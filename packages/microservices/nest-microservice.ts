@@ -279,6 +279,9 @@ export class NestMicroservice
     await this.loadSocketModule();
     await super.init();
     await this.registerModules();
+    if (this.microserviceConfig?.autoFlushLogs ?? true) {
+      this.flushLogs();
+    }
     return this;
   }
 

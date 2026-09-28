@@ -1,4 +1,4 @@
-import { LOG_LEVELS, LogLevel } from '../logger.service.js';
+import { LOG_LEVELS, LogLevel } from '../log-levels.constant.js';
 
 /**
  * @publicApi

@@ -1192,6 +1192,971 @@ describe('Logger', () => {
       });
     });
   });
+
+  describe('ConsoleLogger - JSON mode', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    describe('circular structures', () => {
+      it('should replace circular references instead of throwing', () => {
+        const logger = new ConsoleLogger('Ctx', { json: true });
+        const payload: Record<string, any> = { id: 1 };
+        payload.self = payload;
+
+        expect(() => logger.log('message', payload)).not.toThrow();
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('message');
+        // "params" is a merged copy, so the cycle closes one level deeper.
+        expect(json.params).toEqual({
+          id: 1,
+          self: { id: 1, self: '[Circular]' },
+        });
+      });
+
+      it('should replace circular references in the message itself', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const list: any[] = [1];
+        list.push({ list });
+
+        expect(() => logger.log(list)).not.toThrow();
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toEqual([1, { list: '[Circular]' }]);
+      });
+
+      it('should keep repeated (non-circular) references intact', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const shared = { a: 1 };
+
+        logger.log('message', { first: shared, second: shared });
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params).toEqual({ first: { a: 1 }, second: { a: 1 } });
+      });
+
+      it('should still serialize bigint, symbol, Map and Set values', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const nested: Record<string, any> = {};
+        nested.self = nested;
+        const payload = {
+          big: BigInt(10),
+          sym: Symbol('s'),
+          map: new Map([['k', 'v']]),
+          set: new Set([1]),
+          nested,
+        };
+
+        logger.log('message', payload);
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params).toEqual({
+          big: '10',
+          sym: 'Symbol(s)',
+          map: `Map(1) { 'k' => 'v' }`,
+          set: 'Set(1) { 1 }',
+          nested: { self: '[Circular]' },
+        });
+      });
+
+      it('should not throw when a value cannot be serialized', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const payload = {
+          toJSON() {
+            throw new Error('boom');
+          },
+        };
+
+        expect(() => logger.log('message', { payload })).not.toThrow();
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('message');
+      });
+    });
+
+    describe('function and class messages', () => {
+      it('should evaluate a lazy message', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.log(() => 'lazy message');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('lazy message');
+      });
+
+      it('should evaluate a lazy message that returns an object', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.log(() => ({ answer: 42 }));
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toEqual({ answer: 42 });
+      });
+
+      it('should not evaluate a lazy message when the level is disabled', () => {
+        const logger = new ConsoleLogger({ json: true, logLevels: ['log'] });
+        const factory = vi.fn(() => 'expensive');
+
+        logger.debug(factory);
+
+        expect(factory).not.toHaveBeenCalled();
+        expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      });
+
+      it("should print a class's name", () => {
+        const logger = new ConsoleLogger({ json: true });
+        class Test {}
+
+        logger.log(Test);
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('Test');
+      });
+
+      it('should evaluate a lazy message when compact is false', () => {
+        const logger = new ConsoleLogger({ json: true, compact: false });
+
+        logger.log(() => 'lazy message');
+
+        const json = convertInspectToJSON(
+          processStdoutWriteSpy.mock.calls[0][0],
+        );
+        expect(json.message).toBe('lazy message');
+      });
+    });
+
+    describe('errors', () => {
+      const parseStderr = (index = 0) =>
+        JSON.parse(processStderrWriteSpy.mock.calls[index][0]);
+
+      it('should print a message and an error as one record with a structured error', () => {
+        const logger = new ConsoleLogger('Ctx', { json: true });
+        const error = new Error('boom');
+
+        logger.error('Failed', error);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.level).toBe('error');
+        expect(json.message).toBe('Failed');
+        expect(json.context).toBe('Ctx');
+        expect(json.stack).toBeUndefined();
+        expect(json.error).toEqual({
+          name: 'Error',
+          message: 'boom',
+          stack: error.stack,
+        });
+      });
+
+      it('should keep an explicit context argument', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.error('Failed', new TypeError('boom'), 'Explicit');
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.context).toBe('Explicit');
+        expect(json.error.name).toBe('TypeError');
+      });
+
+      it('should keep params next to the error', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.error('Failed', new Error('boom'), { reqId: 'abc' });
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.params).toEqual({ reqId: 'abc' });
+        expect(json.error.message).toBe('boom');
+      });
+
+      it('should use the error message when the error is the message', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = new RangeError('out of range');
+
+        logger.error(error);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.message).toBe('out of range');
+        expect(json.error).toEqual({
+          name: 'RangeError',
+          message: 'out of range',
+          stack: error.stack,
+        });
+      });
+
+      it('should structure an error passed to other levels', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.warn('Retrying', new Error('timeout'));
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('Retrying');
+        expect(json.error.message).toBe('timeout');
+      });
+
+      it('should include primitive own properties such as "code"', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = Object.assign(new Error('refused'), {
+          code: 'ECONNREFUSED',
+          errno: -61,
+          socket: { big: 'object' },
+        });
+
+        logger.error('Failed', error);
+
+        const json = parseStderr();
+        expect(json.error.code).toBe('ECONNREFUSED');
+        expect(json.error.errno).toBe(-61);
+        expect(json.error.socket).toBeUndefined();
+      });
+
+      it('should serialize the "cause" chain recursively', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const root = new Error('root');
+        const inner = new Error('inner', { cause: root });
+        const outer = new Error('outer', { cause: inner });
+
+        logger.error('Failed', outer);
+
+        const json = parseStderr();
+        expect(json.error.message).toBe('outer');
+        expect(json.error.cause).toEqual({
+          name: 'Error',
+          message: 'inner',
+          stack: inner.stack,
+          cause: { name: 'Error', message: 'root', stack: root.stack },
+        });
+      });
+
+      it('should keep a non-error "cause" as is', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.error(
+          'Failed',
+          new Error('outer', { cause: { status: 503, retry: true } }),
+        );
+
+        const json = parseStderr();
+        expect(json.error.cause).toEqual({ status: 503, retry: true });
+      });
+
+      it('should cap the "cause" chain depth', () => {
+        const logger = new ConsoleLogger({ json: true });
+        let error = new Error('level 0');
+        for (let i = 1; i <= 20; i++) {
+          error = new Error(`level ${i}`, { cause: error });
+        }
+
+        logger.error('Failed', error);
+
+        const json = parseStderr();
+        let depth = 0;
+        let current = json.error;
+        while (typeof current === 'object' && current.cause !== undefined) {
+          current = current.cause;
+          depth++;
+        }
+        expect(depth).toBeLessThan(20);
+        expect(current).toBe('[Truncated]');
+      });
+
+      it('should not loop on a circular "cause" chain', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const first = new Error('first');
+        const second = new Error('second', { cause: first });
+        (first as any).cause = second;
+
+        expect(() => logger.error('Failed', first)).not.toThrow();
+
+        const json = parseStderr();
+        expect(json.error.cause.message).toBe('second');
+        expect(json.error.cause.cause).toBe('[Circular]');
+      });
+
+      it('should serialize the errors of an AggregateError', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const first = new Error('first');
+        const aggregate = new AggregateError(
+          [first, 'not an error'],
+          'Several failed',
+        );
+
+        logger.error('Failed', aggregate);
+
+        const json = parseStderr();
+        expect(json.error.name).toBe('AggregateError');
+        expect(json.error.message).toBe('Several failed');
+        expect(json.error.errors).toEqual([
+          { name: 'Error', message: 'first', stack: first.stack },
+          'not an error',
+        ]);
+      });
+
+      it('should keep the stack argument convention', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = new Error('boom');
+
+        logger.error(error.message, error.stack, 'Ctx');
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.message).toBe('boom');
+        expect(json.stack).toBe(error.stack);
+        expect(json.context).toBe('Ctx');
+        expect(json.error).toBeUndefined();
+      });
+
+      it('should structure the error when using compact: false', () => {
+        const logger = new ConsoleLogger({ json: true, compact: false });
+
+        logger.error('Failed', new Error('boom'));
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const output = processStderrWriteSpy.mock.calls[0][0];
+        expect(output).toContain(`message: 'Failed'`);
+        expect(output).toContain(`name: 'Error'`);
+        expect(output).toContain(`message: 'boom'`);
+      });
+
+      it('should print one record through a "Logger" instance with a context', () => {
+        const previousLoggerRef = Logger['staticInstanceRef'];
+        Logger.overrideLogger(new ConsoleLogger({ json: true }));
+        try {
+          new Logger('Ctx').error('Failed', new Error('boom'));
+        } finally {
+          Logger.overrideLogger(previousLoggerRef!);
+        }
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.message).toBe('Failed');
+        expect(json.context).toBe('Ctx');
+        expect(json.error.message).toBe('boom');
+      });
+
+      it('should leave text mode output unchanged', () => {
+        const logger = new ConsoleLogger({ colors: false });
+        const error = new Error('boom');
+
+        logger.error('Failed', error);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain('Failed');
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain('Error: boom');
+      });
+    });
+  });
+
+  describe('ConsoleLogger - fatal', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+    const stack = 'Error: boom\n    at <anonymous>:1:1';
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    it('should print to stderr', () => {
+      const logger = new ConsoleLogger({ colors: false });
+
+      logger.fatal('shutting down', 'Ctx');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
+        'FATAL [Ctx] shutting down',
+      );
+    });
+
+    it('should print a stack argument like "error" does', () => {
+      const logger = new ConsoleLogger({ colors: false });
+
+      logger.fatal('shutting down', stack, 'Ctx');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
+        '[Ctx] shutting down',
+      );
+      expect(processStderrWriteSpy.mock.calls[1][0]).toBe(`${stack}\n`);
+    });
+
+    it('should detect a stack passed as the only optional argument', () => {
+      const logger = new ConsoleLogger({ colors: false });
+
+      logger.fatal('shutting down', stack);
+
+      expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+      expect(processStderrWriteSpy.mock.calls[1][0]).toBe(`${stack}\n`);
+    });
+
+    it('should include the stack in JSON mode', () => {
+      const logger = new ConsoleLogger({ json: true });
+
+      logger.fatal('shutting down', stack, 'Ctx');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+      const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+      expect(json.level).toBe('fatal');
+      expect(json.message).toBe('shutting down');
+      expect(json.context).toBe('Ctx');
+      expect(json.stack).toBe(stack);
+    });
+
+    it('should use console.error when forceConsole is true', () => {
+      const consoleLogSpy = vi
+        .spyOn(console, 'log')
+        .mockImplementation(() => {});
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      try {
+        const logger = new ConsoleLogger({ forceConsole: true });
+
+        logger.fatal('shutting down');
+
+        expect(consoleLogSpy).not.toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledOnce();
+      } finally {
+        consoleLogSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+      }
+    });
+
+    it('should print to stderr through "Logger"', () => {
+      Logger.fatal('static fatal');
+      new Logger('Ctx').fatal('instance fatal', stack);
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledTimes(3);
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain('static fatal');
+      expect(processStderrWriteSpy.mock.calls[1][0]).toContain('[Ctx]');
+      expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
+        'instance fatal',
+      );
+      expect(processStderrWriteSpy.mock.calls[2][0]).toBe(`${stack}\n`);
+    });
+  });
+
+  describe('log levels set at runtime', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+    let previousStaticInstanceRef: LoggerService;
+    let previousStaticLogLevels: LogLevel[] | undefined;
+    let previousDefaultLoggerLevels: LogLevel[] | undefined;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+
+      previousStaticInstanceRef = Logger['staticInstanceRef']!;
+      previousStaticLogLevels = Logger['logLevels'];
+      previousDefaultLoggerLevels = (previousStaticInstanceRef as any).options
+        ?.logLevels;
+      Logger['logLevels'] = undefined;
+    });
+
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+
+      Logger.overrideLogger(previousStaticInstanceRef);
+      Logger['logLevels'] = previousStaticLogLevels;
+      if (previousDefaultLoggerLevels) {
+        previousStaticInstanceRef.setLogLevels!(previousDefaultLoggerLevels);
+      }
+    });
+
+    describe('existing "Logger" instances', () => {
+      it('should apply levels set with "overrideLogger" after they logged', () => {
+        const logger = new Logger('Ctx');
+        logger.log('before');
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+
+        Logger.overrideLogger(['error']);
+        logger.log('after');
+        logger.error('still printed');
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
+          'still printed',
+        );
+      });
+
+      it('should apply every subsequent level change', () => {
+        const logger = new Logger('Ctx');
+        Logger.overrideLogger(['error']);
+        logger.log('hidden');
+
+        Logger.overrideLogger(['verbose']);
+        logger.verbose('shown');
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('shown');
+      });
+    });
+
+    describe('Logger.isLevelEnabled', () => {
+      it('should report every level as enabled by default', () => {
+        for (const level of [
+          'verbose',
+          'debug',
+          'log',
+          'warn',
+          'error',
+          'fatal',
+        ] as LogLevel[]) {
+          expect(Logger.isLevelEnabled(level)).toBe(true);
+        }
+      });
+
+      it('should follow levels set with "overrideLogger"', () => {
+        Logger.overrideLogger(['warn']);
+
+        expect(Logger.isLevelEnabled('log')).toBe(false);
+        expect(Logger.isLevelEnabled('warn')).toBe(true);
+        expect(Logger.isLevelEnabled('error')).toBe(true);
+      });
+
+      it('should follow the levels of a "ConsoleLogger" set as the logger', () => {
+        Logger.overrideLogger(new ConsoleLogger({ logLevels: ['error'] }));
+
+        expect(Logger.isLevelEnabled('log')).toBe(false);
+        expect(Logger.isLevelEnabled('error')).toBe(true);
+      });
+
+      it('should report every level as enabled for a custom logger', () => {
+        Logger.overrideLogger({
+          log: () => {},
+          error: () => {},
+          warn: () => {},
+        });
+
+        expect(Logger.isLevelEnabled('debug')).toBe(true);
+      });
+
+      it('should report no level as enabled when logging is disabled', () => {
+        Logger.overrideLogger(false);
+
+        expect(Logger.isLevelEnabled('error')).toBe(false);
+      });
+    });
+  });
+
+  describe('ConsoleLogger - redact', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    const stdoutJson = (call = 0) =>
+      JSON.parse(processStdoutWriteSpy.mock.calls[call][0]);
+    const stderrJson = (call = 0) =>
+      JSON.parse(processStderrWriteSpy.mock.calls[call][0]);
+
+    describe('text mode', () => {
+      it('should mask params', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['password', 'authorization'],
+        });
+
+        logger.log('Login', {
+          user: { name: 'john', password: 'hunter2' },
+          headers: { Authorization: 'Bearer abc' },
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain(
+          "{ user: { name: 'john', password: '[REDACTED]' }, headers: { Authorization: '[REDACTED]' } }",
+        );
+        expect(output).not.toContain('hunter2');
+        expect(output).not.toContain('Bearer abc');
+      });
+
+      it('should mask object messages but print string messages as they are', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['password'],
+        });
+
+        logger.log({ password: 'hunter2' });
+        logger.log('password: hunter2');
+
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
+          "password: '[REDACTED]'",
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(
+          'password: hunter2',
+        );
+      });
+
+      it('should mask the value returned by a lazy message', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['password'],
+        });
+
+        logger.log(() => ({ password: 'hunter2' }));
+
+        expect(processStdoutWriteSpy.mock.calls[0][0]).not.toContain('hunter2');
+      });
+
+      it('should mask the properties of an error in params', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['authorization'],
+        });
+        const error = Object.assign(new Error('Request failed'), {
+          config: { headers: { authorization: 'Bearer abc' } },
+        });
+
+        logger.error('Call failed', { error });
+
+        const output = processStderrWriteSpy.mock.calls[0][0];
+        expect(output).toContain('Request failed');
+        expect(output).toContain("authorization: '[REDACTED]'");
+        expect(output).not.toContain('Bearer abc');
+      });
+    });
+
+    describe('JSON mode', () => {
+      it('should mask params', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: ['password', 'items.token'],
+        });
+
+        logger.log('Login', {
+          password: 'hunter2',
+          items: [{ token: 'a', id: 1 }],
+        });
+
+        expect(stdoutJson().params).toEqual({
+          password: '[REDACTED]',
+          items: [{ token: '[REDACTED]', id: 1 }],
+        });
+      });
+
+      it('should mask flattened params', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          flattenParams: true,
+          redact: ['password'],
+        });
+
+        logger.log('Login', { password: 'hunter2', userId: 1 });
+
+        expect(stdoutJson()).toMatchObject({
+          password: '[REDACTED]',
+          userId: 1,
+        });
+      });
+
+      it('should mask the structured error and its cause', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['token'] });
+        const cause = Object.assign(new Error('Unauthorized'), {
+          token: 'abc',
+        });
+        const error = Object.assign(new Error('Sync failed', { cause }), {
+          token: 'def',
+          code: 'E_SYNC',
+        });
+
+        logger.error('Job failed', error);
+
+        const record = stderrJson();
+        expect(record.error).toMatchObject({
+          message: 'Sync failed',
+          token: '[REDACTED]',
+          code: 'E_SYNC',
+          cause: { message: 'Unauthorized', token: '[REDACTED]' },
+        });
+        expect(error.token).toBe('def');
+        expect(cause.token).toBe('abc');
+      });
+
+      it('should mask the entries of a Map', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['password'] });
+
+        logger.log('Users', {
+          users: new Map([['john', { password: 'hunter2' }]]),
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain('[REDACTED]');
+        expect(output).not.toContain('hunter2');
+      });
+
+      it('should mask circular params', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['password'] });
+        const payload: any = { password: 'hunter2' };
+        payload.self = payload;
+
+        logger.log('Payload', payload);
+
+        // The params object is a copy of the payload, so the cycle starts
+        // one level down.
+        expect(stdoutJson().params).toEqual({
+          password: '[REDACTED]',
+          self: { password: '[REDACTED]', self: '[Circular]' },
+        });
+      });
+
+      it('should use a custom censor', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: { paths: ['password'], censor: '***' },
+        });
+
+        logger.log('Login', { password: 'hunter2' });
+
+        expect(stdoutJson().params).toEqual({ password: '***' });
+      });
+
+      it('should not mask the message, context or stack', () => {
+        const logger = new ConsoleLogger('password', {
+          json: true,
+          redact: ['password', 'message', 'context', 'stack'],
+        });
+
+        logger.error('password reset failed', 'Error: x\n    at y (z.ts:1:1)');
+
+        expect(stderrJson()).toMatchObject({
+          message: 'password reset failed',
+          context: 'password',
+          stack: 'Error: x\n    at y (z.ts:1:1)',
+        });
+      });
+    });
+
+    it('should not mutate the logged values', () => {
+      const logger = new ConsoleLogger({ json: true, redact: ['password'] });
+      const params = { user: { password: 'hunter2' } };
+
+      logger.log('Login', params);
+
+      expect(params.user.password).toBe('hunter2');
+    });
+
+    it('should not traverse the values when the option is not set', () => {
+      const logger = new ConsoleLogger({ json: true });
+      const params = { password: 'hunter2' };
+
+      expect(logger['redact'](params)).toBe(params);
+      logger.log('Login', params);
+      expect(stdoutJson().params).toEqual({ password: 'hunter2' });
+    });
+  });
+
+  describe('NEST_LOG_LEVEL environment variable', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    const enabledLevels = (logger: ConsoleLogger) =>
+      (
+        ['verbose', 'debug', 'log', 'warn', 'error', 'fatal'] as LogLevel[]
+      ).filter(level => logger.isLevelEnabled(level));
+
+    it('should enable the given level and the levels above it', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'warn');
+
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'warn',
+        'error',
+        'fatal',
+      ]);
+    });
+
+    it('should accept the "filterLogLevels" formats, in any case', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', '>=DEBUG');
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'debug',
+        'log',
+        'warn',
+        'error',
+        'fatal',
+      ]);
+
+      vi.stubEnv('NEST_LOG_LEVEL', '>log');
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'warn',
+        'error',
+        'fatal',
+      ]);
+
+      vi.stubEnv('NEST_LOG_LEVEL', 'verbose, error');
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'verbose',
+        'error',
+        'fatal',
+      ]);
+    });
+
+    it('should disable every level for ">fatal"', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', '>fatal');
+      const logger = new ConsoleLogger();
+
+      logger.fatal('hidden');
+
+      expect(enabledLevels(logger)).toEqual([]);
+      expect(processStderrWriteSpy).not.toHaveBeenCalled();
+    });
+
+    it('should filter the output of a logger created without levels', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+      const logger = new ConsoleLogger('Ctx');
+
+      logger.log('hidden');
+      logger.warn('hidden');
+      logger.error('shown');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain('shown');
+    });
+
+    it('should apply to "Logger" instances using the default logger', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'warn');
+      const logger = new Logger('Ctx');
+
+      logger.log('hidden');
+      logger.warn('shown');
+
+      expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('shown');
+    });
+
+    it('should be read on the first level check, not in the constructor', () => {
+      const logger = new ConsoleLogger();
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+
+      expect(enabledLevels(logger)).toEqual(['error', 'fatal']);
+    });
+
+    it('should be ignored when levels are passed explicitly', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+
+      const logger = new ConsoleLogger({ logLevels: ['log'] });
+
+      expect(logger.isLevelEnabled('log')).toBe(true);
+    });
+
+    it('should be ignored once levels are set with "setLogLevels"', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+      const logger = new ConsoleLogger();
+
+      logger.setLogLevels(['debug']);
+
+      expect(logger.isLevelEnabled('debug')).toBe(true);
+    });
+
+    it('should enable every level when it is empty', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', ' ');
+
+      expect(enabledLevels(new ConsoleLogger())).toHaveLength(6);
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+    });
+
+    describe('when the value is invalid', () => {
+      it.each(['warning', 'warn,info', 'warn,', '>=info', '>=warn,error'])(
+        'should warn and enable every level for "%s"',
+        value => {
+          vi.stubEnv('NEST_LOG_LEVEL', value);
+          const logger = new ConsoleLogger('Ctx');
+
+          expect(enabledLevels(logger)).toHaveLength(6);
+          expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+          const output = processStdoutWriteSpy.mock.calls[0][0];
+          expect(output).toContain('WARN');
+          expect(output).toContain('[ConsoleLogger]');
+          expect(output).toContain(`Invalid NEST_LOG_LEVEL value "${value}"`);
+        },
+      );
+
+      it('should warn only once for the same value', () => {
+        vi.stubEnv('NEST_LOG_LEVEL', 'loud');
+
+        new ConsoleLogger().log('first');
+        new ConsoleLogger().log('second');
+        new Logger('Ctx').log('third');
+
+        const warnings = processStdoutWriteSpy.mock.calls.filter(([output]) =>
+          String(output).includes('Invalid NEST_LOG_LEVEL'),
+        );
+        expect(warnings).toHaveLength(1);
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(4);
+      });
+
+      it('should print the warning in json mode for a json logger', () => {
+        vi.stubEnv('NEST_LOG_LEVEL', 'quiet');
+
+        new ConsoleLogger({ json: true }).log('message');
+
+        const warning = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(warning).toMatchObject({
+          level: 'warn',
+          context: 'ConsoleLogger',
+        });
+      });
+    });
+  });
 });
 
 function convertInspectToJSON(inspectOutput: string) {

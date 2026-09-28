@@ -209,6 +209,11 @@ export class NestApplication
 
     this.isInitialized = true;
     this.logger.log(MESSAGES.APPLICATION_READY);
+    // Without this, an application that is never started with "listen()"
+    // (e.g. serverless handlers, e2e tests) would buffer logs forever.
+    if (this.appOptions?.autoFlushLogs ?? true) {
+      this.flushLogs();
+    }
     return this;
   }
 
