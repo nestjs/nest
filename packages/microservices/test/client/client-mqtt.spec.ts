@@ -572,6 +572,35 @@ describe('ClientMqtt', () => {
       expect(untyped.mqttClient).toBeNull();
       expect(untyped.connectionPromise).toBeNull();
     });
+
+    it('should let the next client handle responses after a connected client gave up', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const firstClient = fakeClient(0);
+      const secondClient = fakeClient(0);
+      vi.spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const first = mqtt.connect();
+      firstClient.emit('connect');
+      await first;
+      const callback = vi.fn();
+      untyped.routingMap.set('pending id', callback);
+      untyped.subscriptionsCount.set('test/reply', 1);
+
+      firstClient.emit('close');
+
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(untyped.subscriptionsCount.size).toBe(0);
+
+      const second = mqtt.connect();
+      secondClient.emit('connect');
+      await second;
+      expect(secondClient.listenerCount('message')).toBe(1);
+    });
   });
   describe('mergeCloseEvent', () => {
     it('should merge close event', () => {

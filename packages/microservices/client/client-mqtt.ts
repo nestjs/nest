@@ -142,8 +142,14 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     if (client !== this.mqttClient) {
       return;
     }
+    // Requests sent through the dropped client can no longer get a reply
+    this.handleClose();
     this.mqttClient = null;
     this.connectionPromise = null;
+    // The next client has to attach the response listener and subscribe to
+    // the reply channels again
+    this.isInitialConnection = false;
+    this.subscriptionsCount.clear();
   }
 
   public mergeCloseEvent<T = any>(
