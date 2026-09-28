@@ -1726,6 +1726,51 @@ describe('Logger', () => {
       });
     });
 
+    describe('Logger.isLevelEnabled', () => {
+      it('should report every level as enabled by default', () => {
+        for (const level of [
+          'verbose',
+          'debug',
+          'log',
+          'warn',
+          'error',
+          'fatal',
+        ] as LogLevel[]) {
+          expect(Logger.isLevelEnabled(level)).toBe(true);
+        }
+      });
+
+      it('should follow levels set with "overrideLogger"', () => {
+        Logger.overrideLogger(['warn']);
+
+        expect(Logger.isLevelEnabled('log')).toBe(false);
+        expect(Logger.isLevelEnabled('warn')).toBe(true);
+        expect(Logger.isLevelEnabled('error')).toBe(true);
+      });
+
+      it('should follow the levels of a "ConsoleLogger" set as the logger', () => {
+        Logger.overrideLogger(new ConsoleLogger({ logLevels: ['error'] }));
+
+        expect(Logger.isLevelEnabled('log')).toBe(false);
+        expect(Logger.isLevelEnabled('error')).toBe(true);
+      });
+
+      it('should report every level as enabled for a custom logger', () => {
+        Logger.overrideLogger({
+          log: () => {},
+          error: () => {},
+          warn: () => {},
+        });
+
+        expect(Logger.isLevelEnabled('debug')).toBe(true);
+      });
+
+      it('should report no level as enabled when logging is disabled', () => {
+        Logger.overrideLogger(false);
+
+        expect(Logger.isLevelEnabled('error')).toBe(false);
+      });
+    });
   });
 });
 

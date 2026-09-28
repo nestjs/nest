@@ -331,8 +331,17 @@ export class Logger implements LoggerService {
   }
 
   static isLevelEnabled(level: LogLevel): boolean {
+    const instance = Logger.staticInstanceRef;
+    if (!instance) {
+      // Logging is disabled ("logger: false").
+      return false;
+    }
+    if (instance instanceof ConsoleLogger) {
+      return instance.isLevelEnabled(level);
+    }
     const logLevels = Logger.logLevels;
-    return isLogLevelEnabled(level, logLevels);
+    // Without explicitly set levels, every level is enabled.
+    return logLevels ? isLogLevelEnabled(level, logLevels) : true;
   }
 
   private registerLocalInstanceRef() {
