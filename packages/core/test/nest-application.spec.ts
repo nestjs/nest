@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
 import * as microservicesPackage from '@nestjs/microservices';
 import { MicroserviceOptions } from '@nestjs/microservices';
@@ -204,6 +204,62 @@ describe('NestApplication', () => {
       expect((noopHttpAdapter as any).init).toHaveBeenCalledOnce();
     });
   });
+  describe('buffered logs', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+
+    const createApp = (options: { autoFlushLogs?: boolean } = {}) => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const httpAdapter = new NoopHttpAdapter({});
+      container.setHttpAdapter(httpAdapter);
+      return new NestApplication(
+        container,
+        httpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        options,
+      );
+    };
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      Logger.attachBuffer();
+      new Logger('Bootstrap').log('buffered message');
+    });
+
+    afterEach(() => {
+      Logger.detachBuffer();
+      Logger['logBuffer'] = [];
+      processStdoutWriteSpy.mockRestore();
+    });
+
+    const printed = () =>
+      processStdoutWriteSpy.mock.calls.map(([chunk]) => String(chunk));
+
+    it('should flush them when the application is initialized', async () => {
+      const app = createApp();
+      expect(printed()).toEqual([]);
+
+      await app.init();
+
+      expect(printed().some(line => line.includes('buffered message'))).toBe(
+        true,
+      );
+      expect(Logger['isBufferAttached']).toBe(false);
+    });
+
+    it('should not flush them on init when "autoFlushLogs" is false', async () => {
+      const app = createApp({ autoFlushLogs: false });
+
+      await app.init();
+
+      expect(printed()).toEqual([]);
+      expect(Logger['isBufferAttached']).toBe(true);
+    });
+  });
+
   describe('use', () => {
     it('should decorate function middleware before passing it to the http adapter', () => {
       const useSpy = vi.fn();
