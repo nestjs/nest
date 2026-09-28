@@ -158,7 +158,7 @@
     "typescript-eslint": "8.70.1",
     "vite": "8.3.1",
     "vitest": "5.0.2",
-    "ws": "8.21.3"
+    "ws": "8.22.0"
   },
   "engines": {
     "node": ">= 20"
