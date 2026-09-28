@@ -92,6 +92,10 @@ export class Logger implements LoggerService {
   private static isBufferAttached: boolean;
 
   protected localInstanceRef?: LoggerService;
+  /**
+   * The `Logger.logLevels` the local instance was last configured with.
+   */
+  private localInstanceLogLevels?: LogLevel[];
 
   private static WrapBuffer: MethodDecorator = (
     target: object,
@@ -333,8 +337,18 @@ export class Logger implements LoggerService {
 
   private registerLocalInstanceRef() {
     if (this.localInstanceRef) {
+      // Levels set at runtime (e.g. "app.useLogger(['error'])") must also
+      // reach instances created before the change.
+      if (
+        Logger.logLevels &&
+        this.localInstanceLogLevels !== Logger.logLevels
+      ) {
+        this.localInstanceRef.setLogLevels?.(Logger.logLevels);
+        this.localInstanceLogLevels = Logger.logLevels;
+      }
       return this.localInstanceRef;
     }
+    this.localInstanceLogLevels = Logger.logLevels;
     this.localInstanceRef = new ConsoleLogger(this.context!, {
       timestamp: this.options?.timestamp,
       logLevels: Logger.logLevels,

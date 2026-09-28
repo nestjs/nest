@@ -1662,6 +1662,71 @@ describe('Logger', () => {
       expect(processStderrWriteSpy.mock.calls[2][0]).toBe(`${stack}\n`);
     });
   });
+
+  describe('log levels set at runtime', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+    let previousStaticInstanceRef: LoggerService;
+    let previousStaticLogLevels: LogLevel[] | undefined;
+    let previousDefaultLoggerLevels: LogLevel[] | undefined;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+
+      previousStaticInstanceRef = Logger['staticInstanceRef']!;
+      previousStaticLogLevels = Logger['logLevels'];
+      previousDefaultLoggerLevels = (previousStaticInstanceRef as any).options
+        ?.logLevels;
+      Logger['logLevels'] = undefined;
+    });
+
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+
+      Logger.overrideLogger(previousStaticInstanceRef);
+      Logger['logLevels'] = previousStaticLogLevels;
+      if (previousDefaultLoggerLevels) {
+        previousStaticInstanceRef.setLogLevels!(previousDefaultLoggerLevels);
+      }
+    });
+
+    describe('existing "Logger" instances', () => {
+      it('should apply levels set with "overrideLogger" after they logged', () => {
+        const logger = new Logger('Ctx');
+        logger.log('before');
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+
+        Logger.overrideLogger(['error']);
+        logger.log('after');
+        logger.error('still printed');
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
+          'still printed',
+        );
+      });
+
+      it('should apply every subsequent level change', () => {
+        const logger = new Logger('Ctx');
+        Logger.overrideLogger(['error']);
+        logger.log('hidden');
+
+        Logger.overrideLogger(['verbose']);
+        logger.verbose('shown');
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('shown');
+      });
+    });
+
+  });
 });
 
 function convertInspectToJSON(inspectOutput: string) {
