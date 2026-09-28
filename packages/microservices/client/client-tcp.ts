@@ -54,19 +54,23 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    this.socket = this.createSocket();
-    this.registerConnectListener(this.socket);
-    this.registerCloseListener(this.socket);
-    this.registerErrorListener(this.socket);
+    const socket = this.createSocket();
+    this.socket = socket;
+    this.registerConnectListener(socket);
+    this.registerCloseListener(socket);
+    this.registerErrorListener(socket);
 
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.socket!.on(event, callback as any),
+      socket.on(event, callback as any),
     );
     this.pendingEventListeners = [];
 
-    const source$ = this.connect$(this.socket.netSocket).pipe(
+    const source$ = this.connect$(socket.netSocket).pipe(
       tap(() => {
-        this.socket!.on('message', (buffer: WritePacket & PacketId) =>
+        // A socket replaced by a newer `connect()` call (`close()` followed by
+        // `connect()` while it was still connecting) still finishes connecting,
+        // so its listener must stay on it instead of `this.socket`.
+        socket.on('message', (buffer: WritePacket & PacketId) =>
           this.handleResponse(buffer),
         );
       }),
@@ -75,7 +79,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
     // For TLS connections, the connection is initiated when the socket is created
     if (!this.tlsOptions) {
-      this.socket.connect(this.port, this.host);
+      socket.connect(this.port, this.host);
     }
     this.connectionPromise = lastValueFrom(source$).catch(err => {
       if (err instanceof EmptyError) {
@@ -146,6 +150,9 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
   public registerConnectListener(socket: TcpSocket) {
     socket.on(TcpEventsMap.CONNECT, () => {
+      if (this.isReplacedSocket(socket)) {
+        return;
+      }
       this._status$.next(TcpStatus.CONNECTED);
     });
   }
@@ -154,7 +161,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     socket.on(TcpEventsMap.ERROR, err => {
       if (err.code !== ECONNREFUSED) {
         this.handleError(err);
-      } else {
+      } else if (!this.isReplacedSocket(socket)) {
         this._status$.next(TcpStatus.DISCONNECTED);
       }
     });
@@ -162,9 +169,21 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
   public registerCloseListener(socket: TcpSocket) {
     socket.on(TcpEventsMap.CLOSE, () => {
+      if (this.isReplacedSocket(socket)) {
+        return;
+      }
       this._status$.next(TcpStatus.DISCONNECTED);
       this.handleClose();
     });
+  }
+
+  /**
+   * Whether a newer `connect()` call has replaced `socket` (e.g., `close()`
+   * followed by `connect()` before it finished closing), so its late events
+   * must not tear down or report on the newer connection.
+   */
+  private isReplacedSocket(socket: TcpSocket): boolean {
+    return this.socket !== null && this.socket !== socket;
   }
 
   public handleError(err: any) {
