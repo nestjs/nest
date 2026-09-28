@@ -1336,6 +1336,230 @@ describe('Logger', () => {
         expect(json.message).toBe('lazy message');
       });
     });
+
+    describe('errors', () => {
+      const parseStderr = (index = 0) =>
+        JSON.parse(processStderrWriteSpy.mock.calls[index][0]);
+
+      it('should print a message and an error as one record with a structured error', () => {
+        const logger = new ConsoleLogger('Ctx', { json: true });
+        const error = new Error('boom');
+
+        logger.error('Failed', error);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.level).toBe('error');
+        expect(json.message).toBe('Failed');
+        expect(json.context).toBe('Ctx');
+        expect(json.stack).toBeUndefined();
+        expect(json.error).toEqual({
+          name: 'Error',
+          message: 'boom',
+          stack: error.stack,
+        });
+      });
+
+      it('should keep an explicit context argument', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.error('Failed', new TypeError('boom'), 'Explicit');
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.context).toBe('Explicit');
+        expect(json.error.name).toBe('TypeError');
+      });
+
+      it('should keep params next to the error', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.error('Failed', new Error('boom'), { reqId: 'abc' });
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.params).toEqual({ reqId: 'abc' });
+        expect(json.error.message).toBe('boom');
+      });
+
+      it('should use the error message when the error is the message', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = new RangeError('out of range');
+
+        logger.error(error);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.message).toBe('out of range');
+        expect(json.error).toEqual({
+          name: 'RangeError',
+          message: 'out of range',
+          stack: error.stack,
+        });
+      });
+
+      it('should structure an error passed to other levels', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.warn('Retrying', new Error('timeout'));
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('Retrying');
+        expect(json.error.message).toBe('timeout');
+      });
+
+      it('should include primitive own properties such as "code"', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = Object.assign(new Error('refused'), {
+          code: 'ECONNREFUSED',
+          errno: -61,
+          socket: { big: 'object' },
+        });
+
+        logger.error('Failed', error);
+
+        const json = parseStderr();
+        expect(json.error.code).toBe('ECONNREFUSED');
+        expect(json.error.errno).toBe(-61);
+        expect(json.error.socket).toBeUndefined();
+      });
+
+      it('should serialize the "cause" chain recursively', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const root = new Error('root');
+        const inner = new Error('inner', { cause: root });
+        const outer = new Error('outer', { cause: inner });
+
+        logger.error('Failed', outer);
+
+        const json = parseStderr();
+        expect(json.error.message).toBe('outer');
+        expect(json.error.cause).toEqual({
+          name: 'Error',
+          message: 'inner',
+          stack: inner.stack,
+          cause: { name: 'Error', message: 'root', stack: root.stack },
+        });
+      });
+
+      it('should keep a non-error "cause" as is', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.error(
+          'Failed',
+          new Error('outer', { cause: { status: 503, retry: true } }),
+        );
+
+        const json = parseStderr();
+        expect(json.error.cause).toEqual({ status: 503, retry: true });
+      });
+
+      it('should cap the "cause" chain depth', () => {
+        const logger = new ConsoleLogger({ json: true });
+        let error = new Error('level 0');
+        for (let i = 1; i <= 20; i++) {
+          error = new Error(`level ${i}`, { cause: error });
+        }
+
+        logger.error('Failed', error);
+
+        const json = parseStderr();
+        let depth = 0;
+        let current = json.error;
+        while (typeof current === 'object' && current.cause !== undefined) {
+          current = current.cause;
+          depth++;
+        }
+        expect(depth).toBeLessThan(20);
+        expect(current).toBe('[Truncated]');
+      });
+
+      it('should not loop on a circular "cause" chain', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const first = new Error('first');
+        const second = new Error('second', { cause: first });
+        (first as any).cause = second;
+
+        expect(() => logger.error('Failed', first)).not.toThrow();
+
+        const json = parseStderr();
+        expect(json.error.cause.message).toBe('second');
+        expect(json.error.cause.cause).toBe('[Circular]');
+      });
+
+      it('should serialize the errors of an AggregateError', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const first = new Error('first');
+        const aggregate = new AggregateError(
+          [first, 'not an error'],
+          'Several failed',
+        );
+
+        logger.error('Failed', aggregate);
+
+        const json = parseStderr();
+        expect(json.error.name).toBe('AggregateError');
+        expect(json.error.message).toBe('Several failed');
+        expect(json.error.errors).toEqual([
+          { name: 'Error', message: 'first', stack: first.stack },
+          'not an error',
+        ]);
+      });
+
+      it('should keep the stack argument convention', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = new Error('boom');
+
+        logger.error(error.message, error.stack, 'Ctx');
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.message).toBe('boom');
+        expect(json.stack).toBe(error.stack);
+        expect(json.context).toBe('Ctx');
+        expect(json.error).toBeUndefined();
+      });
+
+      it('should structure the error when using compact: false', () => {
+        const logger = new ConsoleLogger({ json: true, compact: false });
+
+        logger.error('Failed', new Error('boom'));
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const output = processStderrWriteSpy.mock.calls[0][0];
+        expect(output).toContain(`message: 'Failed'`);
+        expect(output).toContain(`name: 'Error'`);
+        expect(output).toContain(`message: 'boom'`);
+      });
+
+      it('should print one record through a "Logger" instance with a context', () => {
+        const previousLoggerRef = Logger['staticInstanceRef'];
+        Logger.overrideLogger(new ConsoleLogger({ json: true }));
+        try {
+          new Logger('Ctx').error('Failed', new Error('boom'));
+        } finally {
+          Logger.overrideLogger(previousLoggerRef!);
+        }
+
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        const json = parseStderr();
+        expect(json.message).toBe('Failed');
+        expect(json.context).toBe('Ctx');
+        expect(json.error.message).toBe('boom');
+      });
+
+      it('should leave text mode output unchanged', () => {
+        const logger = new ConsoleLogger({ colors: false });
+        const error = new Error('boom');
+
+        logger.error('Failed', error);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain('Failed');
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain('Error: boom');
+      });
+    });
   });
 });
 

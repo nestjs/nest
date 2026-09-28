@@ -11,6 +11,11 @@ import { LoggerService, LogLevel } from './logger.service.js';
 import { isLogLevelEnabled } from './utils/is-log-level-enabled.util.js';
 
 const DEFAULT_DEPTH = 5;
+/**
+ * How many levels of nested errors (`cause`, `AggregateError#errors`) are
+ * serialized in JSON mode.
+ */
+const MAX_ERROR_DEPTH = 5;
 
 /**
  * @publicApi
@@ -339,17 +344,24 @@ export class ConsoleLogger implements LoggerService {
     errorStack?: unknown,
     params?: Record<string, any>,
   ) {
-    messages.forEach(message => {
-      if (this.options.json) {
-        this.printAsJson(this.resolveMessage(message), {
+    if (this.options.json) {
+      const { messages: jsonMessages, error } = this.extractJsonError(
+        messages.map(message => this.resolveMessage(message)),
+      );
+      jsonMessages.forEach((message, index) => {
+        this.printAsJson(message, {
           context,
           logLevel,
           writeStreamType,
           errorStack,
           params,
+          // The error belongs to the first record (the log message).
+          error: index === 0 ? error : undefined,
         });
-        return;
-      }
+      });
+      return;
+    }
+    messages.forEach(message => {
       const pidMessage = this.formatPid(process.pid);
       const contextMessage = this.formatContext(context);
       const timestampDiff = this.updateAndGetTimestampDiff();
@@ -384,6 +396,7 @@ export class ConsoleLogger implements LoggerService {
       writeStreamType?: 'stdout' | 'stderr';
       errorStack?: unknown;
       params?: Record<string, any>;
+      error?: Error;
     },
   ) {
     const logObject = this.getJsonLogObject(message, options);
@@ -412,6 +425,7 @@ export class ConsoleLogger implements LoggerService {
       writeStreamType?: 'stdout' | 'stderr';
       errorStack?: unknown;
       params?: Record<string, any>;
+      error?: Error;
     },
   ) {
     type JsonLogObject = {
@@ -421,6 +435,7 @@ export class ConsoleLogger implements LoggerService {
       message: unknown;
       context?: string;
       stack?: unknown;
+      error?: Record<string, unknown>;
       params?: Record<string, any>;
       [key: string]: unknown;
     };
@@ -440,6 +455,10 @@ export class ConsoleLogger implements LoggerService {
       logObject.stack = options.errorStack;
     }
 
+    if (options.error) {
+      logObject.error = this.serializeError(options.error);
+    }
+
     if (options.params) {
       if (this.options.flattenParams) {
         // Framework fields win on key collisions: a param named "message" or
@@ -455,6 +474,81 @@ export class ConsoleLogger implements LoggerService {
     }
 
     return logObject;
+  }
+
+  /**
+   * Pulls the first `Error` out of the messages so that it can be attached to
+   * the log record as a structured `error` field instead of being printed as
+   * a separate record. When the error is the message itself, the record's
+   * message becomes the error's message.
+   */
+  protected extractJsonError(messages: unknown[]): {
+    messages: unknown[];
+    error?: Error;
+  } {
+    const errorIndex = messages.findIndex(message => message instanceof Error);
+    if (errorIndex === -1) {
+      return { messages };
+    }
+    const error = messages[errorIndex] as Error;
+    const remainingMessages =
+      errorIndex === 0
+        ? [error.message, ...messages.slice(1)]
+        : messages.filter((_, index) => index !== errorIndex);
+    return { messages: remainingMessages, error };
+  }
+
+  /**
+   * Converts an error into a plain object: `name`, `message`, `stack`, own
+   * primitive properties (e.g. `code`), and, recursively, `cause` and the
+   * `errors` of an `AggregateError`, up to a fixed depth.
+   */
+  protected serializeError(
+    error: Error,
+    depth = 0,
+    ancestors = new Set<Error>(),
+  ): Record<string, unknown> {
+    const serialized: Record<string, unknown> = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+    for (const [key, value] of Object.entries(error)) {
+      if (key in serialized || key === 'cause' || key === 'errors') {
+        continue;
+      }
+      const isPrimitive =
+        value === null ||
+        (typeof value !== 'object' && typeof value !== 'function');
+      if (isPrimitive) {
+        serialized[key] = value;
+      }
+    }
+
+    const serializeNested = (value: unknown) => {
+      if (!(value instanceof Error)) {
+        return value;
+      }
+      if (ancestors.has(value)) {
+        return '[Circular]';
+      }
+      if (depth + 1 > MAX_ERROR_DEPTH) {
+        return '[Truncated]';
+      }
+      return this.serializeError(value, depth + 1, ancestors);
+    };
+
+    ancestors.add(error);
+    if (error.cause !== undefined) {
+      serialized.cause = serializeNested(error.cause);
+    }
+    const errors = (error as Partial<AggregateError>).errors;
+    if (Array.isArray(errors)) {
+      serialized.errors = errors.map(serializeNested);
+    }
+    ancestors.delete(error);
+
+    return serialized;
   }
 
   protected formatPid(pid: number) {
