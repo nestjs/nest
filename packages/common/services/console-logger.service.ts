@@ -13,6 +13,7 @@ import {
   LOG_LEVEL_ENV_VAR,
 } from './utils/get-env-log-levels.util.js';
 import { isLogLevelEnabled } from './utils/is-log-level-enabled.util.js';
+import { createRedactor, Redactor } from './utils/redact.util.js';
 
 const DEFAULT_DEPTH = 5;
 /**
@@ -121,6 +122,19 @@ export interface ConsoleLoggerOptions {
    * @default false
    */
   flattenParams?: boolean;
+  /**
+   * Properties to mask in logged values, as key names (`'password'`, matched
+   * at any depth) or dotted paths (`'user.password'`, matched by the last
+   * keys leading to the property, at any depth). Keys are compared
+   * case-insensitively, and array indices are skipped.
+   * Applies to structured params and to messages that are not strings
+   * (objects, arrays, errors), in text and JSON mode. String messages, the
+   * error message and the stack trace are printed as is.
+   * The logged values are not mutated: only the objects that contain a
+   * matching property are copied.
+   * Pass an object to replace the default censor (`"[REDACTED]"`).
+   */
+  redact?: string[] | { paths: string[]; censor?: string };
 }
 
 const DEFAULT_LOG_LEVELS: LogLevel[] = [
@@ -172,6 +186,10 @@ export class ConsoleLogger implements LoggerService {
    * The last timestamp at which the log message was printed.
    */
   protected static lastTimestampAt?: number;
+  /**
+   * Masks the properties set in the `redact` option.
+   */
+  private readonly redactor?: Redactor;
 
   constructor();
   constructor(context: string);
@@ -196,6 +214,11 @@ export class ConsoleLogger implements LoggerService {
 
     this.options = opts;
     this.inspectOptions = this.getInspectOptions();
+    if (opts.redact) {
+      this.redactor = Array.isArray(opts.redact)
+        ? createRedactor(opts.redact)
+        : createRedactor(opts.redact.paths, opts.redact.censor);
+    }
 
     if (context) {
       this.context = context;
@@ -386,6 +409,12 @@ export class ConsoleLogger implements LoggerService {
     errorStack?: unknown,
     params?: Record<string, any>,
   ) {
+    if (this.redactor) {
+      messages = messages.map(message =>
+        this.redact(this.resolveMessage(message)),
+      );
+      params = params && (this.redact(params) as Record<string, any>);
+    }
     if (this.options.json) {
       const { messages: jsonMessages, error } = this.extractJsonError(
         messages.map(message => this.resolveMessage(message)),
@@ -591,6 +620,14 @@ export class ConsoleLogger implements LoggerService {
     ancestors.delete(error);
 
     return serialized;
+  }
+
+  /**
+   * Masks the properties set in the `redact` option. Returns the value itself
+   * when the option isn't set or nothing matched.
+   */
+  protected redact(value: unknown): unknown {
+    return this.redactor ? this.redactor(value) : value;
   }
 
   protected formatPid(pid: number) {

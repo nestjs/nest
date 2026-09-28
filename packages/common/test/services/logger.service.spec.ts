@@ -1773,6 +1773,223 @@ describe('Logger', () => {
     });
   });
 
+  describe('ConsoleLogger - redact', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    const stdoutJson = (call = 0) =>
+      JSON.parse(processStdoutWriteSpy.mock.calls[call][0]);
+    const stderrJson = (call = 0) =>
+      JSON.parse(processStderrWriteSpy.mock.calls[call][0]);
+
+    describe('text mode', () => {
+      it('should mask params', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['password', 'authorization'],
+        });
+
+        logger.log('Login', {
+          user: { name: 'john', password: 'hunter2' },
+          headers: { Authorization: 'Bearer abc' },
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain(
+          "{ user: { name: 'john', password: '[REDACTED]' }, headers: { Authorization: '[REDACTED]' } }",
+        );
+        expect(output).not.toContain('hunter2');
+        expect(output).not.toContain('Bearer abc');
+      });
+
+      it('should mask object messages but print string messages as they are', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['password'],
+        });
+
+        logger.log({ password: 'hunter2' });
+        logger.log('password: hunter2');
+
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
+          "password: '[REDACTED]'",
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(
+          'password: hunter2',
+        );
+      });
+
+      it('should mask the value returned by a lazy message', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['password'],
+        });
+
+        logger.log(() => ({ password: 'hunter2' }));
+
+        expect(processStdoutWriteSpy.mock.calls[0][0]).not.toContain('hunter2');
+      });
+
+      it('should mask the properties of an error in params', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['authorization'],
+        });
+        const error = Object.assign(new Error('Request failed'), {
+          config: { headers: { authorization: 'Bearer abc' } },
+        });
+
+        logger.error('Call failed', { error });
+
+        const output = processStderrWriteSpy.mock.calls[0][0];
+        expect(output).toContain('Request failed');
+        expect(output).toContain("authorization: '[REDACTED]'");
+        expect(output).not.toContain('Bearer abc');
+      });
+    });
+
+    describe('JSON mode', () => {
+      it('should mask params', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: ['password', 'items.token'],
+        });
+
+        logger.log('Login', {
+          password: 'hunter2',
+          items: [{ token: 'a', id: 1 }],
+        });
+
+        expect(stdoutJson().params).toEqual({
+          password: '[REDACTED]',
+          items: [{ token: '[REDACTED]', id: 1 }],
+        });
+      });
+
+      it('should mask flattened params', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          flattenParams: true,
+          redact: ['password'],
+        });
+
+        logger.log('Login', { password: 'hunter2', userId: 1 });
+
+        expect(stdoutJson()).toMatchObject({
+          password: '[REDACTED]',
+          userId: 1,
+        });
+      });
+
+      it('should mask the structured error and its cause', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['token'] });
+        const cause = Object.assign(new Error('Unauthorized'), {
+          token: 'abc',
+        });
+        const error = Object.assign(new Error('Sync failed', { cause }), {
+          token: 'def',
+          code: 'E_SYNC',
+        });
+
+        logger.error('Job failed', error);
+
+        const record = stderrJson();
+        expect(record.error).toMatchObject({
+          message: 'Sync failed',
+          token: '[REDACTED]',
+          code: 'E_SYNC',
+          cause: { message: 'Unauthorized', token: '[REDACTED]' },
+        });
+        expect(error.token).toBe('def');
+        expect(cause.token).toBe('abc');
+      });
+
+      it('should mask the entries of a Map', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['password'] });
+
+        logger.log('Users', {
+          users: new Map([['john', { password: 'hunter2' }]]),
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain('[REDACTED]');
+        expect(output).not.toContain('hunter2');
+      });
+
+      it('should mask circular params', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['password'] });
+        const payload: any = { password: 'hunter2' };
+        payload.self = payload;
+
+        logger.log('Payload', payload);
+
+        // The params object is a copy of the payload, so the cycle starts
+        // one level down.
+        expect(stdoutJson().params).toEqual({
+          password: '[REDACTED]',
+          self: { password: '[REDACTED]', self: '[Circular]' },
+        });
+      });
+
+      it('should use a custom censor', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: { paths: ['password'], censor: '***' },
+        });
+
+        logger.log('Login', { password: 'hunter2' });
+
+        expect(stdoutJson().params).toEqual({ password: '***' });
+      });
+
+      it('should not mask the message, context or stack', () => {
+        const logger = new ConsoleLogger('password', {
+          json: true,
+          redact: ['password', 'message', 'context', 'stack'],
+        });
+
+        logger.error('password reset failed', 'Error: x\n    at y (z.ts:1:1)');
+
+        expect(stderrJson()).toMatchObject({
+          message: 'password reset failed',
+          context: 'password',
+          stack: 'Error: x\n    at y (z.ts:1:1)',
+        });
+      });
+    });
+
+    it('should not mutate the logged values', () => {
+      const logger = new ConsoleLogger({ json: true, redact: ['password'] });
+      const params = { user: { password: 'hunter2' } };
+
+      logger.log('Login', params);
+
+      expect(params.user.password).toBe('hunter2');
+    });
+
+    it('should not traverse the values when the option is not set', () => {
+      const logger = new ConsoleLogger({ json: true });
+      const params = { password: 'hunter2' };
+
+      expect(logger['redact'](params)).toBe(params);
+      logger.log('Login', params);
+      expect(stdoutJson().params).toEqual({ password: 'hunter2' });
+    });
+  });
+
   describe('NEST_LOG_LEVEL environment variable', () => {
     let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
     let processStderrWriteSpy: ReturnType<typeof vi.fn>;
