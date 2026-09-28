@@ -694,4 +694,111 @@ describe('ClientRMQ', function () {
       });
     });
   });
+
+  describe('on', () => {
+    let firstManager: ReturnType<typeof createFakeManager>;
+    let secondManager: ReturnType<typeof createFakeManager>;
+    let createClientStub: ReturnType<typeof vi.fn>;
+
+    // Plays the connection manager, so its events can be fired by hand.
+    const createFakeManager = () =>
+      Object.assign(new EventEmitter(), {
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+    const connectWith = async (
+      manager: ReturnType<typeof createFakeManager>,
+    ) => {
+      const connectPromise = client.connect();
+      manager.emit('connect');
+      await connectPromise;
+    };
+    // Fails the attempt like an unreachable broker does, which discards the
+    // manager, so the next `connect()` creates a new one.
+    const failToConnect = async (
+      manager: ReturnType<typeof createFakeManager>,
+      connectPromise = client.connect(),
+    ) => {
+      const failure = { err: new Error('broker unavailable') };
+      manager.emit('connectFailed', failure);
+      await expect(connectPromise).rejects.toBe(failure);
+    };
+
+    beforeEach(() => {
+      client = new ClientRMQ({});
+      firstManager = createFakeManager();
+      secondManager = createFakeManager();
+      createClientStub = vi
+        .spyOn(client, 'createClient')
+        .mockReturnValueOnce(firstManager)
+        .mockReturnValueOnce(secondManager);
+      vi.spyOn(client, 'createChannel').mockResolvedValue(undefined);
+      vi.spyOn(client['logger'], 'log').mockImplementation(() => {});
+      vi.spyOn(client['logger'], 'error').mockImplementation(() => {});
+    });
+
+    it('should attach a listener registered before "connect()" to the client created after a failed attempt', async () => {
+      const callback = vi.fn();
+      client.on('disconnect', callback);
+
+      await failToConnect(firstManager);
+      await connectWith(secondManager);
+      secondManager.emit('disconnect');
+
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    it('should attach a listener registered while "connect()" is pending to the client created after it fails', async () => {
+      const connectPromise = client.connect();
+      const callback = vi.fn();
+      client.on('disconnect', callback);
+
+      await failToConnect(firstManager, connectPromise);
+      await connectWith(secondManager);
+      secondManager.emit('disconnect');
+
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep a listener across the reconnects of the same connection manager', async () => {
+      await connectWith(firstManager);
+      const callback = vi.fn();
+      client.on('disconnect', callback);
+      // e.g., the lazy `connect()` of `send()` / `emit()`
+      await client.connect();
+
+      firstManager.emit('disconnect');
+      firstManager.emit('connect');
+      firstManager.emit('disconnect');
+
+      expect(callback).toHaveBeenCalledTimes(2);
+      expect(createClientStub).toHaveBeenCalledOnce();
+    });
+
+    it('should drop the listeners on "close()"', async () => {
+      const callback = vi.fn();
+      client.on('disconnect', callback);
+
+      await connectWith(firstManager);
+      await client.close();
+      await connectWith(secondManager);
+      secondManager.emit('disconnect');
+
+      expect(callback).not.toHaveBeenCalled();
+    });
+
+    it('should drop the listeners on "close()" while still connecting', async () => {
+      const callback = vi.fn();
+      client.on('disconnect', callback);
+
+      const firstAttempt = client.connect();
+      await client.close();
+      const secondAttempt = client.connect();
+      await failToConnect(firstManager, firstAttempt);
+      secondManager.emit('connect');
+      await secondAttempt;
+      secondManager.emit('disconnect');
+
+      expect(callback).not.toHaveBeenCalled();
+    });
+  });
 });
