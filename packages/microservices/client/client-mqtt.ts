@@ -109,7 +109,6 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     this.pendingEventListeners.forEach(({ event, callback }) =>
       mqttClient.on(event, callback),
     );
-    this.pendingEventListeners = [];
 
     const connect$ = this.connect$(mqttClient);
     const connectionPromise = lastValueFrom(
@@ -241,10 +240,11 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     EventKey extends keyof MqttEvents = keyof MqttEvents,
     EventCallback extends MqttEvents[EventKey] = MqttEvents[EventKey],
   >(event: EventKey, callback: EventCallback) {
+    // Kept until `close()`, so the clients created later (e.g., after a
+    // failed connect) get it as well
+    this.pendingEventListeners.push({ event, callback });
     if (this.mqttClient) {
       this.mqttClient.on(event, callback as any);
-    } else {
-      this.pendingEventListeners.push({ event, callback });
     }
   }
 
