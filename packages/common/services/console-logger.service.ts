@@ -8,9 +8,19 @@ import {
   isUndefined,
 } from '../utils/shared.utils.js';
 import { LoggerService, LogLevel } from './logger.service.js';
+import {
+  getEnvLogLevels,
+  LOG_LEVEL_ENV_VAR,
+} from './utils/get-env-log-levels.util.js';
 import { isLogLevelEnabled } from './utils/is-log-level-enabled.util.js';
+import { createRedactor, Redactor } from './utils/redact.util.js';
 
 const DEFAULT_DEPTH = 5;
+/**
+ * How many levels of nested errors (`cause`, `AggregateError#errors`) are
+ * serialized in JSON mode.
+ */
+const MAX_ERROR_DEPTH = 5;
 
 /**
  * @publicApi
@@ -18,6 +28,9 @@ const DEFAULT_DEPTH = 5;
 export interface ConsoleLoggerOptions {
   /**
    * Enabled log levels.
+   * When not set, the levels are read from the `NEST_LOG_LEVEL` environment
+   * variable (e.g. `warn`, `>=debug` or `warn,error`) the first time the
+   * logger checks a level. Without it, every level is enabled.
    */
   logLevels?: LogLevel[];
   /**
@@ -109,6 +122,19 @@ export interface ConsoleLoggerOptions {
    * @default false
    */
   flattenParams?: boolean;
+  /**
+   * Properties to mask in logged values, as key names (`'password'`, matched
+   * at any depth) or dotted paths (`'user.password'`, matched by the last
+   * keys leading to the property, at any depth). Keys are compared
+   * case-insensitively, and array indices are skipped.
+   * Applies to structured params and to messages that are not strings
+   * (objects, arrays, errors), in text and JSON mode. String messages, the
+   * error message and the stack trace are printed as is.
+   * The logged values are not mutated: only the objects that contain a
+   * matching property are copied.
+   * Pass an object to replace the default censor (`"[REDACTED]"`).
+   */
+  redact?: string[] | { paths: string[]; censor?: string };
 }
 
 const DEFAULT_LOG_LEVELS: LogLevel[] = [
@@ -119,6 +145,12 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'verbose',
   'fatal',
 ];
+
+/**
+ * The last invalid `NEST_LOG_LEVEL` value that was reported, so that loggers
+ * sharing the environment warn about it once.
+ */
+let reportedInvalidEnvLogLevel: string | undefined;
 
 const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -154,6 +186,10 @@ export class ConsoleLogger implements LoggerService {
    * The last timestamp at which the log message was printed.
    */
   protected static lastTimestampAt?: number;
+  /**
+   * Masks the properties set in the `redact` option.
+   */
+  private readonly redactor?: Redactor;
 
   constructor();
   constructor(context: string);
@@ -173,12 +209,16 @@ export class ConsoleLogger implements LoggerService {
         : [contextOrOptions?.context, contextOrOptions];
 
     opts = opts ?? {};
-    opts.logLevels ??= DEFAULT_LOG_LEVELS;
     opts.colors ??= opts.colors ?? (opts.json ? false : isColorAllowed());
     opts.prefix ??= 'Nest';
 
     this.options = opts;
     this.inspectOptions = this.getInspectOptions();
+    if (opts.redact) {
+      this.redactor = Array.isArray(opts.redact)
+        ? createRedactor(opts.redact)
+        : createRedactor(opts.redact.paths, opts.redact.censor);
+    }
 
     if (context) {
       this.context = context;
@@ -281,19 +321,20 @@ export class ConsoleLogger implements LoggerService {
 
   /**
    * Write a 'fatal' level log, if the configured level allows for it.
-   * Prints to `stdout` with newline.
+   * Prints to `stderr` with newline.
    */
-  fatal(message: any, context?: string): void;
-  fatal(message: any, ...optionalParams: [...any, string?]): void;
+  fatal(message: any, stackOrContext?: string): void;
+  fatal(message: any, stack?: string, context?: string): void;
+  fatal(message: any, ...optionalParams: [...any, string?, string?]): void;
   fatal(message: any, ...optionalParams: any[]) {
     if (!this.isLevelEnabled('fatal')) {
       return;
     }
-    const { messages, context, params } = this.getContextAndMessagesToPrint([
-      message,
-      ...optionalParams,
-    ]);
-    this.printMessages(messages, context, 'fatal', 'stdout', undefined, params);
+    const { messages, context, stack, params } =
+      this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
+
+    this.printMessages(messages, context, 'fatal', 'stderr', stack, params);
+    this.printStackTrace(stack!);
   }
 
   /**
@@ -323,8 +364,37 @@ export class ConsoleLogger implements LoggerService {
   }
 
   isLevelEnabled(level: LogLevel): boolean {
+    if (this.options && !this.options.logLevels) {
+      this.options.logLevels = this.getDefaultLogLevels();
+    }
     const logLevels = this.options?.logLevels;
     return isLogLevelEnabled(level, logLevels);
+  }
+
+  /**
+   * Returns the levels used when none were passed to the constructor: the
+   * `NEST_LOG_LEVEL` environment variable if it is set, every level otherwise.
+   * Called on the first level check rather than in the constructor, so that
+   * the default logger also sees variables loaded after "@nestjs/common" was
+   * imported (for example, from a `.env` file).
+   */
+  protected getDefaultLogLevels(): LogLevel[] {
+    const envLogLevels = getEnvLogLevels();
+    if (envLogLevels !== false) {
+      return envLogLevels ?? DEFAULT_LOG_LEVELS;
+    }
+    const value = process.env[LOG_LEVEL_ENV_VAR]!;
+    if (reportedInvalidEnvLogLevel !== value) {
+      reportedInvalidEnvLogLevel = value;
+      // The default levels must be in place before this call, as "warn"
+      // checks the level again.
+      this.options.logLevels = DEFAULT_LOG_LEVELS;
+      this.warn(
+        `Invalid ${LOG_LEVEL_ENV_VAR} value "${value}". Expected a log level ("warn"), a comma-separated list ("warn,error") or a threshold (">=warn"). Every log level is enabled instead.`,
+        'ConsoleLogger',
+      );
+    }
+    return DEFAULT_LOG_LEVELS;
   }
 
   protected getTimestamp(): string {
@@ -339,17 +409,30 @@ export class ConsoleLogger implements LoggerService {
     errorStack?: unknown,
     params?: Record<string, any>,
   ) {
-    messages.forEach(message => {
-      if (this.options.json) {
+    if (this.redactor) {
+      messages = messages.map(message =>
+        this.redact(this.resolveMessage(message)),
+      );
+      params = params && (this.redact(params) as Record<string, any>);
+    }
+    if (this.options.json) {
+      const { messages: jsonMessages, error } = this.extractJsonError(
+        messages.map(message => this.resolveMessage(message)),
+      );
+      jsonMessages.forEach((message, index) => {
         this.printAsJson(message, {
           context,
           logLevel,
           writeStreamType,
           errorStack,
           params,
+          // The error belongs to the first record (the log message).
+          error: index === 0 ? error : undefined,
         });
-        return;
-      }
+      });
+      return;
+    }
+    messages.forEach(message => {
       const pidMessage = this.formatPid(process.pid);
       const contextMessage = this.formatContext(context);
       const timestampDiff = this.updateAndGetTimestampDiff();
@@ -384,12 +467,13 @@ export class ConsoleLogger implements LoggerService {
       writeStreamType?: 'stdout' | 'stderr';
       errorStack?: unknown;
       params?: Record<string, any>;
+      error?: Error;
     },
   ) {
     const logObject = this.getJsonLogObject(message, options);
     const formattedMessage =
       !this.options.colors && this.inspectOptions.compact === true
-        ? JSON.stringify(logObject, this.stringifyReplacer)
+        ? this.stringifyJsonLogObject(logObject)
         : inspect(logObject, this.inspectOptions);
     if (this.options.forceConsole) {
       if (options.writeStreamType === 'stderr') {
@@ -412,6 +496,7 @@ export class ConsoleLogger implements LoggerService {
       writeStreamType?: 'stdout' | 'stderr';
       errorStack?: unknown;
       params?: Record<string, any>;
+      error?: Error;
     },
   ) {
     type JsonLogObject = {
@@ -421,6 +506,7 @@ export class ConsoleLogger implements LoggerService {
       message: unknown;
       context?: string;
       stack?: unknown;
+      error?: Record<string, unknown>;
       params?: Record<string, any>;
       [key: string]: unknown;
     };
@@ -440,6 +526,10 @@ export class ConsoleLogger implements LoggerService {
       logObject.stack = options.errorStack;
     }
 
+    if (options.error) {
+      logObject.error = this.serializeError(options.error);
+    }
+
     if (options.params) {
       if (this.options.flattenParams) {
         // Framework fields win on key collisions: a param named "message" or
@@ -455,6 +545,89 @@ export class ConsoleLogger implements LoggerService {
     }
 
     return logObject;
+  }
+
+  /**
+   * Pulls the first `Error` out of the messages so that it can be attached to
+   * the log record as a structured `error` field instead of being printed as
+   * a separate record. When the error is the message itself, the record's
+   * message becomes the error's message.
+   */
+  protected extractJsonError(messages: unknown[]): {
+    messages: unknown[];
+    error?: Error;
+  } {
+    const errorIndex = messages.findIndex(message => message instanceof Error);
+    if (errorIndex === -1) {
+      return { messages };
+    }
+    const error = messages[errorIndex] as Error;
+    const remainingMessages =
+      errorIndex === 0
+        ? [error.message, ...messages.slice(1)]
+        : messages.filter((_, index) => index !== errorIndex);
+    return { messages: remainingMessages, error };
+  }
+
+  /**
+   * Converts an error into a plain object: `name`, `message`, `stack`, own
+   * primitive properties (e.g. `code`), and, recursively, `cause` and the
+   * `errors` of an `AggregateError`, up to a fixed depth.
+   */
+  protected serializeError(
+    error: Error,
+    depth = 0,
+    ancestors = new Set<Error>(),
+  ): Record<string, unknown> {
+    const serialized: Record<string, unknown> = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+    for (const [key, value] of Object.entries(error)) {
+      if (key in serialized || key === 'cause' || key === 'errors') {
+        continue;
+      }
+      const isPrimitive =
+        value === null ||
+        (typeof value !== 'object' && typeof value !== 'function');
+      if (isPrimitive) {
+        serialized[key] = value;
+      }
+    }
+
+    const serializeNested = (value: unknown) => {
+      if (!(value instanceof Error)) {
+        return value;
+      }
+      if (ancestors.has(value)) {
+        return '[Circular]';
+      }
+      if (depth + 1 > MAX_ERROR_DEPTH) {
+        return '[Truncated]';
+      }
+      return this.serializeError(value, depth + 1, ancestors);
+    };
+
+    ancestors.add(error);
+    if (error.cause !== undefined) {
+      serialized.cause = serializeNested(error.cause);
+    }
+    const errors = (error as Partial<AggregateError>).errors;
+    if (Array.isArray(errors)) {
+      serialized.errors = errors.map(serializeNested);
+    }
+    ancestors.delete(error);
+
+    return serialized;
+  }
+
+  /**
+   * Masks the properties set in the `redact` option. Returns the value itself
+   * when the option isn't set or nothing matched.
+   */
+  protected redact(value: unknown): unknown {
+    return this.redactor ? this.redactor(value) : value;
   }
 
   protected formatPid(pid: number) {
@@ -494,17 +667,26 @@ export class ConsoleLogger implements LoggerService {
     });
   }
 
-  protected stringifyMessage(message: unknown, logLevel: LogLevel) {
+  /**
+   * Resolves a message passed as a function: a class resolves to its name,
+   * any other function is called (lazy message) and its result re-resolved.
+   */
+  protected resolveMessage(message: unknown): unknown {
     if (isFunction(message)) {
       const messageAsStr = Function.prototype.toString.call(message);
       const isClass = messageAsStr.startsWith('class ');
       if (isClass) {
         // If the message is a class, we will display the class name.
-        return this.stringifyMessage(message.name, logLevel);
+        return message.name;
       }
       // If the message is a non-class function, call it and re-resolve its value.
-      return this.stringifyMessage(message(), logLevel);
+      return this.resolveMessage(message());
     }
+    return message;
+  }
+
+  protected stringifyMessage(message: unknown, logLevel: LogLevel) {
+    message = this.resolveMessage(message);
 
     if (typeof message === 'string') {
       return this.colorize(message, logLevel);
@@ -583,6 +765,49 @@ export class ConsoleLogger implements LoggerService {
     }
 
     return inspectOptions;
+  }
+
+  /**
+   * Serializes a JSON log object without ever throwing: circular references
+   * are replaced with "[Circular]", and a value that cannot be serialized
+   * (e.g. a throwing `toJSON()`) makes the whole record fall back to `inspect`.
+   */
+  protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
+    const replacer = this.stringifyReplacer;
+    // Objects on the path from the root to the value being serialized.
+    const ancestors: unknown[] = [];
+
+    try {
+      return JSON.stringify(
+        logObject,
+        function (this: unknown, key: string, value: unknown) {
+          value = replacer.call(this, key, value);
+          if (typeof value !== 'object' || value === null) {
+            return value;
+          }
+          // `this` is the object holding `key`, so everything above it on the
+          // stack belongs to an already-finished sibling branch.
+          while (
+            ancestors.length > 0 &&
+            ancestors[ancestors.length - 1] !== this
+          ) {
+            ancestors.pop();
+          }
+          if (ancestors.includes(value)) {
+            return '[Circular]';
+          }
+          ancestors.push(value);
+          return value;
+        },
+      );
+    } catch {
+      return inspect(logObject, {
+        ...this.inspectOptions,
+        colors: false,
+        compact: true,
+        breakLength: Infinity,
+      });
+    }
   }
 
   protected stringifyReplacer(key: string, value: unknown) {

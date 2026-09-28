@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { EMPTY } from 'rxjs';
 import { ClientMqtt } from '../../client/client-mqtt.js';
 import { ReadPacket } from '../../interfaces/index.js';
@@ -496,6 +497,109 @@ describe('ClientMqtt', () => {
       it('should not call "connect$"', () => {
         expect(connect$Stub).not.toHaveBeenCalled();
       });
+    });
+  });
+  describe('connect after a failed attempt', () => {
+    const refused = () => {
+      const err: any = new Error('connect ECONNREFUSED');
+      err.code = 'ECONNREFUSED';
+      return err;
+    };
+    const fakeClient = (reconnectPeriod: number) => {
+      const emitter: any = new EventEmitter();
+      emitter.options = { reconnectPeriod };
+      emitter.endAsync = vi.fn().mockResolvedValue(undefined);
+      emitter.subscribe = vi.fn();
+      return emitter;
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should try a new client when the failed one does not reconnect on its own', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const mqttClient = fakeClient(0);
+      const createClientStub = vi
+        .spyOn(mqtt, 'createClient')
+        .mockReturnValue(mqttClient);
+
+      const failed = mqtt.connect();
+      mqttClient.emit('error', refused());
+      await expect(failed).rejects.toThrow('connect ECONNREFUSED');
+
+      expect(untyped.mqttClient).toBeNull();
+      expect(untyped.connectionPromise).toBeNull();
+
+      // The next call has to create a new client instead of replaying the
+      // rejection of the attempt that already gave up.
+      const retry = mqtt.connect();
+      mqttClient.emit('error', refused());
+      await expect(retry).rejects.toThrow('connect ECONNREFUSED');
+      expect(createClientStub).toHaveBeenCalledTimes(2);
+    });
+
+    it('should keep the client when mqtt reconnects on it', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const mqttClient = fakeClient(1000);
+      mqttClient.reconnecting = true;
+      const createClientStub = vi
+        .spyOn(mqtt, 'createClient')
+        .mockReturnValue(mqttClient);
+
+      const failed = mqtt.connect();
+      mqttClient.emit('error', refused());
+      await expect(failed).rejects.toThrow('connect ECONNREFUSED');
+
+      // mqtt keeps retrying on the same client, so it has to stay in place for
+      // the reconnect to be picked up.
+      expect(untyped.mqttClient).toBe(mqttClient);
+      expect(createClientStub).toHaveBeenCalledTimes(1);
+    });
+
+    it('should drop a closed client that gave up reconnecting', () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const mqttClient = fakeClient(0);
+      untyped.mqttClient = mqttClient;
+      untyped.connectionPromise = Promise.resolve();
+
+      mqtt.registerCloseListener(mqttClient);
+      mqttClient.emit('close');
+
+      expect(untyped.mqttClient).toBeNull();
+      expect(untyped.connectionPromise).toBeNull();
+    });
+
+    it('should let the next client handle responses after a connected client gave up', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const firstClient = fakeClient(0);
+      const secondClient = fakeClient(0);
+      vi.spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const first = mqtt.connect();
+      firstClient.emit('connect');
+      await first;
+      const callback = vi.fn();
+      untyped.routingMap.set('pending id', callback);
+      untyped.subscriptionsCount.set('test/reply', 1);
+
+      firstClient.emit('close');
+
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(untyped.subscriptionsCount.size).toBe(0);
+
+      const second = mqtt.connect();
+      secondClient.emit('connect');
+      await second;
+      expect(secondClient.listenerCount('message')).toBe(1);
     });
   });
   describe('mergeCloseEvent', () => {

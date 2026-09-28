@@ -1,21 +1,12 @@
 import { Injectable, Optional } from '../decorators/core/index.js';
 import { isObject } from '../utils/shared.utils.js';
 import { ConsoleLogger } from './console-logger.service.js';
+import { LogLevel } from './log-levels.constant.js';
 import { isLogLevelEnabled } from './utils/index.js';
 
-export const LOG_LEVELS = [
-  'verbose',
-  'debug',
-  'log',
-  'warn',
-  'error',
-  'fatal',
-] as const satisfies string[];
-
-/**
- * @publicApi
- */
-export type LogLevel = (typeof LOG_LEVELS)[number];
+// Defined in a separate file so that the log level utilities don't import
+// this file (and, through it, "ConsoleLogger") at runtime.
+export { LOG_LEVELS, type LogLevel } from './log-levels.constant.js';
 
 /**
  * @publicApi
@@ -92,6 +83,10 @@ export class Logger implements LoggerService {
   private static isBufferAttached: boolean;
 
   protected localInstanceRef?: LoggerService;
+  /**
+   * The `Logger.logLevels` the local instance was last configured with.
+   */
+  private localInstanceLogLevels?: LogLevel[];
 
   private static WrapBuffer: MethodDecorator = (
     target: object,
@@ -327,14 +322,33 @@ export class Logger implements LoggerService {
   }
 
   static isLevelEnabled(level: LogLevel): boolean {
+    const instance = Logger.staticInstanceRef;
+    if (!instance) {
+      // Logging is disabled ("logger: false").
+      return false;
+    }
+    if (instance instanceof ConsoleLogger) {
+      return instance.isLevelEnabled(level);
+    }
     const logLevels = Logger.logLevels;
-    return isLogLevelEnabled(level, logLevels);
+    // Without explicitly set levels, every level is enabled.
+    return logLevels ? isLogLevelEnabled(level, logLevels) : true;
   }
 
   private registerLocalInstanceRef() {
     if (this.localInstanceRef) {
+      // Levels set at runtime (e.g. "app.useLogger(['error'])") must also
+      // reach instances created before the change.
+      if (
+        Logger.logLevels &&
+        this.localInstanceLogLevels !== Logger.logLevels
+      ) {
+        this.localInstanceRef.setLogLevels?.(Logger.logLevels);
+        this.localInstanceLogLevels = Logger.logLevels;
+      }
       return this.localInstanceRef;
     }
+    this.localInstanceLogLevels = Logger.logLevels;
     this.localInstanceRef = new ConsoleLogger(this.context!, {
       timestamp: this.options?.timestamp,
       logLevels: Logger.logLevels,

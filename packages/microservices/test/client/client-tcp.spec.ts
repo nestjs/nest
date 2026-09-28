@@ -1,7 +1,26 @@
+import { EventEmitter } from 'events';
 import { Socket as NetSocket } from 'net';
 import { TLSSocket } from 'tls';
 import { ClientTCP } from '../../client/client-tcp.js';
+import { ECONNREFUSED } from '../../constants.js';
+import { TcpStatus } from '../../events/tcp.events.js';
 import { TcpSocket } from '../../helpers/tcp-socket.js';
+
+/**
+ * Stands in for a `TcpSocket`, forwarding listeners to an event emitter that
+ * plays the underlying net socket, so connection events can be fired by hand.
+ */
+class FakeTcpSocket {
+  public readonly netSocket = new EventEmitter();
+  public readonly connect = vi.fn();
+  public readonly end = vi.fn();
+  public readonly sendMessage = vi.fn();
+
+  public on(event: string, callback: (...args: any[]) => void) {
+    this.netSocket.on(event, callback);
+    return this;
+  }
+}
 
 describe('ClientTCP', () => {
   let client: ClientTCP;
@@ -267,6 +286,144 @@ describe('ClientTCP', () => {
       expect(callback.mock.calls[0][0]).toEqual('connect');
     });
   });
+  describe('socket lifecycle', () => {
+    let socketA: FakeTcpSocket;
+    let socketB: FakeTcpSocket;
+    let statuses: TcpStatus[];
+
+    const connectWith = async (fakeSocket: FakeTcpSocket) => {
+      const connectPromise = client.connect();
+      fakeSocket.netSocket.emit('connect');
+      await connectPromise;
+    };
+
+    beforeEach(() => {
+      socketA = new FakeTcpSocket();
+      socketB = new FakeTcpSocket();
+      createSocketStub
+        .mockReturnValueOnce(socketA as any)
+        .mockReturnValueOnce(socketB as any);
+      statuses = [];
+      client.status.subscribe(status => statuses.push(status));
+    });
+
+    it('should tear down the client when the current socket closes', async () => {
+      await connectWith(socketA);
+      const callback = vi.fn();
+      untypedClient.routingMap.set('pending id', callback);
+
+      socketA.netSocket.emit('close');
+
+      expect(untypedClient.socket).toBeNull();
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(statuses).toEqual([TcpStatus.CONNECTED, TcpStatus.DISCONNECTED]);
+    });
+
+    it('should report the disconnection when a closed socket finishes closing', async () => {
+      await connectWith(socketA);
+      client.close();
+
+      socketA.netSocket.emit('close');
+
+      expect(statuses).toEqual([TcpStatus.CONNECTED, TcpStatus.DISCONNECTED]);
+    });
+
+    it('should resolve a connection closed while connecting without reconnecting', async () => {
+      const connectA = client.connect();
+      client.close();
+
+      // close() clears this.socket before the pending connect() tap runs.
+      expect(untypedClient.socket).toBeNull();
+      socketA.netSocket.emit('connect');
+
+      await expect(connectA).resolves.toBeUndefined();
+      expect(socketA.end).toHaveBeenCalledTimes(1);
+      expect(socketA.netSocket.listenerCount('message')).toBe(1);
+      expect(untypedClient.socket).toBeNull();
+      expect(untypedClient.connectionPromise).toBeNull();
+      expect(createSocketStub).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when a newer "connect()" call replaced the socket', () => {
+      it('should connect the newer socket when the replaced one closes before it connects', async () => {
+        await connectWith(socketA);
+        client.close();
+        const connectB = client.connect();
+
+        socketA.netSocket.emit('close');
+        socketB.netSocket.emit('connect');
+
+        await expect(connectB).resolves.toBeUndefined();
+        expect(untypedClient.socket).toBe(socketB);
+        expect(untypedClient.connectionPromise).toBe(connectB);
+        expect(socketB.netSocket.listenerCount('message')).toBe(1);
+        expect(statuses).toEqual([TcpStatus.CONNECTED]);
+        expect(client.connect()).toBe(connectB);
+        expect(createSocketStub).toHaveBeenCalledTimes(2);
+      });
+
+      it('should keep the newer socket when the replaced one finishes closing', async () => {
+        await connectWith(socketA);
+        client.close();
+        await connectWith(socketB);
+        const callback = vi.fn();
+        untypedClient.routingMap.set('pending id', callback);
+
+        socketA.netSocket.emit('close');
+
+        expect(untypedClient.socket).toBe(socketB);
+        expect(callback).not.toHaveBeenCalled();
+        expect(untypedClient.routingMap.get('pending id')).toBe(callback);
+
+        await client.connect();
+        expect(createSocketStub).toHaveBeenCalledTimes(2);
+      });
+
+      it('should not report the newer connection as disconnected', async () => {
+        await connectWith(socketA);
+        client.close();
+        await connectWith(socketB);
+
+        socketA.netSocket.emit('error', { code: ECONNREFUSED });
+        socketA.netSocket.emit('close');
+
+        expect(statuses).toEqual([TcpStatus.CONNECTED]);
+      });
+
+      it('should not report the newer connection as connected when the replaced socket connects late', async () => {
+        const connectA = client.connect();
+        client.close();
+        const connectB = client.connect();
+
+        socketA.netSocket.emit('connect');
+        expect(statuses).toEqual([]);
+
+        socketB.netSocket.emit('connect');
+        await Promise.all([connectA, connectB]);
+        expect(statuses).toEqual([TcpStatus.CONNECTED]);
+      });
+
+      it('should not attach the response listener of the replaced socket to the newer one', async () => {
+        const handleResponseSpy = vi
+          .spyOn(client, 'handleResponse')
+          .mockResolvedValue(undefined);
+        const connectA = client.connect();
+        client.close();
+        const connectB = client.connect();
+        socketA.netSocket.emit('connect');
+        socketB.netSocket.emit('connect');
+        await Promise.all([connectA, connectB]);
+
+        const response = { id: 'some id', response: 'res' };
+        socketB.netSocket.emit('message', response);
+
+        expect(handleResponseSpy).toHaveBeenCalledTimes(1);
+        expect(handleResponseSpy).toHaveBeenCalledWith(response);
+      });
+    });
+  });
   describe('dispatchEvent', () => {
     const msg = { pattern: 'pattern', data: 'data' };
     let sendMessageStub: ReturnType<typeof vi.fn>, internalSocket;
@@ -344,6 +501,80 @@ describe('ClientTCP', () => {
         // Custom socket should not have maxBufferSize property
         expect(socket['maxBufferSize']).toBeUndefined();
       });
+    });
+  });
+
+  describe('on', () => {
+    let firstSocket: ReturnType<typeof createFakeSocket>;
+    let secondSocket: ReturnType<typeof createFakeSocket>;
+
+    // Forwards listeners to an event emitter that plays the net socket, so
+    // connection events can be fired by hand.
+    const createFakeSocket = () => {
+      const netSocket = new EventEmitter();
+      return {
+        netSocket,
+        on: (event: string, callback: (...args: any[]) => void) =>
+          netSocket.on(event, callback),
+        connect: vi.fn(),
+        end: vi.fn(),
+        sendMessage: vi.fn(),
+      };
+    };
+    const connectWith = async (
+      fakeSocket: ReturnType<typeof createFakeSocket>,
+    ) => {
+      const connectPromise = client.connect();
+      fakeSocket.netSocket.emit('connect');
+      await connectPromise;
+    };
+
+    beforeEach(() => {
+      firstSocket = createFakeSocket();
+      secondSocket = createFakeSocket();
+      createSocketStub
+        .mockReturnValueOnce(firstSocket as any)
+        .mockReturnValueOnce(secondSocket as any);
+    });
+
+    it('should attach a listener registered before "connect()" to the sockets of later reconnects', async () => {
+      const callback = vi.fn();
+      client.on('close', callback);
+
+      await connectWith(firstSocket);
+      firstSocket.netSocket.emit('close');
+      await connectWith(secondSocket);
+      secondSocket.netSocket.emit('close');
+
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('should attach a listener registered after "connect()" to the sockets of later reconnects', async () => {
+      await connectWith(firstSocket);
+      const callback = vi.fn();
+      client.on('close', callback);
+
+      firstSocket.netSocket.emit('close');
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      await connectWith(secondSocket);
+      secondSocket.netSocket.emit('close');
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('should drop the listeners on "close()"', async () => {
+      const callback = vi.fn();
+      client.on('close', callback);
+
+      await connectWith(firstSocket);
+      client.close();
+      firstSocket.netSocket.emit('close');
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      await connectWith(secondSocket);
+      secondSocket.netSocket.emit('close');
+
+      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 });

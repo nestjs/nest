@@ -109,9 +109,11 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
     return Object.keys(this.enumType as object)
       .filter(key => {
         const enumValue = (this.enumType as any)[key];
+        // Only numeric reverse mappings point back to their own key.
         return !(
           typeof enumValue === 'string' &&
-          typeof (this.enumType as any)[enumValue] === 'number'
+          typeof (this.enumType as any)[enumValue] === 'number' &&
+          String((this.enumType as any)[enumValue]) === key
         );
       })
       .map(key => (this.enumType as any)[key]);
