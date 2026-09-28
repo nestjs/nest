@@ -341,7 +341,7 @@ export class ConsoleLogger implements LoggerService {
   ) {
     messages.forEach(message => {
       if (this.options.json) {
-        this.printAsJson(message, {
+        this.printAsJson(this.resolveMessage(message), {
           context,
           logLevel,
           writeStreamType,
@@ -494,17 +494,26 @@ export class ConsoleLogger implements LoggerService {
     });
   }
 
-  protected stringifyMessage(message: unknown, logLevel: LogLevel) {
+  /**
+   * Resolves a message passed as a function: a class resolves to its name,
+   * any other function is called (lazy message) and its result re-resolved.
+   */
+  protected resolveMessage(message: unknown): unknown {
     if (isFunction(message)) {
       const messageAsStr = Function.prototype.toString.call(message);
       const isClass = messageAsStr.startsWith('class ');
       if (isClass) {
         // If the message is a class, we will display the class name.
-        return this.stringifyMessage(message.name, logLevel);
+        return message.name;
       }
       // If the message is a non-class function, call it and re-resolve its value.
-      return this.stringifyMessage(message(), logLevel);
+      return this.resolveMessage(message());
     }
+    return message;
+  }
+
+  protected stringifyMessage(message: unknown, logLevel: LogLevel) {
+    message = this.resolveMessage(message);
 
     if (typeof message === 'string') {
       return this.colorize(message, logLevel);

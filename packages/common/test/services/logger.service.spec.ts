@@ -1285,6 +1285,57 @@ describe('Logger', () => {
         expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('message');
       });
     });
+
+    describe('function and class messages', () => {
+      it('should evaluate a lazy message', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.log(() => 'lazy message');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('lazy message');
+      });
+
+      it('should evaluate a lazy message that returns an object', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        logger.log(() => ({ answer: 42 }));
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toEqual({ answer: 42 });
+      });
+
+      it('should not evaluate a lazy message when the level is disabled', () => {
+        const logger = new ConsoleLogger({ json: true, logLevels: ['log'] });
+        const factory = vi.fn(() => 'expensive');
+
+        logger.debug(factory);
+
+        expect(factory).not.toHaveBeenCalled();
+        expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      });
+
+      it("should print a class's name", () => {
+        const logger = new ConsoleLogger({ json: true });
+        class Test {}
+
+        logger.log(Test);
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('Test');
+      });
+
+      it('should evaluate a lazy message when compact is false', () => {
+        const logger = new ConsoleLogger({ json: true, compact: false });
+
+        logger.log(() => 'lazy message');
+
+        const json = convertInspectToJSON(
+          processStdoutWriteSpy.mock.calls[0][0],
+        );
+        expect(json.message).toBe('lazy message');
+      });
+    });
   });
 });
 
