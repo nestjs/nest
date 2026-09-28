@@ -107,8 +107,8 @@
     "@types/node": "26.6.2",
     "@types/supertest": "7.2.1",
     "@types/ws": "8.18.1",
-    "@vitest/coverage-istanbul": "5.0.1",
-    "@vitest/coverage-v8": "5.0.1",
+    "@vitest/coverage-istanbul": "5.0.2",
+    "@vitest/coverage-v8": "5.0.2",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "2.1.0",
     "body-parser": "2.3.0",
@@ -136,7 +136,7 @@
     "lerna": "10.0.1",
     "lerna-changelog": "2.2.0",
     "light-my-request": "6.6.0",
-    "lint-staged": "17.5.1",
+    "lint-staged": "17.6.0",
     "markdown-table": "2.0.0",
     "mongoose": "9.10.2",
     "mqtt": "5.16.0",
@@ -157,7 +157,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.1",
     "vite": "8.3.1",
-    "vitest": "5.0.1",
+    "vitest": "5.0.2",
     "ws": "8.22.0"
   },
   "engines": {
