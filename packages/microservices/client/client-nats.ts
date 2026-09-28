@@ -222,6 +222,9 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     if (this.natsClient === client) {
       this.natsClient = null;
       this.connectionPromise = null;
+      // nats never calls back the reply subscriptions it closes. Fail them
+      // after the reset, so that a request retried from its callback reconnects.
+      this.handleClose();
     }
   }
 
