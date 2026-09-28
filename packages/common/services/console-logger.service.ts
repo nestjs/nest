@@ -389,7 +389,7 @@ export class ConsoleLogger implements LoggerService {
     const logObject = this.getJsonLogObject(message, options);
     const formattedMessage =
       !this.options.colors && this.inspectOptions.compact === true
-        ? JSON.stringify(logObject, this.stringifyReplacer)
+        ? this.stringifyJsonLogObject(logObject)
         : inspect(logObject, this.inspectOptions);
     if (this.options.forceConsole) {
       if (options.writeStreamType === 'stderr') {
@@ -583,6 +583,49 @@ export class ConsoleLogger implements LoggerService {
     }
 
     return inspectOptions;
+  }
+
+  /**
+   * Serializes a JSON log object without ever throwing: circular references
+   * are replaced with "[Circular]", and a value that cannot be serialized
+   * (e.g. a throwing `toJSON()`) makes the whole record fall back to `inspect`.
+   */
+  protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
+    const replacer = this.stringifyReplacer;
+    // Objects on the path from the root to the value being serialized.
+    const ancestors: unknown[] = [];
+
+    try {
+      return JSON.stringify(
+        logObject,
+        function (this: unknown, key: string, value: unknown) {
+          value = replacer.call(this, key, value);
+          if (typeof value !== 'object' || value === null) {
+            return value;
+          }
+          // `this` is the object holding `key`, so everything above it on the
+          // stack belongs to an already-finished sibling branch.
+          while (
+            ancestors.length > 0 &&
+            ancestors[ancestors.length - 1] !== this
+          ) {
+            ancestors.pop();
+          }
+          if (ancestors.includes(value)) {
+            return '[Circular]';
+          }
+          ancestors.push(value);
+          return value;
+        },
+      );
+    } catch {
+      return inspect(logObject, {
+        ...this.inspectOptions,
+        colors: false,
+        compact: true,
+        breakLength: Infinity,
+      });
+    }
   }
 
   protected stringifyReplacer(key: string, value: unknown) {

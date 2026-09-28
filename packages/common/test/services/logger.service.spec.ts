@@ -1192,6 +1192,100 @@ describe('Logger', () => {
       });
     });
   });
+
+  describe('ConsoleLogger - JSON mode', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    describe('circular structures', () => {
+      it('should replace circular references instead of throwing', () => {
+        const logger = new ConsoleLogger('Ctx', { json: true });
+        const payload: Record<string, any> = { id: 1 };
+        payload.self = payload;
+
+        expect(() => logger.log('message', payload)).not.toThrow();
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('message');
+        // "params" is a merged copy, so the cycle closes one level deeper.
+        expect(json.params).toEqual({
+          id: 1,
+          self: { id: 1, self: '[Circular]' },
+        });
+      });
+
+      it('should replace circular references in the message itself', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const list: any[] = [1];
+        list.push({ list });
+
+        expect(() => logger.log(list)).not.toThrow();
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toEqual([1, { list: '[Circular]' }]);
+      });
+
+      it('should keep repeated (non-circular) references intact', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const shared = { a: 1 };
+
+        logger.log('message', { first: shared, second: shared });
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params).toEqual({ first: { a: 1 }, second: { a: 1 } });
+      });
+
+      it('should still serialize bigint, symbol, Map and Set values', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const nested: Record<string, any> = {};
+        nested.self = nested;
+        const payload = {
+          big: BigInt(10),
+          sym: Symbol('s'),
+          map: new Map([['k', 'v']]),
+          set: new Set([1]),
+          nested,
+        };
+
+        logger.log('message', payload);
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params).toEqual({
+          big: '10',
+          sym: 'Symbol(s)',
+          map: `Map(1) { 'k' => 'v' }`,
+          set: 'Set(1) { 1 }',
+          nested: { self: '[Circular]' },
+        });
+      });
+
+      it('should not throw when a value cannot be serialized', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const payload = {
+          toJSON() {
+            throw new Error('boom');
+          },
+        };
+
+        expect(() => logger.log('message', { payload })).not.toThrow();
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('message');
+      });
+    });
+  });
 });
 
 function convertInspectToJSON(inspectOutput: string) {
