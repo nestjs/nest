@@ -110,7 +110,7 @@
     "@vitest/coverage-istanbul": "5.0.2",
     "@vitest/coverage-v8": "5.0.2",
     "amqp-connection-manager": "5.0.0",
-    "amqplib": "2.1.0",
+    "amqplib": "2.2.0",
     "body-parser": "2.3.0",
     "cache-manager": "7.2.9",
     "conventional-changelog": "8.1.3",
