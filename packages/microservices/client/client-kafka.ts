@@ -137,12 +137,28 @@ export class ClientKafka
 
   public async close(): Promise<void> {
     this.handleClose();
-    this._producer && (await this._producer.disconnect());
-    this._consumer && (await this._consumer.disconnect());
-    this._producer = null;
-    this._consumer = null;
-    this.initialized = null;
-    this.client = null;
+    try {
+      // Both clients have to be disconnected even if one of them fails, so a
+      // consumer does not stay in its group when the producer cannot be closed.
+      const results = await Promise.allSettled([
+        this._producer?.disconnect(),
+        this._consumer?.disconnect(),
+      ]);
+      const failure = results.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      );
+      if (failure) {
+        throw failure.reason;
+      }
+    } finally {
+      // The state must be reset even when a disconnect throws, otherwise the
+      // rejected `initialized` promise keeps every later `connect()` failing.
+      this._producer = null;
+      this._consumer = null;
+      this.initialized = null;
+      this.client = null;
+    }
   }
 
   public handleClose() {
