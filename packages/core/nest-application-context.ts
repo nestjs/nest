@@ -176,14 +176,14 @@ export class NestApplicationContext<
 
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   public resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   public resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
@@ -193,7 +193,7 @@ export class NestApplicationContext<
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   public resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
@@ -207,7 +207,7 @@ export class NestApplicationContext<
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instances of either injectables or controllers, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<Array<TResult>>}
    */
   public resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,

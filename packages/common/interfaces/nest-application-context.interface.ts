@@ -70,14 +70,14 @@ export interface INestApplicationContext {
 
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
@@ -85,7 +85,7 @@ export interface INestApplicationContext {
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
@@ -94,7 +94,7 @@ export interface INestApplicationContext {
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instances of either injectables or controllers, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<Array<TResult>>}
    */
   resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
