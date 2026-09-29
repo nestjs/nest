@@ -753,4 +753,82 @@ describe('ClientMqtt', () => {
       });
     });
   });
+  describe('on', () => {
+    const fakeClient = (reconnectPeriod: number) => {
+      const emitter: any = new EventEmitter();
+      emitter.options = { reconnectPeriod };
+      emitter.endAsync = vi.fn().mockResolvedValue(undefined);
+      emitter.subscribe = vi.fn();
+      return emitter;
+    };
+    const connectWith = async (mqtt: ClientMqtt, mqttClient: any) => {
+      const connectPromise = mqtt.connect();
+      mqttClient.emit('connect');
+      await connectPromise;
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should attach a listener registered before "connect()" to the clients of later reconnects', async () => {
+      const mqtt = new ClientMqtt({});
+      const firstClient = fakeClient(0);
+      const secondClient = fakeClient(0);
+      vi.spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const callback = vi.fn();
+      mqtt.on('close', callback);
+
+      await connectWith(mqtt, firstClient);
+      firstClient.emit('close');
+      await connectWith(mqtt, secondClient);
+      secondClient.emit('close');
+
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('should attach a listener registered after "connect()" to the clients of later reconnects', async () => {
+      const mqtt = new ClientMqtt({});
+      const firstClient = fakeClient(0);
+      const secondClient = fakeClient(0);
+      vi.spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      await connectWith(mqtt, firstClient);
+      const callback = vi.fn();
+      mqtt.on('close', callback);
+
+      firstClient.emit('close');
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      await connectWith(mqtt, secondClient);
+      secondClient.emit('close');
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('should drop the listeners on "close()"', async () => {
+      const mqtt = new ClientMqtt({});
+      const firstClient = fakeClient(0);
+      const secondClient = fakeClient(0);
+      vi.spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const callback = vi.fn();
+      mqtt.on('close', callback);
+
+      await connectWith(mqtt, firstClient);
+      await mqtt.close();
+      firstClient.emit('close');
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      await connectWith(mqtt, secondClient);
+      secondClient.emit('close');
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+  });
 });
