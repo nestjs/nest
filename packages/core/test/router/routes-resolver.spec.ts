@@ -1,10 +1,11 @@
-import { Module, Post, VersioningType } from '@nestjs/common';
+import { Module, Post, RequestMethod, VersioningType } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator.js';
 import { ApplicationConfig } from '../../application-config.js';
 import { NestContainer } from '../../injector/index.js';
 import { Injector } from '../../injector/injector.js';
+import { mapToExcludeRoute } from '../../middleware/utils.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { GraphInspector } from '../../inspector/graph-inspector.js';
 import { SerializedGraph } from '../../inspector/serialized-graph.js';
@@ -298,6 +299,44 @@ describe('RoutesResolver', () => {
       routesResolver.registerNotFoundHandler();
 
       expect(applicationRef.setNotFoundHandler).toHaveBeenCalled();
+    });
+
+    it('should pass the excluded routes as RouteInfo', () => {
+      const applicationConfig = new ApplicationConfig();
+      applicationConfig.setGlobalPrefix('api');
+      applicationConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute([
+          'health',
+          { path: 'hello', method: RequestMethod.GET },
+        ]),
+      });
+      routesResolver = new RoutesResolver(
+        container,
+        applicationConfig,
+        new Injector(),
+        new GraphInspector(container),
+      );
+
+      routesResolver.registerNotFoundHandler();
+
+      expect(applicationRef.setNotFoundHandler).toHaveBeenCalledWith(
+        expect.any(Function),
+        'api',
+        [
+          { path: 'health', method: RequestMethod.ALL },
+          { path: 'hello', method: RequestMethod.GET },
+        ],
+      );
+    });
+
+    it('should pass no excluded routes when the prefix has no options', () => {
+      routesResolver.registerNotFoundHandler();
+
+      expect(applicationRef.setNotFoundHandler).toHaveBeenCalledWith(
+        expect.any(Function),
+        '',
+        [],
+      );
     });
   });
 

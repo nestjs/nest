@@ -6,6 +6,7 @@ import type {
 } from '@nestjs/common';
 import type {
   RequestHandler,
+  RouteInfo,
   SecurityRequestHook,
   VersionValue,
 } from '@nestjs/common/internal';
@@ -609,7 +610,11 @@ export abstract class AbstractHttpAdapter<
    *
    * @see {@link HttpServer.setNotFoundHandler}
    */
-  abstract setNotFoundHandler(handler: Function, prefix?: string);
+  abstract setNotFoundHandler(
+    handler: Function,
+    prefix?: string,
+    excludedRoutes?: RouteInfo[],
+  );
   /**
    * Reports whether response headers have already been flushed. Must return
    * synchronously.

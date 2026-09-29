@@ -26,6 +26,7 @@ import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import {
   type CorsOptions,
   type CorsOptionsDelegate,
+  type RouteInfo,
   type VersionValue,
   addLeadingSlash,
   isFunction,
@@ -177,13 +178,27 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return this.use(handler);
   }
 
-  public setNotFoundHandler(handler: Function, prefix?: string) {
+  public setNotFoundHandler(
+    handler: Function,
+    prefix?: string,
+    excludedRoutes?: RouteInfo[],
+  ) {
     const normalizedPrefix = this.normalizePrefix(prefix);
     if (normalizedPrefix) {
       this.registeredPrefixes.add(normalizedPrefix);
       const router = express.Router();
       router.all('*path', handler as any);
-      return this.use(normalizedPrefix, router);
+      this.use(normalizedPrefix, router);
+      // Excluded routes live at the root, out of the prefix router's reach.
+      // Mount the handler on each exact path, for every method, so a method
+      // miss there (`POST /hello` with only `GET /hello`) still reaches the
+      // exception layer. Not `use(path, router)`: a subtree mount would claim
+      // a raw `/hello/live` added after `init()`; a wildcard exclusion covers
+      // its subtree through its own pattern.
+      for (const route of excludedRoutes ?? []) {
+        this.instance.all(addLeadingSlash(route.path), handler as any);
+      }
+      return;
     }
     return this.use(
       (

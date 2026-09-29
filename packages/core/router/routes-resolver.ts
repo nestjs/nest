@@ -9,6 +9,7 @@ import {
   MODULE_PATH,
   VERSION_METADATA,
   type Controller,
+  type RouteInfo,
   type VersionValue,
 } from '@nestjs/common/internal';
 import { ApplicationConfig } from '../application-config.js';
@@ -162,8 +163,14 @@ export class RoutesResolver implements Resolver {
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     const prefix = this.applicationConfig.getGlobalPrefix();
+    // `ExcludeRouteMetadata` is core-only, so the adapter gets the `RouteInfo`
+    // shape the interface declares; `path` is already converted by
+    // `mapToExcludeRoute` and `pathRegex` is not needed.
+    const excludedRoutes: RouteInfo[] = (
+      this.applicationConfig.getGlobalPrefixOptions().exclude ?? []
+    ).map(route => ({ path: route.path, method: route.requestMethod }));
     applicationRef.setNotFoundHandler &&
-      applicationRef.setNotFoundHandler(proxy, prefix);
+      applicationRef.setNotFoundHandler(proxy, prefix, excludedRoutes);
   }
 
   public registerExceptionHandler() {
