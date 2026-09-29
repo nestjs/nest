@@ -3,7 +3,6 @@ import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
-  EADDRINUSE,
   ECONNREFUSED,
   NO_MESSAGE_HANDLER,
   TCP_DEFAULT_HOST,
@@ -76,14 +75,25 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   public listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.server.once(TcpEventsMap.ERROR, (err: Record<string, unknown>) => {
-      if (err?.code === EADDRINUSE || err?.code === ECONNREFUSED) {
-        this._status$.next(TcpStatus.DISCONNECTED);
+    // The once('error') listener outlives a successful listen, so a later
+    // error must find the callback already settled.
+    let listenCallback:
+      ((err?: unknown, ...optionalParams: unknown[]) => void) | undefined =
+      callback;
+    const settleListenCallback = (err?: unknown) => {
+      const cb = listenCallback;
+      listenCallback = undefined;
+      isUndefined(err) ? cb?.() : cb?.(err);
+    };
 
-        return callback(err);
+    this.server.once(TcpEventsMap.ERROR, err => {
+      if (!listenCallback) {
+        return;
       }
+      this._status$.next(TcpStatus.DISCONNECTED);
+      settleListenCallback(err);
     });
-    this.server.listen(this.port, this.host, callback as () => void);
+    this.server.listen(this.port, this.host, () => settleListenCallback());
   }
 
   public close() {

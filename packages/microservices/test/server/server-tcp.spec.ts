@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { Socket as NetSocket } from 'net';
 import { of, throwError as _throw } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
@@ -97,18 +98,87 @@ describe('ServerTCP', () => {
     });
   });
   describe('listen', () => {
-    const serverMock = { listen: vi.fn(), once: vi.fn() };
+    let serverMock: EventEmitter & { listen: ReturnType<typeof vi.fn> };
+    let statuses: string[];
+
     beforeEach(() => {
+      serverMock = Object.assign(new EventEmitter(), { listen: vi.fn() });
+      // init() keeps a permanent error listener, so later errors do not throw
+      serverMock.on('error', () => {});
       untypedServer.server = serverMock;
+      statuses = [];
+      server.status.subscribe(status => statuses.push(status));
     });
+
     it('should call native listen method with expected arguments', () => {
-      const callback = () => {};
-      server.listen(callback);
+      server.listen(() => {});
       expect(serverMock.listen).toHaveBeenCalledWith(
         untypedServer.port,
         untypedServer.host,
-        callback,
+        expect.any(Function),
       );
+    });
+
+    it('should call the callback without arguments once listening', () => {
+      const callback = vi.fn();
+      serverMock.listen.mockImplementation((_port, _host, onListening) =>
+        onListening(),
+      );
+
+      server.listen(callback);
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith();
+    });
+
+    it.each(['EADDRINUSE', 'ECONNREFUSED', 'EACCES', 'EADDRNOTAVAIL'])(
+      'should pass a "%s" listen error to the callback',
+      code => {
+        const callback = vi.fn();
+        const error = Object.assign(new Error('listen failed'), { code });
+
+        server.listen(callback);
+        serverMock.emit('error', error);
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(error);
+        expect(statuses).toEqual(['disconnected']);
+      },
+    );
+
+    it('should pass a listen error without a code to the callback', () => {
+      const callback = vi.fn();
+      const error = new Error('listen failed');
+
+      server.listen(callback);
+      serverMock.emit('error', error);
+
+      expect(callback).toHaveBeenCalledWith(error);
+    });
+
+    describe('when the server is already listening', () => {
+      let callback: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        callback = vi.fn();
+        serverMock.listen.mockImplementation((_port, _host, onListening) =>
+          onListening(),
+        );
+        server.listen(callback);
+        serverMock.emit(
+          'error',
+          Object.assign(new Error('late'), { code: 'EACCES' }),
+        );
+      });
+
+      it('should not call the callback again on a later error', () => {
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith();
+      });
+
+      it('should not report a later error as a failed listen', () => {
+        expect(statuses).toEqual([]);
+      });
     });
   });
   describe('handleMessage', () => {
