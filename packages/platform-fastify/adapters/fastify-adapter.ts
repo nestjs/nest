@@ -566,8 +566,13 @@ export class FastifyAdapter<
     return (response as { code: Function }).code(statusCode);
   }
 
-  public end(response: TReply, message?: string) {
-    response.raw.end(message!);
+  public end(response: TRawResponse | TReply, message?: string) {
+    if (this.isNativeResponse(response)) {
+      response.end(message!);
+      return;
+    }
+    const reply: TReply = response;
+    reply.raw.end(message!);
   }
 
   public render(
@@ -724,8 +729,14 @@ export class FastifyAdapter<
     );
   }
 
-  public isHeadersSent(response: TReply): boolean {
-    return response.sent;
+  public isHeadersSent(response: TRawResponse | TReply): boolean {
+    if (this.isNativeResponse(response)) {
+      return response.headersSent;
+    }
+    const reply: TReply = response;
+    // `reply.sent` only covers hijacked or ended replies, not headers
+    // already flushed through `reply.raw`.
+    return reply.sent || reply.raw.headersSent;
   }
 
   public getHeader(response: any, name: string) {
