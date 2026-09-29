@@ -155,6 +155,37 @@ describe('ExpressAdapter', () => {
         expect(response.status).toHaveBeenCalledWith(statusCode);
       }
     });
+
+    it.each([
+      'application/json; charset=utf-8',
+      'application/problem+json',
+      'application/vnd.api+json; charset=utf-8',
+      'Application/JSON',
+    ])('should keep the "%s" JSON content type for error bodies', type => {
+      const response = createResponse();
+      response.getHeader.mockReturnValue(type);
+      const warnSpy = vi
+        .spyOn((expressAdapter as any).logger, 'warn')
+        .mockImplementation(() => {});
+
+      expressAdapter.reply(response, { statusCode: 400, message: 'Oops' }, 400);
+
+      expect(response.setHeader).not.toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(response.json).toHaveBeenCalled();
+    });
+
+    it('should force a JSON content type for error bodies sent with a non-JSON content type', () => {
+      const response = createResponse();
+      response.getHeader.mockReturnValue('text/html');
+
+      expressAdapter.reply(response, { statusCode: 400, message: 'Oops' }, 400);
+
+      expect(response.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/json',
+      );
+    });
   });
 
   describe('mapException', () => {
