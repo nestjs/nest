@@ -414,6 +414,31 @@ describe('ClientGrpcProxy', () => {
         expect(callMock.cancel).toHaveBeenCalled();
         expect(upstreamSubscribe).toHaveBeenCalled();
       });
+
+      it('should forward upstream error and cancel call case client streaming', () => {
+        const methodName = 'm';
+        const upstreamError = new Error('upstream error');
+        const errorSpy = vi.fn();
+
+        const callMock = {
+          cancel: vi.fn(),
+          finished: false,
+        };
+        const obj = { [methodName]: () => callMock };
+
+        (obj[methodName] as any).requestStream = true;
+        const upstream: Subject<unknown> = new Subject();
+        const stream$: Observable<any> = client.createUnaryServiceMethod(
+          obj,
+          methodName,
+        )(upstream);
+
+        stream$.subscribe({ error: errorSpy });
+        upstream.error(upstreamError);
+
+        expect(errorSpy).toHaveBeenCalledWith(upstreamError);
+        expect(callMock.cancel).toHaveBeenCalled();
+      });
     });
   });
 
