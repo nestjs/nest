@@ -159,7 +159,7 @@ export const INVALID_MODULE_MESSAGE = (
   scope: any[],
   receivedValue: unknown,
 ) => {
-  const parentModuleName = parentModule?.name || 'module';
+  const parentModuleName = getInstanceName(parentModule) || 'module';
 
   let formattedValue: string;
   let receivedType: string;
@@ -212,7 +212,7 @@ export const UNDEFINED_MODULE_MESSAGE = (
   index: number,
   scope: any[],
 ) => {
-  const parentModuleName = parentModule?.name || 'module';
+  const parentModuleName = getInstanceName(parentModule) || 'module';
 
   return `Nest cannot create the ${parentModuleName} instance.
 The module at index [${index}] of the ${parentModuleName} "imports" array is undefined.
