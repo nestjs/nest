@@ -81,6 +81,38 @@ describe('ClientNats', () => {
         expect(callback.mock.calls[0][0].err).toBeInstanceOf(Error);
       });
     });
+    describe('when the send throws after the reply inbox is subscribed', () => {
+      const sendError = new Error('max_payload size exceeded');
+
+      it('should unsubscribe from the inbox and report the error when publish throws', () => {
+        publishSpy.mockImplementation(() => {
+          throw sendError;
+        });
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+
+        expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({ err: sendError });
+        expect(untypedClient.routingMap.size).toBe(0);
+      });
+
+      it('should unsubscribe from the inbox when merging headers throws', () => {
+        const mergeHeadersSpy = vi
+          .spyOn(untypedClient, 'mergeHeaders')
+          .mockImplementation(() => {
+            throw sendError;
+          });
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+
+        expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(callback).toHaveBeenCalledWith({ err: sendError });
+        mergeHeadersSpy.mockRestore();
+      });
+    });
     describe('dispose callback', () => {
       let assignStub: ReturnType<typeof vi.fn>;
       let callback: ReturnType<typeof vi.fn>, subscription;

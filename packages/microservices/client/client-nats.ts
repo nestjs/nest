@@ -289,10 +289,8 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     const packet = this.assignPacketId(partialPacket);
     this.routingMap.set(packet.id, callback);
 
-    const cleanup = () => this.routingMap.delete(packet.id);
-    const errorCallback = (err: unknown) => {
-      cleanup();
-      callback({ err });
+    let cleanup = () => {
+      this.routingMap.delete(packet.id);
     };
 
     try {
@@ -314,18 +312,21 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
         ) => Promise<never>,
       });
 
+      cleanup = () => {
+        this.routingMap.delete(packet.id);
+        subscription.unsubscribe();
+      };
+
       const headers = this.mergeHeaders(serializedPacket.headers);
       this.natsClient!.publish(channel, serializedPacket.data, {
         reply: inbox,
         headers,
       });
 
-      return () => {
-        cleanup();
-        subscription.unsubscribe();
-      };
+      return cleanup;
     } catch (err) {
-      errorCallback(err);
+      cleanup();
+      callback({ err });
       return () => {};
     }
   }
