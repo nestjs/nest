@@ -588,6 +588,18 @@ describe('NestApplication', () => {
       expect(response.headers.has('X-Powered-By')).toBe(false);
     });
 
+    it('should disable the "x-powered-by" setting unless xPoweredBy is false', () => {
+      const adapter = Object.assign(createAdapter(), { disable: vi.fn() });
+      vi.spyOn(adapter, 'registerSecurityHook').mockReturnValue(undefined);
+      createApp(adapter).useSecurityHeaders();
+      expect(adapter.disable).toHaveBeenCalledExactlyOnceWith('x-powered-by');
+
+      const other = Object.assign(createAdapter(), { disable: vi.fn() });
+      vi.spyOn(other, 'registerSecurityHook').mockReturnValue(undefined);
+      createApp(other).useSecurityHeaders({ xPoweredBy: false });
+      expect(other.disable).not.toHaveBeenCalled();
+    });
+
     it.each([
       ['useSecurityHeaders() first', ['headers', 'csrf']],
       ['enableCsrfProtection() first', ['csrf', 'headers']],
