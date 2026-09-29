@@ -198,6 +198,18 @@ describe('ServerKafka', () => {
       expect(untypedServer.producer).toBeNull();
       expect(untypedServer.client).toBeNull();
     });
+
+    it('should disconnect the producer when the consumer fails to disconnect', async () => {
+      const error = new Error('consumer disconnect failed');
+      consumer.disconnect.mockRejectedValueOnce(error);
+
+      await expect(server.close()).rejects.toThrow(error);
+
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedServer.consumer).toBeNull();
+      expect(untypedServer.producer).toBeNull();
+      expect(untypedServer.client).toBeNull();
+    });
   });
 
   describe('bindEvents', () => {

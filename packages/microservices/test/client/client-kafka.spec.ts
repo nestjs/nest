@@ -297,6 +297,20 @@ describe('ClientKafka', () => {
       expect(untypedClient.client).toBeNull();
     });
 
+    it('should disconnect the consumer when the producer fails to disconnect', async () => {
+      const error = new Error('producer disconnect failed');
+      producer.disconnect.mockRejectedValueOnce(error);
+      untypedClient.initialized = Promise.resolve();
+
+      await expect(client.close()).rejects.toThrow(error);
+
+      expect(consumer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedClient._consumer).toBeNull();
+      expect(untypedClient._producer).toBeNull();
+      expect(untypedClient.initialized).toBeNull();
+      expect(untypedClient.client).toBeNull();
+    });
+
     it('should fail pending requests with a connection closed error', async () => {
       const callback = vi.fn();
       untypedClient.routingMap.set('some id', callback);
