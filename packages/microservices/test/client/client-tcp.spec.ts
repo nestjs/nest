@@ -53,6 +53,13 @@ describe('ClientTCP', () => {
   afterEach(() => {
     createSocketStub.mockRestore();
   });
+
+  const connectWith = async (fakeSocket: FakeTcpSocket) => {
+    const connectPromise = client.connect();
+    fakeSocket.netSocket.emit('connect');
+    await connectPromise;
+  };
+
   describe('publish', () => {
     let msg;
     beforeEach(() => {
@@ -291,12 +298,6 @@ describe('ClientTCP', () => {
     let socketB: FakeTcpSocket;
     let statuses: TcpStatus[];
 
-    const connectWith = async (fakeSocket: FakeTcpSocket) => {
-      const connectPromise = client.connect();
-      fakeSocket.netSocket.emit('connect');
-      await connectPromise;
-    };
-
     beforeEach(() => {
       socketA = new FakeTcpSocket();
       socketB = new FakeTcpSocket();
@@ -505,33 +506,12 @@ describe('ClientTCP', () => {
   });
 
   describe('on', () => {
-    let firstSocket: ReturnType<typeof createFakeSocket>;
-    let secondSocket: ReturnType<typeof createFakeSocket>;
-
-    // Forwards listeners to an event emitter that plays the net socket, so
-    // connection events can be fired by hand.
-    const createFakeSocket = () => {
-      const netSocket = new EventEmitter();
-      return {
-        netSocket,
-        on: (event: string, callback: (...args: any[]) => void) =>
-          netSocket.on(event, callback),
-        connect: vi.fn(),
-        end: vi.fn(),
-        sendMessage: vi.fn(),
-      };
-    };
-    const connectWith = async (
-      fakeSocket: ReturnType<typeof createFakeSocket>,
-    ) => {
-      const connectPromise = client.connect();
-      fakeSocket.netSocket.emit('connect');
-      await connectPromise;
-    };
+    let firstSocket: FakeTcpSocket;
+    let secondSocket: FakeTcpSocket;
 
     beforeEach(() => {
-      firstSocket = createFakeSocket();
-      secondSocket = createFakeSocket();
+      firstSocket = new FakeTcpSocket();
+      secondSocket = new FakeTcpSocket();
       createSocketStub
         .mockReturnValueOnce(firstSocket as any)
         .mockReturnValueOnce(secondSocket as any);
