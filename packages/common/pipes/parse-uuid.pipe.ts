@@ -14,11 +14,38 @@ import { isNil, isString } from '../utils/shared.utils.js';
 /**
  * @publicApi
  */
+export type UUIDVersion =
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 'all';
+
+/**
+ * @publicApi
+ */
+export type ParseUUIDVersion = UUIDVersion;
+
+/**
+ * @publicApi
+ */
 export interface ParseUUIDPipeOptions {
   /**
    * UUID version to validate
    */
-  version?: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
+  version?: ParseUUIDVersion;
   /**
    * The HTTP status code to be used in the response when the validation fails.
    */
@@ -46,7 +73,7 @@ export interface ParseUUIDPipeOptions {
  */
 @Injectable()
 export class ParseUUIDPipe implements PipeTransform {
-  protected static uuidRegExps = {
+  protected static uuidRegExps: Record<ParseUUIDVersion, RegExp> = {
     1: /^[0-9A-F]{8}-[0-9A-F]{4}-1[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
     2: /^[0-9A-F]{8}-[0-9A-F]{4}-2[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
     3: /^[0-9A-F]{8}-[0-9A-F]{4}-3[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
@@ -85,14 +112,14 @@ export class ParseUUIDPipe implements PipeTransform {
     if (!this.isUUID(value, this.version)) {
       throw this.exceptionFactory(
         `Validation failed (uuid${
-          this.version ? ` v ${this.version}` : ''
+          this.version && this.version !== 'all' ? ` v ${this.version}` : ''
         } is expected)`,
       );
     }
     return value as string;
   }
 
-  protected isUUID(str: unknown, version = 'all') {
+  protected isUUID(str: unknown, version: ParseUUIDVersion = 'all') {
     if (!isString(str)) {
       throw this.exceptionFactory('The value passed as UUID is not a string');
     }

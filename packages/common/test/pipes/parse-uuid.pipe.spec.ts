@@ -1,7 +1,11 @@
 import { HttpStatus } from '../../enums/index.js';
 import { HttpException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
-import { ParseUUIDPipe } from '../../pipes/parse-uuid.pipe.js';
+import {
+  ParseUUIDPipe,
+  ParseUUIDVersion,
+  UUIDVersion,
+} from '../../pipes/parse-uuid.pipe.js';
 
 class TestException extends HttpException {
   constructor() {
@@ -24,6 +28,46 @@ describe('ParseUUIDPipe', () => {
     const v8 = '2489e9ad-2ee2-8e00-8ec9-32d5f69181c0';
 
     describe('when validation passes', () => {
+      it('should return string if value is uuid and version is "all"', async () => {
+        target = new ParseUUIDPipe({ version: 'all', exceptionFactory });
+        for (const uuid of [
+          v1,
+          v2,
+          v3,
+          v4,
+          v5,
+          v6,
+          v7,
+          v8,
+          '00000000-0000-0000-0000-000000000000',
+          'ffffffff-ffff-ffff-ffff-ffffffffffff',
+        ]) {
+          expect(await target.transform(uuid, {} as ArgumentMetadata)).toBe(
+            uuid,
+          );
+        }
+      });
+
+      it('should return string if value is uuid and version is a number', async () => {
+        target = new ParseUUIDPipe({ version: 1, exceptionFactory });
+        expect(await target.transform(v1, {} as ArgumentMetadata)).toBe(v1);
+
+        target = new ParseUUIDPipe({ version: 4, exceptionFactory });
+        expect(await target.transform(v4, {} as ArgumentMetadata)).toBe(v4);
+
+        target = new ParseUUIDPipe({ version: 7, exceptionFactory });
+        expect(await target.transform(v7, {} as ArgumentMetadata)).toBe(v7);
+      });
+
+      it('should accept UUIDVersion / ParseUUIDVersion types', () => {
+        const version: UUIDVersion = 'all';
+        const numVersion: ParseUUIDVersion = 4;
+        const pipe1 = new ParseUUIDPipe({ version });
+        const pipe2 = new ParseUUIDPipe({ version: numVersion });
+        expect(pipe1).toBeDefined();
+        expect(pipe2).toBeDefined();
+      });
+
       it('should return string if value is uuid v3, v4 or v5', async () => {
         target = new ParseUUIDPipe({ exceptionFactory });
         expect(await target.transform(v3, {} as ArgumentMetadata)).toBe(v3);
@@ -104,6 +148,27 @@ describe('ParseUUIDPipe', () => {
         target = new ParseUUIDPipe({ exceptionFactory });
         await expect(
           target.transform('123a', {} as ArgumentMetadata),
+        ).rejects.toThrow(TestException);
+      });
+
+      it('should throw an error with "uuid is expected" when version is "all"', async () => {
+        target = new ParseUUIDPipe({ version: 'all' });
+        await expect(
+          target.transform('invalid-uuid', {} as ArgumentMetadata),
+        ).rejects.toThrow('Validation failed (uuid is expected)');
+      });
+
+      it('should throw an error with "uuid v 4 is expected" when version is number 4', async () => {
+        target = new ParseUUIDPipe({ version: 4 });
+        await expect(
+          target.transform('invalid-uuid', {} as ArgumentMetadata),
+        ).rejects.toThrow('Validation failed (uuid v 4 is expected)');
+      });
+
+      it('should throw an error when numeric version does not match', async () => {
+        target = new ParseUUIDPipe({ version: 4, exceptionFactory });
+        await expect(
+          target.transform(v1, {} as ArgumentMetadata),
         ).rejects.toThrow(TestException);
       });
 
