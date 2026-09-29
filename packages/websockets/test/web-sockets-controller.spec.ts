@@ -459,6 +459,85 @@ describe('WebSocketsController', () => {
       expect(contextId).toBeDefined();
       expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
     });
+
+    it('should cleanup request-scoped context after async handleDisconnect completes', async () => {
+      const client = {};
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        instance: {
+          handleDisconnect() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const moduleRef = {
+        providers: new Map(),
+      } as Module;
+      let contextIdDuringHook: unknown;
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handleDisconnect: async () => {
+          await Promise.resolve();
+          contextIdDuringHook = client[REQUEST_CONTEXT_ID as any];
+        },
+      } as never);
+
+      const handler = instance.createRequestScopedEventHandler(
+        gatewayWrapper,
+        moduleRef,
+        'moduleKey',
+        'handleDisconnect',
+        {},
+      );
+
+      await handler(client);
+
+      expect(contextIdDuringHook).toBeDefined();
+      expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
+    });
+
+    it('should pass async hook errors to the exception filter', async () => {
+      const client = {};
+      const error = new Error('Unauthorized');
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        instance: {
+          handleConnection() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const moduleRef = {
+        providers: new Map(),
+      } as Module;
+      const exceptionFilter = { handle: vi.fn() };
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handleConnection: () => Promise.reject(error),
+      } as never);
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      const handler = instance.createRequestScopedEventHandler(
+        gatewayWrapper,
+        moduleRef,
+        'moduleKey',
+        'handleConnection',
+        {},
+      );
+
+      await handler(client);
+
+      expect(exceptionFilter.handle).toHaveBeenCalledWith(
+        error,
+        expect.anything(),
+      );
+    });
   });
   describe('getConnectionHandler', () => {
     const gateway = new Test();
