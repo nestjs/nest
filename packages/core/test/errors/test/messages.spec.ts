@@ -382,6 +382,12 @@ Scope [AppModule -> CatsModule]`);
 
       expect(actualMessage).toBe(expectedMessage);
     });
+
+    it('should display the module name when the parent module is dynamic', () => {
+      expect(
+        UNDEFINED_MODULE_MESSAGE({ module: CatsModule }, 0, [AppModule]),
+      ).toBe(UNDEFINED_MODULE_MESSAGE(CatsModule, 0, [AppModule]));
+    });
   });
 
   describe('INVALID_PROVIDER_MESSAGE', () => {
@@ -479,6 +485,12 @@ Scope [AppModule -> CatsModule]`);
       );
 
       expect(actualMessage).toBe(expectedMessage);
+    });
+
+    it('should display the module name when the parent module is dynamic', () => {
+      expect(
+        INVALID_MODULE_MESSAGE({ module: CatsModule }, 0, [AppModule], null),
+      ).toBe(INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule], null));
     });
   });
 
