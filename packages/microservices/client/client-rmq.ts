@@ -149,7 +149,6 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.pendingEventListeners.forEach(({ event, callback }) =>
       this.client!.on(event, callback),
     );
-    this.pendingEventListeners = [];
 
     this.responseEmitter = new EventEmitter();
     this.responseEmitter.setMaxListeners(0);
@@ -376,10 +375,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     EventKey extends keyof RmqEvents = keyof RmqEvents,
     EventCallback extends RmqEvents[EventKey] = RmqEvents[EventKey],
   >(event: EventKey, callback: EventCallback) {
+    // Kept until `close()`, so the clients created later (e.g., after a
+    // failed connect) get it as well
+    this.pendingEventListeners.push({ event, callback });
     if (this.client) {
       this.client.addListener(event, callback);
-    } else {
-      this.pendingEventListeners.push({ event, callback });
     }
   }
 
