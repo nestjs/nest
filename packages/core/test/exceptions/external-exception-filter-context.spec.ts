@@ -1,5 +1,6 @@
 import { Catch } from '../../../common/decorators/core/catch.decorator.js';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
+import { Scope } from '../../../common/interfaces/scope-options.interface.js';
 import { ApplicationConfig } from '../../application-config.js';
 import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context.js';
 import { NestContainer } from '../../injector/container.js';
@@ -106,6 +107,36 @@ describe('ExternalExceptionFilterContext', () => {
         const result = exceptionFilter.getGlobalMetadata({ id: 3 });
         expect(result).toContain(instance);
         globalFilters.forEach(f => expect(result).toContain(f));
+      });
+    });
+    describe('when a ContextIdStrategy is applied', () => {
+      it('should look up durable filters with the durable context id', () => {
+        const tenantContextId = { id: 2 };
+        const contextId = {
+          id: 3,
+          getParent: info => (info.isTreeDurable ? tenantContextId : contextId),
+        };
+        const durableWrapper = new InstanceWrapper({
+          scope: Scope.REQUEST,
+          durable: true,
+        });
+        const requestWrapper = new InstanceWrapper({ scope: Scope.REQUEST });
+        durableWrapper.setInstanceByContextId(tenantContextId, {
+          instance: 'durable',
+        });
+        requestWrapper.setInstanceByContextId(contextId, {
+          instance: 'request-scoped',
+        });
+
+        vi.spyOn(
+          applicationConfig,
+          'getGlobalRequestFilters',
+        ).mockImplementation(() => [durableWrapper, requestWrapper]);
+
+        expect(exceptionFilter.getGlobalMetadata(contextId)).toEqual([
+          'durable',
+          'request-scoped',
+        ]);
       });
     });
   });

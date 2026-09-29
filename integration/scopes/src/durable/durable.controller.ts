@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { BadRequestException, Controller, Get } from '@nestjs/common';
 import { DurableZooService } from './durable-zoo.service.js';
 import { DurableCatsService } from './durable-forward-ref.services.js';
 import { DurableService } from './durable.service.js';
@@ -41,5 +41,10 @@ export class DurableController {
       durableService: this.durableService.getTenantId(),
       nonDurableService: this.nonDurableService.getTenantId(),
     };
+  }
+
+  @Get('filter')
+  filter() {
+    throw new BadRequestException();
   }
 }

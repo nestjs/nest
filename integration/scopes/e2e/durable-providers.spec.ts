@@ -103,6 +103,24 @@ describe('Durable providers', () => {
       expect(result.body).toEqual({ tenantId: '3' });
     });
 
+    it(`should run a durable global filter with its tenant payload`, async () => {
+      let result: request.Response;
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(51, resolve, '/durable/filter'),
+      );
+      expect(result.body).toEqual({ tenantId: '51', instanceCounter: 1 });
+
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(51, resolve, '/durable/filter'),
+      );
+      expect(result.body).toEqual({ tenantId: '51', instanceCounter: 2 });
+
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(52, resolve, '/durable/filter'),
+      );
+      expect(result.body).toEqual({ tenantId: '52', instanceCounter: 1 });
+    });
+
     it(`should return the same tenantId both from durable request scoped service and non-durable request scoped service`, async () => {
       let result: request.Response;
       result = await new Promise<request.Response>(resolve =>
