@@ -611,6 +611,70 @@ describe('ClientNats', () => {
       expect(createClientSpy).toHaveBeenCalledTimes(2);
       createClientSpy.mockRestore();
     });
+
+    describe('with a pending request', () => {
+      const secondClient = {
+        status: () => ({
+          async *[Symbol.asyncIterator]() {
+            // stays connected
+          },
+        }),
+        close: vi.fn(),
+      };
+      let releaseIterator: () => void;
+      let createClientSpy: ReturnType<typeof vi.fn>;
+
+      beforeEach(async () => {
+        const iteratorReachedEnd = new Promise<void>(resolve => {
+          releaseIterator = resolve;
+        });
+        const natsClient = {
+          status: () => ({
+            async *[Symbol.asyncIterator]() {
+              yield { type: 'disconnect' };
+              await iteratorReachedEnd;
+            },
+          }),
+          subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
+          publish: vi.fn(),
+          close: vi.fn(),
+        };
+        createClientSpy = vi
+          .spyOn(client, 'createClient')
+          .mockResolvedValueOnce(natsClient as any)
+          .mockResolvedValueOnce(secondClient as any);
+        await client.connect();
+      });
+      afterEach(() => {
+        createClientSpy.mockRestore();
+      });
+
+      it('should fail pending requests when the status iterator completes', async () => {
+        const callback = vi.fn();
+        untypedClient.publish({ pattern: 'pattern', data: 'data' }, callback);
+
+        releaseIterator();
+        await vi.waitFor(() => expect(untypedClient.natsClient).toBeNull());
+
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(untypedClient.routingMap.size).toBe(0);
+      });
+
+      it('should start a new connection when a failed request retries from its callback', async () => {
+        let retry: Promise<any> | undefined;
+        untypedClient.publish({ pattern: 'pattern', data: 'data' }, () => {
+          retry = client.connect();
+        });
+
+        releaseIterator();
+        await vi.waitFor(() => expect(retry).toBeDefined());
+
+        await expect(retry).resolves.toBe(secondClient);
+        expect(createClientSpy).toHaveBeenCalledTimes(2);
+      });
+    });
   });
   describe('dispatchEvent', () => {
     let msg: ReadPacket;
