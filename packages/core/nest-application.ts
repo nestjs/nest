@@ -403,6 +403,13 @@ export class NestApplication
     this.assertSecurityFeatureCanBeEnabled('useSecurityHeaders');
     const headers = resolveSecurityHeaders(options);
     this.getSecurityHook().setHeaders(headers);
+    if (headers.removeHeaders.includes('X-Powered-By')) {
+      // Express sets the header before any middleware runs, so the hook alone
+      // misses responses ended by middleware registered ahead of the hook.
+      (this.httpAdapter as { disable?(setting: string): unknown }).disable?.(
+        'x-powered-by',
+      );
+    }
     this.enabledSecurityFeatures.add('useSecurityHeaders');
     return this;
   }
