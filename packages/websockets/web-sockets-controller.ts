@@ -447,7 +447,7 @@ export class WebSocketsController {
         const scopedMethod = contextInstance[methodName] as
           | ((...methodArgs: unknown[]) => unknown)
           | undefined;
-        return scopedMethod?.apply(contextInstance, args);
+        return await scopedMethod?.apply(contextInstance, args);
       } catch (err) {
         if (!targetCallback) {
           throw err;
