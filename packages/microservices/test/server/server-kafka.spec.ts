@@ -525,6 +525,17 @@ describe('ServerKafka', () => {
       expect(endHook).toHaveBeenCalledOnce();
     });
 
+    it('should run the end hook when the returned stream completes without emitting', async () => {
+      const endHook = bindHandler(async () => EMPTY, {
+        isEventHandler: true,
+      });
+
+      // A rejection would make kafkajs redeliver a message that was handled.
+      await server.handleEvent(topic, { pattern: topic, data: null }, context);
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
     it('should run the end hook when the returned stream fails', async () => {
       const endHook = bindHandler(
         async () => throwError(() => new Error('failed')),
