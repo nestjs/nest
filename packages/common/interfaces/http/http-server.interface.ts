@@ -1,4 +1,5 @@
 import { RequestMethod } from '../../enums/index.js';
+import { RouteInfo } from '../middleware/middleware-configuration.interface.js';
 import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface.js';
 import {
   VersionValue,
@@ -458,8 +459,23 @@ export interface HttpServer<
    *
    * @param handler The `(req, res, next)` callback.
    * @param prefix The global prefix (`app.setGlobalPrefix()`), when set.
+   * @param excludedRoutes The routes `app.setGlobalPrefix()` excluded from the
+   * prefix, when any. They live at the root rather than under `prefix`, so an
+   * adapter that scopes the handler by path never sees a request for one and
+   * leaves the framework to answer it. That is right for a path Nest does not
+   * own, and wrong for a method miss on a path it does: with
+   * `exclude: ['hello']` and only `GET /hello` declared, a `POST /hello` is an
+   * unmatched request for a route Nest knows about. Each entry is the path and
+   * the method the exclusion names; an adapter should answer every method on
+   * that path, since the methods the exclusion does NOT name are exactly the
+   * misses this covers. Paths arrive in the framework's own syntax, already
+   * converted.
    */
-  setNotFoundHandler?(handler: Function, prefix?: string): any;
+  setNotFoundHandler?(
+    handler: Function,
+    prefix?: string,
+    excludedRoutes?: RouteInfo[],
+  ): any;
   /**
    * Serves static files; pass-through for `app.useStaticAssets()`. The
    * arguments are platform-specific. When not implemented,

@@ -26,6 +26,7 @@ import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import {
   type CorsOptions,
   type CorsOptionsDelegate,
+  type RouteInfo,
   type VersionValue,
   addLeadingSlash,
   isFunction,
@@ -177,13 +178,36 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return this.use(handler);
   }
 
-  public setNotFoundHandler(handler: Function, prefix?: string) {
+  public setNotFoundHandler(
+    handler: Function,
+    prefix?: string,
+    excludedRoutes?: RouteInfo[],
+  ) {
     const normalizedPrefix = this.normalizePrefix(prefix);
     if (normalizedPrefix) {
       this.registeredPrefixes.add(normalizedPrefix);
       const router = express.Router();
       router.all('*path', handler as any);
-      return this.use(normalizedPrefix, router);
+      this.use(normalizedPrefix, router);
+      // A path `setGlobalPrefix({ exclude })` took out of the prefix lives at
+      // the root, so the router above never sees a request for it and express
+      // answers a miss with its own HTML 404. That is correct for a path Nest
+      // does not own and wrong for a method miss on one it does: with
+      // `exclude: ['hello']` and only `GET /hello` declared, `POST /hello` is
+      // an unmatched request for a route Nest knows about.
+      //
+      // One `all()` per excluded path, and `all` whatever method the exclusion
+      // names, because the methods it does NOT name are exactly the misses
+      // this answers. Registered after the prefix router, so declared routes
+      // still win. An exact path rather than `use(path, router)`: a subtree
+      // mount would claim a raw `/health/live` added later, which is the
+      // shadowing this was asked to stop doing at the root. A wildcard
+      // exclusion such as `health/{*splat}` covers its subtree through the
+      // pattern itself.
+      for (const route of excludedRoutes ?? []) {
+        this.instance.all(addLeadingSlash(route.path), handler as any);
+      }
+      return;
     }
     return this.use(
       (
