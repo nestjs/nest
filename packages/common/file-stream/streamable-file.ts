@@ -47,7 +47,10 @@ export class StreamableFile {
       this.stream = new Readable();
       this.stream.push(bufferOrReadStream);
       this.stream.push(null);
-      this.options.length ??= bufferOrReadStream.length;
+      this.options = {
+        ...this.options,
+        length: this.options.length ?? bufferOrReadStream.length,
+      };
     } else if (bufferOrReadStream.pipe && isFunction(bufferOrReadStream.pipe)) {
       this.stream = bufferOrReadStream;
     }
