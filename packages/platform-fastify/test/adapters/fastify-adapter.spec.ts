@@ -3,6 +3,7 @@ import { createError } from '@fastify/error';
 import {
   HttpException,
   Logger,
+  RawBodyRequest,
   VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
@@ -319,6 +320,91 @@ describe('FastifyAdapter', () => {
 
       await fastifyAdapter.close();
       expect(onCloseCalled).toBe(true);
+    });
+  });
+
+  describe('useBodyParser', () => {
+    const registerEchoRoute = () =>
+      fastifyAdapter.post(
+        '/',
+        (req: RawBodyRequest<FastifyRequest>, reply: FastifyReply) =>
+          fastifyAdapter.reply(reply, {
+            body: req.body,
+            rawBody: req.rawBody?.toString(),
+          }),
+      );
+    const post = (contentType: string, payload: string) =>
+      fastifyAdapter.inject({
+        method: 'POST',
+        url: '/',
+        headers: { 'content-type': contentType },
+        payload,
+      });
+
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    it('should keep the default parsers when another content type is registered', async () => {
+      fastifyAdapter.useBodyParser('text/plain', true);
+      fastifyAdapter.registerParserMiddleware(undefined, true);
+      registerEchoRoute();
+
+      const form = await post('application/x-www-form-urlencoded', 'msg=hello');
+      expect(form.statusCode).toBe(200);
+      expect(JSON.parse(form.body)).toEqual({
+        body: { msg: 'hello' },
+        rawBody: 'msg=hello',
+      });
+
+      const json = await post('application/json', '{"msg":"hello"}');
+      expect(JSON.parse(json.body)).toEqual({
+        body: { msg: 'hello' },
+        rawBody: '{"msg":"hello"}',
+      });
+    });
+
+    it.each([
+      ['application/json', '{"msg":"hello"}'],
+      ['application/x-www-form-urlencoded', 'msg=hello'],
+      ['Application/JSON', '{"msg":"hello"}'],
+    ])(
+      'should parse %s with the default parser when no custom parser is given',
+      async (contentType, payload) => {
+        fastifyAdapter.useBodyParser(contentType, true, {
+          bodyLimit: 10_485_760,
+        });
+        // Would throw FST_ERR_CTP_ALREADY_PRESENT if the defaults were registered again.
+        fastifyAdapter.registerParserMiddleware(undefined, true);
+        registerEchoRoute();
+
+        const res = await post(contentType, payload);
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body)).toEqual({
+          body: { msg: 'hello' },
+          rawBody: payload,
+        });
+      },
+    );
+
+    it('should parse each content type of an array with its default parser', async () => {
+      fastifyAdapter.useBodyParser(['application/json', 'text/plain'], true, {
+        bodyLimit: 10_485_760,
+      });
+      fastifyAdapter.registerParserMiddleware(undefined, true);
+      registerEchoRoute();
+
+      const json = await post('application/json', '{"msg":"hello"}');
+      expect(json.statusCode).toBe(200);
+      expect(JSON.parse(json.body)).toEqual({
+        body: { msg: 'hello' },
+        rawBody: '{"msg":"hello"}',
+      });
+
+      const text = await post('text/plain', 'hello');
+      expect(text.statusCode).toBe(200);
+      expect(JSON.parse(text.body).rawBody).toBe('hello');
     });
   });
 
