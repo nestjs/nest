@@ -15,6 +15,8 @@ import {
   randomStringGenerator,
 } from '@nestjs/common/internal';
 import { iterate } from 'iterare';
+import { getClassScope } from '../helpers/get-class-scope.js';
+import { isDurable } from '../helpers/is-durable.js';
 import { UuidFactory } from '../inspector/uuid-factory.js';
 import { STATIC_CONTEXT } from './constants.js';
 import { isDebugMode } from './helpers/is-debug-mode.util.js';
@@ -509,12 +511,15 @@ export class InstanceWrapper<T = any> {
     } else if (isClassProvider(provider)) {
       this.inject = null;
       this.metatype = provider.useClass;
+      this.scope = getClassScope(provider.useClass);
+      this.durable = isDurable(provider.useClass);
       this.resetStaticInstance();
     } else if (isFactoryProvider(provider)) {
       this.metatype = provider.useFactory;
       this.inject = provider.inject || [];
       this.resetStaticInstance();
     }
+    this.resetDependencyTreeState();
   }
 
   private resetStaticInstance() {
