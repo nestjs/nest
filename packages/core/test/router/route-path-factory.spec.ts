@@ -225,6 +225,29 @@ describe('RoutePathFactory', () => {
       ).toEqual(['/ctrlPath']);
       vi.restoreAllMocks();
     });
+
+    it('should exclude every URI version of an excluded route from the global prefix', () => {
+      vi.spyOn(applicationConfig, 'getGlobalPrefixOptions').mockReturnValue({
+        exclude: [
+          {
+            path: '/cats',
+            pathRegex: pathToRegexp('/cats').regexp,
+            requestMethod: RequestMethod.ALL,
+          },
+        ],
+      });
+      expect(
+        routePathFactory.create(
+          {
+            ctrlPath: '/cats',
+            globalPrefix: '/api',
+            methodVersion: ['1', '10'],
+            versioningOptions: { type: VersioningType.URI },
+          },
+          RequestMethod.GET,
+        ),
+      ).toEqual(['/v1/cats', '/v10/cats']);
+    });
   });
 
   describe('isExcludedFromGlobalPrefix', () => {
