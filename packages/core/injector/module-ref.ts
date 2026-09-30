@@ -96,14 +96,14 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
 
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   abstract resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   abstract resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
@@ -111,7 +111,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<TResult>}
    */
   abstract resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
@@ -120,7 +120,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
   ): Promise<TResult>;
   /**
    * Resolves transient or request-scoped instances of either injectables or controllers, otherwise, throws exception.
-   * @returns {Array<TResult>}
+   * @returns {Promise<Array<TResult>>}
    */
   abstract resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Function | string | symbol,
