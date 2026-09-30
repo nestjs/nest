@@ -317,10 +317,24 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   ): (path: string, callback: Function) => any {
     return (path: string, callback: Function) => {
       try {
-        const convertedPath = LegacyRouteConverter.tryConvert(path);
-        return this.routerMethodFactory
-          .get(this.instance, requestMethod)
-          .call(this.instance, convertedPath, callback);
+        // The core marks an exact-match path with a trailing "$" (e.g. "/api$").
+        // Express 5 reads "$" literally and "use()" matches by prefix, so strip
+        // the marker and register the path as an exact "all()" route instead.
+        const isExactPath = path.endsWith('$');
+        const convertedPath = LegacyRouteConverter.tryConvert(
+          isExactPath ? path.slice(0, -1) : path,
+        );
+        let router = this.routerMethodFactory.get(this.instance, requestMethod);
+        if (isExactPath && router === this.instance.use) {
+          router = this.instance.all;
+        }
+        // Express routes are not strict, so "/api" also matches "/api/",
+        // which the wildcard entry registered next to it already covers.
+        const handler = isExactPath
+          ? (req: any, res: any, next: Function) =>
+              req.path.endsWith('/') ? next() : callback(req, res, next)
+          : callback;
+        return router.call(this.instance, convertedPath, handler);
       } catch (e) {
         if (e instanceof TypeError) {
           LegacyRouteConverter.printError(path);
