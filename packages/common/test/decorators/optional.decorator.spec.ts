@@ -14,6 +14,10 @@ describe('@Optional', () => {
     @Optional() property2: number;
   }
 
+  class ChildPropertyTest extends PropertyTest {
+    @Optional() property3: boolean;
+  }
+
   it('should enhance class with expected constructor params metadata', () => {
     const metadata = Reflect.getMetadata(OPTIONAL_DEPS_METADATA, Test);
     expect(metadata).toEqual([1, 0]);
@@ -25,5 +29,13 @@ describe('@Optional', () => {
       PropertyTest,
     );
     expect(metadata).toEqual(['property1', 'property2']);
+  });
+
+  it('should enhance subclass with expected property metadata', () => {
+    const metadata = Reflect.getMetadata(
+      OPTIONAL_PROPERTY_DEPS_METADATA,
+      ChildPropertyTest,
+    );
+    expect(metadata).toEqual(['property1', 'property2', 'property3']);
   });
 });
