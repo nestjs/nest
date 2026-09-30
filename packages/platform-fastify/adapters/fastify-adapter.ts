@@ -198,6 +198,9 @@ export class FastifyAdapter<
   private readonly openConnections = new Set<Duplex>();
   private isClosing = false;
   private _isParserRegistered: boolean;
+  // Fastify's `hasContentTypeParser('application/json')` is always true (built-in
+  // parser), so the types registered through `useBodyParser()` are tracked here.
+  private readonly registeredContentTypes = new Set<string | RegExp>();
   private onRequestHook?: (
     request: TRequest,
     reply: TReply,
@@ -823,10 +826,18 @@ export class FastifyAdapter<
     options?: NestFastifyBodyParserOptions,
     parser?: FastifyBodyParser<Buffer, TServer>,
   ) {
+    if (Array.isArray(type)) {
+      // One by one, so that each content type gets its own default parser.
+      for (const contentType of type) {
+        this.useBodyParser(contentType, rawBody, options, parser);
+      }
+      return;
+    }
     const parserOptions = {
       ...(options || {}),
       parseAs: 'buffer' as const,
     };
+    const bodyParser = parser ?? this.getDefaultBodyParser(type);
 
     this.getInstance().addContentTypeParser<Buffer>(
       type,
@@ -840,8 +851,8 @@ export class FastifyAdapter<
           req.rawBody = body;
         }
 
-        if (parser) {
-          parser(req, body, done);
+        if (bodyParser) {
+          bodyParser(req, body, done);
           return;
         }
 
@@ -849,9 +860,7 @@ export class FastifyAdapter<
       },
     );
 
-    // To avoid the Nest application init to override our custom
-    // body parser, we mark the parsers as registered.
-    this._isParserRegistered = true;
+    this.registeredContentTypes.add(this.normalizeContentType(type));
   }
 
   public async createMiddlewareFactory(
@@ -976,38 +985,68 @@ export class FastifyAdapter<
 
   private registerJsonContentParser(rawBody?: boolean) {
     const contentType = 'application/json';
+    if (this.hasCustomBodyParser(contentType)) {
+      return;
+    }
     const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.useBodyParser(
-      contentType,
-      withRawBody,
-      { bodyLimit },
-      (req, body, done) => {
-        const { onProtoPoisoning, onConstructorPoisoning } =
-          this.instance.initialConfig;
-        const defaultJsonParser = this.instance.getDefaultJsonParser(
-          onProtoPoisoning || 'error',
-          onConstructorPoisoning || 'error',
-        ) as FastifyBodyParser<string | Buffer, TServer>;
-        defaultJsonParser(req, body, done);
-      },
-    );
+    this.useBodyParser(contentType, withRawBody, { bodyLimit });
   }
 
   private registerUrlencodedContentParser(rawBody?: boolean) {
     const contentType = 'application/x-www-form-urlencoded';
+    if (this.hasCustomBodyParser(contentType)) {
+      return;
+    }
     const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.useBodyParser(
-      contentType,
-      withRawBody,
-      { bodyLimit },
-      (_req, body, done) => {
-        done(null, querystringParse(body.toString()));
-      },
-    );
+    this.useBodyParser(contentType, withRawBody, { bodyLimit });
+  }
+
+  // A parser registered through `useBodyParser()` takes precedence over the
+  // default one, including a RegExp or catch-all ('*') parser matching the type.
+  private hasCustomBodyParser(contentType: string) {
+    for (const type of this.registeredContentTypes) {
+      if (type === '*' || type === contentType) {
+        return true;
+      }
+      if (isString(type)) {
+        continue;
+      }
+      type.lastIndex = 0;
+      if (type.test(contentType)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Fastify stores string content types trimmed and lower-cased.
+  private normalizeContentType(type: string | RegExp) {
+    return isString(type) ? type.trim().toLowerCase() : type;
+  }
+
+  private getDefaultBodyParser(
+    type: string | RegExp,
+  ): FastifyBodyParser<Buffer, TServer> | undefined {
+    switch (this.normalizeContentType(type)) {
+      case 'application/json':
+        return (req, body, done) => {
+          const { onProtoPoisoning, onConstructorPoisoning } =
+            this.instance.initialConfig;
+          const defaultJsonParser = this.instance.getDefaultJsonParser(
+            onProtoPoisoning || 'error',
+            onConstructorPoisoning || 'error',
+          ) as FastifyBodyParser<string | Buffer, TServer>;
+          defaultJsonParser(req, body, done);
+        };
+      case 'application/x-www-form-urlencoded':
+        return (_req, body, done) => {
+          done(null, querystringParse(body.toString()));
+        };
+    }
   }
 
   private async registerMiddie() {
