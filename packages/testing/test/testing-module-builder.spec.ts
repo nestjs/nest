@@ -1,4 +1,4 @@
-import { Module as ModuleDecorator, Injectable } from '@nestjs/common';
+import { Module as ModuleDecorator, Injectable, Scope } from '@nestjs/common';
 import {
   UuidFactory,
   UuidFactoryMode,
@@ -194,6 +194,27 @@ describe('TestingModuleBuilder', () => {
 
       const service = module.get('SERVICE');
       expect(service).toBeInstanceOf(MockService);
+    });
+
+    it('should support overriding a request-scoped provider with useClass', async () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class OriginalService {}
+
+      @ModuleDecorator({
+        providers: [{ provide: 'SERVICE', useClass: OriginalService }],
+      })
+      class TestModule {}
+
+      class MockService {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestModule],
+      })
+        .overrideProvider('SERVICE')
+        .useClass(MockService)
+        .compile();
+
+      expect(module.get('SERVICE')).toBeInstanceOf(MockService);
     });
 
     it('should support overriding a value provider with useClass', async () => {
