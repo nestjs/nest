@@ -195,6 +195,27 @@ describe.each(adapters)('Security headers (%s)', (_name, createAdapter) => {
     });
   });
 
+  // Express sets X-Powered-By before any middleware runs, so the security
+  // hook alone can't strip it from responses ended ahead of it.
+  it('removes X-Powered-By from responses ended by earlier middleware', async () => {
+    await init(app => {
+      app.use('/early', (_req: any, res: any) => res.end());
+      app.enableCors();
+      app.useSecurityHeaders();
+    });
+    const server = app.getHttpServer();
+
+    const early = await request(server).get('/early').expect(200);
+    expect(early.headers['x-powered-by']).toBeUndefined();
+
+    const preflight = await request(server)
+      .options('/items')
+      .set('Origin', 'http://example.com')
+      .set('Access-Control-Request-Method', 'GET')
+      .expect(204);
+    expect(preflight.headers['x-powered-by']).toBeUndefined();
+  });
+
   it('keeps X-Powered-By on Express when the feature is not used', async () => {
     await init(() => undefined);
     const res = await request(app.getHttpServer()).get('/items').expect(200);
