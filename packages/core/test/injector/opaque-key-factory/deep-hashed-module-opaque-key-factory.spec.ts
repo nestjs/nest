@@ -84,6 +84,24 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
           '{"providers":[{"provide":"Symbol(a)","useValue":"a"},{"provide":"Symbol(b)","useValue":"b"}]}',
         );
       });
+      it('should serialize maps, sets and regular expressions in a dynamic metadata object', () => {
+        const metadata = {
+          providers: [
+            {
+              provide: 'Options',
+              useValue: {
+                map: new Map([['a', 1]]),
+                set: new Set(['b']),
+                pattern: /c/i,
+              },
+            },
+          ],
+        };
+
+        expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
+          '{"providers":[{"provide":"Options","useValue":{"map":{"Map":[["a",1]]},"set":{"Set":["b"]},"pattern":{"RegExp":"/c/i"}}}]}',
+        );
+      });
     });
 
     describe('when metadata does not exist', () => {
