@@ -382,6 +382,21 @@ Scope [AppModule -> CatsModule]`);
 
       expect(actualMessage).toBe(expectedMessage);
     });
+
+    it('should display the module name when the parent module is dynamic', () => {
+      const actualMessage = UNDEFINED_MODULE_MESSAGE(
+        { module: CatsModule },
+        0,
+        [AppModule],
+      );
+
+      expect(actualMessage).toContain(
+        'Nest cannot create the CatsModule instance',
+      );
+      expect(actualMessage).toBe(
+        UNDEFINED_MODULE_MESSAGE(CatsModule, 0, [AppModule]),
+      );
+    });
   });
 
   describe('INVALID_PROVIDER_MESSAGE', () => {
@@ -479,6 +494,22 @@ Scope [AppModule -> CatsModule]`);
       );
 
       expect(actualMessage).toBe(expectedMessage);
+    });
+
+    it('should display the module name when the parent module is dynamic', () => {
+      const actualMessage = INVALID_MODULE_MESSAGE(
+        { module: CatsModule },
+        0,
+        [AppModule],
+        null,
+      );
+
+      expect(actualMessage).toContain(
+        'Nest cannot create the CatsModule instance',
+      );
+      expect(actualMessage).toBe(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule], null),
+      );
     });
   });
 
