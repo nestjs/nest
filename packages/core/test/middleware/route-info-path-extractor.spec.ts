@@ -115,7 +115,27 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: ['1', VERSION_NEUTRAL],
         }),
-      ).toEqual(['/v1$', '/v1/*', '/*']);
+      ).toEqual(['/*']);
+    });
+
+    it(`should not add a version segment for VERSION_NEUTRAL when set global prefix`, () => {
+      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: 'cats',
+          method: RequestMethod.GET,
+          version: ['1', VERSION_NEUTRAL],
+        }),
+      ).toEqual(['/api/v1/cats', '/api/cats']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+          version: ['1', VERSION_NEUTRAL],
+        }),
+      ).toEqual(['/api$', '/api/*']);
     });
   });
 

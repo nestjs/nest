@@ -31,19 +31,18 @@ export class RouteInfoPathExtractor {
     const versionPaths = this.extractVersionPathFrom(version);
 
     if (this.isAWildcard(path)) {
+      // VERSION_NEUTRAL has no version segment, so its wildcard already covers
+      // every versioned path; registering both would run the middleware twice.
+      const wildcardVersionPaths = versionPaths.includes('')
+        ? []
+        : versionPaths;
       const entries =
-        versionPaths.length > 0
-          ? versionPaths
-              .map(versionPath =>
-                // VERSION_NEUTRAL without a global prefix: no base path to match
-                // exactly, same as the unversioned branch below
-                this.prefixPath + versionPath
-                  ? [
-                      this.prefixPath + versionPath + '$',
-                      this.prefixPath + versionPath + addLeadingSlash(path),
-                    ]
-                  : [addLeadingSlash(path)],
-              )
+        wildcardVersionPaths.length > 0
+          ? wildcardVersionPaths
+              .map(versionPath => [
+                this.prefixPath + versionPath + '$',
+                this.prefixPath + versionPath + addLeadingSlash(path),
+              ])
               .flat()
           : this.prefixPath
             ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
