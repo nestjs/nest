@@ -49,6 +49,26 @@ describe('Media Type Versioning (fastify)', () => {
           .expect('Hello World V2!');
       });
 
+      it('V2 after other parameters', () => {
+        return request(app.getHttpServer())
+          .get('/')
+          .set({
+            Accept: 'application/json;q=0.9;v=2',
+          })
+          .expect(200)
+          .expect('Hello World V2!');
+      });
+
+      it('V2 in a list of media types', () => {
+        return request(app.getHttpServer())
+          .get('/')
+          .set({
+            Accept: 'text/html, application/json;v=2, */*;q=0.1',
+          })
+          .expect(200)
+          .expect('Hello World V2!');
+      });
+
       it('V3', () => {
         return request(app.getHttpServer())
           .get('/')
@@ -363,6 +383,16 @@ describe('Media Type Versioning (fastify)', () => {
           .get('/multiple-neutral')
           .set({
             Accept: 'application/json',
+          })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it('No Version with other parameters', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/json;charset=utf-8',
           })
           .expect(200)
           .expect('Multiple Versions Neutral or 2');

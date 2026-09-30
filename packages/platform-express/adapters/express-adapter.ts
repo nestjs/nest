@@ -22,6 +22,7 @@ import {
 } from '../interfaces/nest-express-body-parser.interface.js';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util.js';
+import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import {
   type CorsOptions,
   type CorsOptionsDelegate,
@@ -465,26 +466,23 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         next,
       ) => {
         const MEDIA_TYPE_HEADER = 'Accept';
-        const acceptHeaderValue: string | undefined =
+        const acceptHeaderValue: string | string[] | undefined =
           req.headers?.[MEDIA_TYPE_HEADER] ||
           req.headers?.[MEDIA_TYPE_HEADER.toLowerCase()];
 
-        const acceptHeaderVersionParameter = acceptHeaderValue
-          ? acceptHeaderValue.split(';')[1]
-          : undefined;
+        const headerVersion = getMediaTypeVersion(
+          acceptHeaderValue,
+          versioningOptions.key,
+        );
 
         // No version was supplied
-        if (isUndefined(acceptHeaderVersionParameter)) {
+        if (isUndefined(headerVersion)) {
           if (Array.isArray(version)) {
             if (version.includes(VERSION_NEUTRAL)) {
               return handler(req, res, next);
             }
           }
         } else {
-          const headerVersion = acceptHeaderVersionParameter.split(
-            versioningOptions.key,
-          )[1];
-
           if (Array.isArray(version)) {
             if (version.includes(headerVersion)) {
               return handler(req, res, next);

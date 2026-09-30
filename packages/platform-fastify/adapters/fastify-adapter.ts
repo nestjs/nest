@@ -61,6 +61,7 @@ import {
 } from '@nestjs/common/internal';
 import { AbstractHttpAdapter } from '@nestjs/core';
 import { LegacyRouteConverter } from '@nestjs/core/internal';
+import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 const { kRouteContext } = fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
@@ -245,17 +246,18 @@ export class FastifyAdapter<
       // Media Type (Accept Header) Versioning Handler
       if (this.versioningOptions?.type === VersioningType.MEDIA_TYPE) {
         const MEDIA_TYPE_HEADER = 'Accept';
-        const acceptHeaderValue: string | undefined = (req.headers?.[
-          MEDIA_TYPE_HEADER
-        ] || req.headers?.[MEDIA_TYPE_HEADER.toLowerCase()]) as string;
+        const acceptHeaderValue: string | string[] | undefined =
+          req.headers?.[MEDIA_TYPE_HEADER] ||
+          req.headers?.[MEDIA_TYPE_HEADER.toLowerCase()];
 
-        const acceptHeaderVersionParameter = acceptHeaderValue
-          ? acceptHeaderValue.split(';')[1]
-          : undefined;
+        const headerVersion = getMediaTypeVersion(
+          acceptHeaderValue,
+          this.versioningOptions.key,
+        );
 
-        return isUndefined(acceptHeaderVersionParameter)
+        return isUndefined(headerVersion)
           ? VERSION_NEUTRAL // No version was supplied
-          : acceptHeaderVersionParameter.split(this.versioningOptions.key)[1];
+          : headerVersion;
       }
       // Header Versioning Handler
       else if (this.versioningOptions?.type === VersioningType.HEADER) {
