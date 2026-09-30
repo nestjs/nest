@@ -11,6 +11,7 @@ import {
   NatsStatus,
 } from '../events/nats.events.js';
 import {
+  IncomingResponse,
   NatsOptions,
   PacketId,
   ReadPacket,
@@ -263,7 +264,13 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
           isDisposed: true,
         });
       }
-      const message = await this.deserializer.deserialize(natsMsg);
+      // nats-core does not await this callback: a rejection here would crash the process.
+      let message: IncomingResponse;
+      try {
+        message = await this.deserializer.deserialize(natsMsg);
+      } catch (err) {
+        return callback({ err, isDisposed: true });
+      }
       if (message.id && message.id !== packet.id) {
         return undefined;
       }

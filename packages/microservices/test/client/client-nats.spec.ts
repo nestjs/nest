@@ -1,4 +1,5 @@
 import { headers as createHeaders } from '@nats-io/transport-node';
+import { firstValueFrom } from 'rxjs';
 import { ClientNats } from '../../client/client-nats.js';
 import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { NatsRecord } from '../../record-builders/index.js';
@@ -185,6 +186,24 @@ describe('ClientNats', () => {
         );
       });
     });
+
+    it('should release the inbox when a reply cannot be deserialized', async () => {
+      const error = new SyntaxError('Unexpected token');
+      const undecodable = {
+        data: 'not json',
+        json: () => {
+          throw error;
+        },
+      };
+      const rejection = firstValueFrom(client.send(pattern, 'data'));
+      await vi.waitFor(() => expect(subscribeSpy).toHaveBeenCalled());
+
+      await subscribeSpy.mock.calls[0][1].callback(null, undecodable);
+
+      await expect(rejection).rejects.toBe(error);
+      expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
+      expect(untypedClient.routingMap.size).toBe(0);
+    });
   });
 
   describe('createSubscriptionHandler', () => {
@@ -267,6 +286,57 @@ describe('ClientNats', () => {
 
       it('should not call callback', () => {
         expect(callback).not.toHaveBeenCalled();
+      });
+    });
+    describe('reply that cannot be deserialized', () => {
+      const error = new SyntaxError('Unexpected token');
+      const createHandler = () => {
+        client = new ClientNats({});
+        untypedClient = client as any;
+        callback = vi.fn();
+        return client.createSubscriptionHandler(
+          msg,
+          callback as (packet: WritePacket) => any,
+        );
+      };
+
+      it('should fail the request when the deserializer throws', async () => {
+        const handler = createHandler();
+        const undecodable = {
+          data: 'not json',
+          json: () => {
+            throw error;
+          },
+        };
+
+        await expect(handler(null, undecodable)).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({ err: error, isDisposed: true });
+      });
+
+      it('should fail the request when the deserializer rejects', async () => {
+        const handler = createHandler();
+        vi.spyOn(untypedClient.deserializer, 'deserialize').mockRejectedValue(
+          error,
+        );
+
+        await expect(handler(null, natsMessage)).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({ err: error, isDisposed: true });
+      });
+
+      it('should not report a failing callback as an undecodable reply', async () => {
+        const handler = createHandler();
+        const callbackError = new Error('callback failed');
+        callback.mockImplementation(() => {
+          throw callbackError;
+        });
+
+        await expect(handler(null, natsMessage)).rejects.toBe(callbackError);
+
+        expect(callback).toHaveBeenCalledTimes(1);
       });
     });
   });
