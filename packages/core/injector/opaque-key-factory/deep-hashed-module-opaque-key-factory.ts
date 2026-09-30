@@ -14,6 +14,11 @@ const stringify = ((_stringify as any).default ?? _stringify) as unknown as (
   space?: string | number,
 ) => string;
 
+// What fast-safe-stringify returns when it can't break a cycle
+const UNSERIALIZABLE = JSON.stringify(
+  '[unable to serialize, circular reference is too complex to analyze]',
+);
+
 const CLASS_STR = 'class ';
 const CLASS_STR_LEN = CLASS_STR.length;
 
@@ -67,7 +72,22 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
     // Uses safeStringify instead of JSON.stringify to support circular dynamic modules
     // The replacer function is also required in order to obtain real class names
     // instead of the unified "Function" key
-    return opaqueToken ? stringify(opaqueToken, this.replacer) : '';
+    if (!opaqueToken) {
+      return '';
+    }
+    const tokenString = stringify(opaqueToken, this.replacer);
+    if (tokenString !== UNSERIALIZABLE) {
+      return tokenString;
+    }
+    // fast-safe-stringify only breaks cycles it finds through arrays and object
+    // keys, so one running through a Map or Set makes it give up. Hashing that
+    // constant would give modules of different classes the same token, so
+    // serialize those collections as "{}" instead, as JSON.stringify does.
+    return stringify(opaqueToken, (key, value) =>
+      value instanceof Map || value instanceof Set
+        ? {}
+        : this.replacer(key, value),
+    );
   }
 
   public getModuleId(metatype: Type<unknown>): string {
@@ -99,6 +119,16 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
     }
     if (isSymbol(value)) {
       return value.toString();
+    }
+    // Tagged so they don't collide with plain values holding the same data
+    if (value instanceof Map) {
+      return { Map: [...value] };
+    }
+    if (value instanceof Set) {
+      return { Set: [...value] };
+    }
+    if (value instanceof RegExp) {
+      return { RegExp: value.toString() };
     }
     return value;
   }
