@@ -172,7 +172,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         // A rejected attempt must not be cached: the next `connect()` call
         // has to try again once the broker is reachable, instead of failing
         // forever with the error of the first attempt.
-        await this.discardPartialConnection(client, connectionPromise);
+        await this.discardPartialConnection(client);
         throw err;
       },
     );
@@ -190,10 +190,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
    */
   private async discardPartialConnection(
     client: AmqpConnectionManager,
-    connectionPromise: Promise<void>,
   ): Promise<void> {
     let channel: ChannelWrapper | null = null;
-    if (this.connectionPromise === connectionPromise) {
+    // Compared by client, not by promise: the disconnect listener replaces
+    // "connectionPromise" when the broker drops the connection during the setup.
+    if (this.client === client) {
       channel = this.channel;
       this.client = null;
       this.channel = null;
@@ -203,10 +204,17 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   }
 
   public createChannel(): Promise<void> {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       this.channel = this.client!.createChannel({
         json: false,
         setup: (channel: Channel) => this.setupChannel(channel, resolve),
+      });
+      // The wrapper emits "error" when the setup throws, and an emitter with
+      // no listener throws, which crashes the process. Rejecting is a no-op
+      // once the channel is set up, so later errors are only logged.
+      this.channel.on(RmqEventsMap.ERROR, (err: unknown) => {
+        this.logger.error(err);
+        reject(err);
       });
     });
   }

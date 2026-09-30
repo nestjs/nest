@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER, RMQ_DEFAULT_QUEUE } from '../../constants.js';
 import { RmqContext } from '../../ctx-host/index.js';
@@ -27,7 +28,10 @@ describe('ServerRMQ', () => {
         .mockImplementation(
           (event, callback) => event === 'connect' && callback(),
         );
-      createChannelStub = vi.fn().mockImplementation(({ setup }) => setup());
+      createChannelStub = vi.fn().mockImplementation(({ setup }) => {
+        void setup();
+        return new EventEmitter();
+      });
       setupChannelStub = vi
         .spyOn(server, 'setupChannel')
         .mockImplementation(() => ({}) as any);
@@ -69,13 +73,78 @@ describe('ServerRMQ', () => {
       createChannelStub.mockImplementation(({ setup }) => {
         void setup({});
         void setup({});
-        return {};
+        return new EventEmitter();
       });
 
       await server.listen(callbackSpy);
       await new Promise(resolve => setImmediate(resolve));
 
       expect(callbackSpy).toHaveBeenCalledOnce();
+    });
+    describe('when the channel setup fails', () => {
+      const setupError = new Error('PRECONDITION_FAILED');
+      let channel: EventEmitter;
+      const listenCallback = vi.fn<(err?: unknown) => void>();
+      let logError: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        listenCallback.mockClear();
+        logError = vi
+          .spyOn(server['logger'], 'error')
+          .mockImplementation(() => {});
+        channel = new EventEmitter();
+        createChannelStub.mockReturnValue(channel);
+      });
+
+      it('should call the callback once with the setup error', async () => {
+        await server.listen(listenCallback);
+        channel.emit('error', setupError);
+        channel.emit('error', setupError);
+
+        expect(listenCallback).toHaveBeenCalledOnce();
+        expect(listenCallback).toHaveBeenCalledWith(setupError);
+      });
+
+      it('should log the setup error', async () => {
+        await server.listen(listenCallback);
+        channel.emit('error', setupError);
+
+        expect(logError).toHaveBeenCalledWith(setupError);
+      });
+
+      it('should log a later setup error without calling the callback again', async () => {
+        setupChannelStub.mockImplementation(async (_channel, setupCallback) =>
+          setupCallback(),
+        );
+        createChannelStub.mockImplementation(({ setup }) => {
+          void setup({});
+          return channel;
+        });
+        await server.listen(listenCallback);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(() => channel.emit('error', setupError)).not.toThrow();
+        expect(logError).toHaveBeenCalledWith(setupError);
+        expect(listenCallback).toHaveBeenCalledOnce();
+        expect(listenCallback).toHaveBeenCalledWith();
+      });
+    });
+    describe('when the connection attempts run out', () => {
+      it('should call the callback once with the connection error', async () => {
+        const connectionError = new Error('ECONNREFUSED');
+        const handlers = new Map<string, (error: object) => Promise<void>>();
+        client.once = vi.fn((event, handler) => handlers.set(event, handler));
+        untypedServer.options = { maxConnectionAttempts: 1 };
+        vi.spyOn(server, 'close').mockResolvedValue();
+        vi.spyOn(server['logger'], 'error').mockImplementation(() => {});
+        const listenCallback = vi.fn<(err?: unknown) => void>();
+
+        await server.listen(listenCallback);
+        await handlers.get('connectFailed')?.({ err: connectionError });
+
+        expect(listenCallback).toHaveBeenCalledOnce();
+        expect(listenCallback).toHaveBeenCalledWith(connectionError);
+      });
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
