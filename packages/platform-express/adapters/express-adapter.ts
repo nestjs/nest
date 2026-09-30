@@ -51,6 +51,15 @@ type VersionedRoute = <
   next: () => void,
 ) => any;
 
+// Covers "application/json" and the "+json" structured syntax suffix (RFC 6839),
+// e.g. "application/problem+json", with or without parameters.
+function isJsonContentType(contentType: string): boolean {
+  const mediaType = contentType.split(';')[0].trim().toLowerCase();
+  return (
+    mediaType.startsWith('application/json') || mediaType.endsWith('+json')
+  );
+}
+
 /**
  * @publicApi
  */
@@ -128,7 +137,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     const responseContentType = response.getHeader('Content-Type');
     if (
       typeof responseContentType === 'string' &&
-      !responseContentType.startsWith('application/json') &&
+      !isJsonContentType(responseContentType) &&
       body?.statusCode >= HttpStatus.BAD_REQUEST
     ) {
       this.logger.warn(

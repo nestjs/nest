@@ -2,6 +2,7 @@ import { FastifyAdapter } from '../../adapters/fastify-adapter';
 import { createError } from '@fastify/error';
 import {
   HttpException,
+  Logger,
   VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
@@ -66,6 +67,25 @@ describe('FastifyAdapter', () => {
       );
 
       expect(reply.header).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      'application/problem+json',
+      'application/vnd.api+json; charset=utf-8',
+      'Application/JSON',
+    ])('should keep the "%s" JSON content type for error bodies', type => {
+      const reply = createReply();
+      reply.getHeader.mockReturnValue(type);
+      const warnSpy = vi.spyOn(Logger, 'warn').mockImplementation(() => {});
+
+      fastifyAdapter.reply(
+        reply as any,
+        { statusCode: 400, message: 'Oops' },
+        400,
+      );
+
+      expect(reply.header).not.toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
     });
 
     it('should force a JSON content type for error bodies sent with a non-JSON content type', () => {
