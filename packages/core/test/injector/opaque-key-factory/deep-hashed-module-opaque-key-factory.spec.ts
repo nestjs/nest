@@ -102,6 +102,21 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
           '{"providers":[{"provide":"Options","useValue":{"map":{"Map":[["a",1]]},"set":{"Set":["b"]},"pattern":{"RegExp":"/c/i"}}}]}',
         );
       });
+      it('should fall back to empty objects for maps and sets holding a cycle', () => {
+        const node: Record<string, unknown> = {};
+        node.self = node;
+        const metadata = {
+          module: 'CyclicModule',
+          providers: [
+            { provide: 'Options', useValue: new Map([['node', node]]) },
+            { provide: 'Pattern', useValue: /c/i },
+          ],
+        };
+
+        expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
+          '{"module":"CyclicModule","providers":[{"provide":"Options","useValue":{}},{"provide":"Pattern","useValue":{"RegExp":"/c/i"}}]}',
+        );
+      });
     });
 
     describe('when metadata does not exist', () => {
