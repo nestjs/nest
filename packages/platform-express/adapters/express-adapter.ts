@@ -328,8 +328,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         if (isExactPath && router === this.instance.use) {
           router = this.instance.all;
         }
-        // Express routes are not strict, so "/api" also matches "/api/",
-        // which the wildcard entry registered next to it already covers.
+        // Express routes are not strict, so "/api" also matches "/api/". That
+        // path is left to the wildcard entry registered next to it (an optional
+        // "{*path}" matches it), so the middleware doesn't run twice.
         const handler = isExactPath
           ? (req: any, res: any, next: Function) =>
               req.path.endsWith('/') ? next() : callback(req, res, next)
