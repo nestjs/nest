@@ -170,5 +170,61 @@ describe('IoAdapter', () => {
       expect(unhandled).toEqual([]);
       expect(logError).toHaveBeenCalledTimes(1);
     });
+
+    it('should not let a response the encoder chokes on escape as an uncaught error', async () => {
+      const unhandled: unknown[] = [];
+      config.onUnhandledError = err => unhandled.push(err);
+      const logError = vi
+        .spyOn(adapter['logger'], 'error')
+        .mockImplementation(() => undefined);
+
+      // stands in for socket.io's recursive packet encoder on outbound events
+      const socket = new EventEmitter() as any;
+      const replies: any[] = [];
+      socket.emit = function (event: string, ...args: any[]) {
+        if (event === 'echo-reply') {
+          replies.push(JSON.parse(JSON.stringify(args[0])));
+          return true;
+        }
+        return EventEmitter.prototype.emit.call(this, event, ...args);
+      };
+
+      adapter.bindMessageHandlers(
+        socket,
+        [
+          {
+            message: 'echo',
+            methodName: 'echo',
+            callback: (data: any) => ({ event: 'echo-reply', data }),
+            isAckHandledManually: false,
+          },
+          {
+            message: 'echo-ack',
+            methodName: 'echoAck',
+            callback: (data: any) => data,
+            isAckHandledManually: false,
+          },
+        ],
+        (data: any) => of(data),
+      );
+
+      const depth = 100_000;
+      const deep = JSON.parse(`${'['.repeat(depth)}${']'.repeat(depth)}`);
+      const ack = vi.fn((payload: any) => JSON.stringify(payload));
+
+      socket.emit('echo', deep);
+      socket.emit('echo', 'ok');
+      socket.emit('echo-ack', deep, ack);
+      socket.emit('echo-ack', 'ok', ack);
+      await new Promise(resolve => setTimeout(resolve, 5));
+      config.onUnhandledError = null;
+
+      expect(unhandled).toEqual([]);
+      expect(logError).toHaveBeenCalledTimes(2);
+      expect(logError.mock.calls[0][0]).toBeInstanceOf(RangeError);
+      expect(logError.mock.calls[1][0]).toBeInstanceOf(RangeError);
+      expect(replies).toEqual(['ok']);
+      expect(ack).toHaveBeenLastCalledWith('ok');
+    });
   });
 });

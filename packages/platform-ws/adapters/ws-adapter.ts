@@ -181,7 +181,18 @@ export class WsAdapter extends AbstractWsAdapter {
       if (client.readyState !== READY_STATE.OPEN_STATE) {
         return;
       }
-      client.send(JSON.stringify(response));
+      // JSON.stringify throws on circular structures and BigInts, and on
+      // client-controlled payloads nested deep enough to overflow its native
+      // recursion (JSON.parse accepts any depth). A throw here escapes the
+      // subscriber, which RxJS rethrows asynchronously, killing the process.
+      let payload: string;
+      try {
+        payload = JSON.stringify(response);
+      } catch (err) {
+        this.logger.error(err);
+        return;
+      }
+      client.send(payload);
     };
     source$.subscribe(onMessage);
   }

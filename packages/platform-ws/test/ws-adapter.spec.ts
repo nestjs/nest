@@ -218,6 +218,48 @@ describe('WsAdapter', () => {
       expect(unhandled).toEqual([]);
       expect(logError).toHaveBeenCalledTimes(1);
     });
+
+    it('should not let an unserializable response escape as an uncaught error', async () => {
+      const unhandled: unknown[] = [];
+      config.onUnhandledError = err => unhandled.push(err);
+
+      const adapter = new WsAdapter();
+      const logError = vi
+        .spyOn(adapter['logger'], 'error')
+        .mockImplementation(() => undefined);
+
+      const client = new EventEmitter() as any;
+      client.readyState = 1; // OPEN_STATE
+      const replies: any[] = [];
+      client.send = (payload: string) => replies.push(JSON.parse(payload));
+
+      adapter.bindMessageHandlers(
+        client,
+        [
+          {
+            message: 'echo',
+            methodName: 'echo',
+            callback: (data: any) => ({ event: 'echo', data }),
+            isAckHandledManually: false,
+          },
+        ],
+        (data: any) => of(data),
+      );
+
+      // JSON.parse accepts this, JSON.stringify overflows the stack on it
+      const depth = 100_000;
+      client.emit('message', {
+        data: `{"event":"echo","data":${'['.repeat(depth)}${']'.repeat(depth)}}`,
+      });
+      client.emit('message', frame({ event: 'echo', data: 'ok' }));
+      await new Promise(resolve => setTimeout(resolve, 5));
+      config.onUnhandledError = null;
+
+      expect(unhandled).toEqual([]);
+      expect(logError).toHaveBeenCalledTimes(1);
+      expect(logError.mock.calls[0][0]).toBeInstanceOf(RangeError);
+      expect(replies).toEqual([{ event: 'echo', data: 'ok' }]);
+    });
   });
 
   describe('dispose', () => {
