@@ -543,7 +543,9 @@ export class ServerGrpc extends Server<never, never> {
               await methodHandler(call, callback),
             );
           }
-          await lastValueFrom(handlerStream.pipe(finalize(runEndHook)));
+          await lastValueFrom(handlerStream.pipe(finalize(runEndHook)), {
+            defaultValue: undefined,
+          });
         },
         call.request,
       );

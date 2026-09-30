@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { join } from 'path';
 import { EventEmitter } from 'events';
 import {
+  EMPTY,
   lastValueFrom,
   of,
   ReplaySubject,
@@ -1195,6 +1196,23 @@ describe('ServerGrpc', () => {
     });
 
     describe('createStreamCallMethod', () => {
+      it('should run the end hook and resolve when the handler stream completes empty', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+
+        await expect(
+          server.createStreamCallMethod(async () => EMPTY, true)(
+            call as any,
+            vi.fn(),
+          ),
+        ).resolves.toBeUndefined();
+
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+
       it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
         const endHook = bindHooks();
         const call = createCall();
