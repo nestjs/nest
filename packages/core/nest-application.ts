@@ -107,6 +107,8 @@ export class NestApplication
     await this.socketModule?.close();
     await this.microservicesModule?.close();
     await this.httpAdapter?.close();
+    this.isListening = false;
+    this.container.getHttpAdapterHostRef().listening = false;
 
     await Promise.all(
       iterate(this.microservices).map(async microservice => {
