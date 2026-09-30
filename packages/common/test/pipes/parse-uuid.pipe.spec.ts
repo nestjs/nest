@@ -1,11 +1,7 @@
 import { HttpStatus } from '../../enums/index.js';
 import { HttpException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
-import {
-  ParseUUIDPipe,
-  ParseUUIDVersion,
-  UUIDVersion,
-} from '../../pipes/parse-uuid.pipe.js';
+import { ParseUUIDPipe, UUIDVersion } from '../../pipes/parse-uuid.pipe.js';
 
 class TestException extends HttpException {
   constructor() {
@@ -59,9 +55,9 @@ describe('ParseUUIDPipe', () => {
         expect(await target.transform(v7, {} as ArgumentMetadata)).toBe(v7);
       });
 
-      it('should accept UUIDVersion / ParseUUIDVersion types', () => {
+      it('should accept UUIDVersion values', () => {
         const version: UUIDVersion = 'all';
-        const numVersion: ParseUUIDVersion = 4;
+        const numVersion: UUIDVersion = 4;
         const pipe1 = new ParseUUIDPipe({ version });
         const pipe2 = new ParseUUIDPipe({ version: numVersion });
         expect(pipe1).toBeDefined();
