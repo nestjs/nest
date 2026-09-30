@@ -643,6 +643,29 @@ describe('ServerGrpc', () => {
         expect(responseCallback).toHaveBeenCalled();
       });
 
+      it('should call callback when handler resolves to undefined', async () => {
+        const handler = async () => undefined;
+        const fn = server.createRequestStreamMethod(handler, false);
+        const call = {
+          on: (event, callback) => {
+            if (event !== CANCELLED_EVENT) {
+              callback();
+            }
+          },
+          off: vi.fn(),
+          end: vi.fn(),
+          write: vi.fn(),
+        };
+
+        const responseCallback = vi.fn();
+        await fn(call as any, responseCallback);
+
+        expect(responseCallback).toHaveBeenCalledExactlyOnceWith(
+          null,
+          undefined,
+        );
+      });
+
       it('should handle error thrown in handler', async () => {
         const error = new Error('Error');
         const handler = async () => throwError(() => error);
