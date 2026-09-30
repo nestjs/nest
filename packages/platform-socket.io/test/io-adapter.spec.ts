@@ -1,8 +1,11 @@
 import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { IoAdapter } from '../adapters/io-adapter';
 import { EventEmitter } from 'events';
-import { config, of } from 'rxjs';
+import { config, from, mergeAll, of } from 'rxjs';
+import * as sinon from 'sinon';
+import { WsProxy } from '../../websockets/context/ws-proxy';
+import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler';
+import { WebSocketsController } from '../../websockets/web-sockets-controller';
+import { IoAdapter } from '../adapters/io-adapter';
 
 describe('IoAdapter', () => {
   let adapter: IoAdapter;
@@ -46,6 +49,128 @@ describe('IoAdapter', () => {
         .getCalls()
         .filter(call => call.args[0] === 'test-event');
       expect(messageCalls).to.have.lengthOf(2);
+    });
+
+    it('should not let a throwing handler tear down the message stream', () => {
+      const socket = new EventEmitter() as any;
+      let calls = 0;
+      const handler = {
+        message: 'test-event',
+        methodName: 'handleTestEvent',
+        callback: (() => {
+          calls++;
+          if (calls === 1) {
+            throw new Error('handler blew up');
+          }
+          return { event: 'test-event-reply', data: 'recovered' };
+        }) as any,
+        isAckHandledManually: false,
+      };
+      sinon.stub(adapter['logger'], 'error');
+
+      const replies: any[] = [];
+      socket.on('test-event-reply', (payload: any) => replies.push(payload));
+
+      adapter.bindMessageHandlers(socket, [handler], (data: any) => of(data));
+
+      socket.emit('test-event', { data: {} });
+      socket.emit('test-event', { data: {} });
+
+      expect(calls).to.equal(2);
+      expect(replies).to.deep.equal(['recovered']);
+    });
+
+    it('should not ack a throwing message but keep acking the next one', () => {
+      const socket = new EventEmitter() as any;
+      let calls = 0;
+      const handler = {
+        message: 'test-event',
+        methodName: 'handleTestEvent',
+        callback: (() => {
+          calls++;
+          if (calls === 1) {
+            throw new Error('handler blew up');
+          }
+          return { data: 'ok' };
+        }) as any,
+        isAckHandledManually: false,
+      };
+      sinon.stub(adapter['logger'], 'error');
+
+      const ack = sinon.spy();
+      adapter.bindMessageHandlers(socket, [handler], (data: any) => of(data));
+
+      socket.emit('test-event', [{ a: 1 }, ack]);
+      expect(calls).to.equal(1);
+      expect(ack.called).to.be.false;
+
+      socket.emit('test-event', [{ a: 1 }, ack]);
+      expect(calls).to.equal(2);
+      expect(ack.calledOnceWith({ data: 'ok' })).to.be.true;
+    });
+
+    it('should not let a rejected handler tear down the message stream', async () => {
+      const unhandled: unknown[] = [];
+      config.onUnhandledError = err => unhandled.push(err);
+      const logError = sinon.stub(adapter['logger'], 'error');
+
+      // an app-level @Catch() filter that rethrows
+      const exceptionsHandler = new WsExceptionsHandler();
+      exceptionsHandler.setCustomFilters([
+        {
+          exceptionMetatypes: [],
+          func: (exception: any) => {
+            throw exception;
+          },
+        },
+      ] as any);
+
+      const socket = new EventEmitter() as any;
+      const replies: any[] = [];
+      socket.on('reply', (payload: any) => replies.push(payload));
+
+      let calls = 0;
+      const callback = new WsProxy()
+        .create(
+          async () => {
+            if (++calls === 1) throw new Error('handler blew up');
+            return { event: 'reply', data: 'ok' };
+          },
+          exceptionsHandler,
+          'test-event',
+        )
+        .bind(undefined, socket);
+
+      // same transform WebSocketsController.subscribeMessages passes in
+      const transform = (data: any) =>
+        from(
+          WebSocketsController.prototype.pickResult.call(undefined, data),
+        ).pipe(mergeAll());
+
+      adapter.bindMessageHandlers(
+        socket,
+        [
+          {
+            message: 'test-event',
+            methodName: 'm',
+            callback,
+            isAckHandledManually: false,
+          },
+        ],
+        transform,
+      );
+
+      const flush = () => new Promise(resolve => setTimeout(resolve, 5));
+      socket.emit('test-event', {});
+      await flush();
+      socket.emit('test-event', {});
+      await flush();
+      config.onUnhandledError = null;
+
+      expect(calls).to.equal(2);
+      expect(replies).to.deep.equal(['ok']);
+      expect(unhandled).to.deep.equal([]);
+      expect(logError.callCount).to.equal(1);
     });
 
     it('should not let a response the encoder chokes on escape as an uncaught error', async () => {

@@ -10,7 +10,14 @@ import {
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
 import * as http from 'http';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
-import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+import {
+  catchError,
+  filter,
+  first,
+  mergeMap,
+  share,
+  takeUntil,
+} from 'rxjs/operators';
 
 let wsPackage: any = {};
 
@@ -138,6 +145,13 @@ export class WsAdapter extends AbstractWsAdapter {
       mergeMap(data =>
         this.bindMessageHandler(data, handlersMap, transform).pipe(
           filter(result => !isNil(result)),
+          // a handler that rejects through an error filter that rethrows
+          // would error the client's stream and silence every later message;
+          // that rethrow is an app bug, so it gets logged, not dropped silently
+          catchError(err => {
+            this.logger.error(err);
+            return EMPTY;
+          }),
         ),
       ),
       takeUntil(close$),
