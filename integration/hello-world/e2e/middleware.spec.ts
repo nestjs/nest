@@ -71,6 +71,7 @@ describe('Middleware', () => {
     await request(app.getHttpServer())
       .get('/api/hello')
       .expect(200, RETURN_VALUE);
+    await request(app.getHttpServer()).get('/api').expect(200, RETURN_VALUE);
     await request(app.getHttpServer())
       .get('/api/exclude')
       .expect(200, EXCLUDE_VALUE);

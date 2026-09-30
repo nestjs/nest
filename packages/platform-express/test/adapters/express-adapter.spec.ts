@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, RequestMethod } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 
@@ -77,6 +77,69 @@ describe('ExpressAdapter', () => {
         expect(useSpy).toHaveBeenCalledExactlyOnceWith(expect.any(Function));
       },
     );
+  });
+
+  describe('createMiddlewareFactory', () => {
+    // Plain-path routes such as forRoutes('*') carry no request method
+    // (see RoutesMapper.getRouteInfoFromPath).
+    const NO_REQUEST_METHOD = -1 as RequestMethod;
+
+    it.each([
+      {
+        method: NO_REQUEST_METHOD,
+        path: '/api$',
+        expressMethod: 'all',
+        registeredPath: '/api',
+      },
+      {
+        method: NO_REQUEST_METHOD,
+        path: '/api/v1$',
+        expressMethod: 'all',
+        registeredPath: '/api/v1',
+      },
+      {
+        method: RequestMethod.GET,
+        path: '/api$',
+        expressMethod: 'get',
+        registeredPath: '/api',
+      },
+    ] as const)(
+      'should register the exact-match path $path through "$expressMethod" at $registeredPath',
+      ({ method, path, expressMethod, registeredPath }) => {
+        const expressInstance = expressAdapter.getInstance();
+        const routeSpy = vi.spyOn(expressInstance, expressMethod);
+        const useSpy = vi.spyOn(expressInstance, 'use');
+        const handler = vi.fn();
+
+        expressAdapter.createMiddlewareFactory(method)(path, handler);
+
+        expect(routeSpy).toHaveBeenCalledExactlyOnceWith(
+          registeredPath,
+          expect.any(Function),
+        );
+        expect(useSpy).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should leave "/api/" of the exact-match path to the wildcard entry', () => {
+      const allSpy = vi.spyOn(expressAdapter.getInstance(), 'all');
+      const middleware = vi.fn();
+      const next = vi.fn();
+
+      expressAdapter.createMiddlewareFactory(NO_REQUEST_METHOD)(
+        '/api$',
+        middleware,
+      );
+      const [, handler] = allSpy.mock.calls[0] as unknown as [string, Function];
+
+      handler({ path: '/api/' }, {}, next);
+      expect(middleware).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledOnce();
+
+      const req = { path: '/api' };
+      handler(req, {}, next);
+      expect(middleware).toHaveBeenCalledExactlyOnceWith(req, {}, next);
+    });
   });
 
   describe('registerParserMiddleware', () => {
