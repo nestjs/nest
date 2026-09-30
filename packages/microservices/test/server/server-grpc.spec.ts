@@ -10,9 +10,10 @@ import {
   toArray,
   throwError,
 } from 'rxjs';
+import { ignoreElements } from 'rxjs/operators';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
-import { GrpcMethodStreamingType } from '../../index.js';
+import { GrpcMethodStreamingType, GrpcStatus } from '../../index.js';
 import { ServerGrpc } from '../../server/index.js';
 import { objectToMap } from './utils/object-to-map.js';
 
@@ -570,6 +571,18 @@ describe('ServerGrpc', () => {
         expect(endHookArgs![1]).toEqual(call.request);
       });
 
+      it('should fail the call when the handler completes without a response', async () => {
+        const call = { write: vi.fn(), end: vi.fn() };
+        const callback = vi.fn();
+
+        await server.createUnaryServiceMethod(() => EMPTY)(call, callback);
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith({
+          code: GrpcStatus.INTERNAL,
+          details: 'The handler completed without emitting a response',
+        });
+      });
+
       it('should await when a promise is return by the native', async () => {
         const call = { write: vi.fn(), end: vi.fn() };
         const callback = vi.fn();
@@ -1001,6 +1014,33 @@ describe('ServerGrpc', () => {
       );
     });
 
+    it('should fail the call when the handler completes without a response', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+
+      const result = server.createRequestStreamMethod((stream: any) => {
+        stream.drainBuffer?.();
+        return stream.pipe(ignoreElements());
+      }, false)(call as any, callback);
+      await tick();
+      call.emit('data', 'x');
+      call.emit('end');
+      await result;
+
+      expect(callback).toHaveBeenCalledExactlyOnceWith(
+        {
+          code: GrpcStatus.INTERNAL,
+          details: 'The handler completed without emitting a response',
+        },
+        null,
+      );
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+
     it('should run the end hook when the call errors', async () => {
       const endHook = bindEndHook();
       const call = createCall();
@@ -1213,7 +1253,7 @@ describe('ServerGrpc', () => {
         );
       });
 
-      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+      it('should run the end hook once and emit the error on the call when the handler rejects', async () => {
         const endHook = bindHooks();
         const call = createCall();
 
@@ -1221,8 +1261,29 @@ describe('ServerGrpc', () => {
           server.createStreamCallMethod(async () => {
             throw error;
           }, true)(call as any, vi.fn()),
-        ).rejects.toThrow(error);
+        ).resolves.toBeUndefined();
 
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith('error', error);
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+
+      it('should pass the error to the callback when a request stream handler errors', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+        const callback = vi.fn();
+
+        await expect(
+          server.createStreamCallMethod(
+            async () => throwError(() => error),
+            false,
+          )(call as any, callback),
+        ).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(error, null);
+        expect(call.emit).not.toHaveBeenCalled();
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
