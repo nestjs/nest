@@ -152,5 +152,32 @@ describe('middleware utils', () => {
         expect(isMiddlewareRouteExcluded({}, [], adapter)).toBe(false);
       });
     });
+    describe('when a HEAD request targets a route excluded for GET', () => {
+      const excludedRoutes = mapToExcludeRoute([
+        {
+          path: '/cats/*path',
+          method: RequestMethod.GET,
+        },
+      ]);
+      it('should return true', () => {
+        vi.spyOn(adapter, 'getRequestMethod').mockImplementation(() => 'HEAD');
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(
+          true,
+        );
+      });
+    });
+    describe('when a GET request targets a route excluded only for HEAD', () => {
+      const excludedRoutes = mapToExcludeRoute([
+        {
+          path: '/cats/*path',
+          method: RequestMethod.HEAD,
+        },
+      ]);
+      it('should return false', () => {
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(
+          false,
+        );
+      });
+    });
   });
 });
