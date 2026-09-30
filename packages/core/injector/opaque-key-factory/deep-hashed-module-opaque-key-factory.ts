@@ -100,6 +100,16 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
     if (isSymbol(value)) {
       return value.toString();
     }
+    // Tagged so they don't collide with plain values holding the same data
+    if (value instanceof Map) {
+      return { Map: [...value] };
+    }
+    if (value instanceof Set) {
+      return { Set: [...value] };
+    }
+    if (value instanceof RegExp) {
+      return { RegExp: value.toString() };
+    }
     return value;
   }
 }
