@@ -25,7 +25,7 @@ export function Optional(): PropertyDecorator & ParameterDecorator {
       return;
     }
     const properties =
-      Reflect.getOwnMetadata(
+      Reflect.getMetadata(
         OPTIONAL_PROPERTY_DEPS_METADATA,
         target.constructor,
       ) || [];
