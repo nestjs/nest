@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package edge;
+
+service Edge {
+  rpc CompleteEmpty (Num) returns (Num);
+  rpc CollectEmpty (stream Num) returns (Num);
+  rpc EchoThrow (stream Num) returns (stream Num);
+  rpc CollectThrow (stream Num) returns (Num);
+}
+
+message Num {
+  int32 value = 1;
+}

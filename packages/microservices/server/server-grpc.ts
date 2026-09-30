@@ -9,10 +9,10 @@ import {
   fromEvent,
   lastValueFrom,
 } from 'rxjs';
-import { catchError, finalize, takeUntil } from 'rxjs/operators';
+import { catchError, finalize, takeUntil, throwIfEmpty } from 'rxjs/operators';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
 import { GrpcMethodStreamingType } from '../decorators/index.js';
-import { Transport } from '../enums/index.js';
+import { GrpcStatus, Transport } from '../enums/index.js';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception.js';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception.js';
 import { ChannelOptions } from '../external/grpc-options.interface.js';
@@ -298,7 +298,10 @@ export class ServerGrpc extends Server<never, never> {
         async runEndHook => {
           const handler = methodHandler(call.request, call.metadata, call);
           this.transformToObservable(await handler)
-            .pipe(finalize(runEndHook))
+            .pipe(
+              throwIfEmpty(() => this.createNoResponseError()),
+              finalize(runEndHook),
+            )
             .subscribe({
               next: async data => callback(null, await data),
               error: (err: any) => callback(err),
@@ -499,6 +502,9 @@ export class ServerGrpc extends Server<never, never> {
               let errored = false;
               const response = await lastValueFrom(
                 res.pipe(
+                  // Ahead of "takeUntil", which completes the stream when the
+                  // call is cancelled.
+                  throwIfEmpty(() => this.createNoResponseError()),
                   takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
                   catchError(err => {
                     errored = true;
@@ -535,22 +541,40 @@ export class ServerGrpc extends Server<never, never> {
       return this.runWithProcessingHooks(
         { ...call, operationId: methodHandler.name } as any,
         async runEndHook => {
-          let handlerStream: Observable<any>;
-          if (isResponseStream) {
-            handlerStream = this.transformToObservable(
-              await methodHandler(call),
-            );
-          } else {
-            handlerStream = this.transformToObservable(
-              await methodHandler(call, callback),
-            );
+          try {
+            let handlerStream: Observable<any>;
+            if (isResponseStream) {
+              handlerStream = this.transformToObservable(
+                await methodHandler(call),
+              );
+            } else {
+              handlerStream = this.transformToObservable(
+                await methodHandler(call, callback),
+              );
+            }
+            await lastValueFrom(handlerStream.pipe(finalize(runEndHook)), {
+              defaultValue: undefined,
+            });
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection would
+            // go unhandled and the client would never learn about the error.
+            runEndHook();
+            if (isResponseStream) {
+              call.emit('error', err);
+            } else {
+              callback(err, null);
+            }
           }
-          await lastValueFrom(handlerStream.pipe(finalize(runEndHook)), {
-            defaultValue: undefined,
-          });
         },
         call.request,
       );
+    };
+  }
+
+  private createNoResponseError() {
+    return {
+      code: GrpcStatus.INTERNAL,
+      details: 'The handler completed without emitting a response',
     };
   }
 
