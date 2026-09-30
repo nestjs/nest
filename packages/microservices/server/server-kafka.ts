@@ -454,7 +454,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     return this.runWithProcessingHooks(context, async runEndHook => {
       const resultOrStream = await handler(packet.data, context);
       if (isObservable(resultOrStream)) {
-        await lastValueFrom(resultOrStream.pipe(finalize(runEndHook)));
+        await lastValueFrom(resultOrStream.pipe(finalize(runEndHook)), {
+          defaultValue: undefined,
+        });
       } else {
         runEndHook();
       }
