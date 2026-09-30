@@ -1,4 +1,4 @@
-import { Scope } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { createContextId } from '../../helpers/index.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
@@ -1028,6 +1028,46 @@ describe('InstanceWrapper', () => {
         expect(instance).toBeNull();
         expect(isResolved).toBe(false);
         expect(isPending).toBeFalsy();
+      });
+
+      it('should take the scope and durability of the given class', () => {
+        @Injectable({ scope: Scope.REQUEST, durable: true })
+        class DurableTestClass {}
+
+        const wrapper = new InstanceWrapper();
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
+
+        wrapper.mergeWith({
+          useClass: DurableTestClass,
+          provide: 'token',
+        });
+
+        expect(wrapper.scope).toBe(Scope.REQUEST);
+        expect(wrapper.durable).toBe(true);
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
+        expect(wrapper.isDependencyTreeDurable()).toBe(true);
+      });
+
+      it('should drop the previous scope when the given class has none', () => {
+        const wrapper = new InstanceWrapper({ scope: Scope.REQUEST });
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
+
+        wrapper.mergeWith({ useClass: class TestClass {}, provide: 'token' });
+
+        expect(wrapper.scope).toBe(Scope.DEFAULT);
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
+      });
+
+      it('should support transient instances after taking a transient scope', () => {
+        @Injectable({ scope: Scope.TRANSIENT })
+        class TransientTestClass {}
+
+        const wrapper = new InstanceWrapper();
+        wrapper.mergeWith({ useClass: TransientTestClass, provide: 'token' });
+
+        expect(() =>
+          wrapper.getInstanceByContextId(STATIC_CONTEXT, 'inquirer'),
+        ).not.toThrow();
       });
     });
 
