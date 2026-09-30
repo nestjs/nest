@@ -795,6 +795,7 @@ export class Injector {
         metadata,
         resolutionContext.contextId,
         resolutionContext.inquirer,
+        parentInquirer,
       );
     }
     const properties = this.reflectProperties(wrapper.metatype as Type<any>);
@@ -1027,26 +1028,35 @@ export class Injector {
     metadata: PropertyMetadata[],
     contextId: ContextId,
     inquirer?: InstanceWrapper,
+    parentInquirer?: InstanceWrapper,
   ): Promise<PropertyDependency[]> {
     const dependenciesHosts = await Promise.all(
       metadata.map(async ({ wrapper: item, key }) => ({
         key,
-        host: await this.resolveComponentHost(
-          item.host!,
+        host: await this.resolveScopedComponentHost(
           item,
-          this.createResolutionContext(contextId, inquirer),
+          contextId,
+          inquirer,
+          parentInquirer,
         ),
       })),
     );
-    const inquirerId = this.getInquirerId(inquirer);
-    return dependenciesHosts.map(({ key, host }) => ({
-      key,
-      name: key,
-      instance: host.getInstanceByContextId(
-        this.getContextId(contextId, host),
-        inquirerId,
-      ).instance,
-    }));
+    return dependenciesHosts.map(({ key, host }, index) => {
+      const effectiveInquirerId = this.getEffectiveInquirerId(
+        metadata[index].wrapper,
+        this.createResolutionContext(contextId, inquirer),
+        parentInquirer,
+      );
+
+      return {
+        key,
+        name: key,
+        instance: host?.getInstanceByContextId(
+          this.getContextId(contextId, host),
+          effectiveInquirerId,
+        ).instance,
+      };
+    });
   }
 
   private getInquirerId(
