@@ -141,6 +141,48 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('isHeadersSent', () => {
+    it('should report headers written to the raw response as sent', async () => {
+      let headersSent: Record<string, boolean> | undefined;
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.writeHead(200);
+        headersSent = {
+          reply: fastifyAdapter.isHeadersSent(reply),
+          // Nest middleware receives the raw response instead of the reply.
+          raw: fastifyAdapter.isHeadersSent(reply.raw),
+        };
+        reply.raw.end();
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(headersSent).toEqual({ reply: true, raw: true });
+      await fastifyAdapter.close();
+    });
+  });
+
+  describe('end', () => {
+    it('should end a raw response whose headers were already sent', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.writeHead(200);
+        // Nest middleware receives the raw response instead of the reply.
+        fastifyAdapter.end(reply.raw, 'partial');
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const response = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/p',
+      });
+
+      expect(response.payload).toBe('partial');
+      await fastifyAdapter.close();
+    });
+  });
+
   describe('appendHeader', () => {
     it('should append to an existing header instead of overwriting it', async () => {
       fastifyAdapter.initHttpServer();
