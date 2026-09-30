@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { DurableZooModule } from './durable-cross-module.modules.js';
 import { DurableController } from './durable.controller.js';
 import {
   DurableCatsService,
   DurableDogsService,
 } from './durable-forward-ref.services.js';
+import { DurableFilter } from './durable.filter.js';
 import { DurableGuard } from './durable.guard.js';
 import { DurableService } from './durable.service.js';
 import { NonDurableService } from './non-durable.service.js';
@@ -21,6 +22,10 @@ import { NonDurableService } from './non-durable.service.js';
     {
       provide: APP_GUARD,
       useClass: DurableGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: DurableFilter,
     },
   ],
 })

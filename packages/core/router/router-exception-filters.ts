@@ -57,7 +57,12 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
     const scopedFilterWrappers =
       this.config.getGlobalRequestFilters() as InstanceWrapper[];
     const scopedFilters = iterate(scopedFilterWrappers)
-      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .map(wrapper =>
+        wrapper.getInstanceByContextId(
+          this.getContextId(contextId, wrapper),
+          inquirerId,
+        ),
+      )
       .filter(host => !!host)
       .map(host => host.instance)
       .toArray();
