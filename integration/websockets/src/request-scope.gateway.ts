@@ -23,7 +23,8 @@ export class SocketLifecycleTracker {
     | {
         stateListeners: number;
         disconnectListeners: number;
-        hasRequestContextId: boolean;
+        hasRequestContextIdDuringHook: boolean;
+        hasRequestContextId: () => boolean;
       }
     | undefined;
 
@@ -35,7 +36,9 @@ export class SocketLifecycleTracker {
     this.latestDisconnectState = {
       stateListeners: getListenerCount(client, 'state'),
       disconnectListeners: getListenerCount(client, 'disconnect'),
-      hasRequestContextId: REQUEST_CONTEXT_ID in client,
+      hasRequestContextIdDuringHook: REQUEST_CONTEXT_ID in client,
+      // Read after the hook settles: the context is only released then.
+      hasRequestContextId: () => REQUEST_CONTEXT_ID in client,
     };
   }
 

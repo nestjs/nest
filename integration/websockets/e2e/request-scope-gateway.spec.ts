@@ -165,7 +165,8 @@ describe('WebSocketGateway request scope', () => {
     );
     expect(disconnectState.stateListeners).toBe(0);
     expect(disconnectState.disconnectListeners).toBe(0);
-    expect(disconnectState.hasRequestContextId).toBe(false);
+    expect(disconnectState.hasRequestContextIdDuringHook).toBe(true);
+    expect(disconnectState.hasRequestContextId()).toBe(false);
   });
 
   afterEach(async () => {
