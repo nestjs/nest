@@ -132,5 +132,10 @@ export function isMiddlewareRouteExcluded(
       ? originalUrl.slice(0, queryParamsIndex)
       : originalUrl;
 
-  return isRouteExcluded(excludedRoutes, pathname, RequestMethod[reqMethod]);
+  // HEAD requests are served by GET handlers, so a GET exclusion covers them too
+  return (
+    isRouteExcluded(excludedRoutes, pathname, RequestMethod[reqMethod]) ||
+    (reqMethod === RequestMethod[RequestMethod.HEAD] &&
+      isRouteExcluded(excludedRoutes, pathname, RequestMethod.GET))
+  );
 }
