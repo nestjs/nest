@@ -1,4 +1,4 @@
-import { VersioningType } from '@nestjs/common';
+import { VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { isRouteExcluded } from '../router/utils/index.js';
@@ -31,9 +31,14 @@ export class RouteInfoPathExtractor {
     const versionPaths = this.extractVersionPathFrom(version);
 
     if (this.isAWildcard(path)) {
+      // VERSION_NEUTRAL has no version segment, so its wildcard already covers
+      // every versioned path; registering both would run the middleware twice.
+      const wildcardVersionPaths = versionPaths.includes('')
+        ? []
+        : versionPaths;
       const entries =
-        versionPaths.length > 0
-          ? versionPaths
+        wildcardVersionPaths.length > 0
+          ? wildcardVersionPaths
               .map(versionPath => [
                 this.prefixPath + versionPath + '$',
                 this.prefixPath + versionPath + addLeadingSlash(path),
@@ -113,12 +118,14 @@ export class RouteInfoPathExtractor {
     const versionPrefix = this.routePathFactory.getVersionPrefix(
       this.versioningConfig,
     );
+    const toVersionPath = (version: string | typeof VERSION_NEUTRAL) =>
+      version === VERSION_NEUTRAL
+        ? ''
+        : addLeadingSlash(versionPrefix + version);
 
     if (Array.isArray(versionValue)) {
-      return versionValue.map(version =>
-        addLeadingSlash(versionPrefix + version.toString()),
-      );
+      return versionValue.map(toVersionPath);
     }
-    return [addLeadingSlash(versionPrefix + versionValue.toString())];
+    return [toVersionPath(versionValue)];
   }
 }
