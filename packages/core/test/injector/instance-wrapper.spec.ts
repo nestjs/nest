@@ -1042,8 +1042,32 @@ describe('InstanceWrapper', () => {
           provide: 'token',
         });
 
+        expect(wrapper.scope).toBe(Scope.REQUEST);
+        expect(wrapper.durable).toBe(true);
         expect(wrapper.isDependencyTreeStatic()).toBe(false);
         expect(wrapper.isDependencyTreeDurable()).toBe(true);
+      });
+
+      it('should drop the previous scope when the given class has none', () => {
+        const wrapper = new InstanceWrapper({ scope: Scope.REQUEST });
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
+
+        wrapper.mergeWith({ useClass: class TestClass {}, provide: 'token' });
+
+        expect(wrapper.scope).toBe(Scope.DEFAULT);
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
+      });
+
+      it('should support transient instances after taking a transient scope', () => {
+        @Injectable({ scope: Scope.TRANSIENT })
+        class TransientTestClass {}
+
+        const wrapper = new InstanceWrapper();
+        wrapper.mergeWith({ useClass: TransientTestClass, provide: 'token' });
+
+        expect(() =>
+          wrapper.getInstanceByContextId(STATIC_CONTEXT, 'inquirer'),
+        ).not.toThrow();
       });
     });
 

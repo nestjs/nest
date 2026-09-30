@@ -511,8 +511,11 @@ export class InstanceWrapper<T = any> {
     } else if (isClassProvider(provider)) {
       this.inject = null;
       this.metatype = provider.useClass;
-      this.scope = getClassScope(provider.useClass);
+      this.scope = getClassScope(provider.useClass) ?? Scope.DEFAULT;
       this.durable = isDurable(provider.useClass);
+      if (this.scope === Scope.TRANSIENT && !this.transientMap) {
+        this.transientMap = new Map();
+      }
       this.resetStaticInstance();
     } else if (isFactoryProvider(provider)) {
       this.metatype = provider.useFactory;

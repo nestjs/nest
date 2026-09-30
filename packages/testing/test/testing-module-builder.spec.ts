@@ -217,6 +217,31 @@ describe('TestingModuleBuilder', () => {
       expect(module.get('SERVICE')).toBeInstanceOf(MockService);
     });
 
+    it('should take the scope of the class that overrides a provider', async () => {
+      @ModuleDecorator({
+        providers: [{ provide: 'SERVICE', useClass: class OriginalService {} }],
+      })
+      class TestModule {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class MockService {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestModule],
+      })
+        .overrideProvider('SERVICE')
+        .useClass(MockService)
+        .compile();
+
+      expect(() => module.get('SERVICE')).toThrow();
+      const [first, second] = await Promise.all([
+        module.resolve('SERVICE'),
+        module.resolve('SERVICE'),
+      ]);
+      expect(first).toBeInstanceOf(MockService);
+      expect(first).not.toBe(second);
+    });
+
     it('should support overriding a value provider with useClass', async () => {
       @ModuleDecorator({
         providers: [{ provide: 'SERVICE', useValue: 'real-service' }],
