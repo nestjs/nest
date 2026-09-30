@@ -2,7 +2,9 @@ import { Logger, RequestMethod } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
 import * as microservicesPackage from '@nestjs/microservices';
 import { MicroserviceOptions } from '@nestjs/microservices';
+import { createServer } from 'http';
 import { ApplicationConfig } from '../application-config.js';
+import { MESSAGES } from '../constants.js';
 import { CookieSigner } from '../helpers/cookies/cookie-signer.js';
 import { NestContainer } from '../injector/container.js';
 import { GraphInspector } from '../inspector/graph-inspector.js';
@@ -202,6 +204,31 @@ describe('NestApplication', () => {
       await instance.init();
 
       expect((noopHttpAdapter as any).init).toHaveBeenCalledOnce();
+    });
+  });
+  describe('close', () => {
+    it('should reset the listening state', async () => {
+      const server = createServer();
+      const httpAdapter = new NoopHttpAdapter(server);
+      httpAdapter.setHttpServer(server);
+      httpAdapter.close = () => new Promise(resolve => server.close(resolve));
+
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      container.setHttpAdapter(httpAdapter);
+      const instance = new NestApplication(
+        container,
+        httpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+      await instance.listen(0, '127.0.0.1');
+
+      await instance.close();
+
+      expect(container.getHttpAdapterHostRef().listening).toBe(false);
+      await expect(instance.getUrl()).rejects.toBe(MESSAGES.CALL_LISTEN_FIRST);
     });
   });
   describe('buffered logs', () => {
