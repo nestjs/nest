@@ -773,7 +773,7 @@ export class ConsoleLogger implements LoggerService {
    * (e.g. a throwing `toJSON()`) makes the whole record fall back to `inspect`.
    */
   protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
-    const replacer = this.stringifyReplacer;
+    const replacer = this.stringifyReplacer.bind(this);
     // Objects on the path from the root to the value being serialized.
     const ancestors: unknown[] = [];
 
@@ -781,7 +781,7 @@ export class ConsoleLogger implements LoggerService {
       return JSON.stringify(
         logObject,
         function (this: unknown, key: string, value: unknown) {
-          value = replacer.call(this, key, value);
+          value = replacer(key, value);
           if (typeof value !== 'object' || value === null) {
             return value;
           }
