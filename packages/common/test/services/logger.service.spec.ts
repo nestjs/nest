@@ -1286,6 +1286,38 @@ describe('Logger', () => {
       });
     });
 
+    describe('stringifyReplacer', () => {
+      it('should inspect a Map with the logger inspect options', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        // Deeper than the default depth of util.inspect (2).
+        logger.log('message', {
+          map: new Map([['k', { a: { b: { c: 1 } } }]]),
+        });
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params.map).toBe(
+          `Map(1) { 'k' => { a: { b: { c: 1 } } } }`,
+        );
+      });
+
+      it('should call an overridden replacer with the logger as "this"', () => {
+        class CustomConsoleLogger extends ConsoleLogger {
+          protected stringifyReplacer(key: string, value: unknown) {
+            return key === 'context'
+              ? `${this.options.prefix}:${value}`
+              : super.stringifyReplacer(key, value);
+          }
+        }
+        const logger = new CustomConsoleLogger('Ctx', { json: true });
+
+        logger.log('message');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.context).toBe('Nest:Ctx');
+      });
+    });
+
     describe('function and class messages', () => {
       it('should evaluate a lazy message', () => {
         const logger = new ConsoleLogger({ json: true });
