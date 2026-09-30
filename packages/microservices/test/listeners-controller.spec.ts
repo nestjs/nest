@@ -4,6 +4,16 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { NestContainer } from '@nestjs/core/injector/container.js';
 import { Injector } from '@nestjs/core/injector/injector.js';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
+import {
+  EMPTY,
+  lastValueFrom,
+  map,
+  Observable,
+  tap,
+  throwError,
+  timer,
+  toArray,
+} from 'rxjs';
 import { GraphInspector } from '../../core/inspector/graph-inspector.js';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { ClientProxyFactory } from '../client/index.js';
@@ -15,6 +25,7 @@ import {
   EventOrMessageListenerDefinition,
   ListenerMetadataExplorer,
 } from '../listener-metadata-explorer.js';
+import { MessageHandler } from '../interfaces/message-handler.interface.js';
 import { ListenersController } from '../listeners-controller.js';
 
 describe('ListenersController', () => {
@@ -305,6 +316,157 @@ describe('ListenersController', () => {
         expect(handleSpy.mock.calls[0][0]).toBeInstanceOf(Error);
         expect(handleSpy.mock.calls[0][1]).toBeInstanceOf(ExecutionContextHost);
       });
+    });
+  });
+
+  describe('forkJoinHandlersIfAttached', () => {
+    let sideEffects: string[];
+
+    beforeEach(() => {
+      sideEffects = [];
+    });
+
+    // Resolves after a tick, like a handler that awaits I/O, and records a
+    // side effect that only happens if nobody cancels the subscription.
+    const slowHandlerResult = (name: string) =>
+      timer(10).pipe(
+        tap(() => sideEffects.push(name)),
+        map(() => name),
+      );
+
+    const createHandlerChain = ([
+      returnValue,
+      ...rest
+    ]: Observable<unknown>[]): MessageHandler => {
+      const handler: MessageHandler = async (...args: unknown[]) =>
+        instance.forkJoinHandlersIfAttached(returnValue, args, handler);
+      if (rest.length > 0) {
+        handler.next = createHandlerChain(rest);
+      }
+      return handler;
+    };
+
+    const emissionsOf = async (handler: MessageHandler) =>
+      lastValueFrom(
+        instance.transformToObservable(await handler('data')).pipe(toArray()),
+      );
+
+    it('should return the value untouched when there is no next handler', () => {
+      const returnValue = slowHandlerResult('a');
+      const lastHandler = createHandlerChain([returnValue]);
+
+      expect(
+        instance.forkJoinHandlersIfAttached(returnValue, [], lastHandler),
+      ).toBe(returnValue);
+    });
+
+    it('should run the next handler when the current one completes empty', async () => {
+      const emissions = await emissionsOf(
+        createHandlerChain([EMPTY, slowHandlerResult('next')]),
+      );
+
+      expect(sideEffects).toEqual(['next']);
+      expect(emissions).toHaveLength(1);
+    });
+
+    it('should run the current handler when the next one completes empty', async () => {
+      const emissions = await emissionsOf(
+        createHandlerChain([slowHandlerResult('current'), EMPTY]),
+      );
+
+      expect(sideEffects).toEqual(['current']);
+      expect(emissions).toHaveLength(1);
+    });
+
+    it('should run every handler when the middle one of three completes empty', async () => {
+      const emissions = await emissionsOf(
+        createHandlerChain([
+          slowHandlerResult('first'),
+          EMPTY,
+          slowHandlerResult('last'),
+        ]),
+      );
+
+      expect([...sideEffects].sort()).toEqual(['first', 'last']);
+      expect(emissions).toHaveLength(1);
+    });
+
+    it('should run every handler when the last one of three completes empty', async () => {
+      const emissions = await emissionsOf(
+        createHandlerChain([
+          slowHandlerResult('first'),
+          slowHandlerResult('second'),
+          EMPTY,
+        ]),
+      );
+
+      expect([...sideEffects].sort()).toEqual(['first', 'second']);
+      expect(emissions).toHaveLength(1);
+    });
+
+    it('should still fail the join when one handler errors', async () => {
+      const failure = new Error('handler failed');
+
+      await expect(
+        emissionsOf(
+          createHandlerChain([
+            slowHandlerResult('current'),
+            throwError(() => failure),
+          ]),
+        ),
+      ).rejects.toBe(failure);
+    });
+
+    it('should run the next static handler when the current one completes empty', async () => {
+      vi.spyOn(container, 'getModuleByKey').mockReturnValue({} as any);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue([
+        { patterns: ['event'], targetCallback: 'a', isEventHandler: true },
+        { patterns: ['event'], targetCallback: 'b', isEventHandler: true },
+      ] as any);
+      proxySpy
+        .mockReturnValueOnce(EMPTY)
+        .mockReturnValueOnce(slowHandlerResult('next'));
+
+      instance.registerPatternHandlers(
+        new InstanceWrapper({ instance: {} }),
+        server,
+        '',
+      );
+      const [[, head], [, tail]] = addSpy.mock.calls;
+      head.next = tail;
+      const emissions = await emissionsOf(head);
+
+      expect(sideEffects).toEqual(['next']);
+      expect(emissions).toHaveLength(1);
+    });
+
+    it('should run the next request-scoped handler when the current one completes empty', async () => {
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => ({}) as any,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handle: () => undefined,
+      });
+      proxySpy
+        .mockReturnValueOnce(EMPTY)
+        .mockReturnValueOnce(slowHandlerResult('next'));
+      const createHandler = () =>
+        instance.createRequestScopedHandler(
+          new InstanceWrapper({ instance: {} }),
+          {},
+          { controllers: new Map() } as any,
+          'moduleKey',
+          'handle',
+          undefined,
+          true,
+        );
+      const head = createHandler();
+      head.next = createHandler();
+
+      const emissions = await emissionsOf(head);
+
+      expect(sideEffects).toEqual(['next']);
+      expect(emissions).toHaveLength(1);
     });
   });
 
