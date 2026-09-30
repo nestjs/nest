@@ -7,7 +7,7 @@ import {
   RpcException,
 } from '@nestjs/microservices';
 import { EMPTY, Observable } from 'rxjs';
-import { ignoreElements } from 'rxjs/operators';
+import { ignoreElements, map, toArray } from 'rxjs/operators';
 
 @Controller()
 export class EdgeController {
@@ -19,6 +19,14 @@ export class EdgeController {
   @GrpcStreamMethod('Edge')
   collectEmpty(messages: Observable<unknown>) {
     return messages.pipe(ignoreElements());
+  }
+
+  @GrpcStreamMethod('Edge')
+  collectVoid(messages: Observable<unknown>) {
+    return messages.pipe(
+      toArray(),
+      map(() => undefined),
+    );
   }
 
   @GrpcStreamCall('Edge')

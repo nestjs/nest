@@ -65,6 +65,13 @@ describe('GRPC transport (handlers that complete empty or throw)', () => {
     expect(err?.code).toBe(GRPC.status.INTERNAL);
   });
 
+  it('answers a client-streaming call whose handler returns nothing', async () => {
+    const { err, res } = await clientStream('collectVoid', [{ value: 1 }]);
+
+    expect(err).toBeNull();
+    expect(res).toEqual({});
+  });
+
   it('sends the error of a throwing bidi stream call to the client', async () => {
     const call = client.echoThrow({ deadline: deadline() });
     const err = await new Promise<any>(resolve => {

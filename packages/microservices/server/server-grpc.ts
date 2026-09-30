@@ -499,6 +499,7 @@ export class ServerGrpc extends Server<never, never> {
             if (isResponseStream) {
               await this.writeObservableToGrpc(res, call);
             } else {
+              let errored = false;
               const response = await lastValueFrom(
                 res.pipe(
                   // Ahead of "takeUntil", which completes the stream when the
@@ -506,6 +507,7 @@ export class ServerGrpc extends Server<never, never> {
                   throwIfEmpty(() => this.createNoResponseError()),
                   takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
                   catchError(err => {
+                    errored = true;
                     callback(err, null);
                     return EMPTY;
                   }),
@@ -513,7 +515,7 @@ export class ServerGrpc extends Server<never, never> {
                 ),
               );
 
-              if (!isUndefined(response)) {
+              if (!errored && !call.cancelled) {
                 callback(null, response);
               }
             }
