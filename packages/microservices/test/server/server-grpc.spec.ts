@@ -1,7 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import { join } from 'path';
-import { ReplaySubject, Subject, throwError } from 'rxjs';
+import { EMPTY, ReplaySubject, Subject, throwError } from 'rxjs';
+import { ignoreElements } from 'rxjs/operators';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
@@ -10,6 +12,7 @@ import { GrpcMethodStreamingType } from '../../index';
 import { ServerGrpc } from '../../server';
 
 const CANCELLED_EVENT = 'cancelled';
+const GRPC_STATUS_INTERNAL = 13;
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -568,6 +571,21 @@ describe('ServerGrpc', () => {
         expect(endHookArgs![1]).to.deep.equal(call.request);
       });
 
+      it('should fail the call when the handler completes without a response', async () => {
+        const call = { write: sinon.spy(), end: sinon.spy() };
+        const callback = sinon.spy();
+
+        await server.createUnaryServiceMethod(() => EMPTY)(call, callback);
+
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args).to.eql([
+          {
+            code: GRPC_STATUS_INTERNAL,
+            details: 'The handler completed without emitting a response',
+          },
+        ]);
+      });
+
       it('should await when a promise is return by the native', async () => {
         const call = { write: sinon.spy(), end: sinon.spy() };
         const callback = sinon.spy();
@@ -667,6 +685,38 @@ describe('ServerGrpc', () => {
 
         expect(responseCallback.calledOnce).to.be.true;
         expect(responseCallback.firstCall.args).to.eql([error, null]);
+      });
+
+      it('should fail the call when the handler completes without a response', async () => {
+        const endHook = sinon.spy();
+        untypedServer.onProcessingEndHook = endHook;
+        const call = Object.assign(new EventEmitter(), {
+          request: { data: [] },
+          metadata: {},
+          write: sinon.spy(() => true),
+          end: sinon.spy(),
+        });
+        const callback = sinon.spy();
+
+        const result = server.createRequestStreamMethod((stream: any) => {
+          stream.drainBuffer?.();
+          return stream.pipe(ignoreElements());
+        }, false)(call as any, callback);
+        await new Promise(resolve => setImmediate(resolve));
+        call.emit('data', 'x');
+        call.emit('end');
+        await result;
+
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args).to.eql([
+          {
+            code: GRPC_STATUS_INTERNAL,
+            details: 'The handler completed without emitting a response',
+          },
+          null,
+        ]);
+        expect(endHook.calledOnceWithExactly(server.transportId, call.request))
+          .to.be.true;
       });
 
       describe('when response is a stream', () => {
@@ -867,6 +917,69 @@ describe('ServerGrpc', () => {
       await fn(args as any, sinon.spy());
 
       expect(handler.calledWith(args)).to.be.true;
+    });
+
+    describe('when the handler fails', () => {
+      const error = new Error('handler rejected');
+      let endHook: sinon.SinonSpy;
+
+      beforeEach(() => {
+        endHook = sinon.spy();
+        untypedServer.onProcessingEndHook = endHook;
+      });
+
+      const createCall = () => ({
+        request: { data: [1, 2, 3] },
+        metadata: {},
+        write: sinon.spy(() => true),
+        end: sinon.spy(),
+        on: sinon.spy(),
+        off: sinon.spy(),
+        emit: sinon.spy(),
+      });
+
+      it('should run the end hook once and emit the error on the call when the handler rejects', async () => {
+        const call = createCall();
+
+        const result = await server.createStreamCallMethod(async () => {
+          throw error;
+        }, true)(call as any, sinon.spy());
+
+        expect(result).to.be.undefined;
+        expect(call.emit.calledOnceWithExactly('error', error)).to.be.true;
+        expect(endHook.calledOnceWithExactly(server.transportId, call.request))
+          .to.be.true;
+      });
+
+      it('should pass the error to the callback when a request stream handler errors', async () => {
+        const call = createCall();
+        const callback = sinon.spy();
+
+        const result = await server.createStreamCallMethod(
+          async () => throwError(() => error),
+          false,
+        )(call as any, callback);
+
+        expect(result).to.be.undefined;
+        expect(callback.calledOnceWithExactly(error, null)).to.be.true;
+        expect(call.emit.called).to.be.false;
+        expect(endHook.calledOnceWithExactly(server.transportId, call.request))
+          .to.be.true;
+      });
+
+      it('should resolve when the handler stream completes without emitting', async () => {
+        const call = createCall();
+        const callback = sinon.spy();
+
+        const result = await server.createStreamCallMethod(() => EMPTY, false)(
+          call as any,
+          callback,
+        );
+
+        expect(result).to.be.undefined;
+        expect(callback.called).to.be.false;
+        expect(endHook.calledOnce).to.be.true;
+      });
     });
   });
 

@@ -13,7 +13,7 @@ import {
   fromEvent,
   lastValueFrom,
 } from 'rxjs';
-import { catchError, takeUntil } from 'rxjs/operators';
+import { catchError, takeUntil, throwIfEmpty } from 'rxjs/operators';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { GrpcMethodStreamingType } from '../decorators';
 import { Transport } from '../enums';
@@ -29,6 +29,8 @@ import {
 import { Server } from './server';
 
 const CANCELLED_EVENT = 'cancelled';
+// gRPC status codes, as in "@grpc/grpc-js"
+const GRPC_STATUS_INTERNAL = 13;
 
 // To enable type safety for gRPC. This cant be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
@@ -301,16 +303,18 @@ export class ServerGrpc extends Server<never, never> {
         { ...call, operationId: methodHandler.name } as any,
         async () => {
           const handler = methodHandler(call.request, call.metadata, call);
-          this.transformToObservable(await handler).subscribe({
-            next: async data => callback(null, await data),
-            error: (err: any) => {
-              this.onProcessingEndHook?.(this.transportId, call.request);
-              callback(err);
-            },
-            complete: () => {
-              this.onProcessingEndHook?.(this.transportId, call.request);
-            },
-          });
+          this.transformToObservable(await handler)
+            .pipe(throwIfEmpty(() => this.createNoResponseError()))
+            .subscribe({
+              next: async data => callback(null, await data),
+              error: (err: any) => {
+                this.onProcessingEndHook?.(this.transportId, call.request);
+                callback(err);
+              },
+              complete: () => {
+                this.onProcessingEndHook?.(this.transportId, call.request);
+              },
+            });
         },
       );
     };
@@ -500,6 +504,9 @@ export class ServerGrpc extends Server<never, never> {
           } else {
             const response = await lastValueFrom(
               res.pipe(
+                // Ahead of "takeUntil", which completes the stream when the
+                // call is cancelled.
+                throwIfEmpty(() => this.createNoResponseError()),
                 takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
                 catchError(err => {
                   callback(err, null);
@@ -530,21 +537,38 @@ export class ServerGrpc extends Server<never, never> {
         this.transportId,
         { ...call, operationId: methodHandler.name } as any,
         async () => {
-          let handlerStream: Observable<any>;
-          if (isResponseStream) {
-            handlerStream = this.transformToObservable(
-              await methodHandler(call),
-            );
-          } else {
-            handlerStream = this.transformToObservable(
-              await methodHandler(call, callback),
-            );
-          }
-          await lastValueFrom(handlerStream).finally(() => {
+          try {
+            let handlerStream: Observable<any>;
+            if (isResponseStream) {
+              handlerStream = this.transformToObservable(
+                await methodHandler(call),
+              );
+            } else {
+              handlerStream = this.transformToObservable(
+                await methodHandler(call, callback),
+              );
+            }
+            await lastValueFrom(handlerStream, { defaultValue: undefined });
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection would
+            // go unhandled and the client would never learn about the error.
+            if (isResponseStream) {
+              call.emit('error', err);
+            } else {
+              callback(err, null);
+            }
+          } finally {
             this.onProcessingEndHook?.(this.transportId, call.request);
-          });
+          }
         },
       );
+    };
+  }
+
+  private createNoResponseError() {
+    return {
+      code: GRPC_STATUS_INTERNAL,
+      details: 'The handler completed without emitting a response',
     };
   }
 
