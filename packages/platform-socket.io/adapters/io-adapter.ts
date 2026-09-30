@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import {
   AbstractWsAdapter,
@@ -12,6 +13,7 @@ import { Server, ServerOptions, Socket } from 'socket.io';
  * @publicApi
  */
 export class IoAdapter extends AbstractWsAdapter {
+  protected readonly logger = new Logger(IoAdapter.name);
   private readonly disconnectMap = new WeakMap<Socket, Observable<any>>();
 
   public create(
@@ -59,11 +61,19 @@ export class IoAdapter extends AbstractWsAdapter {
         takeUntil(disconnect$),
       );
       source$.subscribe(([response, ack, isAckHandledManually]) => {
-        if (response.event) {
-          return socket.emit(response.event, response.data);
-        }
-        if (!isAckHandledManually && isFunction(ack)) {
-          ack(response);
+        // socket.io's encoder walks the payload recursively, so a response
+        // echoing a client-controlled payload nested deep enough overflows the
+        // stack. A throw here escapes the subscriber, which RxJS rethrows
+        // asynchronously, killing the process.
+        try {
+          if (response.event) {
+            return socket.emit(response.event, response.data);
+          }
+          if (!isAckHandledManually && isFunction(ack)) {
+            ack(response);
+          }
+        } catch (err) {
+          this.logger.error(err);
         }
       });
     });
