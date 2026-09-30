@@ -221,6 +221,16 @@ describe('StreamableFile', () => {
 
       expect(streamableFile.getHeaders().length).toBe(999);
     });
+
+    it('should auto-populate length per instance when options object is reused', () => {
+      const options = { type: 'application/pdf' };
+      const first = new StreamableFile(Buffer.alloc(10), options);
+      const second = new StreamableFile(Buffer.alloc(20), options);
+
+      expect(first.getHeaders().length).toBe(10);
+      expect(second.getHeaders().length).toBe(20);
+      expect(options).toEqual({ type: 'application/pdf' });
+    });
   });
 
   describe('getStream', () => {
