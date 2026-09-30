@@ -1,4 +1,7 @@
-import { SELF_DECLARED_DEPS_METADATA } from '../../constants.js';
+import {
+  PROPERTY_DEPS_METADATA,
+  SELF_DECLARED_DEPS_METADATA,
+} from '../../constants.js';
 import { Inject } from '../../index.js';
 
 describe('@Inject', () => {
@@ -47,6 +50,21 @@ describe('@Inject', () => {
         TestWithUndefinedToken,
       );
       expect(metadata).toEqual([{ index: 0, param: undefined }]);
+    });
+  });
+
+  describe('when used on a property redeclared by a subclass', () => {
+    class ParentTest {
+      @Inject('parent') property;
+    }
+
+    class ChildTest extends ParentTest {
+      @Inject('child') override property;
+    }
+
+    it('should replace the inherited token of that property', () => {
+      const metadata = Reflect.getMetadata(PROPERTY_DEPS_METADATA, ChildTest);
+      expect(metadata).toEqual([{ key: 'property', type: 'child' }]);
     });
   });
 });

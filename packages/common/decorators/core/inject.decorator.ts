@@ -58,7 +58,10 @@ export function Inject(
     let properties =
       Reflect.getMetadata(PROPERTY_DEPS_METADATA, target.constructor) || [];
 
-    properties = [...properties, { key, type }];
+    properties = [
+      ...properties.filter(property => property.key !== key),
+      { key, type },
+    ];
     Reflect.defineMetadata(
       PROPERTY_DEPS_METADATA,
       properties,
