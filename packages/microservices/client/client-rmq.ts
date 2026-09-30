@@ -344,10 +344,6 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
       if (this.isInitialConnect) {
         this.isInitialConnect = false;
-
-        if (!this.channel) {
-          this.connectionPromise = this.createChannel();
-        }
       } else {
         this.connectionPromise = Promise.resolve();
       }

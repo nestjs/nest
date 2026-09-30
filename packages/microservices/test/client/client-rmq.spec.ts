@@ -152,6 +152,34 @@ describe('ClientRMQ', function () {
     });
   });
 
+  describe('connect (channel ownership)', () => {
+    let rmqClient: ClientRMQ;
+    let manager: EventEmitter & { createChannel: ReturnType<typeof vi.fn> };
+
+    beforeEach(() => {
+      rmqClient = new ClientRMQ({});
+      vi.spyOn(rmqClient['logger'], 'log').mockImplementation(() => {});
+      manager = Object.assign(new EventEmitter(), {
+        createChannel: vi.fn(({ setup }) => setup()),
+      });
+      vi.spyOn(rmqClient, 'createClient').mockReturnValue(manager);
+      vi.spyOn(rmqClient, 'setupChannel').mockImplementation(
+        async (_, resolve) => resolve(),
+      );
+    });
+
+    it('should create a single channel when the first connection is established', async () => {
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      await connection;
+
+      expect(manager.createChannel).toHaveBeenCalledTimes(1);
+      expect(rmqClient['channel']).toBe(
+        manager.createChannel.mock.results[0].value,
+      );
+    });
+  });
+
   describe('createChannel', () => {
     let createChannelStub: ReturnType<typeof vi.fn>;
     let setupChannelStub: ReturnType<typeof vi.fn>;
