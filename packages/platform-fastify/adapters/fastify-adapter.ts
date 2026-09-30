@@ -974,7 +974,7 @@ export class FastifyAdapter<
 
   private registerJsonContentParser(rawBody?: boolean) {
     const contentType = 'application/json';
-    if (this.registeredContentTypes.has(contentType)) {
+    if (this.hasCustomBodyParser(contentType)) {
       return;
     }
     const withRawBody = !!rawBody;
@@ -985,13 +985,31 @@ export class FastifyAdapter<
 
   private registerUrlencodedContentParser(rawBody?: boolean) {
     const contentType = 'application/x-www-form-urlencoded';
-    if (this.registeredContentTypes.has(contentType)) {
+    if (this.hasCustomBodyParser(contentType)) {
       return;
     }
     const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
     this.useBodyParser(contentType, withRawBody, { bodyLimit });
+  }
+
+  // A parser registered through `useBodyParser()` takes precedence over the
+  // default one, including a RegExp or catch-all ('*') parser matching the type.
+  private hasCustomBodyParser(contentType: string) {
+    for (const type of this.registeredContentTypes) {
+      if (type === '*' || type === contentType) {
+        return true;
+      }
+      if (isString(type)) {
+        continue;
+      }
+      type.lastIndex = 0;
+      if (type.test(contentType)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // Fastify stores string content types trimmed and lower-cased.

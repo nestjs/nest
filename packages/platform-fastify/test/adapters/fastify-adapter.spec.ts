@@ -388,6 +388,31 @@ describe('FastifyAdapter', () => {
       },
     );
 
+    it.each([
+      ['a catch-all', '*'],
+      ['a RegExp', /urlencoded/],
+    ])(
+      'should not replace %s custom parser with the default urlencoded one',
+      async (_, type) => {
+        fastifyAdapter.useBodyParser(type, true, {}, (_req, body, done) =>
+          done(null, `custom:${body.toString()}`),
+        );
+        fastifyAdapter.registerParserMiddleware(undefined, true);
+        registerEchoRoute();
+
+        const res = await post(
+          'application/x-www-form-urlencoded',
+          'msg=hello',
+        );
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body)).toEqual({
+          body: 'custom:msg=hello',
+          rawBody: 'msg=hello',
+        });
+      },
+    );
+
     it('should parse each content type of an array with its default parser', async () => {
       fastifyAdapter.useBodyParser(['application/json', 'text/plain'], true, {
         bodyLimit: 10_485_760,
