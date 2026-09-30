@@ -45,7 +45,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected logger = new Logger(ServerKafka.name);
   protected client: Kafka | null = null;
   protected consumer: Consumer | null = null;
-  protected consumers: Map<string, Consumer> = new Map();
+  protected consumers: Map<string | RegExp, Consumer> = new Map();
   protected producer: Producer | null = null;
   protected parser: KafkaParser | null = null;
   protected brokers: string[] | BrokersFunction;
@@ -122,12 +122,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async close(): Promise<void> {
-    if (this.consumers.size > 0) {
-      await Promise.allSettled(
-        [...this.consumers.values()].map(consumer => consumer.disconnect()),
-      );
-      this.consumers.clear();
-    }
+    await this.disconnectTopicConsumers();
     this.consumer && (await this.consumer.disconnect());
     this.producer && (await this.producer.disconnect());
     this.consumer = null;
@@ -141,21 +136,34 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       groupId: this.groupId,
     };
 
+    this.producer = this.client!.producer(this.options.producer);
+    this.registerProducerEventListeners();
+    await this.producer.connect();
+
     if (this.getOptionsProp(this.options, 'topicConsumers', false)) {
-      this.producer = this.client!.producer(this.options.producer);
-      this.registerProducerEventListeners();
-      await this.producer.connect();
       await this.bindEventsPerTopic(consumerOptions);
     } else {
       this.consumer = this.client!.consumer(consumerOptions);
-      this.producer = this.client!.producer(this.options.producer);
       this.registerConsumerEventListeners();
-      this.registerProducerEventListeners();
       await this.consumer.connect();
-      await this.producer.connect();
       await this.bindEvents(this.consumer);
     }
     callback();
+  }
+
+  private async disconnectTopicConsumers(): Promise<void> {
+    if (this.consumers.size === 0) {
+      return;
+    }
+    const results = await Promise.allSettled(
+      [...this.consumers.values()].map(consumer => consumer.disconnect()),
+    );
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        this.logger.error(result.reason);
+      }
+    }
+    this.consumers.clear();
   }
 
   protected registerConsumerEventListeners() {
@@ -209,61 +217,54 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     } as KafkaConfig) as T;
   }
 
-  public async bindEvents(consumer: Consumer) {
-    const registeredPatterns = [...this.messageHandlers.keys()];
+  public async bindEvents(
+    consumer: Consumer,
+    topics: (string | RegExp)[] = [...this.messageHandlers.keys()],
+  ) {
     const consumerSubscribeOptions = this.options.subscribe || {};
 
-    if (registeredPatterns.length > 0) {
+    if (topics.length > 0) {
       await consumer.subscribe({
         ...consumerSubscribeOptions,
-        topics: registeredPatterns,
+        topics,
       });
     }
 
     const consumerRunOptions = {
       ...(this.options.run || {}),
-      eachMessage: this.getMessageHandler(),
+      eachMessage: this.getMessageHandler(consumer),
     };
     await consumer.run(consumerRunOptions);
   }
 
   public async bindEventsPerTopic(consumerOptions: ConsumerConfig) {
     const registeredPatterns = [...this.messageHandlers.keys()];
-    const consumerSubscribeOptions = this.options.subscribe || {};
 
     try {
-      for (const topic of registeredPatterns) {
-        const composedGroupId = `${this.groupId}-${topic}`;
-        if (!/^[a-zA-Z0-9._-]{1,255}$/.test(composedGroupId)) {
-          this.logger.warn(
-            `Consumer group ID "${composedGroupId}" may be invalid: ` +
-              `must be 1–255 characters and contain only alphanumeric, '.', '_', or '-'.`,
-          );
-        }
-        const topicConsumer = this.client!.consumer({
-          ...consumerOptions,
-          groupId: composedGroupId,
-        });
-        this.registerConsumerEventListenersFor(topicConsumer);
-        await topicConsumer.connect();
-        this.consumers.set(topic, topicConsumer);
-        await topicConsumer.subscribe({
-          ...consumerSubscribeOptions,
-          topics: [topic],
-        });
-        const consumerRunOptions = {
-          ...(this.options.run || {}),
-          eachMessage: this.getMessageHandler(),
-        };
-        await topicConsumer.run(consumerRunOptions);
-      }
-    } catch (err) {
-      await Promise.allSettled(
-        [...this.consumers.values()].map(consumer => consumer.disconnect()),
+      await Promise.all(
+        registeredPatterns.map(topic =>
+          this.bindTopicConsumer(topic, consumerOptions),
+        ),
       );
-      this.consumers.clear();
+    } catch (err) {
+      await this.disconnectTopicConsumers();
       throw err;
     }
+  }
+
+  private async bindTopicConsumer(
+    topic: string | RegExp,
+    consumerOptions: ConsumerConfig,
+  ) {
+    const composedGroupId = `${this.groupId}-${topic}`;
+    const topicConsumer = this.client!.consumer({
+      ...consumerOptions,
+      groupId: composedGroupId,
+    });
+    this.registerConsumerEventListenersFor(topicConsumer);
+    await topicConsumer.connect();
+    this.consumers.set(topic, topicConsumer);
+    await this.bindEvents(topicConsumer, [topic]);
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
@@ -296,8 +297,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     return isMatch;
   }
 
-  public getMessageHandler() {
-    return async (payload: EachMessagePayload) => this.handleMessage(payload);
+  public getMessageHandler(consumer: Consumer = this.consumer!) {
+    return async (payload: EachMessagePayload) =>
+      this.handleMessage(payload, consumer);
   }
 
   public getPublisher(
@@ -316,7 +318,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       );
   }
 
-  public async handleMessage(payload: EachMessagePayload) {
+  public async handleMessage(
+    payload: EachMessagePayload,
+    consumer: Consumer = this.consumer!,
+  ) {
     const channel = payload.topic;
     const rawMessage = this.parser!.parse<KafkaMessage>(
       Object.assign(payload.message, {
@@ -330,7 +335,6 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     const replyPartition = headers[KafkaHeaders.REPLY_PARTITION];
 
     const packet = await this.deserializer.deserialize(rawMessage, { channel });
-    const consumer = this.consumers.get(payload.topic) ?? this.consumer!;
     const kafkaContext = new KafkaContext([
       rawMessage,
       payload.partition,
@@ -381,10 +385,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         'Not initialized. Please call the "listen"/"startAllMicroservices" method before accessing the server.',
       );
     }
-    if (this.consumers.size > 0) {
-      return [this.client, this.consumers, this.producer] as T;
-    }
-    return [this.client, this.consumer, this.producer] as T;
+    return [this.client, this.consumer, this.producer, this.consumers] as T;
   }
 
   public on<

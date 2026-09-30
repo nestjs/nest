@@ -198,6 +198,34 @@ describe('ServerKafka', () => {
     });
   });
 
+  describe('unwrap', () => {
+    it('should throw if the client is not initialized', () => {
+      expect(() => server.unwrap()).toThrow();
+    });
+
+    it('should return the client, consumer, producer, and an empty consumers map', () => {
+      const client = {} as any;
+      const consumer = {} as any;
+      const producer = {} as any;
+      untypedServer.client = client;
+      untypedServer.consumer = consumer;
+      untypedServer.producer = producer;
+
+      const [
+        unwrappedClient,
+        unwrappedConsumer,
+        unwrappedProducer,
+        unwrappedConsumers,
+      ] = server.unwrap<[any, any, any, Map<string | RegExp, any>]>();
+
+      expect(unwrappedClient).toBe(client);
+      expect(unwrappedConsumer).toBe(consumer);
+      expect(unwrappedProducer).toBe(producer);
+      expect(unwrappedConsumers).toBeInstanceOf(Map);
+      expect(unwrappedConsumers.size).toEqual(0);
+    });
+  });
+
   describe('bindEvents', () => {
     it('should not call subscribe nor run on consumer when there are no messageHandlers', async () => {
       untypedServer.logger = new NoopLogger();
@@ -318,6 +346,17 @@ describe('ServerKafka', () => {
           .mockImplementation(() => null!);
         await server.getMessageHandler()(null!);
         expect(handleMessageStub).toHaveBeenCalled();
+      });
+
+      it('should forward the given consumer to "handleMessage"', async () => {
+        const handleMessageStub = vi
+          .spyOn(server, 'handleMessage')
+          .mockImplementation(() => null!);
+        const perTopicConsumer = { id: 'per-topic-consumer' } as any;
+
+        await server.getMessageHandler(perTopicConsumer)(null!);
+
+        expect(handleMessageStub).toHaveBeenCalledWith(null, perTopicConsumer);
       });
     });
   });
@@ -480,6 +519,44 @@ describe('ServerKafka', () => {
 
       await server.handleMessage(payload);
       expect(handler).toHaveBeenCalled();
+    });
+
+    it('should bind the given consumer to the KafkaContext for a string pattern', async () => {
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: handler,
+      });
+      const perTopicConsumer = { id: 'per-topic-consumer' } as any;
+
+      await server.handleMessage(payload, perTopicConsumer);
+
+      const context = handler.mock.calls[0][1] as KafkaContext;
+      expect(context.getConsumer()).toBe(perTopicConsumer);
+    });
+
+    it('should bind the given consumer to the KafkaContext for a RegExp pattern', async () => {
+      const handler = vi.fn();
+      server.addHandler(/test\..*/, handler);
+      const perTopicConsumer = { id: 'per-topic-consumer' } as any;
+
+      await server.handleMessage(payload, perTopicConsumer);
+
+      const context = handler.mock.calls[0][1] as KafkaContext;
+      expect(context.getConsumer()).toBe(perTopicConsumer);
+    });
+
+    it('should fall back to the shared consumer when none is provided', async () => {
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: handler,
+      });
+      const sharedConsumer = { id: 'shared-consumer' } as any;
+      untypedServer.consumer = sharedConsumer;
+
+      await server.handleMessage(payload);
+
+      const context = handler.mock.calls[0][1] as KafkaContext;
+      expect(context.getConsumer()).toBe(sharedConsumer);
     });
   });
 
@@ -760,6 +837,38 @@ describe('ServerKafka', () => {
         expect(disconnectOk).toHaveBeenCalledOnce();
         expect(perTopicUntyped.consumers.size).toEqual(0);
       });
+
+      it('should bind each per-topic consumer instance to its own message handler', async () => {
+        const getMessageHandlerSpy = vi.spyOn(
+          perTopicServer,
+          'getMessageHandler',
+        );
+        perTopicUntyped.messageHandlers = objectToMap({
+          'topic-a': vi.fn(),
+          'topic-b': vi.fn(),
+        });
+
+        await perTopicServer.listen(vi.fn());
+
+        expect(getMessageHandlerSpy).toHaveBeenCalledWith(
+          perTopicUntyped.consumers.get('topic-a'),
+        );
+        expect(getMessageHandlerSpy).toHaveBeenCalledWith(
+          perTopicUntyped.consumers.get('topic-b'),
+        );
+      });
+
+      it('should create and subscribe a dedicated consumer for a RegExp topic pattern', async () => {
+        const pattern = /^topic-c\..*/;
+        perTopicUntyped.messageHandlers = new Map([[pattern, vi.fn()]]);
+
+        await perTopicServer.listen(vi.fn());
+
+        expect(perTopicSubscribe).toHaveBeenCalledWith(
+          expect.objectContaining({ topics: [pattern] }),
+        );
+        expect(perTopicUntyped.consumers.has(pattern)).toBe(true);
+      });
     });
 
     describe('close with topicConsumers', () => {
@@ -781,29 +890,32 @@ describe('ServerKafka', () => {
         expect(perTopicUntyped.client).toBeNull();
       });
     });
+
+    describe('unwrap with topicConsumers', () => {
+      it('should return the client, a null consumer, the producer, and the per-topic consumers map', async () => {
+        perTopicUntyped.messageHandlers = objectToMap({
+          'topic-a': vi.fn(),
+        });
+
+        await perTopicServer.listen(vi.fn());
+
+        const [client, consumer, producer, consumers] =
+          perTopicServer.unwrap<[any, any, any, Map<string | RegExp, any>]>();
+
+        expect(client).toBeDefined();
+        expect(consumer).toBeNull();
+        expect(producer).toBeDefined();
+        expect(consumers).toBeInstanceOf(Map);
+        expect(consumers.size).toEqual(1);
+        expect(consumers.has('topic-a')).toBe(true);
+      });
+    });
   });
 
   describe('createClient', () => {
     it('should accept a custom logCreator in client options', async () => {
       const logCreatorSpy = vi.fn(() => 'test');
       const logCreator = () => logCreatorSpy;
-
-      class MockKafka {
-        private logFn: any;
-        constructor({ logCreator: lc }: any) {
-          this.logFn = lc(1);
-        }
-        logger() {
-          return { info: (entry: any) => this.logFn(entry) };
-        }
-      }
-
-      vi.spyOn(
-        ServerKafka.prototype as any,
-        'loadPackage',
-      ).mockResolvedValueOnce({
-        Kafka: MockKafka,
-      });
 
       server = new ServerKafka({
         client: {
