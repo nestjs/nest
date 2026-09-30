@@ -1,4 +1,4 @@
-import { VersioningType } from '@nestjs/common';
+import { VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { isRouteExcluded } from '../router/utils/index.js';
@@ -34,10 +34,16 @@ export class RouteInfoPathExtractor {
       const entries =
         versionPaths.length > 0
           ? versionPaths
-              .map(versionPath => [
-                this.prefixPath + versionPath + '$',
-                this.prefixPath + versionPath + addLeadingSlash(path),
-              ])
+              .map(versionPath =>
+                // VERSION_NEUTRAL without a global prefix: no base path to match
+                // exactly, same as the unversioned branch below
+                this.prefixPath + versionPath
+                  ? [
+                      this.prefixPath + versionPath + '$',
+                      this.prefixPath + versionPath + addLeadingSlash(path),
+                    ]
+                  : [addLeadingSlash(path)],
+              )
               .flat()
           : this.prefixPath
             ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
@@ -113,12 +119,14 @@ export class RouteInfoPathExtractor {
     const versionPrefix = this.routePathFactory.getVersionPrefix(
       this.versioningConfig,
     );
+    const toVersionPath = (version: string | typeof VERSION_NEUTRAL) =>
+      version === VERSION_NEUTRAL
+        ? ''
+        : addLeadingSlash(versionPrefix + version);
 
     if (Array.isArray(versionValue)) {
-      return versionValue.map(version =>
-        addLeadingSlash(versionPrefix + version.toString()),
-      );
+      return versionValue.map(toVersionPath);
     }
-    return [addLeadingSlash(versionPrefix + versionValue.toString())];
+    return [toVersionPath(versionValue)];
   }
 }
