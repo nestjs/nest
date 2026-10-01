@@ -130,6 +130,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       stream.once('error', err => {
         body.errorHandler(err, response);
       });
+      // pipe() leaves the source open when the client disconnects early
+      response.once('close', () => stream.destroy());
       return stream
         .pipe<Writable>(response)
         .on('error', (err: Error) => body.errorLogger(err));

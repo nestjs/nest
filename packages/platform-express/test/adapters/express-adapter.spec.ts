@@ -1,6 +1,11 @@
-import { BadRequestException, RequestMethod } from '@nestjs/common';
+import {
+  BadRequestException,
+  RequestMethod,
+  StreamableFile,
+} from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
+import { PassThrough } from 'stream';
 
 describe('ExpressAdapter', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -248,6 +253,48 @@ describe('ExpressAdapter', () => {
         'Content-Type',
         'application/json',
       );
+    });
+
+    describe('when the body is a StreamableFile', () => {
+      const createStreamResponse = () =>
+        Object.assign(new PassThrough(), {
+          getHeader: vi.fn(),
+          setHeader: vi.fn(),
+        });
+
+      it('should destroy the source stream when the client disconnects', async () => {
+        const source = new PassThrough();
+        const errorHandler = vi.fn();
+        const errorLogger = vi.fn();
+        const file = new StreamableFile(source)
+          .setErrorHandler(errorHandler)
+          .setErrorLogger(errorLogger);
+        const response = createStreamResponse();
+
+        expressAdapter.reply(response, file);
+        source.write('partial');
+        response.destroy();
+
+        await vi.waitFor(() => expect(source.destroyed).toBe(true));
+        expect(errorHandler).not.toHaveBeenCalled();
+        expect(errorLogger).not.toHaveBeenCalled();
+      });
+
+      it('should keep the source open while the response is being written', async () => {
+        const source = new PassThrough();
+        const response = createStreamResponse();
+        const chunks: Buffer[] = [];
+        response.on('data', chunk => chunks.push(chunk));
+
+        expressAdapter.reply(response, new StreamableFile(source));
+        source.write('first');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(source.destroyed).toBe(false);
+        source.end('second');
+        await new Promise(resolve => response.once('end', resolve));
+        expect(Buffer.concat(chunks).toString()).toBe('firstsecond');
+      });
     });
   });
 
