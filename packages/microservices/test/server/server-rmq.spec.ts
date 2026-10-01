@@ -96,11 +96,14 @@ describe('ServerRMQ', () => {
         createChannelStub.mockReturnValue(channel);
       });
 
-      it('should call the callback once with the setup error', async () => {
+      it('should close the server, then call the callback once with the setup error', async () => {
+        const close = vi.spyOn(server, 'close').mockResolvedValue();
         await server.listen(listenCallback);
         channel.emit('error', setupError);
         channel.emit('error', setupError);
+        await new Promise(resolve => setImmediate(resolve));
 
+        expect(close).toHaveBeenCalledOnce();
         expect(listenCallback).toHaveBeenCalledOnce();
         expect(listenCallback).toHaveBeenCalledWith(setupError);
       });
@@ -123,8 +126,12 @@ describe('ServerRMQ', () => {
         await server.listen(listenCallback);
         await new Promise(resolve => setImmediate(resolve));
 
+        const close = vi.spyOn(server, 'close').mockResolvedValue();
+
         expect(() => channel.emit('error', setupError)).not.toThrow();
+        await new Promise(resolve => setImmediate(resolve));
         expect(logError).toHaveBeenCalledWith(setupError);
+        expect(close).not.toHaveBeenCalled();
         expect(listenCallback).toHaveBeenCalledOnce();
         expect(listenCallback).toHaveBeenCalledWith();
       });
@@ -371,6 +378,16 @@ describe('ServerRMQ', () => {
         assertExchange: vi.fn(() => ({})),
         bindQueue: vi.fn(),
       };
+    });
+    it('should fail the setup instead of calling back when "consume" rejects', async () => {
+      const consumeError = new Error('NOT_FOUND');
+      channel.consume = vi.fn().mockRejectedValue(consumeError);
+      const callback = vi.fn();
+
+      await expect(server.setupChannel(channel, callback)).rejects.toBe(
+        consumeError,
+      );
+      expect(callback).not.toHaveBeenCalled();
     });
     it('should call "assertQueue" with queue and queue options when noAssert is false', async () => {
       server['noAssert' as any] = false;

@@ -236,6 +236,37 @@ describe('ClientRMQ', function () {
       expect(rmqClient.createClient).toHaveBeenCalledTimes(2);
     });
 
+    it('should treat the first "connect" of the next attempt as the initial one', async () => {
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      manager.emit('disconnect', { err: setupError });
+      channel.emit('error', setupError);
+      await connection.catch(() => {});
+
+      const nextChannel = Object.assign(new EventEmitter(), {
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      const nextManager = Object.assign(new EventEmitter(), {
+        createChannel: vi.fn(() => nextChannel),
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      vi.mocked(rmqClient.createClient).mockReturnValue(nextManager as any);
+      const nextConnection = rmqClient.connect();
+      nextManager.emit('connect');
+
+      // Must keep waiting for the channel setup instead of resolving early.
+      const settled = await Promise.race([
+        rmqClient['connectionPromise']!.then(
+          () => 'resolved',
+          () => 'rejected',
+        ),
+        new Promise(resolve => setImmediate(() => resolve('pending'))),
+      ]);
+      expect(settled).toBe('pending');
+      nextChannel.emit('error', setupError);
+      await expect(nextConnection).rejects.toBe(setupError);
+    });
+
     it('should log a later setup error without throwing once connected', async () => {
       vi.spyOn(rmqClient, 'setupChannel').mockImplementation(
         async (_, resolve) => resolve(),

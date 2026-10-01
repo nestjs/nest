@@ -112,6 +112,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.client && (await this.client.close());
     this.channel = null;
     this.client = null;
+    this.isInitialConnect = true;
     this.pendingEventListeners = [];
   }
 
@@ -199,6 +200,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.client = null;
       this.channel = null;
       this.connectionPromise = null;
+      this.isInitialConnect = true;
     }
     await Promise.allSettled([client.close(), channel?.close()]);
   }

@@ -132,7 +132,16 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       // settles once.
       this.channel.on(RmqEventsMap.ERROR, (err: unknown) => {
         this.logger.error(err);
-        settleListenCallback(err);
+        const cb = listenCallback;
+        if (!cb) {
+          return;
+        }
+        listenCallback = undefined;
+        // Otherwise the wrapper re-runs the setup on every reconnect, and the
+        // server would start consuming after "listen()" has failed.
+        void this.close()
+          .catch(closeErr => this.logger.error(closeErr))
+          .then(() => cb(err));
       });
     });
 
@@ -289,7 +298,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
-    channel.consume(
+    await channel.consume(
       createdQueue,
       (msg: Record<string, any> | null) =>
         this.handleMessage(msg!, channel).catch(err => this.handleError(err)),
