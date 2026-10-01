@@ -418,6 +418,102 @@ describe('NestApplicationContext', () => {
       vi.useRealTimers();
     });
 
+    it('should run shutdown hooks when a signal arrives after a failed init', async () => {
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const onApplicationShutdownStub = vi.fn();
+
+      class B {
+        onModuleInit() {
+          throw new Error('init failed');
+        }
+
+        onApplicationShutdown() {
+          onApplicationShutdownStub();
+        }
+      }
+
+      const applicationContext = await testHelper(A, Scope.DEFAULT, [
+        { provide: B, useClass: B, scope: Scope.DEFAULT },
+      ]);
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => true);
+
+      try {
+        applicationContext.enableShutdownHooks([signal]);
+        await expect(applicationContext.init()).rejects.toThrow('init failed');
+        await applicationContext['shutdownCleanupRefs'].get(signal)!(signal);
+
+        expect(onApplicationShutdownStub).toHaveBeenCalledTimes(1);
+        expect(processKillStub).toHaveBeenCalledWith(process.pid, signal);
+        expect(processExitStub).not.toHaveBeenCalled();
+      } finally {
+        processKillStub.mockRestore();
+        processExitStub.mockRestore();
+        removeListenersNotIn(signal, listeners);
+      }
+    });
+
+    it('should defer shutdown until a failing init settles, then run it', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout'] });
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const onApplicationShutdownStub = vi.fn();
+      const delay = (ms: number) =>
+        new Promise<void>(resolve => globalThis.setTimeout(resolve, ms));
+
+      class B {
+        async onModuleInit() {
+          await delay(5000);
+          throw new Error('init failed');
+        }
+
+        onApplicationShutdown() {
+          onApplicationShutdownStub();
+        }
+      }
+
+      const applicationContext = await testHelper(A, Scope.DEFAULT, [
+        { provide: B, useClass: B, scope: Scope.DEFAULT },
+      ]);
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => true);
+
+      try {
+        applicationContext.enableShutdownHooks([signal]);
+        const initError = applicationContext.init().then(
+          () => undefined,
+          (error: Error) => error,
+        );
+        const shutdown =
+          applicationContext['shutdownCleanupRefs'].get(signal)!(signal);
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(onApplicationShutdownStub).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(5000);
+        await shutdown;
+
+        expect((await initError)?.message).toBe('init failed');
+        expect(onApplicationShutdownStub).toHaveBeenCalledTimes(1);
+        expect(processKillStub).toHaveBeenCalledWith(process.pid, signal);
+        expect(processExitStub).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+        processKillStub.mockRestore();
+        processExitStub.mockRestore();
+        removeListenersNotIn(signal, listeners);
+      }
+    });
+
     it('should use process.exit when useProcessExit option is enabled', async () => {
       const signal = 'SIGTERM';
       const applicationContext = await testHelper(A, Scope.DEFAULT);
@@ -476,6 +572,43 @@ describe('NestApplicationContext', () => {
       hookStub.mockRestore();
       processExitStub.mockRestore();
       processKillStub.mockRestore();
+    });
+  });
+
+  describe('close', () => {
+    it('should run the shutdown sequence after a failed init', async () => {
+      const onModuleDestroyStub = vi.fn();
+      const beforeApplicationShutdownStub = vi.fn();
+      const onApplicationShutdownStub = vi.fn();
+
+      class B {
+        onModuleInit() {
+          throw new Error('init failed');
+        }
+
+        onModuleDestroy() {
+          onModuleDestroyStub();
+        }
+
+        beforeApplicationShutdown() {
+          beforeApplicationShutdownStub();
+        }
+
+        onApplicationShutdown() {
+          onApplicationShutdownStub();
+        }
+      }
+
+      const applicationContext = await testHelper(A, Scope.DEFAULT, [
+        { provide: B, useClass: B, scope: Scope.DEFAULT },
+      ]);
+
+      await expect(applicationContext.init()).rejects.toThrow('init failed');
+      await applicationContext.close();
+
+      expect(onModuleDestroyStub).toHaveBeenCalledTimes(1);
+      expect(beforeApplicationShutdownStub).toHaveBeenCalledTimes(1);
+      expect(onApplicationShutdownStub).toHaveBeenCalledTimes(1);
     });
   });
 

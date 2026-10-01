@@ -1,4 +1,9 @@
-import { Injectable, Module, OnApplicationShutdown } from '@nestjs/common';
+import {
+  Injectable,
+  Module,
+  OnApplicationShutdown,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 @Injectable()
 class TestInjectable implements OnApplicationShutdown {
@@ -13,6 +18,25 @@ describe('OnApplicationShutdown', () => {
 
     const app = module.createNestApplication();
     await app.close();
+    const instance = module.get(TestInjectable);
+    expect(instance.onApplicationShutdown).toHaveBeenCalled();
+  });
+
+  it('should call onApplicationShutdown when an application context closes after a failed init', async () => {
+    @Injectable()
+    class FailingInjectable implements OnModuleInit {
+      onModuleInit() {
+        throw new Error('init failed');
+      }
+    }
+
+    const module = await Test.createTestingModule({
+      providers: [TestInjectable, FailingInjectable],
+    }).compile();
+
+    await expect(module.init()).rejects.toThrow('init failed');
+    await module.close();
+
     const instance = module.get(TestInjectable);
     expect(instance.onApplicationShutdown).toHaveBeenCalled();
   });

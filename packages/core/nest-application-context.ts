@@ -290,7 +290,11 @@ export class NestApplicationContext<
   }
 
   private async runShutdownSequence(signal?: string): Promise<void> {
-    await this.initializationPromise;
+    // A shutdown that arrives during initialization waits for it to settle.
+    // A failed initialization must not stop the teardown: its error already
+    // went to the caller of `init()`, and the hooks below release what the
+    // partial startup acquired (connection pools, timers, sockets).
+    await this.initializationPromise?.catch(() => undefined);
     await this.prepareClose();
     await this.callDestroyHook();
     await this.callBeforeShutdownHook(signal);
