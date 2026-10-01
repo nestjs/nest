@@ -145,7 +145,7 @@
     "nats": "2.29.3",
     "oxlint": "1.86.0",
     "prettier": "^3.7.4",
-    "redis": "6.2.1",
+    "redis": "6.3.0",
     "rxjs-compat": "6.6.7",
     "socket.io-client": "4.8.3",
     "supertest": "7.3.0",
