@@ -1,4 +1,5 @@
 import {
+  defaultIfEmpty,
   forkJoin,
   from as fromPromise,
   isObservable,
@@ -200,9 +201,15 @@ export class ListenersController {
       const returnedValueWrapper = handlerRef.next(
         ...(originalArgs as Parameters<MessageHandler>),
       );
+      // `forkJoin` completes silently and unsubscribes the other sources as
+      // soon as one completes empty, which would cancel the sibling handlers.
       return forkJoin({
-        current: this.transformToObservable(currentReturnValue),
-        next: this.transformToObservable(returnedValueWrapper),
+        current: this.transformToObservable(currentReturnValue).pipe(
+          defaultIfEmpty(undefined),
+        ),
+        next: this.transformToObservable(returnedValueWrapper).pipe(
+          defaultIfEmpty(undefined),
+        ),
       });
     }
     return currentReturnValue;
