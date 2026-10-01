@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import {
   EMPTY,
   lastValueFrom,
+  NEVER,
   of,
   ReplaySubject,
   Subject,
@@ -1062,6 +1063,52 @@ describe('ServerGrpc', () => {
         server.transportId,
         call.request,
       );
+    });
+
+    it('should not error the request stream when the handler errors the response stream', async () => {
+      const call = createCall();
+      const responseError = new Error('response failed');
+      const requestErrors: unknown[] = [];
+      const serverErrors: unknown[] = [];
+      call.on('error', e => serverErrors.push(e));
+
+      const handler = (stream: any) => {
+        stream.subscribe({ error: (e: unknown) => requestErrors.push(e) });
+        stream.drainBuffer?.();
+        return throwError(() => responseError);
+      };
+
+      await server.createRequestStreamMethod(handler, true)(
+        call as any,
+        vi.fn(),
+      );
+
+      // The error still reaches the call, which sends it to the client
+      expect(serverErrors).toEqual([responseError]);
+      expect(requestErrors).toEqual([]);
+    });
+
+    it('should still pass a transport error on to the request stream', async () => {
+      const call = createCall();
+      const transportError = new Error('transport failed');
+      const requestErrors: unknown[] = [];
+
+      const handler = (stream: any) => {
+        stream.subscribe({ error: (e: unknown) => requestErrors.push(e) });
+        stream.drainBuffer?.();
+        return NEVER;
+      };
+
+      const result = server.createRequestStreamMethod(handler, true)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      call.emit('error', transportError);
+
+      expect(requestErrors).toEqual([transportError]);
+      call.emit('cancelled', 'cancelled');
+      await result;
     });
 
     it('should run the end hook when the call errors', async () => {

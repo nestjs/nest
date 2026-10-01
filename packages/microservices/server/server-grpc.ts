@@ -51,6 +51,20 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   cancelled?: boolean;
 }
 
+// Calls on which the server is emitting a response error. The call is also
+// the emitter of the request stream's errors, so the listener on the request
+// side uses this to tell the two apart.
+const callsEmittingResponseError = new WeakSet<GrpcCall>();
+
+function emitResponseError(call: GrpcCall, err: unknown) {
+  callsEmittingResponseError.add(call);
+  try {
+    call.emit('error', err);
+  } finally {
+    callsEmittingResponseError.delete(call);
+  }
+}
+
 /**
  * @publicApi
  */
@@ -402,7 +416,7 @@ export class ServerGrpc extends Server<never, never> {
           subscription.unsubscribe();
           resolve();
         } else if (shouldErrorAfterDraining) {
-          call.emit('error', error);
+          emitResponseError(call, error);
           subscription.unsubscribe();
           resolve();
         }
@@ -427,7 +441,7 @@ export class ServerGrpc extends Server<never, never> {
             if (valuesWaitingToBeDrained.length === 0) {
               // We're not waiting for a drain event, so we can just
               // reject and teardown.
-              call.emit('error', err);
+              emitResponseError(call, err);
               subscription.unsubscribe();
               resolve();
             } else {
@@ -469,6 +483,11 @@ export class ServerGrpc extends Server<never, never> {
           const { subject, next, error, complete } = this.bufferUntilDrained();
           call.on('data', (m: any) => next(m));
           call.on('error', (e: any) => {
+            // The response error emitted by this server on the same call
+            // is not an error of the request stream
+            if (callsEmittingResponseError.has(call)) {
+              return;
+            }
             // Check if error means that stream ended on other end
             const isCancelledError = String(e)
               .toLowerCase()
