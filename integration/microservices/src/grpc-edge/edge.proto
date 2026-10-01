@@ -8,6 +8,7 @@ service Edge {
   rpc CollectVoid (stream Num) returns (Nothing);
   rpc EchoThrow (stream Num) returns (stream Num);
   rpc CollectThrow (stream Num) returns (Num);
+  rpc EchoReject (stream Num) returns (stream Num);
 }
 
 message Num {
