@@ -112,6 +112,11 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   ) {
     this.server = await this.createClient();
     let listenCallback = callback;
+    const settleListenCallback = (...args: unknown[]) => {
+      const cb = listenCallback;
+      listenCallback = undefined;
+      cb?.(...args);
+    };
     this.server!.once(RmqEventsMap.CONNECT, () => {
       if (this.channel) {
         return;
@@ -120,11 +125,23 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this.channel = this.server!.createChannel({
         json: false,
         setup: (channel: Channel) =>
-          this.setupChannel(channel, () => {
-            const cb = listenCallback;
-            listenCallback = undefined;
-            cb?.();
-          }),
+          this.setupChannel(channel, settleListenCallback),
+      });
+      // The wrapper emits "error" when the setup throws, and an unhandled emit
+      // crashes the process. A later error is only logged: the callback
+      // settles once.
+      this.channel.on(RmqEventsMap.ERROR, (err: unknown) => {
+        this.logger.error(err);
+        const cb = listenCallback;
+        if (!cb) {
+          return;
+        }
+        listenCallback = undefined;
+        // Otherwise the wrapper re-runs the setup on every reconnect, and the
+        // server would start consuming after "listen()" has failed.
+        void this.close()
+          .catch(closeErr => this.logger.error(closeErr))
+          .then(() => cb(err));
       });
     });
 
@@ -162,9 +179,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         }
         if (++this.connectionAttempts === maxConnectionAttempts) {
           await this.close();
-          const cb = listenCallback;
-          listenCallback = undefined;
-          cb?.(error.err ?? new Error(CONNECTION_FAILED_MESSAGE));
+          settleListenCallback(
+            error.err ?? new Error(CONNECTION_FAILED_MESSAGE),
+          );
         }
       },
     );
@@ -281,7 +298,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
-    channel.consume(
+    await channel.consume(
       createdQueue,
       (msg: Record<string, any> | null) =>
         this.handleMessage(msg!, channel).catch(err => this.handleError(err)),

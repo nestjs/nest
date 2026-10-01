@@ -160,7 +160,10 @@ describe('ClientRMQ', function () {
       rmqClient = new ClientRMQ({});
       vi.spyOn(rmqClient['logger'], 'log').mockImplementation(() => {});
       manager = Object.assign(new EventEmitter(), {
-        createChannel: vi.fn(({ setup }) => setup()),
+        createChannel: vi.fn(({ setup }) => {
+          void setup();
+          return new EventEmitter();
+        }),
       });
       vi.spyOn(rmqClient, 'createClient').mockReturnValue(manager);
       vi.spyOn(rmqClient, 'setupChannel').mockImplementation(
@@ -180,6 +183,107 @@ describe('ClientRMQ', function () {
     });
   });
 
+  describe('connect (channel setup errors)', () => {
+    let rmqClient: ClientRMQ;
+    let manager: EventEmitter & { createChannel: ReturnType<typeof vi.fn> };
+    let channel: EventEmitter & { close: ReturnType<typeof vi.fn> };
+    let logError: ReturnType<typeof vi.spyOn>;
+    const setupError = new Error('PRECONDITION_FAILED');
+
+    beforeEach(() => {
+      rmqClient = new ClientRMQ({});
+      vi.spyOn(rmqClient['logger'], 'log').mockImplementation(() => {});
+      logError = vi
+        .spyOn(rmqClient['logger'], 'error')
+        .mockImplementation(() => {});
+      channel = Object.assign(new EventEmitter(), {
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      manager = Object.assign(new EventEmitter(), {
+        createChannel: vi.fn(() => channel),
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      vi.spyOn(rmqClient, 'createClient').mockReturnValue(manager);
+    });
+
+    it('should reject "connect()" with the error the channel setup failed with', async () => {
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      channel.emit('error', setupError);
+
+      await expect(connection).rejects.toBe(setupError);
+    });
+
+    it('should log the error the channel setup failed with', async () => {
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      channel.emit('error', setupError);
+      await connection.catch(() => {});
+
+      expect(logError).toHaveBeenCalledWith(setupError);
+    });
+
+    it('should try again on the next call instead of caching the setup error', async () => {
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      // amqplib drops the whole connection before the setup error surfaces.
+      manager.emit('disconnect', { err: setupError });
+      channel.emit('error', setupError);
+      await connection.catch(() => {});
+
+      void rmqClient.connect();
+
+      expect(rmqClient.createClient).toHaveBeenCalledTimes(2);
+    });
+
+    it('should treat the first "connect" of the next attempt as the initial one', async () => {
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      manager.emit('disconnect', { err: setupError });
+      channel.emit('error', setupError);
+      await connection.catch(() => {});
+
+      const nextChannel = Object.assign(new EventEmitter(), {
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      const nextManager = Object.assign(new EventEmitter(), {
+        createChannel: vi.fn(() => nextChannel),
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      vi.mocked(rmqClient.createClient).mockReturnValue(nextManager as any);
+      const nextConnection = rmqClient.connect();
+      nextManager.emit('connect');
+
+      // Must keep waiting for the channel setup instead of resolving early.
+      const settled = await Promise.race([
+        rmqClient['connectionPromise']!.then(
+          () => 'resolved',
+          () => 'rejected',
+        ),
+        new Promise(resolve => setImmediate(() => resolve('pending'))),
+      ]);
+      expect(settled).toBe('pending');
+      nextChannel.emit('error', setupError);
+      await expect(nextConnection).rejects.toBe(setupError);
+    });
+
+    it('should log a later setup error without throwing once connected', async () => {
+      vi.spyOn(rmqClient, 'setupChannel').mockImplementation(
+        async (_, resolve) => resolve(),
+      );
+      manager.createChannel.mockImplementation(({ setup }) => {
+        void setup();
+        return channel;
+      });
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      await connection;
+
+      expect(() => channel.emit('error', setupError)).not.toThrow();
+      expect(logError).toHaveBeenCalledWith(setupError);
+    });
+  });
+
   describe('createChannel', () => {
     let createChannelStub: ReturnType<typeof vi.fn>;
     let setupChannelStub: ReturnType<typeof vi.fn>;
@@ -188,7 +292,10 @@ describe('ClientRMQ', function () {
       setupChannelStub = vi
         .spyOn(client, 'setupChannel')
         .mockImplementation((_, done) => done());
-      createChannelStub = vi.fn().mockImplementation(({ setup }) => setup());
+      createChannelStub = vi.fn().mockImplementation(({ setup }) => {
+        void setup();
+        return new EventEmitter();
+      });
       client['client'] = { createChannel: createChannelStub };
     });
     afterEach(() => {
