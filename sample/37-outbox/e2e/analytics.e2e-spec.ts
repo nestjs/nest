@@ -1,7 +1,7 @@
 /**
  * The analytics service, as the order API's relay reaches it: a TCP microservice that gets
  * outbox envelopes from a ClientProxy. Its database is PGlite (PostgreSQL, in-process), with
- * the service's own migrations.
+ * the service's own migrations; the outbox's store creates its inbox there at startup.
  */
 import { PGlite } from '@electric-sql/pglite';
 import type { INestMicroservice } from '@nestjs/common';
@@ -20,7 +20,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { lastValueFrom } from 'rxjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { AnalyticsModule } from '../analytics-service/src/analytics.module.js';
+import { AppModule as AnalyticsAppModule } from '../analytics-service/src/app.module.js';
 import * as schema from '../analytics-service/src/database/schema.js';
 import {
   OrderStatsService,
@@ -59,10 +59,10 @@ describe('Analytics service (outbox consumer)', () => {
     });
     const options = { host: '127.0.0.1', port: await freePort() };
     const moduleRef = await Test.createTestingModule({
-      imports: [AnalyticsModule],
+      imports: [AnalyticsAppModule],
     })
       .overrideProvider(getDrizzleToken())
-      .useValue(db) // DrizzleInboxStore injects it too
+      .useValue(db) // the outbox's store runs on it too
       .compile();
     app = moduleRef.createNestMicroservice<MicroserviceOptions>({
       transport: Transport.TCP,

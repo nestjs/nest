@@ -1,9 +1,10 @@
+// The analytics service's own tables, for Drizzle and drizzle-kit. Its inbox isn't here: the
+// outbox's store keeps it in a schema of its own (nest_outbox).
 import {
   bigint,
   index,
   integer,
   pgTable,
-  primaryKey,
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
@@ -24,19 +25,4 @@ export const orderEvents = pgTable(
       .defaultNow(),
   },
   table => [index('order_events_order_id').on(table.orderId)],
-);
-
-// The inbox, read and written by DrizzleInboxStore: the message ids this service has processed.
-export const outboxInbox = pgTable(
-  'outbox_inbox',
-  {
-    consumer: text('consumer').notNull(),
-    messageId: text('message_id').notNull(),
-    processedAt: timestamp('processed_at', { withTimezone: true }).notNull(),
-  },
-  table => [
-    // One record per consumer and message: the unique key two deliveries meet at.
-    primaryKey({ columns: [table.consumer, table.messageId] }),
-    index('outbox_inbox_processed_at').on(table.processedAt),
-  ],
 );

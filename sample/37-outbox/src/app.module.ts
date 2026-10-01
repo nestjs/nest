@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
-import { DrizzleModule } from '@nestjs/drizzle';
+import { DrizzleModule, getDrizzleToken } from '@nestjs/drizzle';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ClientProxyTransport, OutboxModule } from '@nestjs/outbox';
+import {
+  ClientProxyTransport,
+  OutboxModule,
+  OutboxStorage,
+} from '@nestjs/outbox';
+import { fromDrizzle, PostgresOutboxStore } from '@nestjs/outbox/postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { DrizzleOutboxStore } from './database/drizzle-outbox.store.js';
+import type { Database } from './database/drizzle.js';
 import * as schema from './database/schema.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
@@ -59,7 +64,14 @@ export const ANALYTICS_SERVICE = 'ANALYTICS_SERVICE';
     InventoryModule,
     OutboxAdminModule,
   ],
-  // Registers itself as the outbox's store.
-  providers: [DrizzleOutboxStore],
+  providers: [
+    {
+      // Messages and inbox records in your database, in a schema of their own (nest_outbox)
+      provide: PostgresOutboxStore,
+      inject: [getDrizzleToken(), OutboxStorage],
+      useFactory: (db: Database, outboxStorage: OutboxStorage) =>
+        new PostgresOutboxStore({ executor: fromDrizzle(db) }, outboxStorage),
+    },
+  ],
 })
 export class AppModule {}

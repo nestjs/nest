@@ -27,7 +27,7 @@
     "@nestjs/core": "12.1.2",
     "@nestjs/drizzle": "0.0.1",
     "@nestjs/microservices": "12.1.2",
-    "@nestjs/outbox": "0.0.1",
+    "@nestjs/outbox": "0.1.0",
     "@nestjs/platform-express": "12.1.2",
     "drizzle-orm": "0.45.3",
     "pg": "8.23.1",

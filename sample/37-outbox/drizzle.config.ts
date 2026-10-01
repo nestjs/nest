@@ -1,6 +1,6 @@
 import { defineConfig } from 'drizzle-kit';
 
-// The order API's migrations: its own tables and the outbox's.
+// The order API's migrations: its own tables. The outbox's store creates its own schema.
 export default defineConfig({
   dialect: 'postgresql',
   schema: './src/database/schema.ts',
