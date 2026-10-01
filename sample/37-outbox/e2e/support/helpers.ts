@@ -1,5 +1,6 @@
 import type { LoggerService } from '@nestjs/common';
 import { createServer } from 'node:net';
+import type pg from 'pg';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -42,4 +43,21 @@ export function freePort(): Promise<number> {
       server.close(() => resolve(port));
     });
   });
+}
+
+/**
+ * Ends a pool once its connections have closed: `pool.end()` resolves before they have, so a
+ * database dropped right after (`WITH (FORCE)`, as support/postgres.ts does) could terminate
+ * one, an error nothing listens for.
+ */
+export async function endPool(pool: pg.Pool): Promise<void> {
+  let open = pool.totalCount;
+  const closed = new Promise<void>(resolve => {
+    if (open === 0) return resolve();
+    pool.on('remove', () => {
+      if (--open === 0) resolve();
+    });
+  });
+  await pool.end();
+  await closed;
 }

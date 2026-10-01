@@ -1,5 +1,5 @@
 {
-  "id": "19a65eeb-10d5-4235-9a4f-e74aee73eb03",
+  "id": "e4a82a9e-c0fb-4343-80d0-3ac1dbee9623",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -70,61 +70,6 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.outbox_inbox": {
-      "name": "outbox_inbox",
-      "schema": "",
-      "columns": {
-        "consumer": {
-          "name": "consumer",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message_id": {
-          "name": "message_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "processed_at": {
-          "name": "processed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "outbox_inbox_processed_at": {
-          "name": "outbox_inbox_processed_at",
-          "columns": [
-            {
-              "expression": "processed_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "outbox_inbox_consumer_message_id_pk": {
-          "name": "outbox_inbox_consumer_message_id_pk",
-          "columns": [
-            "consumer",
-            "message_id"
-          ]
-        }
-      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

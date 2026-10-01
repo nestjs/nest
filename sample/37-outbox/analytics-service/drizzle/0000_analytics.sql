@@ -6,12 +6,4 @@ CREATE TABLE "order_events" (
 	"recorded_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "outbox_inbox" (
-	"consumer" text NOT NULL,
-	"message_id" text NOT NULL,
-	"processed_at" timestamp with time zone NOT NULL,
-	CONSTRAINT "outbox_inbox_consumer_message_id_pk" PRIMARY KEY("consumer","message_id")
-);
---> statement-breakpoint
-CREATE INDEX "order_events_order_id" ON "order_events" USING btree ("order_id");--> statement-breakpoint
-CREATE INDEX "outbox_inbox_processed_at" ON "outbox_inbox" USING btree ("processed_at");
+CREATE INDEX "order_events_order_id" ON "order_events" USING btree ("order_id");

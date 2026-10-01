@@ -22,14 +22,14 @@ describe('OrdersService (outbox)', () => {
   let relay: OutboxRelay;
 
   beforeAll(async () => {
-    // The real migrations, the outbox's tables included.
+    // Your migrations: the order tables. The outbox's store creates its schema in init().
     await migrate(db, {
       migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)),
     });
     process.env.OUTBOX_RELAY = 'off'; // no poll loop: the test drives the relay
     moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(getDrizzleToken())
-      .useValue(db) // DrizzleOutboxStore injects it too
+      .useValue(db) // the outbox's store runs on it too
       .overrideProvider(MailerService)
       .useValue(mailer)
       .overrideProvider(ANALYTICS_SERVICE)

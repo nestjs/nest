@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1790467041549,
+      "when": 1790848905661,
       "tag": "0000_orders",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1790467041948,
-      "tag": "0001_outbox",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1790467042309,
-      "tag": "0002_seed_products",
+      "when": 1790848906200,
+      "tag": "0001_seed_products",
       "breakpoints": true
     }
   ]

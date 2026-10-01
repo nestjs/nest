@@ -12,12 +12,13 @@ The application built in the [Transactional outbox](https://docs.nestjs.com/reli
 | Path | Contents |
 | --- | --- |
 | `src/` | The order API, on PostgreSQL with Drizzle (`@nestjs/drizzle`) |
-| `src/database/` | The Drizzle schema, with the outbox's three tables, and `DrizzleOutboxStore` |
+| `src/app.module.ts` | `OutboxModule`, and its store, `PostgresOutboxStore`, on the Drizzle database |
+| `src/database/` | The Drizzle schema: the order API's own tables |
 | `src/orders/` | `OrdersService` adds the messages through the order's transaction |
 | `src/notifications/`, `src/inventory/` | The `@OnOutboxMessage()` handlers |
 | `src/outbox-admin/` | The dead-letter routes and the outbox's stats |
-| `drizzle/` | The order API's migrations, written by drizzle-kit |
-| `analytics-service/` | The analytics microservice: its schema, migrations, inbox store and TCP consumer |
+| `drizzle/` | The order API's migrations, written by drizzle-kit: its tables and the products |
+| `analytics-service/` | The analytics microservice: its schema, migrations, `AppModule` and TCP consumer |
 | `e2e/` | The tests |
 
 ### Installation
@@ -40,12 +41,14 @@ After running the sample, you can stop the Docker container with
 
 #### Migrations
 
-Apply each service's migrations:
+Apply each service's migrations, which create its own tables:
 
 ```bash
 $ DATABASE_URL=postgres://postgres:postgres@localhost:5432/store npx drizzle-kit migrate
 $ DATABASE_URL=postgres://postgres:postgres@localhost:5432/analytics npx drizzle-kit migrate --config analytics-service/drizzle.config.ts
 ```
+
+There are no tables to create for the outbox. Its store, `PostgresOutboxStore` from `@nestjs/outbox/postgres`, keeps its messages, dead letters and inbox in a schema of its own, `nest_outbox`, in each service's database, and creates it when the service starts. In production (`NODE_ENV=production`) it doesn't: apply its migrations in your deploy step, next to drizzle-kit's, with `npx nest-outbox migrate` (it reads `DATABASE_URL`, or `--url`), or put the SQL of `PostgresOutboxStore.migrationSql()` (`npx nest-outbox sql`) in a migration of your own. `npx nest-outbox status` exits with 1 while the schema is behind.
 
 ### Run the sample
 
@@ -56,11 +59,13 @@ $ DATABASE_URL=postgres://postgres:postgres@localhost:5432/analytics npm run sta
 $ DATABASE_URL=postgres://postgres:postgres@localhost:5432/store ADMIN_TOKEN=s3cret npm run start
 ```
 
-Each logs the store it registered when it starts:
+Each logs the store it registered when it starts, and the store creates its schema on the first start:
 
 ```bash
-[Nest] 46426  - 09/25/2026, 8:56:39 AM     LOG [OutboxModule] OutboxStorage: DrizzleOutboxStore
-[Nest] 46425  - 09/25/2026, 8:56:38 AM     LOG [OutboxModule] OutboxStorage: DrizzleInboxStore (inbox)
+[Nest] 52654  - 09/30/2026, 6:45:43 PM     LOG [OutboxModule] OutboxStorage: PostgresOutboxStore
+[Nest] 52654  - 09/30/2026, 6:45:43 PM     LOG [OutboxModule] PostgresOutboxStore: migrated schema "nest_outbox" to version 1.
+[Nest] 52743  - 09/30/2026, 6:45:59 PM     LOG [OutboxModule] OutboxStorage: PostgresOutboxStore
+[Nest] 52743  - 09/30/2026, 6:46:00 PM     LOG [OutboxModule] PostgresOutboxStore: migrated schema "nest_outbox" to version 1.
 ```
 
 | Variable | Used by | Meaning |
@@ -113,7 +118,7 @@ $ curl localhost:3000/admin/outbox/stats -H 'x-admin-token: s3cret'
 | --- | --- |
 | `orders.e2e-spec.ts`: the order API, with the relay driven by the test | PGlite |
 | `analytics.e2e-spec.ts`: the analytics service, over TCP | PGlite |
-| `drizzle-outbox.store.e2e-spec.ts`: the store contract suites of `@nestjs/outbox/testing` | PGlite, and PostgreSQL |
+| `drizzle-outbox.store.e2e-spec.ts`: `PostgresOutboxStore` through Drizzle, against the store contract suites of `@nestjs/outbox/testing` | PGlite, and PostgreSQL |
 
 [PGlite](https://pglite.dev) is PostgreSQL in the test's process, so those tests need nothing else. The store suites also run on a server, where transactions really overlap, and are skipped without one. Point them at the container:
 
