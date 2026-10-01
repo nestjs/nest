@@ -241,7 +241,7 @@ data: hello
             'Cache-Control':
               'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
             Pragma: 'no-cache',
-            Expire: '0',
+            Expires: '0',
             'X-Accel-Buffering': 'no',
           });
           callback();
@@ -264,7 +264,7 @@ data: hello
             'Cache-Control':
               'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
             Pragma: 'no-cache',
-            Expire: '0',
+            Expires: '0',
             'X-Accel-Buffering': 'no',
           });
           callback();

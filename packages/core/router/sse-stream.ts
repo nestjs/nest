@@ -136,7 +136,7 @@ export class SseStream extends Transform {
         'Cache-Control':
           'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
         Pragma: 'no-cache',
-        Expire: '0',
+        Expires: '0',
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
         'X-Accel-Buffering': 'no',
       });
