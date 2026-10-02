@@ -1,6 +1,6 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
-import { Observable, of, Subject } from 'rxjs';
+import { EMPTY, Observable, of, Subject } from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
@@ -753,6 +753,44 @@ data: test
 
       expect(signal!.aborted).toBe(true);
     });
+
+    it.each([
+      { name: 'synchronous', result: EMPTY },
+      { name: 'asynchronous', result: Promise.resolve(EMPTY) },
+    ])(
+      'should commit headers for an empty $name stream',
+      async ({ result }) => {
+        const response = new Writable({
+          write(_chunk, _encoding, cb) {
+            cb();
+          },
+        });
+        const writeHead = vi.fn();
+        const flushHeaders = vi.fn();
+        Object.assign(response, { writeHead, flushHeaders });
+        const request = attachSocket(new PassThrough());
+        await routerResponseController.sse(
+          result,
+          response as any,
+          request as any,
+          {
+            additionalHeaders: { 'X-Test': 'empty' },
+          },
+        );
+        await new Promise(resolve => setImmediate(resolve));
+        expect(writeHead).toHaveBeenCalledOnce();
+        expect(writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'Content-Type': 'text/event-stream',
+            'X-Test': 'empty',
+          }),
+        );
+        expect(flushHeaders).toHaveBeenCalledOnce();
+        expect(response.writableEnded).toBe(true);
+        expect(request.socket.listenerCount('close')).toBe(0);
+      },
+    );
 
     it('should remove the close listener after synchronous completion', async () => {
       const result = of('test');

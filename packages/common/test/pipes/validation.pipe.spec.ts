@@ -1,5 +1,6 @@
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDefined,
@@ -51,6 +52,60 @@ class TestModelNoValidation {
 }
 
 describe('ValidationPipe', () => {
+  it('should retain array constraints alongside nested property errors', async () => {
+    class Child {
+      @IsString()
+      name: string;
+    }
+    class Parent {
+      @ArrayMinSize(2, { message: 'at least two children' })
+      @ValidateNested({ each: true })
+      @Type(() => Child)
+      children: Child[];
+    }
+    const pipe = new ValidationPipe();
+    await expect(
+      pipe.transform(
+        { children: [{ name: 42 }] },
+        {
+          type: 'body',
+          metatype: Parent,
+        },
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        message: ['at least two children', 'children.0.name must be a string'],
+      },
+    });
+  });
+
+  it('should include intermediate constraints only once with their parent path', () => {
+    const pipe = new ValidationPipe();
+    const exception = pipe.createExceptionFactory()([
+      {
+        property: 'parent',
+        constraints: { invalid: 'parent is invalid' },
+        children: [
+          {
+            property: 'child',
+            constraints: { invalid: 'child is invalid' },
+            children: [
+              {
+                property: 'name',
+                constraints: { isString: 'name must be a string' },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+    expect(exception.getResponse().message).toEqual([
+      'parent is invalid',
+      'parent.child is invalid',
+      'parent.child.name must be a string',
+    ]);
+  });
+
   let target: ValidationPipe;
   const metadata: ArgumentMetadata = {
     type: 'body',

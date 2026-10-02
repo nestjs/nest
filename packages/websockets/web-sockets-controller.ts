@@ -47,6 +47,7 @@ export class WebSocketsController {
     new MetadataScanner(),
   );
   private readonly exceptionFiltersCache = new WeakMap();
+  private readonly pendingDisconnects = new WeakMap<ContextId, number>();
 
   constructor(
     private readonly socketServerProvider: SocketServerProvider,
@@ -437,6 +438,12 @@ export class WebSocketsController {
           client as Record<any, any>,
           isTreeDurable,
         );
+        if (methodName === 'handleDisconnect') {
+          this.pendingDisconnects.set(
+            contextId,
+            (this.pendingDisconnects.get(contextId) ?? 0) + 1,
+          );
+        }
         const contextInstance = await this.injector.loadPerContext(
           instance,
           moduleRef,
@@ -445,8 +452,7 @@ export class WebSocketsController {
         );
         this.assignServerToProperties(contextInstance, server);
         const scopedMethod = contextInstance[methodName] as
-          | ((...methodArgs: unknown[]) => unknown)
-          | undefined;
+          ((...methodArgs: unknown[]) => unknown) | undefined;
         return await scopedMethod?.apply(contextInstance, args);
       } catch (err) {
         if (!targetCallback) {
@@ -499,10 +505,20 @@ export class WebSocketsController {
 
   private cleanupRequestScopedContext(
     _instanceWrapper: InstanceWrapper<NestGateway>,
-    _contextId: ContextId,
+    contextId: ContextId,
     request: Record<any, any>,
   ) {
-    Reflect.deleteProperty(request, REQUEST_CONTEXT_ID as any);
+    const remaining = (this.pendingDisconnects.get(contextId) ?? 1) - 1;
+    if (remaining > 0) {
+      this.pendingDisconnects.set(contextId, remaining);
+      return;
+    }
+    this.pendingDisconnects.delete(contextId);
+    // Other gateways can still be executing their asynchronous disconnect hooks.
+    // A finished cycle must also never remove a newer context on the same client.
+    if (request[REQUEST_CONTEXT_ID as any] === contextId) {
+      Reflect.deleteProperty(request, REQUEST_CONTEXT_ID as any);
+    }
   }
 
   private assignServerToProperties<T = any>(
