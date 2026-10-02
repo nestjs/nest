@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { lastValueFrom, of, Subject } from 'rxjs';
 import { StreamableFile } from '../../file-stream/index.js';
 import { CallHandler, ExecutionContext } from '../../interfaces/index.js';
 import { ClassSerializerInterceptor } from '../../serializer/class-serializer.interceptor.js';
@@ -54,6 +54,43 @@ describe('ClassSerializerInterceptor', () => {
   });
 
   describe('intercept', () => {
+    it('should keep custom packages isolated for concurrent response streams', async () => {
+      const firstPackage = {
+        classToPlain: vi.fn(value => ({ ...value, marker: 'first' })),
+        plainToInstance: vi.fn(),
+      };
+      const secondPackage = {
+        classToPlain: vi.fn(value => ({ ...value, marker: 'second' })),
+        plainToInstance: vi.fn(),
+      };
+      const first = new ClassSerializerInterceptor(mockReflector, {
+        transformerPackage: firstPackage,
+      });
+      const firstResponse = new Subject();
+      const context = { getHandler: vi.fn(), getClass: vi.fn() } as any;
+      const firstResult = lastValueFrom(
+        await first.intercept(context, {
+          handle: () => firstResponse,
+        }),
+      );
+      // The second interceptor is created after the first stream is wired.
+      const second = new ClassSerializerInterceptor(mockReflector, {
+        transformerPackage: secondPackage,
+      });
+      new ClassSerializerInterceptor(mockReflector);
+      const secondResult = lastValueFrom(
+        await second.intercept(context, {
+          handle: () => of({ id: 2 }),
+        }),
+      );
+      firstResponse.next({ id: 1 });
+      firstResponse.complete();
+      expect(await firstResult).toEqual({ id: 1, marker: 'first' });
+      expect(await secondResult).toEqual({ id: 2, marker: 'second' });
+      expect(firstPackage.classToPlain).toHaveBeenCalledOnce();
+      expect(secondPackage.classToPlain).toHaveBeenCalledOnce();
+    });
+
     let mockExecutionContext: ExecutionContext;
     let mockCallHandler: CallHandler;
 
