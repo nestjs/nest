@@ -172,6 +172,11 @@ export class RouterResponseController {
       };
 
       disconnectSource.once('close', onClose);
+      // The client may have disconnected before the handler ran (e.g., during
+      // a guard), in which case "close" has already been emitted.
+      if ((disconnectSource as { destroyed?: boolean }).destroyed) {
+        onClose();
+      }
 
       Promise.resolve(result)
         .then(observableResult => {
@@ -239,8 +244,8 @@ export class RouterResponseController {
               },
             });
 
-          // A producer can synchronously trigger a disconnect during subscribe,
-          // before the subscription has been assigned for onClose to cancel it.
+          // Guards against a "close" event emitted synchronously during
+          // subscribe, before the subscription is assigned for onClose to cancel.
           if (settled) {
             subscription.unsubscribe();
           }
