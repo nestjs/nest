@@ -251,6 +251,9 @@ export class RouterResponseController {
                   return;
                 }
                 settled = true;
+                // An empty producer is still a successful SSE response. Commit
+                // before ending, since the deferred header task will be skipped.
+                stream.commitHeaders();
                 finalize();
                 endStream();
                 resolve();

@@ -160,6 +160,16 @@ describe('Sse (Express Application)', () => {
       await app.close();
     });
 
+    it('should return SSE headers when the producer completes without events', async () => {
+      const response = await fetch(`${await app.getUrl()}/sse/empty`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain(
+        'text/event-stream',
+      );
+      expect(response.headers.get('cache-control')).toContain('no-cache');
+      expect(await response.text()).toBe('\n');
+    });
+
     it('should deliver all events when bursting large payloads', async () => {
       const url = await app.getUrl();
       const n = 50;

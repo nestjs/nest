@@ -74,6 +74,11 @@ export class AppController {
     return of({ data: { limit: query.limit } });
   }
 
+  @Sse('sse/empty')
+  sseEmpty(): Observable<MessageEvent> {
+    return EMPTY;
+  }
+
   @Sse('sse/burst')
   sseBurst(
     @Query('n') n = '20',
