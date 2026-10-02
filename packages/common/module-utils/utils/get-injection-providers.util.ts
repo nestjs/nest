@@ -1,5 +1,6 @@
 import { isUndefined } from '../../utils/shared.utils.js';
 import {
+  ExistingProvider,
   FactoryProvider,
   InjectionToken,
   OptionalFactoryDependency,
@@ -42,10 +43,13 @@ export function getInjectionProviders(
         (search.includes(p as any) || search.includes((p as any)?.provide)),
     );
     result.push(...match);
-    // get injection tokens of the matched providers, if any
+    // Follow factory dependencies and aliases to existing providers.
     search = match
-      .filter(p => (p as any)?.inject)
-      .flatMap(p => (p as FactoryProvider).inject!)
+      .flatMap(p =>
+        (p as ExistingProvider)?.useExisting !== undefined
+          ? [(p as ExistingProvider).useExisting]
+          : ((p as FactoryProvider)?.inject ?? []),
+      )
       .map(mapInjectToTokens);
   }
   return result;
