@@ -98,7 +98,7 @@ export class WsAdapter extends AbstractWsAdapter {
       path?: string;
     },
   ) {
-    const { server, path, ...wsOptions } = options as {
+    const { server, path, ...wsOptions } = (options ?? {}) as {
       namespace?: string;
       server?: any;
       path?: string;
