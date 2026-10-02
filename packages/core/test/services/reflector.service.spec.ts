@@ -79,6 +79,58 @@ describe('Reflector', () => {
     });
   });
 
+  describe('createDecorator', () => {
+    it('should preserve an explicit null metadata value', () => {
+      const decorator = Reflector.createDecorator<string | null>();
+
+      @decorator(null)
+      class TestNull {}
+
+      const reflectedValue = reflector.get(decorator, TestNull);
+      expect(reflectedValue).toBeNull();
+
+      reflectedValue satisfies string | null;
+    });
+
+    it('should preserve null returned by the transform function', () => {
+      const decorator = Reflector.createDecorator<string, string | null>({
+        transform: () => null,
+      });
+
+      @decorator('ignored')
+      class TestTransformedNull {}
+
+      const reflectedValue = reflector.get(decorator, TestTransformedNull);
+      expect(reflectedValue).toBeNull();
+
+      reflectedValue satisfies string | null;
+    });
+
+    it('should use an empty object for decorators called without arguments', () => {
+      const decorator = Reflector.createDecorator<{ marker?: boolean }>();
+
+      @decorator()
+      class TestMarker {}
+
+      expect(reflector.get(decorator, TestMarker)).toEqual({});
+    });
+
+    it('should preserve other falsy metadata values', () => {
+      const decorator = Reflector.createDecorator<number | string | boolean>();
+
+      @decorator(0)
+      class TestZero {}
+      @decorator('')
+      class TestEmptyString {}
+      @decorator(false)
+      class TestFalse {}
+
+      expect(reflector.get(decorator, TestZero)).toEqual(0);
+      expect(reflector.get(decorator, TestEmptyString)).toEqual('');
+      expect(reflector.get(decorator, TestFalse)).toEqual(false);
+    });
+  });
+
   describe('getAll', () => {
     it('should reflect metadata of all targets by key', () => {
       const value1 = 'value1';

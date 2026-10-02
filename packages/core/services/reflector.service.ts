@@ -64,7 +64,14 @@ export class Reflector {
         const value = options.transform
           ? options.transform(metadataValue)
           : metadataValue;
-        SetMetadata(metadataKey, value ?? {})(target, key!, descriptor);
+        // Only a missing value falls back to the empty object marker used by
+        // argument-less decorators. An explicit `null` (or a `transform` that
+        // returns `null`) is a legitimate metadata value and must be preserved,
+        // otherwise the reflected value contradicts the decorator's type.
+        SetMetadata(
+          metadataKey,
+          value === undefined ? {} : value,
+        )(target, key!, descriptor);
       };
 
     decoratorFn.KEY = metadataKey;
