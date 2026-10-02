@@ -314,7 +314,11 @@ describe('Injector', () => {
 
     it('should call "loadInstance" with expected arguments', async () => {
       const module = { controllers: [] };
-      const wrapper = { test: 'test', getEnhancersMetadata: () => [] };
+      const wrapper = {
+        test: 'test',
+        getEnhancersMetadata: () => [],
+        isDependencyTreeStatic: () => true,
+      };
 
       await injector.loadController(wrapper as any, module as any);
       expect(loadInstance).toHaveBeenCalledWith(
@@ -326,6 +330,46 @@ describe('Injector', () => {
           inquirer: wrapper,
         }),
       );
+    });
+
+    describe('enhancers of a static controller', () => {
+      const createEnhancer = () =>
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        });
+
+      it('should load each enhancer in the static context with the controller as inquirer', async () => {
+        const controller = new InstanceWrapper();
+        const enhancer = createEnhancer();
+        controller.addEnhancerMetadata(enhancer);
+
+        await injector.loadController(
+          controller,
+          new Module(class {}, new NestContainer()),
+        );
+
+        expect(loadInstance).toHaveBeenCalledWith(
+          enhancer,
+          enhancer.host!.injectables,
+          enhancer.host,
+          expect.objectContaining({
+            contextId: STATIC_CONTEXT,
+            inquirer: controller,
+          }),
+        );
+      });
+
+      it('should not load the enhancers of a request scoped controller in the static context', async () => {
+        const controller = new InstanceWrapper({ scope: Scope.REQUEST });
+        controller.addEnhancerMetadata(createEnhancer());
+
+        await injector.loadController(
+          controller,
+          new Module(class {}, new NestContainer()),
+        );
+
+        expect(loadInstance).toHaveBeenCalledOnce();
+      });
     });
   });
 
@@ -931,6 +975,29 @@ describe('Injector', () => {
 
       await injector.loadEnhancersPerContext(wrapper, contextId);
       expect(loadInstanceStub).toHaveBeenCalledTimes(2);
+    });
+
+    it('should load each enhancer with the given inquirer', async () => {
+      const contextId = { id: 1 };
+      const inquirer = new InstanceWrapper();
+      const wrapper = new InstanceWrapper();
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        }),
+      );
+
+      const loadInstanceStub = vi
+        .spyOn(injector, 'loadInstance')
+        .mockImplementation(async () => ({}) as any);
+
+      await injector.loadEnhancersPerContext(wrapper, contextId, inquirer);
+      expect(loadInstanceStub).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ contextId, inquirer }),
+      );
     });
   });
 
