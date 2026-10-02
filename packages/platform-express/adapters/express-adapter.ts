@@ -15,7 +15,7 @@ import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
-import { Duplex, Writable } from 'stream';
+import { Duplex, finished, Writable } from 'stream';
 import {
   NestExpressBodyParserOptionsFor,
   NestExpressBodyParserType,
@@ -129,6 +129,13 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       const stream = body.getStream();
       stream.once('error', err => {
         body.errorHandler(err, response);
+      });
+      // pipe() leaves the source open when the client disconnects early,
+      // also before reply() runs ("close" has already fired by then)
+      finished(response, () => {
+        if (!stream.readableEnded) {
+          stream.destroy();
+        }
       });
       return stream
         .pipe<Writable>(response)
