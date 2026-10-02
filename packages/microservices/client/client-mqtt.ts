@@ -327,7 +327,6 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
             isObject(packet?.data) && packet.data instanceof MqttRecord
               ? packet.data.options
               : undefined;
-          delete packet?.data?.options;
           const serializedPacket: string | Buffer =
             this.serializer.serialize(packet);
 
@@ -378,7 +377,6 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       isObject(packet?.data) && packet.data instanceof MqttRecord
         ? packet.data.options
         : undefined;
-    delete packet?.data?.options;
 
     const serializedPacket: string | Buffer = this.serializer.serialize(packet);
     return new Promise<void>((resolve, reject) =>
