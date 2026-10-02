@@ -156,6 +156,9 @@ export class JsonSocket extends TcpSocket {
       return;
     }
     this.isBackpressured = true;
+    // Reads are paused by us, so the peer cannot make progress on an inbound
+    // packet. Resume its idle timeout only after outgoing data has drained.
+    this.clearIncompleteMessageTimer();
     this.socket.pause();
     this.socket.once(TcpEventsMap.DRAIN, () => this.releaseBackpressure());
   }
@@ -185,7 +188,11 @@ export class JsonSocket extends TcpSocket {
 
     const hasIncompleteMessage =
       this.buffer.length > 0 || this.contentLength !== null;
-    if (!this.incompleteMessageTimeout || !hasIncompleteMessage) {
+    if (
+      this.isBackpressured ||
+      !this.incompleteMessageTimeout ||
+      !hasIncompleteMessage
+    ) {
       return;
     }
 
