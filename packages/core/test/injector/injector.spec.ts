@@ -872,6 +872,45 @@ describe('Injector', () => {
   });
 
   describe('loadEnhancersPerContext', () => {
+    it('should resolve an explicit enhancer list without changing a singleton dependency tree', async () => {
+      class Gateway {}
+      @Injectable({ scope: Scope.TRANSIENT })
+      class Enhancer {
+        readonly constructed = true;
+      }
+      const moduleRef = new Module(class {}, new NestContainer());
+      moduleRef.addProvider(Gateway);
+      moduleRef.addInjectable(Enhancer, 'guard');
+      const wrapper = moduleRef.providers.get(Gateway)!;
+      const enhancer = moduleRef.injectables.get(Enhancer)!;
+      const firstContext = { id: 1 };
+      const secondContext = { id: 2 };
+
+      await injector.loadEnhancersPerContext(wrapper, firstContext, wrapper, [
+        enhancer,
+      ]);
+      const firstInstance = enhancer.getInstanceByContextId(
+        firstContext,
+        wrapper.id,
+      ).instance;
+      await injector.loadEnhancersPerContext(wrapper, firstContext, wrapper, [
+        enhancer,
+      ]);
+      await injector.loadEnhancersPerContext(wrapper, secondContext, wrapper, [
+        enhancer,
+      ]);
+
+      expect(firstInstance.constructed).toBe(true);
+      expect(
+        enhancer.getInstanceByContextId(firstContext, wrapper.id).instance,
+      ).toBe(firstInstance);
+      expect(
+        enhancer.getInstanceByContextId(secondContext, wrapper.id).instance,
+      ).not.toBe(firstInstance);
+      expect(wrapper.isDependencyTreeStatic()).toBe(true);
+      expect(wrapper.getEnhancersMetadata()).toBeUndefined();
+    });
+
     it('should load enhancers per context id', async () => {
       const contextId = { id: 1 };
       const wrapper = new InstanceWrapper();

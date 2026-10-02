@@ -976,11 +976,11 @@ export class Injector {
     wrapper: InstanceWrapper,
     ctx: ContextId,
     inquirer?: InstanceWrapper,
+    enhancers: InstanceWrapper[] = wrapper.getEnhancersMetadata() || [],
   ) {
     if (ctx === STATIC_CONTEXT) {
       return;
     }
-    const enhancers = wrapper.getEnhancersMetadata() || [];
     const loadEnhancer = (item: InstanceWrapper) => {
       const hostModule = item.host!;
       return this.loadInstance(
