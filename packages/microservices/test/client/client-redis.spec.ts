@@ -351,6 +351,82 @@ describe('ClientRedis', () => {
         });
       });
     });
+    describe('response that cannot be deserialized', () => {
+      const error = new TypeError('Cannot read properties of undefined');
+      const buffer = JSON.stringify({ id: '1', response: 'test' });
+      let redisClient: ClientRedis;
+      let logError: ReturnType<typeof vi.spyOn>;
+      let pendingCallback: ReturnType<typeof vi.fn>;
+
+      const createResponseCallbackWith = (
+        deserialize: () => unknown,
+      ): ReturnType<ClientRedis['createResponseCallback']> => {
+        redisClient = new ClientRedis({});
+        Object.assign(redisClient, { deserializer: { deserialize } });
+        logError = vi
+          .spyOn(Reflect.get(redisClient, 'logger'), 'error')
+          .mockImplementation(() => {});
+        pendingCallback = vi.fn();
+        Reflect.get(redisClient, 'routingMap').set('1', pendingCallback);
+        return redisClient.createResponseCallback();
+      };
+
+      it('should log the error and resolve when the deserializer throws', async () => {
+        const subscription = createResponseCallbackWith(() => {
+          throw error;
+        });
+
+        await expect(subscription('channel', buffer)).resolves.toBeUndefined();
+
+        expect(logError).toHaveBeenCalledTimes(1);
+        expect(logError).toHaveBeenCalledWith(
+          `Dropped a response that the deserializer failed on: ${error}`,
+        );
+      });
+
+      it('should log the error and resolve when the deserializer rejects', async () => {
+        const subscription = createResponseCallbackWith(() =>
+          Promise.reject(error),
+        );
+
+        await expect(subscription('channel', buffer)).resolves.toBeUndefined();
+
+        expect(logError).toHaveBeenCalledTimes(1);
+        expect(logError).toHaveBeenCalledWith(
+          `Dropped a response that the deserializer failed on: ${error}`,
+        );
+      });
+
+      it('should leave the pending request untouched', async () => {
+        const subscription = createResponseCallbackWith(() =>
+          Promise.reject(error),
+        );
+
+        await subscription('channel', buffer);
+
+        expect(pendingCallback).not.toHaveBeenCalled();
+        expect(Reflect.get(redisClient, 'routingMap').get('1')).toBe(
+          pendingCallback,
+        );
+      });
+
+      it('should not report a failing callback as an undecodable response', async () => {
+        const callbackError = new Error('callback failed');
+        const subscription = createResponseCallbackWith(() => ({
+          id: '1',
+          response: 'test',
+        }));
+        pendingCallback.mockImplementation(() => {
+          throw callbackError;
+        });
+
+        await expect(subscription('channel', buffer)).rejects.toBe(
+          callbackError,
+        );
+
+        expect(logError).not.toHaveBeenCalled();
+      });
+    });
   });
   describe('close', () => {
     const untypedClient = client as any;
