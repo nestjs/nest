@@ -306,6 +306,47 @@ describe('ServerTCP', () => {
     });
   });
   describe('handleClose', () => {
+    describe('pending retries', () => {
+      let listen: ReturnType<typeof vi.fn>;
+      beforeEach(() => {
+        vi.useFakeTimers();
+        server = new ServerTCP({ retryAttempts: 2, retryDelay: 50 });
+        untypedServer = server as any;
+        listen = vi.fn();
+        untypedServer.server = { listen, close: vi.fn() };
+      });
+      afterEach(() => {
+        server.close();
+        vi.useRealTimers();
+      });
+
+      it('should cancel an already scheduled retry on manual close', () => {
+        server.handleClose();
+        server.close();
+        vi.advanceTimersByTime(50);
+        expect(listen).not.toHaveBeenCalled();
+        expect(server.handleClose()).toBeUndefined();
+      });
+
+      it('should retry normally and release the timer for the next cycle', () => {
+        server.handleClose();
+        vi.advanceTimersByTime(50);
+        expect(listen).toHaveBeenCalledOnce();
+        server.handleClose();
+        vi.advanceTimersByTime(50);
+        expect(listen).toHaveBeenCalledTimes(2);
+        expect(server.handleClose()).toBeUndefined();
+      });
+
+      it('should coalesce close events while a retry is pending', () => {
+        const timer = server.handleClose();
+        expect(server.handleClose()).toBe(timer);
+        vi.advanceTimersByTime(50);
+        expect(listen).toHaveBeenCalledOnce();
+        expect(untypedServer.retryAttemptsCount).toBe(1);
+      });
+    });
+
     describe('when is terminated', () => {
       it('should return undefined', () => {
         untypedServer.isExplicitlyTerminated = true;
