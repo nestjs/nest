@@ -117,8 +117,8 @@ export class SocketModule<
       // Memoize the initialization promise so concurrent gateway connections
       // share a single adapter instead of racing to create their own.
       this.adapterInitPromise ??= this.initializeAdapter();
-      await this.adapterInitPromise;
     }
+    await this.adapterInitPromise;
     this.webSocketsController.connectGatewayToServer(
       wrapper as InstanceWrapper<NestGateway>,
       moduleName,
