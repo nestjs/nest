@@ -9,6 +9,7 @@ import {
   MODULE_PATH,
   VERSION_METADATA,
   type Controller,
+  type RouteInfo,
   type VersionValue,
 } from '@nestjs/common/internal';
 import { ApplicationConfig } from '../application-config.js';
@@ -162,8 +163,19 @@ export class RoutesResolver implements Resolver {
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     const prefix = this.applicationConfig.getGlobalPrefix();
+    // The paths `setGlobalPrefix({ exclude })` took out of the prefix. An
+    // adapter that scopes the handler by path cannot see them otherwise, and a
+    // method miss on one of them is an unmatched request for a route Nest does
+    // own. `ExcludeRouteMetadata` lives in core and `@nestjs/common` cannot
+    // import it, so it travels as the `RouteInfo` the interface declares;
+    // `pathRegex` is not part of that shape and is not needed, because
+    // `mapToExcludeRoute` has already written `path` in the syntax the
+    // framework speaks.
+    const excludedRoutes: RouteInfo[] = (
+      this.applicationConfig.getGlobalPrefixOptions().exclude ?? []
+    ).map(route => ({ path: route.path, method: route.requestMethod }));
     applicationRef.setNotFoundHandler &&
-      applicationRef.setNotFoundHandler(proxy, prefix);
+      applicationRef.setNotFoundHandler(proxy, prefix, excludedRoutes);
   }
 
   public registerExceptionHandler() {
