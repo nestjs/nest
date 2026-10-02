@@ -47,6 +47,14 @@ export class WebSocketsController {
     new MetadataScanner(),
   );
   private readonly exceptionFiltersCache = new WeakMap();
+  private readonly gatewayServers = new WeakMap<
+    InstanceWrapper<NestGateway>,
+    object
+  >();
+  private readonly scopedInitializations = new WeakMap<
+    NestGateway,
+    Promise<void>
+  >();
 
   constructor(
     private readonly socketServerProvider: SocketServerProvider,
@@ -186,7 +194,9 @@ export class WebSocketsController {
       options,
       port,
     );
-    this.assignServerToProperties(instance, observableServer.server);
+    if (isStatic) {
+      this.assignServerToProperties(instance, observableServer.server);
+    }
     this.subscribeEvents(
       instanceWrapper,
       messageHandlers,
@@ -223,7 +233,9 @@ export class WebSocketsController {
     const { init, disconnect, connection, server } = observableServer;
     const adapter = this.config.getIoAdapter();
 
-    this.subscribeInitEvent(instance, init);
+    if (instanceWrapper.isDependencyTreeStatic?.() ?? true) {
+      this.subscribeInitEvent(instance, init);
+    }
     this.subscribeConnectionEvent(connectionHandler, connection);
     this.subscribeDisconnectEvent(disconnectHandler, disconnect);
 
@@ -389,6 +401,10 @@ export class WebSocketsController {
           collection,
           contextId,
         );
+        const server = this.gatewayServers.get(instanceWrapper);
+        if (server) {
+          await this.initializeScopedGateway(contextInstance, server);
+        }
         return this.contextCreator.create(
           contextInstance,
           contextInstance[methodName],
@@ -426,7 +442,8 @@ export class WebSocketsController {
     const { instance } = instanceWrapper;
     const collection = moduleRef.providers;
     const isTreeDurable = instanceWrapper.isDependencyTreeDurable();
-    const targetCallback = instance[methodName];
+    const targetCallback = instance[methodName] ?? instance.afterInit;
+    this.gatewayServers.set(instanceWrapper, server);
 
     return async (...args: unknown[]) => {
       const [client] = args;
@@ -443,10 +460,9 @@ export class WebSocketsController {
           collection,
           contextId,
         );
-        this.assignServerToProperties(contextInstance, server);
+        await this.initializeScopedGateway(contextInstance, server);
         const scopedMethod = contextInstance[methodName] as
-          | ((...methodArgs: unknown[]) => unknown)
-          | undefined;
+          ((...methodArgs: unknown[]) => unknown) | undefined;
         return await scopedMethod?.apply(contextInstance, args);
       } catch (err) {
         if (!targetCallback) {
@@ -503,6 +519,23 @@ export class WebSocketsController {
     request: Record<any, any>,
   ) {
     Reflect.deleteProperty(request, REQUEST_CONTEXT_ID as any);
+  }
+
+  private initializeScopedGateway(
+    instance: NestGateway,
+    server: object,
+  ): Promise<void> {
+    let initialization = this.scopedInitializations.get(instance);
+    if (!initialization) {
+      this.assignServerToProperties(instance, server);
+      // Cache before invoking the hook so concurrent connection/message handlers
+      // wait for the same initialization, including an asynchronous afterInit.
+      initialization = Promise.resolve().then(() =>
+        instance.afterInit?.(server),
+      );
+      this.scopedInitializations.set(instance, initialization);
+    }
+    return initialization;
   }
 
   private assignServerToProperties<T = any>(

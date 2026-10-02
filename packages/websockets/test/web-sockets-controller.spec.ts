@@ -417,6 +417,67 @@ describe('WebSocketsController', () => {
     });
   });
   describe('createRequestScopedEventHandler', () => {
+    it('should initialize a constructed gateway once before concurrent handlers run', async () => {
+      let release: () => void;
+      const ready = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      const server = {};
+      const contextInstance = {
+        dependency: 'constructed',
+        afterInit: vi.fn(async function (this: any, receivedServer: object) {
+          expect(this.dependency).toBe('constructed');
+          expect(receivedServer).toBe(server);
+          await ready;
+        }),
+        handleConnection: vi.fn(),
+        onMessage: vi.fn(),
+      };
+      const wrapper = {
+        id: 'gateway-wrapper',
+        instance: { handleConnection() {}, onMessage() {} },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const moduleRef = { providers: new Map() } as Module;
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue(
+        contextInstance as never,
+      );
+      vi.spyOn(untypedInstance.contextCreator, 'create').mockImplementation(
+        (target: any, callback: Function) =>
+          (...args: unknown[]) =>
+            callback.apply(target, args),
+      );
+      const connection = instance.createRequestScopedEventHandler(
+        wrapper,
+        moduleRef,
+        'moduleKey',
+        'handleConnection',
+        server,
+      );
+      const message = instance.createRequestScopedHandler(
+        wrapper,
+        moduleRef,
+        'moduleKey',
+        'onMessage',
+      );
+      const client = {};
+      const connecting = connection(client);
+      const messaging = message(client, 'first');
+      await new Promise(resolve => setImmediate(resolve));
+      expect(contextInstance.afterInit).toHaveBeenCalledOnce();
+      expect(contextInstance.handleConnection).not.toHaveBeenCalled();
+      expect(contextInstance.onMessage).not.toHaveBeenCalled();
+      release!();
+      await Promise.all([connecting, messaging]);
+      await message(client, 'second');
+      expect(contextInstance.afterInit).toHaveBeenCalledOnce();
+      expect(contextInstance.handleConnection).toHaveBeenCalledOnce();
+      expect(contextInstance.onMessage).toHaveBeenCalledTimes(2);
+    });
+
     it('should cleanup request-scoped context on disconnect', async () => {
       const client = {};
       const gatewayWrapper = {
