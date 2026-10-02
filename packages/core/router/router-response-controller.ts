@@ -138,7 +138,6 @@ export class RouterResponseController {
 
     return new Promise<void>((resolve, reject) => {
       let settled = false;
-      let closeRequested = false;
       let subscription: { unsubscribe(): void } | undefined;
       const disconnectSource = request.socket ?? response;
 
@@ -160,14 +159,7 @@ export class RouterResponseController {
       };
 
       const onClose = () => {
-        if (settled || closeRequested) {
-          return;
-        }
-
-        closeRequested = true;
-
-        if (!subscription) {
-          finalize();
+        if (settled) {
           return;
         }
 
@@ -184,22 +176,12 @@ export class RouterResponseController {
       Promise.resolve(result)
         .then(observableResult => {
           if (settled) {
+            // Setup may resolve after the client has disconnected. Leave its
+            // producer unsubscribed, without keeping the router lifecycle open.
             return;
           }
 
           this.assertObservable(observableResult);
-
-          if (closeRequested) {
-            // The client disconnected while the async handler was resolving.
-            // Do not subscribe the producer Observable after the consumer has
-            // already gone away — subscribing only to abort it in the same tick
-            // would start producer side effects just to immediately cancel them.
-            settled = true;
-            endStream();
-            response.end();
-            resolve();
-            return;
-          }
 
           stream.pipe(response, {
             additionalHeaders: options?.additionalHeaders,
@@ -257,6 +239,12 @@ export class RouterResponseController {
               },
             });
 
+          // A producer can synchronously trigger a disconnect during subscribe,
+          // before the subscription has been assigned for onClose to cancel it.
+          if (settled) {
+            subscription.unsubscribe();
+          }
+
           // Commit SSE headers on the next macrotask. Pipe validation errors
           // propagate through microtasks (which complete before macrotasks),
           // so if the lifecycle errored, `settled` is already true and we
@@ -270,14 +258,6 @@ export class RouterResponseController {
         })
         .catch(err => {
           if (settled) {
-            return;
-          }
-
-          if (closeRequested) {
-            settled = true;
-            endStream();
-            response.end();
-            resolve();
             return;
           }
 
