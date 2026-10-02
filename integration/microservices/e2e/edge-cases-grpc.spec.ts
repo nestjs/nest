@@ -90,4 +90,19 @@ describe('GRPC transport (handlers that complete empty or throw)', () => {
     expect(err?.code).toBe(GRPC.status.INVALID_ARGUMENT);
     expect(err?.details).toBe('collect rejected');
   });
+
+  it('completes the request stream of a bidi call whose response errors', async () => {
+    const call = client.echoReject({ deadline: deadline() });
+    const err = await new Promise<any>(resolve => {
+      call.on('error', resolve);
+      call.on('data', () => undefined);
+      call.write({ value: 1 });
+    });
+
+    expect(err.code).toBe(GRPC.status.INVALID_ARGUMENT);
+    expect(err.details).toBe('echo rejected');
+    expect(app.get(EdgeController).echoRejectRequestEvents).toEqual([
+      'complete',
+    ]);
+  });
 });

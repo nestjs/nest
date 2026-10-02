@@ -41,6 +41,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly maxSendBufferSize?: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
+  protected retryTimer?: ReturnType<typeof setTimeout>;
   protected tlsOptions?: TlsOptions;
   protected pendingEventListeners: Array<{
     event: keyof TcpEvents;
@@ -98,6 +99,10 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
 
   public close() {
     this.isManuallyTerminated = true;
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = undefined;
+    }
 
     this.server.close();
     this.closeOpenSockets();
@@ -152,6 +157,9 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {
+    if (this.retryTimer) {
+      return this.retryTimer;
+    }
     if (
       this.isManuallyTerminated ||
       !this.getOptionsProp(this.options, 'retryAttempts') ||
@@ -161,10 +169,16 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       return undefined;
     }
     ++this.retryAttemptsCount;
-    return setTimeout(
-      () => this.server.listen(this.port, this.host),
+    this.retryTimer = setTimeout(
+      () => {
+        this.retryTimer = undefined;
+        if (!this.isManuallyTerminated) {
+          this.server.listen(this.port, this.host);
+        }
+      },
       this.getOptionsProp(this.options, 'retryDelay', 0),
     );
+    return this.retryTimer;
   }
 
   public unwrap<T>(): T {

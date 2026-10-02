@@ -2,8 +2,10 @@ import { Logger } from '@nestjs/common';
 import { join } from 'path';
 import { EventEmitter } from 'events';
 import {
+  concat,
   EMPTY,
   lastValueFrom,
+  NEVER,
   of,
   ReplaySubject,
   Subject,
@@ -1062,6 +1064,85 @@ describe('ServerGrpc', () => {
         server.transportId,
         call.request,
       );
+    });
+
+    it('should not error the request stream when the handler errors the response stream', async () => {
+      const call = createCall();
+      const responseError = new Error('response failed');
+      const requestErrors: unknown[] = [];
+      const serverErrors: unknown[] = [];
+      call.on('error', e => serverErrors.push(e));
+
+      const handler = (stream: any) => {
+        stream.subscribe({ error: (e: unknown) => requestErrors.push(e) });
+        stream.drainBuffer?.();
+        return throwError(() => responseError);
+      };
+
+      await server.createRequestStreamMethod(handler, true)(
+        call as any,
+        vi.fn(),
+      );
+
+      // The error still reaches the call, which sends it to the client
+      expect(serverErrors).toEqual([responseError]);
+      expect(requestErrors).toEqual([]);
+    });
+
+    it('should not error the request stream when the response errors after draining', async () => {
+      const call = createCall();
+      // Backpressure: the first write asks the server to wait for "drain"
+      call.write.mockReturnValueOnce(false);
+      const responseError = new Error('response failed');
+      const requestErrors: unknown[] = [];
+      const serverErrors: unknown[] = [];
+      call.on('error', e => serverErrors.push(e));
+
+      const handler = (stream: any) => {
+        stream.subscribe({ error: (e: unknown) => requestErrors.push(e) });
+        stream.drainBuffer?.();
+        return concat(
+          of('a', 'b'),
+          throwError(() => responseError),
+        );
+      };
+
+      const result = server.createRequestStreamMethod(handler, true)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      // The error waits for the buffered value to be written
+      expect(serverErrors).toEqual([]);
+      call.emit('drain');
+      await result;
+
+      expect(call.write.mock.calls).toEqual([['a'], ['b']]);
+      expect(serverErrors).toEqual([responseError]);
+      expect(requestErrors).toEqual([]);
+    });
+
+    it('should still pass a transport error on to the request stream', async () => {
+      const call = createCall();
+      const transportError = new Error('transport failed');
+      const requestErrors: unknown[] = [];
+
+      const handler = (stream: any) => {
+        stream.subscribe({ error: (e: unknown) => requestErrors.push(e) });
+        stream.drainBuffer?.();
+        return NEVER;
+      };
+
+      const result = server.createRequestStreamMethod(handler, true)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      call.emit('error', transportError);
+
+      expect(requestErrors).toEqual([transportError]);
+      call.emit('cancelled', 'cancelled');
+      await result;
     });
 
     it('should run the end hook when the call errors', async () => {

@@ -6,11 +6,13 @@ import {
   GrpcStreamMethod,
   RpcException,
 } from '@nestjs/microservices';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, Subject } from 'rxjs';
 import { ignoreElements, map, toArray } from 'rxjs/operators';
 
 @Controller()
 export class EdgeController {
+  readonly echoRejectRequestEvents: string[] = [];
+
   @GrpcMethod('Edge')
   completeEmpty() {
     return EMPTY;
@@ -43,5 +45,22 @@ export class EdgeController {
       code: GrpcStatus.INVALID_ARGUMENT,
       message: 'collect rejected',
     });
+  }
+
+  @GrpcStreamMethod('Edge')
+  echoReject(messages: Observable<unknown>) {
+    const response = new Subject<unknown>();
+    messages.subscribe({
+      next: () =>
+        response.error(
+          new RpcException({
+            code: GrpcStatus.INVALID_ARGUMENT,
+            message: 'echo rejected',
+          }),
+        ),
+      error: () => this.echoRejectRequestEvents.push('error'),
+      complete: () => this.echoRejectRequestEvents.push('complete'),
+    });
+    return response;
   }
 }

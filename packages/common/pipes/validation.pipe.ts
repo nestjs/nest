@@ -340,21 +340,21 @@ export class ValidationPipe implements PipeTransform {
     error: ValidationError,
     parentPath?: string,
   ): ValidationError[] {
+    const currentError = parentPath
+      ? this.prependConstraintsWithParentProp(parentPath, error)
+      : error;
     if (!(error.children && error.children.length)) {
-      return [error];
+      return [currentError];
     }
-    const validationErrors: ValidationError[] = [];
+    const validationErrors: ValidationError[] = error.constraints
+      ? [currentError]
+      : [];
     parentPath = parentPath
       ? `${parentPath}.${error.property}`
       : error.property;
     for (const item of error.children) {
-      if (item.children && item.children.length) {
-        validationErrors.push(
-          ...this.mapChildrenToValidationErrors(item, parentPath),
-        );
-      }
       validationErrors.push(
-        this.prependConstraintsWithParentProp(parentPath, item),
+        ...this.mapChildrenToValidationErrors(item, parentPath),
       );
     }
     return validationErrors;

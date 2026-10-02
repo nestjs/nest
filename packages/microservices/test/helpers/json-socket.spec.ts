@@ -197,6 +197,61 @@ describe('JsonSocket', () => {
   });
 
   describe('write backpressure', () => {
+    describe('incomplete packet timeout', () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should not time out complete frames buffered while responses are backpressured', () => {
+        const socket = makeSocketStub();
+        const errors: string[] = [];
+        socket.on('error', error => errors.push(error));
+        socket.write.mockReturnValue(false);
+        const jsonSocket = new JsonSocket(socket, {
+          incompleteMessageTimeout: 1000,
+        });
+        const messages: unknown[] = [];
+        socket.on('message', message => {
+          messages.push(message);
+          jsonSocket.sendMessage({ response: 'ok' });
+        });
+        socket.emit('data', Buffer.from(frame({ n: 1 }) + frame({ n: 2 })));
+        expect(messages).toEqual([{ n: 1 }]);
+        vi.advanceTimersByTime(2000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+        expect(errors).toHaveLength(0);
+        socket.write.mockReturnValue(true);
+        socket.emit('drain');
+        expect(messages).toEqual([{ n: 1 }, { n: 2 }]);
+        vi.advanceTimersByTime(2000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+      });
+
+      it('should suspend an existing partial-packet timer and rearm it after drain', () => {
+        const socket = makeSocketStub();
+        const errors: string[] = [];
+        socket.on('error', error => errors.push(error));
+        const jsonSocket = new JsonSocket(socket, {
+          incompleteMessageTimeout: 1000,
+        });
+        socket.emit('data', Buffer.from('100#partial'));
+        vi.advanceTimersByTime(500);
+        socket.write.mockReturnValue(false);
+        jsonSocket.sendMessage({ response: 'ok' });
+        vi.advanceTimersByTime(2000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+        socket.emit('drain');
+        vi.advanceTimersByTime(999);
+        expect(socket.destroy).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+        expect(errors).toHaveLength(1);
+      });
+    });
+
     it('pauses reading when the outgoing buffer is above the high-water mark', () => {
       const socket = makeSocketStub();
       socket.write.mockReturnValue(false);

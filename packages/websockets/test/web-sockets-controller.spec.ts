@@ -507,6 +507,88 @@ describe('WebSocketsController', () => {
       expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
     });
 
+    it('should retain a shared context until all disconnect hooks finish', async () => {
+      let release: () => void;
+      const pending = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      const fast = { handleDisconnect: vi.fn() };
+      let contextDuringSlowHook: unknown;
+      const client = {};
+      const slow = {
+        handleDisconnect: async () => {
+          await pending;
+          contextDuringSlowHook = client[REQUEST_CONTEXT_ID as any];
+        },
+      };
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockImplementation(
+        async (target: any) => target,
+      );
+      const wrapper = (gateway: any) =>
+        ({
+          instance: gateway,
+          isDependencyTreeStatic: () => false,
+          isDependencyTreeDurable: () => false,
+        }) as any;
+      const moduleRef = { providers: new Map() } as Module;
+      const slowHandler = instance.createRequestScopedEventHandler(
+        wrapper(slow),
+        moduleRef,
+        'moduleKey',
+        'handleDisconnect',
+        {},
+      );
+      const fastHandler = instance.createRequestScopedEventHandler(
+        wrapper(fast),
+        moduleRef,
+        'moduleKey',
+        'handleDisconnect',
+        {},
+      );
+      const slowResult = slowHandler(client);
+      const contextId = client[REQUEST_CONTEXT_ID as any];
+      await fastHandler(client);
+      expect(client[REQUEST_CONTEXT_ID as any]).toBe(contextId);
+      release!();
+      await slowResult;
+      expect(contextDuringSlowHook).toBe(contextId);
+      expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
+    });
+
+    it('should preserve a newer context when an old disconnect hook completes', async () => {
+      let release: () => void;
+      const pending = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      const gateway = { handleDisconnect: async () => pending };
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue(gateway as never);
+      const wrapper = {
+        instance: gateway,
+        isDependencyTreeStatic: () => false,
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const handler = instance.createRequestScopedEventHandler(
+        wrapper,
+        { providers: new Map() } as Module,
+        'moduleKey',
+        'handleDisconnect',
+        {},
+      );
+      const client = {};
+      const result = handler(client);
+      Reflect.deleteProperty(client, REQUEST_CONTEXT_ID);
+      const newContext = instance.getContextId(client, false);
+      release!();
+      await result;
+      expect(client[REQUEST_CONTEXT_ID as any]).toBe(newContext);
+    });
+
     it('should cleanup request-scoped context on disconnect', async () => {
       const client = {};
       const gatewayWrapper = {
