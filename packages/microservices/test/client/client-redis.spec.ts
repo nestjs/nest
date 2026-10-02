@@ -475,12 +475,13 @@ describe('ClientRedis', () => {
 
     it('should register the response listener after close and reconnect', async () => {
       const firstSubClient = { quit: vi.fn() };
-      const secondSubClient = { on: vi.fn() };
+      const secondSubClient = { status: 'ready', on: vi.fn() };
       untypedClient.pubClient = { quit: vi.fn() };
       untypedClient.subClient = firstSubClient;
       untypedClient.wasInitialConnectionSuccessful = true;
 
       await client.close();
+      untypedClient.pubClient = { status: 'ready' };
       untypedClient.subClient = secondSubClient;
       client.registerReadyListener(secondSubClient);
 
@@ -841,10 +842,12 @@ describe('ClientRedis', () => {
       const client = new ClientRedis({});
       const untypedClient = client as any;
       const emitter = {
+        status: 'ready',
         on: onSpy,
       };
 
       untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.pubClient = { status: 'ready' };
       untypedClient.subClient = emitter;
 
       client.registerReadyListener(emitter as any);
@@ -860,10 +863,12 @@ describe('ClientRedis', () => {
       const untypedClient = client as any;
 
       const emitter = {
+        status: 'ready',
         on: onSpy,
       };
 
       untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.pubClient = { status: 'ready' };
       untypedClient.subClient = emitter;
 
       client.registerReadyListener(emitter as any);
@@ -879,10 +884,12 @@ describe('ClientRedis', () => {
       const untypedClientWithBuffers = clientWithBuffers as any;
 
       const emitter = {
+        status: 'ready',
         on: onSpy,
       };
 
       untypedClientWithBuffers.wasInitialConnectionSuccessful = false;
+      untypedClientWithBuffers.pubClient = { status: 'ready' };
       untypedClientWithBuffers.subClient = emitter;
 
       clientWithBuffers.registerReadyListener(emitter as any);
