@@ -64,7 +64,11 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       socket.on(event, callback as any),
     );
 
-    const source$ = this.connect$(socket.netSocket).pipe(
+    const source$ = this.connect$(
+      socket.netSocket,
+      TcpEventsMap.ERROR,
+      this.tlsOptions ? 'secureConnect' : TcpEventsMap.CONNECT,
+    ).pipe(
       tap(() => {
         // A socket replaced by a newer `connect()` call (`close()` followed by
         // `connect()` while it was still connecting) still finishes connecting,
@@ -148,7 +152,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   }
 
   public registerConnectListener(socket: TcpSocket) {
-    socket.on(TcpEventsMap.CONNECT, () => {
+    socket.on(this.tlsOptions ? 'secureConnect' : TcpEventsMap.CONNECT, () => {
       if (this.isReplacedSocket(socket)) {
         return;
       }
