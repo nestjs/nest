@@ -1,11 +1,95 @@
-import { RequestMethod } from '@nestjs/common';
+import { RequestMethod, StreamableFile } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { expect } from 'chai';
 import * as express from 'express';
 import * as sinon from 'sinon';
+import { PassThrough } from 'stream';
 
 describe('ExpressAdapter', () => {
   afterEach(() => sinon.restore());
+
+  describe('reply', () => {
+    let expressAdapter: ExpressAdapter;
+
+    beforeEach(() => {
+      expressAdapter = new ExpressAdapter(express());
+    });
+
+    describe('when the body is a StreamableFile', () => {
+      const createStreamResponse = () =>
+        Object.assign(new PassThrough(), {
+          getHeader: sinon.stub(),
+          setHeader: sinon.stub(),
+        });
+
+      const waitFor = async (condition: () => boolean) => {
+        for (let i = 0; i < 100 && !condition(); i++) {
+          await new Promise(resolve => setTimeout(resolve, 5));
+        }
+      };
+
+      it('should destroy the source stream when the client disconnects', async () => {
+        const source = new PassThrough();
+        const errorHandler = sinon.stub();
+        const errorLogger = sinon.stub();
+        const file = new StreamableFile(source)
+          .setErrorHandler(errorHandler)
+          .setErrorLogger(errorLogger);
+        const response = createStreamResponse();
+
+        expressAdapter.reply(response, file);
+        source.write('partial');
+        response.destroy();
+
+        await waitFor(() => source.destroyed);
+        expect(source.destroyed).to.be.true;
+        expect(errorHandler.called).to.be.false;
+        expect(errorLogger.called).to.be.false;
+      });
+
+      it('should destroy the source stream when the client disconnected before the reply', async () => {
+        const source = new PassThrough();
+        const response = createStreamResponse();
+        response.destroy();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, new StreamableFile(source));
+
+        await waitFor(() => source.destroyed);
+        expect(source.destroyed).to.be.true;
+      });
+
+      it('should not destroy a source that has ended', async () => {
+        const source = new PassThrough({ autoDestroy: false });
+        const response = createStreamResponse();
+        response.resume();
+
+        expressAdapter.reply(response, new StreamableFile(source));
+        source.end('done');
+        await new Promise(resolve => response.once('end', resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(source.readableEnded).to.be.true;
+        expect(source.destroyed).to.be.false;
+      });
+
+      it('should keep the source open while the response is being written', async () => {
+        const source = new PassThrough();
+        const response = createStreamResponse();
+        const chunks: Buffer[] = [];
+        response.on('data', chunk => chunks.push(chunk));
+
+        expressAdapter.reply(response, new StreamableFile(source));
+        source.write('first');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(source.destroyed).to.be.false;
+        source.end('second');
+        await new Promise(resolve => response.once('end', resolve));
+        expect(Buffer.concat(chunks).toString()).to.equal('firstsecond');
+      });
+    });
+  });
 
   describe('registerParserMiddleware', () => {
     it('should register the express built-in parsers for json and urlencoded payloads', () => {
