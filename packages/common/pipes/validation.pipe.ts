@@ -53,9 +53,6 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   errorFormat?: ValidationErrorFormat;
 }
 
-let classValidator: any = {} as any;
-let classTransformer: any = {} as any;
-
 /**
  * @see [Validation](https://docs.nestjs.com/techniques/validation)
  *
@@ -63,6 +60,8 @@ let classTransformer: any = {} as any;
  */
 @Injectable()
 export class ValidationPipe implements PipeTransform {
+  protected classValidator: ValidatorPackage | Promise<ValidatorPackage>;
+  protected classTransformer: TransformerPackage | Promise<TransformerPackage>;
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
@@ -101,8 +100,8 @@ export class ValidationPipe implements PipeTransform {
     this.errorFormat = errorFormat || 'list';
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
-    classValidator = this.loadValidator(validatorPackage);
-    classTransformer = this.loadTransformer(transformerPackage);
+    this.classValidator = this.loadValidator(validatorPackage);
+    this.classTransformer = this.loadTransformer(transformerPackage);
   }
 
   protected loadValidator(
@@ -143,8 +142,8 @@ export class ValidationPipe implements PipeTransform {
         : value;
     }
 
-    classValidator = (await classValidator) as ValidatorPackage;
-    classTransformer = (await classTransformer) as TransformerPackage;
+    this.classValidator = await this.classValidator;
+    const classTransformer = await this.classTransformer;
 
     const originalValue = value;
     value = this.toEmptyIfNil(value, metatype);
@@ -302,7 +301,10 @@ export class ValidationPipe implements PipeTransform {
     object: object,
     validatorOptions?: ValidatorOptions,
   ): Promise<ValidationError[]> | ValidationError[] {
-    return classValidator.validate(object, validatorOptions);
+    return (this.classValidator as ValidatorPackage).validate(
+      object,
+      validatorOptions,
+    );
   }
 
   protected flattenValidationErrors(

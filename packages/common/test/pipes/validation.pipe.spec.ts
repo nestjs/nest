@@ -1,4 +1,10 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import {
+  classToPlain,
+  Exclude,
+  Expose,
+  plainToInstance,
+  Type,
+} from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -51,6 +57,38 @@ class TestModelNoValidation {
 }
 
 describe('ValidationPipe', () => {
+  it('should isolate custom validator and transformer packages between instances', async () => {
+    const createPipe = (marker: string) => {
+      const validate = vi.fn().mockResolvedValue([]);
+      const transform = vi.fn((type, value, options) =>
+        Object.assign(plainToInstance(type, value, options), { marker }),
+      );
+      return {
+        validate,
+        transform,
+        pipe: new ValidationPipe({
+          transform: true,
+          validatorPackage: { validate },
+          transformerPackage: { plainToInstance: transform, classToPlain },
+        }),
+      };
+    };
+    const first = createPipe('first');
+    const second = createPipe('second');
+    // Creating a default pipe must not replace either instance's packages.
+    new ValidationPipe();
+    const metadata: ArgumentMetadata = { type: 'body', metatype: TestModel };
+    const results = await Promise.all([
+      first.pipe.transform({ prop1: 'a' }, metadata),
+      second.pipe.transform({ prop1: 'b' }, metadata),
+    ]);
+    expect(results.map(result => result.marker)).toEqual(['first', 'second']);
+    expect(first.validate).toHaveBeenCalledOnce();
+    expect(second.validate).toHaveBeenCalledOnce();
+    expect(first.transform).toHaveBeenCalledOnce();
+    expect(second.transform).toHaveBeenCalledOnce();
+  });
+
   let target: ValidationPipe;
   const metadata: ArgumentMetadata = {
     type: 'body',
