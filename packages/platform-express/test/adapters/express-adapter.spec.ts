@@ -280,6 +280,31 @@ describe('ExpressAdapter', () => {
         expect(errorLogger).not.toHaveBeenCalled();
       });
 
+      it('should destroy the source stream when the client disconnected before the reply', async () => {
+        const source = new PassThrough();
+        const response = createStreamResponse();
+        response.destroy();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, new StreamableFile(source));
+
+        await vi.waitFor(() => expect(source.destroyed).toBe(true));
+      });
+
+      it('should not destroy a source that has ended', async () => {
+        const source = new PassThrough({ autoDestroy: false });
+        const response = createStreamResponse();
+        response.resume();
+
+        expressAdapter.reply(response, new StreamableFile(source));
+        source.end('done');
+        await new Promise(resolve => response.once('end', resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(source.readableEnded).toBe(true);
+        expect(source.destroyed).toBe(false);
+      });
+
       it('should keep the source open while the response is being written', async () => {
         const source = new PassThrough();
         const response = createStreamResponse();
