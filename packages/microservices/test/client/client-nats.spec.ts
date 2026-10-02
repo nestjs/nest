@@ -623,6 +623,7 @@ describe('ClientNats', () => {
           },
         }),
       };
+      untypedClient.natsClient = clientMock;
       await client.handleStatusUpdates(clientMock as any);
       expect(logErrorSpy).toHaveBeenCalledTimes(2);
       expect(logErrorSpy).toHaveBeenNthCalledWith(
@@ -644,6 +645,7 @@ describe('ClientNats', () => {
           },
         }),
       };
+      untypedClient.natsClient = clientMock;
       await client.handleStatusUpdates(clientMock as any);
       expect(logSpy).toHaveBeenCalledTimes(2);
       expect(logSpy).toHaveBeenCalledWith(

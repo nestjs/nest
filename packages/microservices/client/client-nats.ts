@@ -145,6 +145,9 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   public async handleStatusUpdates(client: Client) {
     for await (const status of client.status()) {
+      if (this.natsClient !== client) {
+        return;
+      }
       switch (status.type) {
         case 'error':
           this.logger.error(
