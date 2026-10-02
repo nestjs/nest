@@ -337,7 +337,7 @@ export class FastifyAdapter<
 
     this.instance.addHook('onRequest', (request, reply, done) => {
       if (this.onRequestHook) {
-        this.onRequestHook(request as TRequest, reply as TReply, done);
+        return this.onRequestHook(request as TRequest, reply as TReply, done);
       } else {
         done();
       }
@@ -345,7 +345,7 @@ export class FastifyAdapter<
 
     this.instance.addHook('onResponse', (request, reply, done) => {
       if (this.onResponseHook) {
-        this.onResponseHook(request as TRequest, reply as TReply, done);
+        return this.onResponseHook(request as TRequest, reply as TReply, done);
       } else {
         done();
       }
