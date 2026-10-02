@@ -1,3 +1,4 @@
+import { Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Injector } from '@nestjs/core/injector/injector.js';
 import { Module } from '@nestjs/core/injector/module.js';
@@ -423,6 +424,46 @@ describe('WebSocketsController', () => {
       expect(wrapper.isDependencyTreeStatic()).toBe(true);
       expect(wrapper.getEnhancersMetadata()).toBeUndefined();
     });
+
+    it.each([
+      [true, true],
+      [false, false],
+      [undefined, false],
+    ])(
+      'should take the durability of the global enhancers for a singleton (durable: %s)',
+      async (durable, expected) => {
+        class Gateway {
+          onMessage() {}
+        }
+        const wrapper = new InstanceWrapper({
+          token: Gateway,
+          metatype: Gateway,
+          instance: new Gateway(),
+          isResolved: true,
+        });
+        config.addGlobalRequestGuard(
+          new InstanceWrapper({ scope: Scope.REQUEST, durable }),
+        );
+        vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+          () => undefined,
+        );
+        vi.spyOn(injector, 'loadEnhancersPerContext').mockResolvedValue();
+        vi.spyOn(untypedInstance.contextCreator, 'create').mockReturnValue(
+          () => undefined,
+        );
+        const getContextId = vi.spyOn(instance, 'getContextId');
+        const client = {};
+
+        await instance.createRequestScopedHandler(
+          wrapper,
+          { providers: new Map([[Gateway, wrapper]]) } as Module,
+          'moduleKey',
+          'onMessage',
+        )(client);
+
+        expect(getContextId).toHaveBeenCalledWith(client, expected);
+      },
+    );
 
     it('should reuse the same context id for the same client', async () => {
       const client = {};

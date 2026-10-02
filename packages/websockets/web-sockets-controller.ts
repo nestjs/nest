@@ -378,8 +378,10 @@ export class WebSocketsController {
   ) {
     const { instance } = instanceWrapper;
     const collection = moduleRef.providers;
-    const isTreeDurable = instanceWrapper.isDependencyTreeDurable();
     const isStatic = instanceWrapper.isDependencyTreeStatic();
+    const isTreeDurable = isStatic
+      ? this.areGlobalScopedEnhancersDurable()
+      : instanceWrapper.isDependencyTreeDurable();
     const scopedEnhancers = [
       ...(isStatic ? instanceWrapper.getEnhancersMetadata() || [] : []),
       ...this.getGlobalScopedEnhancers(),
@@ -445,8 +447,10 @@ export class WebSocketsController {
   ) {
     const { instance } = instanceWrapper;
     const collection = moduleRef.providers;
-    const isTreeDurable = instanceWrapper.isDependencyTreeDurable();
     const isStatic = instanceWrapper.isDependencyTreeStatic();
+    const isTreeDurable = isStatic
+      ? this.areGlobalScopedEnhancersDurable()
+      : instanceWrapper.isDependencyTreeDurable();
     const targetCallback = instance[methodName];
 
     return async (...args: unknown[]) => {
@@ -472,7 +476,9 @@ export class WebSocketsController {
               collection,
               contextId,
             );
-        this.assignServerToProperties(contextInstance, server);
+        if (!isStatic) {
+          this.assignServerToProperties(contextInstance, server);
+        }
         const scopedMethod = contextInstance[methodName] as
           ((...methodArgs: unknown[]) => unknown) | undefined;
         return await scopedMethod?.apply(contextInstance, args);
@@ -502,6 +508,19 @@ export class WebSocketsController {
         }
       }
     };
+  }
+
+  // A default-scoped gateway is resolved per connection only for its global
+  // scoped enhancers, so their trees decide whether the context is durable
+  // (mirrors InstanceWrapper#isDependencyTreeDurable).
+  private areGlobalScopedEnhancersDurable(): boolean {
+    const scopedEnhancers = this.getGlobalScopedEnhancers().filter(
+      wrapper => !wrapper.isDependencyTreeStatic(),
+    );
+    return (
+      scopedEnhancers.length > 0 &&
+      scopedEnhancers.every(wrapper => wrapper.isDependencyTreeDurable())
+    );
   }
 
   private getGlobalScopedEnhancers(): InstanceWrapper[] {
