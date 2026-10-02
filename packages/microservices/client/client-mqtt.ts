@@ -7,7 +7,12 @@ import {
   MqttEventsMap,
   MqttStatus,
 } from '../events/mqtt.events.js';
-import { MqttOptions, ReadPacket, WritePacket } from '../interfaces/index.js';
+import {
+  IncomingResponse,
+  MqttOptions,
+  ReadPacket,
+  WritePacket,
+} from '../interfaces/index.js';
 import {
   MqttRecord,
   MqttRecordOptions,
@@ -268,8 +273,18 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         );
         packet = buffer.toString();
       }
-      const { err, response, isDisposed, id } =
-        await this.deserializer.deserialize(packet);
+      let incomingResponse: IncomingResponse;
+      try {
+        incomingResponse = await this.deserializer.deserialize(packet);
+      } catch (error) {
+        // Only the deserializer knows the id, so no request can be failed here.
+        // Nobody awaits this listener, so a rejection would crash the process.
+        this.logger.error(
+          `Dropped a response that the deserializer failed on: ${error}`,
+        );
+        return;
+      }
+      const { err, response, isDisposed, id } = incomingResponse;
 
       const callback = this.routingMap.get(id);
       if (!callback) {

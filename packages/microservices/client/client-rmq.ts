@@ -24,7 +24,12 @@ import {
   UNBLOCKED_RMQ_MESSAGE,
 } from '../constants.js';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
-import { ReadPacket, RmqOptions, WritePacket } from '../interfaces/index.js';
+import {
+  IncomingResponse,
+  ReadPacket,
+  RmqOptions,
+  WritePacket,
+} from '../interfaces/index.js';
 import { RmqRecord } from '../record-builders/index.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
@@ -315,8 +320,14 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const noAck = this.getOptionsProp(this.options, 'noAck', RMQ_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
-      (msg: ConsumeMessage | null) =>
-        this.responseEmitter.emit(msg!.properties.correlationId, msg),
+      (msg: ConsumeMessage | null) => {
+        // RabbitMQ sends null when it cancels the consumer, e.g. queue deleted.
+        if (!msg) {
+          this.logger.warn('RabbitMQ cancelled the reply consumer.');
+          return;
+        }
+        this.responseEmitter.emit(msg.properties.correlationId, msg);
+      },
       {
         noAck,
       },
@@ -418,10 +429,14 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       options = undefined;
     }
 
-    const { err, response, isDisposed } = await this.deserializer.deserialize(
-      packet,
-      options,
-    );
+    let incomingResponse: IncomingResponse;
+    try {
+      incomingResponse = await this.deserializer.deserialize(packet, options);
+    } catch (error) {
+      // Nobody awaits this listener, so a rejection would crash the process.
+      return callback?.({ err: error, isDisposed: true });
+    }
+    const { err, response, isDisposed } = incomingResponse;
     if (isDisposed || err) {
       return callback?.({
         err,
