@@ -256,6 +256,15 @@ export class Injector {
       moduleRef,
       this.createResolutionContext(contextId, wrapper),
     );
+    if (wrapper.isDependencyTreeStatic()) {
+      // A static controller never gets a per-request load, so its transient
+      // enhancers must exist for the controller before the first request.
+      return this.loadEnhancers(
+        contextId,
+        wrapper,
+        wrapper.getEnhancersMetadata() || [],
+      );
+    }
     await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
@@ -981,6 +990,14 @@ export class Injector {
     if (ctx === STATIC_CONTEXT) {
       return;
     }
+    await this.loadEnhancers(ctx, inquirer, enhancers);
+  }
+
+  private async loadEnhancers(
+    ctx: ContextId,
+    inquirer: InstanceWrapper | undefined,
+    enhancers: InstanceWrapper[],
+  ) {
     const loadEnhancer = (item: InstanceWrapper) => {
       const hostModule = item.host!;
       return this.loadInstance(

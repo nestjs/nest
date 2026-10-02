@@ -10,6 +10,7 @@ import { Injector } from '../../../core/injector/injector.js';
 import { ApplicationConfig } from '../../application-config.js';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception.js';
 import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
+import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { GraphInspector } from '../../inspector/graph-inspector.js';
@@ -186,6 +187,43 @@ describe('RouterExplorer', () => {
 
       expect(get).toHaveBeenCalledOnce();
       expect(get.mock.calls[0][1].name).toBe('TestRoute.getTest');
+    });
+
+    it('should create the proxy of a static controller with the controller id as inquirer id', () => {
+      const instance = new TestRoute();
+      container.setHttpAdapter({});
+      const createCallbackProxy = vi
+        .spyOn(routerBuilder as any, 'createCallbackProxy')
+        .mockReturnValue(() => {});
+
+      (routerBuilder as any).applyCallbackToRouter(
+        { get: vi.fn() },
+        {
+          path: ['test'],
+          requestMethod: RequestMethod.GET,
+          targetCallback: instance.getTest,
+          methodName: 'getTest',
+        },
+        {
+          id: 'test-route',
+          instance,
+          name: TestRoute.name,
+          isDependencyTreeStatic: () => true,
+        } as any,
+        'module-key',
+        { ctrlPath: 'global' },
+        '',
+      );
+
+      expect(createCallbackProxy).toHaveBeenCalledWith(
+        instance,
+        instance.getTest,
+        'getTest',
+        'module-key',
+        RequestMethod.GET,
+        STATIC_CONTEXT,
+        'test-route',
+      );
     });
   });
 
