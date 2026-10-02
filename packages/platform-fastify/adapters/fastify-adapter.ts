@@ -316,6 +316,9 @@ export class FastifyAdapter<
               ),
               ...(instanceOrOptions as FastifyServerOptions)?.routerOptions,
               constraints: {
+                ...(instanceOrOptions as FastifyServerOptions)?.constraints,
+                ...(instanceOrOptions as FastifyServerOptions)?.routerOptions
+                  ?.constraints,
                 version: this.versionConstraint as any,
               },
             },
