@@ -45,7 +45,7 @@
     "@nestjs/schematics": "12.0.6",
     "@nestjs/testing": "12.1.2",
     "@types/express": "5.0.6",
-    "@types/node": "24.19.0",
+    "@types/node": "24.19.1",
     "@types/supertest": "7.2.1",
     "oxlint": "1.86.0",
     "prettier": "3.9.9",
