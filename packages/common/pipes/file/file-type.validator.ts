@@ -195,6 +195,10 @@ export class FileTypeValidator extends FileValidator<
     if (typeof fileType === 'string' && mimetype === fileType) {
       return true;
     }
-    return !!mimetype.match(fileType);
+    // Stateful expressions must start at zero for each file, without changing
+    // the caller's lastIndex (the validator can be reused across uploads).
+    const pattern =
+      typeof fileType === 'string' ? fileType : new RegExp(fileType);
+    return !!mimetype.match(pattern);
   }
 }

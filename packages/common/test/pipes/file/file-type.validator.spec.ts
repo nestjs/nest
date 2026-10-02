@@ -20,6 +20,42 @@ const pdfBuffer = Buffer.from([
 
 describe('FileTypeValidator', () => {
   describe('isValid', () => {
+    it.each(['y', 'g', 'gy'])(
+      'should isolate a regexp with %s flags between uploads',
+      async flags => {
+        const fileType = new RegExp('^image/png$', flags);
+        fileType.lastIndex = 3;
+        const validator = new FileTypeValidator({
+          fileType,
+          skipMagicNumbersValidation: true,
+        });
+        const file = { mimetype: 'image/png', size: 10 };
+        for (let attempt = 0; attempt < 3; attempt++) {
+          expect(await validator.isValid(file)).toBe(true);
+          expect(
+            await validator.isValid({ ...file, mimetype: 'image/jpeg' }),
+          ).toBe(false);
+        }
+        expect(fileType.lastIndex).toBe(3);
+      },
+    );
+
+    it('should reuse a sticky regexp for magic number validation', async () => {
+      const fileType = /^image\/png$/y;
+      const validator = new FileTypeValidator({ fileType });
+      const file = {
+        mimetype: 'image/png',
+        size: pngBuffer.length,
+        buffer: pngBuffer,
+      };
+      const results = await Promise.all([
+        validator.isValid(file),
+        validator.isValid(file),
+      ]);
+      expect(results).toEqual([true, true]);
+      expect(fileType.lastIndex).toBe(0);
+    });
+
     describe('support file types', () => {
       async function testFileByMimeType(mimeType, fileData) {
         const fileTypeValidator = new FileTypeValidator({
