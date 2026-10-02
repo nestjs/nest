@@ -376,6 +376,99 @@ describe('RouterResponseController', () => {
       }
     });
 
+    for (const outcome of ['resolve', 'reject'] as const) {
+      it(`should settle a disconnected lifecycle before late setup ${outcome}`, async () => {
+        let resolveSetup: (value: Observable<never>) => void;
+        let rejectSetup: (reason: Error) => void;
+        const setup = new Promise<Observable<never>>((resolve, reject) => {
+          resolveSetup = resolve;
+          rejectSetup = reject;
+        });
+        const response = new Writable({
+          write(_chunk, _encoding, cb) {
+            cb();
+          },
+        });
+        const request = attachSocket(new PassThrough());
+        const lifecycle = routerResponseController.sse(
+          setup,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        request.socket.emit('close');
+        const settledBeforeSetup = await Promise.race([
+          lifecycle.then(() => true),
+          new Promise<boolean>(resolve => setImmediate(() => resolve(false))),
+        ]);
+        expect(settledBeforeSetup).to.equal(true);
+        expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).to.equal(
+          true,
+        );
+        expect(response.writableEnded).to.equal(true);
+        expect(request.socket.listenerCount('close')).to.equal(0);
+        const subscribe = sinon.spy();
+        if (outcome === 'resolve') {
+          resolveSetup!(new Observable(subscribe));
+        } else {
+          rejectSetup!(new Error('late setup rejection'));
+        }
+        await new Promise(resolve => setImmediate(resolve));
+        expect(subscribe.called).to.equal(false);
+        expect(await lifecycle).to.equal(undefined);
+      });
+    }
+
+    it('should settle without subscribing when the client disconnected before the handler ran', async () => {
+      const request = attachSocket(new PassThrough());
+      Object.assign(request.socket, { destroyed: true });
+      const subscribe = sinon.spy();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+
+      await routerResponseController.sse(
+        Promise.resolve(new Observable(subscribe)),
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(subscribe.called).to.equal(false);
+      expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).to.equal(
+        true,
+      );
+      expect(response.writableEnded).to.equal(true);
+      expect(request.socket.listenerCount('close')).to.equal(0);
+    });
+
+    it('should cancel a producer that disconnects synchronously during subscription', async () => {
+      const request = attachSocket(new PassThrough());
+      const teardown = sinon.spy();
+      const result = new Observable(() => {
+        request.socket.emit('close');
+        return teardown;
+      });
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      const lifecycle = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      expect(
+        await Promise.race([
+          lifecycle.then(() => true),
+          new Promise<boolean>(resolve => setImmediate(() => resolve(false))),
+        ]),
+      ).to.equal(true);
+      expect(teardown.calledOnce).to.equal(true);
+    });
+
     it('should accept Promise<Observable>', async () => {
       class Sink extends Writable {
         private readonly chunks: string[] = [];
