@@ -1,7 +1,7 @@
 {
   "name": "nest-babel-starter",
   "version": "1.0.0",
-  "description": "Nest Babel starter repository",
+  "description": "Plain JavaScript compiled with Babel and legacy decorators",
   "license": "MIT",
   "scripts": {
     "format": "prettier --write \"**/*.js\"",

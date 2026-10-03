@@ -1,7 +1,7 @@
 {
   "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Guards, pipes, interceptors, filters and middleware in a REST API",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

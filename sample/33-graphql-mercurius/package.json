@@ -1,7 +1,7 @@
 {
   "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Code-first GraphQL with Mercurius on Fastify, including subscriptions",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

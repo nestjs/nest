@@ -1,7 +1,7 @@
 {
   "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Transactional outbox with @nestjs/outbox, Drizzle ORM and PostgreSQL",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

@@ -1,7 +1,7 @@
 {
   "name": "posts-application",
   "version": "1.0.0",
-  "description": "",
+  "description": "Schema-first Apollo Federation subgraph owning Post and extending User",
   "author": "Flusinerd",
   "private": true,
   "license": "MIT",

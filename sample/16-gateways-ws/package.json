@@ -1,7 +1,7 @@
 {
   "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "WebSocket gateway with the ws library via WsAdapter",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

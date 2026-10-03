@@ -1,7 +1,7 @@
 {
   "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Hybrid HTTP and gRPC microservice with streaming and server reflection",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

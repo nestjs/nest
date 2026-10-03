@@ -1,7 +1,7 @@
 {
   "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "TypeORM integration with MongoDB via @nestjs/typeorm",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

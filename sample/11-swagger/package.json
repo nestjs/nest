@@ -1,7 +1,7 @@
 {
   "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "OpenAPI (Swagger) documentation with @nestjs/swagger",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
