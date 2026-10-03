@@ -1,7 +1,7 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "queues",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Background job queues with Bull and Redis",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

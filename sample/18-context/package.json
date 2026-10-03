@@ -1,7 +1,7 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "context",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Standalone application context (no HTTP server) using get() and select()",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

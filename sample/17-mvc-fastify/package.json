@@ -1,7 +1,7 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "mvc-fastify",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Server-side rendering with Fastify and Handlebars",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

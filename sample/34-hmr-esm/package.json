@@ -1,7 +1,7 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "hmr-esm",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Hot module replacement with webpack in a native ESM project",
   "type": "module",
   "license": "MIT",
   "scripts": {

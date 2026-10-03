@@ -1,7 +1,7 @@
 {
-  "name": "gateway",
+  "name": "graphql-federation-schema-first-gateway",
   "version": "0.0.1",
-  "description": "",
+  "description": "Schema-first Apollo Federation gateway for the users and posts subgraphs",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
