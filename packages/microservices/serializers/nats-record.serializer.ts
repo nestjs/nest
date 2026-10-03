@@ -8,6 +8,13 @@ export class NatsRecordSerializer implements Serializer<
   NatsRecord
 > {
   serialize(packet: any): NatsRecord {
+    if (packet?.response instanceof NatsRecord) {
+      const record = packet.response;
+      return {
+        data: JSON.stringify({ ...packet, response: record.data }),
+        headers: record.headers,
+      };
+    }
     const natsMessage =
       packet?.data && isObject(packet.data) && packet.data instanceof NatsRecord
         ? packet.data

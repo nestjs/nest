@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER, RMQ_DEFAULT_QUEUE } from '../../constants.js';
 import { RmqContext } from '../../ctx-host/index.js';
+import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
 import { objectToMap } from './utils/object-to-map.js';
 
@@ -479,6 +480,72 @@ describe('ServerRMQ', () => {
         Buffer.from(JSON.stringify(message)),
         { correlationId },
       );
+    });
+    describe('when the response is a record', () => {
+      const replyTo = 'test';
+      const correlationId = '0';
+
+      it('should publish the record data as "response" with the record options', () => {
+        const options = { priority: 5, headers: { key: 'value' } };
+        const record = new RmqRecordBuilder({ value: 'test' })
+          .setOptions(options)
+          .build();
+
+        server.sendMessage(
+          { response: record, isDisposed: true },
+          replyTo,
+          correlationId,
+          context,
+        );
+
+        expect(channel.sendToQueue).toHaveBeenCalledWith(
+          replyTo,
+          Buffer.from(
+            JSON.stringify({ response: { value: 'test' }, isDisposed: true }),
+          ),
+          { ...options, correlationId },
+        );
+        expect(record.options).toBe(options);
+      });
+      it('should publish the record sent through "send" unwrapped, with its options, once disposed', async () => {
+        const flush = () => new Promise(resolve => setImmediate(resolve));
+        const options = { priority: 5, headers: { key: 'value' } };
+        const record = new RmqRecordBuilder({ value: 'test' })
+          .setOptions(options)
+          .build();
+
+        server.send(of(record), data =>
+          server.sendMessage(data, replyTo, correlationId, context),
+        );
+        await flush();
+
+        expect(channel.sendToQueue).toHaveBeenCalledExactlyOnceWith(
+          replyTo,
+          Buffer.from(
+            JSON.stringify({ response: { value: 'test' }, isDisposed: true }),
+          ),
+          { ...options, correlationId },
+        );
+      });
+      it('should keep the correlation id of the request when the options set another one', () => {
+        const options = { priority: 5, correlationId: 'other' };
+        const record = new RmqRecordBuilder({ value: 'test' })
+          .setOptions(options)
+          .build();
+
+        server.sendMessage(
+          { response: record },
+          replyTo,
+          correlationId,
+          context,
+        );
+
+        expect(channel.sendToQueue).toHaveBeenCalledWith(
+          replyTo,
+          expect.any(Buffer),
+          { priority: 5, correlationId },
+        );
+      });
     });
   });
 
