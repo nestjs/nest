@@ -1,5 +1,5 @@
 {
-  "name": "gateway",
+  "name": "graphql-federation-code-first-gateway",
   "version": "1.0.0",
   "description": "Code-first Apollo Federation gateway for the users and posts subgraphs",
   "license": "MIT",

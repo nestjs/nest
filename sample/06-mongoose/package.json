@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "mongoose",
   "version": "1.0.0",
   "description": "Mongoose integration with MongoDB via @nestjs/mongoose",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "grpc",
   "version": "1.0.0",
   "description": "Hybrid HTTP and gRPC microservice with streaming and server reflection",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "event-emitter",
   "version": "1.0.0",
   "description": "Application events with @nestjs/event-emitter and @OnEvent()",
   "license": "MIT",

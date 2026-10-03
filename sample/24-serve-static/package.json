@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "serve-static",
   "version": "1.0.0",
   "description": "Static file serving with @nestjs/serve-static",
   "license": "MIT",

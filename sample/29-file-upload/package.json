@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "file-upload",
   "version": "1.0.0",
   "description": "File uploads with FileInterceptor and ParseFilePipeBuilder validation",
   "license": "MIT",

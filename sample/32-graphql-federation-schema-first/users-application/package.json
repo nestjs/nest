@@ -1,5 +1,5 @@
 {
-  "name": "users-application",
+  "name": "graphql-federation-schema-first-users-application",
   "version": "1.0.0",
   "description": "Schema-first Apollo Federation subgraph owning User",
   "author": "Flusinerd",

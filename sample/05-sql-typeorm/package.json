@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "sql-typeorm",
   "version": "1.0.0",
   "description": "TypeORM integration with MySQL via @nestjs/typeorm",
   "license": "MIT",

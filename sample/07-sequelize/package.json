@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "sequelize",
   "version": "1.0.0",
   "description": "Sequelize integration with MySQL via @nestjs/sequelize",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "nest-babel-starter",
+  "name": "babel-example",
   "version": "1.0.0",
   "description": "Plain JavaScript compiled with Babel and legacy decorators",
   "license": "MIT",

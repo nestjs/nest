@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "cache",
   "version": "1.0.0",
   "description": "Response caching with CacheModule and CacheInterceptor",
   "license": "MIT",

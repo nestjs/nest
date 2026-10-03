@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "graphql-mercurius",
   "version": "1.0.0",
   "description": "Code-first GraphQL with Mercurius on Fastify, including subscriptions",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "scheduling",
   "version": "1.0.0",
   "description": "Cron jobs, intervals and timeouts with @nestjs/schedule",
   "license": "MIT",

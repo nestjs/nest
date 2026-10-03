@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "sse",
   "version": "1.0.0",
   "description": "Server-Sent Events with @Sse() and RxJS",
   "license": "MIT",

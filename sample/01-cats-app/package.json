@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "cats-app",
   "version": "1.0.0",
   "description": "Guards, pipes, interceptors, filters and middleware in a REST API",
   "license": "MIT",

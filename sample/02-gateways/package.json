@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "gateways",
   "version": "1.0.0",
   "description": "WebSocket gateway with Socket.IO and an optional Redis adapter",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "posts-application",
+  "name": "graphql-federation-code-first-posts-application",
   "version": "1.0.0",
   "description": "Code-first Apollo Federation subgraph owning Post and extending User",
   "license": "MIT",

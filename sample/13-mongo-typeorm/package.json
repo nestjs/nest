@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "mongo-typeorm",
   "version": "1.0.0",
   "description": "TypeORM integration with MongoDB via @nestjs/typeorm",
   "license": "MIT",

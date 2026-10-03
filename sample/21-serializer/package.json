@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "serializer",
   "version": "1.0.0",
   "description": "Response serialization with ClassSerializerInterceptor and class-transformer",
   "license": "MIT",

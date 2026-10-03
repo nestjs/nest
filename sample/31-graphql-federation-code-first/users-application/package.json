@@ -1,5 +1,5 @@
 {
-  "name": "users-application",
+  "name": "graphql-federation-code-first-users-application",
   "version": "1.0.0",
   "description": "Code-first Apollo Federation subgraph owning User",
   "license": "MIT",

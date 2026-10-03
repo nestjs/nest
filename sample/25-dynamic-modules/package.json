@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "dynamic-modules",
   "version": "1.0.0",
   "description": "Dynamic modules configured per importer with register()",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "swagger",
   "version": "1.0.0",
   "description": "OpenAPI (Swagger) documentation with @nestjs/swagger",
   "license": "MIT",

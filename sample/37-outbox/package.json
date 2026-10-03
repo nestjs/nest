@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "outbox",
   "version": "1.0.0",
   "description": "Transactional outbox with @nestjs/outbox, Drizzle ORM and PostgreSQL",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "context",
   "version": "1.0.0",
   "description": "Standalone application context (no HTTP server) using get() and select()",
   "license": "MIT",

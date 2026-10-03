@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "valibot-serializer",
   "version": "1.0.0",
   "description": "Response serialization with Valibot via Standard Schema",
   "license": "MIT",

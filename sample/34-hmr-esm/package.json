@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "hmr-esm",
   "version": "1.0.0",
   "description": "Hot module replacement with webpack in a native ESM project",
   "type": "module",

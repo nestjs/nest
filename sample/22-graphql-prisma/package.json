@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "graphql-prisma",
   "version": "1.0.0",
   "description": "Schema-first GraphQL with Apollo and Prisma, including subscriptions",
   "license": "MIT",

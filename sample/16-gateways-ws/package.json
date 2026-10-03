@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "gateways-ws",
   "version": "1.0.0",
   "description": "WebSocket gateway with the ws library via WsAdapter",
   "license": "MIT",

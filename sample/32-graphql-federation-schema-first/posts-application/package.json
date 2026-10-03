@@ -1,5 +1,5 @@
 {
-  "name": "posts-application",
+  "name": "graphql-federation-schema-first-posts-application",
   "version": "1.0.0",
   "description": "Schema-first Apollo Federation subgraph owning Post and extending User",
   "author": "Flusinerd",

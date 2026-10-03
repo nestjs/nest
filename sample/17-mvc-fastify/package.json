@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "mvc-fastify",
   "version": "1.0.0",
   "description": "Server-side rendering with Fastify and Handlebars",
   "license": "MIT",

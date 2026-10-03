@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "zod-validation",
   "version": "1.0.0",
   "description": "Request validation with Zod via Standard Schema",
   "license": "MIT",

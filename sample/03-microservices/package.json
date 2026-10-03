@@ -1,5 +1,5 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "microservices",
   "version": "1.0.0",
   "description": "Hybrid HTTP and TCP microservice with request-response messaging",
   "license": "MIT",
