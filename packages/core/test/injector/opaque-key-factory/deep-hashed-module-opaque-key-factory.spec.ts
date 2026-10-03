@@ -53,8 +53,29 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
         class Provider {}
         const metadata = { providers: [Provider], exports: [Provider] };
         expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
-          '{"providers":["Provider"],"exports":["Provider"]}',
+          '{"providers":[{"Class":"class Provider {}"}],"exports":[{"Class":"class Provider {}"}]}',
         );
+      });
+      it('should tell two classes that share a name apart', () => {
+        class Repository {
+          find() {
+            return 'a';
+          }
+        }
+        class OtherRepository {
+          find() {
+            return 'b';
+          }
+        }
+        Object.defineProperty(OtherRepository, 'name', { value: 'Repository' });
+
+        const token = (cls: unknown) =>
+          factory.getStringifiedOpaqueToken({
+            providers: [{ provide: 'REPO', useClass: cls }],
+          });
+
+        expect(token(Repository)).not.toEqual(token(OtherRepository));
+        expect(token(Repository)).toEqual(token(Repository));
       });
       it('should return hash with value provider with non-class function', () => {
         const provider = {
