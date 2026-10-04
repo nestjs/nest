@@ -69,9 +69,9 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
   }
 
   public getStringifiedOpaqueToken(opaqueToken: object | undefined): string {
-    // Uses safeStringify instead of JSON.stringify to support circular dynamic modules
-    // The replacer function is also required in order to obtain real class names
-    // instead of the unified "Function" key
+    // Uses safeStringify instead of JSON.stringify to support circular dynamic modules.
+    // The replacer is also required so classes, symbols, maps, sets and regular
+    // expressions serialize to stable tagged values instead of being dropped
     if (!opaqueToken) {
       return '';
     }
@@ -113,12 +113,9 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
       const funcAsString = value.toString();
       const isClass = funcAsString.slice(0, CLASS_STR_LEN) === CLASS_STR;
       if (isClass) {
-        // Tagged and serialized from its source rather than from its name, so
-        // two unrelated classes that share a name (two packages each
-        // exporting their own `Repository`) no longer hash to one token,
-        // which made the container keep the first module and silently drop
-        // the second import's providers.
-        return { Class: funcAsString };
+        // Name and source together: same-named classes differ in source,
+        // while `mixin()` classes share one source and differ only in name
+        return { Class: [value.name, funcAsString] };
       }
       return funcAsString;
     }

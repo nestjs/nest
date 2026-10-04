@@ -1,3 +1,4 @@
+import { mixin } from '@nestjs/common';
 import { DeepHashedModuleOpaqueKeyFactory } from '../../../injector/opaque-key-factory/deep-hashed-module-opaque-key-factory.js';
 
 describe('DeepHashedModuleOpaqueKeyFactory', () => {
@@ -52,8 +53,11 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
       it('should return hash with class', () => {
         class Provider {}
         const metadata = { providers: [Provider], exports: [Provider] };
+        const serialized = JSON.stringify({
+          Class: ['Provider', Provider.toString()],
+        });
         expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
-          '{"providers":[{"Class":"class Provider {}"}],"exports":[{"Class":"class Provider {}"}]}',
+          `{"providers":[${serialized}],"exports":[${serialized}]}`,
         );
       });
       it('should tell two classes that share a name apart', () => {
@@ -76,6 +80,24 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
 
         expect(token(Repository)).not.toEqual(token(OtherRepository));
         expect(token(Repository)).toEqual(token(Repository));
+      });
+      it('should tell apart mixin classes built by one factory', () => {
+        const createGuard = (role: string) => {
+          class RoleGuard {
+            role() {
+              return role;
+            }
+          }
+          return mixin(RoleGuard);
+        };
+        const token = (cls: unknown) =>
+          factory.getStringifiedOpaqueToken({
+            providers: [{ provide: 'GUARD', useClass: cls }],
+          });
+
+        expect(token(createGuard('admin'))).not.toEqual(
+          token(createGuard('user')),
+        );
       });
       it('should return hash with value provider with non-class function', () => {
         const provider = {
