@@ -1,7 +1,12 @@
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
 import type { MessageEvent } from '@nestjs/common';
-import { isNil, isObject, isUndefined } from '@nestjs/common/internal';
+import {
+  isFunction,
+  isNil,
+  isObject,
+  isUndefined,
+} from '@nestjs/common/internal';
 
 function serializeSseLines(value: string, prefix: string): string {
   return value
@@ -22,6 +27,18 @@ function toCommentString(comment: string): string {
   return serializeSseLines(comment, ': ');
 }
 
+function omitHeaders(
+  headers: AdditionalHeaders | undefined,
+  names: string[],
+): AdditionalHeaders {
+  const omitted = new Set(names.map(name => name.toLowerCase()));
+  return Object.fromEntries(
+    Object.entries(headers ?? {}).filter(
+      ([name]) => !omitted.has(name.toLowerCase()),
+    ),
+  );
+}
+
 function isCommentOnly(message: MessageEvent): boolean {
   return (
     !isNil(message.comment) &&
@@ -36,12 +53,18 @@ export type AdditionalHeaders = Record<
   string[] | string | number | undefined
 >;
 
+export type AdditionalHeadersSource =
+  AdditionalHeaders | (() => AdditionalHeaders | undefined);
+
+export type StatusCodeSource = number | (() => number | undefined);
+
 interface ReadHeaders {
   getHeaders?(): AdditionalHeaders;
 }
 
 interface WriteHeaders {
   writableEnded?: boolean;
+  statusCode?: number;
   writeHead?(
     statusCode: number,
     reasonPhrase?: string,
@@ -72,8 +95,8 @@ export class SseStream extends Transform {
   private lastEventId: number | null = null;
   private _headersCommitted = false;
   private _destination: WritableHeaderStream | null = null;
-  private _statusCode = 200;
-  private _additionalHeaders: AdditionalHeaders | undefined;
+  private _statusCode: StatusCodeSource | undefined;
+  private _additionalHeaders: AdditionalHeadersSource | undefined;
   private readonly _isHttp2: boolean;
 
   constructor(req?: IncomingMessage) {
@@ -97,36 +120,36 @@ export class SseStream extends Transform {
   pipe<T extends WritableHeaderStream>(
     destination: T,
     options?: {
-      additionalHeaders?: AdditionalHeaders;
-      statusCode?: number;
+      additionalHeaders?: AdditionalHeadersSource;
+      statusCode?: StatusCodeSource;
       end?: boolean;
     },
   ): T {
     this._destination = destination;
-    this._statusCode = options?.statusCode ?? 200;
+    this._statusCode = options?.statusCode;
     this._additionalHeaders = options?.additionalHeaders;
     return super.pipe(destination, options);
   }
 
   /**
    * Writes SSE headers to the destination if they have not been sent yet.
-   * Headers are deferred until the first message so that, if the observable
-   * errors before any data is emitted, the HTTP status code can still be
-   * changed by an exception filter.
+   * The sources are read here, not in `pipe()`, to pick up the values that
+   * interceptors and handlers set after piping. A source that throws leaves
+   * the headers uncommitted so the caller can still fail the response.
    */
   commitHeaders(): void {
-    if (this._headersCommitted || !this._destination) {
+    if (
+      this._headersCommitted ||
+      !this._destination ||
+      this._destination.writableEnded
+    ) {
       return;
     }
-    if (this._destination.writableEnded) {
-      return;
-    }
+    const statusCode = this.readStatusCode();
+    const additionalHeaders = this.readAdditionalHeaders();
     this._headersCommitted = true;
-    const statusCode = this._statusCode ?? 200;
-    const additionalHeaders = this._additionalHeaders;
     if (this._destination.writeHead) {
-      this._destination.writeHead(statusCode, {
-        ...additionalHeaders,
+      const sseHeaders = {
         // See https://github.com/dunglas/mercure/blob/main/subscribe.go#L347-L362
         'Content-Type': 'text/event-stream',
         // Hop-by-hop header, forbidden in HTTP/2
@@ -139,10 +162,26 @@ export class SseStream extends Transform {
         Expires: '0',
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
         'X-Accel-Buffering': 'no',
+      };
+      // Fastify keeps its own header names (lower case), so a name that only
+      // differs in case would be sent twice instead of being overridden.
+      this._destination.writeHead(statusCode, {
+        ...omitHeaders(additionalHeaders, Object.keys(sseHeaders)),
+        ...sseHeaders,
       });
       this._destination.flushHeaders?.();
     }
     this._destination.write('\n');
+  }
+
+  private readStatusCode(): number {
+    const source = this._statusCode;
+    return (isFunction(source) ? source() : source) ?? 200;
+  }
+
+  private readAdditionalHeaders(): AdditionalHeaders | undefined {
+    const source = this._additionalHeaders;
+    return isFunction(source) ? source() : source;
   }
 
   _transform(

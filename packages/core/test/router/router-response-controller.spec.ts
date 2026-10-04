@@ -1,6 +1,6 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
-import { EMPTY, Observable, of, Subject } from 'rxjs';
+import { EMPTY, Observable, of, Subject, throwError } from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
@@ -465,6 +465,195 @@ data: test
 
       expect(response.writeHead.mock.calls[0][0]).toBe(404);
       request.destroy();
+    });
+
+    it('should read the status code from the response when the headers are committed', async () => {
+      class SinkWithStatusCode extends Writable {
+        statusCode = 200;
+        writeHead = vi.fn();
+        flushHeaders = vi.fn();
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          callback();
+        }
+      }
+
+      const response = new SinkWithStatusCode();
+      const result = new Observable<string>(() => {
+        response.statusCode = 202;
+      });
+      const request = attachSocket(new PassThrough());
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      await vi.waitFor(() => expect(response.writeHead).toHaveBeenCalled());
+
+      expect(response.writeHead.mock.calls[0][0]).toBe(202);
+      request.socket.emit('close');
+      await ssePromise;
+    });
+
+    it('should read the options when the headers are committed', async () => {
+      const writeHead = vi.fn();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      Object.assign(response, { writeHead, flushHeaders: vi.fn() });
+      const result = new Subject<string>();
+      const request = attachSocket(new PassThrough());
+      const replyHeaders: Record<string, string> = {};
+      let replyStatus = 200;
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+        {
+          additionalHeaders: () => replyHeaders,
+          statusCode: () => replyStatus,
+        },
+      );
+
+      replyHeaders['x-late'] = 'set';
+      replyStatus = 202;
+      await vi.waitFor(() => expect(writeHead).toHaveBeenCalled());
+
+      expect(writeHead).toHaveBeenCalledWith(
+        202,
+        expect.objectContaining({ 'x-late': 'set' }),
+      );
+      result.complete();
+      await ssePromise;
+    });
+
+    it('should reject and clean up when reading the headers fails on the next macrotask', async () => {
+      const writeHead = vi.fn();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      Object.assign(response, { writeHead, flushHeaders: vi.fn() });
+      const request = attachSocket(new PassThrough());
+      const baselineListeners = request.socket.listenerCount('close');
+      const teardown = vi.fn();
+      const failure = new Error('headers unavailable');
+
+      await expect(
+        routerResponseController.sse(
+          new Observable<string>(() => teardown),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          {
+            additionalHeaders: () => {
+              throw failure;
+            },
+          },
+        ),
+      ).rejects.toBe(failure);
+
+      expect(writeHead).not.toHaveBeenCalled();
+      expect(response.writableEnded).toBe(true);
+      expect(teardown).toHaveBeenCalledTimes(1);
+      expect(request.socket.listenerCount('close')).toBe(baselineListeners);
+      expect(
+        (request as unknown as Record<symbol, AbortController>)[
+          SSE_ABORT_CONTROLLER
+        ].signal.aborted,
+      ).toBe(true);
+
+      request.socket.emit('close');
+      expect(teardown).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not commit the headers after an observable error', async () => {
+      const writeHead = vi.fn();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      // An end that does not end keeps writableEnded false, so only the settled flag stops the timer.
+      Object.assign(response, {
+        writeHead,
+        flushHeaders: vi.fn(),
+        end: vi.fn(),
+      });
+      const request = attachSocket(new PassThrough());
+      const failure = new Error('stream failed');
+
+      await expect(
+        routerResponseController.sse(
+          throwError(() => failure),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        ),
+      ).rejects.toBe(failure);
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(writeHead).not.toHaveBeenCalled();
+    });
+
+    it('should reject when reading the headers fails on the first message', async () => {
+      const writeHead = vi.fn();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      Object.assign(response, { writeHead, flushHeaders: vi.fn() });
+      const request = attachSocket(new PassThrough());
+      const failure = new Error('headers unavailable');
+
+      await expect(
+        routerResponseController.sse(
+          of('first'),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          {
+            additionalHeaders: () => {
+              throw failure;
+            },
+          },
+        ),
+      ).rejects.toBe(failure);
+
+      expect(writeHead).not.toHaveBeenCalled();
+    });
+
+    it('should reject when reading the headers fails for an empty stream', async () => {
+      const writeHead = vi.fn();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      Object.assign(response, { writeHead, flushHeaders: vi.fn() });
+      const request = attachSocket(new PassThrough());
+      const failure = new Error('headers unavailable');
+
+      await expect(
+        routerResponseController.sse(
+          EMPTY,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          {
+            statusCode: () => {
+              throw failure;
+            },
+          },
+        ),
+      ).rejects.toBe(failure);
+
+      expect(writeHead).not.toHaveBeenCalled();
     });
 
     it('should write string', async () => {

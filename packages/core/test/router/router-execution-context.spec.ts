@@ -805,7 +805,7 @@ describe('RouterExecutionContext', () => {
         );
       });
 
-      it('should pass through status and headers from the wrapper response at handle time', async () => {
+      it('should pass through status and headers from the wrapper response', async () => {
         const rawResponse = new PassThrough() as HeaderStream;
         rawResponse.write = vi.fn() as any;
         rawResponse.writeHead = vi.fn() as any;
@@ -841,6 +841,127 @@ describe('RouterExecutionContext', () => {
             'access-control-headers': 'at-handle-time',
           }),
         );
+      });
+
+      it('should read status and headers from the wrapper response when the stream commits', async () => {
+        const rawResponse = new PassThrough() as HeaderStream;
+        rawResponse.write = vi.fn() as any;
+        rawResponse.writeHead = vi.fn() as any;
+        rawResponse.flushHeaders = vi.fn() as any;
+
+        let replyHeaders: Record<string, string> = {};
+        const response = {
+          raw: rawResponse,
+          statusCode: 200,
+          getHeaders: () => replyHeaders,
+        };
+        const result = new Subject<string>();
+
+        const request = attachSocket(new PassThrough());
+
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          true,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        const handled = handler(result, response as any, request);
+
+        response.statusCode = 202;
+        replyHeaders = { 'x-late': 'set' };
+        await vi.waitFor(() =>
+          expect(rawResponse.writeHead).toHaveBeenCalled(),
+        );
+
+        expect(rawResponse.writeHead).toHaveBeenCalledWith(
+          202,
+          expect.objectContaining({ 'x-late': 'set' }),
+        );
+        result.complete();
+        await handled;
+      });
+
+      it('should fall back to the raw response status when the wrapper has none', async () => {
+        const rawResponse = new PassThrough() as HeaderStream;
+        rawResponse.write = vi.fn() as any;
+        rawResponse.writeHead = vi.fn() as any;
+        rawResponse.flushHeaders = vi.fn() as any;
+        Object.assign(rawResponse, { statusCode: 201 });
+
+        const response = { raw: rawResponse, getHeaders: () => ({}) };
+        const result = new Subject<string>();
+
+        const request = attachSocket(new PassThrough());
+
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          true,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        const handled = handler(result, response as any, request);
+
+        await vi.waitFor(() =>
+          expect(rawResponse.writeHead).toHaveBeenCalled(),
+        );
+
+        expect(rawResponse.writeHead).toHaveBeenCalledWith(
+          201,
+          expect.any(Object),
+        );
+        result.complete();
+        await handled;
+      });
+
+      it('should prefer the wrapper status over the raw response status', async () => {
+        const rawResponse = new PassThrough() as HeaderStream;
+        rawResponse.write = vi.fn() as any;
+        rawResponse.writeHead = vi.fn() as any;
+        rawResponse.flushHeaders = vi.fn() as any;
+        Object.assign(rawResponse, { statusCode: 200 });
+
+        const response = {
+          raw: rawResponse,
+          statusCode: 202,
+          getHeaders: () => ({}),
+        };
+        const result = new Subject<string>();
+
+        const request = attachSocket(new PassThrough());
+
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          true,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        const handled = handler(result, response as any, request);
+
+        await vi.waitFor(() =>
+          expect(rawResponse.writeHead).toHaveBeenCalled(),
+        );
+
+        expect(rawResponse.writeHead).toHaveBeenCalledWith(
+          202,
+          expect.any(Object),
+        );
+        result.complete();
+        await handled;
       });
     });
   });
