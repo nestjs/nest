@@ -98,6 +98,9 @@ jobs:
       - run:
           name: Lint
           command: npm run lint:ci
+      - run:
+          name: Format
+          command: npm run format:check
 
   integration_tests:
     working_directory: ~/nest

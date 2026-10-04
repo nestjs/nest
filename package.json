@@ -31,6 +31,7 @@
     "codechecks:benchmarks": "codechecks ./tools/benchmarks/check-benchmarks.ts",
     "coverage": "vitest run --coverage --config vitest.config.coverage.mts || true",
     "format": "oxfmt \"**/*.ts\" \"packages/**/*.json\" && git status",
+    "format:check": "oxfmt --check \"**/*.ts\" \"packages/**/*.json\"",
     "postinstall": "opencollective",
     "test": "vitest run",
     "test:dev": "vitest",
