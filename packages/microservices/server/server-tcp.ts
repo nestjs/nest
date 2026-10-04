@@ -79,8 +79,8 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     // The once('error') listener outlives a successful listen, so a later
     // error must find the callback already settled.
     let listenCallback:
-      ((err?: unknown, ...optionalParams: unknown[]) => void) | undefined =
-      callback;
+      | ((err?: unknown, ...optionalParams: unknown[]) => void)
+      | undefined = callback;
     const settleListenCallback = (err?: unknown) => {
       const cb = listenCallback;
       listenCallback = undefined;

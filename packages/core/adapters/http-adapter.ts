@@ -70,7 +70,8 @@ export abstract class AbstractHttpAdapter<
    * {@link AbstractHttpAdapter.setOnRouteTriggered}, if any.
    */
   protected onRouteTriggered:
-    ((requestMethod: RequestMethod, path: string) => void) | undefined;
+    | ((requestMethod: RequestMethod, path: string) => void)
+    | undefined;
   /**
    * Signer built from the `cookies.secret` application option, used by
    * {@link AbstractHttpAdapter.setCookie} for `signed` cookies.

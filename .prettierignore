@@ -1,5 +1,0 @@
-packages/**/*.d.ts
-packages/**/*.js
-.nyc_output
-
-/.nx/workspace-data

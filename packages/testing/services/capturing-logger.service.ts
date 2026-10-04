@@ -67,7 +67,8 @@ export interface CapturedLogFilter {
  * @publicApi
  */
 export type CapturedLogMatcher =
-  CapturedLogFilter | ((entry: CapturedLog) => boolean);
+  | CapturedLogFilter
+  | ((entry: CapturedLog) => boolean);
 
 /**
  * @publicApi

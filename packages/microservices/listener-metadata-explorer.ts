@@ -42,9 +42,8 @@ export class ListenerMetadataExplorer {
     const instancePrototype = Object.getPrototypeOf(instance);
     return this.metadataScanner
       .getAllMethodNames(instancePrototype)
-      .map(
-        method =>
-          this.exploreMethodMetadata(instance, instancePrototype, method)!,
+      .map(method =>
+        this.exploreMethodMetadata(instance, instancePrototype, method)!,
       )
       .filter(metadata => metadata);
   }

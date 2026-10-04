@@ -467,7 +467,8 @@ export class Injector {
         throw new UndefinedDependencyException(wrapper.name, {
           index,
           dependencies: (wrapper.inject ?? undefined) as
-            InjectorDependency[] | undefined,
+            | InjectorDependency[]
+            | undefined,
         });
       }
       if (typeof item !== 'object') {

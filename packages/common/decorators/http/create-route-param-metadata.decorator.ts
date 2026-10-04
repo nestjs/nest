@@ -32,14 +32,14 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
 ) => ParameterDecorator {
   const paramtype = uid(21);
   return (
-      data?,
-      ...pipes: (
-        | Type<PipeTransform>
-        | PipeTransform
-        | FactoryData
-        | ParameterDecoratorOptions
-      )[]
-    ): ParameterDecorator =>
+    data?,
+    ...pipes: (
+      | Type<PipeTransform>
+      | PipeTransform
+      | FactoryData
+      | ParameterDecoratorOptions
+    )[]
+  ): ParameterDecorator =>
     (target, key, index) => {
       const args =
         Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) ||

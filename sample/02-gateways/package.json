@@ -6,7 +6,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "oxfmt \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -41,7 +41,7 @@
     "@types/supertest": "7.2.1",
     "@types/ws": "8.5.13",
     "oxlint": "1.86.0",
-    "prettier": "3.9.9",
+    "oxfmt": "0.71.0",
     "redis": "6.3.0",
     "supertest": "7.3.0",
     "ts-loader": "9.6.2",

@@ -10,7 +10,10 @@
  * @publicApi
  */
 export type ContentSecurityPolicyDirectiveValue =
-  string | readonly string[] | boolean | null;
+  | string
+  | readonly string[]
+  | boolean
+  | null;
 
 /**
  * @publicApi
@@ -64,7 +67,8 @@ export interface SecurityHeadersOptions {
    * `require-corp`.
    */
   crossOriginEmbedderPolicy?:
-    boolean | { policy?: 'require-corp' | 'credentialless' | 'unsafe-none' };
+    | boolean
+    | { policy?: 'require-corp' | 'credentialless' | 'unsafe-none' };
   /**
    * `Cross-Origin-Opener-Policy`. Default: `same-origin`.
    */
@@ -81,7 +85,8 @@ export interface SecurityHeadersOptions {
    * `Cross-Origin-Resource-Policy`. Default: `same-origin`.
    */
   crossOriginResourcePolicy?:
-    boolean | { policy?: 'same-origin' | 'same-site' | 'cross-origin' };
+    | boolean
+    | { policy?: 'same-origin' | 'same-site' | 'cross-origin' };
   /**
    * `Origin-Agent-Cluster: ?1`.
    */
@@ -91,7 +96,8 @@ export interface SecurityHeadersOptions {
    * chain (the browser uses the last one it supports).
    */
   referrerPolicy?:
-    boolean | { policy?: ReferrerPolicyToken | readonly ReferrerPolicyToken[] };
+    | boolean
+    | { policy?: ReferrerPolicyToken | readonly ReferrerPolicyToken[] };
   /**
    * `Strict-Transport-Security`. Default: `max-age=31536000;
    * includeSubDomains`. Browsers ignore it over plain HTTP.

@@ -187,12 +187,14 @@ export interface HttpServer<
    */
   use(
     handler:
-      RequestHandler<TRequest, TResponse> | ErrorHandler<TRequest, TResponse>,
+      | RequestHandler<TRequest, TResponse>
+      | ErrorHandler<TRequest, TResponse>,
   ): any;
   use(
     path: string,
     handler:
-      RequestHandler<TRequest, TResponse> | ErrorHandler<TRequest, TResponse>,
+      | RequestHandler<TRequest, TResponse>
+      | ErrorHandler<TRequest, TResponse>,
   ): any;
   /**
    * Registers an additional body parser, called by `app.useBodyParser()`.

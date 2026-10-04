@@ -242,9 +242,7 @@ describe('Transient scope', () => {
       const serviceA = app.get(ServiceA);
       const serviceB = app.get(ServiceB);
 
-      expect(serviceA.logger.instanceId).not.toBe(
-        serviceB.logger.instanceId,
-      );
+      expect(serviceA.logger.instanceId).not.toBe(serviceB.logger.instanceId);
     });
 
     it('should create separate nested TRANSIENT instances for each DEFAULT parent', () => {

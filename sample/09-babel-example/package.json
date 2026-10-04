@@ -4,7 +4,7 @@
   "description": "Nest Babel starter repository",
   "license": "MIT",
   "scripts": {
-    "format": "prettier --write \"**/*.js\"",
+    "format": "oxfmt \"**/*.js\"",
     "prebuild": "rimraf dist",
     "build": "babel src -d dist",
     "start": "npm run build && node dist/main.js",
@@ -32,7 +32,7 @@
     "@nestjs/testing": "12.1.2",
     "nodemon": "3.1.14",
     "oxlint": "1.86.0",
-    "prettier": "3.9.9",
+    "oxfmt": "0.71.0",
     "supertest": "7.3.0",
     "vitest": "5.0.3"
   },

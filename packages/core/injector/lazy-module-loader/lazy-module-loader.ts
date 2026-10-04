@@ -20,7 +20,9 @@ export class LazyModuleLoader {
 
   public async load(
     loaderFn: () =>
-      Promise<Type<unknown> | DynamicModule> | Type<unknown> | DynamicModule,
+      | Promise<Type<unknown> | DynamicModule>
+      | Type<unknown>
+      | DynamicModule,
     loadOpts?: LazyModuleLoaderLoadOptions,
   ): Promise<ModuleRef> {
     const originalLogger = (this.instanceLoader as any).logger;

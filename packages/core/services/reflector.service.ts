@@ -68,10 +68,11 @@ export class Reflector {
         // argument-less decorators. An explicit `null` (or a `transform` that
         // returns `null`) is a legitimate metadata value and must be preserved,
         // otherwise the reflected value contradicts the decorator's type.
-        SetMetadata(
-          metadataKey,
-          value === undefined ? {} : value,
-        )(target, key!, descriptor);
+        SetMetadata(metadataKey, value === undefined ? {} : value)(
+          target,
+          key!,
+          descriptor,
+        );
       };
 
     decoratorFn.KEY = metadataKey;

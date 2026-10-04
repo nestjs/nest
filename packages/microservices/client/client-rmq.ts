@@ -410,7 +410,9 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   public async handleMessage(
     packet: unknown,
     options:
-      Record<string, unknown> | ((packet: WritePacket) => any) | undefined,
+      | Record<string, unknown>
+      | ((packet: WritePacket) => any)
+      | undefined,
     callback?: (packet: WritePacket) => any,
   ): Promise<void> {
     if (isFunction(options)) {

@@ -480,7 +480,8 @@ export class WebSocketsController {
           this.assignServerToProperties(contextInstance, server);
         }
         const scopedMethod = contextInstance[methodName] as
-          ((...methodArgs: unknown[]) => unknown) | undefined;
+          | ((...methodArgs: unknown[]) => unknown)
+          | undefined;
         return await scopedMethod?.apply(contextInstance, args);
       } catch (err) {
         if (!targetCallback) {

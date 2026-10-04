@@ -28,9 +28,7 @@ describe('validateModuleKeys', () => {
     });
 
     it('should throw when mixing valid and invalid keys', () => {
-      expect(() =>
-        validateModuleKeys(['imports', 'exports', 'bogus']),
-      ).toThrow(
+      expect(() => validateModuleKeys(['imports', 'exports', 'bogus'])).toThrow(
         "Invalid property 'bogus' passed into the @Module() decorator.",
       );
     });

@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": true,
+  "arrowParens": "avoid",
+  "trailingComma": "all",
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "packages/**/*.d.ts",
+    "packages/**/*.js",
+    ".nyc_output",
+    "/.nx/workspace-data"
+  ]
+}

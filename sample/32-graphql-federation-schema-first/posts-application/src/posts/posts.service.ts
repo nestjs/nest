@@ -11,11 +11,11 @@ export class PostsService {
   ];
 
   findOneByAuthorId(authorId: number) {
-    return this.posts.filter((post) => post.authorId === Number(authorId));
+    return this.posts.filter(post => post.authorId === Number(authorId));
   }
 
   findOne(postId: number) {
-    return this.posts.find((post) => post.id === postId);
+    return this.posts.find(post => post.id === postId);
   }
 
   findAll() {

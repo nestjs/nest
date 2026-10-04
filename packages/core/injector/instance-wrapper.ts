@@ -93,7 +93,8 @@ export class InstanceWrapper<T = any> {
   private readonly [INSTANCE_METADATA_SYMBOL]: InstanceMetadataStore = {};
   private readonly [INSTANCE_ID_SYMBOL]: string;
   private transientMap?:
-    Map<string, WeakMap<ContextId, InstancePerContext<T>>> | undefined;
+    | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
+    | undefined;
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
   private _hierarchyLevel = 0;

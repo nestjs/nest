@@ -296,18 +296,27 @@ export class Module {
   public isCustomProvider(
     provider: Provider,
   ): provider is
-    ClassProvider | FactoryProvider | ValueProvider | ExistingProvider {
+    | ClassProvider
+    | FactoryProvider
+    | ValueProvider
+    | ExistingProvider {
     return !isNil(
       (
         provider as
-          ClassProvider | FactoryProvider | ValueProvider | ExistingProvider
+          | ClassProvider
+          | FactoryProvider
+          | ValueProvider
+          | ExistingProvider
       ).provide,
     );
   }
 
   public addCustomProvider(
     provider:
-      ClassProvider | FactoryProvider | ValueProvider | ExistingProvider,
+      | ClassProvider
+      | FactoryProvider
+      | ValueProvider
+      | ExistingProvider,
     collection: Map<Function | string | symbol, any>,
     enhancerSubtype?: EnhancerSubtype,
   ) {
@@ -333,10 +342,7 @@ export class Module {
   }
 
   public isCustomValue(provider: any): provider is ValueProvider {
-    return (
-      isObject(provider) &&
-      Object.hasOwn(provider, 'useValue')
-    );
+    return isObject(provider) && Object.hasOwn(provider, 'useValue');
   }
 
   public isCustomFactory(provider: any): provider is FactoryProvider {
@@ -480,7 +486,10 @@ export class Module {
 
   public addCustomExportedProvider(
     provider:
-      FactoryProvider | ValueProvider | ClassProvider | ExistingProvider,
+      | FactoryProvider
+      | ValueProvider
+      | ClassProvider
+      | ExistingProvider,
   ) {
     const provide = provider.provide;
     if (isString(provide) || isSymbol(provide)) {

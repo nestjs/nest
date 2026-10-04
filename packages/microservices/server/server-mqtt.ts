@@ -81,8 +81,8 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     // The bootstrap callback must settle exactly once, no matter whether the
     // connection succeeds or the attempts limit is exhausted first.
     let listenCallback:
-      ((err?: unknown, ...optionalParams: unknown[]) => void) | undefined =
-      callback;
+      | ((err?: unknown, ...optionalParams: unknown[]) => void)
+      | undefined = callback;
     const settleListenCallback = (err?: unknown) => {
       const cb = listenCallback;
       listenCallback = undefined;

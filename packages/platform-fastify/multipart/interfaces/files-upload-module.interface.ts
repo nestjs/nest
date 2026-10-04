@@ -13,7 +13,8 @@ export type MultipartModuleOptions = MultipartOptions;
  */
 export interface MultipartOptionsFactory {
   createMultipartOptions():
-    Promise<MultipartModuleOptions> | MultipartModuleOptions;
+    | Promise<MultipartModuleOptions>
+    | MultipartModuleOptions;
 }
 
 /**

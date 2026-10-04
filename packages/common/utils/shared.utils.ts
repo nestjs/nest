@@ -12,9 +12,7 @@ export const isPlainObject = (fn: unknown): fn is object => {
   if (proto === null) {
     return true;
   }
-  const ctor =
-    Object.hasOwn(proto, 'constructor') &&
-    proto.constructor;
+  const ctor = Object.hasOwn(proto, 'constructor') && proto.constructor;
   return (
     typeof ctor === 'function' &&
     ctor instanceof ctor &&

@@ -41,7 +41,8 @@ export type CrossOriginAllowedReason =
   | 'excluded';
 
 export type CrossOriginDeniedReason =
-  'cross-origin-sec-fetch-site' | 'cross-origin-origin-header';
+  | 'cross-origin-sec-fetch-site'
+  | 'cross-origin-origin-header';
 
 export type CrossOriginDecision =
   | { allowed: true; reason: CrossOriginAllowedReason }

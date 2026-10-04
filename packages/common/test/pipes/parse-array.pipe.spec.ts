@@ -41,18 +41,18 @@ describe('ParseArrayPipe', () => {
         it('should parse to a single empty item', async () => {
           target = new ParseArrayPipe({ optional: false });
 
-          expect(
-            await target.transform('', {} as ArgumentMetadata),
-          ).toEqual(['']);
+          expect(await target.transform('', {} as ArgumentMetadata)).toEqual([
+            '',
+          ]);
         });
       });
       describe('and optional enabled', () => {
         it('should parse to a single empty item', async () => {
           target = new ParseArrayPipe({ optional: true });
 
-          expect(
-            await target.transform('', {} as ArgumentMetadata),
-          ).toEqual(['']);
+          expect(await target.transform('', {} as ArgumentMetadata)).toEqual([
+            '',
+          ]);
         });
       });
     });

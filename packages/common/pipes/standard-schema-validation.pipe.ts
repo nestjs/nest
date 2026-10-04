@@ -164,7 +164,8 @@ export class StandardSchemaValidationPipe implements PipeTransform {
     options?: Record<string, unknown>,
   ): Promise<StandardSchemaV1.Result<T>> | StandardSchemaV1.Result<T> {
     return schema['~standard'].validate(value, options) as
-      Promise<StandardSchemaV1.Result<T>> | StandardSchemaV1.Result<T>;
+      | Promise<StandardSchemaV1.Result<T>>
+      | StandardSchemaV1.Result<T>;
   }
 
   protected stripProtoKeys(value: any): void {

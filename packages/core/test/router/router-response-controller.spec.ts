@@ -744,7 +744,8 @@ data: test
       );
 
       const signal = (request as any)[SSE_ABORT_CONTROLLER]?.signal as
-        AbortSignal | undefined;
+        | AbortSignal
+        | undefined;
       expect(signal).toBeInstanceOf(AbortSignal);
       expect(signal!.aborted).toBe(false);
 

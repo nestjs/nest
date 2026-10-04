@@ -277,10 +277,7 @@ describe('LazyModuleLoader', () => {
         const moduleRef = await lazyModuleLoader.load(() => definition);
 
         // Assert
-        expect(moduleRef.get(ParentService).items).toEqual([
-          'itemA',
-          'itemB',
-        ]);
+        expect(moduleRef.get(ParentService).items).toEqual(['itemA', 'itemB']);
       });
 
       it('should keep the module resolvable on repeated load() calls', async () => {
@@ -298,10 +295,7 @@ describe('LazyModuleLoader', () => {
 
         // Assert
         expect(first).toBe(second);
-        expect(second.get(ParentService).items).toEqual([
-          'itemA',
-          'itemB',
-        ]);
+        expect(second.get(ParentService).items).toEqual(['itemA', 'itemB']);
       });
 
       it('should bind global providers into a rescanned dynamic import', async () => {

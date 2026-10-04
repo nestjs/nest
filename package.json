@@ -30,7 +30,7 @@
     "build:samples": "gulp install:samples && npm run build && npm run move:samples && gulp build:samples",
     "codechecks:benchmarks": "codechecks ./tools/benchmarks/check-benchmarks.ts",
     "coverage": "vitest run --coverage --config vitest.config.coverage.mts || true",
-    "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
+    "format": "oxfmt \"**/*.ts\" \"packages/**/*.json\" && git status",
     "postinstall": "opencollective",
     "test": "vitest run",
     "test:dev": "vitest",
@@ -53,10 +53,10 @@
   },
   "lint-staged": {
     "**/*.ts": [
-      "prettier --ignore-path ./.prettierignore --write"
+      "oxfmt --no-error-on-unmatched-pattern"
     ],
     "packages/**/*.json": [
-      "prettier --ignore-path ./.prettierignore --write"
+      "oxfmt --no-error-on-unmatched-pattern"
     ]
   },
   "dependencies": {
@@ -143,8 +143,8 @@
     "multer": "2.4.0",
     "mysql2": "3.24.5",
     "nats": "2.29.3",
+    "oxfmt": "0.71.0",
     "oxlint": "1.86.0",
-    "prettier": "^3.7.4",
     "redis": "6.3.0",
     "rxjs-compat": "6.6.7",
     "socket.io-client": "4.8.3",

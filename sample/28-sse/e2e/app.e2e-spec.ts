@@ -27,7 +27,7 @@ describe('AppController (e2e)', () => {
         .get('/')
         .expect(200)
         .expect('content-type', /text\/html/)
-        .expect((res) => {
+        .expect(res => {
           expect(res.text).toContain('EventSource');
         });
     });
@@ -51,7 +51,7 @@ describe('AppController (e2e)', () => {
           }
         };
 
-        const req = http.get(`http://127.0.0.1:${port}/sse`, (res) => {
+        const req = http.get(`http://127.0.0.1:${port}/sse`, res => {
           expect(res.statusCode).toBe(200);
           expect(res.headers['content-type']).toContain('text/event-stream');
 
