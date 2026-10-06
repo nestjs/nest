@@ -210,6 +210,7 @@ describe('NestApplicationContext', () => {
 
         expect(destroyHookStub).toHaveBeenCalledTimes(1);
         expect(hookStub).toHaveBeenCalledTimes(1);
+        expect(processKillStub).toHaveBeenCalledWith(process.pid, signal);
         expect(process.listenerCount(signal)).toBe(listeners.size);
       } finally {
         destroyHookStub.mockRestore();
