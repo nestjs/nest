@@ -106,9 +106,6 @@ export class InterceptorsContextCreator extends ContextCreator {
       return [] as unknown[] as T;
     }
     const globalInterceptors = this.config.getGlobalInterceptors() as T;
-    if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalInterceptors;
-    }
     const scopedInterceptorWrappers =
       this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
     const scopedInterceptors = iterate(scopedInterceptorWrappers)
@@ -118,10 +115,14 @@ export class InterceptorsContextCreator extends ContextCreator {
           inquirerId,
         ),
       )
-      .filter(host => !!host)
+      .filter(host => !!host?.instance)
       .map(host => host.instance)
       .toArray();
 
-    return globalInterceptors.concat(scopedInterceptors) as T;
+    return (
+      scopedInterceptors.length
+        ? globalInterceptors.concat(scopedInterceptors)
+        : globalInterceptors
+    ) as T;
   }
 }

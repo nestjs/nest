@@ -58,6 +58,24 @@ describe('ExceptionFiltersContext', () => {
         const expectedResult = applicationConfig.getGlobalFilters();
         expect(exceptionFilter.getGlobalMetadata()).toBe(expectedResult);
       });
+      it('should include scoped enhancers that already have a static instance', () => {
+        const instanceWrapper = new InstanceWrapper();
+        const requestScopedWrapper = new InstanceWrapper();
+        const instance = 'static-transient';
+
+        vi.spyOn(applicationConfig, 'getGlobalFilters').mockImplementation(
+          () => ['test'] as any,
+        );
+        vi.spyOn(
+          applicationConfig,
+          'getGlobalRequestFilters',
+        ).mockImplementation(() => [instanceWrapper, requestScopedWrapper]);
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () => ({ instance }) as any,
+        );
+
+        expect(exceptionFilter.getGlobalMetadata()).toEqual(['test', instance]);
+      });
     });
     describe('otherwise', () => {
       it('should merge static global with request/transient scoped filters', () => {

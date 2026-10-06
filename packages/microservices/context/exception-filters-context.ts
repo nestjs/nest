@@ -53,9 +53,6 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     inquirerId?: string,
   ): T {
     const globalFilters = this.config.getGlobalFilters() as T;
-    if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalFilters;
-    }
     const scopedFilterWrappers =
       this.config.getGlobalRequestFilters() as InstanceWrapper[];
     const scopedFilters = iterate(scopedFilterWrappers)
@@ -65,10 +62,12 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
           inquirerId,
         ),
       )
-      .filter(host => !!host)
+      .filter(host => !!host?.instance)
       .map(host => host.instance)
       .toArray();
 
-    return globalFilters.concat(scopedFilters) as T;
+    return (
+      scopedFilters.length ? globalFilters.concat(scopedFilters) : globalFilters
+    ) as T;
   }
 }

@@ -146,6 +146,27 @@ describe('InterceptorsContextCreator', () => {
           expectedResult,
         );
       });
+      it('should include scoped enhancers that already have a static instance', () => {
+        const instanceWrapper = new InstanceWrapper();
+        const requestScopedWrapper = new InstanceWrapper();
+        const instance = 'static-transient';
+
+        vi.spyOn(applicationConfig, 'getGlobalInterceptors').mockImplementation(
+          () => ['test'] as any,
+        );
+        vi.spyOn(
+          applicationConfig,
+          'getGlobalRequestInterceptors',
+        ).mockImplementation(() => [instanceWrapper, requestScopedWrapper]);
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () => ({ instance }) as any,
+        );
+
+        expect(interceptorsContextCreator.getGlobalMetadata()).toEqual([
+          'test',
+          instance,
+        ]);
+      });
     });
     describe('otherwise', () => {
       it('should merge static global with request/transient scoped interceptors', () => {

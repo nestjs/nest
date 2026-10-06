@@ -137,6 +137,27 @@ describe('GuardsContextCreator', () => {
         const expectedResult = applicationConfig.getGlobalGuards();
         expect(guardsContextCreator.getGlobalMetadata()).toBe(expectedResult);
       });
+      it('should include scoped enhancers that already have a static instance', () => {
+        const instanceWrapper = new InstanceWrapper();
+        const requestScopedWrapper = new InstanceWrapper();
+        const instance = 'static-transient';
+
+        vi.spyOn(applicationConfig, 'getGlobalGuards').mockImplementation(
+          () => ['test'] as any,
+        );
+        vi.spyOn(
+          applicationConfig,
+          'getGlobalRequestGuards',
+        ).mockImplementation(() => [instanceWrapper, requestScopedWrapper]);
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () => ({ instance }) as any,
+        );
+
+        expect(guardsContextCreator.getGlobalMetadata()).toEqual([
+          'test',
+          instance,
+        ]);
+      });
     });
     describe('otherwise', () => {
       it('should merge static global with request/transient scoped guards', () => {

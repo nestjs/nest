@@ -99,6 +99,23 @@ describe('PipesContextCreator', () => {
         const expectedResult = applicationConfig.getGlobalPipes();
         expect(creator.getGlobalMetadata()).toBe(expectedResult);
       });
+      it('should include scoped enhancers that already have a static instance', () => {
+        const instanceWrapper = new InstanceWrapper();
+        const requestScopedWrapper = new InstanceWrapper();
+        const instance = 'static-transient';
+
+        vi.spyOn(applicationConfig, 'getGlobalPipes').mockImplementation(
+          () => ['test'] as any,
+        );
+        vi.spyOn(applicationConfig, 'getGlobalRequestPipes').mockImplementation(
+          () => [instanceWrapper, requestScopedWrapper],
+        );
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () => ({ instance }) as any,
+        );
+
+        expect(creator.getGlobalMetadata()).toEqual(['test', instance]);
+      });
     });
     describe('otherwise', () => {
       it('should merge static global with request/transient scoped pipes', () => {

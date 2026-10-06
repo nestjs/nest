@@ -104,9 +104,6 @@ export class GuardsContextCreator extends ContextCreator {
       return [] as unknown[] as T;
     }
     const globalGuards = this.config.getGlobalGuards() as T;
-    if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalGuards;
-    }
     const scopedGuardWrappers =
       this.config.getGlobalRequestGuards() as InstanceWrapper[];
     const scopedGuards = iterate(scopedGuardWrappers)
@@ -116,10 +113,12 @@ export class GuardsContextCreator extends ContextCreator {
           inquirerId,
         ),
       )
-      .filter(host => !!host)
+      .filter(host => !!host?.instance)
       .map(host => host.instance)
       .toArray();
 
-    return globalGuards.concat(scopedGuards) as T;
+    return (
+      scopedGuards.length ? globalGuards.concat(scopedGuards) : globalGuards
+    ) as T;
   }
 }

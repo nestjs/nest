@@ -96,9 +96,6 @@ export class PipesContextCreator extends ContextCreator {
       return [] as unknown[] as T;
     }
     const globalPipes = this.config.getGlobalPipes() as T;
-    if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalPipes;
-    }
     const scopedPipeWrappers =
       this.config.getGlobalRequestPipes() as InstanceWrapper[];
     const scopedPipes = iterate(scopedPipeWrappers)
@@ -108,11 +105,13 @@ export class PipesContextCreator extends ContextCreator {
           inquirerId,
         ),
       )
-      .filter(host => !!host)
+      .filter(host => !!host?.instance)
       .map(host => host.instance)
       .toArray();
 
-    return globalPipes.concat(scopedPipes) as T;
+    return (
+      scopedPipes.length ? globalPipes.concat(scopedPipes) : globalPipes
+    ) as T;
   }
 
   public setModuleContext(context: string) {
