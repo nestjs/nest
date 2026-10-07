@@ -1,4 +1,10 @@
-import { Module, Post, VersioningType } from '@nestjs/common';
+import {
+  Module,
+  Post,
+  RequestMethod,
+  VERSION_NEUTRAL,
+  VersioningType,
+} from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator.js';
@@ -9,6 +15,7 @@ import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { GraphInspector } from '../../inspector/graph-inspector.js';
 import { SerializedGraph } from '../../inspector/serialized-graph.js';
 import { RoutesResolver } from '../../router/routes-resolver.js';
+import { mapToExcludeRoute } from '../../middleware/utils.js';
 import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
 describe('RoutesResolver', () => {
@@ -298,6 +305,124 @@ describe('RoutesResolver', () => {
       routesResolver.registerNotFoundHandler();
 
       expect(applicationRef.setNotFoundHandler).toHaveBeenCalled();
+    });
+
+    it('should pass an empty exclusion list by default', () => {
+      routesResolver.registerNotFoundHandler();
+      expect(applicationRef.setNotFoundHandler).toHaveBeenCalledWith(
+        expect.any(Function),
+        '',
+        [],
+      );
+    });
+
+    it('should preserve configured exclusions for non-URI versioning', () => {
+      const config =
+        untypedRoutesResolver.applicationConfig as ApplicationConfig;
+      config.setGlobalPrefix('api');
+      config.enableVersioning({
+        type: VersioningType.HEADER,
+        header: 'version',
+      });
+      config.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute([
+          'hello',
+          { path: 'other', method: RequestMethod.GET },
+        ]),
+      });
+      routesResolver.registerNotFoundHandler();
+      expect(applicationRef.setNotFoundHandler).toHaveBeenCalledWith(
+        expect.any(Function),
+        'api',
+        [
+          { path: 'hello', method: RequestMethod.ALL },
+          { path: 'other', method: RequestMethod.GET },
+        ],
+      );
+    });
+
+    it('should collect resolved URI exclusions and forward deferred route callbacks', () => {
+      const config =
+        untypedRoutesResolver.applicationConfig as ApplicationConfig;
+      config.setGlobalPrefix('api');
+      config.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+      });
+      const exclusions = mapToExcludeRoute(['hello']);
+      config.setGlobalPrefixOptions({ exclude: exclusions });
+      const routes = [
+        {
+          path: '/v1/hello',
+          method: RequestMethod.GET,
+          version: '1',
+          excludedFromGlobalPrefix: true,
+        },
+        {
+          path: '/v2/hello',
+          method: RequestMethod.GET,
+          version: '2',
+          excludedFromGlobalPrefix: true,
+        },
+        {
+          path: '/v2/hello',
+          method: RequestMethod.POST,
+          version: '2',
+          excludedFromGlobalPrefix: true,
+        },
+        {
+          path: '/hello',
+          method: RequestMethod.GET,
+          version: VERSION_NEUTRAL,
+          excludedFromGlobalPrefix: true,
+        },
+        {
+          path: '/api/v1/other',
+          method: RequestMethod.GET,
+          version: '1',
+          excludedFromGlobalPrefix: false,
+        },
+      ];
+      modules.set('TestModule', {
+        controllers: new Map(),
+        metatype: TestModule,
+      });
+      const registerSpy = vi
+        .spyOn(routesResolver, 'registerRouters')
+        .mockImplementation(
+          (_controllers, _module, _prefix, _modulePath, _adapter, options) => {
+            routes.forEach(route => options?.onRouteResolved?.(route as any));
+          },
+        );
+      const onRouteResolved = vi.fn();
+      routesResolver.resolve(applicationRef, 'api', {
+        onRouteResolved,
+        deferRegistration: true,
+      });
+      routesResolver.registerNotFoundHandler();
+
+      expect(registerSpy.mock.calls[0][5]?.deferRegistration).toBe(true);
+      expect(onRouteResolved.mock.calls.map(([route]) => route)).toEqual(
+        routes,
+      );
+      expect(applicationRef.setNotFoundHandler).toHaveBeenLastCalledWith(
+        expect.any(Function),
+        'api',
+        [
+          { path: '/v1/hello', method: RequestMethod.GET },
+          { path: '/v2/hello', method: RequestMethod.POST },
+          { path: '/hello', method: RequestMethod.GET },
+        ],
+      );
+      expect(config.getGlobalPrefixOptions().exclude).toBe(exclusions);
+      modules.clear();
+      routesResolver.resolve(applicationRef, 'api');
+      routesResolver.registerNotFoundHandler();
+      expect(applicationRef.setNotFoundHandler).toHaveBeenLastCalledWith(
+        expect.any(Function),
+        'api',
+        [],
+      );
     });
   });
 

@@ -26,6 +26,7 @@ import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import {
   type CorsOptions,
   type CorsOptionsDelegate,
+  type RouteInfo,
   type VersionValue,
   addLeadingSlash,
   isFunction,
@@ -184,13 +185,21 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return this.use(handler);
   }
 
-  public setNotFoundHandler(handler: Function, prefix?: string) {
+  public setNotFoundHandler(
+    handler: Function,
+    prefix?: string,
+    excludedRoutes: RouteInfo[] = [],
+  ) {
     const normalizedPrefix = this.normalizePrefix(prefix);
     if (normalizedPrefix) {
       this.registeredPrefixes.add(normalizedPrefix);
       const router = express.Router();
       router.all('*path', handler as any);
-      return this.use(normalizedPrefix, router);
+      const result = this.use(normalizedPrefix, router);
+      for (const { path } of excludedRoutes) {
+        this.instance.all(addLeadingSlash(path), handler);
+      }
+      return result;
     }
     return this.use(
       (

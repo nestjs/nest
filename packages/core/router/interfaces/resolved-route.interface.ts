@@ -23,6 +23,8 @@ export interface ResolvedRoute {
   method: RequestMethod;
   path: string;
   rawPath?: string;
+  /** Whether the final path omits a configured global prefix. */
+  excludedFromGlobalPrefix?: boolean;
   host: string | RegExp | Array<string | RegExp> | undefined;
   version: VersionValue | undefined;
   methodVersion: VersionValue | undefined;

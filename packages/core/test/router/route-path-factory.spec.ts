@@ -2,6 +2,7 @@ import { RequestMethod, VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../../application-config.js';
 import { RoutePathFactory } from '../../router/route-path-factory.js';
+import { mapToExcludeRoute } from '../../middleware/utils.js';
 
 describe('RoutePathFactory', () => {
   let routePathFactory: RoutePathFactory;
@@ -13,6 +14,48 @@ describe('RoutePathFactory', () => {
   });
 
   describe('create', () => {
+    it('should report only paths whose global prefix was excluded', () => {
+      applicationConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['hello']),
+      });
+      const onExcludedPath = vi.fn();
+      const paths = routePathFactory.create(
+        {
+          globalPrefix: '/api/',
+          ctrlPath: '/hello/',
+          methodVersion: [VERSION_NEUTRAL, '1'],
+          versioningOptions: { type: VersioningType.URI },
+        },
+        RequestMethod.GET,
+        onExcludedPath,
+      );
+      expect(paths).toEqual(['/hello', '/v1/hello']);
+      expect(onExcludedPath.mock.calls).toEqual([
+        ['/hello', 0],
+        ['/v1/hello', 1],
+      ]);
+    });
+
+    it('should distinguish excluded and prefixed variants with identical final paths', () => {
+      applicationConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['v1/hello']),
+      });
+      const onExcludedPath = vi.fn();
+      expect(
+        routePathFactory.create(
+          {
+            globalPrefix: '/v1',
+            ctrlPath: 'v1/hello',
+            methodVersion: [VERSION_NEUTRAL, '1'],
+            versioningOptions: { type: VersioningType.URI },
+          },
+          RequestMethod.GET,
+          onExcludedPath,
+        ),
+      ).toEqual(['/v1/v1/hello', '/v1/v1/hello']);
+      expect(onExcludedPath.mock.calls).toEqual([['/v1/v1/hello', 1]]);
+    });
+
     it('should return valid, concatenated paths (various combinations)', () => {
       expect(
         routePathFactory.create({

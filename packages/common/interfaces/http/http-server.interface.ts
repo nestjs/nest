@@ -5,6 +5,7 @@ import {
   VersioningOptions,
 } from '../version-options.interface.js';
 import { CookieSerializeOptions } from './cookie-options.interface.js';
+import { RouteInfo } from '../middleware/middleware-configuration.interface.js';
 
 /**
  * Shape of the error-layer callback that Nest hands to
@@ -458,8 +459,18 @@ export interface HttpServer<
    *
    * @param handler The `(req, res, next)` callback.
    * @param prefix The global prefix (`app.setGlobalPrefix()`), when set.
+   * @param excludedRoutes Paths excluded from the global prefix, including
+   * their URI version segments when URI versioning is enabled. An adapter
+   * that scopes its not-found handler by path must cover these paths for all
+   * request methods, so method misses also reach the exception filters.
+   * URI paths come from resolved routes, including controller and method
+   * versions and version-neutral routes; undeclared versions are not added.
    */
-  setNotFoundHandler?(handler: Function, prefix?: string): any;
+  setNotFoundHandler?(
+    handler: Function,
+    prefix?: string,
+    excludedRoutes?: RouteInfo[],
+  ): any;
   /**
    * Serves static files; pass-through for `app.useStaticAssets()`. The
    * arguments are platform-specific. When not implemented,

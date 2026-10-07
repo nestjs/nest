@@ -9,6 +9,8 @@ import { MiddlewareConfiguration } from '../../../common/interfaces/index.js';
 import { ApplicationConfig } from '../../application-config.js';
 import { NestContainer } from '../../injector/container.js';
 import { RoutesMapper } from '../../middleware/routes-mapper.js';
+import { MODULE_PATH } from '../../../common/constants.js';
+import { Module } from '../../injector/module.js';
 
 describe('RoutesMapper', () => {
   @Controller('test')
@@ -55,6 +57,46 @@ describe('RoutesMapper', () => {
       { path: '/test/versioned', method: RequestMethod.GET, version: '1' },
     ]);
   });
+
+  it('should use the supplied module when mapping a shared controller', () => {
+    class RoutedModule {}
+    Reflect.defineMetadata(MODULE_PATH, '/second', RoutedModule);
+    expect(
+      mapper.mapRouteToRouteInfo(TestRoute, {
+        metatype: RoutedModule,
+      } as Module),
+    ).toEqual([
+      { path: '/second/test/test', method: RequestMethod.GET },
+      { path: '/second/test/another', method: RequestMethod.DELETE },
+      {
+        path: '/second/test/versioned',
+        method: RequestMethod.GET,
+        version: '1',
+      },
+    ]);
+    expect(mapper.mapRouteToRouteInfo(TestRoute)[0].path).toBe('/test/test');
+  });
+
+  it.each([
+    { modulePath: '/', expected: '/tail/child' },
+    { modulePath: '/parent/', expected: '/parent/tail/child' },
+  ])(
+    'should join $modulePath with a controller path ending in a slash',
+    ({ modulePath, expected }) => {
+      @Controller('tail/')
+      class TrailingController {
+        @Get('child')
+        child() {}
+      }
+      class RoutedModule {}
+      Reflect.defineMetadata(MODULE_PATH, modulePath, RoutedModule);
+      expect(
+        mapper.mapRouteToRouteInfo(TrailingController, {
+          metatype: RoutedModule,
+        } as Module),
+      ).toEqual([{ path: expected, method: RequestMethod.GET }]);
+    },
+  );
   @Controller(['test', 'test2'])
   class TestRouteWithMultiplePaths {
     @RequestMapping({ path: 'test' })

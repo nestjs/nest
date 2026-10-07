@@ -16,6 +16,69 @@ describe('RouteInfoPathExtractor', () => {
       routeInfoPathExtractor = new RouteInfoPathExtractor(appConfig);
     });
 
+    it('should expand unversioned wildcards to the versions of excluded controller routes', () => {
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['hello']),
+      });
+      const extractor = new RouteInfoPathExtractor(appConfig, [
+        { path: '/hello', method: RequestMethod.GET, version: '1' },
+        { path: '/hello', method: RequestMethod.GET, version: '2' },
+        { path: '/hello', method: RequestMethod.GET },
+        { path: '/other', method: RequestMethod.GET, version: '9' },
+        { path: '/hello', method: RequestMethod.POST, version: '1' },
+      ]);
+      expect(
+        extractor.extractPathsFrom({
+          path: '/{*path}',
+          method: RequestMethod.ALL,
+        }),
+      ).toEqual(['/api$', '/api/{*path}', '/v1/hello', '/v2/hello', '/hello']);
+      expect(
+        extractor.extractPathsFrom({
+          path: '/{*path}',
+          method: RequestMethod.ALL,
+          version: '2',
+        }),
+      ).toEqual(['/api/v2$', '/api/v2/{*path}', '/v2/hello']);
+    });
+
+    it('should not duplicate a neutral wildcard exclusion with versioned variants', () => {
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['{*excluded}']),
+      });
+      const extractor = new RouteInfoPathExtractor(appConfig, [
+        { path: '/hello', method: RequestMethod.GET, version: '1' },
+        { path: '/hello', method: RequestMethod.GET },
+      ]);
+      expect(
+        extractor.extractPathsFrom({
+          path: '/{*path}',
+          method: RequestMethod.ALL,
+        }),
+      ).toEqual(['/api$', '/api/{*path}', '/{*excluded}']);
+    });
+
+    it('should respect method-specific exclusions when discovering URI versions', () => {
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute([
+          { path: 'hello', method: RequestMethod.GET },
+        ]),
+      });
+      const extractor = new RouteInfoPathExtractor(appConfig, [
+        { path: '/hello', method: RequestMethod.GET, version: '1' },
+        { path: '/hello', method: RequestMethod.POST, version: '2' },
+      ]);
+      expect(
+        extractor.extractPathsFrom({
+          path: '/{*path}',
+          method: RequestMethod.ALL,
+        }),
+      ).toEqual(['/api$', '/api/{*path}', '/v1/hello']);
+    });
+
     it(`should return correct paths`, () => {
       expect(
         routeInfoPathExtractor.extractPathsFrom({

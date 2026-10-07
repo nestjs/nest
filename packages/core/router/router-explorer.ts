@@ -220,11 +220,15 @@ export class RouterExplorer {
       }
 
       routePathMetadata.methodPath = path;
+      const excludedPathIndexes = new Set<number>();
       const pathsToRegister = this.routePathFactory.create(
         routePathMetadata,
         requestMethod,
+        onRouteResolved
+          ? (_path, index) => excludedPathIndexes.add(index)
+          : undefined,
       );
-      pathsToRegister.forEach(path => {
+      pathsToRegister.forEach((path, index) => {
         const normalizedPath = router.normalizePath
           ? router.normalizePath(path)
           : path;
@@ -267,6 +271,7 @@ export class RouterExplorer {
           method: requestMethod,
           path: normalizedPath,
           rawPath: path,
+          excludedFromGlobalPrefix: excludedPathIndexes.has(index),
           host,
           version:
             routePathMetadata.methodVersion ??

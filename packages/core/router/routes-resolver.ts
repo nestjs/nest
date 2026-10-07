@@ -3,12 +3,14 @@ import {
   type Type,
   Logger,
   NotFoundException,
+  VersioningType,
 } from '@nestjs/common';
 import {
   HOST_METADATA,
   MODULE_PATH,
   VERSION_METADATA,
   type Controller,
+  type RouteInfo,
   type VersionValue,
 } from '@nestjs/common/internal';
 import { ApplicationConfig } from '../application-config.js';
@@ -38,6 +40,7 @@ export class RoutesResolver implements Resolver {
   private readonly routePathFactory: RoutePathFactory;
   private readonly routerExceptionsFilter: RouterExceptionFilters;
   private readonly routerExplorer: RouterExplorer;
+  private readonly excludedRoutes = new Map<string, RouteInfo>();
 
   constructor(
     private readonly container: NestContainer,
@@ -71,6 +74,24 @@ export class RoutesResolver implements Resolver {
     globalPrefix: string,
     options: RouteResolutionOptions = {},
   ) {
+    this.excludedRoutes.clear();
+    const collectUriExclusions =
+      this.applicationConfig.getVersioning()?.type === VersioningType.URI &&
+      this.applicationConfig.getGlobalPrefixOptions().exclude?.length;
+    const resolutionOptions: RouteResolutionOptions = collectUriExclusions
+      ? {
+          ...options,
+          onRouteResolved: route => {
+            if (route.excludedFromGlobalPrefix) {
+              this.excludedRoutes.set(route.path, {
+                path: route.path,
+                method: route.method,
+              });
+            }
+            options.onRouteResolved?.(route);
+          },
+        }
+      : options;
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
       const modulePath = this.getModulePathMetadata(metatype)!;
@@ -80,7 +101,7 @@ export class RoutesResolver implements Resolver {
         globalPrefix,
         modulePath,
         applicationRef,
-        options,
+        resolutionOptions,
       );
     });
   }
@@ -162,8 +183,16 @@ export class RoutesResolver implements Resolver {
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     const prefix = this.applicationConfig.getGlobalPrefix();
+    // URI exclusions must follow the resolved controller and method versions,
+    // rather than assuming every excluded route uses defaultVersion.
+    const excludedRoutes =
+      this.applicationConfig.getVersioning()?.type === VersioningType.URI
+        ? [...this.excludedRoutes.values()]
+        : (this.applicationConfig.getGlobalPrefixOptions().exclude ?? []).map(
+            ({ path, requestMethod }) => ({ path, method: requestMethod }),
+          );
     applicationRef.setNotFoundHandler &&
-      applicationRef.setNotFoundHandler(proxy, prefix);
+      applicationRef.setNotFoundHandler(proxy, prefix, excludedRoutes);
   }
 
   public registerExceptionHandler() {

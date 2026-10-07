@@ -1,4 +1,9 @@
-import { type HttpServer, type InjectionToken, Logger } from '@nestjs/common';
+import {
+  type HttpServer,
+  type InjectionToken,
+  type Type,
+  Logger,
+} from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
@@ -23,7 +28,11 @@ import { MiddlewareContainer } from './container.js';
 import { MiddlewareResolver } from './resolver.js';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
-import { RequestMethod, type NestMiddleware } from '@nestjs/common';
+import {
+  RequestMethod,
+  VersioningType,
+  type NestMiddleware,
+} from '@nestjs/common';
 import {
   type MiddlewareConfiguration,
   type RouteInfo,
@@ -68,7 +77,24 @@ export class MiddlewareModule<
     );
     this.routesMapper = new RoutesMapper(container, config);
     this.resolver = new MiddlewareResolver(middlewareContainer, injector);
-    this.routeInfoPathExtractor = new RouteInfoPathExtractor(config);
+    // Middleware is installed before the router. Discover declared URI
+    // versions from controller metadata before expanding wildcard paths.
+    const controllerRoutes =
+      config.getVersioning()?.type === VersioningType.URI &&
+      config.getGlobalPrefixOptions().exclude?.length
+        ? [...container.getModules().values()].flatMap(moduleRef =>
+            [...moduleRef.controllers.values()].flatMap(({ metatype }) =>
+              this.routesMapper.mapRouteToRouteInfo(
+                metatype as Type<any>,
+                moduleRef,
+              ),
+            ),
+          )
+        : undefined;
+    this.routeInfoPathExtractor = new RouteInfoPathExtractor(
+      config,
+      controllerRoutes,
+    );
     this.injector = injector;
     this.container = container;
     this.httpAdapter = httpAdapter;
@@ -327,8 +353,22 @@ export class MiddlewareModule<
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
+    // A binding may have overlapping wildcard and excluded paths. Execute
+    // its middleware once even if the adapter matches several of them.
+    const executedRequests = new WeakSet<object>();
+    const invokeOnce = <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      if (executedRequests.has(req as object)) {
+        return next();
+      }
+      executedRequests.add(req as object);
+      return proxy(req, res, next);
+    };
     const middlewareFunction = isMethodAll
-      ? proxy
+      ? invokeOnce
       : <TRequest, TResponse>(
           req: TRequest,
           res: TResponse,
@@ -340,7 +380,7 @@ export class MiddlewareModule<
             (actualRequestMethod === RequestMethod[RequestMethod.HEAD] &&
               requestMethod === RequestMethod[RequestMethod.GET])
           ) {
-            return proxy(req, res, next);
+            return invokeOnce(req, res, next);
           }
           return next();
         };

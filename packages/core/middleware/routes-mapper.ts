@@ -13,6 +13,7 @@ import {
   addLeadingSlash,
   isString,
   isUndefined,
+  stripEndSlash,
 } from '@nestjs/common/internal';
 import { type Type, VERSION_NEUTRAL } from '@nestjs/common';
 
@@ -28,6 +29,7 @@ export class RoutesMapper {
 
   public mapRouteToRouteInfo(
     controllerOrRoute: Type<any> | RouteInfo | string,
+    moduleRef?: Module,
   ): RouteInfo[] {
     if (isString(controllerOrRoute)) {
       return this.getRouteInfoFromPath(controllerOrRoute);
@@ -40,6 +42,7 @@ export class RoutesMapper {
     return this.getRouteInfoFromController(
       controllerOrRoute,
       routePathOrPaths!,
+      moduleRef,
     );
   }
 
@@ -68,6 +71,7 @@ export class RoutesMapper {
   private getRouteInfoFromController(
     controller: Type<any>,
     routePath: string,
+    moduleRef?: Module,
   ): RouteInfo[] {
     const controllerPaths = this.pathsExplorer.scanForPaths(
       Object.create(controller),
@@ -75,8 +79,8 @@ export class RoutesMapper {
     );
     const controllerVersion = this.getVersionMetadata(controller);
     const versioningConfig = this.applicationConfig.getVersioning();
-    const moduleRef = this.getHostModuleOfController(controller);
-    const modulePath = this.getModulePath(moduleRef?.metatype);
+    const hostModule = moduleRef ?? this.getHostModuleOfController(controller);
+    const modulePath = this.getModulePath(hostModule?.metatype);
 
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
@@ -86,8 +90,10 @@ export class RoutesMapper {
 
     const toRouteInfo = (item: RouteDefinition, prefix: string) =>
       item.path?.flatMap(p => {
-        let endpointPath = modulePath ?? '';
-        endpointPath += this.normalizeGlobalPath(prefix) + addLeadingSlash(p);
+        const endpointPath =
+          stripEndSlash(modulePath ?? '') +
+          stripEndSlash(this.normalizeGlobalPath(prefix)) +
+          addLeadingSlash(p);
 
         const routeInfo: RouteInfo = {
           path: endpointPath,

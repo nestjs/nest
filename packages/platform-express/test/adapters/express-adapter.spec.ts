@@ -51,6 +51,35 @@ describe('ExpressAdapter', () => {
   });
 
   describe('setNotFoundHandler', () => {
+    it('should mount each excluded path for every request method', () => {
+      const instance = expressAdapter.getInstance();
+      const allSpy = vi.spyOn(instance, 'all');
+      const useSpy = vi.spyOn(instance, 'use');
+      const handler = vi.fn();
+
+      expressAdapter.setNotFoundHandler(handler, 'api', [
+        { path: '/v1/hello', method: RequestMethod.GET },
+        { path: 'v2/hello/:id', method: RequestMethod.POST },
+      ]);
+
+      expect(useSpy).toHaveBeenCalledExactlyOnceWith(
+        '/api',
+        expect.any(Function),
+      );
+      expect(allSpy.mock.calls).toEqual([
+        ['/v1/hello', handler],
+        ['/v2/hello/:id', handler],
+      ]);
+    });
+
+    it('should not mount excluded paths separately without a global prefix', () => {
+      const allSpy = vi.spyOn(expressAdapter.getInstance(), 'all');
+      expressAdapter.setNotFoundHandler(vi.fn(), undefined, [
+        { path: '/hello', method: RequestMethod.GET },
+      ]);
+      expect(allSpy).not.toHaveBeenCalled();
+    });
+
     it.each([
       { prefix: 'api', path: '/api' },
       { prefix: '/api', path: '/api' },

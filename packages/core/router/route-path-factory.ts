@@ -18,11 +18,21 @@ import {
 export class RoutePathFactory {
   constructor(private readonly applicationConfig: ApplicationConfig) {}
 
+  /**
+   * Composes route paths and reports the paths that omit a global prefix.
+   * The callback receives the normalized path and its index in the result,
+   * so variants that resolve to the same string retain their own decision.
+   */
   public create(
     metadata: RoutePathMetadata,
     requestMethod?: RequestMethod,
+    onExcludedPath?: (path: string, index: number) => void,
   ): string[] {
     let paths = [''];
+    const normalizePath = (path: string) => {
+      path = addLeadingSlash(path || '/');
+      return path !== '/' ? stripEndSlash(path) : path;
+    };
 
     const versionOrVersions = this.getVersion(metadata);
     if (
@@ -57,7 +67,8 @@ export class RoutePathFactory {
     paths = this.appendToAllIfDefined(paths, metadata.methodPath);
 
     if (metadata.globalPrefix) {
-      paths = paths.map(path => {
+      const globalPrefix = stripEndSlash(metadata.globalPrefix);
+      paths = paths.map((path, index) => {
         if (
           this.isExcludedFromGlobalPrefix(
             path,
@@ -66,15 +77,16 @@ export class RoutePathFactory {
             metadata.versioningOptions,
           )
         ) {
+          if (globalPrefix) {
+            onExcludedPath?.(normalizePath(path), index);
+          }
           return path;
         }
-        return stripEndSlash(metadata.globalPrefix || '') + path;
+        return globalPrefix + path;
       });
     }
 
-    return paths
-      .map(path => addLeadingSlash(path || '/'))
-      .map(path => (path !== '/' ? stripEndSlash(path) : path));
+    return paths.map(normalizePath);
   }
 
   public getVersion(metadata: RoutePathMetadata) {

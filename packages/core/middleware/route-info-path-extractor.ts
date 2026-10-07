@@ -17,7 +17,10 @@ export class RouteInfoPathExtractor {
   private readonly excludedGlobalPrefixRoutes: ExcludeRouteMetadata[];
   private readonly versioningConfig?: VersioningOptions;
 
-  constructor(private readonly applicationConfig: ApplicationConfig) {
+  constructor(
+    private readonly applicationConfig: ApplicationConfig,
+    private readonly controllerRoutes?: RouteInfo[],
+  ) {
     this.routePathFactory = new RoutePathFactory(applicationConfig);
     this.prefixPath = stripEndSlash(
       addLeadingSlash(this.applicationConfig.getGlobalPrefix()),
@@ -47,6 +50,43 @@ export class RouteInfoPathExtractor {
           : this.prefixPath
             ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
             : [addLeadingSlash(path)];
+
+      const controllerRoutes = this.controllerRoutes;
+      if (
+        controllerRoutes &&
+        this.versioningConfig?.type === VersioningType.URI &&
+        (!versionPaths.length || versionPaths.includes(''))
+      ) {
+        const excludedPaths = (this.excludedGlobalPrefixRoutes ?? []).flatMap(
+          route => {
+            const versionPrefixes = new Set(
+              controllerRoutes
+                .filter(controllerRoute =>
+                  isRouteExcluded(
+                    [route],
+                    controllerRoute.path,
+                    controllerRoute.method,
+                  ),
+                )
+                .flatMap(({ version }) => {
+                  const prefixes = this.extractVersionPathFrom(version);
+                  return prefixes.length ? prefixes : [''];
+                }),
+            );
+            // A neutral root wildcard already covers its versioned variants.
+            if (
+              versionPrefixes.has('') &&
+              this.isAWildcard(addLeadingSlash(route.path))
+            ) {
+              return [addLeadingSlash(route.path)];
+            }
+            return [...versionPrefixes].map(
+              prefix => prefix + addLeadingSlash(route.path),
+            );
+          },
+        );
+        return [...new Set([...entries, ...excludedPaths])];
+      }
 
       return Array.isArray(this.excludedGlobalPrefixRoutes)
         ? [
