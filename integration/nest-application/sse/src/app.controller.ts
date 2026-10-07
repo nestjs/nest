@@ -95,6 +95,25 @@ export class AppController {
     });
   }
 
+  @Sse('sse/primitives')
+  ssePrimitives(): Observable<unknown> {
+    return of(1, { data: 0 }, { data: true });
+  }
+
+  @Sse('sse/unserializable')
+  sseUnserializable(): Observable<MessageEvent> {
+    return of(
+      { data: { n: 1 } },
+      { data: { n: BigInt(2) } },
+      { data: { n: 3 } },
+    );
+  }
+
+  @Sse('sse/unserializable-first')
+  sseUnserializableFirst(): Observable<MessageEvent> {
+    return of({ data: { n: BigInt(1) } });
+  }
+
   @Sse('sse/post', { method: RequestMethod.POST })
   ssePost(@Body() body: { content?: string }): Observable<MessageEvent> {
     return of({ data: { content: body.content ?? 'default' } });

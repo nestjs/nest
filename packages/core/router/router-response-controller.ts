@@ -15,7 +15,7 @@ import {
   WritableHeaderStream,
   SseStream,
 } from './sse-stream.js';
-import { isObject } from '@nestjs/common/internal';
+import { isNil, isObject, isString } from '@nestjs/common/internal';
 
 export interface CustomHeader {
   name: string;
@@ -193,11 +193,16 @@ export class RouterResponseController {
           subscription = observableResult
             .pipe(
               map((message): MessageEvent => {
-                if (isObject(message)) {
-                  return message as MessageEvent;
-                }
-
-                return { data: message as object | string };
+                const event = isObject(message)
+                  ? (message as MessageEvent)
+                  : { data: message as object | string };
+                // The SseStream only receives string data. Serializing here
+                // turns a JSON.stringify error (BigInts, circular references)
+                // into an error of this pipeline, handled by catchError below,
+                // instead of a throw that leaves the stream stuck mid-write.
+                return isNil(event.data) || isString(event.data)
+                  ? event
+                  : { ...event, data: JSON.stringify(event.data) };
               }),
               concatMap(
                 message =>
