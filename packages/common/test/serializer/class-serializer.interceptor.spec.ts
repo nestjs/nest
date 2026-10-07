@@ -1,4 +1,6 @@
-import { of } from 'rxjs';
+import * as classTransformer from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
+import { firstValueFrom, of } from 'rxjs';
 import { StreamableFile } from '../../file-stream/index.js';
 import { CallHandler, ExecutionContext } from '../../interfaces/index.js';
 import { ClassSerializerInterceptor } from '../../serializer/class-serializer.interceptor.js';
@@ -184,6 +186,58 @@ describe('ClassSerializerInterceptor', () => {
           resolve();
         });
       });
+    });
+
+    describe('with class-transformer groups', () => {
+      @Exclude()
+      class UserDto {
+        @Expose()
+        id: number;
+
+        @Expose({ groups: ['public'] })
+        name: string;
+
+        @Expose({ groups: ['admin'] })
+        email: string;
+
+        password: string;
+      }
+
+      it.each([
+        { groups: ['public'], array: false },
+        { groups: ['public'], array: true },
+        { groups: [], array: false },
+        { groups: [], array: true },
+      ])(
+        'should override default groups with $groups (array: $array)',
+        async ({ groups, array }) => {
+          interceptor = new ClassSerializerInterceptor(mockReflector, {
+            transformerPackage: classTransformer,
+            type: UserDto,
+            groups: ['admin'],
+          });
+          mockReflector.getAllAndOverride.mockReturnValue({ groups });
+
+          const user = {
+            id: 1,
+            name: 'Alice',
+            email: 'alice@example.com',
+            password: 'secret',
+          };
+          const next: CallHandler = {
+            handle: () => of(array ? [user] : user),
+          };
+          const result$ = await interceptor.intercept(
+            mockExecutionContext,
+            next,
+          );
+          const expected = groups.length ? { id: 1, name: 'Alice' } : { id: 1 };
+
+          expect(await firstValueFrom(result$)).toEqual(
+            array ? [expected] : expected,
+          );
+        },
+      );
     });
   });
 
