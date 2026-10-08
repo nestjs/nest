@@ -24,7 +24,10 @@ export interface UploadApi {
   OptionsModule: { register(options: any): any };
 }
 
-export const uploadApis: Record<'express' | 'fastify', UploadApi> = {
+export const uploadApis: Record<'express' | 'fastify' | 'node', UploadApi> = {
   express: { ...express, OptionsModule: express.MulterModule },
   fastify: { ...fastify, OptionsModule: fastify.MultipartModule },
+  // The multer interceptors only need the Node.js request, so the Node
+  // adapter uses the ones from @nestjs/platform-express
+  node: { ...express, OptionsModule: express.MulterModule },
 };

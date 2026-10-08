@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
@@ -9,6 +10,7 @@ import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 const adapters = [
   ['Express', () => new ExpressAdapter()],
   ['Fastify', () => new FastifyAdapter()],
+  ['Node', () => new NodeAdapter()],
 ] as const;
 
 const DEFAULT_CSP =

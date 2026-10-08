@@ -13,16 +13,16 @@ import { type AdapterName, createApp, PNG, txt } from './utils.js';
 
 type Send = (http: ReturnType<typeof request>) => request.Test;
 
-const adapterNames = ['express', 'fastify'] as const;
+const adapterNames = ['express', 'fastify', 'node'] as const;
 
 /**
  * Every scenario sends the same request to an Express application (the
- * multer interceptors from @nestjs/platform-express) and to a Fastify
- * application (the interceptors from @nestjs/platform-fastify/multipart),
- * both built from one controller, and asserts that the responses are
- * identical.
+ * multer interceptors from @nestjs/platform-express), to a Fastify
+ * application (the interceptors from @nestjs/platform-fastify/multipart) and
+ * to a Node application (the multer interceptors again), all built from one
+ * controller, and asserts that the responses are identical.
  */
-describe('File upload: Express (multer) and Fastify parity', () => {
+describe('File upload: Express (multer), Fastify and Node parity', () => {
   const apps = {} as Record<AdapterName, INestApplication>;
   const dirs = {} as Record<AdapterName, string>;
 
@@ -62,6 +62,7 @@ describe('File upload: Express (multer) and Fastify parity', () => {
       results[adapterName] = { status: res.status, body: res.body };
     }
     expect(results.fastify).toEqual(results.express);
+    expect(results.node).toEqual(results.express);
     return results.express;
   }
 
