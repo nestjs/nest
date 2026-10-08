@@ -2,13 +2,14 @@ import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import request from 'supertest';
 import { AsyncApplicationModule } from '../src/async-options.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('GraphQL (async configuration)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     app = await NestFactory.create(AsyncApplicationModule, { logger: false });
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should return query result`, () => {

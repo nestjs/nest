@@ -11,6 +11,7 @@ import { APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import request from 'supertest';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 // ─── Test schemas ──────────────────────────────────────────────
 
@@ -189,7 +190,7 @@ describe('StandardSchemaSerializerInterceptor (integration)', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should strip fields via schema on a single object', () => {
@@ -261,7 +262,7 @@ describe('StandardSchemaSerializerInterceptor (integration)', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should apply class-level schema to all routes', () => {
@@ -293,7 +294,7 @@ describe('StandardSchemaSerializerInterceptor (integration)', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should apply the default schema globally', () => {

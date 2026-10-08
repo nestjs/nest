@@ -2,6 +2,7 @@ import { INestApplication, NestApplicationOptions } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { WildcardModule } from '../src/wildcard/wildcard.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 interface CapturedLogger {
   warnings: string[];
@@ -63,7 +64,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
   it('with no policy, the wildcard silently swallows every request', async () => {
     const capture = createCaptureLogger();
     app = await buildApp({}, capture);
-    await app.init();
+    await listenOnLoopback(app);
 
     const readme = await request(app.getHttpServer()).get('/files/readme');
     expect(readme.status).toBe(200);
@@ -79,7 +80,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
   it('with shadow=warn, emits one warning per overlapping pair', async () => {
     const capture = createCaptureLogger();
     app = await buildApp({ routeConflictPolicy: { shadow: 'warn' } }, capture);
-    await app.init();
+    await listenOnLoopback(app);
 
     expect(capture.warnings).toHaveLength(WILDCARD_SHADOW_PAIRS);
   });
@@ -87,7 +88,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
   it('with shadow=warn, the warnings name the wildcard, param and literal routes', async () => {
     const capture = createCaptureLogger();
     app = await buildApp({ routeConflictPolicy: { shadow: 'warn' } }, capture);
-    await app.init();
+    await listenOnLoopback(app);
 
     const joined = capture.warnings.join('\n');
     expect(joined).toContain('/files/*path');
@@ -110,7 +111,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
       { routeConflictPolicy: { duplicate: 'error' } },
       capture,
     );
-    await app.init();
+    await listenOnLoopback(app);
     expect(capture.warnings).toHaveLength(0);
   });
 });

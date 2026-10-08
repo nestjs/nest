@@ -7,6 +7,7 @@ import { HelloModule } from '../src/hello/hello.module.js';
 import { Interceptor } from '../src/hello/interceptors/logging.interceptor.js';
 import { UserByIdPipe } from '../src/hello/users/user-by-id.pipe.js';
 import { UsersService } from '../src/hello/users/users.service.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 class Meta {
   static COUNTER = 0;
@@ -33,7 +34,7 @@ describe('Request scope', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.listen(0);
+    await listenOnLoopback(app);
     baseUrl = await app.getUrl();
   });
 

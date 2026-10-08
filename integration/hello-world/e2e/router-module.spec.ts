@@ -2,6 +2,7 @@ import { Controller, Get, INestApplication, Module } from '@nestjs/common';
 import { RouterModule, Routes } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('RouterModule', () => {
   let app: INestApplication;
@@ -72,7 +73,7 @@ describe('RouterModule', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it('should hit the "ParentController"', async () => {

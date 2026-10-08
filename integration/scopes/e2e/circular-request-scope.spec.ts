@@ -5,6 +5,7 @@ import { HelloController } from '../src/circular-hello/hello.controller.js';
 import { HelloModule } from '../src/circular-hello/hello.module.js';
 import { HelloService } from '../src/circular-hello/hello.service.js';
 import { UsersService } from '../src/circular-hello/users/users.service.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 class Meta {
   static COUNTER = 0;
@@ -30,7 +31,7 @@ describe('Circular request scope', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   describe('when one service is request scoped', () => {

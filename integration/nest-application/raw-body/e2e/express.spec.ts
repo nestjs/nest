@@ -2,6 +2,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { ExpressModule } from '../src/express.module.js';
+import { listenOnLoopback } from '../../../_support/listen-on-loopback.js';
 
 describe('Raw body (Express Application)', () => {
   let app: NestExpressApplication;
@@ -15,7 +16,7 @@ describe('Raw body (Express Application)', () => {
       rawBody: true,
     });
 
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   afterEach(async () => {

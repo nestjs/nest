@@ -12,6 +12,7 @@ import { Test } from '@nestjs/testing';
 import * as http from 'http';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const HOST = 'app.example';
 
@@ -53,7 +54,7 @@ describe.each(adapters)('CSRF protection (%s)', (_name, createAdapter) => {
     // Listening on the loopback address supertest connects to, rather than
     // letting supertest listen on all interfaces, keeps a process that holds
     // the same port on 127.0.0.1 from answering instead.
-    await app.listen(0, '127.0.0.1');
+    await listenOnLoopback(app);
     return app;
   };
 

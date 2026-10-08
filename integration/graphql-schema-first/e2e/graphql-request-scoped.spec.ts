@@ -6,6 +6,7 @@ import { join } from 'path';
 import request from 'supertest';
 import { CatsRequestScopedService } from '../src/cats/cats-request-scoped.service.js';
 import { CatsModule } from '../src/cats/cats.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('GraphQL request scoped', () => {
   let app: INestApplication;
@@ -24,7 +25,7 @@ describe('GraphQL request scoped', () => {
     }).compile();
 
     app = module.createNestApplication();
-    await app.init();
+    await listenOnLoopback(app);
 
     const performHttpCall = end =>
       request(app.getHttpServer())

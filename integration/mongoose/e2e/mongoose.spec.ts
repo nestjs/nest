@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { ApplicationModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Mongoose', () => {
   let server;
@@ -14,7 +15,7 @@ describe('Mongoose', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should return created entity`, () => {

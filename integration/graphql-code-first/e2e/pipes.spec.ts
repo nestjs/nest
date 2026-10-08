@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('GraphQL Pipes', () => {
   let app: INestApplication;
@@ -13,7 +14,7 @@ describe('GraphQL Pipes', () => {
 
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should throw an error`, () => {

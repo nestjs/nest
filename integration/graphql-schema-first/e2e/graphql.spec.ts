@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('GraphQL', () => {
   let app: INestApplication;
@@ -12,7 +13,7 @@ describe('GraphQL', () => {
     }).compile();
 
     app = module.createNestApplication();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should return query result`, () => {

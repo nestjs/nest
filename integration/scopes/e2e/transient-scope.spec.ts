@@ -9,6 +9,7 @@ import { HelloModule } from '../src/transient/hello.module.js';
 import { Interceptor } from '../src/transient/interceptors/logging.interceptor.js';
 import { UserByIdPipe } from '../src/transient/users/user-by-id.pipe.js';
 import { UsersService } from '../src/transient/users/users.service.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 class Meta {
   static COUNTER = 0;
@@ -35,7 +36,7 @@ describe('Transient scope', () => {
 
       app = module.createNestApplication();
       server = app.getHttpServer();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('and when one service is request scoped', () => {
@@ -123,7 +124,7 @@ describe('Transient scope', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should create a new instance of the transient provider for each provider', async () => {
@@ -171,7 +172,7 @@ describe('Transient scope', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should call constructor of deeply nested TRANSIENT provider', () => {
@@ -235,7 +236,7 @@ describe('Transient scope', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should create separate TransientLogger instances for each DEFAULT parent', () => {
@@ -359,7 +360,7 @@ describe('Transient scope', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should create separate level-5 transient instances for each DEFAULT parent', () => {
@@ -410,7 +411,7 @@ describe('Transient scope', () => {
 
       app = module.createNestApplication();
       server = app.getHttpServer();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('when handling HTTP requests', () => {
@@ -517,7 +518,7 @@ describe('Transient scope', () => {
       }).compile();
 
       app = module.createNestApplication();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should create separate deep transient chains for different request-scoped parents in the same context', async () => {

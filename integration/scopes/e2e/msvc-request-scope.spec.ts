@@ -7,6 +7,7 @@ import { HelloController } from '../src/msvc/hello.controller.js';
 import { HelloModule } from '../src/msvc/hello.module.js';
 import { Interceptor } from '../src/msvc/interceptors/logging.interceptor.js';
 import { UsersService } from '../src/msvc/users/users.service.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 class Meta {
   static COUNTER = 0;
@@ -33,7 +34,7 @@ describe('Request scope (microservices)', () => {
     app.connectMicroservice<MicroserviceOptions>({ transport: Transport.TCP });
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
     await app.startAllMicroservices();
   });
 

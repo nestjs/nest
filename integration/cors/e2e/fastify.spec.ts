@@ -5,6 +5,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe.skip('Fastify Cors', () => {
   let app: NestFastifyApplication;
@@ -47,7 +48,7 @@ describe.skip('Fastify Cors', () => {
         };
         app.enableCors(configDelegation);
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`should add cors headers based on the first config`, async () => {
@@ -98,7 +99,7 @@ describe.skip('Fastify Cors', () => {
           },
         );
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`should add cors headers based on the first config`, async () => {
@@ -142,7 +143,7 @@ describe.skip('Fastify Cors', () => {
         );
         app.enableCors(configs[0]);
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`CORS headers`, async () => {
@@ -172,7 +173,7 @@ describe.skip('Fastify Cors', () => {
             cors: configs[0],
           },
         );
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`CORS headers`, async () => {

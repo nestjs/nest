@@ -7,6 +7,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 @Injectable()
 export class AuthGuard {
@@ -40,7 +41,7 @@ describe('Guards', () => {
   it(`should prevent access (unauthorized)`, async () => {
     app = (await createTestModule(new AuthGuard())).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer())
       .get('/hello')
       .expect(401)
@@ -54,7 +55,7 @@ describe('Guards', () => {
     const allowGuard = { canActivate: () => true };
     app = (await createTestModule(allowGuard)).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer())
       .get('/hello')
       .expect(200)

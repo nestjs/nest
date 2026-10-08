@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AsyncOptionsFactoryModule } from '../src/async-options.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('TypeOrm (async configuration)', () => {
   let server;
@@ -14,7 +15,7 @@ describe('TypeOrm (async configuration)', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should return created entity`, () => {

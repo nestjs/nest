@@ -6,6 +6,7 @@ import {
   MIDDLEWARE_PARAM_VALUE,
   MIDDLEWARE_VALUE,
 } from '../src/app.module.js';
+import { listenOnLoopback } from '../../../_support/listen-on-loopback.js';
 
 describe('Global prefix', () => {
   let server;
@@ -23,7 +24,7 @@ describe('Global prefix', () => {
     app.setGlobalPrefix('/api/v1');
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(server).get('/health').expect(404);
 
@@ -34,7 +35,7 @@ describe('Global prefix', () => {
     app.setGlobalPrefix('/api/v1', { exclude: ['/test', '/middleware'] });
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
     await request(server).get('/test').expect(200);
     await request(server).post('/test').expect(201);
 
@@ -57,7 +58,7 @@ describe('Global prefix', () => {
     });
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(server).get('/health').expect(200);
 
@@ -78,7 +79,7 @@ describe('Global prefix', () => {
     });
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(server).get('/test').expect(200);
 
@@ -93,7 +94,7 @@ describe('Global prefix', () => {
     });
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(server).get('/health').expect(200);
 
@@ -106,7 +107,7 @@ describe('Global prefix', () => {
     });
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(server)
       .get('/hello/foo')
@@ -123,7 +124,7 @@ describe('Global prefix', () => {
     app.setGlobalPrefix('/api/:tenantId');
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(server)
       .get('/api/test/params')
@@ -134,7 +135,7 @@ describe('Global prefix', () => {
     app.setGlobalPrefix('/api', { exclude: ['/'] });
 
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(server)
       .get('/')

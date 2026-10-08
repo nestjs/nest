@@ -32,6 +32,7 @@ import { Test } from '@nestjs/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import request from 'supertest';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const TCP_PORT = 3792;
 
@@ -207,7 +208,7 @@ const createApp = async (module: Type<unknown>) => {
     imports: [module],
   }).compile();
   const app = moduleRef.createNestApplication();
-  await app.init();
+  await listenOnLoopback(app);
   return app;
 };
 

@@ -9,6 +9,7 @@ import express from 'express';
 import { join } from 'path';
 import request from 'supertest';
 import { AdvancedGrpcController } from '../src/grpc-advanced/advanced.grpc.controller.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Advanced GRPC transport', () => {
   let server;
@@ -41,7 +42,7 @@ describe('Advanced GRPC transport', () => {
     });
     // Start gRPC microservice
     await app.startAllMicroservices();
-    await app.init();
+    await listenOnLoopback(app);
     // Load proto-buffers for test gRPC dispatch
     const proto = ProtoLoader.loadSync('root.proto', {
       includeDirs: [join(import.meta.dirname, '../src/grpc-advanced/proto')],

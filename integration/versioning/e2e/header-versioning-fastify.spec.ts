@@ -6,6 +6,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Header Versioning (fastify)', () => {
   let app: INestApplication;
@@ -24,7 +25,7 @@ describe('Header Versioning (fastify)', () => {
         type: VersioningType.HEADER,
         header: 'X-API-Version',
       });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 
@@ -358,7 +359,7 @@ describe('Header Versioning (fastify)', () => {
         header: 'X-API-Version',
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 

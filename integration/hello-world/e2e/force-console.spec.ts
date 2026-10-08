@@ -2,6 +2,7 @@ import { ConsoleLogger, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('ForceConsole Option', () => {
   let app: INestApplication;
@@ -28,7 +29,7 @@ describe('ForceConsole Option', () => {
         logger: ['log', 'error'],
       });
 
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     afterEach(async () => {
@@ -92,7 +93,7 @@ describe('ForceConsole Option', () => {
         // forceConsole is not set, defaults to false
       });
 
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     afterEach(async () => {

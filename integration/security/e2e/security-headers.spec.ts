@@ -4,6 +4,7 @@ import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const adapters = [
   ['Express', () => new ExpressAdapter()],
@@ -51,7 +52,7 @@ describe.each(adapters)('Security headers (%s)', (_name, createAdapter) => {
     // Listening on the loopback address supertest connects to, rather than
     // letting supertest listen on all interfaces, keeps a process that holds
     // the same port on 127.0.0.1 from answering instead.
-    await app.listen(0, '127.0.0.1');
+    await listenOnLoopback(app);
   };
 
   afterEach(async () => {

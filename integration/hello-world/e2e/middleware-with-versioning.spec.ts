@@ -14,6 +14,7 @@ import { CustomVersioningOptions } from '@nestjs/common/interfaces/index.js';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const RETURN_VALUE = 'test';
 const VERSIONED_VALUE = 'test_versioned';
@@ -165,7 +166,7 @@ async function createAppWithVersioning(
   if (beforeInit) {
     await beforeInit(app);
   }
-  await app.init();
+  await listenOnLoopback(app);
 
   return app;
 }

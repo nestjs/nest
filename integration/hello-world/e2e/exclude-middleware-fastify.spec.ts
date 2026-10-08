@@ -14,6 +14,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const RETURN_VALUE = 'test';
 const MIDDLEWARE_VALUE = 'middleware';
@@ -99,7 +100,7 @@ describe('Exclude middleware (fastify)', () => {
       }).compile()
     ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
-    await app.init();
+    await listenOnLoopback(app);
     await app.getHttpAdapter().getInstance().ready();
   });
 

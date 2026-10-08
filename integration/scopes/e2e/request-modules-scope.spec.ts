@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { RequestChainModule } from '../src/request-chain/request-chain.module.js';
 import { RequestChainService } from '../src/request-chain/request-chain.service.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Request scope (modules propagation)', () => {
   const OVERLAP_REQUEST_COUNT = 1000;
@@ -17,7 +18,7 @@ describe('Request scope (modules propagation)', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.listen(0);
+    await listenOnLoopback(app);
     baseUrl = await app.getUrl();
   });
 

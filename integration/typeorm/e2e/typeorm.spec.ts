@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('TypeOrm', () => {
   let server;
@@ -14,7 +15,7 @@ describe('TypeOrm', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should return created entity`, () => {

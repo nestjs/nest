@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DurableContextIdStrategy } from '../src/durable/durable-context-id.strategy.js';
 import { DurableModule } from '../src/durable/durable.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Durable providers in a forwardRef cycle spanning modules (issue #17562 follow-up)', () => {
   let server: any;
@@ -16,7 +17,7 @@ describe('Durable providers in a forwardRef cycle spanning modules (issue #17562
 
     app = moduleRef.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
 
     ContextIdFactory.apply(new DurableContextIdStrategy());
   });

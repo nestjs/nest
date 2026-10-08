@@ -6,6 +6,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('URI Versioning (fastify)', () => {
   let app: INestApplication;
@@ -23,7 +24,7 @@ describe('URI Versioning (fastify)', () => {
       app.enableVersioning({
         type: VersioningType.URI,
       });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 
@@ -200,7 +201,7 @@ describe('URI Versioning (fastify)', () => {
         type: VersioningType.URI,
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 
