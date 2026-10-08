@@ -290,6 +290,102 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('empty route parameters', () => {
+    beforeEach(() => {
+      fastifyAdapter.setNotFoundHandler((_req, reply) =>
+        reply.code(404).send('not found'),
+      );
+    });
+
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    it.each([
+      ['/users/:id/profile', '/users//profile'],
+      ['/users/:id', '/users/'],
+      ['/ranges/:from-:to', '/ranges/-b'],
+      ['/ranges/:from-:to', '/ranges/a-'],
+    ])(
+      'should pass a request for "%s" with an empty parameter (%s) to the not-found handler',
+      async (path, url) => {
+        const handler = vi.fn(() => 'found');
+        fastifyAdapter.get(path, handler);
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body).toBe('not found');
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should call the handler when every route parameter has a value', async () => {
+      const handler = vi.fn((req: FastifyRequest) => req.params);
+      fastifyAdapter.get('/ranges/:from-:to', handler);
+
+      const res = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/ranges/a-b',
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body)).toEqual({ from: 'a', to: 'b' });
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('should call the handler for an empty wildcard', async () => {
+      const handler = vi.fn(() => 'found');
+      fastifyAdapter.get('/files/*', handler);
+
+      const res = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/files/',
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('found');
+    });
+
+    it('should pass a request with an empty parameter to the not-found handler for routes registered with all()', async () => {
+      const handler = vi.fn(() => 'found');
+      fastifyAdapter.all('/actions/:id/run', handler);
+
+      for (const method of ['GET', 'POST'] as const) {
+        const res = await fastifyAdapter.inject({
+          method,
+          url: '/actions//run',
+        });
+        expect(res.statusCode).toBe(404);
+      }
+      expect(handler).not.toHaveBeenCalled();
+
+      const res = await fastifyAdapter.inject({
+        method: 'POST',
+        url: '/actions/1/run',
+      });
+      expect(res.body).toBe('found');
+    });
+
+    it('should keep the name of the route handler', () => {
+      const names: string[] = [];
+      fastifyAdapter
+        .getInstance()
+        .addHook('onRoute', route => names.push(route.handler.name));
+      const handler = () => 'found';
+      Object.defineProperty(handler, 'name', {
+        value: 'UsersController.findOne',
+      });
+
+      fastifyAdapter.get('/users/:id', handler);
+
+      expect(names).toEqual([
+        'UsersController.findOne',
+        'UsersController.findOne',
+      ]);
+    });
+  });
+
   describe('applyVersionFilter', () => {
     const registerVersionNeutralRoute = (
       type: VersioningType.MEDIA_TYPE | VersioningType.HEADER,

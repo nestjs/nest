@@ -534,6 +534,12 @@ export class FastifyAdapter<
     return this.injectRouteOptions('UNLOCK', ...args);
   }
 
+  public all(...args: any[]) {
+    const handlerRef = args[args.length - 1];
+    args[args.length - 1] = this.requireNonEmptyParams(args[0], handlerRef);
+    return (this.instance.all as any)(...args);
+  }
+
   public applyVersionFilter(
     handler: Function,
     version: VersionValue,
@@ -1137,7 +1143,7 @@ export class FastifyAdapter<
       RouteShorthandOptions = {
       method: routerMethodKey,
       url: args[0],
-      handler: handlerRef,
+      handler: this.requireNonEmptyParams(args[0], handlerRef),
     };
 
     if (!this.instance.supportedMethods.includes(routerMethodKey)) {
@@ -1172,6 +1178,43 @@ export class FastifyAdapter<
       }
     }
     return this.instance.route(routeToInject);
+  }
+
+  /**
+   * "find-my-way" matches an empty path segment for a route parameter
+   * ("/users//profile" -> { id: "" }), while "path-to-regexp", which
+   * middleware paths (and the ExpressAdapter's routes) are matched with,
+   * needs at least one character per parameter. Requests with an empty route
+   * parameter are passed to the not-found handler instead, as with the
+   * ExpressAdapter, so that middleware and routes always match the same
+   * requests. Only the wildcard ("*") may be empty.
+   */
+  private requireNonEmptyParams<THandler extends Function>(
+    url: unknown,
+    handler: THandler,
+  ): THandler {
+    if (isString(url) && !url.includes(':')) {
+      return handler;
+    }
+    const routeHandler = function (
+      this: unknown,
+      request: TRequest,
+      reply: TReply,
+    ) {
+      const params = request.params as Record<string, string>;
+      for (const name in params) {
+        if (params[name] === '' && name !== '*') {
+          reply.callNotFound();
+          return;
+        }
+      }
+      return handler.call(this, request, reply);
+    };
+    Object.defineProperty(routeHandler, 'name', {
+      configurable: true,
+      value: handler.name,
+    });
+    return routeHandler as unknown as THandler;
   }
 
   /**
