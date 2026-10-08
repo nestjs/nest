@@ -392,7 +392,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     delete outgoingResponse.options;
 
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
-    const sendOptions = { correlationId, ...options };
+    const sendOptions = { ...options, correlationId };
 
     this.channel!.sendToQueue(replyTo, buffer, sendOptions);
   }

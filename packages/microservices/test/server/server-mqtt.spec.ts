@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { MqttContext } from '../../ctx-host/index.js';
+import { MqttRecordBuilder } from '../../record-builders/index.js';
 import { ServerMqtt } from '../../server/server-mqtt.js';
 import { objectToMap } from './utils/object-to-map.js';
 
@@ -449,13 +450,82 @@ describe('ServerMqtt', () => {
       expect(typeof server.getPublisher(null, context, id)).toEqual('function');
     });
     it(`should call "publish" with expected arguments`, () => {
-      const respond = 'test';
-      publisher({ respond, id });
+      const response = 'test';
+      publisher({ response, isDisposed: true });
       expect(publisherSpy).toHaveBeenCalledWith(
         `${pattern}/reply`,
-        JSON.stringify({ respond, id }),
+        JSON.stringify({ response, isDisposed: true, id }),
         {},
       );
+    });
+    it(`should publish a plain object that looks like a record as is, with empty options`, () => {
+      const response = { data: 'x', options: { qos: 1 } };
+      publisher({ response, isDisposed: true });
+      expect(publisherSpy).toHaveBeenCalledWith(
+        `${pattern}/reply`,
+        JSON.stringify({ response, isDisposed: true, id }),
+        {},
+      );
+    });
+    describe('when the response is a record', () => {
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+      const options = {
+        qos: 1 as const,
+        retain: true,
+        properties: { userProperties: { key: 'value' } },
+      };
+
+      it(`should publish the record data as "response" with the record options`, () => {
+        const record = new MqttRecordBuilder({ value: 'test' })
+          .setQoS(options.qos)
+          .setRetain(options.retain)
+          .setProperties(options.properties)
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        expect(publisherSpy).toHaveBeenCalledWith(
+          `${pattern}/reply`,
+          JSON.stringify({
+            response: { value: 'test' },
+            isDisposed: true,
+            id,
+          }),
+          options,
+        );
+      });
+      it(`should publish the record sent through "send" unwrapped, with its options, once disposed`, async () => {
+        const record = new MqttRecordBuilder({ value: 'test' })
+          .setQoS(options.qos)
+          .setRetain(options.retain)
+          .setProperties(options.properties)
+          .build();
+
+        server.send(of(record), publisher);
+        await flush();
+
+        expect(publisherSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}/reply`,
+          JSON.stringify({
+            response: { value: 'test' },
+            isDisposed: true,
+            id,
+          }),
+          options,
+        );
+      });
+      it(`should not change the record`, () => {
+        const record = new MqttRecordBuilder({ value: 'test' })
+          .setQoS(options.qos)
+          .setRetain(options.retain)
+          .setProperties(options.properties)
+          .build();
+
+        publisher({ response: record });
+
+        expect(record.data).toEqual({ value: 'test' });
+        expect(record.options).toEqual(options);
+      });
     });
   });
   describe('getRequestPattern', () => {

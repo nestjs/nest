@@ -2,6 +2,7 @@ import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { NatsContext } from '../../ctx-host/index.js';
+import { NatsRecordBuilder } from '../../record-builders/index.js';
 import { ServerNats } from '../../server/server-nats.js';
 import { objectToMap } from './utils/object-to-map.js';
 
@@ -333,12 +334,67 @@ describe('ServerNats', () => {
       } as NatsMsg;
       const publisher = server.getPublisher(natsMsg, id, context);
 
-      const respond = 'test';
-      publisher({ respond, id });
+      const response = 'test';
+      publisher({ response, isDisposed: true });
       expect(natsMsg.respond).toHaveBeenCalledWith(
-        JSON.stringify({ respond, id }),
-        expect.objectContaining({}),
+        JSON.stringify({ response, isDisposed: true, id }),
+        { headers: undefined },
       );
+    });
+    describe('when the response is a record', () => {
+      it(`should respond with the record data as "response" and the record headers`, () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const headers = { key: 'value' };
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders(headers)
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        expect(natsMsg.respond).toHaveBeenCalledWith(
+          JSON.stringify({
+            response: { value: 'test' },
+            isDisposed: true,
+            id,
+          }),
+          { headers },
+        );
+        expect(record.headers).toBe(headers);
+      });
+      it(`should respond with the record sent through "send" unwrapped, with its headers, once disposed`, async () => {
+        const flush = () => new Promise(resolve => setImmediate(resolve));
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const headers = { key: 'value' };
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders(headers)
+          .build();
+
+        server.send(of(record), publisher);
+        await flush();
+
+        expect(natsMsg.respond).toHaveBeenCalledExactlyOnceWith(
+          JSON.stringify({
+            response: { value: 'test' },
+            isDisposed: true,
+            id,
+          }),
+          { headers },
+        );
+      });
     });
     it(`should not call "publish" when replyTo NOT provided`, () => {
       const replyTo = undefined;

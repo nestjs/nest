@@ -26,7 +26,7 @@ import {
 import { MqttRecord } from '../record-builders/mqtt.record-builder.js';
 import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
 import { Server } from './server.js';
-import { isObject, isUndefined } from '@nestjs/common/internal';
+import { isUndefined } from '@nestjs/common/internal';
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
 
@@ -198,10 +198,9 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       Object.assign(response, { id });
 
       const options =
-        isObject(response?.data) && response.data instanceof MqttRecord
-          ? (response.data as MqttRecord)?.options
+        response.response instanceof MqttRecord
+          ? response.response.options
           : {};
-      delete response?.data?.options;
 
       const outgoingResponse: string | Buffer =
         this.serializer.serialize(response);
