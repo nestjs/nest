@@ -16,8 +16,39 @@ export interface RouteMatch {
 interface RouteRecord {
   handlers: RouteHandler[];
   seqs: number[];
-  /** Name of the trailing wildcard, translated from find-my-way's `*`. */
-  wildcard?: string;
+  /**
+   * Parameter names of the route of each handler, in path order. Routes are
+   * registered in find-my-way under positional names ("p0", "p1", ...), so
+   * that routes differing only by their parameter names share one record and
+   * pass control to each other through `next()`, as in Express.
+   */
+  paramNames: string[][];
+  /** Whether the last parameter is a trailing wildcard (find-my-way's `*`). */
+  hasWildcard: boolean;
+}
+
+interface FoundRoute {
+  handlers: RouteHandler[];
+  seqs: number[];
+  params: Record<string, any>;
+}
+
+interface FindMyWayVariant {
+  path: string;
+  paramNames: string[];
+  hasWildcard: boolean;
+}
+
+// Route parameters live in an object without a prototype, as with
+// find-my-way, which is cheaper to create than `Object.create(null)`
+const ParamsObject = function () {} as unknown as new () => Record<string, any>;
+ParamsObject.prototype = Object.create(null);
+
+// Positional parameter names, see `RouteRecord`
+const POSITIONAL_NAMES = Array.from({ length: 32 }, (_, i) => `p${i}`);
+
+function positionalName(index: number) {
+  return POSITIONAL_NAMES[index] ?? `p${index}`;
 }
 
 interface FallbackRoute {
@@ -39,8 +70,9 @@ const ROUTER_OPTIONS = {
   maxParamLength: MAX_PARAM_LENGTH,
 };
 
-const PARAM_NAME = /^[A-Za-z_$][\w$]*$/;
 const UNSAFE_TEXT = /[*?(]/;
+// find-my-way reads a parameter name up to the next "/", "-" or "."
+const PARAM_NAME_END = /^[/.-]/;
 
 function decodeParam(value: string) {
   return decodeURIComponent(value);
@@ -82,11 +114,14 @@ function expandGroups(tokens: Token[]): Token[][] {
     if (token.type === 'group') {
       const groupVariants = expandGroups(token.tokens);
       const next: Token[][] = [];
+      // Variants with the group come first: when two variants match the same
+      // paths ("/a{/:x}{/:y}" gives "/a/:x" and "/a/:y"), the first one names
+      // the parameters, and path-to-regexp fills the earlier group first
       for (const variant of variants) {
-        next.push(variant);
         for (const groupVariant of groupVariants) {
           next.push([...variant, ...groupVariant]);
         }
+        next.push(variant);
       }
       variants = next;
     } else {
@@ -101,11 +136,10 @@ function expandGroups(tokens: Token[]): Token[][] {
  * `undefined` when find-my-way cannot express it, in which case the route is
  * matched with path-to-regexp instead.
  */
-function toFindMyWayPath(
-  tokens: Token[],
-): { path: string; wildcard?: string } | undefined {
+function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
   let path = '';
-  let wildcard: string | undefined;
+  const paramNames: string[] = [];
+  let hasWildcard = false;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     switch (token.type) {
@@ -115,29 +149,34 @@ function toFindMyWayPath(
         }
         path += token.value.replaceAll(':', '::');
         break;
-      case 'param':
-        if (!PARAM_NAME.test(token.name)) {
+      case 'param': {
+        // Anything else right after a parameter (another parameter, a
+        // wildcard, "@", "~", ...) would end up in find-my-way's name for it
+        const next = tokens[i + 1];
+        if (
+          next !== undefined &&
+          (next.type !== 'text' || !PARAM_NAME_END.test(next.value))
+        ) {
           return undefined;
         }
-        // Two adjacent parameters cannot be told apart by find-my-way
-        if (tokens[i + 1]?.type === 'param') {
-          return undefined;
-        }
-        path += `:${token.name}`;
+        path += `:${positionalName(paramNames.length)}`;
+        paramNames.push(token.name);
         break;
+      }
       case 'wildcard':
         // find-my-way only supports a trailing wildcard
         if (i !== tokens.length - 1) {
           return undefined;
         }
         path += '*';
-        wildcard = token.name;
+        paramNames.push(token.name);
+        hasWildcard = true;
         break;
       default:
         return undefined;
     }
   }
-  return { path: path || '/', wildcard };
+  return { path: path || '/', paramNames, hasWildcard };
 }
 
 /**
@@ -180,11 +219,19 @@ export class RouteTable {
       });
       return;
     }
-    // Several variants may translate to the same path ("/a{/}" for instance)
-    const uniqueVariants = new Map(
-      variants.map(variant => [variant!.path, variant!]),
-    );
-    for (const { path: routePath, wildcard } of uniqueVariants.values()) {
+    // Several variants may translate to the same path ("/a{/}" for instance);
+    // the first one wins
+    const uniqueVariants = new Map<string, FindMyWayVariant>();
+    for (const variant of variants as FindMyWayVariant[]) {
+      if (!uniqueVariants.has(variant.path)) {
+        uniqueVariants.set(variant.path, variant);
+      }
+    }
+    for (const {
+      path: routePath,
+      paramNames,
+      hasWildcard,
+    } of uniqueVariants.values()) {
       const router = method === null ? this.allRouter : this.router;
       const routerMethod = method ?? 'GET';
       const key = `${method} ${routePath}`;
@@ -193,12 +240,14 @@ export class RouteTable {
       if (record) {
         record.handlers.push(handler);
         record.seqs.push(seq);
+        record.paramNames.push(paramNames);
         continue;
       }
       const newRecord: RouteRecord = {
         handlers: [handler],
         seqs: [seq],
-        wildcard,
+        paramNames: [paramNames],
+        hasWildcard,
       };
       try {
         router.on(routerMethod as any, routePath, () => {}, newRecord);
@@ -232,7 +281,7 @@ export class RouteTable {
       }
     }
     if (found !== null) {
-      return { handlers: found.record.handlers, params: found.params };
+      return { handlers: found.handlers, params: found.params };
     }
     return this.fallbackRoutes.length > 0
       ? this.lookupFallback(method, path)
@@ -243,53 +292,53 @@ export class RouteTable {
     router: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>,
     method: string,
     path: string,
-  ): { record: RouteRecord; params: Record<string, any> } | null {
+  ): FoundRoute | null {
     const result = router.find(method as any, path);
     if (result === null) {
       return null;
     }
     const record = result.store as RouteRecord;
-    const params = result.params as Record<string, any>;
-    for (const key in params) {
+    const values = result.params as Record<string, string>;
+    for (const key in values) {
       // path-to-regexp (the middleware matcher, and Express) requires at
       // least one character per parameter; find-my-way also accepts an empty
       // one ("/users//profile"). Treat that as no match, or the route could
       // run without the middleware guarding it.
-      if (key !== '*' && params[key] === '') {
+      if (key !== '*' && values[key] === '') {
         return null;
       }
     }
-    if (record.wildcard !== undefined) {
-      const value = params['*'];
+    let wildcard: string[] | undefined;
+    if (record.hasWildcard) {
+      const value = values['*'];
       // path-to-regexp wildcards match one or more characters
       if (!value) {
         return null;
       }
-      delete params['*'];
-      params[record.wildcard] = value.split('/');
+      wildcard = value.split('/');
     }
-    return { record, params };
+    // Every handler sees the parameters under the names its route uses
+    const params = new ParamsObject();
+    for (const names of record.paramNames) {
+      const last = names.length - 1;
+      for (let i = 0; i <= last; i++) {
+        params[names[i]] =
+          wildcard !== undefined && i === last
+            ? wildcard
+            : values[positionalName(i)];
+      }
+    }
+    return { handlers: record.handlers, seqs: record.seqs, params };
   }
 
-  private merge(
-    left: { record: RouteRecord; params: Record<string, any> },
-    right: { record: RouteRecord; params: Record<string, any> },
-  ) {
+  private merge(left: FoundRoute, right: FoundRoute): FoundRoute {
     const entries = [
-      ...left.record.handlers.map((handler, i) => ({
-        handler,
-        seq: left.record.seqs[i],
-      })),
-      ...right.record.handlers.map((handler, i) => ({
-        handler,
-        seq: right.record.seqs[i],
-      })),
+      ...left.handlers.map((handler, i) => ({ handler, seq: left.seqs[i] })),
+      ...right.handlers.map((handler, i) => ({ handler, seq: right.seqs[i] })),
     ].sort((a, b) => a.seq - b.seq);
     return {
-      record: {
-        handlers: entries.map(entry => entry.handler),
-        seqs: entries.map(entry => entry.seq),
-      },
+      handlers: entries.map(entry => entry.handler),
+      seqs: entries.map(entry => entry.seq),
       params: { ...right.params, ...left.params },
     };
   }
