@@ -1282,6 +1282,62 @@ data: test
         request.destroy();
       });
 
+      it('should write an error event and end the stream when a message field cannot be serialized', async () => {
+        class Sink extends Writable {
+          private readonly chunks: string[] = [];
+
+          _write(
+            chunk: any,
+            encoding: string,
+            callback: (error?: Error | null) => void,
+          ): void {
+            this.chunks.push(chunk);
+            callback();
+          }
+
+          get content() {
+            return this.chunks.join('');
+          }
+        }
+
+        const result = new Subject();
+        const response = new Sink();
+        const request = new PassThrough();
+        const promise = routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        result.next({ data: 'before' });
+        result.next({ comment: 5 });
+        result.next({ data: 'after' });
+        await promise;
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        expect(response.content).toContain('data: before');
+        expect(response.content).toContain('event: error');
+        expect(response.content).not.toContain('data: after');
+        expect(response.writableFinished).toBe(true);
+        request.destroy();
+      });
+
+      it('should reject when the first message has a field that cannot be serialized', async () => {
+        const response = new Writable();
+        response._write = () => {};
+        const request = new PassThrough();
+
+        await expect(
+          routerResponseController.sse(
+            of({ comment: 5 }),
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          ),
+        ).rejects.toThrow(TypeError);
+        request.destroy();
+      });
+
       it('should reject when the first message cannot be serialized before headers are committed', async () => {
         const response = new Writable();
         response._write = () => {};

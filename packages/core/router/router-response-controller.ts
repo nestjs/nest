@@ -214,8 +214,10 @@ export class RouterResponseController {
               }),
               concatMap(
                 message =>
-                  new Promise<void>(resolve =>
-                    stream.writeMessage(message, () => resolve()),
+                  new Promise<void>((resolve, reject) =>
+                    stream.writeMessage(message, err =>
+                      err ? reject(err) : resolve(),
+                    ),
                   ),
               ),
               catchError(err => {

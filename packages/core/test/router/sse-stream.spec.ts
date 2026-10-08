@@ -219,6 +219,22 @@ data: hello
     expect(sink.content).toBe(['', 'id: 1', 'data: ', '', ''].join('\n'));
   });
 
+  it('passes a message that cannot be formatted to the callback and keeps writing', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    const error = await new Promise<Error | null | undefined>(resolve =>
+      sse.writeMessage({ comment: 5 } as any, resolve),
+    );
+    sse.writeMessage({ data: 'after' }, noop);
+    sse.end();
+    await written(sink);
+
+    expect(error).toBeInstanceOf(TypeError);
+    expect(sink.content).toBe(['', 'id: 1', 'data: after', '', ''].join('\n'));
+  });
+
   it('does not write headers eagerly in pipe()', () => {
     const sse = new SseStream();
     let writeHeadCalled = false;

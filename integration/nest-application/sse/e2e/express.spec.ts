@@ -246,6 +246,31 @@ describe('Sse (Express Application)', () => {
       expect(body).not.toContain('data: {"n":3}');
     });
 
+    it('should send an error event and end the stream when an event field cannot be serialized', async () => {
+      const response = await fetch(
+        `${await app.getUrl()}/sse/unserializable-field`,
+        { signal: AbortSignal.timeout(2000) },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(body).toContain('data: {"n":1}');
+      expect(body).toContain('event: error');
+      expect(body).not.toContain('data: {"n":3}');
+    });
+
+    it('should return an error status when a field of the first event cannot be serialized', async () => {
+      const response = await fetch(
+        `${await app.getUrl()}/sse/unserializable-field-first`,
+        { signal: AbortSignal.timeout(2000) },
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.headers.get('content-type')).not.toContain(
+        'text/event-stream',
+      );
+    });
+
     it('should return an error status when the first event cannot be serialized', async () => {
       const response = await fetch(
         `${await app.getUrl()}/sse/unserializable-first`,

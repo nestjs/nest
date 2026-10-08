@@ -114,6 +114,16 @@ export class AppController {
     return of({ data: { n: BigInt(1) } });
   }
 
+  @Sse('sse/unserializable-field')
+  sseUnserializableField(): Observable<unknown> {
+    return of({ data: { n: 1 } }, { comment: 5 }, { data: { n: 3 } });
+  }
+
+  @Sse('sse/unserializable-field-first')
+  sseUnserializableFieldFirst(): Observable<unknown> {
+    return of({ comment: 5 });
+  }
+
   @Sse('sse/post', { method: RequestMethod.POST })
   ssePost(@Body() body: { content?: string }): Observable<MessageEvent> {
     return of({ data: { content: body.content ?? 'default' } });
