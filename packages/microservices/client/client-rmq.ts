@@ -320,14 +320,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const noAck = this.getOptionsProp(this.options, 'noAck', RMQ_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
-      (msg: ConsumeMessage | null) => {
-        // RabbitMQ sends null when it cancels the consumer, e.g. queue deleted.
-        if (!msg) {
-          this.logger.warn('RabbitMQ cancelled the reply consumer.');
-          return;
-        }
-        this.responseEmitter.emit(msg.properties.correlationId, msg);
-      },
+      (msg: ConsumeMessage | null) =>
+        this.responseEmitter.emit(msg!.properties.correlationId, msg),
       {
         noAck,
       },

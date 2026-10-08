@@ -104,6 +104,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       // Nobody awaits this listener, so a rejection would crash the process.
       this.logger.error(
         `Dropped a response that the deserializer failed on: ${error}`,
+        (error as Error)?.stack,
       );
       return;
     }

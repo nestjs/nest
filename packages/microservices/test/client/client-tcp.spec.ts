@@ -160,6 +160,7 @@ describe('ClientTCP', () => {
         expect(logError).toHaveBeenCalledTimes(1);
         expect(logError).toHaveBeenCalledWith(
           `Dropped a response that the deserializer failed on: ${error}`,
+          error.stack,
         );
       });
 
@@ -173,6 +174,7 @@ describe('ClientTCP', () => {
         expect(logError).toHaveBeenCalledTimes(1);
         expect(logError).toHaveBeenCalledWith(
           `Dropped a response that the deserializer failed on: ${error}`,
+          error.stack,
         );
       });
 

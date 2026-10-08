@@ -307,6 +307,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         // Nobody awaits this listener, so a rejection would crash the process.
         this.logger.error(
           `Dropped a response that the deserializer failed on: ${error}`,
+          (error as Error)?.stack,
         );
         return;
       }

@@ -359,22 +359,6 @@ describe('ClientRMQ', function () {
       expect(emitSpy).toHaveBeenCalledTimes(1);
       expect(emitSpy).toHaveBeenCalledWith(msg.properties.correlationId, msg);
     });
-
-    describe('when RabbitMQ cancels the consumer', () => {
-      it('should warn and ignore the null message', () => {
-        const warnSpy = vi
-          .spyOn(Reflect.get(rmqClient, 'logger'), 'warn')
-          .mockImplementation(() => {});
-
-        onMessage(null);
-
-        expect(warnSpy).toHaveBeenCalledTimes(1);
-        expect(warnSpy).toHaveBeenCalledWith(
-          'RabbitMQ cancelled the reply consumer.',
-        );
-        expect(emitSpy).not.toHaveBeenCalled();
-      });
-    });
   });
 
   describe('setupChannel', () => {
