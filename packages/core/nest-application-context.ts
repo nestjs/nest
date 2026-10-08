@@ -54,6 +54,7 @@ export class NestApplicationContext<
   >();
   private readonly moduleCompiler: ModuleCompiler;
   private shutdownPromise?: Promise<void>;
+  private receivedSignal = false;
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsForHooksByDistance?: Array<Module>;
   private initializationPromise?: Promise<void>;
@@ -387,12 +388,15 @@ export class NestApplicationContext<
   ) {
     const cleanup = async (signal: string) => {
       try {
-        if (this.shutdownPromise) {
-          // If a shutdown is already under way - because of another signal or
-          // an explicit `close()` call - just ignore this one.
+        if (this.receivedSignal) {
+          // Another signal's handler is already shutting down and will
+          // terminate the process.
           return;
         }
-        await this.shutdown(signal);
+        this.receivedSignal = true;
+        await this.shutdown(signal).finally(() => {
+          this.receivedSignal = false;
+        });
 
         if (options.useProcessExit) {
           // Use process.exit() to ensure the 'exit' event is properly triggered.

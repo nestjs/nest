@@ -173,7 +173,9 @@ describe('NestApplicationContext', () => {
     });
 
     it('should run shutdown hooks once when a signal arrives during close', async () => {
-      const signal = 'SIGTERM';
+      // Not SIGTERM: a handler left by an earlier test re-sends SIGTERM through
+      // the process.kill stub, which would satisfy the assertion below.
+      const signal = 'SIGINT';
       const listeners = new Set(process.listeners(signal));
       const applicationContext = await testHelper(A, Scope.DEFAULT);
       const processExitStub = vi
@@ -210,6 +212,10 @@ describe('NestApplicationContext', () => {
 
         expect(destroyHookStub).toHaveBeenCalledTimes(1);
         expect(hookStub).toHaveBeenCalledTimes(1);
+        expect(
+          processKillStub.mock.calls.filter(([, sent]) => sent === signal),
+        ).toEqual([[process.pid, signal]]);
+        expect(processExitStub).not.toHaveBeenCalled();
         expect(process.listenerCount(signal)).toBe(listeners.size);
       } finally {
         destroyHookStub.mockRestore();
