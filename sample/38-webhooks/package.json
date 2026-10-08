@@ -19,7 +19,7 @@
     "@nestjs/common": "12.1.2",
     "@nestjs/core": "12.1.2",
     "@nestjs/drizzle": "0.0.1",
-    "@nestjs/outbox": "0.1.0",
+    "@nestjs/outbox": "0.1.1",
     "@nestjs/platform-express": "12.1.2",
     "@nestjs/webhooks": "0.0.1",
     "class-transformer": "0.5.1",
