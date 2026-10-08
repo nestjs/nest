@@ -25,7 +25,7 @@
     "access": "public"
   },
   "dependencies": {
-    "socket.io": "4.8.3",
+    "socket.io": "4.8.4",
     "tslib": "2.8.1"
   },
   "peerDependencies": {
