@@ -9,7 +9,7 @@ describe('ClientKafka custom deserializer failures', () => {
   const topic = 'test.topic';
   const partition = 0;
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
-  const error = new TypeError('Cannot read properties of undefined');
+  const error = new Error('deserializer failed');
   const message: KafkaMessage = {
     key: Buffer.from('test-key'),
     offset: '0',
@@ -61,6 +61,25 @@ describe('ClientKafka custom deserializer failures', () => {
     await expect(subscription(payload)).resolves.toBeUndefined();
 
     expect(callback).toHaveBeenCalledWith({ err: error, isDisposed: true });
+  });
+
+  it('should ignore a reply whose correlation id header is empty', async () => {
+    const client = createClient(() => Promise.reject(error));
+    const callback = vi.fn();
+    client['routingMap'].set(correlationId, callback);
+    const subscription = client.createResponseCallback();
+
+    await expect(
+      subscription({
+        ...payload,
+        message: {
+          ...payload.message,
+          headers: { [KafkaHeaders.CORRELATION_ID]: null as any },
+        },
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(callback).not.toHaveBeenCalled();
   });
 
   it('should resolve without a failure when no request is pending', async () => {

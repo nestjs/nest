@@ -306,7 +306,8 @@ export class ClientKafka
         }),
       );
       const correlationId = rawMessage.headers![KafkaHeaders.CORRELATION_ID];
-      if (isUndefined(correlationId)) {
+      // kafkajs decodes an empty header value as null
+      if (isNil(correlationId)) {
         return;
       }
       let incomingResponse: IncomingResponse;
