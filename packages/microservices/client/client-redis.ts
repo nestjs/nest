@@ -178,7 +178,11 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     on: (event: string, fn: () => void) => void;
   }) {
     client.on(RedisEventsMap.READY, () => {
-      if (!this.isCurrentClient(client)) {
+      if (
+        !this.isCurrentClient(client) ||
+        this.pubClient?.status !== 'ready' ||
+        this.subClient?.status !== 'ready'
+      ) {
         return;
       }
       this.connectionPromise = Promise.resolve();
