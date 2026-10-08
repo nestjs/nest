@@ -5,6 +5,7 @@ import {
   isFunction,
   isNil,
   isObject,
+  isString,
   isUndefined,
 } from '@nestjs/common/internal';
 
@@ -37,6 +38,17 @@ function omitHeaders(
       ([name]) => !omitted.has(name.toLowerCase()),
     ),
   );
+}
+
+function formatMessage(message: MessageEvent): string {
+  const sanitize = (val: string | number) => String(val).replace(/[\r\n]/g, '');
+
+  let data = message.type ? `event: ${sanitize(message.type)}\n` : '';
+  data += !isNil(message.id) ? `id: ${sanitize(message.id)}\n` : '';
+  data += !isNil(message.retry) ? `retry: ${sanitize(message.retry)}\n` : '';
+  data += !isNil(message.comment) ? toCommentString(message.comment) : '';
+  data += !isNil(message.data) ? toDataString(message.data) : '';
+  return data + '\n';
 }
 
 function isCommentOnly(message: MessageEvent): boolean {
@@ -184,22 +196,13 @@ export class SseStream extends Transform {
   }
 
   _transform(
-    message: MessageEvent,
+    message: MessageEvent | string,
     encoding: string,
     callback: (error?: Error | null, data?: any) => void,
   ) {
     this.commitHeaders();
 
-    const sanitize = (val: string | number) =>
-      String(val).replace(/[\r\n]/g, '');
-
-    let data = message.type ? `event: ${sanitize(message.type)}\n` : '';
-    data += !isNil(message.id) ? `id: ${sanitize(message.id)}\n` : '';
-    data += !isNil(message.retry) ? `retry: ${sanitize(message.retry)}\n` : '';
-    data += !isNil(message.comment) ? toCommentString(message.comment) : '';
-    data += !isNil(message.data) ? toDataString(message.data) : '';
-    data += '\n';
-    this.push(data);
+    this.push(isString(message) ? message : formatMessage(message));
     callback();
   }
 
@@ -215,7 +218,17 @@ export class SseStream extends Transform {
       message.id = this.lastEventId!.toString();
     }
 
-    if (!this.write(message, 'utf-8')) {
+    // Formatted before writing: a throw inside _transform would leave the
+    // stream stuck mid-write, while an error passed to the callback lets the
+    // caller report it and end the response.
+    let chunk: string;
+    try {
+      chunk = formatMessage(message);
+    } catch (err) {
+      process.nextTick(cb, err as Error);
+      return;
+    }
+    if (!this.write(chunk, 'utf-8')) {
       this.once('drain', cb);
     } else {
       process.nextTick(cb);

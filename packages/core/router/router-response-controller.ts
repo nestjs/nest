@@ -15,7 +15,7 @@ import {
   WritableHeaderStream,
   SseStream,
 } from './sse-stream.js';
-import { isObject } from '@nestjs/common/internal';
+import { isNil, isObject, isString } from '@nestjs/common/internal';
 
 export interface CustomHeader {
   name: string;
@@ -193,16 +193,31 @@ export class RouterResponseController {
           subscription = observableResult
             .pipe(
               map((message): MessageEvent => {
-                if (isObject(message)) {
-                  return message as MessageEvent;
-                }
-
-                return { data: message as object | string };
+                const event = isObject(message)
+                  ? (message as MessageEvent)
+                  : { data: message as object | string };
+                // The SseStream only receives string data. Serializing here
+                // turns a JSON.stringify error (BigInts, circular references)
+                // into an error of this pipeline, handled by catchError below,
+                // instead of a throw that leaves the stream stuck mid-write.
+                // Fields are copied one by one, as a spread would drop the
+                // getters of an event implemented as a class.
+                return isNil(event.data) || isString(event.data)
+                  ? event
+                  : {
+                      type: event.type,
+                      id: event.id,
+                      retry: event.retry,
+                      comment: event.comment,
+                      data: JSON.stringify(event.data),
+                    };
               }),
               concatMap(
                 message =>
-                  new Promise<void>(resolve =>
-                    stream.writeMessage(message, () => resolve()),
+                  new Promise<void>((resolve, reject) =>
+                    stream.writeMessage(message, err =>
+                      err ? reject(err) : resolve(),
+                    ),
                   ),
               ),
               catchError(err => {

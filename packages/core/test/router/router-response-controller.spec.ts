@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
   HttpStatus,
+  type MessageEvent,
   RequestMethod,
   SSE_ABORT_CONTROLLER,
 } from '../../../common/index.js';
@@ -1092,6 +1093,83 @@ data: test
       request.destroy();
     });
 
+    it('should write number and boolean data as JSON', async () => {
+      class Sink extends Writable {
+        private readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk);
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const response = new Sink();
+      const request = new PassThrough();
+
+      await routerResponseController.sse(
+        of(1, { data: 0 }, { data: false }),
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(response.content).toBe(
+        '\nid: 1\ndata: 1\n\nid: 2\ndata: 0\n\nid: 3\ndata: false\n\n',
+      );
+      expect(response.writableFinished).toBe(true);
+      request.destroy();
+    });
+
+    it('should keep the fields of an event implemented as a class with getters', async () => {
+      class TypedEvent implements MessageEvent {
+        constructor(readonly data: object) {}
+
+        get type() {
+          return 'update';
+        }
+      }
+
+      class Sink extends Writable {
+        private readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk);
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const response = new Sink();
+      const request = new PassThrough();
+
+      await routerResponseController.sse(
+        of(new TypedEvent({ value: 1 })),
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(response.content).toBe(
+        '\nevent: update\nid: 1\ndata: {"value":1}\n\n',
+      );
+      request.destroy();
+    });
+
     describe('when there is an error', () => {
       it('should reject when the stream errors before headers are committed', async () => {
         const result = new Subject();
@@ -1160,6 +1238,122 @@ data: test
         await written(response);
         expect(response.content).toContain('event: error');
         expect(response.content).toContain('data: Some error');
+      });
+
+      it('should write an error event and end the stream when a message cannot be serialized', async () => {
+        class Sink extends Writable {
+          private readonly chunks: string[] = [];
+
+          _write(
+            chunk: any,
+            encoding: string,
+            callback: (error?: Error | null) => void,
+          ): void {
+            this.chunks.push(chunk);
+            callback();
+          }
+
+          get content() {
+            return this.chunks.join('');
+          }
+        }
+
+        const result = new Subject();
+        const response = new Sink();
+        const request = new PassThrough();
+        const promise = routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        result.next({ data: { value: 1n } });
+        result.next({ data: 'after' });
+        await promise;
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        expect(response.content).toContain('event: error');
+        expect(response.content).toContain(
+          'data: Do not know how to serialize a BigInt',
+        );
+        expect(response.content).not.toContain('data: after');
+        expect(response.writableFinished).toBe(true);
+        request.destroy();
+      });
+
+      it('should write an error event and end the stream when a message field cannot be serialized', async () => {
+        class Sink extends Writable {
+          private readonly chunks: string[] = [];
+
+          _write(
+            chunk: any,
+            encoding: string,
+            callback: (error?: Error | null) => void,
+          ): void {
+            this.chunks.push(chunk);
+            callback();
+          }
+
+          get content() {
+            return this.chunks.join('');
+          }
+        }
+
+        const result = new Subject();
+        const response = new Sink();
+        const request = new PassThrough();
+        const promise = routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        result.next({ data: 'before' });
+        result.next({ comment: 5 });
+        result.next({ data: 'after' });
+        await promise;
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        expect(response.content).toContain('data: before');
+        expect(response.content).toContain('event: error');
+        expect(response.content).not.toContain('data: after');
+        expect(response.writableFinished).toBe(true);
+        request.destroy();
+      });
+
+      it('should reject when the first message has a field that cannot be serialized', async () => {
+        const response = new Writable();
+        response._write = () => {};
+        const request = new PassThrough();
+
+        await expect(
+          routerResponseController.sse(
+            of({ comment: 5 }),
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          ),
+        ).rejects.toThrow(TypeError);
+        request.destroy();
+      });
+
+      it('should reject when the first message cannot be serialized before headers are committed', async () => {
+        const response = new Writable();
+        response._write = () => {};
+        const request = new PassThrough();
+
+        const circular: Record<string, unknown> = {};
+        circular.self = circular;
+
+        await expect(
+          routerResponseController.sse(
+            of({ data: circular }),
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          ),
+        ).rejects.toThrow(TypeError);
+        request.destroy();
       });
     });
   });

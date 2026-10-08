@@ -205,6 +205,85 @@ describe('Sse (Express Application)', () => {
     });
   });
 
+  describe('event data that cannot be serialized', () => {
+    beforeEach(async () => {
+      const moduleFixture = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleFixture.createNestApplication<NestExpressApplication>({
+        forceCloseConnections: true,
+      });
+
+      await app.listen(0);
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should send number and boolean data as JSON', async () => {
+      const response = await fetch(`${await app.getUrl()}/sse/primitives`, {
+        signal: AbortSignal.timeout(2000),
+      });
+
+      expect(await response.text()).toBe(
+        '\nid: 1\ndata: 1\n\nid: 2\ndata: 0\n\nid: 3\ndata: true\n\n',
+      );
+    });
+
+    it('should send an error event and end the stream', async () => {
+      const response = await fetch(`${await app.getUrl()}/sse/unserializable`, {
+        signal: AbortSignal.timeout(2000),
+      });
+      const body = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(body).toContain('data: {"n":1}');
+      expect(body).toContain(
+        'event: error\nid: 2\ndata: Do not know how to serialize a BigInt',
+      );
+      expect(body).not.toContain('data: {"n":3}');
+    });
+
+    it('should send an error event and end the stream when an event field cannot be serialized', async () => {
+      const response = await fetch(
+        `${await app.getUrl()}/sse/unserializable-field`,
+        { signal: AbortSignal.timeout(2000) },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(body).toContain('data: {"n":1}');
+      expect(body).toContain('event: error');
+      expect(body).not.toContain('data: {"n":3}');
+    });
+
+    it('should return an error status when a field of the first event cannot be serialized', async () => {
+      const response = await fetch(
+        `${await app.getUrl()}/sse/unserializable-field-first`,
+        { signal: AbortSignal.timeout(2000) },
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.headers.get('content-type')).not.toContain(
+        'text/event-stream',
+      );
+    });
+
+    it('should return an error status when the first event cannot be serialized', async () => {
+      const response = await fetch(
+        `${await app.getUrl()}/sse/unserializable-first`,
+        { signal: AbortSignal.timeout(2000) },
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.headers.get('content-type')).not.toContain(
+        'text/event-stream',
+      );
+    });
+  });
+
   describe('Promise<Observable> disconnect handling', () => {
     beforeEach(async () => {
       const moduleFixture = await Test.createTestingModule({
