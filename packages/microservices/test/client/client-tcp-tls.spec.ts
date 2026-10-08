@@ -10,7 +10,7 @@ describe('ClientTCP TLS connection readiness', () => {
 
   const fakeConnection = (tls: boolean) => {
     const client = new ClientTCP(tls ? { tlsOptions: {} } : {});
-    const netSocket = new EventEmitter();
+    const netSocket = Object.assign(new EventEmitter(), { destroy: vi.fn() });
     const socket = {
       netSocket,
       on: (event, listener) => netSocket.on(event, listener),
@@ -87,6 +87,52 @@ describe('ClientTCP TLS connection readiness', () => {
       import.meta.url,
     ),
   );
+
+  it('ends a TLS connection by destroying its socket once connected only', async () => {
+    const pending = fakeConnection(true);
+    pending.client.connect().catch(() => {});
+    pending.client.close();
+    expect(pending.socket.netSocket.destroy).toHaveBeenCalledOnce();
+    expect(pending.socket.end).not.toHaveBeenCalled();
+    pending.subscription.unsubscribe();
+
+    const connected = fakeConnection(true);
+    const attempt = connected.client.connect();
+    connected.socket.netSocket.emit('secureConnect');
+    await attempt;
+    connected.client.close();
+    expect(connected.socket.end).toHaveBeenCalledOnce();
+    expect(connected.socket.netSocket.destroy).not.toHaveBeenCalled();
+    connected.subscription.unsubscribe();
+  });
+
+  it('rejects a pending handshake when the client is closed', async () => {
+    const peers = new Set<Socket>();
+    const server = createTcpServer(socket => {
+      peers.add(socket);
+      socket.on('error', () => {});
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    const port = (server.address() as { port: number }).port;
+    const client = new ClientTCP({
+      port,
+      host: '127.0.0.1',
+      tlsOptions: { rejectUnauthorized: false },
+    });
+    vi.spyOn(client['logger'], 'error').mockImplementation(() => {});
+    const attempt = client.connect();
+    const socket = client.unwrap<TLSSocket>();
+    try {
+      await new Promise(resolve => socket.once('connect', resolve));
+      client.close();
+
+      await expect(attempt).rejects.toThrow('Connection closed');
+      expect(socket.destroyed).toBe(true);
+    } finally {
+      for (const peer of peers) peer.destroy();
+      await new Promise<void>(resolve => server.close(() => resolve()));
+    }
+  });
 
   it.each(['stalled', 'accepted', 'untrusted'] as const)(
     'handles a real %s TLS handshake',

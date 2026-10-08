@@ -1,7 +1,7 @@
 import { Logger, type Type } from '@nestjs/common';
 import * as net from 'net';
-import { EmptyError, lastValueFrom } from 'rxjs';
-import { share, tap } from 'rxjs/operators';
+import { EmptyError, fromEvent, lastValueFrom, merge } from 'rxjs';
+import { map, share, take, tap } from 'rxjs/operators';
 import { ConnectionOptions, connect as tlsConnect, TLSSocket } from 'tls';
 import {
   ECONNREFUSED,
@@ -27,6 +27,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   protected readonly incompleteMessageTimeout?: number;
   protected readonly maxSendBufferSize?: number;
   protected socket: TcpSocket | null = null;
+  private readonly connectedSockets = new WeakSet<TcpSocket>();
   protected connectionPromise: Promise<any> | null = null;
   protected pendingEventListeners: Array<{
     event: keyof TcpEvents;
@@ -64,12 +65,27 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       socket.on(event, callback as any),
     );
 
-    const source$ = this.connect$(
+    const connected$ = this.connect$(
       socket.netSocket,
       TcpEventsMap.ERROR,
       this.tlsOptions ? 'secureConnect' : TcpEventsMap.CONNECT,
+    );
+    // A TLS socket destroyed during the handshake (see `close()`) closes
+    // without an "error", which would otherwise leave this pending.
+    const source$ = (
+      this.tlsOptions
+        ? merge(
+            connected$,
+            fromEvent(socket.netSocket, TcpEventsMap.CLOSE).pipe(
+              map(() => {
+                throw new Error('Connection closed');
+              }),
+            ),
+          ).pipe(take(1))
+        : connected$
     ).pipe(
       tap(() => {
+        this.connectedSockets.add(socket);
         // A socket replaced by a newer `connect()` call (`close()` followed by
         // `connect()` while it was still connecting) still finishes connecting,
         // so its listener must stay on it instead of `this.socket`.
@@ -146,7 +162,14 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   }
 
   public close() {
-    this.socket && this.socket.end();
+    if (this.socket) {
+      // `end()` waits for a pending TLS handshake, which may never finish
+      if (this.tlsOptions && !this.connectedSockets.has(this.socket)) {
+        this.socket.netSocket.destroy();
+      } else {
+        this.socket.end();
+      }
+    }
     this.handleClose();
     this.pendingEventListeners = [];
   }
