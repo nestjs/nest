@@ -6,7 +6,11 @@ import {
   Subject,
 } from 'rxjs';
 import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
-import { GATEWAY_OPTIONS, PORT_METADATA } from './constants.js';
+import {
+  GATEWAY_OPTIONS,
+  MESSAGE_METADATA,
+  PORT_METADATA,
+} from './constants.js';
 import { WsContextCreator } from './context/ws-context-creator.js';
 import { InvalidSocketPortException } from './errors/invalid-socket-port.exception.js';
 import {
@@ -386,6 +390,8 @@ export class WebSocketsController {
       ...(isStatic ? instanceWrapper.getEnhancersMetadata() || [] : []),
       ...this.getGlobalScopedEnhancers(),
     ];
+    const pattern =
+      Reflect.getMetadata(MESSAGE_METADATA, instance[methodName]) ?? 'unknown';
 
     return async (...args: unknown[]) => {
       const [client] = args;
@@ -431,7 +437,9 @@ export class WebSocketsController {
           );
           this.exceptionFiltersCache.set(instance[methodName], exceptionFilter);
         }
-        const host = new ExecutionContextHost(args);
+        // The context failed to resolve before `WsProxy` could append the
+        // pattern, so add it here the same way.
+        const host = new ExecutionContextHost([...args, pattern]);
         host.setType('ws');
         exceptionFilter.handle(err as Error, host);
       }
