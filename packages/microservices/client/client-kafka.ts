@@ -35,6 +35,7 @@ import {
 } from '../helpers/index.js';
 import {
   ClientKafkaProxy,
+  IncomingResponse,
   KafkaOptions,
   MsPattern,
   OutgoingEvent,
@@ -304,11 +305,20 @@ export class ClientKafka
           partition: payload.partition,
         }),
       );
-      if (isUndefined(rawMessage.headers![KafkaHeaders.CORRELATION_ID])) {
+      const correlationId = rawMessage.headers![KafkaHeaders.CORRELATION_ID];
+      if (isUndefined(correlationId)) {
         return;
       }
-      const { err, response, isDisposed, id } =
-        await this.deserializer.deserialize(rawMessage);
+      let incomingResponse: IncomingResponse;
+      try {
+        incomingResponse = await this.deserializer.deserialize(rawMessage);
+      } catch (error) {
+        // The correlation id is on the headers, so the pending request can be
+        // failed here instead of staying pending forever.
+        const callback = this.routingMap.get(correlationId.toString());
+        return callback?.({ err: error, isDisposed: true });
+      }
+      const { err, response, isDisposed, id } = incomingResponse;
       const callback = this.routingMap.get(id);
       if (!callback) {
         return;
