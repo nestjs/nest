@@ -144,10 +144,11 @@ export class ClientKafka
         this._producer?.disconnect(),
         this._consumer?.disconnect(),
       ]);
-      const failure = results.find(
+      const [failure, ...otherFailures] = results.filter(
         (result): result is PromiseRejectedResult =>
           result.status === 'rejected',
       );
+      otherFailures.forEach(({ reason }) => this.logger.error(reason));
       if (failure) {
         throw failure.reason;
       }
