@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
   HttpStatus,
+  type MessageEvent,
   RequestMethod,
   SSE_ABORT_CONTROLLER,
 } from '../../../common/index.js';
@@ -1124,6 +1125,48 @@ data: test
         '\nid: 1\ndata: 1\n\nid: 2\ndata: 0\n\nid: 3\ndata: false\n\n',
       );
       expect(response.writableFinished).toBe(true);
+      request.destroy();
+    });
+
+    it('should keep the fields of an event implemented as a class with getters', async () => {
+      class TypedEvent implements MessageEvent {
+        constructor(readonly data: object) {}
+
+        get type() {
+          return 'update';
+        }
+      }
+
+      class Sink extends Writable {
+        private readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk);
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const response = new Sink();
+      const request = new PassThrough();
+
+      await routerResponseController.sse(
+        of(new TypedEvent({ value: 1 })),
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(response.content).toBe(
+        '\nevent: update\nid: 1\ndata: {"value":1}\n\n',
+      );
       request.destroy();
     });
 

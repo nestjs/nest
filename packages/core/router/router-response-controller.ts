@@ -200,9 +200,17 @@ export class RouterResponseController {
                 // turns a JSON.stringify error (BigInts, circular references)
                 // into an error of this pipeline, handled by catchError below,
                 // instead of a throw that leaves the stream stuck mid-write.
+                // Fields are copied one by one, as a spread would drop the
+                // getters of an event implemented as a class.
                 return isNil(event.data) || isString(event.data)
                   ? event
-                  : { ...event, data: JSON.stringify(event.data) };
+                  : {
+                      type: event.type,
+                      id: event.id,
+                      retry: event.retry,
+                      comment: event.comment,
+                      data: JSON.stringify(event.data),
+                    };
               }),
               concatMap(
                 message =>
