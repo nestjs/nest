@@ -42,7 +42,7 @@
     "@types/express": "5.0.6",
     "@types/node": "24.19.1",
     "@types/supertest": "7.2.1",
-    "oxlint": "1.86.0",
+    "oxlint": "1.87.0",
     "prettier": "3.9.9",
     "supertest": "7.3.1",
     "ts-loader": "9.6.2",

@@ -23,7 +23,7 @@
     "@nestjs/cli": "12.0.8",
     "@nestjs/schematics": "12.0.6",
     "@types/node": "24.19.1",
-    "oxlint": "1.86.0",
+    "oxlint": "1.87.0",
     "start-server-webpack-plugin": "2.2.5",
     "vitest": "5.0.3",
     "webpack": "5.111.1",
