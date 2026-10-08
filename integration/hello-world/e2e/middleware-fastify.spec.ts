@@ -1,4 +1,5 @@
 import {
+  All,
   Controller,
   Get,
   Injectable,
@@ -10,6 +11,7 @@ import {
   Query,
   Req,
   RequestMethod,
+  VersioningType,
 } from '@nestjs/common';
 import {
   FastifyAdapter,
@@ -1090,6 +1092,214 @@ describe('Middleware (FastifyAdapter)', () => {
       const response = await sendRawRequest(`HTTP://127.0.0.1:${port}//USERS/`);
       expect(response.statusCode).to.equal(200);
       expect(response.body).to.equal(MIDDLEWARE_RETURN_VALUE);
+    });
+  });
+
+  /**
+   * The Fastify router matches an empty path segment for a route parameter
+   * ("/users//profile" -> { id: "" }), while middleware paths (like Express
+   * routes) need at least one character per parameter. For route and
+   * middleware matching to agree, such a request is answered with 404, as
+   * with the ExpressAdapter.
+   */
+  describe('empty route parameters', () => {
+    const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
+    const handlerCalls: string[] = [];
+
+    @Controller('users')
+    class UsersController {
+      @Get(':id')
+      findOne(@Param('id') id: string) {
+        handlerCalls.push(`findOne:${id}`);
+        return `user:${id}`;
+      }
+
+      @Get(':id/profile')
+      profile(@Param('id') id: string) {
+        handlerCalls.push(`profile:${id}`);
+        return `profile:${id}`;
+      }
+    }
+
+    @Controller('ranges')
+    class RangesController {
+      @Get(':from-:to')
+      range(@Param('from') from: string, @Param('to') to: string) {
+        handlerCalls.push(`range:${from}-${to}`);
+        return `range:${from}-${to}`;
+      }
+    }
+
+    @Controller('actions')
+    class ActionsController {
+      @All(':id/run')
+      run(@Param('id') id: string) {
+        handlerCalls.push(`run:${id}`);
+        return `run:${id}`;
+      }
+    }
+
+    @Controller({ path: 'versioned', version: '1' })
+    class VersionedController {
+      @Get(':id/profile')
+      profile(@Param('id') id: string) {
+        handlerCalls.push(`versioned:${id}`);
+        return `versioned:${id}`;
+      }
+    }
+
+    @Controller('files')
+    class FilesController {
+      @Get('*')
+      findAll() {
+        handlerCalls.push('files');
+        return 'files';
+      }
+    }
+
+    @Module({
+      controllers: [
+        UsersController,
+        RangesController,
+        ActionsController,
+        VersionedController,
+        FilesController,
+      ],
+    })
+    class EmptyRouteParamsModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => res.end(MIDDLEWARE_RETURN_VALUE))
+          .forRoutes(
+            UsersController,
+            RangesController,
+            ActionsController,
+            VersionedController,
+          );
+      }
+    }
+
+    const createApp = async (adapter = new FastifyAdapter()) => {
+      app = (
+        await Test.createTestingModule({
+          imports: [EmptyRouteParamsModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(adapter);
+      app.enableVersioning({
+        type: VersioningType.HEADER,
+        header: 'X-API-Version',
+      });
+      await app.init();
+    };
+
+    const expectNotFound = async (
+      method: 'GET' | 'HEAD' | 'POST',
+      url: string,
+      headers: Record<string, string> = {},
+    ) => {
+      const response = await app.inject({ method, url, headers });
+      expect(response.statusCode).to.equal(404);
+      expect(handlerCalls).to.deep.equal([]);
+      return response;
+    };
+
+    beforeEach(() => {
+      handlerCalls.length = 0;
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('runs middleware for a non-empty route parameter', async () => {
+      await createApp();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/users/1/profile',
+      });
+      expect(response.payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+      expect(handlerCalls).to.deep.equal([]);
+    });
+
+    it('responds with 404 to an empty route parameter in the middle of the path', async () => {
+      await createApp();
+
+      const response = await expectNotFound('GET', '/users//profile');
+      expect(JSON.parse(response.payload)).to.deep.equal({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Cannot GET /users//profile',
+      });
+    });
+
+    it('responds with 404 to an empty route parameter at the end of the path', async () => {
+      await createApp();
+
+      await expectNotFound('GET', '/users/');
+    });
+
+    it('responds with 404 to an empty route parameter in the HEAD route generated for a GET route', async () => {
+      await createApp();
+
+      await expectNotFound('HEAD', '/users//profile');
+    });
+
+    it('responds with 404 to an empty route parameter in a multi-parameter segment', async () => {
+      await createApp();
+
+      const response = await app.inject({ method: 'GET', url: '/ranges/a-b' });
+      expect(response.payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+
+      await expectNotFound('GET', '/ranges/-b');
+      await expectNotFound('GET', '/ranges/a-');
+    });
+
+    it('responds with 404 to an empty route parameter of an @All() route', async () => {
+      await createApp();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/actions/1/run',
+      });
+      expect(response.payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+
+      await expectNotFound('GET', '/actions//run');
+      await expectNotFound('POST', '/actions//run');
+    });
+
+    it('responds with 404 to an empty route parameter of a versioned route', async () => {
+      await createApp();
+      const headers = { 'X-API-Version': '1' };
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/versioned/1/profile',
+        headers,
+      });
+      expect(response.payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+
+      await expectNotFound('GET', '/versioned//profile', headers);
+      await expectNotFound('HEAD', '/versioned//profile', headers);
+    });
+
+    it('matches an empty wildcard', async () => {
+      await createApp();
+
+      const response = await app.inject({ method: 'GET', url: '/files/' });
+      expect(response.statusCode).to.equal(200);
+      expect(response.payload).to.equal('files');
+    });
+
+    it('responds with 404 to an empty route parameter followed by an ignored trailing slash', async () => {
+      await createApp(
+        new FastifyAdapter({ routerOptions: { ignoreTrailingSlash: true } }),
+      );
+
+      const response = await app.inject({ method: 'GET', url: '/users/1/' });
+      expect(response.payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+
+      await expectNotFound('GET', '/users//');
     });
   });
 });
