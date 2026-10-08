@@ -3,6 +3,7 @@ import { INestApplication, VersioningType } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('URI Versioning', () => {
   let app: INestApplication;
@@ -18,7 +19,7 @@ describe('URI Versioning', () => {
       app.enableVersioning({
         type: VersioningType.URI,
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {
@@ -192,7 +193,7 @@ describe('URI Versioning', () => {
         type: VersioningType.URI,
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {
@@ -367,7 +368,7 @@ describe('URI Versioning', () => {
         type: VersioningType.URI,
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {
@@ -432,7 +433,7 @@ describe('URI Versioning', () => {
         type: VersioningType.URI,
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /middleware', () => {

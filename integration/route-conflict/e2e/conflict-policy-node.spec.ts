@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 interface CapturedLogger {
   warnings: string[];
@@ -66,12 +67,12 @@ describe('Route conflict policy (Node)', () => {
       app = await buildNodeApp(MultiUserModule, {
         routeConflictPolicy: { shadow: 'error' },
       });
-      await expect(app.init()).resolves.toBeDefined();
+      await expect(listenOnLoopback(app)).resolves.toBeDefined();
     });
 
     it('natively routes every endpoint correctly without any strategy', async () => {
       app = await buildNodeApp(MultiUserModule, {});
-      await app.init();
+      await listenOnLoopback(app);
 
       const cases: Array<{ url: string; body: Record<string, unknown> }> = [
         { url: '/users/me', body: { handler: 'me' } },
@@ -108,7 +109,7 @@ describe('Route conflict policy (Node)', () => {
         { routeConflictPolicy: { duplicate: 'warn' } },
         capture,
       );
-      await expect(app.init()).resolves.toBeDefined();
+      await expect(listenOnLoopback(app)).resolves.toBeDefined();
       expect(capture.warnings).toHaveLength(1);
       expect(capture.warnings[0]).toContain('/users/me');
     });
@@ -120,7 +121,7 @@ describe('Route conflict policy (Node)', () => {
         { routeConflictPolicy: { duplicate: 'off' } },
         capture,
       );
-      await expect(app.init()).resolves.toBeDefined();
+      await expect(listenOnLoopback(app)).resolves.toBeDefined();
 
       await request(app.getHttpServer())
         .get('/users/me')
@@ -130,7 +131,7 @@ describe('Route conflict policy (Node)', () => {
 
     it('boots without a policy, and the first duplicate wins (Fastify throws at registration)', async () => {
       app = await buildNodeApp(DuplicateModule, {});
-      await expect(app.init()).resolves.toBeDefined();
+      await expect(listenOnLoopback(app)).resolves.toBeDefined();
 
       await request(app.getHttpServer())
         .get('/users/me')

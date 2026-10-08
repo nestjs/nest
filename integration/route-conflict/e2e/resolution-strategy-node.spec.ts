@@ -3,6 +3,7 @@ import { INestApplication, NestApplicationOptions } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 async function buildApp(
   options: NestApplicationOptions,
@@ -26,7 +27,7 @@ describe('Route resolution strategy: specificity (Node)', () => {
   describe('with the multi-user fixture', () => {
     beforeEach(async () => {
       app = await buildApp({ routeResolutionStrategy: 'specificity' });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('routes `/users/me` to the static handler, not `:userId`', async () => {
@@ -113,7 +114,7 @@ describe('Route resolution strategy: specificity (Node)', () => {
         routeResolutionStrategy: 'specificity',
         routeConflictPolicy: { shadow: 'warn' },
       });
-      await app.init();
+      await listenOnLoopback(app);
 
       const meRes = await request(app.getHttpServer()).get('/users/me');
       expect(meRes.status).toBe(200);

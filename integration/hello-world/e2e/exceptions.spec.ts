@@ -162,7 +162,7 @@ describe('Error messages', () => {
 
       app = module.createNestApplication(new NodeAdapter());
       server = app.getHttpServer();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it(`/GET`, () => {

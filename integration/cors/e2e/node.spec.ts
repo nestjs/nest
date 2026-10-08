@@ -2,6 +2,7 @@ import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Node Cors', () => {
   let app: NestNodeApplication;
@@ -42,7 +43,7 @@ describe('Node Cors', () => {
         };
         app.enableCors(configDelegation);
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`should add cors headers based on the first config`, async () => {
@@ -93,7 +94,7 @@ describe('Node Cors', () => {
           },
         );
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`should add cors headers based on the first config`, async () => {
@@ -136,7 +137,7 @@ describe('Node Cors', () => {
         );
         app.enableCors(configs[0]);
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`CORS headers`, async () => {
@@ -166,7 +167,7 @@ describe('Node Cors', () => {
             cors: configs[0],
           },
         );
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`CORS headers`, async () => {

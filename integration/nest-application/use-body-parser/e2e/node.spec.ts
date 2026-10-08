@@ -2,6 +2,7 @@ import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../../_support/listen-on-loopback.js';
 
 describe('Body Parser (Node Application)', () => {
   const moduleFixture = Test.createTestingModule({
@@ -27,7 +28,7 @@ describe('Body Parser (Node Application)', () => {
         })
         .useBodyParser('json', { limit: Buffer.from(stringLimit).byteLength });
 
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should allow request with matching body limit', async () => {
@@ -68,7 +69,7 @@ describe('Body Parser (Node Application)', () => {
           extended: true,
         });
 
-      await app.init();
+      await listenOnLoopback(app);
     });
     it('should allow request with matching body limit', async () => {
       const response = await request(app.getHttpServer())

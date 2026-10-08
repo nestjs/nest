@@ -9,6 +9,7 @@ import {
   sendCanceledHttpRequest,
   sendHttpRequest,
 } from './utils.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const readme = readFileSync(join(process.cwd(), 'Readme.md'));
 const readmeString = readme.toString();
@@ -22,7 +23,7 @@ describe('Node FileSend', () => {
     }).compile();
 
     app = modRef.createNestApplication(new NodeAdapter());
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it('should return a file from a stream', async () => {
@@ -71,7 +72,6 @@ describe('Node FileSend', () => {
   });
   // TODO: temporarily turned off (flaky test)
   it.skip('should allow for the client to end the response and be able to make another', async () => {
-    await app.listen(0);
     const url = await getHttpBaseOptions(app);
     await sendCanceledHttpRequest(new URL('/file/slow', url));
     const res = await sendHttpRequest(new URL('/file/stream', url));

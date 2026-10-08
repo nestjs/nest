@@ -3,6 +3,7 @@ import request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Hello world (default adapter)', () => {
   let server;
@@ -15,7 +16,7 @@ describe('Hello world (default adapter)', () => {
 
     app = module.createNestApplication(new NodeAdapter());
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   [

@@ -3,6 +3,7 @@ import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { VersionedWildcardModule } from '../src/versioned-wildcard/versioned-wildcard.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 async function buildVersionedNodeApp(
   options: NestApplicationOptions,
@@ -43,13 +44,13 @@ describe('Route conflict policy (Node, URI versioning + wildcard)', () => {
     app = await buildVersionedNodeApp({
       routeConflictPolicy: { shadow: 'error' },
     });
-    await expect(app.init()).resolves.toBeDefined();
+    await expect(listenOnLoopback(app)).resolves.toBeDefined();
   });
 
   describe('runtime routing under URI versioning', () => {
     beforeEach(async () => {
       app = await buildVersionedNodeApp({});
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('routes GET /v1/users/me to the literal handler (UsersMeController)', async () => {
@@ -90,7 +91,7 @@ describe('Route conflict policy (Node, URI versioning + wildcard)', () => {
     app = await buildVersionedNodeApp({
       routeConflictPolicy: { duplicate: 'error' },
     });
-    await app.init();
+    await listenOnLoopback(app);
 
     await request(app.getHttpServer())
       .get('/v1/users/me')

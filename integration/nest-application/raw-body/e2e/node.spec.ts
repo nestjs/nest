@@ -2,6 +2,7 @@ import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { NodeModule } from '../src/node.module.js';
+import { listenOnLoopback } from '../../../_support/listen-on-loopback.js';
 
 describe('Raw body (Node Application)', () => {
   let app: NestNodeApplication;
@@ -18,7 +19,7 @@ describe('Raw body (Node Application)', () => {
       },
     );
 
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   afterEach(async () => {

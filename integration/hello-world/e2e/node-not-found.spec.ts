@@ -8,6 +8,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const jsonFilter = {
   catch(exception: HttpException, host: ArgumentsHost) {
@@ -35,7 +36,7 @@ describe('Hello world (node not-found handling)', () => {
     app = module.createNestApplication(new NodeAdapter());
     configure(app);
     app.useGlobalFilters(jsonFilter);
-    await app.init();
+    await listenOnLoopback(app);
     return app;
   }
 

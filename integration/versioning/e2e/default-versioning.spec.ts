@@ -108,7 +108,7 @@ describe('Default Versioning behavior', () => {
 
       app = moduleRef.createNestApplication(new NodeAdapter());
       app.enableVersioning();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {

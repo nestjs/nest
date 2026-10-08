@@ -9,6 +9,7 @@ import {
 import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Middleware before init (NodeAdapter)', () => {
   let app: NestNodeApplication;
@@ -66,7 +67,7 @@ describe('Middleware before init (NodeAdapter)', () => {
         next();
       });
 
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it('should apply the middleware registered before init', async () => {
@@ -94,7 +95,7 @@ describe('Middleware before init (NodeAdapter)', () => {
       );
 
       // Initialize app first
-      await app.init();
+      await listenOnLoopback(app);
 
       // Now middleware registration should work
       app.use((req, res, next) => {

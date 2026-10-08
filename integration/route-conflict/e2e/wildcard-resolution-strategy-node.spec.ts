@@ -3,6 +3,7 @@ import { INestApplication, NestApplicationOptions } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { WildcardModule } from '../src/wildcard/wildcard.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 async function buildApp(
   options: NestApplicationOptions,
@@ -18,7 +19,7 @@ describe('Route resolution strategy with wildcards: specificity (Node)', () => {
 
   beforeEach(async () => {
     app = await buildApp({ routeResolutionStrategy: 'specificity' });
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   afterEach(async () => {
