@@ -1,6 +1,7 @@
 import { Scope } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
@@ -191,6 +192,20 @@ describe('ListenersController', () => {
           sinon.match({ param: 'value' }),
         ),
       ).to.be.true;
+    });
+    describe('when static', () => {
+      it('should create the proxy with the controller id as inquirer id', () => {
+        explorer.expects('explore').returns(handlers);
+        const controller = new InstanceWrapper();
+
+        instance.registerPatternHandlers(controller, server, '');
+
+        const [, , , , contextId, inquirerId] = (
+          rpcContextCreator.create as sinon.SinonStub
+        ).firstCall.args;
+        expect(contextId).to.equal(STATIC_CONTEXT);
+        expect(inquirerId).to.equal(controller.id);
+      });
     });
     describe('when request scoped', () => {
       it(`should call "addHandler" with deferred proxy`, () => {

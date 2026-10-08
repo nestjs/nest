@@ -115,7 +115,7 @@ export class ListenersController {
             moduleKey,
             methodKey,
             STATIC_CONTEXT,
-            undefined,
+            instanceWrapper.id,
             defaultCallMetadata,
           );
           if (isEventHandler) {

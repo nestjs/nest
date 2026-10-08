@@ -13,6 +13,7 @@ import { Injector } from '../../../core/injector/injector';
 import { ApplicationConfig } from '../../application-config';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
 import { ExecutionContextHost } from '../../helpers/execution-context-host';
+import { STATIC_CONTEXT } from '../../injector/constants';
 import { NestContainer } from '../../injector/container';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { GraphInspector } from '../../inspector/graph-inspector';
@@ -140,6 +141,47 @@ describe('RouterExplorer', () => {
         bindStub.calledWith(null, paths[0], null, '', routePathMetadata, '1'),
       ).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);
+    });
+  });
+
+  describe('applyCallbackToRouter', () => {
+    it('should create the proxy of a static controller with the controller id as inquirer id', () => {
+      const instance = new TestRoute();
+      (routerBuilder as any).container.setHttpAdapter({});
+      const createCallbackProxy = sinon
+        .stub(routerBuilder as any, 'createCallbackProxy')
+        .returns(() => {});
+
+      (routerBuilder as any).applyCallbackToRouter(
+        { get: sinon.spy() },
+        {
+          path: ['test'],
+          requestMethod: RequestMethod.GET,
+          targetCallback: instance.getTest,
+          methodName: 'getTest',
+        },
+        {
+          id: 'test-route',
+          instance,
+          name: TestRoute.name,
+          isDependencyTreeStatic: () => true,
+        } as any,
+        'module-key',
+        { ctrlPath: 'global' },
+        '',
+      );
+
+      expect(
+        createCallbackProxy.calledWith(
+          instance,
+          instance.getTest,
+          'getTest',
+          'module-key',
+          RequestMethod.GET,
+          STATIC_CONTEXT,
+          'test-route',
+        ),
+      ).to.be.true;
     });
   });
 

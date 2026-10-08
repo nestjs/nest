@@ -284,11 +284,57 @@ describe('Injector', () => {
 
     it('should call "loadInstance" with expected arguments', async () => {
       const module = { controllers: [] };
-      const wrapper = { test: 'test', getEnhancersMetadata: () => [] };
+      const wrapper = {
+        test: 'test',
+        getEnhancersMetadata: () => [],
+        isDependencyTreeStatic: () => true,
+      };
 
       await injector.loadController(wrapper as any, module as any);
       expect(loadInstance.calledWith(wrapper, module.controllers, module)).to.be
         .true;
+    });
+
+    describe('enhancers of a static controller', () => {
+      const createEnhancer = () =>
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        });
+
+      it('should load each enhancer in the static context with the controller as inquirer', async () => {
+        const controller = new InstanceWrapper();
+        const enhancer = createEnhancer();
+        controller.addEnhancerMetadata(enhancer);
+
+        await injector.loadController(
+          controller,
+          new Module(class {}, new NestContainer()),
+        );
+
+        expect(
+          loadInstance.calledWith(
+            enhancer,
+            enhancer.host!.injectables,
+            enhancer.host,
+            sinon.match({
+              contextId: STATIC_CONTEXT,
+              inquirer: controller,
+            }),
+          ),
+        ).to.be.true;
+      });
+
+      it('should not load the enhancers of a request scoped controller in the static context', async () => {
+        const controller = new InstanceWrapper({ scope: Scope.REQUEST });
+        controller.addEnhancerMetadata(createEnhancer());
+
+        await injector.loadController(
+          controller,
+          new Module(class {}, new NestContainer()),
+        );
+
+        expect(loadInstance.calledOnce).to.be.true;
+      });
     });
   });
 
@@ -870,6 +916,31 @@ describe('Injector', () => {
 
       await injector.loadEnhancersPerContext(wrapper, { id: 1 } as any);
       expect(loadInstanceStub.calledTwice).to.be.true;
+    });
+
+    it('should load each enhancer with the given inquirer', async () => {
+      const contextId = { id: 1 };
+      const inquirer = new InstanceWrapper();
+      const wrapper = new InstanceWrapper();
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        }),
+      );
+
+      const loadInstanceStub = sinon
+        .stub(injector, 'loadInstance')
+        .callsFake(async () => ({}) as any);
+
+      await injector.loadEnhancersPerContext(wrapper, contextId, inquirer);
+      expect(
+        loadInstanceStub.calledWith(
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match({ contextId, inquirer }),
+        ),
+      ).to.be.true;
     });
   });
 

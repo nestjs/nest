@@ -187,6 +187,8 @@ export class RouterExplorer {
           methodName,
           moduleKey,
           requestMethod,
+          STATIC_CONTEXT,
+          instanceWrapper.id,
         );
 
     const isVersioned =
