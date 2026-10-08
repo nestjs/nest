@@ -7,5 +7,6 @@
 
 export * from './adapters/index.js';
 export * from './interfaces/index.js';
+export * from './multer/index.js';
 export { NodeRouter } from './router/node-router.js';
 export type { NodeViewOptions } from './views/view-renderer.js';

@@ -30,6 +30,7 @@
     "encodeurl": "2.0.0",
     "fast-querystring": "1.1.2",
     "find-my-way": "9.9.0",
+    "multer": "2.4.0",
     "path-to-regexp": "8.4.2",
     "qs": "6.15.3",
     "secure-json-parse": "4.1.0",
