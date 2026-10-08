@@ -36,7 +36,7 @@
     "@types/node": "24.19.1",
     "@types/pg": "8.23.1",
     "drizzle-kit": "0.31.11",
-    "oxlint": "1.86.0",
+    "oxlint": "1.87.0",
     "prettier": "3.9.9",
     "ts-loader": "9.6.2",
     "ts-node": "10.9.2",
