@@ -297,6 +297,50 @@ describe('ClientKafka', () => {
       expect(untypedClient.client).toBeNull();
     });
 
+    it('should disconnect the consumer when the producer fails to disconnect', async () => {
+      const error = new Error('producer disconnect failed');
+      producer.disconnect.mockRejectedValueOnce(error);
+      untypedClient.initialized = Promise.resolve();
+      untypedClient.client = {};
+
+      await expect(client.close()).rejects.toBe(error);
+
+      expect(consumer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedClient._consumer).toBeNull();
+      expect(untypedClient._producer).toBeNull();
+      expect(untypedClient.initialized).toBeNull();
+      expect(untypedClient.client).toBeNull();
+    });
+
+    it('should disconnect the producer when the consumer fails to disconnect', async () => {
+      const error = new Error('consumer disconnect failed');
+      consumer.disconnect.mockRejectedValueOnce(error);
+      untypedClient.initialized = Promise.resolve();
+      untypedClient.client = {};
+
+      await expect(client.close()).rejects.toBe(error);
+
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedClient._consumer).toBeNull();
+      expect(untypedClient._producer).toBeNull();
+      expect(untypedClient.initialized).toBeNull();
+      expect(untypedClient.client).toBeNull();
+    });
+
+    it('should log the second error when both clients fail to disconnect', async () => {
+      const producerError = new Error('producer disconnect failed');
+      const consumerError = new Error('consumer disconnect failed');
+      producer.disconnect.mockRejectedValueOnce(producerError);
+      consumer.disconnect.mockRejectedValueOnce(consumerError);
+      const logError = vi
+        .spyOn(untypedClient.logger, 'error')
+        .mockImplementation(() => {});
+
+      await expect(client.close()).rejects.toBe(producerError);
+
+      expect(logError).toHaveBeenCalledWith(consumerError);
+    });
+
     it('should fail pending requests with a connection closed error', async () => {
       const callback = vi.fn();
       untypedClient.routingMap.set('some id', callback);
