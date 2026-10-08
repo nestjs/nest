@@ -23,6 +23,7 @@ import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams
 import { WebsocketEntrypointMetadata } from './interfaces/websockets-entrypoint-metadata.interface.js';
 import { SocketServerProvider } from './socket-server-provider.js';
 import { compareElementAt } from './utils/compare-element.util.js';
+import { isFunction } from '@nestjs/common/internal';
 import type { NestApplicationContextOptions } from '@nestjs/common/internal';
 import { type Type, Logger } from '@nestjs/common';
 import {
@@ -201,7 +202,7 @@ export class WebSocketsController {
       messageHandlers,
       observableServer,
       isStatic
-        ? instance.handleConnection?.bind(instance)
+        ? this.createStaticEventHandler(instance, moduleKey, 'handleConnection')
         : this.createRequestScopedEventHandler(
             instanceWrapper,
             moduleRef,
@@ -210,7 +211,7 @@ export class WebSocketsController {
             observableServer.server,
           ),
       isStatic && !hasGlobalScopedEnhancers
-        ? instance.handleDisconnect?.bind(instance)
+        ? this.createStaticEventHandler(instance, moduleKey, 'handleDisconnect')
         : this.createRequestScopedEventHandler(
             instanceWrapper,
             moduleRef,
@@ -494,22 +495,13 @@ export class WebSocketsController {
         if (!targetCallback) {
           throw err;
         }
-        let exceptionFilter = this.exceptionFiltersCache.get(targetCallback);
-        if (!exceptionFilter) {
-          exceptionFilter = this.exceptionFiltersContext.create(
-            instance,
-            targetCallback as <TClient>(client: TClient, data: any) => any,
-            moduleKey,
-          );
-          this.exceptionFiltersCache.set(targetCallback, exceptionFilter);
-        }
-        // Client first, data second and the pattern last, as for message
-        // handlers. With the raw hook arguments, the filter would send the last
-        // one (the socket itself with socket.io, the upgrade request with ws)
-        // back to the client as the pattern.
-        const host = new ExecutionContextHost([client, undefined, methodName]);
-        host.setType('ws');
-        exceptionFilter.handle(err as Error, host);
+        this.handleLifecycleHookError(
+          instance,
+          moduleKey,
+          methodName,
+          args,
+          err,
+        );
       } finally {
         if (methodName === 'handleDisconnect' && contextId) {
           this.cleanupRequestScopedContext(
@@ -533,6 +525,72 @@ export class WebSocketsController {
       scopedEnhancers.length > 0 &&
       scopedEnhancers.every(wrapper => wrapper.isDependencyTreeDurable())
     );
+  }
+
+  /**
+   * Runs a lifecycle hook of a default-scoped gateway and passes the errors it
+   * throws or rejects with to the gateway's exception filters, as for message
+   * handlers. The hook still runs synchronously.
+   */
+  public createStaticEventHandler(
+    instance: NestGateway,
+    moduleKey: string,
+    methodName: 'handleConnection' | 'handleDisconnect',
+  ) {
+    const hook = instance[methodName] as
+      ((...args: unknown[]) => unknown) | undefined;
+    if (!hook) {
+      return undefined;
+    }
+    return (...args: unknown[]) => {
+      const handleError = (err: unknown) =>
+        this.handleLifecycleHookError(
+          instance,
+          moduleKey,
+          methodName,
+          args,
+          err,
+        );
+      try {
+        const result = hook.apply(instance, args);
+        return isFunction((result as Promise<unknown>)?.then)
+          ? (result as Promise<unknown>).catch(handleError)
+          : result;
+      } catch (err) {
+        handleError(err);
+      }
+    };
+  }
+
+  private handleLifecycleHookError(
+    instance: NestGateway,
+    moduleKey: string,
+    methodName: 'handleConnection' | 'handleDisconnect',
+    args: unknown[],
+    err: unknown,
+  ) {
+    // Only called for gateways that implement the hook
+    const targetCallback = instance[methodName]!;
+    let exceptionFilter = this.exceptionFiltersCache.get(targetCallback);
+    if (!exceptionFilter) {
+      exceptionFilter = this.exceptionFiltersContext.create(
+        instance,
+        targetCallback as <TClient>(client: TClient, data: any) => any,
+        moduleKey,
+      );
+      this.exceptionFiltersCache.set(targetCallback, exceptionFilter);
+    }
+    const [client, disconnectReason] = args;
+    // Client first, data second and the pattern last, as for message handlers.
+    // With the raw hook arguments, the filter would send the last one (the
+    // socket itself with socket.io, the upgrade request with ws) back to the
+    // client as the pattern. The disconnect reason is safe to pass as data,
+    // as nothing is sent to a client that has already disconnected.
+    const data =
+      methodName === 'handleDisconnect' ? disconnectReason : undefined;
+    const host = new ExecutionContextHost([client, data, methodName]);
+    host.setType('ws');
+    exceptionFilter.handle(err as Error, host);
   }
 
   private getGlobalScopedEnhancers(): InstanceWrapper[] {
