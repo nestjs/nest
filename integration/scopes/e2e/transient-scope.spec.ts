@@ -64,16 +64,16 @@ describe('Transient scope', () => {
         expect(Meta.COUNTER).toEqual(7);
       });
 
-      it(`should create transient pipe for each controller (3 requests, 1 static)`, () => {
-        expect(UserByIdPipe.COUNTER).toEqual(4);
+      it(`should create transient pipe for each controller (3 requests, 1 static, 1 for the static controller)`, () => {
+        expect(UserByIdPipe.COUNTER).toEqual(5);
       });
 
-      it(`should create transient interceptor for each controller (3 requests, 1 static)`, () => {
-        expect(Interceptor.COUNTER).toEqual(4);
+      it(`should create transient interceptor for each controller (3 requests, 1 static, 1 for the static controller)`, () => {
+        expect(Interceptor.COUNTER).toEqual(5);
       });
 
-      it(`should create transient guard for each controller (3 requests, 1 static)`, () => {
-        expect(Guard.COUNTER).toEqual(4);
+      it(`should create transient guard for each controller (3 requests, 1 static, 1 for the static controller)`, () => {
+        expect(Guard.COUNTER).toEqual(5);
       });
     });
 
@@ -242,9 +242,7 @@ describe('Transient scope', () => {
       const serviceA = app.get(ServiceA);
       const serviceB = app.get(ServiceB);
 
-      expect(serviceA.logger.instanceId).not.toBe(
-        serviceB.logger.instanceId,
-      );
+      expect(serviceA.logger.instanceId).not.toBe(serviceB.logger.instanceId);
     });
 
     it('should create separate nested TRANSIENT instances for each DEFAULT parent', () => {

@@ -1,6 +1,7 @@
 import { Scope } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants.js';
 import { NestContainer } from '@nestjs/core/injector/container.js';
 import { Injector } from '@nestjs/core/injector/injector.js';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
@@ -230,6 +231,20 @@ describe('ListenersController', () => {
       expect(addSpyTCP.mock.calls[0][3]).toEqual(
         expect.objectContaining({ param: 'value' }),
       );
+    });
+    describe('when static', () => {
+      it('should create the proxy with the controller id as inquirer id', () => {
+        vi.spyOn(metadataExplorer, 'explore').mockReturnValue(handlers as any);
+        const controller = new InstanceWrapper();
+
+        instance.registerPatternHandlers(controller, server, '');
+
+        const [, , , , contextId, inquirerId] = (
+          rpcContextCreator.create as any
+        ).mock.calls[0];
+        expect(contextId).toBe(STATIC_CONTEXT);
+        expect(inquirerId).toBe(controller.id);
+      });
     });
     describe('when request scoped', () => {
       it(`should call "addHandler" with deferred proxy`, () => {
