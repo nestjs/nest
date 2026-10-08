@@ -82,6 +82,46 @@ describe('ExpressAdapter', () => {
         expect(useSpy).toHaveBeenCalledExactlyOnceWith(expect.any(Function));
       },
     );
+
+    it('should mount the handler on every excluded path, for every method', () => {
+      // An excluded path lives at the root, so the prefix router never sees a
+      // request for it. `all`, not the method the exclusion names: the methods
+      // it leaves out are the misses this answers.
+      const expressInstance = expressAdapter.getInstance();
+      const allSpy = vi.spyOn(expressInstance, 'all');
+      const handler = vi.fn();
+
+      expressAdapter.setNotFoundHandler(handler, 'api', [
+        { path: 'hello', method: RequestMethod.GET },
+        { path: '/health/{*splat}', method: RequestMethod.ALL },
+      ]);
+
+      expect(allSpy).toHaveBeenCalledTimes(2);
+      expect(allSpy).toHaveBeenCalledWith('/hello', handler);
+      expect(allSpy).toHaveBeenCalledWith('/health/{*splat}', handler);
+    });
+
+    it('should mount nothing extra when nothing is excluded', () => {
+      const expressInstance = expressAdapter.getInstance();
+      const allSpy = vi.spyOn(expressInstance, 'all');
+
+      expressAdapter.setNotFoundHandler(vi.fn(), 'api', []);
+
+      expect(allSpy).not.toHaveBeenCalled();
+    });
+
+    it('should ignore excluded paths when there is no prefix', () => {
+      // Without a prefix the root handler already covers them, so a second
+      // mount would only add a route that can never be reached first.
+      const expressInstance = expressAdapter.getInstance();
+      const allSpy = vi.spyOn(expressInstance, 'all');
+
+      expressAdapter.setNotFoundHandler(vi.fn(), undefined, [
+        { path: 'hello', method: RequestMethod.GET },
+      ]);
+
+      expect(allSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('createMiddlewareFactory', () => {
