@@ -20,6 +20,7 @@ import {
   MessageMappingProperties,
 } from '../gateway-metadata-explorer.js';
 import { SocketServerProvider } from '../socket-server-provider.js';
+import { SubscribeMessage } from '../decorators/subscribe-message.decorator.js';
 import { WebSocketsController } from '../web-sockets-controller.js';
 
 class NoopAdapter extends AbstractWsAdapter {
@@ -464,6 +465,42 @@ describe('WebSocketsController', () => {
         expect(getContextId).toHaveBeenCalledWith(client, expected);
       },
     );
+
+    it('should pass the message pattern to the exception filter when the context fails to resolve', async () => {
+      class Gateway {
+        @SubscribeMessage('ping')
+        onPing() {}
+      }
+      const wrapper = new InstanceWrapper({
+        token: Gateway,
+        metatype: Gateway,
+        instance: new Gateway(),
+        isResolved: true,
+      });
+      const client = {};
+      const exceptionFilter = { handle: vi.fn() };
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadEnhancersPerContext').mockRejectedValue(
+        new Error('guard failed to resolve'),
+      );
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      await instance.createRequestScopedHandler(
+        wrapper,
+        { providers: new Map([[Gateway, wrapper]]) } as Module,
+        'moduleKey',
+        'onPing',
+      )(client, 'data', undefined);
+
+      const host = exceptionFilter.handle.mock.calls[0][1];
+      expect(host.switchToWs().getClient()).toBe(client);
+      expect(host.switchToWs().getData()).toBe('data');
+      expect(host.switchToWs().getPattern()).toBe('ping');
+    });
 
     it('should reuse the same context id for the same client', async () => {
       const client = {};
