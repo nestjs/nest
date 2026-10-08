@@ -799,6 +799,140 @@ describe('WebSocketsController', () => {
       expect(host.switchToWs().getData()).toBeUndefined();
       expect(host.switchToWs().getPattern()).toBe('handleConnection');
     });
+
+    it('should pass the disconnect reason and the hook name to the exception filter', async () => {
+      const client = {};
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        isDependencyTreeStatic: () => false,
+        instance: {
+          handleDisconnect() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const exceptionFilter = { handle: vi.fn() };
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handleDisconnect: () => {
+          throw new Error('cleanup failed');
+        },
+      } as never);
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      await instance.createRequestScopedEventHandler(
+        gatewayWrapper,
+        { providers: new Map() } as Module,
+        'moduleKey',
+        'handleDisconnect',
+        {},
+      )(client, 'transport close');
+
+      const host = exceptionFilter.handle.mock.calls[0][1];
+      expect(host.getArgs()).toEqual([
+        client,
+        'transport close',
+        'handleDisconnect',
+      ]);
+    });
+  });
+  describe('createStaticEventHandler', () => {
+    let exceptionFilter: { handle: ReturnType<typeof vi.fn> };
+
+    beforeEach(() => {
+      exceptionFilter = { handle: vi.fn() };
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+    });
+
+    it('should return undefined when the gateway does not implement the hook', () => {
+      expect(
+        instance.createStaticEventHandler({}, 'moduleKey', 'handleConnection'),
+      ).toBeUndefined();
+    });
+
+    it('should run the hook synchronously on the gateway', () => {
+      const gateway = { handleConnection: vi.fn() };
+      const client = {};
+
+      instance.createStaticEventHandler(
+        gateway,
+        'moduleKey',
+        'handleConnection',
+      )!(client, 'upgrade-request');
+
+      expect(gateway.handleConnection).toHaveBeenCalledWith(
+        client,
+        'upgrade-request',
+      );
+      expect(gateway.handleConnection.mock.contexts[0]).toBe(gateway);
+      expect(exceptionFilter.handle).not.toHaveBeenCalled();
+    });
+
+    it('should pass an error thrown by the hook to the exception filter', () => {
+      const error = new Error('Unauthorized');
+      const gateway = {
+        handleConnection: () => {
+          throw error;
+        },
+      };
+      const client = {};
+
+      instance.createStaticEventHandler(
+        gateway,
+        'moduleKey',
+        'handleConnection',
+      )!(client, { url: '/' });
+
+      expect(exceptionFilter.handle).toHaveBeenCalledOnce();
+      const [handledError, host] = exceptionFilter.handle.mock.calls[0];
+      expect(handledError).toBe(error);
+      expect(host.getType()).toBe('ws');
+      expect(host.getArgs()).toEqual([client, undefined, 'handleConnection']);
+    });
+
+    it('should pass a rejection of an async hook to the exception filter', async () => {
+      const error = new Error('Unauthorized');
+      const gateway = { handleConnection: async () => Promise.reject(error) };
+      const client = {};
+
+      await instance.createStaticEventHandler(
+        gateway,
+        'moduleKey',
+        'handleConnection',
+      )!(client);
+
+      expect(exceptionFilter.handle).toHaveBeenCalledOnce();
+      expect(exceptionFilter.handle.mock.calls[0][0]).toBe(error);
+      expect(
+        exceptionFilter.handle.mock.calls[0][1].switchToWs().getPattern(),
+      ).toBe('handleConnection');
+    });
+
+    it('should pass the disconnect reason as data for the disconnect hook', () => {
+      const gateway = {
+        handleDisconnect: () => {
+          throw new Error('cleanup failed');
+        },
+      };
+      const client = {};
+
+      instance.createStaticEventHandler(
+        gateway,
+        'moduleKey',
+        'handleDisconnect',
+      )!(client, 'transport close');
+
+      const host = exceptionFilter.handle.mock.calls[0][1];
+      expect(host.switchToWs().getClient()).toBe(client);
+      expect(host.switchToWs().getData()).toBe('transport close');
+      expect(host.switchToWs().getPattern()).toBe('handleDisconnect');
+    });
   });
   describe('getConnectionHandler', () => {
     const gateway = new Test();
