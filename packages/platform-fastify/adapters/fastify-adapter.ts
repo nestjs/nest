@@ -337,7 +337,12 @@ export class FastifyAdapter<
 
     this.instance.addHook('onRequest', (request, reply, done) => {
       if (this.onRequestHook) {
-        return this.onRequestHook(request as TRequest, reply as TReply, done);
+        this.runLifecycleHook(
+          this.onRequestHook,
+          request as TRequest,
+          reply as TReply,
+          done,
+        );
       } else {
         done();
       }
@@ -345,11 +350,50 @@ export class FastifyAdapter<
 
     this.instance.addHook('onResponse', (request, reply, done) => {
       if (this.onResponseHook) {
-        return this.onResponseHook(request as TRequest, reply as TReply, done);
+        this.runLifecycleHook(
+          this.onResponseHook,
+          request as TRequest,
+          reply as TReply,
+          done,
+        );
       } else {
         done();
       }
     });
+  }
+
+  private runLifecycleHook(
+    hook: (
+      request: TRequest,
+      reply: TReply,
+      done: (err?: Error) => void,
+    ) => void | Promise<void>,
+    request: TRequest,
+    reply: TReply,
+    done: (err?: Error) => void,
+  ): void {
+    let completed = false;
+    const doneOnce = (err?: Error) => {
+      if (completed) return;
+      completed = true;
+      done(err);
+    };
+    try {
+      // Do not return the promise to Fastify: both completion styles share
+      // this guard, including hooks that call done and return a promise.
+      const result = hook.call(this, request, reply, doneOnce);
+      if (result && typeof result.then === 'function') {
+        result.then(
+          () => doneOnce(),
+          err =>
+            doneOnce(
+              err || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR(),
+            ),
+        );
+      }
+    } catch (err) {
+      doneOnce(err);
+    }
   }
 
   public setOnRequestHook(
