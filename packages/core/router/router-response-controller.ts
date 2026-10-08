@@ -168,25 +168,6 @@ export class RouterResponseController {
         resolve();
       };
 
-      const fail = (err: unknown) => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        finalize();
-        subscription?.unsubscribe();
-        endStream();
-        reject(err);
-      };
-
-      const commitHeaders = () => {
-        try {
-          stream.commitHeaders();
-        } catch (err) {
-          fail(err);
-        }
-      };
-
       disconnectSource.once('close', onClose);
       // The client may have disconnected before the handler ran (e.g., during
       // a guard), in which case "close" has already been emitted.
@@ -240,18 +221,23 @@ export class RouterResponseController {
               }),
             )
             .subscribe({
-              error: fail,
-              complete: () => {
-                if (settled) {
-                  return;
-                }
-                // An empty producer is still a successful SSE response. Commit
-                // before ending, since the deferred header task will be skipped.
-                commitHeaders();
+              error: err => {
                 if (settled) {
                   return;
                 }
                 settled = true;
+                finalize();
+                endStream();
+                reject(err);
+              },
+              complete: () => {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                // An empty producer is still a successful SSE response. Commit
+                // before ending, since the deferred header task will be skipped.
+                stream.commitHeaders();
                 finalize();
                 endStream();
                 resolve();
@@ -271,11 +257,20 @@ export class RouterResponseController {
           // than waiting for the first Observable emission.
           setTimeout(() => {
             if (!settled) {
-              commitHeaders();
+              stream.commitHeaders();
             }
           }, 0);
         })
-        .catch(fail);
+        .catch(err => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          finalize();
+          endStream();
+          reject(err);
+        });
     });
   }
 

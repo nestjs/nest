@@ -134,8 +134,7 @@ export class SseStream extends Transform {
   /**
    * Writes SSE headers to the destination if they have not been sent yet.
    * The sources are read here, not in `pipe()`, to pick up the values that
-   * interceptors and handlers set after piping. A source that throws leaves
-   * the headers uncommitted so the caller can still fail the response.
+   * interceptors and handlers set after piping.
    */
   commitHeaders(): void {
     if (

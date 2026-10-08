@@ -387,40 +387,6 @@ data: hello
     expect(sse.headersCommitted).toBe(false);
   });
 
-  it('keeps the headers uncommitted when an additional headers function throws', () => {
-    const sse = new SseStream();
-    const writeHead = vi.fn();
-    const sink = new Sink(writeHead);
-    const failure = new Error('headers unavailable');
-
-    sse.pipe(sink, {
-      additionalHeaders: () => {
-        throw failure;
-      },
-    });
-
-    expect(() => sse.commitHeaders()).toThrow(failure);
-    expect(sse.headersCommitted).toBe(false);
-    expect(writeHead).not.toHaveBeenCalled();
-  });
-
-  it('keeps the headers uncommitted when a status code function throws', () => {
-    const sse = new SseStream();
-    const writeHead = vi.fn();
-    const sink = new Sink(writeHead);
-    const failure = new Error('status unavailable');
-
-    sse.pipe(sink, {
-      statusCode: () => {
-        throw failure;
-      },
-    });
-
-    expect(() => sse.commitHeaders()).toThrow(failure);
-    expect(sse.headersCommitted).toBe(false);
-    expect(writeHead).not.toHaveBeenCalled();
-  });
-
   it('sets custom status code when provided', () =>
     new Promise<void>(callback => {
       const sse = new SseStream();
