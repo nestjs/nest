@@ -283,6 +283,7 @@ The following is the list of supported scopes:
 - **microservices**: for changes made on `packages/microservices` directory
 - **express**: for changes made on `packages/platform-express` directory
 - **fastify**: for changes made on `packages/platform-fastify` directory
+- **node**: for changes made on `packages/platform-node` directory
 - **socket.io**: for changes made on `packages/platform-socket.io` directory
 - **ws**: for changes made on `packages/platform-ws` directory
 - **testing**: for changes made on `packages/testing` directory
