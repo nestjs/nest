@@ -85,7 +85,7 @@
     "@as-integrations/express5": "1.1.2",
     "@commitlint/cli": "21.2.3",
     "@commitlint/config-angular": "21.2.3",
-    "@fastify/cors": "11.3.0",
+    "@fastify/cors": "11.3.1",
     "@fastify/formbody": "9.0.0",
     "@fastify/middie": "9.3.4",
     "@fastify/multipart": "10.1.2",
