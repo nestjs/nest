@@ -27,12 +27,16 @@ interface FallbackRoute {
   seq: number;
 }
 
+/**
+ * Longest (decoded) route parameter a route matches, as with Fastify: a
+ * request whose parameter is longer falls through to the next matching route,
+ * if any, or gets a 404. Wildcards are not limited.
+ */
+export const MAX_PARAM_LENGTH = 100;
+
 const ROUTER_OPTIONS = {
   ignoreTrailingSlash: true,
-  // find-my-way does not match parameters longer than 100 characters by
-  // default; Express has no limit (the URL is bounded by Node's header size
-  // limit anyway)
-  maxParamLength: Number.MAX_SAFE_INTEGER,
+  maxParamLength: MAX_PARAM_LENGTH,
 };
 
 const PARAM_NAME = /^[A-Za-z_$][\w$]*$/;
@@ -40,6 +44,18 @@ const UNSAFE_TEXT = /[*?(]/;
 
 function decodeParam(value: string) {
   return decodeURIComponent(value);
+}
+
+// The limit find-my-way applies to the routes it matches, for the routes
+// matched with path-to-regexp (wildcards are arrays there)
+function exceedsMaxParamLength(params: Record<string, any>) {
+  for (const key in params) {
+    const value = params[key];
+    if (typeof value === 'string' && value.length > MAX_PARAM_LENGTH) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -291,7 +307,7 @@ export class RouteTable {
         continue;
       }
       const result = route.matcher(path);
-      if (!result) {
+      if (!result || exceedsMaxParamLength(result.params)) {
         continue;
       }
       if (found === null) {
