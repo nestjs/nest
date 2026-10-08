@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { EMPTY } from 'rxjs';
+import { EMPTY, firstValueFrom } from 'rxjs';
 import { ClientRMQ } from '../../client/client-rmq.js';
 import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { RmqRecord } from '../../record-builders/index.js';
@@ -331,6 +331,36 @@ describe('ClientRMQ', function () {
     });
   });
 
+  describe('consumeChannel reply consumer', () => {
+    let rmqClient: ClientRMQ;
+    let responseEmitter: EventEmitter;
+    let emitSpy: ReturnType<typeof vi.spyOn>;
+    let onMessage: (msg: unknown) => void;
+
+    beforeEach(async () => {
+      rmqClient = new ClientRMQ({});
+      responseEmitter = new EventEmitter();
+      emitSpy = vi.spyOn(responseEmitter, 'emit');
+      Object.assign(rmqClient, { responseEmitter });
+      const consumingChannel = {
+        consume: vi.fn().mockImplementation((_, callback) => {
+          onMessage = callback;
+        }),
+      };
+
+      await rmqClient.consumeChannel(consumingChannel as any);
+    });
+
+    it('should forward a message to the request waiting for it', () => {
+      const msg = { properties: { correlationId: 'id' }, content: 'content' };
+
+      onMessage(msg);
+
+      expect(emitSpy).toHaveBeenCalledTimes(1);
+      expect(emitSpy).toHaveBeenCalledWith(msg.properties.correlationId, msg);
+    });
+  });
+
   describe('setupChannel', () => {
     const queue = 'test';
     const exchange = 'test.exchange';
@@ -603,6 +633,94 @@ describe('ClientRMQ', function () {
           err: undefined,
           response: packet.response,
         });
+      });
+    });
+
+    describe('when the deserializer fails', () => {
+      const error = new TypeError('Cannot read properties of undefined');
+      const createClientWith = (deserialize: () => unknown) => {
+        const rmqClient = new ClientRMQ({});
+        Object.assign(rmqClient, { deserializer: { deserialize } });
+        return rmqClient;
+      };
+
+      it('should fail the request when the deserializer throws', async () => {
+        const rmqClient = createClientWith(() => {
+          throw error;
+        });
+        const callback = vi.fn();
+
+        await expect(
+          rmqClient.handleMessage({}, callback),
+        ).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({ err: error, isDisposed: true });
+      });
+
+      it('should fail the request when the deserializer rejects', async () => {
+        const rmqClient = createClientWith(() => Promise.reject(error));
+        const callback = vi.fn();
+
+        await expect(
+          rmqClient.handleMessage({}, callback),
+        ).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({ err: error, isDisposed: true });
+      });
+
+      it('should pass the options to the deserializer', async () => {
+        const deserialize = vi.fn().mockReturnValue({ response: 'res' });
+        const rmqClient = createClientWith(deserialize);
+        const packet = { content: 'packet' };
+        const options = { correlationId: 'id' };
+
+        await rmqClient.handleMessage(packet, options, vi.fn());
+
+        expect(deserialize).toHaveBeenCalledWith(packet, options);
+      });
+
+      it('should not report a failing callback as an undecodable response', async () => {
+        const rmqClient = createClientWith(() => ({ response: 'res' }));
+        const callbackError = new Error('callback failed');
+        const callback = vi.fn().mockImplementation(() => {
+          throw callbackError;
+        });
+
+        await expect(rmqClient.handleMessage({}, callback)).rejects.toBe(
+          callbackError,
+        );
+
+        expect(callback).toHaveBeenCalledTimes(1);
+      });
+
+      it('should fail the request and clear its routing entry when the reply cannot be deserialized', async () => {
+        const rmqClient = createClientWith(() => {
+          throw error;
+        });
+        const routingMap: Map<string, unknown> = Reflect.get(
+          rmqClient,
+          'routingMap',
+        );
+        const responseEmitter = new EventEmitter();
+        Object.assign(rmqClient, {
+          responseEmitter,
+          channel: { sendToQueue: vi.fn(() => ({ catch: vi.fn() })) },
+        });
+        vi.spyOn(rmqClient, 'connect').mockResolvedValue(undefined);
+
+        const response = firstValueFrom(rmqClient.send('test', 'data'));
+        await vi.waitFor(() => expect(routingMap.size).toBe(1));
+        const [correlationId] = routingMap.keys();
+        responseEmitter.emit(correlationId, {
+          content: Buffer.from('{}'),
+          options: {},
+        });
+
+        await expect(response).rejects.toBe(error);
+        expect(routingMap.size).toBe(0);
+        expect(responseEmitter.listenerCount(correlationId)).toBe(0);
       });
     });
   });

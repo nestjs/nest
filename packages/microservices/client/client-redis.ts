@@ -4,7 +4,12 @@ import {
   RedisEventsMap,
   RedisStatus,
 } from '../events/redis.events.js';
-import { ReadPacket, RedisOptions, WritePacket } from '../interfaces/index.js';
+import {
+  IncomingResponse,
+  ReadPacket,
+  RedisOptions,
+  WritePacket,
+} from '../interfaces/index.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/internal';
@@ -298,8 +303,19 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         );
         packet = buffer;
       }
-      const { err, response, isDisposed, id } =
-        await this.deserializer.deserialize(packet);
+      let incomingResponse: IncomingResponse;
+      try {
+        incomingResponse = await this.deserializer.deserialize(packet);
+      } catch (error) {
+        // Only the deserializer knows the id, so no request can be failed here.
+        // Nobody awaits this listener, so a rejection would crash the process.
+        this.logger.error(
+          `Dropped a response that the deserializer failed on: ${error}`,
+          (error as Error)?.stack,
+        );
+        return;
+      }
+      const { err, response, isDisposed, id } = incomingResponse;
 
       const callback = this.routingMap.get(id);
       if (!callback) {

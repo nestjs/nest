@@ -135,6 +135,73 @@ describe('ClientTCP', () => {
         });
       });
     });
+    describe('when the deserializer fails', () => {
+      const error = new TypeError('Cannot read properties of undefined');
+      let logError: ReturnType<typeof vi.spyOn>;
+      let callback: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        logError = vi
+          .spyOn(untypedClient.logger, 'error')
+          .mockImplementation(() => {});
+        callback = vi.fn();
+        client['routingMap'].set('1', callback);
+      });
+
+      it('should log the error and resolve when the deserializer throws', async () => {
+        untypedClient.deserializer = {
+          deserialize: () => {
+            throw error;
+          },
+        };
+
+        await expect(client.handleResponse({})).resolves.toBeUndefined();
+
+        expect(logError).toHaveBeenCalledTimes(1);
+        expect(logError).toHaveBeenCalledWith(
+          `Dropped a response that the deserializer failed on: ${error}`,
+          error.stack,
+        );
+      });
+
+      it('should log the error and resolve when the deserializer rejects', async () => {
+        untypedClient.deserializer = {
+          deserialize: () => Promise.reject(error),
+        };
+
+        await expect(client.handleResponse({})).resolves.toBeUndefined();
+
+        expect(logError).toHaveBeenCalledTimes(1);
+        expect(logError).toHaveBeenCalledWith(
+          `Dropped a response that the deserializer failed on: ${error}`,
+          error.stack,
+        );
+      });
+
+      it('should leave the pending request untouched', async () => {
+        untypedClient.deserializer = {
+          deserialize: () => Promise.reject(error),
+        };
+
+        await client.handleResponse({});
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(client['routingMap'].get('1')).toBe(callback);
+      });
+
+      it('should not report a failing callback as an undecodable response', async () => {
+        const callbackError = new Error('callback failed');
+        callback.mockImplementation(() => {
+          throw callbackError;
+        });
+
+        await expect(
+          client.handleResponse({ id: '1', response: 'res' }),
+        ).rejects.toBe(callbackError);
+
+        expect(logError).not.toHaveBeenCalled();
+      });
+    });
   });
   describe('connect', () => {
     let registerConnectListenerSpy: ReturnType<typeof vi.fn>;

@@ -347,6 +347,84 @@ describe('ClientMqtt', () => {
         });
       });
     });
+    describe('response that cannot be deserialized', () => {
+      const error = new TypeError('Cannot read properties of undefined');
+      const buffer = Buffer.from(JSON.stringify(responseMessage));
+      let mqttClient: ClientMqtt;
+      let logError: ReturnType<typeof vi.spyOn>;
+      let pendingCallback: ReturnType<typeof vi.fn>;
+
+      const createResponseCallbackWith = (
+        deserialize: () => unknown,
+      ): ReturnType<ClientMqtt['createResponseCallback']> => {
+        mqttClient = new ClientMqtt({});
+        Object.assign(mqttClient, { deserializer: { deserialize } });
+        logError = vi
+          .spyOn(Reflect.get(mqttClient, 'logger'), 'error')
+          .mockImplementation(() => {});
+        pendingCallback = vi.fn();
+        Reflect.get(mqttClient, 'routingMap').set(
+          responseMessage.id,
+          pendingCallback,
+        );
+        return mqttClient.createResponseCallback();
+      };
+
+      it('should log the error and resolve when the deserializer throws', async () => {
+        const subscription = createResponseCallbackWith(() => {
+          throw error;
+        });
+
+        await expect(subscription('channel', buffer)).resolves.toBeUndefined();
+
+        expect(logError).toHaveBeenCalledTimes(1);
+        expect(logError).toHaveBeenCalledWith(
+          `Dropped a response that the deserializer failed on: ${error}`,
+          error.stack,
+        );
+      });
+
+      it('should log the error and resolve when the deserializer rejects', async () => {
+        const subscription = createResponseCallbackWith(() =>
+          Promise.reject(error),
+        );
+
+        await expect(subscription('channel', buffer)).resolves.toBeUndefined();
+
+        expect(logError).toHaveBeenCalledTimes(1);
+        expect(logError).toHaveBeenCalledWith(
+          `Dropped a response that the deserializer failed on: ${error}`,
+          error.stack,
+        );
+      });
+
+      it('should leave the pending request untouched', async () => {
+        const subscription = createResponseCallbackWith(() =>
+          Promise.reject(error),
+        );
+
+        await subscription('channel', buffer);
+
+        expect(pendingCallback).not.toHaveBeenCalled();
+        expect(
+          Reflect.get(mqttClient, 'routingMap').get(responseMessage.id),
+        ).toBe(pendingCallback);
+      });
+
+      it('should not report a failing callback as an undecodable response', async () => {
+        const callbackError = new Error('callback failed');
+        const subscription = createResponseCallbackWith(() => responseMessage);
+        pendingCallback.mockImplementation(() => {
+          throw callbackError;
+        });
+
+        await expect(subscription('channel', buffer)).rejects.toBe(
+          callbackError,
+        );
+
+        expect(logError).not.toHaveBeenCalled();
+      });
+    });
   });
   describe('close', () => {
     let endSpy: ReturnType<typeof vi.fn>;

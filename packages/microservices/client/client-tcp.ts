@@ -10,7 +10,12 @@ import {
 } from '../constants.js';
 import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events.js';
 import { JsonSocket, TcpSocket } from '../helpers/index.js';
-import { PacketId, ReadPacket, WritePacket } from '../interfaces/index.js';
+import {
+  IncomingResponse,
+  PacketId,
+  ReadPacket,
+  WritePacket,
+} from '../interfaces/index.js';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface.js';
 import { ClientProxy } from './client-proxy.js';
 
@@ -91,8 +96,19 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   }
 
   public async handleResponse(buffer: unknown): Promise<void> {
-    const { err, response, isDisposed, id } =
-      await this.deserializer.deserialize(buffer);
+    let incomingResponse: IncomingResponse;
+    try {
+      incomingResponse = await this.deserializer.deserialize(buffer);
+    } catch (error) {
+      // Only the deserializer knows the id, so no request can be failed here.
+      // Nobody awaits this listener, so a rejection would crash the process.
+      this.logger.error(
+        `Dropped a response that the deserializer failed on: ${error}`,
+        (error as Error)?.stack,
+      );
+      return;
+    }
+    const { err, response, isDisposed, id } = incomingResponse;
     const callback = this.routingMap.get(id);
     if (!callback) {
       return undefined;
