@@ -1,7 +1,7 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "fastify",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Fastify HTTP adapter with a global validation pipe",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

@@ -1,7 +1,7 @@
 {
-  "name": "nest-typescript-starter",
+  "name": "sequelize",
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Sequelize integration with MySQL via @nestjs/sequelize",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",

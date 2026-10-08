@@ -1,7 +1,7 @@
 {
-  "name": "auth-sample",
+  "name": "auth-jwt",
   "version": "0.0.1",
-  "description": "",
+  "description": "JWT authentication with a global guard and a @Public() decorator",
   "author": "",
   "license": "MIT",
   "scripts": {
