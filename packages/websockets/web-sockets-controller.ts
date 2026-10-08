@@ -495,7 +495,11 @@ export class WebSocketsController {
           );
           this.exceptionFiltersCache.set(targetCallback, exceptionFilter);
         }
-        const host = new ExecutionContextHost(args);
+        // Client first, data second and the pattern last, as for message
+        // handlers. With the raw hook arguments, the filter would send the last
+        // one (the socket itself with socket.io, the upgrade request with ws)
+        // back to the client as the pattern.
+        const host = new ExecutionContextHost([client, undefined, methodName]);
         host.setType('ws');
         exceptionFilter.handle(err as Error, host);
       } finally {

@@ -754,6 +754,51 @@ describe('WebSocketsController', () => {
         expect.anything(),
       );
     });
+
+    it('should pass the client and the hook name to the exception filter', async () => {
+      const client = {};
+      const upgradeRequest = { url: '/' };
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        isDependencyTreeStatic: () => false,
+        instance: {
+          handleConnection() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const moduleRef = {
+        providers: new Map(),
+      } as Module;
+      const exceptionFilter = { handle: vi.fn() };
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      } as never);
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      const handler = instance.createRequestScopedEventHandler(
+        gatewayWrapper,
+        moduleRef,
+        'moduleKey',
+        'handleConnection',
+        {},
+      );
+
+      await handler(client, upgradeRequest);
+
+      const host = exceptionFilter.handle.mock.calls[0][1];
+      expect(host.getArgs()).toEqual([client, undefined, 'handleConnection']);
+      expect(host.switchToWs().getClient()).toBe(client);
+      expect(host.switchToWs().getData()).toBeUndefined();
+      expect(host.switchToWs().getPattern()).toBe('handleConnection');
+    });
   });
   describe('getConnectionHandler', () => {
     const gateway = new Test();
