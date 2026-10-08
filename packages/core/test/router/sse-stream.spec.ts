@@ -293,6 +293,100 @@ data: hello
       sse.writeMessage({ data: 'trigger' }, noop);
     }));
 
+  it('keeps the event stream content type over an additional one', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(headers['Content-Type']).toBe('text/event-stream');
+          callback();
+          return sink;
+        },
+      );
+
+      sse.pipe(sink, {
+        additionalHeaders: { 'Content-Type': 'application/json' },
+      });
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
+  it('drops an additional header that differs from an event stream header only in case', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          const names = Object.keys(headers).map(name => name.toLowerCase());
+          expect(new Set(names).size).toBe(names.length);
+          callback();
+          return sink;
+        },
+      );
+
+      sse.pipe(sink, {
+        additionalHeaders: {
+          'content-type': 'application/json',
+          'CACHE-CONTROL': 'public',
+        },
+      });
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
+  it('reads additional headers when the headers are committed', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(headers['x-late']).toBe('set');
+          callback();
+          return sink;
+        },
+      );
+      const replyHeaders: Record<string, string> = {};
+
+      sse.pipe(sink, { additionalHeaders: () => replyHeaders });
+      replyHeaders['x-late'] = 'set';
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
+  it('reads the status code when the headers are committed', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(status).toBe(202);
+          callback();
+          return sink;
+        },
+      );
+      let replyStatus = 200;
+
+      sse.pipe(sink, { statusCode: () => replyStatus });
+      replyStatus = 202;
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
+  it('defaults to 200 when the status code function returns nothing', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(status).toBe(200);
+          callback();
+          return sink;
+        },
+      );
+
+      sse.pipe(sink, { statusCode: () => undefined });
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
+  it('does not throw when committing before it is piped', () => {
+    const sse = new SseStream();
+
+    expect(() => sse.commitHeaders()).not.toThrow();
+    expect(sse.headersCommitted).toBe(false);
+  });
+
   it('sets custom status code when provided', () =>
     new Promise<void>(callback => {
       const sse = new SseStream();

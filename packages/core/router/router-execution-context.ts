@@ -493,10 +493,8 @@ export class RouterExecutionContext {
           rawResponse,
           (req as any).raw || req,
           {
-            additionalHeaders: res.getHeaders?.(),
-            statusCode:
-              (res as { statusCode?: number }).statusCode ??
-              (rawResponse as { statusCode?: number }).statusCode,
+            additionalHeaders: () => res.getHeaders?.(),
+            statusCode: () => res.statusCode ?? rawResponse.statusCode,
           },
         );
       };

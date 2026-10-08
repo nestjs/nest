@@ -10,7 +10,8 @@ import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
 import { catchError, concatMap, map } from 'rxjs/operators';
 import {
-  AdditionalHeaders,
+  AdditionalHeadersSource,
+  StatusCodeSource,
   WritableHeaderStream,
   SseStream,
 } from './sse-stream.js';
@@ -109,8 +110,8 @@ export class RouterResponseController {
     response: TResponse,
     request: TRequest,
     options?: {
-      additionalHeaders?: AdditionalHeaders;
-      statusCode?: number;
+      additionalHeaders?: AdditionalHeadersSource;
+      statusCode?: StatusCodeSource;
     },
   ) {
     // It's possible that we sent headers already so don't use a stream
@@ -124,10 +125,6 @@ export class RouterResponseController {
     }
 
     const stream = new SseStream(request);
-    const statusCode =
-      options?.statusCode ??
-      (response as { statusCode?: number }).statusCode ??
-      200;
 
     // Create a per-request AbortController and expose its signal on the request
     // object so async @Sse() handlers can observe client disconnects (via the
@@ -190,7 +187,7 @@ export class RouterResponseController {
 
           stream.pipe(response, {
             additionalHeaders: options?.additionalHeaders,
-            statusCode,
+            statusCode: options?.statusCode ?? (() => response.statusCode),
           });
 
           subscription = observableResult
