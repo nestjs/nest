@@ -54,7 +54,9 @@ export type NodePoisoningAction = 'error' | 'remove' | 'ignore';
  */
 export interface NodePrototypePoisoningOptions {
   /**
-   * Action for `"__proto__"` keys. Defaults to `'error'`.
+   * Action for `"__proto__"` keys. Defaults to `'error'`. In urlencoded
+   * bodies, `qs` drops these keys itself, so `'remove'` and `'ignore'` both
+   * leave them out there.
    */
   onProtoPoisoning?: NodePoisoningAction;
   /**
@@ -125,8 +127,8 @@ const UNITS: Record<string, number> = {
   gb: 1 << 30,
 };
 
-function parseLimit(limit: number | string | undefined): number {
-  if (limit === undefined) {
+function parseLimit(limit: number | string | null | undefined): number {
+  if (limit === undefined || limit === null) {
     return 100 * 1024;
   }
   if (typeof limit === 'number') {
@@ -271,10 +273,12 @@ function createReader(
   name: string,
 ): Middleware {
   const reader: Middleware = (req, res, next) => {
-    // Nothing to read, already read by another parser, or not our type
+    // Nothing to read, already read by another parser, a client that went
+    // away, or not our type
     if (
       !hasBody(req) ||
       req.readableEnded ||
+      req.destroyed ||
       req.body !== undefined ||
       !options.matchesType(req)
     ) {
@@ -373,14 +377,7 @@ function createReader(
         try {
           options.verify(req, res, buffer, charset);
         } catch (error) {
-          return next(
-            Object.assign(error, {
-              status: 403,
-              statusCode: 403,
-              expose: true,
-              type: 'entity.verify.failed',
-            }),
-          );
+          return next(toVerifyError(error, buffer));
         }
       }
       try {
@@ -390,11 +387,24 @@ function createReader(
       }
       next();
     };
+    const aborted = () =>
+      createHttpError(400, 'request aborted', 'request.aborted', {
+        code: 'ECONNABORTED',
+        expected: length,
+        length,
+        received,
+      });
     const onError = (error: Error) =>
-      fail(createHttpError(400, error.message, 'stream.error', {}, Error));
+      fail(
+        // Node.js destroys the request with an "aborted" error when the
+        // client goes away mid-body
+        req.destroyed && !req.complete
+          ? aborted()
+          : createHttpError(400, error.message, 'stream.error', {}, Error),
+      );
     const onClose = () => {
       if (!req.complete) {
-        fail(createHttpError(400, 'request aborted', 'request.aborted'));
+        fail(aborted());
       }
     };
 
@@ -410,6 +420,24 @@ function createReader(
 }
 
 function noop() {}
+
+// As with body-parser: a status the error carries wins over the 403
+function toVerifyError(error: unknown, buffer: Buffer) {
+  const failure =
+    error instanceof Error
+      ? error
+      : new Error(String(error ?? 'verify failed'));
+  const errorStatus =
+    (failure as any).status || (failure as any).statusCode || 403;
+  const status = errorStatus >= 400 && errorStatus < 600 ? errorStatus : 403;
+  return Object.assign(failure, {
+    status,
+    statusCode: status,
+    expose: status < 500,
+    type: (failure as any).type || 'entity.verify.failed',
+    body: buffer,
+  });
+}
 
 /**
  * Reads off the rest of the request, so that the connection can be reused,
@@ -453,8 +481,11 @@ function toParseError(error: Error, text: string) {
 function decode(buffer: Buffer, charset: string): string {
   switch (charset) {
     case 'utf-8':
-    case 'utf8':
-      return buffer.toString('utf8');
+    case 'utf8': {
+      const text = buffer.toString('utf8');
+      // Without the byte order mark, as body-parser (and TextDecoder) do
+      return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+    }
     case 'us-ascii':
     case 'ascii':
     case 'latin1':
@@ -524,15 +555,17 @@ export function json(options?: NodeJsonParserOptions): Middleware {
     ),
     (buffer, charset) => {
       const text = decode(buffer, charset);
-      const first = firstNonWhitespaceChar(text);
-      if (first === undefined) {
+      if (text.length === 0) {
         // An empty body is a common client-side mistake
         return {};
       }
+      const first = firstNonWhitespaceChar(text);
       if (strict && first !== '{' && first !== '[') {
         throw createHttpError(
           400,
-          `Unexpected token '${first}', "${text.slice(0, 20)}" is not valid JSON`,
+          first === undefined
+            ? 'Unexpected end of JSON input'
+            : `Unexpected token '${first}', "${text.slice(0, 20)}" is not valid JSON`,
           'entity.parse.failed',
           { body: text },
           SyntaxError,
@@ -550,6 +583,9 @@ export function json(options?: NodeJsonParserOptions): Middleware {
   );
 }
 
+// A "__proto__" segment in a key "qs" parses with brackets ("a[__proto__]")
+const PROTO_KEY = /(?:^|\[)__proto__(?:$|[[\]])/;
+
 /**
  * Parses `application/x-www-form-urlencoded` bodies into `req.body`, with
  * `qs` (nested objects and arrays with `extended: true`), like
@@ -564,8 +600,42 @@ export function urlencoded(options?: NodeUrlencodedParserOptions): Middleware {
     extended &&
     (poisoningActions.protoAction !== 'ignore' ||
       poisoningActions.constructorAction !== 'ignore');
-  const parameterLimit = options?.parameterLimit ?? 1000;
-  const depth = extended ? (options?.depth ?? 32) : 0;
+  let parameterLimit = options?.parameterLimit ?? 1000;
+  if (isNaN(parameterLimit) || parameterLimit < 1) {
+    throw new TypeError('option parameterLimit must be a positive number');
+  }
+  if (Number.isFinite(parameterLimit)) {
+    parameterLimit = parameterLimit | 0;
+  }
+  let depth = extended ? (options?.depth ?? 32) : 0;
+  if (isNaN(depth) || depth < 0) {
+    throw new TypeError('option depth must be a zero or a positive number');
+  }
+  if (Number.isFinite(depth)) {
+    depth = depth | 0;
+  }
+  // "qs" silently drops "__proto__" keys; with 'error', reject them as the
+  // JSON parser does
+  const decoder =
+    poisoningActions.protoAction === 'error'
+      ? (
+          value: string,
+          defaultDecoder: (value: string, ...args: any[]) => string,
+          charset: string,
+          type: 'key' | 'value',
+        ) => {
+          const decoded = defaultDecoder(value, defaultDecoder, charset);
+          if (
+            type === 'key' &&
+            (extended ? PROTO_KEY.test(decoded) : decoded === '__proto__')
+          ) {
+            throw new SyntaxError(
+              'Object contains forbidden prototype property',
+            );
+          }
+          return decoded;
+        }
+      : undefined;
   return createReader(
     toReaderOptions(
       options,
@@ -594,6 +664,7 @@ export function urlencoded(options?: NodeUrlencodedParserOptions): Middleware {
           arrayLimit: extended ? Math.max(100, parameterCount) : parameterCount,
           depth,
           charset: charset === 'iso-8859-1' ? 'iso-8859-1' : 'utf-8',
+          decoder,
           parameterLimit,
           strictDepth: true,
         });

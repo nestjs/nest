@@ -161,6 +161,9 @@ export class NodeAdapter extends AbstractHttpAdapter<
       response.statusCode = statusCode;
     }
     if (isNil(body)) {
+      if (endWithoutBody(response)) {
+        return;
+      }
       return response.end();
     }
     if (body instanceof StreamableFile) {
@@ -571,6 +574,9 @@ export class NodeAdapter extends AbstractHttpAdapter<
   }
 
   public mapException(error: unknown): unknown {
+    if (error instanceof HttpException) {
+      return error;
+    }
     // SyntaxError is thrown by the JSON body parser when given invalid JSON,
     // URIError
     // when a path parameter has an invalid percent-encoding (e.g. "%FF")
@@ -700,7 +706,9 @@ export class NodeAdapter extends AbstractHttpAdapter<
         response.statusCode = statusCode;
       },
       send: (body: string) => {
+        // Replaces the headers describing the file (its length, notably)
         response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        response.setHeader('Content-Length', Buffer.byteLength(body));
         response.end(body);
       },
       end: () => response.end(),

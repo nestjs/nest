@@ -53,11 +53,11 @@ function invoke(
     if (result !== undefined && typeof result?.then === 'function') {
       // As in Express 5: a rejected promise is forwarded to the error handlers
       result.then(undefined, (reason: unknown) =>
-        next(reason ?? new Error('Rejected promise')),
+        next(reason || new Error('Rejected promise')),
       );
     }
   } catch (error) {
-    next(error ?? new Error('Thrown nullish value'));
+    next(error || new Error('Thrown falsy value'));
   }
 }
 
@@ -288,7 +288,9 @@ export class NodeRouter {
     const parentBaseUrl = req.baseUrl;
 
     const next: NextFunction = (err?: any) => {
-      if (err === 'route' || err === 'router') {
+      // As with Express, a falsy value is no error: callbacks commonly
+      // pass on their "null" error ("cb(err => next(err))")
+      if (!err || err === 'route' || err === 'router') {
         err = undefined;
       }
       if (removed) {

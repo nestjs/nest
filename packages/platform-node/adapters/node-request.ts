@@ -1,5 +1,7 @@
 import { IncomingMessage, ServerResponse, STATUS_CODES } from 'http';
 import { parse as parseQueryString } from 'fast-querystring';
+import { contentType as lookupContentType } from 'mime-types';
+import { getRoutingPath } from '../router/utils.js';
 
 const QUERY = Symbol('query');
 
@@ -58,12 +60,20 @@ export class NodeRequest extends IncomingMessage {
   }
 
   /**
-   * Path name of `url` (without the query string).
+   * Path of `url`, as the router matches it: the path of an absolute-form
+   * target, percent-decoded except for reserved characters such as "%2F",
+   * without the query string. Unlike Express' `req.path`, which keeps the
+   * percent-encoding, a middleware checking it sees the path the routes see.
    */
   get path(): string {
     const url = this.url!;
-    const index = url.indexOf('?');
-    return index === -1 ? url : url.slice(0, index);
+    try {
+      return getRoutingPath(url);
+    } catch {
+      // A malformed URL, which reaches no route (see NodeRouter)
+      const index = url.indexOf('?');
+      return index === -1 ? url : url.slice(0, index);
+    }
   }
 
   /**
@@ -104,7 +114,7 @@ export class NodeRequest extends IncomingMessage {
   get(name: string): string | string[] | undefined {
     const lowerCaseName = name.toLowerCase();
     if (lowerCaseName === 'referer' || lowerCaseName === 'referrer') {
-      return this.headers.referer ?? this.headers.referrer;
+      return this.headers.referrer || this.headers.referer;
     }
     return this.headers[lowerCaseName];
   }
@@ -178,14 +188,15 @@ export class NodeResponse<
   }
 
   /**
-   * Sets the `Content-Type` header. Chainable.
+   * Sets the `Content-Type` header, given a MIME type or, as with Express, a
+   * file extension (`'json'`, `'.html'`, `'png'`). Chainable.
    */
-  type(contentType: string): this {
+  type(type: string): this {
     this.setHeader(
       'Content-Type',
-      contentType.includes('/')
-        ? contentType
-        : (MIME_TYPES[contentType] ?? 'application/octet-stream'),
+      type.includes('/')
+        ? type
+        : lookupContentType(type) || 'application/octet-stream',
     );
     return this;
   }
@@ -200,7 +211,12 @@ export class NodeResponse<
     if (!this.hasHeader('Content-Type')) {
       this.setHeader('Content-Type', 'application/json; charset=utf-8');
     }
-    this.end(JSON.stringify(body));
+    const text = JSON.stringify(body);
+    if (text === undefined) {
+      this.end();
+    } else {
+      endWithBody(this, text);
+    }
     return this;
   }
 
@@ -219,12 +235,12 @@ export class NodeResponse<
       if (!this.hasHeader('Content-Type')) {
         this.setHeader('Content-Type', 'text/plain; charset=utf-8');
       }
-      this.end(body);
+      endWithBody(this, body);
     } else if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
       if (!this.hasHeader('Content-Type')) {
         this.setHeader('Content-Type', 'application/octet-stream');
       }
-      this.end(body);
+      endWithBody(this, body);
     } else if (typeof body === 'object') {
       return this.json(body);
     } else {
@@ -239,9 +255,18 @@ export class NodeResponse<
   sendStatus(statusCode: number): this {
     this.statusCode = statusCode;
     this.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    this.end(STATUS_CODES[statusCode] ?? String(statusCode));
-    return this;
+    return this.send(STATUS_CODES[statusCode] ?? String(statusCode));
   }
+}
+
+// With an explicit "Content-Length", which Node.js leaves out in answer to
+// HEAD requests otherwise
+function endWithBody(response: ServerResponse, body: string | Uint8Array) {
+  response.setHeader(
+    'Content-Length',
+    typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength,
+  );
+  response.end(body);
 }
 
 /**
@@ -265,14 +290,3 @@ export function endWithoutBody(response: ServerResponse): boolean {
   response.end();
   return true;
 }
-
-const MIME_TYPES: Record<string, string> = Object.assign(Object.create(null), {
-  html: 'text/html; charset=utf-8',
-  text: 'text/plain; charset=utf-8',
-  txt: 'text/plain; charset=utf-8',
-  json: 'application/json; charset=utf-8',
-  xml: 'application/xml',
-  js: 'text/javascript; charset=utf-8',
-  css: 'text/css; charset=utf-8',
-  bin: 'application/octet-stream',
-});
