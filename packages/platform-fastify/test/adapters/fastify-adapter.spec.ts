@@ -580,6 +580,32 @@ describe('FastifyAdapter', () => {
         .spyOn(fastifyAdapter.getInstance(), 'listen')
         .mockResolvedValue('listening');
 
+    it.each([70000, -1, 1.5, '70000', { port: 65536 }])(
+      'should throw instead of listening on the invalid port %j',
+      port => {
+        const listen = spyOnListen();
+
+        expect(() => fastifyAdapter.listen(port as any)).toThrow(
+          expect.objectContaining({
+            name: 'RangeError',
+            code: 'ERR_SOCKET_BAD_PORT',
+          }),
+        );
+        expect(listen).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([0, 3000, '3000', { port: 65535 }, { host: 'localhost' }])(
+      'should listen on the valid port %j',
+      port => {
+        const listen = spyOnListen();
+
+        fastifyAdapter.listen(port as any);
+
+        expect(listen).toHaveBeenCalledOnce();
+      },
+    );
+
     it('should listen on a string that is not a number as a path', () => {
       const listen = spyOnListen();
 
