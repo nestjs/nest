@@ -20,23 +20,23 @@ export class KafkaRequestSerializer implements Serializer<
   any,
   KafkaRequest | Promise<KafkaRequest>
 > {
-  serialize(value: any) {
+  serialize(value: any): any {
     const isNotKafkaMessage =
       isNil(value) ||
       !isObject(value) ||
       (!('key' in value) && !('value' in value));
 
-    if (isNotKafkaMessage) {
-      value = { value };
+    // Serialize a copy, headers included: ClientKafka and ServerKafka write
+    // correlation metadata into the returned headers, and the caller's record
+    // may be frozen, reused or sent concurrently.
+    const record = (isNotKafkaMessage ? { value } : value) as KafkaRequest;
+    const request: KafkaRequest = { ...record, headers: { ...record.headers } };
+
+    request.value = this.encode(request.value);
+    if (!isNil(request.key)) {
+      request.key = this.encode(request.key);
     }
-    value.value = this.encode(value.value);
-    if (!isNil(value.key)) {
-      value.key = this.encode(value.key);
-    }
-    if (isNil(value.headers)) {
-      value.headers = {};
-    }
-    return value;
+    return request;
   }
 
   public encode(value: any): Buffer | string | null {
