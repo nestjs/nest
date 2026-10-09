@@ -7,6 +7,7 @@
 import 'reflect-metadata';
 
 export * from './adapters/index.js';
+export { WS_PATH_PARAMS } from './constants.js';
 export * from './decorators/index.js';
 export * from './errors/index.js';
 export * from './exceptions/index.js';

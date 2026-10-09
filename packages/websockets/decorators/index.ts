@@ -4,3 +4,4 @@ export * from './message-body.decorator.js';
 export * from './socket-gateway.decorator.js';
 export * from './subscribe-message.decorator.js';
 export * from './ack.decorator.js';
+export * from './ws-param.decorator.js';
