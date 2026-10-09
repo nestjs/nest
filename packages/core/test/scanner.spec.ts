@@ -13,6 +13,7 @@ import {
 } from '../constants.js';
 import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-module.exception.js';
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception.js';
+import { RequestScopedGlobalEnhancerException } from '../errors/exceptions/request-scoped-global-enhancer.exception.js';
 import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception.js';
 import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
@@ -491,6 +492,53 @@ describe('DependenciesScanner', () => {
           expect(addInjectableSpy).toHaveBeenCalled();
         });
       });
+      describe('and is global and aliases a request-scoped class', () => {
+        @Injectable({ scope: Scope.REQUEST })
+        class ScopedGuard {}
+
+        const provider = {
+          provide: APP_GUARD,
+          useExisting: ScopedGuard,
+        };
+        it('should call container "addInjectable" with the scope of the class', () => {
+          const addInjectableSpy = vi
+            .spyOn(container, 'addInjectable')
+            .mockImplementation(() => false as any);
+
+          scanner.insertProvider(provider, token);
+
+          expect(addInjectableSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              useExisting: ScopedGuard,
+              scope: Scope.REQUEST,
+            }),
+            token,
+            'guard',
+          );
+          expect(untypedScanner.applicationProvidersApplyMap[0].scope).toBe(
+            Scope.REQUEST,
+          );
+        });
+      });
+      describe('and is global and aliases a default-scoped class', () => {
+        @Injectable()
+        class StaticGuard {}
+
+        it('should call container "addProvider"', () => {
+          const addProviderSpy = vi
+            .spyOn(container, 'addProvider')
+            .mockImplementation(() => false as any);
+          const addInjectableSpy = vi.spyOn(container, 'addInjectable');
+
+          scanner.insertProvider(
+            { provide: APP_GUARD, useExisting: StaticGuard },
+            token,
+          );
+
+          expect(addProviderSpy).toHaveBeenCalled();
+          expect(addInjectableSpy).not.toHaveBeenCalled();
+        });
+      });
       describe('and is not global', () => {
         const component = {
           provide: 'CUSTOM',
@@ -553,6 +601,77 @@ describe('DependenciesScanner', () => {
       expect(applySpy).toHaveBeenCalled();
       expect(applySpy).toHaveBeenCalledWith(expectedInstance);
       expect(insertAttachedEnhancerStub).toHaveBeenCalledWith(instanceWrapper);
+    });
+    describe('when a provider has no instance because it depends on a request-scoped provider', () => {
+      class AuthGuard {}
+
+      const mockWrapper = (wrapper: Partial<InstanceWrapper>) => {
+        untypedScanner.applicationProvidersApplyMap = [
+          {
+            moduleKey: 'moduleToken',
+            providerKey: 'providerToken',
+            type: APP_GUARD,
+          },
+        ];
+        vi.spyOn(container, 'getModules').mockImplementation(
+          () =>
+            ({
+              get: () => ({
+                providers: { get: () => wrapper },
+              }),
+            }) as any,
+        );
+        vi.spyOn(graphInspector, 'insertAttachedEnhancer').mockImplementation(
+          () => {},
+        );
+      };
+
+      it('should throw for an alias', () => {
+        mockWrapper({
+          instance: null,
+          isAlias: true,
+          inject: [AuthGuard],
+          isDependencyTreeStatic: () => false,
+        });
+
+        expect(() => scanner.applyApplicationProviders()).toThrow(
+          new RequestScopedGlobalEnhancerException(
+            APP_GUARD,
+            'useExisting: AuthGuard',
+            true,
+          ),
+        );
+      });
+      it('should throw for a factory', () => {
+        mockWrapper({
+          instance: null,
+          isAlias: false,
+          inject: [AuthGuard],
+          isDependencyTreeStatic: () => false,
+        });
+
+        expect(() => scanner.applyApplicationProviders()).toThrow(
+          new RequestScopedGlobalEnhancerException(
+            APP_GUARD,
+            'useFactory',
+            false,
+          ),
+        );
+      });
+      it('should not throw for a static factory that returns nothing', () => {
+        mockWrapper({
+          instance: null,
+          isAlias: false,
+          isDependencyTreeStatic: () => true,
+        });
+        const applySpy = vi.fn();
+        vi.spyOn(scanner, 'getApplyProvidersMap').mockImplementation(() => ({
+          [APP_GUARD]: applySpy,
+        }));
+
+        expect(() => scanner.applyApplicationProviders()).not.toThrow();
+        expect(applySpy).toHaveBeenCalledWith(null);
+      });
     });
     it('should apply each globally scoped provider', () => {
       const provider = {

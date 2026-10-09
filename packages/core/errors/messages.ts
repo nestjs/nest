@@ -260,6 +260,17 @@ export const INVALID_CLASS_SCOPE_MESSAGE = (
     name || 'This class'
   } is marked as a scoped provider. Request and transient-scoped providers can't be used in combination with "get()" method. Please, use "resolve()" instead.`;
 
+export const REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE = (
+  enhancerToken: string,
+  provider: string,
+  isAlias: boolean,
+) =>
+  `The ${enhancerToken} provider (${provider}) depends on a request-scoped provider, so it would never run. ${
+    isAlias
+      ? `Point "useExisting" at a class marked with @Injectable({ scope: Scope.REQUEST }), or use a factory provider with "scope: Scope.REQUEST".`
+      : `Set "scope: Scope.REQUEST" on the factory provider.`
+  }`;
+
 export const UNKNOWN_REQUEST_MAPPING = (metatype: Type) => {
   const className = metatype.name;
   return className
