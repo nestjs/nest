@@ -145,4 +145,50 @@ describe('KafkaRequestSerializer', () => {
       });
     });
   });
+
+  describe('serialize without mutating the caller record', () => {
+    it('should not mutate the record passed in', async () => {
+      const record = {
+        key: '1',
+        value: { price: 100 },
+        headers: { tenant: 'custom' },
+      };
+
+      const result = await instance.serialize(record);
+
+      expect(result).not.toBe(record);
+      expect(result.headers).not.toBe(record.headers);
+      expect(result).toEqual({
+        key: '1',
+        value: '{"price":100}',
+        headers: { tenant: 'custom' },
+      });
+      expect(record).toEqual({
+        key: '1',
+        value: { price: 100 },
+        headers: { tenant: 'custom' },
+      });
+    });
+
+    it('should not mutate a record whose headers are not set', async () => {
+      const record = { value: { price: 100 } };
+
+      const result = await instance.serialize(record);
+
+      expect(record).toEqual({ value: { price: 100 } });
+      expect(result).toEqual({ value: '{"price":100}', headers: {} });
+    });
+
+    it('should hand back headers the client can safely extend', async () => {
+      const headers = { tenant: 'custom' };
+      const record = { value: 'string', headers };
+
+      const result = await instance.serialize(record);
+      // ClientKafka adds correlation metadata to the serialized
+      // packet's headers once serialization is done.
+      result.headers[KafkaHeaders.CORRELATION_ID] = '1234';
+
+      expect(headers).toEqual({ tenant: 'custom' });
+    });
+  });
 });

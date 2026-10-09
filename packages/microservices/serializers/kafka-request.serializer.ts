@@ -26,17 +26,24 @@ export class KafkaRequestSerializer implements Serializer<
       !isObject(value) ||
       (!('key' in value) && !('value' in value));
 
+    let request: KafkaRequest;
     if (isNotKafkaMessage) {
-      value = { value };
+      request = { value, headers: {} };
+    } else {
+      // The record is cloned, headers included, so that the encoding below
+      // and the correlation metadata ClientKafka writes into the headers of
+      // the serialized packet do not mutate the record the caller passed in
+      // (which it may reuse or retry).
+      request = {
+        ...value,
+        headers: isNil(value.headers) ? {} : { ...value.headers },
+      };
     }
-    value.value = this.encode(value.value);
-    if (!isNil(value.key)) {
-      value.key = this.encode(value.key);
+    request.value = this.encode(request.value);
+    if (!isNil(request.key)) {
+      request.key = this.encode(request.key);
     }
-    if (isNil(value.headers)) {
-      value.headers = {};
-    }
-    return value;
+    return request;
   }
 
   public encode(value: any): Buffer | string | null {
