@@ -43,6 +43,12 @@ describe('Listen (Fastify Application)', () => {
     });
   });
 
+  it('should reject if the port is out of range', async () => {
+    await expect(app.listen(70000)).rejects.toMatchObject({
+      code: 'ERR_SOCKET_BAD_PORT',
+    });
+  });
+
   it('should serve static assets registered before listen()', async () => {
     // `useStaticAssets()` discards what the adapter returns, so the plugin
     // has to reach fastify before the next statement runs.

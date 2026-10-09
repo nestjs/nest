@@ -473,7 +473,28 @@ export class FastifyAdapter<
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
     }
+    if (options.port !== undefined && !this.isValidPort(options.port)) {
+      // Fastify calls `server.listen()` from its ready callback, where the
+      // RangeError Node throws for a bad port becomes an unhandled rejection
+      // and the callback never runs. Throw right away instead, as the
+      // `http.Server` of the Express adapter does.
+      const error = new RangeError(
+        `Options.port should be >= 0 and < 65536. Received ${String(options.port)}.`,
+      );
+      throw Object.assign(error, { code: 'ERR_SOCKET_BAD_PORT' });
+    }
     return this.instance.listen(options, callback);
+  }
+
+  private isValidPort(port: unknown): boolean {
+    const value =
+      typeof port === 'string' && port.trim() !== '' ? Number(port) : port;
+    return (
+      typeof value === 'number' &&
+      Number.isInteger(value) &&
+      value >= 0 &&
+      value <= 65535
+    );
   }
 
   public get(...args: any[]) {
