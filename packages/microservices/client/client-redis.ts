@@ -61,13 +61,24 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   public async close() {
     this.isManuallyClosed = true;
     this.handleClose();
-    this.pubClient && (await this.pubClient.quit());
-    this.subClient && (await this.subClient.quit());
+    this.pubClient && (await this.quitClient(this.pubClient));
+    this.subClient && (await this.quitClient(this.subClient));
     this.pubClient = this.subClient = null;
     this.connectionPromise = null;
     this.isManuallyClosed = false;
     this.wasInitialConnectionSuccessful = false;
     this.pendingEventListeners = [];
+  }
+  // `quit()` rejects when the command cannot be sent (e.g., while
+  // reconnecting with the offline queue disabled), which would leave the
+  // other client open and `close()` half done. Close the connection right
+  // away instead.
+  private async quitClient(client: Redis) {
+    try {
+      await client.quit();
+    } catch {
+      client.disconnect();
+    }
   }
 
   public connect(): Promise<any> {
