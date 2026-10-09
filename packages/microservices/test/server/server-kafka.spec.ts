@@ -198,6 +198,62 @@ describe('ServerKafka', () => {
       expect(untypedServer.producer).toBeNull();
       expect(untypedServer.client).toBeNull();
     });
+
+    it('should disconnect the producer when the consumer fails to disconnect', async () => {
+      const error = new Error('consumer disconnect failed');
+      const localProducer = {
+        disconnect: vi.fn().mockResolvedValue(undefined),
+      };
+      untypedServer.consumer = {
+        disconnect: vi.fn().mockRejectedValueOnce(error),
+      };
+      untypedServer.producer = localProducer;
+      untypedServer.client = {};
+
+      await expect(server.close()).rejects.toBe(error);
+
+      expect(localProducer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedServer.consumer).toBeNull();
+      expect(untypedServer.producer).toBeNull();
+      expect(untypedServer.client).toBeNull();
+    });
+
+    it('should disconnect the consumer when the producer fails to disconnect', async () => {
+      const error = new Error('producer disconnect failed');
+      const localConsumer = {
+        disconnect: vi.fn().mockResolvedValue(undefined),
+      };
+      untypedServer.consumer = localConsumer;
+      untypedServer.producer = {
+        disconnect: vi.fn().mockRejectedValueOnce(error),
+      };
+      untypedServer.client = {};
+
+      await expect(server.close()).rejects.toBe(error);
+
+      expect(localConsumer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedServer.consumer).toBeNull();
+      expect(untypedServer.producer).toBeNull();
+      expect(untypedServer.client).toBeNull();
+    });
+
+    it('should log the second error when both clients fail to disconnect', async () => {
+      const consumerError = new Error('consumer disconnect failed');
+      const producerError = new Error('producer disconnect failed');
+      untypedServer.consumer = {
+        disconnect: vi.fn().mockRejectedValueOnce(consumerError),
+      };
+      untypedServer.producer = {
+        disconnect: vi.fn().mockRejectedValueOnce(producerError),
+      };
+      const logError = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+
+      await expect(server.close()).rejects.toBe(consumerError);
+
+      expect(logError).toHaveBeenCalledWith(producerError);
+    });
   });
 
   describe('bindEvents', () => {

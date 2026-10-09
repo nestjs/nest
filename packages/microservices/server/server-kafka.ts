@@ -130,11 +130,28 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async close(): Promise<void> {
-    this.consumer && (await this.consumer.disconnect());
-    this.producer && (await this.producer.disconnect());
-    this.consumer = null;
-    this.producer = null;
-    this.client = null;
+    try {
+      // Both clients have to be disconnected even if one of them fails, so a
+      // consumer does not stay in its group when the producer cannot be closed.
+      const results = await Promise.allSettled([
+        this.consumer?.disconnect(),
+        this.producer?.disconnect(),
+      ]);
+      const [failure, ...otherFailures] = results.filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      );
+      otherFailures.forEach(({ reason }) => this.logger.error(reason));
+      if (failure) {
+        throw failure.reason;
+      }
+    } finally {
+      // The state must be reset even when a disconnect throws, otherwise a
+      // later close reuses the clients that were not disconnected.
+      this.consumer = null;
+      this.producer = null;
+      this.client = null;
+    }
   }
 
   public async start(callback: () => void): Promise<void> {
