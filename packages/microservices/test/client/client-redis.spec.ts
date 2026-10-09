@@ -104,7 +104,11 @@ describe('ClientRedis', () => {
     });
     it('should publish stringified message to request pattern name', () => {
       client['publish'](msg, () => {});
-      expect(publishSpy).toHaveBeenCalledWith(pattern, JSON.stringify(msg));
+      expect(publishSpy).toHaveBeenCalledWith(
+        pattern,
+        JSON.stringify(msg),
+        expect.any(Function),
+      );
     });
     describe('on error', () => {
       let assignPacketIdStub: ReturnType<typeof vi.fn>;
@@ -194,7 +198,10 @@ describe('ClientRedis', () => {
       });
 
       it('should unsubscribe to response pattern name', () => {
-        expect(unsubscribeSpy).toHaveBeenCalledWith(channel);
+        expect(unsubscribeSpy).toHaveBeenCalledWith(
+          channel,
+          expect.any(Function),
+        );
       });
       it('should clean routingMap', () => {
         expect(client['routingMap'].has(id)).toBe(false);
@@ -264,6 +271,81 @@ describe('ClientRedis', () => {
         expect(client['routingMap'].size).toBe(0);
         expect(client['subscriptionsCount'].get(responseChannel)).toBe(1);
         expect(unsubscribeSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when unsubscribing fails on close', () => {
+      const unhandledRejection = vi.fn();
+      let unsubscribed: string[];
+
+      beforeEach(() => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        unhandledRejection.mockClear();
+        unsubscribed = [];
+        process.on('unhandledRejection', unhandledRejection);
+        // ioredis rejects the returned promise when no callback is passed
+        sub.unsubscribe = (channel: string, done?: Function) => {
+          unsubscribed.push(channel);
+          const result = Promise.reject(new Error('Connection is closed.'));
+          if (done) {
+            result.catch(err => done(err));
+          }
+          return result;
+        };
+      });
+      afterEach(() => {
+        process.off('unhandledRejection', unhandledRejection);
+      });
+
+      it('should fail the request without an unhandled rejection', async () => {
+        const error = vi.fn();
+
+        client.send(pattern, 'data').subscribe({ error });
+        await new Promise(resolve => setImmediate(resolve));
+        client.handleClose();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(unsubscribed).toEqual([`${pattern}.reply`]);
+        expect(unhandledRejection).not.toHaveBeenCalled();
+        expect(error).toHaveBeenCalledWith(
+          expect.objectContaining({ message: 'Connection closed' }),
+        );
+      });
+    });
+
+    describe('when publishing fails later', () => {
+      const responseChannel = `${pattern}.reply`;
+      const publishError = new Error('Connection is closed.');
+
+      beforeEach(() => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        publishSpy.mockImplementation((_channel, _message, done) =>
+          setImmediate(() => done(publishError)),
+        );
+      });
+
+      it('should fail the request and undo what it had set up', async () => {
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(callback).toHaveBeenCalledWith({ err: publishError });
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+      });
+
+      it('should not fail a request again once it is torn down', async () => {
+        const callback = vi.fn();
+
+        const teardown = client['publish'](msg, callback);
+        teardown();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
       });
     });
   });

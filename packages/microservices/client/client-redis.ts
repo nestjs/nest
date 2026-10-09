@@ -379,6 +379,12 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
           this.pubClient.publish(
             this.getRequestPattern(pattern),
             JSON.stringify(serializedPacket),
+            err => {
+              if (err && !isTornDown) {
+                undoBookkeeping();
+                callback({ err });
+              }
+            },
           );
         } catch (err) {
           // The broker can acknowledge the subscription later, so this runs
@@ -432,7 +438,8 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.subscriptionsCount.set(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
-      this.subClient.unsubscribe(channel);
+      // ioredis rejects when the connection is gone (e.g. in "handleClose")
+      this.subClient.unsubscribe(channel, () => {});
     }
   }
 }
