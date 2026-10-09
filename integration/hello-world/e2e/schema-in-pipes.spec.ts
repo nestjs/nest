@@ -16,6 +16,7 @@ import {
 import { Test } from '@nestjs/testing';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import request from 'supertest';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const testSchema: StandardSchemaV1 = {
   '~standard': {
@@ -101,7 +102,7 @@ describe('Schema propagation to pipes', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   beforeEach(() => {

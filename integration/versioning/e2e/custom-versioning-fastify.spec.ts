@@ -7,6 +7,7 @@ import { Test } from '@nestjs/testing';
 import { FastifyRequest } from 'fastify';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Custom Versioning (fastify)', () => {
   const extractor = (request: FastifyRequest): string | string[] => {
@@ -36,7 +37,7 @@ describe('Custom Versioning (fastify)', () => {
         type: VersioningType.CUSTOM,
         extractor,
       });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 
@@ -517,7 +518,7 @@ describe('Custom Versioning (fastify)', () => {
         extractor,
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 

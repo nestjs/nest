@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { Request } from 'express';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Custom Versioning', () => {
   const extractor = (request: Request): string | string[] => {
@@ -31,7 +32,7 @@ describe('Custom Versioning', () => {
         type: VersioningType.CUSTOM,
         extractor,
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {
@@ -398,7 +399,7 @@ describe('Custom Versioning', () => {
         extractor,
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {

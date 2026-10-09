@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DurableContextIdStrategy } from '../src/durable/durable-context-id.strategy.js';
 import { DurableModule } from '../src/durable/durable.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Durable providers', () => {
   const OVERLAP_REQUEST_COUNT = 1000;
@@ -18,7 +19,7 @@ describe('Durable providers', () => {
 
     app = moduleRef.createNestApplication();
     server = app.getHttpServer();
-    await app.listen(0);
+    await listenOnLoopback(app);
     baseUrl = await app.getUrl();
 
     ContextIdFactory.apply(new DurableContextIdStrategy());

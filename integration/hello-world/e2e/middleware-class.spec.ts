@@ -11,6 +11,7 @@ import { Test } from '@nestjs/testing';
 import { Response } from 'express';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const INCLUDED_VALUE = 'test_included';
 const RETURN_VALUE = 'test';
@@ -55,7 +56,7 @@ describe('Middleware (class)', () => {
       }).compile()
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`forRoutes(*)`, () => {

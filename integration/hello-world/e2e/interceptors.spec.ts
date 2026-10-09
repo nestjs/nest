@@ -11,6 +11,7 @@ import { of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const RETURN_VALUE = 'test';
 
@@ -76,7 +77,7 @@ describe('Interceptors', () => {
       await createTestModule(new OverrideInterceptor())
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer()).get('/hello').expect(200, RETURN_VALUE);
   });
 
@@ -85,7 +86,7 @@ describe('Interceptors', () => {
       await createTestModule(new TransformInterceptor())
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer())
       .get('/hello')
       .expect(200, { data: 'Hello world!' });
@@ -96,7 +97,7 @@ describe('Interceptors', () => {
       await createTestModule(new TransformInterceptor())
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer())
       .get('/hello/stream')
       .expect(200, { data: 'Hello world!' });
@@ -107,7 +108,7 @@ describe('Interceptors', () => {
       await createTestModule(new TransformInterceptor())
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer())
       .get('/hello/async')
       .expect(200, { data: 'Hello world!' });
@@ -118,7 +119,7 @@ describe('Interceptors', () => {
       await createTestModule(new StatusInterceptor(400))
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer())
       .get('/hello')
       .expect(400, { data: 'Hello world!' });
@@ -133,7 +134,7 @@ describe('Interceptors', () => {
       await createTestModule(new HeaderInterceptor(customHeaders))
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
     return request(app.getHttpServer())
       .get('/hello')
       .expect(200)

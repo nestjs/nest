@@ -2,6 +2,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Express Cors', () => {
   let app: NestExpressApplication;
@@ -40,7 +41,7 @@ describe('Express Cors', () => {
         };
         app.enableCors(configDelegation);
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`should add cors headers based on the first config`, async () => {
@@ -88,7 +89,7 @@ describe('Express Cors', () => {
           cors: configDelegation,
         });
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`should add cors headers based on the first config`, async () => {
@@ -129,7 +130,7 @@ describe('Express Cors', () => {
         app = module.createNestApplication<NestExpressApplication>();
         app.enableCors(configs[0]);
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`CORS headers`, async () => {
@@ -156,7 +157,7 @@ describe('Express Cors', () => {
         app = module.createNestApplication<NestExpressApplication>({
           cors: configs[0],
         });
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`CORS headers`, async () => {

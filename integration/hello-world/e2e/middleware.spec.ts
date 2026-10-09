@@ -8,6 +8,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const RETURN_VALUE = 'test';
 const SCOPED_VALUE = 'test_scoped';
@@ -116,7 +117,7 @@ async function createApp(
   if (beforeInit) {
     beforeInit(app);
   }
-  await app.init();
+  await listenOnLoopback(app);
 
   return app;
 }

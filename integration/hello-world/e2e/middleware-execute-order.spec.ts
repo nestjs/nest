@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const RETURN_VALUE_A = 'test_A';
 const RETURN_VALUE_B = 'test_B';
@@ -82,7 +83,7 @@ describe('Middleware (execution order)', () => {
       }).compile()
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should execute middleware in topological order`, () => {

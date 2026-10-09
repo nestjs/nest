@@ -5,6 +5,7 @@ import express from 'express';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Hello world (express instance)', () => {
   let server: App;
@@ -17,7 +18,7 @@ describe('Hello world (express instance)', () => {
 
     app = module.createNestApplication(new ExpressAdapter(express()));
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`/GET`, () => {

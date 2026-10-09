@@ -6,6 +6,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 /**
  * `.enableVersioning()` uses `VersioningType.URI` type by default
@@ -23,7 +24,7 @@ describe('Default Versioning behavior', () => {
 
       app = moduleRef.createNestApplication();
       app.enableVersioning();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {
@@ -65,7 +66,7 @@ describe('Default Versioning behavior', () => {
         new FastifyAdapter(),
       );
       app.enableVersioning();
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 

@@ -7,6 +7,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 interface CapturedLogger {
   warnings: string[];
@@ -166,7 +167,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
     it('with no policy, `/users/me` is silently routed to `:userId`', async () => {
       const capture = createCaptureLogger();
       app = await buildApp(MultiUserModule, {}, capture);
-      await app.init();
+      await listenOnLoopback(app);
 
       const meResponse = await request(app.getHttpServer()).get('/users/me');
       expect(meResponse.status).toBe(200);
@@ -189,7 +190,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
         { routeConflictPolicy: { shadow: 'warn' } },
         capture,
       );
-      await app.init();
+      await listenOnLoopback(app);
 
       const joined = capture.warnings.join('\n');
       expect(joined).toContain('/users/me');
@@ -215,7 +216,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
         { routeConflictPolicy: { duplicate: 'off' } },
         capture,
       );
-      await app.init();
+      await listenOnLoopback(app);
 
       const response = await request(app.getHttpServer()).get('/users/me');
       expect(response.status).toBe(200);
@@ -230,7 +231,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
         { routeConflictPolicy: { duplicate: 'warn' } },
         capture,
       );
-      await app.init();
+      await listenOnLoopback(app);
 
       expect(capture.warnings).toHaveLength(1);
       expect(capture.warnings[0]).toContain('/users/me');
@@ -253,7 +254,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
         { routeConflictPolicy: { shadow: 'error' } },
         capture,
       );
-      await app.init();
+      await listenOnLoopback(app);
       expect(capture.warnings).toHaveLength(0);
     });
   });

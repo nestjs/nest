@@ -5,6 +5,7 @@ import {
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 export type AdapterName = 'express' | 'fastify';
 
@@ -21,13 +22,9 @@ export const txt = (filename: string) => ({
 
 /**
  * Boots `module` on the given adapter and listens on an ephemeral port on
- * 127.0.0.1. On Fastify, `@fastify/multipart` is registered by the adapter;
- * `setup` runs before `app.init()`, `afterInit` between it and `listen()`.
- *
- * Listening explicitly matters: given a server that is not listening,
- * supertest listens on port 0 of every interface (`::`), and on some
- * systems another process can then hold the same port on 127.0.0.1, which
- * is where supertest sends the request.
+ * 127.0.0.1 (see `listenOnLoopback()`). On Fastify, `@fastify/multipart` is
+ * registered by the adapter; `setup` runs before `app.init()`, `afterInit`
+ * between it and `listen()`.
  */
 export async function createApp(
   adapterName: AdapterName,
@@ -43,7 +40,7 @@ export async function createApp(
   }).compile();
   if (adapterName === 'express') {
     const app = moduleRef.createNestApplication(new ExpressAdapter());
-    await app.listen(0, '127.0.0.1');
+    await listenOnLoopback(app);
     return app;
   }
   const app = moduleRef.createNestApplication<NestFastifyApplication>(
@@ -52,6 +49,6 @@ export async function createApp(
   await options.setup?.(app);
   await app.init();
   await options.afterInit?.(app);
-  await app.listen(0, '127.0.0.1');
+  await listenOnLoopback(app);
   return app;
 }

@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import { createRequire } from 'module';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const require = createRequire(import.meta.url);
 // Reference signer of cookie-parser/express-session. Used to forge cookies
@@ -66,7 +67,7 @@ async function createApp(
       next();
     });
   }
-  await app.init();
+  await listenOnLoopback(app);
   if (adapter instanceof FastifyAdapter) {
     await adapter.getInstance().ready();
   }

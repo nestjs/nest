@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { LazyController } from '../src/lazy.controller.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Lazy Requested Scoped providers', () => {
   let app: INestApplication;
@@ -12,7 +13,7 @@ describe('Lazy Requested Scoped providers', () => {
     }).compile();
 
     app = module.createNestApplication();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it('should not recreate dependencies for default scope', async () => {

@@ -23,6 +23,7 @@ import { FastifyRequest } from 'fastify';
 import { AddressInfo, connect } from 'net';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
@@ -78,7 +79,7 @@ describe('Middleware (FastifyAdapter)', () => {
           }).compile()
         ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       afterEach(async () => {
@@ -135,7 +136,7 @@ describe('Middleware (FastifyAdapter)', () => {
           }).compile()
         ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       afterEach(async () => {
@@ -261,7 +262,7 @@ describe('Middleware (FastifyAdapter)', () => {
         }).compile()
       ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it(`forRoutes(*)`, () => {
@@ -472,7 +473,7 @@ describe('Middleware (FastifyAdapter)', () => {
         }).compile()
       ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it(`GET forRoutes(/a/b/c)`, () => {
@@ -639,7 +640,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('{*path}') with global prefix (route: /api/pong)`, async () => {
       app.setGlobalPrefix('/api');
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
       return app
         .inject({
@@ -658,7 +659,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('{*path}') with global prefix (route: /api)`, async () => {
       app.setGlobalPrefix('/api');
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
       return app
         .inject({
@@ -676,7 +677,7 @@ describe('Middleware (FastifyAdapter)', () => {
     });
 
     it(`GET forRoutes('{*path}') without prefix config`, async () => {
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
       return app
         .inject({
@@ -695,7 +696,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('{*path}') with global prefix and exclude patterns`, async () => {
       app.setGlobalPrefix('/api', { exclude: ['/'] });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
@@ -705,7 +706,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('{*path}') with global prefix and exclude pattern with wildcard`, async () => {
       app.setGlobalPrefix('/api', { exclude: ['/record/{*path}'] });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
@@ -718,7 +719,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('{*path}') with global prefix and exclude pattern with parameter`, async () => {
       app.setGlobalPrefix('/api', { exclude: ['/record/:id'] });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
@@ -731,7 +732,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('{*path}') with global prefix and global prefix options`, async () => {
       app.setGlobalPrefix('/api', { exclude: ['/'] });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
@@ -748,7 +749,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('{*path}') with global prefix that not starts with /`, async () => {
       app.setGlobalPrefix('api');
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
@@ -804,7 +805,7 @@ describe('Middleware (FastifyAdapter)', () => {
 
     it(`GET forRoutes('/{*path}') with global prefix and excluded route`, async () => {
       app.setGlobalPrefix('/api', { exclude: ['/graphql'] });
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
@@ -857,7 +858,7 @@ describe('Middleware (FastifyAdapter)', () => {
           }),
         );
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`GET forRoutes(GET /abc/def/)`, () => {
@@ -890,7 +891,7 @@ describe('Middleware (FastifyAdapter)', () => {
           }),
         );
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`GET forRoutes(GET /abc//def)`, () => {
@@ -923,7 +924,7 @@ describe('Middleware (FastifyAdapter)', () => {
           }),
         );
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`GET forRoutes(GET /ABC/DEF)`, () => {
@@ -954,7 +955,7 @@ describe('Middleware (FastifyAdapter)', () => {
           }),
         );
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`GET forRoutes(GET /abc/def;foo=bar)`, () => {
@@ -981,7 +982,7 @@ describe('Middleware (FastifyAdapter)', () => {
           }).compile()
         ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
-        await app.init();
+        await listenOnLoopback(app);
       });
 
       it(`GET forRoutes(HEAD /abc/def)`, () => {
@@ -1043,7 +1044,7 @@ describe('Middleware (FastifyAdapter)', () => {
         }).compile()
       ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
-      await app.init();
+      await listenOnLoopback(app);
       await app.getHttpAdapter().getInstance().ready();
     });
 
@@ -1128,7 +1129,7 @@ describe('Middleware (FastifyAdapter)', () => {
         }).compile()
       ).createNestApplication<NestFastifyApplication>(adapter);
 
-      await app.listen(0, '127.0.0.1');
+      await listenOnLoopback(app);
       port = (app.getHttpServer().address() as AddressInfo).port;
     };
 
@@ -1261,7 +1262,7 @@ describe('Middleware (FastifyAdapter)', () => {
         type: VersioningType.HEADER,
         header: 'X-API-Version',
       });
-      await app.init();
+      await listenOnLoopback(app);
     };
 
     const expectNotFound = async (

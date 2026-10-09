@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { CapturingLogger, Test } from '@nestjs/testing';
 import request from 'supertest';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 @Injectable()
 class OrdersService implements OnModuleInit {
@@ -64,7 +65,7 @@ describe('CapturingLogger', () => {
         .compile();
 
       app = moduleRef.createNestApplication();
-      await app.listen(0, '127.0.0.1');
+      await listenOnLoopback(app);
     });
 
     it('should capture the framework logs', () => {
@@ -119,7 +120,7 @@ describe('CapturingLogger', () => {
 
       app = moduleRef.createNestApplication();
       app.useLogger(logger);
-      await app.listen(0, '127.0.0.1');
+      await listenOnLoopback(app);
 
       logger.assertLogged({ context: 'OrdersService' });
       logger.assertLogged({ context: 'RoutesResolver' });

@@ -2,6 +2,7 @@ import { INestApplication, VersioningType } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Media Type Versioning', () => {
   let app: INestApplication;
@@ -18,7 +19,7 @@ describe('Media Type Versioning', () => {
         type: VersioningType.MEDIA_TYPE,
         key: 'v=',
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {
@@ -417,7 +418,7 @@ describe('Media Type Versioning', () => {
         key: 'v=',
         defaultVersion: '1',
       });
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     describe('GET /', () => {

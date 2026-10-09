@@ -2,6 +2,7 @@ import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { HelloModule } from '../src/inject-inquirer/hello.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Inject Inquirer', () => {
   let logger: Record<string, any>;
@@ -20,7 +21,7 @@ describe('Inject Inquirer', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`should allow the injection of inquirer in a Transient Scope`, async () => {

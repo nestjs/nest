@@ -9,6 +9,7 @@ import { RouterModule } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const RETURN_VALUE = 'test';
 const SCOPED_VALUE = 'test_scoped';
@@ -56,7 +57,7 @@ describe('RouterModule with Middleware functions', () => {
       }).compile()
     ).createNestApplication();
 
-    await app.init();
+    await listenOnLoopback(app);
   });
 
   it(`forRoutes(TestController) - /test`, () => {

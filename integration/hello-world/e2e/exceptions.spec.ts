@@ -7,6 +7,7 @@ import { Test } from '@nestjs/testing';
 import { RawServerDefault } from 'fastify';
 import request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller.js';
+import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 describe('Error messages', () => {
   let server: RawServerDefault;
@@ -20,7 +21,7 @@ describe('Error messages', () => {
 
       app = module.createNestApplication();
       server = app.getHttpServer();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it(`/GET`, () => {
@@ -81,7 +82,7 @@ describe('Error messages', () => {
         new FastifyAdapter(),
       );
       server = app.getHttpServer();
-      await app.init();
+      await listenOnLoopback(app);
     });
 
     it(`/GET`, async () => {
