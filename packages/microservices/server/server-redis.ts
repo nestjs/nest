@@ -74,39 +74,50 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
 
   public start(callback?: () => void) {
     void Promise.all([this.subClient.connect(), this.pubClient.connect()])
-      .then(() => {
-        this.bindEvents(this.subClient, this.pubClient);
-        callback?.();
-      })
+      .then(() => this.bindEvents(this.subClient, this.pubClient))
+      .then(() => callback?.())
       .catch(callback);
   }
 
-  public bindEvents(subClient: Redis, pubClient: Redis) {
+  public async bindEvents(subClient: Redis, pubClient: Redis): Promise<void> {
     subClient.on(
       this.options?.wildcards ? 'pmessage' : 'message',
       this.getMessageHandler(pubClient).bind(this),
     );
     const subscribePatterns = [...this.messageHandlers.keys()];
-    subscribePatterns.forEach(pattern => {
-      const { isEventHandler } = this.messageHandlers.get(pattern)!;
+    // Awaited so that a rejected subscription (e.g., an ACL without access to
+    // the channel) fails `listen()` instead of going unhandled.
+    await Promise.all(
+      subscribePatterns.map(pattern => {
+        const { isEventHandler } = this.messageHandlers.get(pattern)!;
 
-      const channel = isEventHandler
-        ? pattern
-        : this.getRequestPattern(pattern);
+        const channel = isEventHandler
+          ? pattern
+          : this.getRequestPattern(pattern);
 
-      if (this.options?.wildcards) {
-        subClient.psubscribe(channel);
-      } else {
-        subClient.subscribe(channel);
-      }
-    });
+        return this.options?.wildcards
+          ? subClient.psubscribe(channel)
+          : subClient.subscribe(channel);
+      }),
+    );
   }
 
   public async close() {
     this.isManuallyClosed = true;
-    this.pubClient && (await this.pubClient.quit());
-    this.subClient && (await this.subClient.quit());
+    this.pubClient && (await this.quitClient(this.pubClient));
+    this.subClient && (await this.quitClient(this.subClient));
     this.pendingEventListeners = [];
+  }
+
+  // `quit()` rejects when the command cannot be sent (e.g., while
+  // reconnecting with the offline queue disabled), which would leave the
+  // other client open. Close the connection right away instead.
+  private async quitClient(client: Redis) {
+    try {
+      await client.quit();
+    } catch {
+      client.disconnect();
+    }
   }
 
   public async createRedisClient(): Promise<Redis> {

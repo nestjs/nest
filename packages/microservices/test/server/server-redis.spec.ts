@@ -89,6 +89,68 @@ describe('ServerRedis', () => {
       expect(pub.quit).toHaveBeenCalledOnce();
       expect(sub.quit).toHaveBeenCalledOnce();
     });
+    it('should disconnect a client whose "quit" fails and still close the other one', async () => {
+      const failingPub = {
+        quit: vi
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              "Stream isn't writeable and enableOfflineQueue options is false",
+            ),
+          ),
+        disconnect: vi.fn(),
+      };
+      untypedServer.pubClient = failingPub;
+
+      await expect(server.close()).resolves.toBeUndefined();
+
+      expect(failingPub.disconnect).toHaveBeenCalledOnce();
+      expect(sub.quit).toHaveBeenCalledOnce();
+    });
+  });
+  describe('start', () => {
+    it('should pass a rejected subscription to the callback', async () => {
+      const error = new Error('NOPERM No permissions to access a channel');
+      untypedServer.messageHandlers = objectToMap({ test: vi.fn() });
+      untypedServer.subClient = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        subscribe: vi.fn().mockRejectedValue(error),
+      };
+      untypedServer.pubClient = {
+        connect: vi.fn().mockResolvedValue(undefined),
+      };
+      const callback = vi.fn();
+
+      server.start(callback);
+      await vi.waitFor(() => expect(callback).toHaveBeenCalled());
+
+      expect(callback).toHaveBeenCalledExactlyOnceWith(error);
+    });
+    it('should call back once every subscription is acknowledged', async () => {
+      let acknowledge: () => void;
+      untypedServer.messageHandlers = objectToMap({ test: vi.fn() });
+      untypedServer.subClient = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        subscribe: vi.fn(
+          () => new Promise<void>(resolve => (acknowledge = resolve)),
+        ),
+      };
+      untypedServer.pubClient = {
+        connect: vi.fn().mockResolvedValue(undefined),
+      };
+      const callback = vi.fn();
+
+      server.start(callback);
+      await vi.waitFor(() =>
+        expect(untypedServer.subClient.subscribe).toHaveBeenCalled(),
+      );
+      expect(callback).not.toHaveBeenCalled();
+
+      acknowledge!();
+      await vi.waitFor(() => expect(callback).toHaveBeenCalledWith());
+    });
   });
   describe('handleConnection', () => {
     let onSpy: ReturnType<typeof vi.fn>,

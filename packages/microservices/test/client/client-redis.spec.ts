@@ -558,6 +558,24 @@ describe('ClientRedis', () => {
       await client.close();
       expect(untypedClient.routingMap.size).toBe(0);
     });
+    it('should disconnect a client whose "quit" fails and still close the other one', async () => {
+      pub.quit = vi
+        .fn()
+        .mockRejectedValue(
+          new Error(
+            "Stream isn't writeable and enableOfflineQueue options is false",
+          ),
+        );
+      pub.disconnect = vi.fn();
+
+      await expect(client.close()).resolves.toBeUndefined();
+
+      expect(pub.disconnect).toHaveBeenCalledOnce();
+      expect(subClose).toHaveBeenCalledOnce();
+      expect(untypedClient.pubClient).toBeNull();
+      expect(untypedClient.subClient).toBeNull();
+      expect(untypedClient.isManuallyClosed).toBe(false);
+    });
     it('should call pending callbacks with connection closed error', async () => {
       await client.close();
       expect(callback).toHaveBeenCalledWith({
