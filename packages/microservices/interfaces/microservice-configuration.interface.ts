@@ -377,5 +377,23 @@ export interface KafkaOptions {
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
     producerOnlyMode?: boolean;
+    /**
+     * When enabled, creates a separate Kafka consumer per registered topic,
+     * allowing concurrent message processing across topics (by default, a
+     * single shared consumer processes every topic's messages sequentially).
+     *
+     * Each consumer uses `{groupId}-{topic}` as its consumer group ID. This
+     * means enabling this option on an existing deployment starts those
+     * groups from scratch, with no prior committed offsets.
+     *
+     * In this mode, `KafkaContext.getConsumer()` returns the consumer bound
+     * to the handler's topic rather than a single shared consumer, and the
+     * server's status stream reflects the state of all per-topic consumers
+     * combined: a `DISCONNECT`/`CRASH` on any one of them is reported as the
+     * server's status, even while the others remain healthy.
+     *
+     * @default false
+     */
+    topicConsumers?: boolean;
   };
 }
