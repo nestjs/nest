@@ -491,9 +491,10 @@ function decode(buffer: Buffer, charset: string): string {
     case 'latin1':
     case 'iso-8859-1':
       return buffer.toString('latin1');
-    default:
+    default: {
+      let decoder: TextDecoder;
       try {
-        return new TextDecoder(charset).decode(buffer);
+        decoder = new TextDecoder(charset);
       } catch {
         throw createHttpError(
           415,
@@ -502,7 +503,26 @@ function decode(buffer: Buffer, charset: string): string {
           { charset },
         );
       }
+      return decoder.encoding === 'windows-1252'
+        ? decodeWindows1252(buffer)
+        : decoder.decode(buffer);
+    }
   }
+}
+
+// Characters of bytes 0x80-0x9F in windows-1252 (the rest match latin1)
+const WINDOWS_1252_HIGH =
+  '€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ';
+const C1_CONTROLS = /[\x80-\x9f]/g;
+
+// Some Node.js 22 and 24 releases (e.g. 22.15, 24.4) decode windows-1252, and
+// the labels mapped to it such as "cp1252", as ISO-8859-1 in TextDecoder
+function decodeWindows1252(buffer: Buffer): string {
+  return buffer
+    .toString('latin1')
+    .replace(C1_CONTROLS, char =>
+      WINDOWS_1252_HIGH.charAt(char.charCodeAt(0) - 0x80),
+    );
 }
 
 function firstNonWhitespaceChar(text: string): string | undefined {

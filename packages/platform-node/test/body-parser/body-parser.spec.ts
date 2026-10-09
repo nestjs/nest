@@ -942,6 +942,11 @@ describe('body parsers', () => {
     it.each([
       ['latin1', Buffer.from('café', 'latin1'), 'café'],
       ['windows-1252', Buffer.from([0x80, 0x20, 0x35]), '€ 5'],
+      [
+        'cp1252',
+        Buffer.from(Array.from({ length: 32 }, (_, i) => 0x80 + i)),
+        '€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ',
+      ],
     ])('should decode the %s charset', async (charset, body, expected) => {
       const { req } = await send(text(), {
         headers: { 'content-type': `text/plain; charset=${charset}` },
