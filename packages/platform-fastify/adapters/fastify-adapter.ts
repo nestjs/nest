@@ -450,6 +450,12 @@ export class FastifyAdapter<
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
 
+    if (typeof listenOptions === 'string' && Number.isNaN(+listenOptions)) {
+      // A string that is not a number is a Unix socket path or a named pipe.
+      // The host does not apply to it.
+      return this.instance.listen({ path: listenOptions }, callback);
+    }
+
     let options: Record<string, any>;
     if (
       typeof listenOptions === 'object' &&

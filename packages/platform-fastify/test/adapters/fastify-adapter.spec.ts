@@ -571,6 +571,87 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('listen', () => {
+    const socketPath = '/run/app.sock';
+    const namedPipe = String.raw`\\.\pipe\app`;
+
+    const spyOnListen = () =>
+      vi
+        .spyOn(fastifyAdapter.getInstance(), 'listen')
+        .mockResolvedValue('listening');
+
+    it('should listen on a string that is not a number as a path', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen(socketPath);
+
+      expect(listen).toHaveBeenCalledWith({ path: socketPath }, undefined);
+    });
+
+    it('should listen on a string that only starts with a number as a path', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen('3000abc');
+
+      expect(listen).toHaveBeenCalledWith({ path: '3000abc' }, undefined);
+    });
+
+    it('should listen on a named pipe as a path', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen(namedPipe);
+
+      expect(listen).toHaveBeenCalledWith({ path: namedPipe }, undefined);
+    });
+
+    it('should not set the host when it listens on a path', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen(socketPath, '127.0.0.1');
+
+      expect(listen).toHaveBeenCalledWith({ path: socketPath }, undefined);
+    });
+
+    it('should pass the callback when it listens on a path', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+
+      fastifyAdapter.listen(socketPath, callback);
+
+      expect(listen).toHaveBeenCalledWith({ path: socketPath }, callback);
+    });
+
+    it('should keep a numeric string as a port', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen('3000', '127.0.0.1');
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1' },
+        undefined,
+      );
+    });
+
+    it('should keep the options object as it is', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen({ port: 3000 });
+
+      expect(listen).toHaveBeenCalledWith({ port: 3000 }, undefined);
+    });
+
+    it('should keep a number as a port', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen(3000, '127.0.0.1');
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1' },
+        undefined,
+      );
+    });
+  });
+
   describe('useStaticAssets / setViewEngine', () => {
     // `NestApplication` discards what these return, so the plugin has to reach
     // fastify before the caller's next statement — which in the documented
