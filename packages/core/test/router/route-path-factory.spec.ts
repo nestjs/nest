@@ -1,6 +1,8 @@
 import { RequestMethod, VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../../application-config.js';
+import { mapToExcludeRoute } from '../../middleware/utils.js';
+import { RoutePathMetadata } from '../../router/interfaces/route-path-metadata.interface.js';
 import { RoutePathFactory } from '../../router/route-path-factory.js';
 
 describe('RoutePathFactory', () => {
@@ -336,6 +338,103 @@ describe('RoutePathFactory', () => {
           });
         });
       });
+    });
+  });
+
+  describe('getExcludedRoutePaths', () => {
+    const uri = { type: VersioningType.URI } as const;
+
+    const createRoute = (
+      ctrlPath: string,
+      controllerVersion?: RoutePathMetadata['controllerVersion'],
+      versioningOptions: RoutePathMetadata['versioningOptions'] = uri,
+      requestMethod = RequestMethod.GET,
+    ) =>
+      routePathFactory.create(
+        { ctrlPath, globalPrefix: 'api', controllerVersion, versioningOptions },
+        requestMethod,
+      );
+
+    const exclude = (...routes: Parameters<typeof mapToExcludeRoute>[0]) =>
+      applicationConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(routes),
+      });
+
+    it('should return no routes when nothing is excluded', () => {
+      createRoute('hello', '1');
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([]);
+    });
+
+    it('should keep an exclusion as configured when its route is unversioned', () => {
+      exclude('hello');
+      createRoute('hello');
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: 'hello', method: RequestMethod.ALL },
+      ]);
+    });
+
+    it('should keep an exclusion as configured when no route matches it', () => {
+      exclude('rawhealth');
+      createRoute('hello', '1');
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: 'rawhealth', method: RequestMethod.ALL },
+      ]);
+    });
+
+    it('should prepend the URI version the route is served at', () => {
+      exclude({ path: 'hello', method: RequestMethod.GET });
+      expect(createRoute('hello', '1')).toEqual(['/v1/hello']);
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: '/v1/hello', method: RequestMethod.GET },
+      ]);
+    });
+
+    it('should return one path per version and deduplicate methods', () => {
+      exclude('hello');
+      createRoute('hello', ['1', '2'], uri, RequestMethod.GET);
+      createRoute('hello', ['1', '2'], uri, RequestMethod.POST);
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: '/v1/hello', method: RequestMethod.ALL },
+        { path: '/v2/hello', method: RequestMethod.ALL },
+      ]);
+    });
+
+    it('should keep the unversioned path of a version neutral route', () => {
+      exclude('hello');
+      createRoute('hello', ['1', VERSION_NEUTRAL]);
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: '/v1/hello', method: RequestMethod.ALL },
+        { path: 'hello', method: RequestMethod.ALL },
+      ]);
+    });
+
+    it('should honour a custom URI version prefix', () => {
+      exclude('hello');
+      createRoute('hello', '1', { type: VersioningType.URI, prefix: false });
+      createRoute('hello', '2', { type: VersioningType.URI, prefix: 'ver' });
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: '/1/hello', method: RequestMethod.ALL },
+        { path: '/ver2/hello', method: RequestMethod.ALL },
+      ]);
+    });
+
+    it('should prepend the URI version to a wildcard exclusion', () => {
+      exclude('hello/{*splat}');
+      createRoute('hello/async', '1');
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: '/v1/hello/{*splat}', method: RequestMethod.ALL },
+      ]);
+    });
+
+    it('should not prepend a version for other versioning types', () => {
+      exclude('hello');
+      createRoute('hello', '1', {
+        type: VersioningType.HEADER,
+        header: 'X-Version',
+      });
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: 'hello', method: RequestMethod.ALL },
+      ]);
     });
   });
 
