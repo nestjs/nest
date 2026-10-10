@@ -189,7 +189,12 @@ export class NestApplication
     if (this.isInitialized) {
       return this;
     }
+    this.initializationPromise = this.runInitSequence();
+    await this.initializationPromise;
+    return this;
+  }
 
+  private async runInitSequence(): Promise<void> {
     // Lazy-load optional modules (ESM-compatible)
     await Promise.all([
       this.loadSocketModule(),
@@ -216,7 +221,6 @@ export class NestApplication
     if (this.appOptions?.autoFlushLogs ?? true) {
       this.flushLogs();
     }
-    return this;
   }
 
   public registerParserMiddleware() {

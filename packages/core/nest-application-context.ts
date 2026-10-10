@@ -57,7 +57,7 @@ export class NestApplicationContext<
   private receivedSignal = false;
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsForHooksByDistance?: Array<Module>;
-  private initializationPromise?: Promise<void>;
+  protected initializationPromise?: Promise<void>;
 
   protected get instanceLinksHost() {
     if (!this._instanceLinksHost) {
