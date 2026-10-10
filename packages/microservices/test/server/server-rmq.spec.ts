@@ -702,6 +702,30 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('#', 'user.profile.created')).toBe(true);
         expect(matchRmqPattern('#', 'created')).toBe(true);
       });
+
+      it('should match when # is followed by other segments', () => {
+        expect(matchRmqPattern('#.error', 'app.error')).toBe(true);
+        expect(matchRmqPattern('#.error', 'app.db.error')).toBe(true);
+        expect(matchRmqPattern('#.error', 'error')).toBe(true);
+        expect(matchRmqPattern('#.error', 'app.warn')).toBe(false);
+        expect(matchRmqPattern('#.error', 'error.app')).toBe(false);
+      });
+
+      it('should match when # is in the middle', () => {
+        expect(matchRmqPattern('app.#.error', 'app.error')).toBe(true);
+        expect(matchRmqPattern('app.#.error', 'app.db.error')).toBe(true);
+        expect(matchRmqPattern('app.#.error', 'app.db.pool.error')).toBe(true);
+        expect(matchRmqPattern('app.#.error', 'app.db.warn')).toBe(false);
+        expect(matchRmqPattern('app.#.error', 'web.db.error')).toBe(false);
+      });
+
+      it('should combine # with *', () => {
+        expect(matchRmqPattern('*.#.error', 'app.error')).toBe(true);
+        expect(matchRmqPattern('*.#.error', 'a.b.c.error')).toBe(true);
+        expect(matchRmqPattern('*.#.error', 'error')).toBe(false);
+        expect(matchRmqPattern('#.*.error', 'app.db.error')).toBe(true);
+        expect(matchRmqPattern('#.*.error', 'error')).toBe(false);
+      });
     });
 
     describe('edge cases', () => {
