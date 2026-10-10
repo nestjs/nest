@@ -109,7 +109,9 @@ export class ParseArrayPipe implements PipeTransform {
 
       const isExpectedTypePrimitive = this.isExpectedTypePrimitive();
       const toClassInstance = (item: any, index?: number) => {
-        if (this.options.items !== String) {
+        // `JSON.parse` stringifies its argument first, so an array holding a
+        // single item (`[1]` becomes `'1'`) would be parsed as that item.
+        if (this.options.items !== String && isString(item)) {
           try {
             item = JSON.parse(item);
           } catch {
