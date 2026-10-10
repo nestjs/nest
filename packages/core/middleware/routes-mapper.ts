@@ -13,6 +13,7 @@ import {
   addLeadingSlash,
   isString,
   isUndefined,
+  stripEndSlash,
 } from '@nestjs/common/internal';
 import { type Type, VERSION_NEUTRAL } from '@nestjs/common';
 
@@ -86,8 +87,10 @@ export class RoutesMapper {
 
     const toRouteInfo = (item: RouteDefinition, prefix: string) =>
       item.path?.flatMap(p => {
-        let endpointPath = modulePath ?? '';
-        endpointPath += this.normalizeGlobalPath(prefix) + addLeadingSlash(p);
+        const endpointPath =
+          stripEndSlash(modulePath ?? '') +
+          stripEndSlash(this.normalizeGlobalPath(prefix)) +
+          addLeadingSlash(p);
 
         const routeInfo: RouteInfo = {
           path: endpointPath,
