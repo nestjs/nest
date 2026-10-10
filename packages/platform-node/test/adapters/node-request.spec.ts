@@ -415,6 +415,17 @@ describe('NodeRequest', () => {
     });
   });
 
+  describe('app', () => {
+    it("should report 'trust proxy' as false and other settings as undefined", async () => {
+      const value = await inspect(req => [
+        req.app.get('trust proxy'),
+        req.app.get('env'),
+      ]);
+
+      expect(value).toEqual([false, undefined]);
+    });
+  });
+
   describe('is()', () => {
     const withBody = (contentType: string) => ({
       headers: { 'content-type': contentType, 'content-length': '0' },
@@ -505,6 +516,122 @@ describe('NodeResponse', () => {
       });
 
       expect(value).toEqual({ replaced: true });
+    });
+  });
+
+  describe('append()', () => {
+    it('should create, extend and combine header values', async () => {
+      const response = await respond((req, res) => {
+        res.append('Link', '<a>');
+        res.append('Link', ['<b>', '<c>']);
+        res.append('X-New', 'v');
+        res.end();
+      });
+
+      expect(response.headers.link).toBe('<a>, <b>, <c>');
+      expect(response.headers['x-new']).toBe('v');
+    });
+
+    it('should return the response', async () => {
+      expect(await inspect((req, res) => res.append('X-A', '1') === res)).toBe(
+        true,
+      );
+    });
+  });
+
+  describe('cookie()', () => {
+    const setCookie = async (handler: Handler) =>
+      (await respond(handler)).headers['set-cookie'];
+
+    it('should send an encoded value with Path=/ by default', async () => {
+      expect(
+        await setCookie((req, res) => res.cookie('a', 'b c;d').end()),
+      ).toEqual(['a=b%20c%3Bd; Path=/']);
+    });
+
+    it('should send objects as "j:" followed by JSON', async () => {
+      expect(
+        await setCookie((req, res) => res.cookie('obj', { x: 1 }).end()),
+      ).toEqual(['obj=j%3A%7B%22x%22%3A1%7D; Path=/']);
+    });
+
+    it('should take maxAge in milliseconds', async () => {
+      const [cookie] = (await setCookie((req, res) =>
+        res.cookie('m', '1', { maxAge: 900_000 }).end(),
+      ))!;
+      const expires = Date.parse(/Expires=([^;]+)/.exec(cookie)![1]);
+
+      expect(cookie).toMatch(/^m=1; Max-Age=900; Path=\/; Expires=/);
+      expect(expires - Date.now()).toBeGreaterThan(890_000);
+      expect(expires - Date.now()).toBeLessThanOrEqual(900_000);
+    });
+
+    it('should send the other attributes', async () => {
+      expect(
+        await setCookie((req, res) =>
+          res
+            .cookie('a', '1', {
+              domain: 'example.com',
+              path: '/app',
+              httpOnly: true,
+              secure: true,
+              sameSite: 'lax',
+            })
+            .end(),
+        ),
+      ).toEqual([
+        'a=1; Domain=example.com; Path=/app; HttpOnly; Secure; SameSite=Lax',
+      ]);
+    });
+
+    it('should sign with the secret cookie-parser sets on req.secret', async () => {
+      expect(
+        await setCookie((req, res) => {
+          (req as NodeRequest & { secret: string }).secret = 's3cret';
+          res.cookie('s', 'v', { signed: true }).end();
+        }),
+      ).toEqual([
+        's=s%3Av.%2Fv6ti1yRAV%2FJ%2BL7wdAEpVP2Y3sYEBAHNL56YKxgerBI; Path=/',
+      ]);
+    });
+
+    it('should throw when asked to sign without a secret', async () => {
+      const message = await inspect((req, res) => {
+        try {
+          res.cookie('s', 'v', { signed: true });
+        } catch (error) {
+          return (error as Error).message;
+        }
+      });
+
+      expect(message).toBe(
+        'cookieParser("secret") required for signed cookies',
+      );
+    });
+
+    it('should keep the cookies set earlier', async () => {
+      expect(
+        await setCookie((req, res) => {
+          res.setHeader('Set-Cookie', 'pre=1');
+          res.cookie('a', '1').cookie('b', '2').end();
+        }),
+      ).toEqual(['pre=1', 'a=1; Path=/', 'b=2; Path=/']);
+    });
+  });
+
+  describe('clearCookie()', () => {
+    it('should expire the cookie, ignoring maxAge', async () => {
+      const response = await respond((req, res) =>
+        res
+          .clearCookie('a')
+          .clearCookie('b', { path: '/x', domain: 'example.com', maxAge: 5000 })
+          .end(),
+      );
+
+      expect(response.headers['set-cookie']).toEqual([
+        'a=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+        'b=; Domain=example.com; Path=/x; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+      ]);
     });
   });
 

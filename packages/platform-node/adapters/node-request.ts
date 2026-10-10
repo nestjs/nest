@@ -1,3 +1,5 @@
+import { serialize as serializeCookie } from 'cookie';
+import { sign as signCookie } from 'cookie-signature';
 import encodeUrl from 'encodeurl';
 import { IncomingMessage, ServerResponse, STATUS_CODES } from 'http';
 import { parse as parseQueryString } from 'fast-querystring';
@@ -7,6 +9,42 @@ import { getRoutingPath } from '../router/utils.js';
 
 const QUERY = Symbol('query');
 const LOCALS = Symbol('locals');
+
+/**
+ * What `req.app` returns: middleware written for Express reads settings from
+ * it (`express-rate-limit` checks `req.app.get('trust proxy')`). There are no
+ * Express settings here; `get()` reports the adapter's fixed behavior.
+ */
+const NODE_APP = Object.freeze({
+  /**
+   * `'trust proxy'` is `false` (`req.ip` is the socket address); every other
+   * setting is `undefined`.
+   */
+  get(setting: string): unknown {
+    return setting === 'trust proxy' ? false : undefined;
+  },
+});
+
+/**
+ * Options of {@link NodeResponse.cookie}, as with Express' `res.cookie()`.
+ */
+export interface NodeCookieOptions {
+  /** Lifetime in milliseconds (sent as `Expires` and `Max-Age`). */
+  maxAge?: number;
+  expires?: Date;
+  /** Defaults to `/`. */
+  path?: string;
+  domain?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: boolean | 'lax' | 'strict' | 'none';
+  priority?: 'low' | 'medium' | 'high';
+  partitioned?: boolean;
+  /** Signs the value with the secret `cookie-parser` sets on `req.secret`. */
+  signed?: boolean;
+  /** Encodes the value; `encodeURIComponent()` by default. */
+  encode?: (value: string) => string;
+}
 
 /**
  * Request object handed to middleware and route handlers by the
@@ -130,6 +168,15 @@ export class NodeRequest extends IncomingMessage {
   }
 
   /**
+   * Stand-in for the Express application, for middleware that reads its
+   * settings: `req.app.get('trust proxy')` is `false`, every other setting
+   * `undefined`.
+   */
+  get app(): { get(setting: string): unknown } {
+    return NODE_APP;
+  }
+
+  /**
    * Checks the request's `Content-Type` against `types`, like Express'
    * `req.is()`: returns the first matching type, `false` when none matches and
    * `null` when the request has no body. Types may be MIME types, wildcards
@@ -153,7 +200,8 @@ Object.defineProperty(NodeRequest.prototype, 'body', {
  * Response object handed to middleware and route handlers by the
  * `NodeAdapter`: a plain Node.js `ServerResponse`, plus the small subset of
  * the Express response API that middleware and exception filters most often
- * rely on (`status()`, `send()`, `json()`, `set()`, `redirect()`, `locals`...). These helpers live on
+ * rely on (`status()`, `send()`, `json()`, `set()`, `append()`, `cookie()`,
+ * `redirect()`, `locals`...). These helpers live on
  * the prototype and add no per-request cost; unlike Express, `send()` does not
  * compute an `ETag`.
  *
@@ -206,6 +254,68 @@ export class NodeResponse<
    */
   header(field: string | Record<string, any>, value?: any): this {
     return this.set(field, value);
+  }
+
+  /**
+   * Appends a value to a response header, creating the header when missing,
+   * like Express' `res.append()`. Chainable.
+   */
+  append(field: string, value: string | string[]): this {
+    const previous = this.getHeader(field);
+    let combined: unknown = value;
+    if (previous) {
+      combined = Array.isArray(previous)
+        ? previous.concat(value)
+        : Array.isArray(value)
+          ? [previous, ...value]
+          : [previous, value];
+    }
+    return this.set(field, combined);
+  }
+
+  /**
+   * Sets a cookie, like Express' `res.cookie()`, for middleware written for
+   * Express: objects are sent as `j:` + JSON, `maxAge` is in milliseconds and
+   * `signed` uses the secret `cookie-parser` sets on `req.secret`. In your own
+   * handlers, prefer Nest's adapter-agnostic cookies (`setCookie()`).
+   * Chainable.
+   */
+  cookie(name: string, value: unknown, options?: NodeCookieOptions): this {
+    const opts: Record<string, any> = { ...options };
+    const secret = (this.req as { secret?: string }).secret;
+    if (opts.signed && !secret) {
+      throw new Error('cookieParser("secret") required for signed cookies');
+    }
+    let text =
+      typeof value === 'object' ? 'j:' + JSON.stringify(value) : String(value);
+    if (opts.signed) {
+      text = 's:' + signCookie(text, secret!);
+    }
+    if (opts.maxAge != null) {
+      const maxAge = opts.maxAge - 0;
+      if (!Number.isNaN(maxAge)) {
+        opts.expires = new Date(Date.now() + maxAge);
+        opts.maxAge = Math.floor(maxAge / 1000);
+      }
+    }
+    if (opts.path == null) {
+      opts.path = '/';
+    }
+    return this.append('Set-Cookie', serializeCookie(name, String(text), opts));
+  }
+
+  /**
+   * Expires a cookie, like Express' `res.clearCookie()`; `path` and `domain`
+   * must match the ones the cookie was set with. Chainable.
+   */
+  clearCookie(name: string, options?: NodeCookieOptions): this {
+    const opts: NodeCookieOptions = {
+      path: '/',
+      ...options,
+      expires: new Date(1),
+    };
+    delete opts.maxAge;
+    return this.cookie(name, '', opts);
   }
 
   /**
