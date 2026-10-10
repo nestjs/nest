@@ -414,9 +414,190 @@ describe('NodeRequest', () => {
       expect(bodies).toStrictEqual([undefined, undefined]);
     });
   });
+
+  describe('is()', () => {
+    const withBody = (contentType: string) => ({
+      headers: { 'content-type': contentType, 'content-length': '0' },
+    });
+
+    it.each([
+      ['application/json', ['json'], 'json'],
+      ['application/json; charset=utf-8', ['html', 'json'], 'json'],
+      ['text/html', ['text/*'], 'text/html'],
+      ['application/vnd.api+json', ['+json'], 'application/vnd.api+json'],
+      ['application/json', ['text', 'html'], false],
+    ])('should match %s against %j', async (contentType, types, expected) => {
+      const value = await inspect(
+        req => req.is(...types),
+        withBody(contentType),
+      );
+
+      expect(value).toBe(expected);
+    });
+
+    it('should take the types as an array too', async () => {
+      const value = await inspect(
+        req => req.is(['html', 'json']),
+        withBody('application/json'),
+      );
+
+      expect(value).toBe('json');
+    });
+
+    it('should return the media type when called without types', async () => {
+      const value = await inspect(
+        req => req.is(),
+        withBody('application/json; charset=utf-8'),
+      );
+
+      expect(value).toBe('application/json');
+    });
+
+    it('should return null when the request has no body', async () => {
+      const value = await inspect(req => req.is('json'), {
+        headers: { 'content-type': 'application/json' },
+      });
+
+      expect(value).toBeNull();
+    });
+  });
 });
 
 describe('NodeResponse', () => {
+  describe('locals', () => {
+    it('should be an empty object without a prototype', async () => {
+      const [locals, prototype] = await inspect((req, res) => [
+        { ...res.locals },
+        Object.getPrototypeOf(res.locals),
+      ]);
+
+      expect(locals).toEqual({});
+      expect(prototype).toBeNull();
+    });
+
+    it('should keep values set by one middleware for the next', async () => {
+      const value = await inspect((req, res) => {
+        res.locals.user = 'nest';
+        return res.locals.user;
+      });
+
+      expect(value).toBe('nest');
+    });
+
+    it('should not be shared between responses', async () => {
+      const seen: unknown[] = [];
+      const port = await listen((req, res) => {
+        seen.push(res.locals.count);
+        res.locals.count = 1;
+        res.end();
+      });
+
+      await request(port);
+      await request(port);
+
+      expect(seen).toStrictEqual([undefined, undefined]);
+    });
+
+    it('should be replaceable', async () => {
+      const value = await inspect((req, res) => {
+        res.locals = { replaced: true };
+        return res.locals;
+      });
+
+      expect(value).toEqual({ replaced: true });
+    });
+  });
+
+  describe('redirect()', () => {
+    const target = '/a b?x=ü&y=<1>';
+    const encoded = '/a%20b?x=%C3%BC&y=%3C1%3E';
+
+    it('should redirect with a 302 and an encoded Location by default', async () => {
+      const response = await respond((req, res) => res.redirect(target));
+
+      expect(response.statusCode).toBe(302);
+      expect(response.headers.location).toBe(encoded);
+      expect(response.headers.vary).toBe('Accept');
+      expect(response.headers['content-type']).toBe(
+        'text/plain; charset=utf-8',
+      );
+      expect(response.body.toString()).toBe(`Found. Redirecting to ${encoded}`);
+    });
+
+    it('should take the status code first', async () => {
+      const response = await respond((req, res) => res.redirect(301, target));
+
+      expect(response.statusCode).toBe(301);
+      expect(response.body.toString()).toBe(
+        `Moved Permanently. Redirecting to ${encoded}`,
+      );
+    });
+
+    it('should send escaped HTML to clients that prefer it', async () => {
+      const response = await respond((req, res) => res.redirect(target), {
+        headers: {
+          accept:
+            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      });
+
+      expect(response.headers['content-type']).toBe('text/html; charset=utf-8');
+      expect(response.body.toString()).toBe(
+        '<p>Found. Redirecting to /a%20b?x=%C3%BC&amp;y=%3C1%3E</p>',
+      );
+    });
+
+    it.each([
+      ['*/*', 'text/plain'],
+      ['text/plain;q=0.5, text/html', 'text/html'],
+      ['text/html;q=0.5, text/plain;q=0.5', 'text/html'],
+      ['application/json, text/*;q=0.2', 'text/plain'],
+    ])('should negotiate "%s" to %s', async (accept, type) => {
+      const response = await respond((req, res) => res.redirect(target), {
+        headers: { accept },
+      });
+
+      expect(response.headers['content-type']).toBe(`${type}; charset=utf-8`);
+    });
+
+    it('should send an empty body to clients that accept neither type', async () => {
+      const response = await respond((req, res) => res.redirect(target), {
+        headers: { accept: 'application/json' },
+      });
+
+      expect(response.statusCode).toBe(302);
+      expect(response.headers.location).toBe(encoded);
+      expect(response.headers['content-type']).toBeUndefined();
+      expect(response.headers['content-length']).toBe('0');
+      expect(response.body).toHaveLength(0);
+    });
+
+    it('should send no body in answer to a HEAD request', async () => {
+      const response = await respond((req, res) => res.redirect(target), {
+        method: 'HEAD',
+      });
+
+      expect(response.headers.location).toBe(encoded);
+      expect(response.headers['content-length']).toBe(
+        String(Buffer.byteLength(`Found. Redirecting to ${encoded}`)),
+      );
+      expect(response.body).toHaveLength(0);
+    });
+
+    it.each([
+      ['Origin', 'Origin, Accept'],
+      ['accept', 'accept'],
+      ['*', '*'],
+    ])('should add Accept to a Vary of "%s"', async (vary, expected) => {
+      const response = await respond((req, res) => {
+        res.setHeader('Vary', vary);
+        res.redirect(target);
+      });
+
+      expect(response.headers.vary).toBe(expected);
+    });
+  });
+
   describe('status()', () => {
     it('should set the status code and return the response', async () => {
       let chained = false;

@@ -1,9 +1,12 @@
+import encodeUrl from 'encodeurl';
 import { IncomingMessage, ServerResponse, STATUS_CODES } from 'http';
 import { parse as parseQueryString } from 'fast-querystring';
 import { contentType as lookupContentType } from 'mime-types';
+import typeIs from 'type-is';
 import { getRoutingPath } from '../router/utils.js';
 
 const QUERY = Symbol('query');
+const LOCALS = Symbol('locals');
 
 /**
  * Request object handed to middleware and route handlers by the
@@ -125,6 +128,17 @@ export class NodeRequest extends IncomingMessage {
   header(name: string): string | string[] | undefined {
     return this.get(name);
   }
+
+  /**
+   * Checks the request's `Content-Type` against `types`, like Express'
+   * `req.is()`: returns the first matching type, `false` when none matches and
+   * `null` when the request has no body. Types may be MIME types, wildcards
+   * (`'text/*'`, `'+json'`) or extensions (`'json'`, `'html'`). Without
+   * arguments, returns the request's media type.
+   */
+  is(...types: (string | string[])[]): string | false | null {
+    return typeIs(this, types.flat());
+  }
 }
 
 // Every request has a "body" (Express libraries check "'body' in req"), with
@@ -139,7 +153,7 @@ Object.defineProperty(NodeRequest.prototype, 'body', {
  * Response object handed to middleware and route handlers by the
  * `NodeAdapter`: a plain Node.js `ServerResponse`, plus the small subset of
  * the Express response API that middleware and exception filters most often
- * rely on (`status()`, `send()`, `json()`, `set()`...). These helpers live on
+ * rely on (`status()`, `send()`, `json()`, `set()`, `redirect()`, `locals`...). These helpers live on
  * the prototype and add no per-request cost; unlike Express, `send()` does not
  * compute an `ETag`.
  *
@@ -148,6 +162,20 @@ Object.defineProperty(NodeRequest.prototype, 'body', {
 export class NodeResponse<
   Request extends IncomingMessage = NodeRequest,
 > extends ServerResponse<Request> {
+  declare [LOCALS]: Record<string, any> | undefined;
+
+  /**
+   * Values scoped to this response, like Express' `res.locals`, for
+   * middleware to pass data along. Created on first access.
+   */
+  get locals(): Record<string, any> {
+    return (this[LOCALS] ??= Object.create(null));
+  }
+
+  set locals(value: Record<string, any>) {
+    this[LOCALS] = value;
+  }
+
   /**
    * Sets the status code. Chainable.
    */
@@ -257,6 +285,110 @@ export class NodeResponse<
     this.setHeader('Content-Type', 'text/plain; charset=utf-8');
     return this.send(STATUS_CODES[statusCode] ?? String(statusCode));
   }
+
+  /**
+   * Redirects to `url` (encoded into the `Location` header), with a 302 unless
+   * a status code is given first, like Express' `res.redirect()`. The body is
+   * a short note in plain text or HTML, whichever the client's `Accept`
+   * header prefers, and empty when it accepts neither.
+   */
+  redirect(url: string): void;
+  redirect(statusCode: number, url: string): void;
+  redirect(statusCodeOrUrl: number | string, url?: string): void {
+    const statusCode =
+      typeof statusCodeOrUrl === 'number' ? statusCodeOrUrl : 302;
+    const location = encodeUrl(
+      typeof statusCodeOrUrl === 'number' ? url! : statusCodeOrUrl,
+    );
+    const message = STATUS_CODES[statusCode] ?? String(statusCode);
+    let body = '';
+    switch (preferredRedirectType(this.req.headers.accept)) {
+      case 'text':
+        this.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        body = `${message}. Redirecting to ${location}`;
+        break;
+      case 'html':
+        this.setHeader('Content-Type', 'text/html; charset=utf-8');
+        body = `<p>${message}. Redirecting to ${escapeHtml(location)}</p>`;
+        break;
+    }
+    this.statusCode = statusCode;
+    this.setHeader('Location', location);
+    appendVary(this, 'Accept');
+    this.setHeader('Content-Length', Buffer.byteLength(body));
+    this.end(this.req.method === 'HEAD' ? undefined : body);
+  }
+}
+
+/**
+ * Picks the redirect body Express would send for an `Accept` header: the
+ * candidate with the highest quality, then the most specific matching range,
+ * then the earlier range, then plain text over HTML (Express' order); `null`
+ * when neither is acceptable.
+ */
+function preferredRedirectType(
+  accept: string | undefined,
+): 'text' | 'html' | null {
+  if (!accept) {
+    return 'text';
+  }
+  const ranges = accept.split(',').map((part, order) => {
+    const [range, ...params] = part.trim().toLowerCase().split(';');
+    const qParam = params.find(param => param.trim().startsWith('q='));
+    const q = qParam ? Number(qParam.trim().slice(2)) : 1;
+    const [type, subtype] = range.trim().split('/');
+    return { type, subtype, q: Number.isNaN(q) ? 0 : q, order };
+  });
+  const rank = (subtype: 'plain' | 'html') => {
+    let best: { q: number; specificity: number; order: number } | undefined;
+    for (const range of ranges) {
+      const specificity =
+        range.type === 'text' && range.subtype === subtype
+          ? 2
+          : range.type === 'text' && range.subtype === '*'
+            ? 1
+            : range.type === '*' && range.subtype === '*'
+              ? 0
+              : -1;
+      if (specificity > (best?.specificity ?? -1)) {
+        best = { q: range.q, specificity, order: range.order };
+      }
+    }
+    return best;
+  };
+  const text = rank('plain');
+  const html = rank('html');
+  const acceptable = [
+    text && text.q > 0 ? { type: 'text' as const, ...text } : undefined,
+    html && html.q > 0 ? { type: 'html' as const, ...html } : undefined,
+  ].filter(candidate => candidate !== undefined);
+  acceptable.sort(
+    (a, b) => b.q - a.q || b.specificity - a.specificity || a.order - b.order,
+  );
+  return acceptable[0]?.type ?? null;
+}
+
+function appendVary(response: ServerResponse, field: string) {
+  const vary = response.getHeader('Vary');
+  if (vary === undefined) {
+    response.setHeader('Vary', field);
+    return;
+  }
+  const value = Array.isArray(vary) ? vary.join(', ') : String(vary);
+  const fields = value.split(',').map(name => name.trim().toLowerCase());
+  if (!fields.includes('*') && !fields.includes(field.toLowerCase())) {
+    response.setHeader('Vary', value ? `${value}, ${field}` : field);
+  }
+}
+
+function escapeHtml(text: string) {
+  return text.replace(
+    /[&<>"']/g,
+    char =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+        char
+      ]!,
+  );
 }
 
 // With an explicit "Content-Length", which Node.js leaves out in answer to
