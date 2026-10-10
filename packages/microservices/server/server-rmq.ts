@@ -479,30 +479,29 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
     const patternSegments = pattern.split(RMQ_SEPARATOR);
     const routingKeySegments = routingKey.split(RMQ_SEPARATOR);
-
-    const patternSegmentsLength = patternSegments.length;
     const routingKeySegmentsLength = routingKeySegments.length;
-    const lastIndex = patternSegmentsLength - 1;
 
-    for (const [i, currentPattern] of patternSegments.entries()) {
-      const currentRoutingKey = routingKeySegments[i];
+    // matched[j] is true when the pattern segments read so far match
+    // the first j segments of the routing key
+    let matched = [true, ...routingKeySegments.map(() => false)];
 
-      if (!currentRoutingKey && !currentPattern) {
-        continue;
+    for (const currentPattern of patternSegments) {
+      const isWildcardAll = currentPattern === RMQ_WILDCARD_ALL;
+      const next = [isWildcardAll && matched[0]];
+
+      for (let j = 1; j <= routingKeySegmentsLength; j++) {
+        if (isWildcardAll) {
+          // "#" matches zero segments (matched[j]) or one more (next[j - 1])
+          next[j] = matched[j] || next[j - 1];
+          continue;
+        }
+        next[j] =
+          matched[j - 1] &&
+          (currentPattern === RMQ_WILDCARD_SINGLE ||
+            currentPattern === routingKeySegments[j - 1]);
       }
-      if (!currentRoutingKey && currentPattern !== RMQ_WILDCARD_ALL) {
-        return false;
-      }
-      if (currentPattern === RMQ_WILDCARD_ALL) {
-        return i === lastIndex;
-      }
-      if (
-        currentPattern !== RMQ_WILDCARD_SINGLE &&
-        currentPattern !== currentRoutingKey
-      ) {
-        return false;
-      }
+      matched = next;
     }
-    return patternSegmentsLength === routingKeySegmentsLength;
+    return matched[routingKeySegmentsLength];
   }
 }
