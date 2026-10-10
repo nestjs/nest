@@ -470,6 +470,75 @@ data: first
     );
   });
 
+  it('generates an id for each write without modifying a reused message', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+    const ping = { data: 'ping' };
+
+    sse.writeMessage(ping, noop);
+    sse.writeMessage(ping, noop);
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).toBe(
+      `
+id: 1
+data: ping
+
+id: 2
+data: ping
+
+`,
+    );
+    expect(ping).toEqual({ data: 'ping' });
+  });
+
+  it('writes a frozen message with a generated id', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage(Object.freeze({ data: 'ping' }), noop);
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).toBe(
+      `
+id: 1
+data: ping
+
+`,
+    );
+  });
+
+  it('reads the getters of a message class when generating an id', async () => {
+    class Ping {
+      get type() {
+        return 'ping';
+      }
+      get data() {
+        return 'pong';
+      }
+    }
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage(new Ping(), noop);
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).toBe(
+      `
+event: ping
+id: 1
+data: pong
+
+`,
+    );
+  });
+
   it('serializes id of 0 in _transform', async () => {
     const sse = new SseStream();
     const sink = new Sink();
