@@ -3,6 +3,7 @@ import {
   HttpException,
   INestApplication,
   RequestMethod,
+  VersioningType,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -119,6 +120,50 @@ describe('Hello world (express not-found handling)', () => {
       );
 
       await request(app.getHttpServer()).get('/hello').expect(200);
+    });
+  });
+
+  // URI versioning puts the version in front of the excluded route, so the
+  // route lives at "/v1/hello" while the exclusion still reads "hello".
+  describe('a method miss on an excluded route under URI versioning', () => {
+    function createVersionedApp(exclude: string[]) {
+      return createApp(app => {
+        app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+        app.setGlobalPrefix('api', { exclude });
+      });
+    }
+
+    it('is answered by the exception filter', async () => {
+      await createVersionedApp(['hello']);
+
+      await request(app.getHttpServer())
+        .post('/v1/hello')
+        .expect(404)
+        .expect({ handledBy: 'nest' });
+    });
+
+    it('is answered under a wildcard exclusion', async () => {
+      await createVersionedApp(['hello/{*splat}']);
+
+      await request(app.getHttpServer())
+        .post('/v1/hello/async')
+        .expect(404)
+        .expect({ handledBy: 'nest' });
+    });
+
+    it('still serves the excluded route itself', async () => {
+      await createVersionedApp(['hello']);
+
+      await request(app.getHttpServer()).get('/v1/hello').expect(200);
+    });
+
+    it('leaves an undeclared version to express', async () => {
+      await createVersionedApp(['hello']);
+
+      await request(app.getHttpServer())
+        .post('/v2/hello')
+        .expect(404)
+        .expect('Content-Type', /text\/html/);
     });
   });
 });

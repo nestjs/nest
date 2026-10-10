@@ -6,9 +6,11 @@ import {
   flatten,
 } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
+import { ExcludeRouteMetadata } from './interfaces/exclude-route-metadata.interface.js';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
 import { isRouteExcluded } from './utils/index.js';
 import {
+  type RouteInfo,
   type VersionValue,
   addLeadingSlash,
   isUndefined,
@@ -16,6 +18,15 @@ import {
 } from '@nestjs/common/internal';
 
 export class RoutePathFactory {
+  /**
+   * URI version prefixes (`/v1`, or `''` for an unversioned route) under
+   * which each global prefix exclusion was matched by a created route.
+   */
+  private readonly excludedRouteVersionPrefixes = new Map<
+    ExcludeRouteMetadata,
+    Set<string>
+  >();
+
   constructor(private readonly applicationConfig: ApplicationConfig) {}
 
   public create(
@@ -66,6 +77,12 @@ export class RoutePathFactory {
             metadata.versioningOptions,
           )
         ) {
+          this.trackExcludedRoute(
+            path,
+            requestMethod!,
+            versionOrVersions,
+            metadata.versioningOptions,
+          );
           return path;
         }
         return stripEndSlash(metadata.globalPrefix || '') + path;
@@ -126,47 +143,96 @@ export class RoutePathFactory {
     const options = this.applicationConfig.getGlobalPrefixOptions();
     const excludedRoutes = options.exclude;
 
-    if (
-      versionOrVersions &&
-      versionOrVersions !== VERSION_NEUTRAL &&
-      versioningOptions?.type === VersioningType.URI
-    ) {
-      path = this.truncateVersionPrefixFromPath(
-        path,
-        versionOrVersions,
-        versioningOptions,
-      );
-    }
+    const versionPrefix = this.getUriVersionPrefixOfPath(
+      path,
+      versionOrVersions,
+      versioningOptions,
+    );
     return (
       Array.isArray(excludedRoutes) &&
-      isRouteExcluded(excludedRoutes, path, requestMethod)
+      isRouteExcluded(
+        excludedRoutes,
+        path.slice(versionPrefix.length),
+        requestMethod,
+      )
     );
   }
 
-  private truncateVersionPrefixFromPath(
+  /**
+   * Returns the global prefix exclusions as the paths routes are actually
+   * served at. Under URI versioning an exclusion such as `hello` matches the
+   * unversioned path, while the route lives at `/v1/hello`, so every version
+   * prefix a matching route was created under is prepended. An exclusion no
+   * created route matched (e.g. a raw route registered by a library) is kept
+   * as configured.
+   */
+  public getExcludedRoutePaths(): RouteInfo[] {
+    const excludedRoutes =
+      this.applicationConfig.getGlobalPrefixOptions().exclude ?? [];
+    return excludedRoutes.flatMap(route => {
+      const versionPrefixes = this.excludedRouteVersionPrefixes.get(route) ?? [
+        '',
+      ];
+      return [...versionPrefixes].map(versionPrefix => ({
+        path: versionPrefix
+          ? versionPrefix + addLeadingSlash(route.path)
+          : route.path,
+        method: route.requestMethod,
+      }));
+    });
+  }
+
+  private trackExcludedRoute(
     path: string,
-    versionValue: Exclude<VersionValue, typeof VERSION_NEUTRAL>,
-    versioningOptions: VersioningOptions,
+    requestMethod: RequestMethod,
+    versionOrVersions?: VersionValue,
+    versioningOptions?: VersioningOptions,
   ) {
-    if (typeof versionValue !== 'string') {
-      versionValue.forEach(version => {
-        if (typeof version === 'string') {
-          path = this.truncateVersionPrefixFromPath(
-            path,
-            version,
-            versioningOptions,
-          );
-        }
-      });
-      return path;
-    }
-
-    const prefix = `/${this.getVersionPrefix(
+    const versionPrefix = this.getUriVersionPrefixOfPath(
+      path,
+      versionOrVersions,
       versioningOptions,
-    )}${versionValue}`;
+    );
+    const unversionedPath = path.slice(versionPrefix.length);
+    const excludedRoutes =
+      this.applicationConfig.getGlobalPrefixOptions().exclude ?? [];
 
-    return path === prefix || path.startsWith(`${prefix}/`)
-      ? path.replace(prefix, '')
-      : path;
+    excludedRoutes
+      .filter(route => isRouteExcluded([route], unversionedPath, requestMethod))
+      .forEach(route => {
+        const versionPrefixes =
+          this.excludedRouteVersionPrefixes.get(route) ?? new Set<string>();
+        versionPrefixes.add(versionPrefix);
+        this.excludedRouteVersionPrefixes.set(route, versionPrefixes);
+      });
+  }
+
+  private getUriVersionPrefixOfPath(
+    path: string,
+    versionOrVersions?: VersionValue,
+    versioningOptions?: VersioningOptions,
+  ): string {
+    if (
+      !versionOrVersions ||
+      versionOrVersions === VERSION_NEUTRAL ||
+      versioningOptions?.type !== VersioningType.URI
+    ) {
+      return '';
+    }
+    const versions = Array.isArray(versionOrVersions)
+      ? versionOrVersions
+      : [versionOrVersions];
+    const versionPrefix = this.getVersionPrefix(versioningOptions);
+
+    for (const version of versions) {
+      if (typeof version !== 'string') {
+        continue;
+      }
+      const prefix = `/${versionPrefix}${version}`;
+      if (path === prefix || path.startsWith(`${prefix}/`)) {
+        return prefix;
+      }
+    }
+    return '';
   }
 }
