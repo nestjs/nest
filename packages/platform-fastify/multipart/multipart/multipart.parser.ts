@@ -314,6 +314,45 @@ function checkFieldNameSize(
 }
 
 /**
+ * Whether the field name holds a numeric index above `limit`, decided as
+ * multer does. Only a name `appendField` parses as a bracket path builds an
+ * array; one it keeps as a literal key (`a[6]suffix`, `[6]`) never does.
+ */
+function exceedsArrayIndexLimit(name: string, limit: number) {
+  if (!/^[^[]+(?:\[[^\]]+\])*(?:\[\])?$/.test(name)) {
+    return false;
+  }
+  for (const [, index] of name.matchAll(/\[(\d+)\]/g)) {
+    if (Number(index) > limit) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * `fieldNestingDepth` and `fieldArrayIndexLimit` are multer's own limits
+ * (busboy knows neither), so they are checked here, against the decoded name.
+ */
+function checkFieldNameShape(
+  name: string,
+  limits: MultipartLimits | undefined,
+) {
+  if (
+    typeof limits?.fieldNestingDepth === 'number' &&
+    name.split('[').length - 1 > limits.fieldNestingDepth
+  ) {
+    throw new MultipartError('LIMIT_FIELD_NESTING', name);
+  }
+  if (
+    typeof limits?.fieldArrayIndexLimit === 'number' &&
+    exceedsArrayIndexLimit(name, limits.fieldArrayIndexLimit)
+  ) {
+    throw new MultipartError('LIMIT_FIELD_ARRAY_INDEX', name);
+  }
+}
+
+/**
  * Adds a text field to `body`, with multer's checks, in multer's order.
  */
 function appendTextField(
@@ -329,6 +368,7 @@ function appendTextField(
     throw new MultipartError('LIMIT_FIELD_VALUE', part.fieldname);
   }
   checkFieldNameSize(rawName, limits);
+  checkFieldNameShape(part.fieldname, limits);
   if (!appendField(body, part.fieldname, part.value)) {
     throw new MultipartError('INVALID_FIELD_NAME', part.fieldname);
   }

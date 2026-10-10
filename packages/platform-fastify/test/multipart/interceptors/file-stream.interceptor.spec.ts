@@ -86,6 +86,34 @@ describe('FileStreamInterceptor', () => {
     }).rejects.toEqual(new PayloadTooLargeException('File too large'));
   });
 
+  it('should apply the field name limits to the fields before the file', async () => {
+    const target = new (FileStreamInterceptor('upload', {
+      limits: { fieldNestingDepth: 1, fieldArrayIndexLimit: 2 },
+    }))();
+    await expect(
+      target.intercept(
+        createContext(
+          createFakeRequest([field('a[b][c]', 'x'), file('upload')]),
+          createReply(),
+        ),
+        handler,
+      ),
+    ).rejects.toEqual(
+      new BadRequestException('Field name nesting too deep - a[b][c]'),
+    );
+    await expect(
+      target.intercept(
+        createContext(
+          createFakeRequest([field('a[3]', 'x'), file('upload')]),
+          createReply(),
+        ),
+        handler,
+      ),
+    ).rejects.toEqual(
+      new BadRequestException('Field name array index too large - a[3]'),
+    );
+  });
+
   it('should reject a file in another field', async () => {
     const target = new (FileStreamInterceptor('upload'))();
     const req = createFakeRequest([file('other')]);

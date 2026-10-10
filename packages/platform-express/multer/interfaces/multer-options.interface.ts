@@ -16,6 +16,10 @@ export interface MulterLimits {
   parts?: number;
   /** For multipart forms, the max number of header key=> value pairs to parse Default: 2000(same as node's http). */
   headerPairs?: number;
+  /** Max nesting depth of field names; `a[b][c]` has 2 levels (Default: Infinity) */
+  fieldNestingDepth?: number;
+  /** Max numeric array index accepted in field names; `a[3]` uses index 3 (Default: Infinity) */
+  fieldArrayIndexLimit?: number;
 }
 
 /**
