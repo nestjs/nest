@@ -25,6 +25,15 @@ describe('RpcException', () => {
         expect(instance.message).toEqual('Rpc Exception');
       });
     });
+    describe('and class name cannot be split into words', () => {
+      class RPC extends RpcException {}
+      const error = { test: true };
+      const instance = new RPC(error);
+
+      it('should fallback error message to "Error"', () => {
+        expect(instance.message).toEqual('Error');
+      });
+    });
     describe('and message property is not undefined', () => {
       const error = { message: 'test', test: true };
       const instance = new RpcException(error);
