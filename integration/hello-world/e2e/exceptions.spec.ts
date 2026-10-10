@@ -3,6 +3,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import { RawServerDefault } from 'fastify';
 import request from 'supertest';
@@ -144,6 +145,66 @@ describe('Error messages', () => {
             statusCode: 500,
             message: 'Internal server error',
           });
+        });
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
+  describe('Node', () => {
+    let app: INestApplication;
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [ErrorsController],
+      }).compile();
+
+      app = module.createNestApplication(new NodeAdapter());
+      server = app.getHttpServer();
+      await listenOnLoopback(app);
+    });
+
+    it(`/GET`, () => {
+      return request(server)
+        .get('/sync')
+        .expect(HttpStatus.BAD_REQUEST)
+        .expect({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Integration test',
+        });
+    });
+
+    it(`/GET (Promise/async)`, () => {
+      return request(server)
+        .get('/async')
+        .expect(HttpStatus.BAD_REQUEST)
+        .expect({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Integration test',
+        });
+    });
+
+    it(`/GET (InternalServerError despite custom content-type)`, async () => {
+      return request(server)
+        .get('/unexpected-error')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+        .expect('Content-Type', /application\/json/)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it(`/GET (InternalServerError when Error instance has statusCode)`, async () => {
+      return request(server)
+        .get('/error-with-status-code')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
 

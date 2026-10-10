@@ -1,6 +1,7 @@
 import type { NestInterceptor, Type } from '@nestjs/common';
 import * as express from '@nestjs/platform-express';
 import * as fastify from '@nestjs/platform-fastify/multipart';
+import * as node from '@nestjs/platform-node';
 
 /**
  * The part of the upload API both platforms share, by name and signature.
@@ -24,7 +25,8 @@ export interface UploadApi {
   OptionsModule: { register(options: any): any };
 }
 
-export const uploadApis: Record<'express' | 'fastify', UploadApi> = {
+export const uploadApis: Record<'express' | 'fastify' | 'node', UploadApi> = {
   express: { ...express, OptionsModule: express.MulterModule },
   fastify: { ...fastify, OptionsModule: fastify.MultipartModule },
+  node: { ...node, OptionsModule: node.MulterModule },
 };

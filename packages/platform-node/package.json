@@ -1,0 +1,50 @@
+{
+  "name": "@nestjs/platform-node",
+  "version": "12.1.2",
+  "description": "Nest - modern, fast, powerful node.js web framework (@platform-node)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js"
+  },
+  "homepage": "https://nestjs.com",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest.git",
+    "directory": "packages/platform-node"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "content-type": "1.0.5",
+    "cors": "2.8.6",
+    "encodeurl": "2.0.0",
+    "fast-querystring": "1.1.2",
+    "find-my-way": "9.9.0",
+    "mime-types": "3.0.2",
+    "multer": "2.4.0",
+    "path-to-regexp": "8.4.2",
+    "qs": "6.15.3",
+    "secure-json-parse": "4.1.0",
+    "serve-static": "2.2.1",
+    "tslib": "2.8.1",
+    "type-is": "2.1.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "12.1.2",
+    "@nestjs/core": "12.1.2"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^12.0.0",
+    "@nestjs/core": "^12.0.0"
+  }
+}

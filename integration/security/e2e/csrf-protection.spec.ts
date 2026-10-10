@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import * as http from 'http';
 import request from 'supertest';
@@ -19,6 +20,7 @@ const HOST = 'app.example';
 const adapters = [
   ['Express', () => new ExpressAdapter()],
   ['Fastify', () => new FastifyAdapter()],
+  ['Node', () => new NodeAdapter()],
 ] as const;
 
 @Catch(ForbiddenException)

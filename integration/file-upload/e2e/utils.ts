@@ -4,10 +4,11 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
-export type AdapterName = 'express' | 'fastify';
+export type AdapterName = 'express' | 'fastify' | 'node';
 
 export const PNG = Buffer.from(
   // 1x1 transparent PNG, so FileTypeValidator's magic-number check runs for real
@@ -38,8 +39,10 @@ export async function createApp(
   const moduleRef = await Test.createTestingModule({
     imports: [module],
   }).compile();
-  if (adapterName === 'express') {
-    const app = moduleRef.createNestApplication(new ExpressAdapter());
+  if (adapterName === 'express' || adapterName === 'node') {
+    const app = moduleRef.createNestApplication(
+      adapterName === 'express' ? new ExpressAdapter() : new NodeAdapter(),
+    );
     await listenOnLoopback(app);
     return app;
   }

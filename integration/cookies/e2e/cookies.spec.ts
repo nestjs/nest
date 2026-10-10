@@ -1,6 +1,7 @@
 import type { INestApplication, NestApplicationOptions } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import { createRequire } from 'module';
 import request from 'supertest';
@@ -34,11 +35,12 @@ function emulateCookieParser(req: any, secret: string) {
   }
 }
 
-type AdapterFactory = () => ExpressAdapter | FastifyAdapter;
+type AdapterFactory = () => ExpressAdapter | FastifyAdapter | NodeAdapter;
 
 const adapters: [string, AdapterFactory][] = [
   ['express', () => new ExpressAdapter()],
   ['fastify', () => new FastifyAdapter()],
+  ['node', () => new NodeAdapter()],
 ];
 
 async function createApp(
