@@ -161,6 +161,20 @@ export function createUploadModule(
       return { body };
     }
 
+    @Post('name-limits')
+    @UseInterceptors(
+      api.NoFilesInterceptor({
+        limits: {
+          fieldNameSize: 12,
+          fieldNestingDepth: 2,
+          fieldArrayIndexLimit: 2,
+        },
+      }),
+    )
+    nameLimits(@Body() body: any) {
+      return { body };
+    }
+
     @Post('parts')
     @UseInterceptors(api.AnyFilesInterceptor({ limits: { parts: 2 } }))
     parts(@Body() body: any) {

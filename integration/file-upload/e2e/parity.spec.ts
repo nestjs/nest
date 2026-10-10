@@ -444,6 +444,79 @@ describe('File upload: Express (multer) and Fastify parity', () => {
       });
     });
 
+    it('should reject a field name nested deeper than fieldNestingDepth', async () => {
+      const ok = await expectParity(http =>
+        http.post('/name-limits').field('a[b][c]', 'x'),
+      );
+      expect(ok.body).toEqual({ body: { a: { b: { c: 'x' } } } });
+      const res = await expectParity(http =>
+        http.post('/name-limits').field('a[b][c][d]', 'x'),
+      );
+      expect(res.body).toEqual({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Field name nesting too deep - a[b][c][d]',
+      });
+    });
+
+    it('should reject an array index over fieldArrayIndexLimit', async () => {
+      const ok = await expectParity(http =>
+        http.post('/name-limits').field('a[2]', 'x'),
+      );
+      expect(ok.body).toEqual({ body: { a: [null, null, 'x'] } });
+      for (const name of ['a[3]', 'a[b][3]', 'a[3][]']) {
+        const res = await expectParity(http =>
+          http.post('/name-limits').field(name, 'x'),
+        );
+        expect(res.body).toEqual({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: `Field name array index too large - ${name}`,
+        });
+      }
+    });
+
+    it('should not apply fieldArrayIndexLimit to a name kept as a literal key', async () => {
+      const res = await expectParity(http =>
+        http.post('/name-limits').field('a[3]x', '1').field('[3]', '2'),
+      );
+      expect(res.body).toEqual({ body: { 'a[3]x': '1', '[3]': '2' } });
+    });
+
+    it('should check the field name limits in the same order', async () => {
+      // Too long, too deep and over the index limit: the size is reported.
+      const tooLong = await expectParity(http =>
+        http.post('/name-limits').field('a[b][c][d][9]', 'x'),
+      );
+      expect(tooLong.body.message).toBe('Field name too long');
+      // Too deep and over the index limit: the depth is reported.
+      const tooDeep = await expectParity(http =>
+        http.post('/name-limits').field('a[b][c][9]', 'x'),
+      );
+      expect(tooDeep.body.message).toBe(
+        'Field name nesting too deep - a[b][c][9]',
+      );
+    });
+
+    it('should agree on field names with unusual brackets', async () => {
+      for (const name of [
+        'a[x[9]',
+        'a[9',
+        'a]9[',
+        'a[[9]]',
+        '[[[',
+        'a[][9]',
+        'a[9][]',
+        'a[09]',
+        'a[2.5]',
+        'a[-9]',
+        'a[ 9 ]',
+        'a%5B9%5D',
+      ]) {
+        await expectParity(http => http.post('/name-limits').field(name, 'x'));
+      }
+    });
+
     it('should merge module-level limits with route limits', async () => {
       const withDefaults = {} as Record<AdapterName, INestApplication>;
       const booted: { app: INestApplication; dir: string }[] = [];

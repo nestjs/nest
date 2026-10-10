@@ -15,6 +15,7 @@ export const multerExceptions = {
   LIMIT_UNEXPECTED_FILE: 'Unexpected file field',
   MISSING_FIELD_NAME: 'Field name missing',
   LIMIT_FIELD_NESTING: 'Field name nesting too deep',
+  LIMIT_FIELD_ARRAY_INDEX: 'Field name array index too large',
   // A multer 2.4 code that platform-express's table lacks. Raised here for
   // field names that would pollute a prototype, which multer accepts.
   INVALID_FIELD_NAME: 'Invalid field name',
