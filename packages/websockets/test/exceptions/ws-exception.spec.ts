@@ -25,6 +25,15 @@ describe('WsException', () => {
         expect(instance.message).toEqual('Ws Exception');
       });
     });
+    describe('and class name cannot be split into words', () => {
+      class WS extends WsException {}
+      const error = { test: true };
+      const instance = new WS(error);
+
+      it('should fallback error message to "Error"', () => {
+        expect(instance.message).toEqual('Error');
+      });
+    });
     describe('and message property is not undefined', () => {
       const error = { message: 'test', test: true };
       const instance = new WsException(error);
