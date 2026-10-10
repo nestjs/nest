@@ -343,12 +343,13 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         err: NO_MESSAGE_HANDLER,
         status,
       };
-      return this.sendMessage(
+      await this.sendMessage(
         noHandlerPacket,
         properties.replyTo,
         properties.correlationId,
         rmqContext,
       );
+      return;
     }
     const publish = <T>(data: T) =>
       this.sendMessage(
@@ -384,7 +385,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     replyTo: any,
     correlationId: string,
     context: RmqContext,
-  ): void {
+  ): Promise<unknown> {
     const outgoingResponse = this.serializer.serialize(
       message as unknown as OutgoingResponse,
     );
@@ -394,7 +395,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
     const sendOptions = { ...options, correlationId };
 
-    this.channel!.sendToQueue(replyTo, buffer, sendOptions);
+    return this.channel!.sendToQueue(replyTo, buffer, sendOptions);
   }
 
   public unwrap<T>(): T {

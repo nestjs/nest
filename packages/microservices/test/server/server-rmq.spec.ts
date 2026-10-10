@@ -210,7 +210,7 @@ describe('ServerRMQ', () => {
     beforeEach(() => {
       sendMessageStub = vi
         .spyOn(server, 'sendMessage')
-        .mockImplementation(() => ({}));
+        .mockResolvedValue(undefined);
       untypedServer.channel = channel;
     });
     afterEach(() => {
@@ -249,6 +249,11 @@ describe('ServerRMQ', () => {
         1,
         expect.any(RmqContext),
       );
+    });
+    it('should reject with the publish error if the NO_MESSAGE_HANDLER reply cannot be sent', async () => {
+      const error = new Error('Channel closed');
+      sendMessageStub.mockRejectedValueOnce(error);
+      await expect(server.handleMessage(msg, '')).rejects.toBe(error);
     });
     it('should call handler if exists in handlers object', async () => {
       const handler = vi.fn();
@@ -480,6 +485,13 @@ describe('ServerRMQ', () => {
         Buffer.from(JSON.stringify(message)),
         { correlationId },
       );
+    });
+    it('should reject if the reply cannot be published', async () => {
+      const error = new Error('Channel closed');
+      channel.sendToQueue.mockRejectedValueOnce(error);
+      await expect(
+        server.sendMessage({ test: true }, 'test', '0', context),
+      ).rejects.toBe(error);
     });
     describe('when the response is a record', () => {
       const replyTo = 'test';
