@@ -267,7 +267,6 @@ export class NodeRouter {
     done: NextFunction | undefined,
   ) {
     const stack = this.stack;
-    const method = req.method!;
     let index = 0;
     let routeHandlers: RouteHandler[] | undefined;
     let routeIndex = 0;
@@ -313,6 +312,9 @@ export class NodeRouter {
       while (index < stack.length) {
         const layer = stack[index++];
         const url = req.url!;
+        // Read for every layer, as in Express, so that middleware such as
+        // "method-override" can change the method routes are matched with
+        const method = req.method!;
         if (url !== cachedUrl) {
           cachedUrl = url;
           try {

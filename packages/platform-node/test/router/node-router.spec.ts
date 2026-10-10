@@ -146,6 +146,23 @@ describe('NodeRouter', () => {
       expect(get).toHaveBeenCalledTimes(1);
     });
 
+    it('should match routes with a method changed by earlier middleware', () => {
+      // As "method-override" does
+      const post = vi.fn();
+      const put = vi.fn();
+      router.use((req: NodeRequest, _res: unknown, next: Next) => {
+        req.method = 'PUT';
+        next();
+      });
+      router.post('/users', post);
+      router.put('/users', put);
+
+      dispatch('POST', '/users');
+
+      expect(post).not.toHaveBeenCalled();
+      expect(put).toHaveBeenCalledTimes(1);
+    });
+
     it('should run routes registered with all() for every method', () => {
       const all = vi.fn();
       router.all('/users', all);
