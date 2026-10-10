@@ -18,7 +18,7 @@ export class KafkaRequestDeserializer extends IncomingRequestDeserializer {
     }
     return {
       pattern: options.channel,
-      data: data?.value ?? data,
+      data: data?.value !== undefined ? data.value : data,
     };
   }
 }
