@@ -7,6 +7,8 @@ import { ApplicationConfig } from '../application-config.js';
 import { MESSAGES } from '../constants.js';
 import { CookieSigner } from '../helpers/cookies/cookie-signer.js';
 import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import { InstanceLoader } from '../injector/instance-loader.js';
 import { GraphInspector } from '../inspector/graph-inspector.js';
 import { NestApplication } from '../nest-application.js';
 import { mapToExcludeRoute } from './../middleware/utils.js';
@@ -229,6 +231,63 @@ describe('NestApplication', () => {
 
       expect(container.getHttpAdapterHostRef().listening).toBe(false);
       await expect(instance.getUrl()).rejects.toBe(MESSAGES.CALL_LISTEN_FIRST);
+    });
+
+    it('should wait for an init in flight before tearing down', async () => {
+      const events: string[] = [];
+      let finishInit!: () => void;
+      const initGate = new Promise<void>(resolve => (finishInit = resolve));
+
+      class Service {
+        async onModuleInit() {
+          events.push('init:start');
+          await initGate;
+          events.push('init:end');
+        }
+
+        onModuleDestroy() {
+          events.push('destroy');
+        }
+      }
+
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const httpAdapter = new NoopHttpAdapter({});
+      httpAdapter.close = () => events.push('http:close');
+      container.setHttpAdapter(httpAdapter);
+      const { moduleRef } = (await container.addModule(
+        class AppModule {},
+        [],
+      ))!;
+      container.addProvider(Service, moduleRef.token);
+      await new InstanceLoader(
+        container,
+        new Injector(),
+        new GraphInspector(container),
+      ).createInstancesOfDependencies(container.getModules());
+
+      const instance = new NestApplication(
+        container,
+        httpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+
+      const init = instance.init();
+      const close = instance.close();
+      await new Promise(resolve => setImmediate(resolve));
+      expect(events).not.toContain('destroy');
+
+      finishInit();
+      await Promise.all([init, close]);
+
+      expect(events).toEqual([
+        'init:start',
+        'init:end',
+        'destroy',
+        'http:close',
+      ]);
     });
   });
   describe('buffered logs', () => {
