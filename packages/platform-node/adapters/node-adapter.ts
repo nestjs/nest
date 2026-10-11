@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  NotFoundException,
   HttpException,
   HttpStatus,
   InternalServerErrorException,
@@ -50,6 +51,7 @@ import {
   endWithoutBody,
   NodeRequest,
   NodeResponse,
+  ROUTE_ERROR_HANDLER,
   toBytes,
 } from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
@@ -214,7 +216,8 @@ export class NodeAdapter extends AbstractHttpAdapter<
       this.logger.warn(
         "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
       );
-      response.setHeader('Content-Type', 'application/json');
+      // With the charset Express' res.json() ends up sending
+      response.setHeader('Content-Type', 'application/json; charset=utf-8');
     }
     // Buffers, typed arrays and DataViews go out as binary, as with Fastify
     if (ArrayBuffer.isView(body)) {
@@ -451,6 +454,22 @@ export class NodeAdapter extends AbstractHttpAdapter<
           listener as http.RequestListener,
         )
       : http.createServer(serverOptions, listener);
+    // Where res.sendFile() hands its errors (see ROUTE_ERROR_HANDLER); a
+    // directory answers like an unmatched route, as with Express
+    (this.httpServer as any)[ROUTE_ERROR_HANDLER] = (
+      err: any,
+      req: NodeRequest,
+      res: NodeResponse,
+    ) =>
+      this.instance.handleError(
+        err?.code === 'EISDIR'
+          ? new NotFoundException(
+              `Cannot ${req.method} ${this.getRequestUrl(req)}`,
+            )
+          : err,
+        req,
+        res,
+      );
 
     if (options?.return503OnClosing) {
       this.use((req: NodeRequest, res: NodeResponse, next: Function) => {

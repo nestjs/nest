@@ -165,6 +165,16 @@ export class NodeRouter {
     this.dispatch(req as NodeRequest, res as NodeResponse, done);
   }
 
+  /**
+   * Runs the error-handling middleware (then the final handler) for an error
+   * raised outside of the middleware chain, such as by `res.sendFile()` once
+   * the route handler returned. Express passes those to the `next()` it
+   * stores on every request.
+   */
+  public handleError(err: unknown, req: NodeRequest, res: NodeResponse) {
+    this.dispatch(req, res, undefined, err);
+  }
+
   public get(...args: any[]) {
     return this.addRoute('GET', args);
   }
@@ -320,6 +330,7 @@ export class NodeRouter {
     req: NodeRequest,
     res: NodeResponse,
     done: NextFunction | undefined,
+    initialError?: unknown,
   ) {
     const stack = this.stack;
     let index = 0;
@@ -479,7 +490,7 @@ export class NodeRouter {
       );
     };
 
-    next();
+    next(initialError);
   }
 }
 

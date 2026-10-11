@@ -4,11 +4,26 @@ import encodeUrl from 'encodeurl';
 import { IncomingMessage, ServerResponse, STATUS_CODES } from 'http';
 import { parse as parseQueryString } from 'fast-querystring';
 import { contentType as lookupContentType } from 'mime-types';
+import onFinished from 'on-finished';
+import { isAbsolute } from 'path';
+import send from 'send';
 import typeIs from 'type-is';
 import { getRoutingPath } from '../router/utils.js';
 
 const QUERY = Symbol('query');
 const LOCALS = Symbol('locals');
+
+/**
+ * Set by the `NodeAdapter` on the HTTP server it creates: a function that
+ * runs the error-handling middleware (and Nest's exception filters) for an
+ * error raised after the route handler returned, such as by
+ * `res.sendFile()`. Express reaches them through the `next()` it stores on
+ * every request; the server is reachable from the request's socket, so this
+ * costs nothing per request.
+ *
+ * @internal
+ */
+export const ROUTE_ERROR_HANDLER = Symbol('nestjs.node.routeErrorHandler');
 
 /**
  * What `req.app` returns: middleware written for Express reads settings from
@@ -24,6 +39,27 @@ const NODE_APP = Object.freeze({
     return setting === 'trust proxy' ? false : undefined;
   },
 });
+
+/**
+ * Options of {@link NodeResponse.sendFile}, those of the `send` package, as
+ * with Express' `res.sendFile()`.
+ */
+export interface NodeSendFileOptions {
+  /** Directory a relative `path` is resolved against. */
+  root?: string;
+  /** `Cache-Control` max-age, in milliseconds or as a string ("1d"). */
+  maxAge?: number | string;
+  /** Extra headers, set once the file is known to exist. */
+  headers?: Record<string, string | number | string[]>;
+  /** How to treat dotfiles: `'ignore'` (404, the default), `'allow'` or `'deny'` (403). */
+  dotfiles?: 'allow' | 'deny' | 'ignore';
+  /** Whether to send an `ETag`. Defaults to `true`, as with Express. */
+  etag?: boolean;
+  lastModified?: boolean;
+  cacheControl?: boolean;
+  immutable?: boolean;
+  acceptRanges?: boolean;
+}
 
 /**
  * Options of {@link NodeResponse.cookie}, as with Express' `res.cookie()`.
@@ -201,7 +237,7 @@ Object.defineProperty(NodeRequest.prototype, 'body', {
  * `NodeAdapter`: a plain Node.js `ServerResponse`, plus the small subset of
  * the Express response API that middleware and exception filters most often
  * rely on (`status()`, `send()`, `json()`, `set()`, `append()`, `cookie()`,
- * `redirect()`, `locals`...). These helpers live on
+ * `redirect()`, `sendFile()`, `locals`...). These helpers live on
  * the prototype and add no per-request cost; unlike Express, `send()` does not
  * compute an `ETag`.
  *
@@ -404,6 +440,64 @@ export class NodeResponse<
   }
 
   /**
+   * Streams a file, like Express' `res.sendFile()` (both build on the `send`
+   * package): `Content-Type` from the extension, `Content-Length`,
+   * `Last-Modified`, `ETag`, ranges and conditional requests (304). `path` is
+   * absolute, or relative to `options.root`.
+   *
+   * `callback(err)` is called once the transfer is done or failed (check
+   * `res.headersSent` before responding). Without one, a failure goes to the
+   * error-handling middleware and Nest's exception filters, as with Express:
+   * a missing file is a 404, a directory answers like an unmatched route.
+   */
+  sendFile(
+    path: string,
+    options?: NodeSendFileOptions | ((err?: Error) => void) | null,
+    callback?: (err?: Error) => void,
+  ): void {
+    if (!path) {
+      throw new TypeError('path argument is required to res.sendFile');
+    }
+    if (typeof path !== 'string') {
+      throw new TypeError('path must be a string to res.sendFile');
+    }
+    let done = callback;
+    let opts: NodeSendFileOptions = {};
+    if (typeof options === 'function') {
+      done = options;
+    } else if (options) {
+      opts = { ...options };
+    }
+    if (!opts.root && !isAbsolute(path)) {
+      throw new TypeError(
+        'path must be absolute or specify root to res.sendFile',
+      );
+    }
+    opts.etag ??= true;
+    const req = this.req;
+    const file = send(req, encodeURI(path), opts as send.SendOptions);
+    transferFile(this, file, opts, err => {
+      if (done) {
+        return done(err);
+      }
+      // Client aborts and write errors are nothing to report, as with Express
+      if (
+        !err ||
+        (err as any).code === 'ECONNABORTED' ||
+        (err as any).syscall === 'write'
+      ) {
+        return;
+      }
+      const handleError = (req.socket as any)?.server?.[ROUTE_ERROR_HANDLER];
+      if (handleError) {
+        handleError(err, req, this);
+      } else {
+        respondWithError(this, err);
+      }
+    });
+  }
+
+  /**
    * Redirects to `url` (encoded into the `Location` header), with a 302 unless
    * a status code is given first, like Express' `res.redirect()`. The body is
    * a short note in plain text or HTML, whichever the client's `Accept`
@@ -435,6 +529,87 @@ export class NodeResponse<
     this.setHeader('Content-Length', Buffer.byteLength(body));
     this.end(this.req.method === 'HEAD' ? undefined : body);
   }
+}
+
+/**
+ * Pipes a `send` stream into the response and calls `callback` once, when the
+ * transfer ended, failed or was aborted: Express' `sendfile()`.
+ */
+function transferFile(
+  res: ServerResponse,
+  file: send.SendStream,
+  options: NodeSendFileOptions,
+  callback: (err?: Error) => void,
+) {
+  let done = false;
+  let streaming: boolean | undefined;
+  const finish = (err?: Error) => {
+    if (!done) {
+      done = true;
+      callback(err);
+    }
+  };
+  const onAborted = () =>
+    finish(
+      Object.assign(new Error('Request aborted'), { code: 'ECONNABORTED' }),
+    );
+
+  file.on('directory', () =>
+    finish(Object.assign(new Error('EISDIR, read'), { code: 'EISDIR' })),
+  );
+  file.on('end', () => finish());
+  file.on('error', (err: Error) => finish(err));
+  file.on('file', () => {
+    streaming = false;
+  });
+  file.on('stream', () => {
+    streaming = true;
+  });
+  onFinished(res, (err: any) => {
+    if (err && err.code === 'ECONNRESET') {
+      return onAborted();
+    }
+    if (err) {
+      return finish(err);
+    }
+    if (done) {
+      return;
+    }
+    setImmediate(() => {
+      if (streaming !== false && !done) {
+        onAborted();
+        return;
+      }
+      finish();
+    });
+  });
+  if (options.headers) {
+    const headers = options.headers;
+    file.on('headers', (response: ServerResponse) => {
+      for (const name of Object.keys(headers)) {
+        response.setHeader(name, headers[name]);
+      }
+    });
+  }
+  file.pipe(res);
+}
+
+/**
+ * Answers an error with its status and reason phrase, when there is no
+ * adapter to hand it to (a `NodeRouter` mounted in another server).
+ */
+function respondWithError(res: ServerResponse, err: any) {
+  if (res.headersSent) {
+    res.destroy();
+    return;
+  }
+  // A directory answers like a missing file
+  const status =
+    err?.code === 'EISDIR' ? 404 : (err?.statusCode ?? err?.status);
+  res.statusCode = status >= 400 && status < 600 ? status : 500;
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.end(STATUS_CODES[res.statusCode]);
 }
 
 /**

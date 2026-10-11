@@ -1,4 +1,8 @@
-import { Controller, Get, Module, Redirect, Res } from '@nestjs/common';
+import { Controller, Get, Module, Param, Redirect, Res } from '@nestjs/common';
+import { join } from 'path';
+import { fileURLToPath } from 'url';
+
+export const FILES_DIR = fileURLToPath(new URL('./files', import.meta.url));
 
 @Controller()
 export class ResponsesController {
@@ -35,6 +39,25 @@ export class ResponsesController {
   @Get('buffer')
   buffer() {
     return Buffer.from([1, 2, 3]);
+  }
+
+  @Get('files/:name')
+  sendFile(@Param('name') name: string, @Res() res: any) {
+    res.sendFile(join(FILES_DIR, name));
+  }
+
+  @Get('rooted/:name')
+  sendRootedFile(@Param('name') name: string, @Res() res: any) {
+    res.sendFile(name, { root: FILES_DIR });
+  }
+
+  @Get('files-or-gone/:name')
+  sendFileOrGone(@Param('name') name: string, @Res() res: any) {
+    res.sendFile(join(FILES_DIR, name), (err?: Error) => {
+      if (err && !res.headersSent) {
+        res.status(410).send('gone');
+      }
+    });
   }
 }
 

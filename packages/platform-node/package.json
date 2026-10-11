@@ -34,9 +34,11 @@
     "find-my-way": "9.9.0",
     "mime-types": "3.0.2",
     "multer": "2.4.0",
+    "on-finished": "2.4.1",
     "path-to-regexp": "8.4.2",
     "qs": "6.15.3",
     "secure-json-parse": "4.1.0",
+    "send": "1.2.1",
     "serve-static": "2.2.1",
     "tslib": "2.8.1",
     "type-is": "2.1.0"

@@ -1,11 +1,21 @@
-import { readFileSync } from 'fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from 'fs';
 import * as http from 'http';
 import * as https from 'https';
 import type { AddressInfo } from 'net';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import {
   endWithoutBody,
   NodeRequest,
   NodeResponse,
+  ROUTE_ERROR_HANDLER,
 } from '../../adapters/node-request.js';
 
 type Handler = (req: NodeRequest, res: NodeResponse) => void;
@@ -632,6 +642,187 @@ describe('NodeResponse', () => {
         'a=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
         'b=; Domain=example.com; Path=/x; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       ]);
+    });
+  });
+
+  describe('sendFile()', () => {
+    let dir: string;
+    const text = 'hello from a file';
+
+    beforeAll(() => {
+      dir = mkdtempSync(join(tmpdir(), 'nest-send-file-'));
+      mkdirSync(join(dir, 'sub'));
+      writeFileSync(join(dir, 'a.txt'), text);
+      writeFileSync(join(dir, '.secret'), 'secret');
+      const date = new Date('2026-01-01T00:00:00Z');
+      utimesSync(join(dir, 'a.txt'), date, date);
+    });
+
+    afterAll(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('should stream the file with its type, length, dates and ETag', async () => {
+      const response = await respond((req, res) =>
+        res.sendFile(join(dir, 'a.txt')),
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe(
+        'text/plain; charset=utf-8',
+      );
+      expect(response.headers['content-length']).toBe(String(text.length));
+      expect(response.headers['accept-ranges']).toBe('bytes');
+      expect(response.headers['cache-control']).toBe('public, max-age=0');
+      expect(response.headers['last-modified']).toBe(
+        'Thu, 01 Jan 2026 00:00:00 GMT',
+      );
+      expect(response.headers.etag).toMatch(/^W\/"/);
+      expect(response.body.toString()).toBe(text);
+    });
+
+    it('should resolve a relative path against the root option', async () => {
+      const response = await respond((req, res) =>
+        res.sendFile('a.txt', { root: dir }),
+      );
+
+      expect(response.body.toString()).toBe(text);
+    });
+
+    it('should send no body in answer to HEAD', async () => {
+      const response = await respond(
+        (req, res) => res.sendFile(join(dir, 'a.txt')),
+        { method: 'HEAD' },
+      );
+
+      expect(response.headers['content-length']).toBe(String(text.length));
+      expect(response.body).toHaveLength(0);
+    });
+
+    it('should answer a range request with 206', async () => {
+      const response = await respond(
+        (req, res) => res.sendFile(join(dir, 'a.txt')),
+        { headers: { range: 'bytes=0-4' } },
+      );
+
+      expect(response.statusCode).toBe(206);
+      expect(response.headers['content-range']).toBe(
+        `bytes 0-4/${text.length}`,
+      );
+      expect(response.body.toString()).toBe('hello');
+    });
+
+    it('should answer a request for a fresh copy with 304', async () => {
+      const port = await listen((req, res) => res.sendFile(join(dir, 'a.txt')));
+      const { etag } = (await request(port)).headers;
+
+      const response = await request(port, {
+        headers: { 'if-none-match': etag },
+      });
+
+      expect(response.statusCode).toBe(304);
+      expect(response.body).toHaveLength(0);
+    });
+
+    it('should set the headers and max-age options, and leave out the ETag with etag: false', async () => {
+      const response = await respond((req, res) =>
+        res.sendFile(join(dir, 'a.txt'), {
+          headers: { 'X-Custom': 'yes' },
+          maxAge: 60_000,
+          etag: false,
+        }),
+      );
+
+      expect(response.headers['x-custom']).toBe('yes');
+      expect(response.headers['cache-control']).toBe('public, max-age=60');
+      expect(response.headers.etag).toBeUndefined();
+    });
+
+    it.each([
+      ['a relative path without root', 'a.txt', /absolute or specify root/],
+      ['an empty path', '', /path argument is required/],
+      ['a path that is not a string', 42, /path must be a string/],
+    ])('should throw for %s', async (_, path, message) => {
+      const error = await inspect((req, res) => {
+        try {
+          res.sendFile(path as any);
+        } catch (err) {
+          return err;
+        }
+      });
+
+      expect(error).toBeInstanceOf(TypeError);
+      expect((error as Error).message).toMatch(message);
+    });
+
+    it('should call the callback once the file is sent, and with the error when it is missing', async () => {
+      const outcomes: unknown[] = [];
+      const port = await listen((req, res) => {
+        res.sendFile(join(dir, req.url!.slice(1)), err => {
+          outcomes.push(err ? (err as any).status : 'sent');
+          if (err) {
+            res.statusCode = 410;
+            res.end('gone');
+          }
+        });
+      });
+
+      const sent = await request(port, { path: '/a.txt' });
+      const missing = await request(port, { path: '/nope.txt' });
+
+      expect(sent.body.toString()).toBe(text);
+      expect(missing.statusCode).toBe(410);
+      expect(outcomes).toEqual(['sent', 404]);
+    });
+
+    it('should take the callback as the second argument', async () => {
+      let called = false;
+      await respond((req, res) =>
+        res.sendFile(join(dir, 'a.txt'), () => {
+          called = true;
+        }),
+      );
+
+      expect(called).toBe(true);
+    });
+
+    it.each([
+      ['a missing file', 'nope.txt'],
+      ['a directory', 'sub'],
+      ['a dotfile', '.secret'],
+    ])(
+      'should answer %s with 404 when there is no callback nor adapter',
+      async (_, name) => {
+        const response = await respond((req, res) =>
+          res.sendFile(join(dir, name)),
+        );
+
+        expect(response.statusCode).toBe(404);
+        expect(response.headers['x-content-type-options']).toBe('nosniff');
+        expect(response.body.toString()).toBe('Not Found');
+      },
+    );
+
+    it("should hand an error to the server's error handler when there is no callback", async () => {
+      const errors: any[] = [];
+      const port = await listen((req, res) =>
+        res.sendFile(join(dir, 'nope.txt')),
+      );
+      (server as any)[ROUTE_ERROR_HANDLER] = (
+        err: any,
+        req: NodeRequest,
+        res: NodeResponse,
+      ) => {
+        errors.push(err);
+        res.statusCode = 499;
+        res.end('handled');
+      };
+
+      const response = await request(port);
+
+      expect(response.statusCode).toBe(499);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].status).toBe(404);
     });
   });
 

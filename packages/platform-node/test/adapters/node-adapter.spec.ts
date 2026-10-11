@@ -3,6 +3,7 @@ import {
   HttpException,
   InternalServerErrorException,
   type NestApplicationOptions,
+  NotFoundException,
   RequestMethod,
   StreamableFile,
   VERSION_NEUTRAL,
@@ -167,6 +168,49 @@ describe('NodeAdapter', () => {
       const router = new NodeRouter(() => {});
 
       expect(new NodeAdapter(router).getInstance()).toBe(router);
+    });
+  });
+
+  describe('res.sendFile() errors without a callback', () => {
+    let dir: string;
+    let port: number;
+    let errors: unknown[];
+
+    beforeEach(async () => {
+      dir = mkdtempSync(join(tmpdir(), 'nest-adapter-send-file-'));
+      mkdirSync(join(dir, 'sub'));
+      errors = [];
+      port = await startServer();
+      adapter.get('/:name', (req: NodeRequest, res: NodeResponse) =>
+        res.sendFile(join(dir, req.params.name)),
+      );
+      adapter.setErrorHandler(
+        (err: any, req: NodeRequest, res: NodeResponse, next: Next) => {
+          errors.push(err);
+          const status = err.getStatus?.() ?? err.statusCode;
+          adapter.reply(res, { status }, status);
+        },
+      );
+    });
+
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('should hand a missing file to the error handlers, as Express does through next()', async () => {
+      const res = await request(port, { path: '/nope.txt' });
+
+      expect(res.status).toBe(404);
+      expect(errors).toHaveLength(1);
+      expect((errors[0] as any).code).toBe('ENOENT');
+    });
+
+    it('should answer a directory like an unmatched route', async () => {
+      const res = await request(port, { path: '/sub' });
+
+      expect(res.status).toBe(404);
+      expect(errors[0]).toBeInstanceOf(NotFoundException);
+      expect((errors[0] as NotFoundException).message).toBe('Cannot GET /sub');
     });
   });
 
@@ -398,7 +442,10 @@ describe('NodeAdapter', () => {
       );
 
       expect(res.status).toBe(400);
-      expect(res.headers['content-type']).toBe('application/json');
+      // As Express' res.json() ends up sending it
+      expect(res.headers['content-type']).toBe(
+        'application/json; charset=utf-8',
+      );
       expect(JSON.parse(res.text)).toEqual(body);
       expect(warn).toHaveBeenCalledOnce();
     });

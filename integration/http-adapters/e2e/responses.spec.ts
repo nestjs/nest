@@ -72,6 +72,70 @@ describe.each(adapters('express', 'node'))(
   },
 );
 
+describe.each(adapters('express', 'node'))('res.sendFile() (%s)', name => {
+  let app: INestApplication;
+  const get = (path: string) => request(app.getHttpServer()).get(path);
+
+  beforeAll(async () => {
+    app = await createApp(name, ResponsesModule);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('should stream the file with its type, length, Last-Modified and ETag', async () => {
+    const res = await get('/files/hello.txt');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
+    expect(res.headers['content-length']).toBe('17');
+    expect(res.headers['accept-ranges']).toBe('bytes');
+    expect(res.headers['last-modified']).toBeDefined();
+    expect(res.headers.etag).toBeDefined();
+    expect(res.text).toBe('hello from a file');
+  });
+
+  it('should resolve a relative path against the root option', async () => {
+    expect((await get('/rooted/hello.txt')).text).toBe('hello from a file');
+  });
+
+  it('should answer ranges and conditional requests', async () => {
+    const range = await get('/files/hello.txt').set('range', 'bytes=0-4');
+    const { etag } = (await get('/files/hello.txt')).headers;
+    const fresh = await get('/files/hello.txt').set('if-none-match', etag);
+
+    expect(range.status).toBe(206);
+    expect(range.text).toBe('hello');
+    expect(fresh.status).toBe(304);
+  });
+
+  it('should hand a missing file to Nest as a 404 without a callback', async () => {
+    const res = await get('/files/missing.txt');
+
+    expect(res.status).toBe(404);
+    expect(res.body.statusCode).toBe(404);
+  });
+
+  it('should answer a directory like an unmatched route', async () => {
+    const res = await get('/files/folder');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      message: 'Cannot GET /files/folder',
+      error: 'Not Found',
+      statusCode: 404,
+    });
+  });
+
+  it('should leave the response to the callback when given one', async () => {
+    const res = await get('/files-or-gone/missing.txt');
+
+    expect(res.status).toBe(410);
+    expect(res.text).toBe('gone');
+  });
+});
+
 // Express serializes typed arrays to JSON; Node, like Fastify, sends their bytes
 describe.each(adapters('fastify', 'node'))('Binary bodies (%s)', name => {
   let app: INestApplication;
