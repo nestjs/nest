@@ -41,7 +41,12 @@ import * as bodyParsers from '../body-parser/body-parser.js';
 import { NodeRouter } from '../router/node-router.js';
 import { getRoutingPath } from '../router/utils.js';
 import { type NodeViewOptions, ViewRenderer } from '../views/view-renderer.js';
-import { endWithoutBody, NodeRequest, NodeResponse } from './node-request.js';
+import {
+  endWithoutBody,
+  NodeRequest,
+  NodeResponse,
+  toBytes,
+} from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 
 type StreamableHandlerResponse = Parameters<StreamableFile['errorHandler']>[1];
@@ -93,6 +98,12 @@ function rawBodyVerifier(req: NodeRequest, _res: unknown, buffer: Buffer) {
 
 function getBodyParserOptions<T extends object>(rawBody: boolean, options?: T) {
   return rawBody ? { ...options, verify: rawBodyVerifier } : options || {};
+}
+
+function setFinalHeaders(res: NodeResponse) {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Security-Policy', "default-src 'none'");
+  res.setHeader('X-Content-Type-Options', 'nosniff');
 }
 
 /**
@@ -193,10 +204,11 @@ export class NodeAdapter extends AbstractHttpAdapter<
       );
       response.setHeader('Content-Type', 'application/json');
     }
-    if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
+    // Buffers, typed arrays and DataViews go out as binary, as with Fastify
+    if (ArrayBuffer.isView(body)) {
       return this.writeBody(
         response,
-        body,
+        toBytes(body),
         responseContentType,
         'application/octet-stream',
       );
@@ -242,9 +254,8 @@ export class NodeAdapter extends AbstractHttpAdapter<
   }
 
   public redirect(response: NodeResponse, statusCode: number, url: string) {
-    response.statusCode = statusCode;
-    response.setHeader('Location', encodeUrl(url));
-    response.end();
+    // With the short body and "Vary: Accept" Express sends (@Redirect())
+    response.redirect(statusCode, url);
   }
 
   public setErrorHandler(handler: Function, prefix?: string) {
@@ -621,13 +632,19 @@ export class NodeAdapter extends AbstractHttpAdapter<
       if (res.statusCode >= 500) {
         this.logger.error(err?.stack ?? err);
       }
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      setFinalHeaders(res);
       res.end(http.STATUS_CODES[res.statusCode]);
       return;
     }
+    // Requests outside the global prefix. As with Express' final handler, the
+    // path is echoed back as received (percent-encoded, never decoded) and
+    // the browser told not to sniff or run anything in the response
+    const url = req.originalUrl ?? req.url!;
+    const queryIndex = url.indexOf('?');
+    const path = queryIndex === -1 ? url : url.slice(0, queryIndex);
     res.statusCode = HttpStatus.NOT_FOUND;
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.end(`Cannot ${req.method} ${req.path}`);
+    setFinalHeaders(res);
+    res.end(`Cannot ${req.method} ${encodeUrl(path)}`);
   }
 
   private normalizePrefix(prefix?: string): string {

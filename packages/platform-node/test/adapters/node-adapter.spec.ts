@@ -240,6 +240,14 @@ describe('NodeAdapter', () => {
     it.each([
       ['a Buffer', Buffer.from([0x00, 0xff, 0x10, 0x80])],
       ['a Uint8Array', new Uint8Array([0x00, 0xff, 0x10, 0x80])],
+      [
+        'another typed array, as Fastify does',
+        new Uint16Array(new Uint8Array([0x00, 0xff, 0x10, 0x80]).buffer),
+      ],
+      [
+        'a DataView, as Fastify does',
+        new DataView(new Uint8Array([7, 0x00, 0xff, 0x10, 0x80]).buffer, 1, 4),
+      ],
     ])('should send %s as binary data', async (_, body) => {
       const res = await replyWith(body);
 
@@ -623,14 +631,19 @@ describe('NodeAdapter', () => {
       return request(port);
     };
 
-    it.each([301, 302, 307])(
-      'should send a %i with the Location header and no body',
-      async statusCode => {
+    it.each([
+      [301, 'Moved Permanently'],
+      [302, 'Found'],
+      [307, 'Temporary Redirect'],
+    ])(
+      'should send a %i with the Location header and the note Express sends',
+      async (statusCode, message) => {
         const res = await redirectTo(statusCode, '/login?next=%2Fhome');
 
         expect(res.status).toBe(statusCode);
         expect(res.headers.location).toBe('/login?next=%2Fhome');
-        expect(res.body).toHaveLength(0);
+        expect(res.headers.vary).toBe('Accept');
+        expect(res.text).toBe(`${message}. Redirecting to /login?next=%2Fhome`);
       },
     );
 
@@ -2040,6 +2053,17 @@ describe('NodeAdapter', () => {
       expect(res.status).toBe(404);
       expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
       expect(res.text).toBe('Cannot POST /missing');
+    });
+
+    it('should echo the path as received, and forbid sniffing and scripts, as Express does', async () => {
+      const res = await request(port, {
+        path: '/%3Cscript%3Ealert(1)%3C/script%3E',
+      });
+
+      expect(res.status).toBe(404);
+      expect(res.text).toBe('Cannot GET /%3Cscript%3Ealert(1)%3C/script%3E');
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['content-security-policy']).toBe("default-src 'none'");
     });
 
     it.each([

@@ -346,10 +346,11 @@ export class NodeResponse<
     if (endWithoutBody(this)) {
       return this;
     }
+    // Before any header, in case it throws (a BigInt, a circular reference)
+    const text = JSON.stringify(body);
     if (!this.hasHeader('Content-Type')) {
       this.setHeader('Content-Type', 'application/json; charset=utf-8');
     }
-    const text = JSON.stringify(body);
     if (text === undefined) {
       this.end();
     } else {
@@ -359,9 +360,10 @@ export class NodeResponse<
   }
 
   /**
-   * Sends a response: objects as JSON, buffers as binary, anything else as
-   * text. Unlike Express, strings default to `text/plain` (as with the values
-   * route handlers return); set the `Content-Type` first to send HTML.
+   * Sends a response: objects, numbers and booleans as JSON, buffers, typed
+   * arrays and `DataView`s as binary, anything else as text. Unlike Express,
+   * strings default to `text/plain` (as with the values route handlers
+   * return); set the `Content-Type` first to send HTML.
    */
   send(body?: unknown): this {
     if (endWithoutBody(this)) {
@@ -374,12 +376,17 @@ export class NodeResponse<
         this.setHeader('Content-Type', 'text/plain; charset=utf-8');
       }
       endWithBody(this, body);
-    } else if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
+    } else if (ArrayBuffer.isView(body)) {
       if (!this.hasHeader('Content-Type')) {
         this.setHeader('Content-Type', 'application/octet-stream');
       }
-      endWithBody(this, body);
-    } else if (typeof body === 'object') {
+      endWithBody(this, toBytes(body));
+    } else if (
+      typeof body === 'object' ||
+      typeof body === 'number' ||
+      typeof body === 'boolean'
+    ) {
+      // As with Express 5
       return this.json(body);
     } else {
       return this.send(String(body));
@@ -499,6 +506,16 @@ function escapeHtml(text: string) {
         char
       ]!,
   );
+}
+
+/**
+ * The bytes of a `Buffer`, a typed array or a `DataView`, which are sent as
+ * binary (as Fastify does) rather than serialized to JSON.
+ */
+export function toBytes(view: ArrayBufferView): Uint8Array {
+  return view instanceof Uint8Array
+    ? view
+    : new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 }
 
 // With an explicit "Content-Length", which Node.js leaves out in answer to

@@ -783,6 +783,14 @@ describe('NodeResponse', () => {
     it.each([
       { kind: 'a Buffer', body: Buffer.from([0, 1, 2, 255]) },
       { kind: 'a Uint8Array', body: new Uint8Array([0, 1, 2, 255]) },
+      {
+        kind: 'another typed array',
+        body: new Uint16Array(new Uint8Array([0, 1, 2, 255]).buffer),
+      },
+      {
+        kind: 'a DataView',
+        body: new DataView(new Uint8Array([9, 0, 1, 2, 255, 9]).buffer, 1, 4),
+      },
     ])('should send $kind as binary', async ({ body }) => {
       const response = await respond((req, res) => res.send(body));
 
@@ -794,14 +802,17 @@ describe('NodeResponse', () => {
     it.each([
       { kind: 'a number', body: 42, text: '42' },
       { kind: 'a boolean', body: true, text: 'true' },
-    ])('should send $kind as text', async ({ body, text }) => {
-      const response = await respond((req, res) => res.send(body));
+    ])(
+      'should send $kind as JSON, as Express 5 does',
+      async ({ body, text }) => {
+        const response = await respond((req, res) => res.send(body));
 
-      expect(response.headers['content-type']).toBe(
-        'text/plain; charset=utf-8',
-      );
-      expect(response.body.toString()).toBe(text);
-    });
+        expect(response.headers['content-type']).toBe(
+          'application/json; charset=utf-8',
+        );
+        expect(response.body.toString()).toBe(text);
+      },
+    );
 
     it.each([
       { kind: 'a string', body: '<p>Hello</p>', type: 'text/html' },
@@ -835,6 +846,15 @@ describe('NodeResponse', () => {
   });
 
   describe('json()', () => {
+    it('should set no Content-Type when the body cannot be serialized', async () => {
+      const contentType = await inspect((req, res) => {
+        expect(() => res.json(1n)).toThrow(TypeError);
+        return res.getHeader('Content-Type') ?? null;
+      });
+
+      expect(contentType).toBeNull();
+    });
+
     it('should send the Content-Length in answer to a HEAD request', async () => {
       const body = { name: 'nést' };
       const response = await respond((req, res) => res.json(body), {
