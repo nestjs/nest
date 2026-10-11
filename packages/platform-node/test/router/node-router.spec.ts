@@ -1,6 +1,6 @@
 import { Socket } from 'net';
 import { NodeRequest, NodeResponse } from '../../adapters/node-request.js';
-import { NodeRouter } from '../../router/node-router.js';
+import { NodeRouter, PARAM_TOO_LONG_KEY } from '../../router/node-router.js';
 
 type Next = (err?: any) => void;
 
@@ -275,6 +275,48 @@ describe('NodeRouter', () => {
         TypeError,
       );
     });
+  });
+
+  describe('maxParamLength', () => {
+    it('should answer a request no route matched only because of a parameter length with a 414', () => {
+      router.get('/users/:id', vi.fn());
+
+      const { req } = dispatch('GET', `/users/${'x'.repeat(101)}`);
+
+      const err = finalHandler.mock.calls[0][0];
+      expect(err).toMatchObject({ status: 414, statusCode: 414, expose: true });
+      expect((req as any)[PARAM_TOO_LONG_KEY]).toBe(true);
+    });
+
+    it('should let a sibling wildcard take the request', () => {
+      const catchAll = vi.fn();
+      router.get('/users/:id', vi.fn());
+      router.get('/users/*rest', catchAll);
+
+      dispatch('GET', `/users/${'x'.repeat(101)}`);
+
+      expect(catchAll).toHaveBeenCalledTimes(1);
+      expect(finalHandler).not.toHaveBeenCalled();
+    });
+
+    it('should take the limit from the options', () => {
+      const byId = vi.fn();
+      router = new NodeRouter(finalHandler, { maxParamLength: 200 });
+      router.get('/users/:id', byId);
+
+      dispatch('GET', `/users/${'x'.repeat(150)}`);
+
+      expect(byId).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([0, -1, NaN, '100'])(
+      'should throw for the maxParamLength %j',
+      maxParamLength => {
+        expect(
+          () => new NodeRouter(finalHandler, { maxParamLength } as any),
+        ).toThrow(TypeError);
+      },
+    );
   });
 
   describe('case sensitivity', () => {

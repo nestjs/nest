@@ -36,9 +36,14 @@ import type {
   NestNodeBodyParserOptionsFor,
   NestNodeBodyParserType,
 } from '../interfaces/nest-node-body-parser.interface.js';
+import type { NodeAdapterOptions } from '../interfaces/node-adapter-options.interface.js';
 import type { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
 import * as bodyParsers from '../body-parser/body-parser.js';
-import { NodeRouter } from '../router/node-router.js';
+import {
+  createUriTooLongError,
+  NodeRouter,
+  PARAM_TOO_LONG_KEY,
+} from '../router/node-router.js';
 import { getRoutingPath } from '../router/utils.js';
 import { type NodeViewOptions, ViewRenderer } from '../views/view-renderer.js';
 import {
@@ -140,11 +145,18 @@ export class NodeAdapter extends AbstractHttpAdapter<
     res: NodeResponse,
   ) => Promise<void> | void;
 
-  constructor(router?: NodeRouter) {
+  /**
+   * @param routerOrOptions The adapter's options, or the `NodeRouter` to use
+   * (one is created by default).
+   */
+  constructor(routerOrOptions?: NodeRouter | NodeAdapterOptions) {
     super();
     this.setInstance(
-      router ??
-        new NodeRouter((err, req, res) => this.finalHandler(err, req, res)),
+      routerOrOptions instanceof NodeRouter
+        ? routerOrOptions
+        : new NodeRouter((err, req, res) => this.finalHandler(err, req, res), {
+            maxParamLength: routerOrOptions?.maxParamLength,
+          }),
     );
   }
 
@@ -267,13 +279,23 @@ export class NodeAdapter extends AbstractHttpAdapter<
     prefix?: string,
     excludedRoutes?: RouteInfo[],
   ) {
+    // A request no route matched only because of a parameter's length gets
+    // a 414 rather than a 404, as with Fastify (see NodeAdapterOptions)
+    const notFound = (req: NodeRequest, res: NodeResponse, next: Function) =>
+      (req as any)[PARAM_TOO_LONG_KEY]
+        ? next(createUriTooLongError())
+        : handler(req, res, next);
     const normalizedPrefix = this.normalizePrefix(prefix);
     if (normalizedPrefix) {
       this.registeredPrefixes.add(normalizedPrefix);
-      this.use(normalizedPrefix, handler);
+      this.use(normalizedPrefix, notFound);
       // Excluded routes live at the root, out of the prefix mount's reach.
       for (const route of excludedRoutes ?? []) {
-        this.instance.useExact(undefined, addLeadingSlash(route.path), handler);
+        this.instance.useExact(
+          undefined,
+          addLeadingSlash(route.path),
+          notFound,
+        );
       }
       return;
     }
@@ -289,7 +311,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
           return next();
         }
       }
-      return handler(req, res, next);
+      return notFound(req, res, next);
     });
   }
 

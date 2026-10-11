@@ -2,9 +2,11 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { match } from 'path-to-regexp';
 import { NodeRequest, NodeResponse } from '../adapters/node-request.js';
 import {
+  PARAM_TOO_LONG,
   type RouteEntry,
   type RouteHandler,
   type RouteMatch,
+  type RouteTableOptions,
   RouteTable,
 } from './route-table.js';
 import { getRawPrefixEnd, getRoutingPath, loosen } from './utils.js';
@@ -66,6 +68,40 @@ function invoke(
   }
 }
 
+export interface NodeRouterOptions {
+  /**
+   * Longest (decoded) route parameter a route matches; `100` by default, as
+   * with Fastify. A request whose parameter is longer falls through to
+   * another matching route (a sibling wildcard, for instance), if any, or
+   * gets a 414. Wildcards are not limited.
+   */
+  maxParamLength?: number;
+}
+
+/**
+ * Set on a request that no route matched only because a route parameter was
+ * longer than `maxParamLength`; turned into a 414 where the request would
+ * otherwise get a 404 (see {@link createUriTooLongError}).
+ *
+ * @internal
+ */
+export const PARAM_TOO_LONG_KEY = Symbol('nestjs.node.paramTooLong');
+
+/**
+ * The 414 for a request flagged with {@link PARAM_TOO_LONG_KEY}, shaped like
+ * an http-errors error, so that Nest's exception filter answers it with its
+ * status and message.
+ *
+ * @internal
+ */
+export function createUriTooLongError() {
+  return Object.assign(new Error('Route parameter too long'), {
+    status: 414,
+    statusCode: 414,
+    expose: true,
+  });
+}
+
 // Like an Express application, a router is itself a request listener: its
 // constructor returns a function, whose call signature this interface adds.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -86,8 +122,18 @@ export interface NodeRouter {
 export class NodeRouter {
   declare private stack: Layer[];
   declare private finalHandler: FinalHandler;
+  declare private routeTableOptions: RouteTableOptions;
 
-  constructor(finalHandler: FinalHandler) {
+  constructor(finalHandler: FinalHandler, options: NodeRouterOptions = {}) {
+    const { maxParamLength } = options;
+    if (
+      maxParamLength !== undefined &&
+      (typeof maxParamLength !== 'number' || !(maxParamLength >= 1))
+    ) {
+      throw new TypeError(
+        `Invalid maxParamLength: ${String(maxParamLength)} (expected a number greater than 0)`,
+      );
+    }
     const router = ((
       req: IncomingMessage,
       res: ServerResponse,
@@ -96,6 +142,7 @@ export class NodeRouter {
     Object.setPrototypeOf(router, new.target.prototype);
     router.stack = [];
     router.finalHandler = finalHandler;
+    router.routeTableOptions = { maxParamLength };
     return router;
   }
 
@@ -222,7 +269,7 @@ export class NodeRouter {
   public route(method: string | null, path: string, handler: RouteHandler) {
     let last = this.stack[this.stack.length - 1];
     if (!last?.table) {
-      last = { table: new RouteTable() };
+      last = { table: new RouteTable(this.routeTableOptions) };
       this.stack.push(last);
     }
     last.table.add(method, path, handler);
@@ -367,6 +414,10 @@ export class NodeRouter {
           if (found === null) {
             continue;
           }
+          if (found === PARAM_TOO_LONG) {
+            (req as any)[PARAM_TOO_LONG_KEY] = true;
+            continue;
+          }
           req.params = found.params;
           routeMatch = found;
           routeIndex = 1;
@@ -419,7 +470,13 @@ export class NodeRouter {
       if (done) {
         return done(err);
       }
-      this.finalHandler(err, req, res);
+      this.finalHandler(
+        err === undefined && (req as any)[PARAM_TOO_LONG_KEY]
+          ? createUriTooLongError()
+          : err,
+        req,
+        res,
+      );
     };
 
     next();

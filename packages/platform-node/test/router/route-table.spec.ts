@@ -1,5 +1,6 @@
 import {
   MAX_PARAM_LENGTH,
+  PARAM_TOO_LONG,
   type RouteHandler,
   RouteTable,
 } from '../../router/route-table.js';
@@ -168,7 +169,7 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', `/users/${value(100)}`)?.params).toEqual({
         id: value(100),
       });
-      expect(table.lookup('GET', `/users/${value(101)}`)).toBeNull();
+      expect(table.lookup('GET', `/users/${value(101)}`)).toBe(PARAM_TOO_LONG);
     });
 
     it('should count the decoded characters', () => {
@@ -176,7 +177,9 @@ describe('RouteTable', () => {
 
       // 100 characters once decoded, 300 encoded
       expect(table.lookup('GET', `/users/${'%2F'.repeat(100)}`)).not.toBeNull();
-      expect(table.lookup('GET', `/users/${'%2F'.repeat(101)}`)).toBeNull();
+      expect(table.lookup('GET', `/users/${'%2F'.repeat(101)}`)).toBe(
+        PARAM_TOO_LONG,
+      );
     });
 
     it('should apply the same limit to routes matched with path-to-regexp', () => {
@@ -184,7 +187,43 @@ describe('RouteTable', () => {
       table.add('GET', '/a/*rest/end/:id', handler());
 
       expect(table.lookup('GET', `/a/b/end/${value(100)}`)).not.toBeNull();
-      expect(table.lookup('GET', `/a/b/end/${value(101)}`)).toBeNull();
+      expect(table.lookup('GET', `/a/b/end/${value(101)}`)).toBe(
+        PARAM_TOO_LONG,
+      );
+    });
+
+    it('should return null rather than PARAM_TOO_LONG when no route would match anyway', () => {
+      table.add('GET', '/users/:id', handler());
+
+      expect(table.lookup('GET', `/posts/${value(101)}`)).toBeNull();
+      expect(table.lookup('POST', `/users/${value(101)}`)).toBeNull();
+    });
+
+    it('should report too-long parameters of GET routes for HEAD and of routes for every method', () => {
+      table.add('GET', '/users/:id', handler());
+      table.add(null, '/posts/:id', handler());
+
+      expect(table.lookup('HEAD', `/users/${value(101)}`)).toBe(PARAM_TOO_LONG);
+      expect(table.lookup('DELETE', `/posts/${value(101)}`)).toBe(
+        PARAM_TOO_LONG,
+      );
+    });
+
+    it('should take the limit from the maxParamLength option', () => {
+      const custom = new RouteTable({ maxParamLength: 200 });
+      custom.add('GET', '/users/:id', handler());
+      custom.add('GET', '/a/*rest/end/:id', handler());
+
+      expect(custom.lookup('GET', `/users/${value(200)}`)).not.toBe(
+        PARAM_TOO_LONG,
+      );
+      expect(custom.lookup('GET', `/users/${value(201)}`)).toBe(PARAM_TOO_LONG);
+      expect(custom.lookup('GET', `/a/b/end/${value(200)}`)).not.toBe(
+        PARAM_TOO_LONG,
+      );
+      expect(custom.lookup('GET', `/a/b/end/${value(201)}`)).toBe(
+        PARAM_TOO_LONG,
+      );
     });
 
     it('should fall through to another matching route', () => {

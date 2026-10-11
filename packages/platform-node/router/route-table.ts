@@ -101,16 +101,36 @@ function acceptsMethod(routeMethod: string | null, method: string) {
 }
 
 /**
- * Longest (decoded) route parameter a route matches, as with Fastify: a
- * request whose parameter is longer falls through to the next matching route,
- * if any, or gets a 404. Wildcards are not limited.
+ * Default longest (decoded) route parameter a route matches, as with Fastify
+ * (see {@link RouteTableOptions.maxParamLength}).
  */
 export const MAX_PARAM_LENGTH = 100;
 
-const ROUTER_OPTIONS = {
-  ignoreTrailingSlash: true,
-  maxParamLength: MAX_PARAM_LENGTH,
-};
+export interface RouteTableOptions {
+  /**
+   * Longest (decoded) route parameter a route matches. A request whose
+   * parameter is longer falls through to another matching route (a sibling
+   * wildcard, for instance), if any; when none matches, `lookup()` returns
+   * {@link PARAM_TOO_LONG} (Fastify answers those with a 414). Wildcards are
+   * not limited. Defaults to {@link MAX_PARAM_LENGTH}.
+   */
+  maxParamLength?: number;
+}
+
+/**
+ * What `lookup()` returns when no route matched, but one would have if a
+ * route parameter were not longer than the `maxParamLength` option.
+ */
+export const PARAM_TOO_LONG: RouteMatch = Object.freeze({
+  handlers: [],
+  params: {},
+  seqs: [],
+}) as unknown as RouteMatch;
+
+// What `find()` returns in that case (find-my-way's onMaxParamLength result)
+const TOO_LONG = {} as FoundRoute;
+
+function noop() {}
 
 const UNSAFE_TEXT = /[*?(]/;
 // find-my-way reads a parameter name up to the next "/", "-" or "."
@@ -130,10 +150,10 @@ function decodeSegment(value: string) {
 
 // The limit find-my-way applies to the routes it matches, for the routes
 // matched with path-to-regexp (wildcards are arrays there)
-function exceedsMaxParamLength(params: Record<string, any>) {
+function exceedsMaxParamLength(params: Record<string, any>, limit: number) {
   for (const key in params) {
     const value = params[key];
-    if (typeof value === 'string' && value.length > MAX_PARAM_LENGTH) {
+    if (typeof value === 'string' && value.length > limit) {
       return true;
     }
   }
@@ -248,13 +268,27 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
  * and pass control to each other through `next()`.
  */
 export class RouteTable {
-  private readonly router = FindMyWay(ROUTER_OPTIONS);
-  private readonly allRouter = FindMyWay(ROUTER_OPTIONS);
+  private readonly maxParamLength: number;
+  private readonly router: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
+  private readonly allRouter: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
   private readonly records = new Map<string, RouteRecord>();
   private readonly fallbackRoutes: FallbackRoute[] = [];
   private readonly routes: RegisteredRoute[] = [];
   private hasAllRoutes = false;
   private seq = 0;
+
+  constructor(options: RouteTableOptions = {}) {
+    this.maxParamLength = options.maxParamLength ?? MAX_PARAM_LENGTH;
+    const routerOptions = {
+      ignoreTrailingSlash: true,
+      maxParamLength: this.maxParamLength,
+      // Makes find() return a result whose store is null when nothing matched
+      // because of a parameter's length (see TOO_LONG)
+      onMaxParamLength: noop,
+    };
+    this.router = FindMyWay(routerOptions);
+    this.allRouter = FindMyWay(routerOptions);
+  }
 
   /**
    * @param method Upper-case HTTP method, or `null` for every method.
@@ -329,22 +363,36 @@ export class RouteTable {
   }
 
   public lookup(method: string, path: string): RouteMatch | null {
+    let exceeded = false;
     let found = this.find(this.router, method, path);
+    if (found === TOO_LONG) {
+      exceeded = true;
+      found = null;
+    }
     if (found === null && method === 'HEAD') {
       found = this.find(this.router, 'GET', path);
+      if (found === TOO_LONG) {
+        exceeded = true;
+        found = null;
+      }
     }
     if (this.hasAllRoutes) {
       const foundAll = this.find(this.allRouter, 'GET', path);
-      if (foundAll !== null) {
+      if (foundAll === TOO_LONG) {
+        exceeded = true;
+      } else if (foundAll !== null) {
         found = found === null ? foundAll : this.merge(found, foundAll);
       }
     }
     if (found !== null) {
       return found;
     }
-    return this.fallbackRoutes.length > 0
-      ? this.lookupFallback(method, path)
-      : null;
+    const fallback =
+      this.fallbackRoutes.length > 0 ? this.lookupFallback(method, path) : null;
+    if (fallback !== null) {
+      return fallback;
+    }
+    return exceeded ? PARAM_TOO_LONG : null;
   }
 
   private find(
@@ -355,6 +403,9 @@ export class RouteTable {
     const result = router.find(method as any, path);
     if (result === null) {
       return null;
+    }
+    if (result.store === null) {
+      return TOO_LONG;
     }
     const record = result.store as RouteRecord;
     const values = result.params as Record<string, string>;
@@ -420,12 +471,17 @@ export class RouteTable {
    * others).
    */
   private lookupFallback(method: string, path: string): RouteMatch | null {
+    let exceeded = false;
     for (const route of this.fallbackRoutes) {
       if (!acceptsMethod(route.method, method)) {
         continue;
       }
       const result = route.matcher(path);
-      if (!result || exceedsMaxParamLength(result.params)) {
+      if (!result) {
+        continue;
+      }
+      if (exceedsMaxParamLength(result.params, this.maxParamLength)) {
+        exceeded = true;
         continue;
       }
       return {
@@ -434,7 +490,7 @@ export class RouteTable {
         params: result.params,
       };
     }
-    return null;
+    return exceeded ? PARAM_TOO_LONG : null;
   }
 
   /**
@@ -458,7 +514,10 @@ export class RouteTable {
       }
       route.matcher ??= compileMatcher(route.path);
       const result = route.matcher(path);
-      if (!result || exceedsMaxParamLength(result.params)) {
+      if (
+        !result ||
+        exceedsMaxParamLength(result.params, this.maxParamLength)
+      ) {
         continue;
       }
       entries.push({ handler: route.handler, params: result.params });

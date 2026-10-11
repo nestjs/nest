@@ -170,6 +170,74 @@ describe('NodeAdapter', () => {
     });
   });
 
+  describe('maxParamLength option', () => {
+    const byId = (req: NodeRequest, res: NodeResponse) =>
+      adapter.reply(res, { length: req.params.id.length });
+
+    it('should answer a parameter over 100 characters with a 414 from the not-found handler', async () => {
+      const port = await startServer();
+      const errors: unknown[] = [];
+      adapter.get('/users/:id', byId);
+      adapter.setNotFoundHandler((req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, 'not found', 404),
+      );
+      adapter.setErrorHandler(
+        (err: any, req: NodeRequest, res: NodeResponse, next: Next) => {
+          errors.push(err);
+          adapter.reply(
+            res,
+            { statusCode: err.statusCode, message: err.message },
+            err.statusCode,
+          );
+        },
+      );
+
+      const ok = await request(port, { path: `/users/${'x'.repeat(100)}` });
+      const tooLong = await request(port, {
+        path: `/users/${'x'.repeat(101)}`,
+      });
+      const missing = await request(port, {
+        path: `/posts/${'x'.repeat(101)}`,
+      });
+
+      expect(JSON.parse(ok.text)).toEqual({ length: 100 });
+      expect(tooLong.status).toBe(414);
+      expect(JSON.parse(tooLong.text)).toEqual({
+        statusCode: 414,
+        message: 'Route parameter too long',
+      });
+      expect(missing.status).toBe(404);
+      expect(errors).toHaveLength(1);
+    });
+
+    it('should answer with a 414 without a not-found handler too', async () => {
+      const port = await startServer();
+      adapter.get('/users/:id', byId);
+
+      const res = await request(port, { path: `/users/${'x'.repeat(101)}` });
+
+      expect(res.status).toBe(414);
+    });
+
+    it('should take the limit from the constructor options', async () => {
+      adapter = new NodeAdapter({ maxParamLength: 200 });
+      const port = await startServer();
+      adapter.get('/users/:id', byId);
+
+      const ok = await request(port, { path: `/users/${'x'.repeat(150)}` });
+      const tooLong = await request(port, {
+        path: `/users/${'x'.repeat(201)}`,
+      });
+
+      expect(JSON.parse(ok.text)).toEqual({ length: 150 });
+      expect(tooLong.status).toBe(414);
+    });
+
+    it('should throw for an invalid limit', () => {
+      expect(() => new NodeAdapter({ maxParamLength: 0 })).toThrow(TypeError);
+    });
+  });
+
   describe('reply', () => {
     let port: number;
 
