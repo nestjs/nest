@@ -741,6 +741,14 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('#', 'user')).toBe(true);
       });
 
+      it('should treat empty segments as words', () => {
+        // the broker binds and routes these, so the matcher must accept them
+        expect(matchRmqPattern('a.*', 'a.')).toBe(true);
+        expect(matchRmqPattern('*.*', '.a')).toBe(true);
+        // "#" cannot stand in for a missing word
+        expect(matchRmqPattern('a..#', 'a')).toBe(false);
+      });
+
       it('should handle complex $ patterns that previously failed', () => {
         expect(
           matchRmqPattern(
