@@ -95,6 +95,21 @@ export interface NodeUrlencodedParserOptions
    * Maximum nesting depth with `extended`. Defaults to `32`.
    */
   depth?: number;
+  /**
+   * Charset used when the request does not specify one: `'utf-8'` (the
+   * default) or `'iso-8859-1'`.
+   */
+  defaultCharset?: 'utf-8' | 'iso-8859-1';
+  /**
+   * Picks the charset from a `utf8=✓` parameter (which is dropped), as
+   * Rails and some HTML forms send. Defaults to `false`.
+   */
+  charsetSentinel?: boolean;
+  /**
+   * Decodes HTML numeric entities (`&#9786;`), which browsers send for
+   * characters an `iso-8859-1` form cannot encode. Defaults to `false`.
+   */
+  interpretNumericEntities?: boolean;
 }
 
 /**
@@ -122,9 +137,11 @@ interface ReaderOptions {
 
 const UNITS: Record<string, number> = {
   b: 1,
-  kb: 1 << 10,
-  mb: 1 << 20,
-  gb: 1 << 30,
+  kb: 2 ** 10,
+  mb: 2 ** 20,
+  gb: 2 ** 30,
+  tb: 2 ** 40,
+  pb: 2 ** 50,
 };
 
 function parseLimit(limit: number | string | null | undefined): number {
@@ -133,15 +150,15 @@ function parseLimit(limit: number | string | null | undefined): number {
   }
   if (typeof limit === 'number') {
     // An invalid limit must not silently disable the size check
-    // (body-parser CVE-2026-12590)
-    if (!Number.isFinite(limit) || limit < 0) {
+    // (body-parser CVE-2026-12590); `Infinity` disables it on purpose
+    if (Number.isNaN(limit) || limit < 0) {
       throw new TypeError(`Invalid body size limit: ${limit}`);
     }
     return limit;
   }
   const match =
     typeof limit === 'string'
-      ? /^\s*(\d+(?:\.\d+)?)\s*(b|kb|mb|gb)?\s*$/i.exec(limit)
+      ? /^\s*(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb|pb)?\s*$/i.exec(limit)
       : null;
   if (!match) {
     throw new TypeError(`Invalid body size limit: "${limit}"`);
@@ -491,6 +508,9 @@ function decode(buffer: Buffer, charset: string): string {
     case 'latin1':
     case 'iso-8859-1':
       return buffer.toString('latin1');
+    case 'utf-16':
+    case 'utf16':
+      return new TextDecoder(detectUtf16Encoding(buffer)).decode(buffer);
     default: {
       let decoder: TextDecoder;
       try {
@@ -508,6 +528,34 @@ function decode(buffer: Buffer, charset: string): string {
         : decoder.decode(buffer);
     }
   }
+}
+
+/**
+ * Byte order of a "utf-16" body, as iconv-lite (body-parser) picks it: from
+ * the byte order mark, or else from the first 100 characters, counting the
+ * ASCII ones as either order would read them; little-endian when undecided.
+ */
+function detectUtf16Encoding(buffer: Buffer): 'utf-16le' | 'utf-16be' {
+  if (buffer.length >= 2) {
+    if (buffer[0] === 0xff && buffer[1] === 0xfe) {
+      return 'utf-16le';
+    }
+    if (buffer[0] === 0xfe && buffer[1] === 0xff) {
+      return 'utf-16be';
+    }
+  }
+  let asciiLE = 0;
+  let asciiBE = 0;
+  const end = Math.min(buffer.length - 1, 200);
+  for (let i = 0; i < end; i += 2) {
+    if (buffer[i] === 0 && buffer[i + 1] !== 0) {
+      asciiBE++;
+    }
+    if (buffer[i] !== 0 && buffer[i + 1] === 0) {
+      asciiLE++;
+    }
+  }
+  return asciiBE > asciiLE ? 'utf-16be' : 'utf-16le';
 }
 
 // Characters of bytes 0x80-0x9F in windows-1252 (the rest match latin1)
@@ -631,6 +679,12 @@ export function urlencoded(options?: NodeUrlencodedParserOptions): Middleware {
   if (isNaN(depth) || depth < 0) {
     throw new TypeError('option depth must be a zero or a positive number');
   }
+  const defaultCharset = options?.defaultCharset || 'utf-8';
+  if (defaultCharset !== 'utf-8' && defaultCharset !== 'iso-8859-1') {
+    throw new TypeError(
+      'option defaultCharset must be either utf-8 or iso-8859-1',
+    );
+  }
   if (Number.isFinite(depth)) {
     depth = depth | 0;
   }
@@ -660,7 +714,7 @@ export function urlencoded(options?: NodeUrlencodedParserOptions): Middleware {
     toReaderOptions(
       options,
       'application/x-www-form-urlencoded',
-      'utf-8',
+      defaultCharset,
       charset => charset === 'utf-8' || charset === 'iso-8859-1',
     ),
     (buffer, charset) => {
@@ -684,6 +738,8 @@ export function urlencoded(options?: NodeUrlencodedParserOptions): Middleware {
           arrayLimit: extended ? Math.max(100, parameterCount) : parameterCount,
           depth,
           charset: charset === 'iso-8859-1' ? 'iso-8859-1' : 'utf-8',
+          charsetSentinel: options?.charsetSentinel,
+          interpretNumericEntities: options?.interpretNumericEntities,
           decoder,
           parameterLimit,
           strictDepth: true,

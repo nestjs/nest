@@ -393,10 +393,27 @@ describe('body parsers', () => {
       expect(error.received).toBeGreaterThan(100 * 1024);
     });
 
-    it.each([-1, NaN, Infinity, 'abc', '10 parsecs'])(
+    it.each([-1, NaN, 'abc', '10 parsecs'])(
       'should throw when the parser is created with the limit %s',
       limit => {
         expect(() => json({ limit })).toThrow(TypeError);
+      },
+    );
+
+    it('should take Infinity for no limit, as body-parser does', async () => {
+      const { status, req } = await send(json({ limit: Infinity }), {
+        headers: JSON_TYPE,
+        body: JSON.stringify({ data: 'x'.repeat(200 * 1024) }),
+      });
+
+      expect(status).toBe(200);
+      expect(req.body.data).toHaveLength(200 * 1024);
+    });
+
+    it.each(['1tb', '2PB', '1.5 gb'])(
+      'should take the limit %s, as the "bytes" package does',
+      limit => {
+        expect(() => json({ limit })).not.toThrow();
       },
     );
 
@@ -519,6 +536,35 @@ describe('body parsers', () => {
 
       expect(req.body).toBe('café');
     });
+
+    it('should read the charset of a Content-Type with a trailing ";", as body-parser does', async () => {
+      const { req } = await send(urlencoded(), {
+        headers: {
+          'content-type':
+            'application/x-www-form-urlencoded; charset=iso-8859-1;',
+        },
+        body: Buffer.from('a=café', 'latin1'),
+      });
+
+      expect(req.body).toEqual({ a: 'café' });
+    });
+
+    it.each([
+      ['a big-endian byte order mark', [0xfe, 0xff, 0, 0x68, 0, 0x69]],
+      ['a little-endian byte order mark', [0xff, 0xfe, 0x68, 0, 0x69, 0]],
+      ['big-endian ASCII without a byte order mark', [0, 0x68, 0, 0x69]],
+      ['little-endian ASCII without a byte order mark', [0x68, 0, 0x69, 0]],
+    ])(
+      'should decode "utf-16" with %s, as iconv-lite does',
+      async (_, bytes) => {
+        const { req } = await send(text(), {
+          headers: { 'content-type': 'text/plain; charset=utf-16' },
+          body: Buffer.from(bytes),
+        });
+
+        expect(req.body).toBe('hi');
+      },
+    );
 
     it('should not take a "charset=" inside another quoted parameter for the charset', async () => {
       const { req } = await send(text(), {
@@ -804,6 +850,42 @@ describe('body parsers', () => {
   });
 
   describe('urlencoded', () => {
+    it('should decode bodies without a charset with defaultCharset', async () => {
+      const { req } = await send(urlencoded({ defaultCharset: 'iso-8859-1' }), {
+        headers: FORM_TYPE,
+        body: Buffer.from('a=café&b=caf%E9', 'latin1'),
+      });
+
+      expect(req.body).toEqual({ a: 'café', b: 'café' });
+    });
+
+    it('should throw for a defaultCharset other than utf-8 or iso-8859-1', () => {
+      expect(() => urlencoded({ defaultCharset: 'utf-16' as any })).toThrow(
+        'option defaultCharset must be either utf-8 or iso-8859-1',
+      );
+    });
+
+    it('should pick the charset from a "utf8" sentinel with charsetSentinel', async () => {
+      const { req } = await send(
+        urlencoded({ defaultCharset: 'iso-8859-1', charsetSentinel: true }),
+        { headers: FORM_TYPE, body: 'utf8=%E2%9C%93&a=caf%C3%A9' },
+      );
+
+      expect(req.body).toEqual({ a: 'café' });
+    });
+
+    it('should decode numeric entities with interpretNumericEntities', async () => {
+      const { req } = await send(
+        urlencoded({
+          defaultCharset: 'iso-8859-1',
+          interpretNumericEntities: true,
+        }),
+        { headers: FORM_TYPE, body: 'a=%26%239786%3B' },
+      );
+
+      expect(req.body).toEqual({ a: '☺' });
+    });
+
     it.each([0, -1, NaN])(
       'should throw for a parameterLimit of %s, as body-parser does',
       parameterLimit => {
