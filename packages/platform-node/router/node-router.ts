@@ -195,6 +195,8 @@ export class NodeRouter {
       : (match(loosen(path), {
           decode: decodeParam,
           end: false,
+          // Case-sensitive, as routes are (see RouteTable)
+          sensitive: true,
         }) as PathMatcher);
 
     for (const handler of handlers.flat()) {
@@ -237,6 +239,7 @@ export class NodeRouter {
       matcher: match(loosen(path), {
         decode: decodeParam,
         end: true,
+        sensitive: true,
       }) as PathMatcher,
       isMount: false,
       method,

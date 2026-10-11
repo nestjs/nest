@@ -277,6 +277,37 @@ describe('NodeRouter', () => {
     });
   });
 
+  describe('case sensitivity', () => {
+    it('should match routes, mounts and exact middleware case-sensitively', () => {
+      const calls: string[] = [];
+      router.use('/static', (_req: unknown, _res: unknown, next: Next) => {
+        calls.push('mount');
+        next();
+      });
+      router.useExact(
+        'GET',
+        '/cats',
+        (_req: unknown, _res: unknown, next: Next) => {
+          calls.push('exact');
+          next();
+        },
+      );
+      router.get('/cats', () => calls.push('route'));
+      router.get('/files/{*path}', () => calls.push('wildcard'));
+
+      dispatch('GET', '/STATIC/x');
+      dispatch('GET', '/CATS');
+      dispatch('GET', '/FILES/a');
+      expect(calls).toEqual([]);
+      expect(finalHandler).toHaveBeenCalledTimes(3);
+
+      dispatch('GET', '/static/x');
+      dispatch('GET', '/cats');
+      dispatch('GET', '/files/a');
+      expect(calls).toEqual(['mount', 'exact', 'route', 'wildcard']);
+    });
+  });
+
   describe('useExact()', () => {
     it('should only run for requests whose whole path matches', () => {
       const middleware = vi.fn((_req: unknown, _res: unknown, next: Next) =>

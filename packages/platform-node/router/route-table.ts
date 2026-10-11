@@ -80,8 +80,15 @@ interface RegisteredRoute {
   seq: number;
 }
 
+// Paths are case-sensitive everywhere, as with find-my-way's default (and
+// Fastify): cheaper than lowercasing every request path, and the routes, the
+// routes matched with path-to-regexp and the middleware all agree
 function compileMatcher(path: string): Matcher {
-  const matcher = match(loosen(path), { decode: decodeParam, end: true });
+  const matcher = match(loosen(path), {
+    decode: decodeParam,
+    end: true,
+    sensitive: true,
+  });
   return (pathname: string) => matcher(pathname) as any;
 }
 
