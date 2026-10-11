@@ -1,0 +1,36 @@
+services:
+  rustfs:
+    image: rustfs/rustfs:1.0.1
+    environment:
+      # The app's credentials: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+    ports:
+      # This machine only: the credentials above are RustFS's well-known defaults.
+      - '127.0.0.1:9000:9000' # S3 API
+      # Console. Not on 9001, which MQTT brokers often use (the repo's integration tests do).
+      - '127.0.0.1:9101:9001'
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:9000/health']
+      interval: 2s
+      retries: 30
+    restart: always
+
+  # Creates the two buckets once RustFS is up, lets anyone read the photos (a CDN would
+  # sit in front of that bucket in production), and exits.
+  create-buckets:
+    image: amazon/aws-cli:2.37.12
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: rustfsadmin
+      AWS_SECRET_ACCESS_KEY: rustfsadmin
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://rustfs:9000
+    entrypoint: ['/bin/sh', '-ec']
+    command:
+      - |
+        aws s3api head-bucket --bucket store-photos 2>/dev/null || aws s3api create-bucket --bucket store-photos
+        aws s3api head-bucket --bucket store-private 2>/dev/null || aws s3api create-bucket --bucket store-private
+        aws s3api put-bucket-policy --bucket store-photos --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::store-photos/*"]}]}'
