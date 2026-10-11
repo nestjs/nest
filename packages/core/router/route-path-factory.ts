@@ -188,6 +188,12 @@ export class RoutePathFactory {
     versionOrVersions?: VersionValue,
     versioningOptions?: VersioningOptions,
   ) {
+    // `RouterExplorer` creates each path a second time with
+    // `versioningOptions: undefined` only to log it; tracking that call
+    // would record `hello` next to `/v1/hello`.
+    if (!versioningOptions && this.applicationConfig.getVersioning()) {
+      return;
+    }
     const versionPrefix = this.getUriVersionPrefixOfPath(
       path,
       versionOrVersions,

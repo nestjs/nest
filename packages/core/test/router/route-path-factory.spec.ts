@@ -436,6 +436,19 @@ describe('RoutePathFactory', () => {
         { path: 'hello', method: RequestMethod.ALL },
       ]);
     });
+
+    it('should not track a path created without the app versioning', () => {
+      applicationConfig.enableVersioning(uri);
+      exclude('hello');
+      createRoute('hello', '1');
+      routePathFactory.create(
+        { ctrlPath: 'hello', globalPrefix: 'api', controllerVersion: '1' },
+        RequestMethod.GET,
+      );
+      expect(routePathFactory.getExcludedRoutePaths()).toEqual([
+        { path: '/v1/hello', method: RequestMethod.ALL },
+      ]);
+    });
   });
 
   describe('getVersionPrefix', () => {

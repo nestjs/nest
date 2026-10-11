@@ -151,6 +151,15 @@ describe('Hello world (express not-found handling)', () => {
         .expect({ handledBy: 'nest' });
     });
 
+    it('is answered for an undeclared path under a wildcard exclusion', async () => {
+      await createVersionedApp(['hello/{*splat}']);
+
+      await request(app.getHttpServer())
+        .post('/v1/hello/other')
+        .expect(404)
+        .expect({ handledBy: 'nest' });
+    });
+
     it('still serves the excluded route itself', async () => {
       await createVersionedApp(['hello']);
 
@@ -164,6 +173,25 @@ describe('Hello world (express not-found handling)', () => {
         .post('/v2/hello')
         .expect(404)
         .expect('Content-Type', /text\/html/);
+    });
+
+    it('leaves the unversioned path to express', async () => {
+      await createVersionedApp(['hello']);
+
+      await request(app.getHttpServer())
+        .post('/hello')
+        .expect(404)
+        .expect('Content-Type', /text\/html/);
+    });
+
+    it('does not shadow a raw route on the unversioned path', async () => {
+      await createVersionedApp(['hello']);
+      app
+        .getHttpAdapter()
+        .getInstance()
+        .get('/hello', (req, res) => res.send('raw'));
+
+      await request(app.getHttpServer()).get('/hello').expect(200, 'raw');
     });
   });
 });
