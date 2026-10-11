@@ -246,11 +246,15 @@ export class WsAdapter extends AbstractWsAdapter {
   }
 
   public bindClientDisconnect(client: any, callback: Function) {
+    // ws emits "close" with the close code first and the reason as a Buffer,
+    // while the disconnect hook expects the reason string
+    const onClose = (_code: number, reason?: Buffer) =>
+      callback(reason?.toString());
     if (typeof client.once === 'function') {
-      client.once(CLOSE_EVENT, callback);
+      client.once(CLOSE_EVENT, onClose);
       return;
     }
-    client.on(CLOSE_EVENT, callback);
+    client.on(CLOSE_EVENT, onClose);
   }
 
   public async close(server: any) {

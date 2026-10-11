@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
+import { OnGatewayDisconnect, WebSocketGateway } from '@nestjs/websockets';
 import WebSocket from 'ws';
 import { ApplicationGateway } from '../src/app.gateway.js';
 import { CoreGateway } from '../src/core.gateway.js';
@@ -8,6 +9,11 @@ import { ExamplePathGateway } from '../src/example-path.gateway.js';
 import { ServerGateway } from '../src/server.gateway.js';
 import { WsPathGateway } from '../src/ws-path.gateway.js';
 import { WsPathGateway2 } from '../src/ws-path2.gateway.js';
+
+@WebSocketGateway()
+class DisconnectReasonGateway implements OnGatewayDisconnect {
+  handleDisconnect = vi.fn();
+}
 
 async function createNestApp(...gateways: any[]): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({
@@ -207,6 +213,23 @@ describe('WebSocketGateway (WsAdapter)', () => {
         ws.close();
         resolve();
       }),
+    );
+  });
+
+  it('should pass the close reason to handleDisconnect', async () => {
+    app = await createNestApp(DisconnectReasonGateway);
+    await app.listen(3000);
+
+    ws = new WebSocket('ws://localhost:3000');
+    await new Promise(resolve => ws.on('open', resolve));
+    ws.close(4000, 'session expired');
+
+    const gateway = app.get(DisconnectReasonGateway);
+    await vi.waitFor(() =>
+      expect(gateway.handleDisconnect).toHaveBeenCalledWith(
+        expect.anything(),
+        'session expired',
+      ),
     );
   });
 

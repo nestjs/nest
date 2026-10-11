@@ -262,6 +262,30 @@ describe('WsAdapter', () => {
     });
   });
 
+  describe('bindClientDisconnect', () => {
+    it('should pass the close reason string to the callback', () => {
+      const adapter = new WsAdapter();
+      const client = new EventEmitter();
+      const callback = vi.fn();
+
+      adapter.bindClientDisconnect(client, callback);
+      client.emit('close', 4000, Buffer.from('session expired'));
+
+      expect(callback).toHaveBeenCalledWith('session expired');
+    });
+
+    it('should pass an empty string when the client closes without a reason', () => {
+      const adapter = new WsAdapter();
+      const client = new EventEmitter();
+      const callback = vi.fn();
+
+      adapter.bindClientDisconnect(client, callback);
+      client.emit('close', 1005, Buffer.alloc(0));
+
+      expect(callback).toHaveBeenCalledWith('');
+    });
+  });
+
   describe('dispose', () => {
     it('should remove the upgrade listener it added to a caller-supplied server', async () => {
       const httpServer = createServer();
