@@ -123,6 +123,32 @@ describe('ViewRenderer', () => {
       );
     });
 
+    it('should pass the views directory to __express() as Express does, for engines such as hbs', async () => {
+      write('views/index.express');
+      const engine = { __express: createCallbackEngine() };
+      renderer.setEngine({ engine: { express: engine }, root: views });
+
+      await renderer.render('index');
+
+      const { settings } = engine.__express.mock.calls[0][1];
+      expect(settings.views).toBe(views);
+      expect(settings['view engine']).toBe('express');
+    });
+
+    it('should pass every views directory when given several', async () => {
+      write('views/index.express');
+      const other = join(views, '..', 'other-views');
+      const engine = { __express: createCallbackEngine() };
+      renderer.setEngine({ engine: { express: engine }, root: [views, other] });
+
+      await renderer.render('index');
+
+      expect(engine.__express.mock.calls[0][1].settings.views).toEqual([
+        views,
+        other,
+      ]);
+    });
+
     it('should compile the template with the options and the filename, then render it with the data', async () => {
       const file = write('views/index.compiled', 'source');
       const engine = createCompileEngine();
@@ -356,6 +382,8 @@ describe('ViewRenderer', () => {
       const data = engine.__express.mock.calls[0][1];
       expect(data.name).toBe('Nest');
       expect(data.settings).toEqual({
+        views,
+        'view engine': 'express',
         'view options': options,
         'view cache': false,
       });

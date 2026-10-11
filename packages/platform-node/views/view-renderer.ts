@@ -147,7 +147,11 @@ export class ViewRenderer {
       ...this.engineOptions,
       ...data,
       cache: this.production,
+      // The Express settings engines read: hbs finds layouts and partials
+      // through "views", as with Express' res.render()
       settings: {
+        views: this.roots.length === 1 ? this.roots[0] : this.roots,
+        'view engine': extension,
         'view options': this.engineOptions,
         'view cache': this.production,
       },
