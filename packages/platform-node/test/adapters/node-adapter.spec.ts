@@ -1752,21 +1752,16 @@ describe('NodeAdapter', () => {
       expect(result.message).toBe(error.message);
     });
 
-    it('should map a client error (http-errors style) to an HttpException with its status', () => {
-      const error = Object.assign(new Error('request entity too large'), {
-        status: 413,
-        statusCode: 413,
-        expose: true,
-      });
-
-      const result = adapter.mapException(error) as HttpException;
-
-      expect(result).toBeInstanceOf(HttpException);
-      expect(result.getStatus()).toBe(413);
-      expect(result.message).toBe('request entity too large');
-    });
-
     it.each([
+      [
+        'a client error (http-errors style), so @Catch() filters still see it',
+        Object.assign(new Error('invalid csrf token'), {
+          status: 403,
+          statusCode: 403,
+          expose: true,
+          code: 'EBADCSRFTOKEN',
+        }),
+      ],
       ['a plain error', new Error('boom')],
       [
         'a server error',
@@ -1799,9 +1794,12 @@ describe('NodeAdapter', () => {
       );
       adapter.setErrorHandler(
         (err: unknown, req: NodeRequest, res: NodeResponse, next: Next) => {
-          const mapped = adapter.mapException(err);
+          // What Nest's exception filter answers
+          const mapped = adapter.mapException(err) as any;
           const status =
-            mapped instanceof HttpException ? mapped.getStatus() : 500;
+            mapped instanceof HttpException
+              ? mapped.getStatus()
+              : (mapped.statusCode ?? 500);
           adapter.reply(
             res,
             { badRequest: mapped instanceof BadRequestException },

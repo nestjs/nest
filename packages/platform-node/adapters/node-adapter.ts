@@ -583,10 +583,10 @@ export class NodeAdapter extends AbstractHttpAdapter<
     if (error instanceof SyntaxError || error instanceof URIError) {
       return new BadRequestException(error.message);
     }
-    // Body parser errors (payload too large, unsupported charset, ...)
-    if (this.isClientHttpError(error)) {
-      return new HttpException(error.message, error.statusCode);
-    }
+    // Anything else, including the body parsers' http-errors-style errors
+    // (payload too large, unsupported charset, ...), stays as it is, as with
+    // Express: Nest's exception filter answers those with their status and
+    // message, and `@Catch()` filters still see the original error and `code`
     return error;
   }
 
@@ -628,18 +628,6 @@ export class NodeAdapter extends AbstractHttpAdapter<
     res.statusCode = HttpStatus.NOT_FOUND;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.end(`Cannot ${req.method} ${req.path}`);
-  }
-
-  private isClientHttpError(
-    error: any,
-  ): error is Error & { statusCode: number } {
-    return (
-      error instanceof Error &&
-      (error as any).expose === true &&
-      typeof (error as any).statusCode === 'number' &&
-      (error as any).statusCode >= 400 &&
-      (error as any).statusCode < 500
-    );
   }
 
   private normalizePrefix(prefix?: string): string {
