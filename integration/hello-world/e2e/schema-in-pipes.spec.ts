@@ -87,7 +87,7 @@ class SchemaTestController {
 
   @Get('custom-pipes-data')
   customWithPipesData(
-    @CustomData({ pipes: 'water', region: 'eu' }) value: unknown,
+    @CustomData({ pipes: ['stage1', 'stage2'], region: 'eu' }) value: unknown,
   ) {
     return { received: value };
   }
@@ -179,7 +179,7 @@ describe('Schema propagation to pipes', () => {
     await request(server)
       .get('/schema-test/custom-pipes-data')
       .expect(200)
-      .expect({ received: { pipes: 'water', region: 'eu' } });
+      .expect({ received: { pipes: ['stage1', 'stage2'], region: 'eu' } });
   });
 
   it('should pass schema to pipe via @Body(property, options)', async () => {

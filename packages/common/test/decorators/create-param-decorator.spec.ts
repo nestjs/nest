@@ -34,18 +34,52 @@ describe('createParamDecorator', () => {
     });
 
     describe('when custom data contains schema or pipes properties', () => {
+      const schema = {
+        '~standard': {
+          version: 1 as const,
+          vendor: 'test',
+          validate: (value: unknown) => ({ value }),
+        },
+      };
+
       it.each([
-        ['a schema string', { schema: 'public', region: 'eu' }],
-        ['a schema object', { schema: { name: 'public' }, region: 'eu' }],
-        ['a null schema', { schema: null, region: 'eu' }],
+        // Keys other than schema and pipes make the object custom data
+        ['a schema string and another key', { schema: 'public', region: 'eu' }],
+        ['a pipes string and another key', { pipes: 'water', region: 'eu' }],
         [
-          'a schema with a non-callable validator',
-          { schema: { '~standard': { validate: true } }, region: 'eu' },
+          'an array of non-pipes and another key',
+          { pipes: ['stage1', 'stage2'], region: 'eu' },
         ],
-        ['a pipes string', { pipes: 'water', region: 'eu' }],
-        ['a pipes number', { pipes: 42, region: 'eu' }],
-        ['both properties', { schema: 'public', pipes: 'water', region: 'eu' }],
-        ['a schema string and a pipes array', { schema: 'public', pipes: [] }],
+        [
+          'an array of real pipes and another key',
+          { pipes: [new ParseIntPipe()], region: 'eu' },
+        ],
+        ['an empty pipes array and another key', { pipes: [], region: 'eu' }],
+        [
+          'an undefined schema and another key',
+          { schema: undefined, region: 'eu' },
+        ],
+        ['a valid schema and another key', { schema, region: 'eu' }],
+        // Only schema and pipes keys, but values that are not valid options
+        ['only a schema string', { schema: 'public' }],
+        ['only a schema object', { schema: { name: 'public' } }],
+        ['only a null schema', { schema: null }],
+        [
+          'only a schema with a non-callable validator',
+          { schema: { '~standard': { validate: true } } },
+        ],
+        ['only a pipes string', { pipes: 'water' }],
+        ['only a pipes number', { pipes: 42 }],
+        ['only an array of non-pipes', { pipes: ['stage1', 'stage2'] }],
+        [
+          'only an array mixing pipes and non-pipes',
+          { pipes: [new ParseIntPipe(), 'stage2'] },
+        ],
+        [
+          'only a schema string and a pipes array',
+          { schema: 'public', pipes: [] },
+        ],
+        ['only a valid schema and a pipes string', { schema, pipes: 'water' }],
       ])('should preserve data containing %s', (_, data) => {
         class Test {
           public test(@Decorator(data) param) {}
@@ -77,13 +111,6 @@ describe('createParamDecorator', () => {
       it('should preserve custom data with trailing schema and pipe options', () => {
         const data = { schema: 'public', region: 'eu' };
         const pipe = new ParseIntPipe();
-        const schema = {
-          '~standard': {
-            version: 1 as const,
-            vendor: 'test',
-            validate: (value: unknown) => ({ value }),
-          },
-        };
         class Test {
           public test(@Decorator(data, { schema, pipes: [pipe] }) param) {}
         }
@@ -173,17 +200,24 @@ describe('createParamDecorator', () => {
         },
       };
 
-      it('should preserve custom data with a valid schema and non-array pipes', () => {
-        const data = { schema: mockSchema, pipes: 'water' };
+      it('should accept options with a schema and pipe classes and instances', () => {
+        const pipe = new ParseIntPipe();
         class Test {
-          public test(@Decorator(data) param) {}
+          public test(
+            @Decorator({ schema: mockSchema, pipes: [ParseIntPipe, pipe] })
+            param,
+          ) {}
         }
 
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
-        expect(metadata[key].data).toBe(data);
-        expect(metadata[key].pipes).toEqual([]);
-        expect(metadata[key]).not.toHaveProperty('schema');
+        expect(metadata[key]).toEqual({
+          data: undefined,
+          factory: factoryFn,
+          index: 0,
+          pipes: [ParseIntPipe, pipe],
+          schema: mockSchema,
+        });
       });
 
       it('should accept pipes-only options before positional pipes', () => {
