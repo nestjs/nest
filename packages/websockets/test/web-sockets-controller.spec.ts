@@ -837,6 +837,51 @@ describe('WebSocketsController', () => {
       expect(host.switchToWs().getPattern()).toBe('handleConnection');
     });
 
+    it('should log instead of rejecting when a gateway without the hook fails to resolve', async () => {
+      class Gateway {}
+      const error = new Error('session lookup failed');
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        isDependencyTreeStatic: () => false,
+        instance: new Gateway(),
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const loggerError = vi
+        .spyOn(untypedInstance.logger, 'error')
+        .mockImplementation(() => undefined);
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockRejectedValue(error);
+
+      for (const methodName of [
+        'handleConnection',
+        'handleDisconnect',
+      ] as const) {
+        const handler = instance.createRequestScopedEventHandler(
+          gatewayWrapper,
+          { providers: new Map() } as Module,
+          'moduleKey',
+          methodName,
+          {},
+        );
+        await expect(handler({})).resolves.toBeUndefined();
+      }
+
+      expect(loggerError).toHaveBeenCalledTimes(2);
+      expect(loggerError).toHaveBeenNthCalledWith(
+        1,
+        'Failed to resolve Gateway on client connection',
+        error.stack,
+      );
+      expect(loggerError).toHaveBeenNthCalledWith(
+        2,
+        'Failed to resolve Gateway on client disconnection',
+        error.stack,
+      );
+    });
+
     it('should pass the disconnect reason and the hook name to the exception filter', async () => {
       const client = {};
       const gatewayWrapper = {
