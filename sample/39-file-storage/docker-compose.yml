@@ -17,20 +17,18 @@ services:
     restart: always
 
   # Creates the two buckets once RustFS is up, lets anyone read the photos (a CDN would
-  # sit in front of that bucket in production), and exits.
+  # sit in front of that bucket in production), and exits. It runs on the RustFS image for
+  # its curl, which signs the S3 requests itself.
   create-buckets:
-    image: amazon/aws-cli:2.37.12
+    image: rustfs/rustfs:1.0.1
     depends_on:
       rustfs:
         condition: service_healthy
-    environment:
-      AWS_ACCESS_KEY_ID: rustfsadmin
-      AWS_SECRET_ACCESS_KEY: rustfsadmin
-      AWS_REGION: us-east-1
-      AWS_ENDPOINT_URL: http://rustfs:9000
     entrypoint: ['/bin/sh', '-ec']
     command:
       - |
-        aws s3api head-bucket --bucket store-photos 2>/dev/null || aws s3api create-bucket --bucket store-photos
-        aws s3api head-bucket --bucket store-private 2>/dev/null || aws s3api create-bucket --bucket store-private
-        aws s3api put-bucket-policy --bucket store-photos --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::store-photos/*"]}]}'
+        s3() { curl -fsS --aws-sigv4 aws:amz:us-east-1:s3 --user rustfsadmin:rustfsadmin "$$@"; }
+        for bucket in store-photos store-private; do
+          s3 --head -o /dev/null "http://rustfs:9000/$$bucket" 2>/dev/null || s3 -X PUT "http://rustfs:9000/$$bucket"
+        done
+        s3 -X PUT 'http://rustfs:9000/store-photos?policy' --data '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::store-photos/*"]}]}'

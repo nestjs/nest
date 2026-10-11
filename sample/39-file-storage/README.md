@@ -120,11 +120,7 @@ On S3, some of the answers differ from the tutorial's:
 
 - The photo URLs point at the bucket (`http://127.0.0.1:9000/store-photos/…`), so RustFS answers the headers request. It sends the type and the `Cache-Control` stored with the photo. It doesn't send `X-Content-Type-Options` or `Content-Disposition`, which the app adds only when it serves a file itself.
 - The invoice link and the upload URL are presigned for RustFS. The link for another order gets a `403` with an S3 `SignatureDoesNotMatch` error, and the upload gets a `200` with an empty body.
-- The files are objects in the buckets:
-
-```bash
-$ docker compose run --rm --entrypoint aws create-buckets s3 ls --recursive s3://store-private
-```
+- The files are objects in the buckets, which [RustFS's console](#s3-compatible-storage-in-docker) shows.
 
 ### Test
 
