@@ -1,7 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { match } from 'path-to-regexp';
 import { NodeRequest, NodeResponse } from '../adapters/node-request.js';
-import { type RouteHandler, RouteTable } from './route-table.js';
+import {
+  type RouteEntry,
+  type RouteHandler,
+  type RouteMatch,
+  RouteTable,
+} from './route-table.js';
 import { getRawPrefixEnd, getRoutingPath, loosen } from './utils.js';
 
 type NextFunction = (err?: any) => void;
@@ -268,8 +273,11 @@ export class NodeRouter {
   ) {
     const stack = this.stack;
     let index = 0;
-    let routeHandlers: RouteHandler[] | undefined;
+    let routeMatch: RouteMatch | undefined;
     let routeIndex = 0;
+    // The other routes matching the path, once every handler of the matched
+    // route passed (see RouteTable.lookupRest)
+    let restEntries: RouteEntry[] | undefined;
     let removed = '';
     let slashAdded = false;
     let cachedUrl = '';
@@ -302,11 +310,27 @@ export class NodeRouter {
         removed = '';
       }
       // Continue with the next handler registered for the matched route
-      if (routeHandlers !== undefined) {
-        if (err === undefined && routeIndex < routeHandlers.length) {
-          return invoke(routeHandlers[routeIndex++], req, res, next);
+      if (routeMatch !== undefined) {
+        if (err === undefined) {
+          if (routeIndex < routeMatch.handlers.length) {
+            return invoke(routeMatch.handlers[routeIndex++], req, res, next);
+          }
+          // Every handler passed: on to the other routes matching the path,
+          // as when a version- or host-filtered handler does not apply. The
+          // route's table is the layer just before "index".
+          restEntries ??= stack[index - 1].table!.lookupRest(
+            req.method!,
+            cachedPath,
+            routeMatch.seqs,
+          );
+          const entry = restEntries.shift();
+          if (entry !== undefined) {
+            req.params = entry.params;
+            return invoke(entry.handler, req, res, next);
+          }
         }
-        routeHandlers = undefined;
+        routeMatch = undefined;
+        restEntries = undefined;
       }
 
       while (index < stack.length) {
@@ -341,7 +365,7 @@ export class NodeRouter {
             continue;
           }
           req.params = found.params;
-          routeHandlers = found.handlers;
+          routeMatch = found;
           routeIndex = 1;
           return invoke(found.handlers[0], req, res, next);
         }

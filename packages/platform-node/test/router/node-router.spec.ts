@@ -146,6 +146,36 @@ describe('NodeRouter', () => {
       expect(get).toHaveBeenCalledTimes(1);
     });
 
+    it('should run the other matching routes once every handler of the most specific one passes', () => {
+      // As a version- or host-filtered handler does when it does not apply
+      const calls: string[] = [];
+      router.get('/items/:id', (req: NodeRequest) => {
+        calls.push(`:id ${req.params.id}`);
+      });
+      router.get('/items/me', (_req: unknown, _res: unknown, next: Next) => {
+        calls.push('me');
+        next();
+      });
+
+      dispatch('GET', '/items/me');
+
+      expect(calls).toEqual(['me', ':id me']);
+      expect(finalHandler).not.toHaveBeenCalled();
+    });
+
+    it('should not run the other matching routes after an error', () => {
+      const byId = vi.fn();
+      router.get('/items/:id', byId);
+      router.get('/items/me', (_req: unknown, _res: unknown, next: Next) =>
+        next(new Error('failed')),
+      );
+
+      dispatch('GET', '/items/me');
+
+      expect(byId).not.toHaveBeenCalled();
+      expect(finalHandler.mock.calls[0][0]).toEqual(new Error('failed'));
+    });
+
     it('should match routes with a method changed by earlier middleware', () => {
       // As "method-override" does
       const post = vi.fn();
