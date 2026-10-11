@@ -56,9 +56,15 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
       const paramData = hasParamData ? (data as any) : undefined;
       const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
-      // Check if data itself is an options object (when used as the first argument)
+      // Custom data may also contain schema or pipes properties, so check their
+      // shapes before treating the first argument as options.
       const isDataOptions =
-        hasParamData && !isNil(data) && isParameterDecoratorOptions(data);
+        hasParamData &&
+        !isNil(data) &&
+        isParameterDecoratorOptions(data) &&
+        (data.schema === undefined ||
+          isFunction(data.schema?.['~standard']?.validate)) &&
+        (data.pipes === undefined || Array.isArray(data.pipes));
 
       // Check if the last pipe argument is actually an options object
       const lastPipeArg =
@@ -88,9 +94,7 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
         finalData = paramData;
         finalSchema = undefined;
         finalPipes = paramPipes as (
-          | Type<PipeTransform>
-          | PipeTransform
-          | FactoryData
+          Type<PipeTransform> | PipeTransform | FactoryData
         )[];
       }
 

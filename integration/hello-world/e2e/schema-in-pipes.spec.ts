@@ -46,6 +46,8 @@ const CustomParam = createParamDecorator(
   },
 );
 
+const CustomData = createParamDecorator((data: unknown) => data ?? null);
+
 @Controller('schema-test')
 class SchemaTestController {
   @Post('body')
@@ -72,6 +74,20 @@ class SchemaTestController {
   @Get('custom')
   customWithSchema(
     @CustomParam({ schema: testSchema, pipes: [SchemaCaptorPipe] }) value: any,
+  ) {
+    return { received: value };
+  }
+
+  @Get('custom-schema-data')
+  customWithSchemaData(
+    @CustomData({ schema: 'public', region: 'eu' }) value: unknown,
+  ) {
+    return { received: value };
+  }
+
+  @Get('custom-pipes-data')
+  customWithPipesData(
+    @CustomData({ pipes: 'water', region: 'eu' }) value: unknown,
   ) {
     return { received: value };
   }
@@ -150,6 +166,20 @@ describe('Schema propagation to pipes', () => {
     expect(SchemaCaptorPipe.lastMetadata).toBeDefined();
     expect(SchemaCaptorPipe.lastMetadata!.schema).toBe(testSchema);
     expect(SchemaCaptorPipe.lastMetadata!.type).toBe('custom');
+  });
+
+  it('should pass custom data with a schema property to the factory', async () => {
+    await request(server)
+      .get('/schema-test/custom-schema-data')
+      .expect(200)
+      .expect({ received: { schema: 'public', region: 'eu' } });
+  });
+
+  it('should pass custom data with a pipes property to the factory', async () => {
+    await request(server)
+      .get('/schema-test/custom-pipes-data')
+      .expect(200)
+      .expect({ received: { pipes: 'water', region: 'eu' } });
   });
 
   it('should pass schema to pipe via @Body(property, options)', async () => {
