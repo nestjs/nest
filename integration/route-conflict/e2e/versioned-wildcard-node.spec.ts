@@ -25,8 +25,9 @@ async function buildVersionedNodeApp(
 //
 // The fixture uses Fastify's `@Get('*')`. On the Node adapter, as on Express,
 // the legacy converter turns it into the optional named wildcard `{*path}`:
-// the tail is exposed as `path` (so `@Param('*')` is undefined), and the bare
-// `/v1/users` matches the catch-all too.
+// the tail is exposed as `path` (so `@Param('*')` is undefined). As with
+// Express, `/v1/users/` matches the catch-all but the bare `/v1/users` does
+// not: the "/" before the optional wildcard is part of the path.
 describe('Route conflict policy (Node, URI versioning + wildcard)', () => {
   let app: NestNodeApplication | undefined;
 
@@ -71,10 +72,14 @@ describe('Route conflict policy (Node, URI versioning + wildcard)', () => {
         .expect(200, { handler: 'catchAll' });
     });
 
-    it('routes GET /v1/users to the wildcard as well (the converted wildcard is optional)', async () => {
+    it('routes GET /v1/users/ to the wildcard as well (the converted wildcard is optional)', async () => {
       await request(app!.getHttpServer())
-        .get('/v1/users')
+        .get('/v1/users/')
         .expect(200, { handler: 'catchAll' });
+    });
+
+    it('does not route the bare GET /v1/users to the wildcard, as Express does not', async () => {
+      await request(app!.getHttpServer()).get('/v1/users').expect(404);
     });
 
     it('routes the unversioned handler outside the /v1 prefix', async () => {
