@@ -190,6 +190,36 @@ describe('WsExceptionsHandler', () => {
       });
     });
   });
+  describe('constructor', () => {
+    describe('when the caller provides an options object', () => {
+      it('should not mutate the options object passed by the caller', () => {
+        const options = {};
+        new WsExceptionsHandler(options);
+        expect(options).toStrictEqual({});
+      });
+
+      it('should not add defaults to the options object passed by the caller', () => {
+        const options = { includeCause: false };
+        new WsExceptionsHandler(options);
+        expect(options).toStrictEqual({ includeCause: false });
+      });
+
+      it('should not throw when the options object passed by the caller is frozen', () => {
+        const options = Object.freeze({ includeCause: false });
+        expect(() => new WsExceptionsHandler(options)).not.toThrow();
+      });
+
+      it('should apply the options to emitted errors', () => {
+        const options = { includeCause: false };
+        const scopedHandler = new WsExceptionsHandler(options);
+        scopedHandler.handle(new Error(), executionContextHost);
+        expect(emitStub).toHaveBeenCalledWith('exception', {
+          status: 'error',
+          message: 'Internal server error',
+        });
+      });
+    });
+  });
   describe('setCustomFilters', () => {
     const filters = ['test', 'test2'];
     it('should set custom filters', () => {
