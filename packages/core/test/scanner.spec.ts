@@ -491,6 +491,45 @@ describe('DependenciesScanner', () => {
           expect(addInjectableSpy).toHaveBeenCalled();
         });
       });
+      describe('and is global with useExisting pointing to a request-scoped class', () => {
+        // Regression test for https://github.com/nestjs/nest/issues/18065
+        // A global guard registered via `useExisting` pointing to a request-scoped
+        // provider had its scope resolved as undefined (treated as DEFAULT/static).
+        // This caused applyApplicationProviders() to look in the wrong collection,
+        // find a null instance, and silently skip the guard — a security bypass.
+        @Injectable({ scope: Scope.REQUEST })
+        class RequestScopedGuard {}
+
+        const provider = {
+          provide: APP_GUARD,
+          useExisting: RequestScopedGuard,
+        };
+
+        it('should call container "addInjectable" (not "addProvider") with expected args', () => {
+          const addInjectableSpy = vi
+            .spyOn(container, 'addInjectable')
+            .mockImplementation(() => false as any);
+          const addProviderSpy = vi
+            .spyOn(container, 'addProvider')
+            .mockImplementation(() => false as any);
+
+          scanner.insertProvider(provider, token);
+
+          expect(addInjectableSpy).toHaveBeenCalled();
+          expect(addProviderSpy).not.toHaveBeenCalled();
+        });
+
+        it('should push entry with REQUEST scope to "applicationProvidersApplyMap"', () => {
+          vi.spyOn(container, 'addInjectable').mockImplementation(
+            () => false as any,
+          );
+          scanner.insertProvider(provider, token);
+          const applyMap = untypedScanner.applicationProvidersApplyMap;
+
+          expect(applyMap).toHaveLength(1);
+          expect(applyMap[0].scope).toBe(Scope.REQUEST);
+        });
+      });
       describe('and is not global', () => {
         const component = {
           provide: 'CUSTOM',

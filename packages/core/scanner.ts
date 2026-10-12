@@ -471,6 +471,9 @@ export class DependenciesScanner {
     if (isNil(scope) && (provider as ClassProvider).useClass) {
       scope = getClassScope((provider as ClassProvider).useClass);
     }
+    if (isNil(scope) && (provider as ExistingProvider).useExisting) {
+      scope = getClassScope((provider as ExistingProvider).useExisting as Type);
+    }
     this.applicationProvidersApplyMap.push({
       type,
       moduleKey: token,
