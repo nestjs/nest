@@ -1,4 +1,10 @@
-import { Controller, Get, Module } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Injectable,
+  Module,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
@@ -24,6 +30,22 @@ class HoldController {
 @Module({ imports: [AppModule], controllers: [HoldController] })
 class HoldModule {}
 
+let shutdownHookEntered: Promise<void>;
+let enterShutdownHook: () => void;
+let shutdownHookReleased: Promise<void>;
+let releaseShutdownHook: () => void;
+
+@Injectable()
+class SlowShutdownHook implements OnModuleDestroy {
+  onModuleDestroy() {
+    enterShutdownHook();
+    return shutdownHookReleased;
+  }
+}
+
+@Module({ imports: [AppModule], providers: [SlowShutdownHook] })
+class SlowShutdownModule {}
+
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const waitUntil = async (predicate: () => boolean) => {
@@ -39,6 +61,16 @@ const within = <T>(promise: Promise<T>, ms = 1500) =>
       throw new Error(`Timed out after ${ms}ms`);
     }),
   ]);
+
+const requestSlow = (port: number, agent: http.Agent | false = false) =>
+  new Promise<http.IncomingMessage>((resolve, reject) => {
+    http
+      .get({ host: '127.0.0.1', port, path: '/slow', agent }, res => {
+        res.resume();
+        res.on('end', () => resolve(res));
+      })
+      .on('error', reject);
+  });
 
 const requestHold = (host: string, port: number, family?: number) =>
   new Promise<net.Socket>(resolve => {
@@ -56,11 +88,16 @@ describe('Graceful Shutdown (Fastify)', () => {
 
   beforeEach(() => {
     hits = 0;
+    shutdownHookEntered = new Promise(resolve => (enterShutdownHook = resolve));
+    shutdownHookReleased = new Promise(
+      resolve => (releaseShutdownHook = resolve),
+    );
   });
 
   afterEach(async () => {
-    // Lets a close() that is stuck on a held request settle
+    // Lets a close() that is stuck on a held request or hook settle
     clientSockets.splice(0).forEach(socket => socket.destroy());
+    releaseShutdownHook();
     await app?.close();
   });
 
@@ -137,5 +174,120 @@ describe('Graceful Shutdown (Fastify)', () => {
     await within(app.close());
     // Dropped as soon as it was accepted, before the request was handled
     expect(hits).toBe(0);
+  });
+
+  it('should allow in-flight requests to complete when return503OnClosing is enabled', async () => {
+    app = await NestFactory.create<NestFastifyApplication>(
+      AppModule,
+      new FastifyAdapter(),
+      { return503OnClosing: true, logger: false },
+    );
+    await app.listen(0, '127.0.0.1');
+    const { port } = app.getHttpServer().address() as net.AddressInfo;
+
+    const response = new Promise<string>((resolve, reject) => {
+      http
+        .get(
+          {
+            host: '127.0.0.1',
+            port,
+            path: '/slow',
+            // Explicitly close connection after response to speed up server shutdown
+            headers: { Connection: 'close' },
+          },
+          res => {
+            let data = '';
+            res.on('data', chunk => (data += chunk));
+            res.on('end', () => resolve(data));
+          },
+        )
+        .on('error', reject);
+    });
+    await sleep(100);
+
+    const closePromise = app.close();
+    expect(await response).toBe('ok');
+    await closePromise;
+  });
+
+  it('should return 503 for NEW queued requests on existing connections during shutdown', async () => {
+    app = await NestFactory.create<NestFastifyApplication>(
+      AppModule,
+      new FastifyAdapter(),
+      { return503OnClosing: true, logger: false },
+    );
+    await app.listen(0, '127.0.0.1');
+    const { port } = app.getHttpServer().address() as net.AddressInfo;
+
+    // Force 1 socket to ensure queuing/reuse
+    const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+
+    // Request A (slow) occupies the socket
+    const inFlight = requestSlow(port, agent);
+    await sleep(100);
+
+    const closePromise = app.close();
+    // Allow the microtask for prepareClose() to flush
+    await sleep(0);
+
+    // Request B is queued behind A on the same socket
+    const queued = requestSlow(port, agent);
+
+    expect((await inFlight).statusCode).toBe(200);
+    expect((await queued).statusCode).toBe(503);
+
+    await closePromise;
+    agent.destroy();
+  });
+
+  it('should return 503 with Connection: close while the shutdown hooks run when return503OnClosing is enabled', async () => {
+    app = await NestFactory.create<NestFastifyApplication>(
+      SlowShutdownModule,
+      new FastifyAdapter(),
+      { return503OnClosing: true, logger: false },
+    );
+    let middlewareHits = 0;
+    app.use((_req: unknown, _res: unknown, next: () => void) => {
+      middlewareHits += 1;
+      next();
+    });
+    await app.listen(0, '127.0.0.1');
+    const { port } = app.getHttpServer().address() as net.AddressInfo;
+    const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+
+    expect((await requestSlow(port, agent)).statusCode).toBe(200);
+    expect(middlewareHits).toBe(1);
+
+    const closePromise = app.close();
+    await shutdownHookEntered;
+
+    // Sent on the kept-alive socket while onModuleDestroy() is still pending
+    const res = await requestSlow(port, agent);
+    expect(res.statusCode).toBe(503);
+    expect(res.headers.connection).toBe('close');
+    // Rejected before Nest middleware runs, as on Express
+    expect(middlewareHits).toBe(1);
+
+    releaseShutdownHook();
+    await closePromise;
+    agent.destroy();
+  });
+
+  it('should keep serving requests while the shutdown hooks run when return503OnClosing is not set', async () => {
+    app = await NestFactory.create<NestFastifyApplication>(
+      SlowShutdownModule,
+      new FastifyAdapter(),
+      { logger: false },
+    );
+    await app.listen(0, '127.0.0.1');
+    const { port } = app.getHttpServer().address() as net.AddressInfo;
+
+    const closePromise = app.close();
+    await shutdownHookEntered;
+
+    expect((await requestSlow(port)).statusCode).toBe(200);
+
+    releaseShutdownHook();
+    await closePromise;
   });
 });

@@ -197,6 +197,8 @@ export class FastifyAdapter<
 
   private readonly openConnections = new Set<Duplex>();
   private isClosing = false;
+  private isShuttingDown = false;
+  private return503OnClosing = false;
   private _isParserRegistered: boolean;
   // Fastify's `hasContentTypeParser('application/json')` is always true (built-in
   // parser), so the types registered through `useBodyParser()` are tracked here.
@@ -346,6 +348,21 @@ export class FastifyAdapter<
           reply as TReply,
           done,
         );
+      } else {
+        done();
+      }
+    });
+
+    // Fastify's own `return503OnClosing` only applies once `close()` runs,
+    // which is after the shutdown hooks. Added here rather than in
+    // `initHttpServer()` so that it runs before Nest middleware:
+    // `NestFactory.create()` calls `init()`, which registers middie, first.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (this.return503OnClosing && this.isShuttingDown) {
+        if (request.raw.httpVersionMajor !== 2) {
+          reply.header('Connection', 'close');
+        }
+        reply.code(503).send('Service Unavailable');
       } else {
         done();
       }
@@ -758,7 +775,12 @@ export class FastifyAdapter<
     return this.instance.inject(opts!);
   }
 
+  public beforeClose() {
+    this.isShuttingDown = true;
+  }
+
   public async close() {
+    this.isShuttingDown = true;
     this.isClosing = true;
     try {
       this.closeOpenConnections();
@@ -774,6 +796,7 @@ export class FastifyAdapter<
 
   public initHttpServer(options: NestApplicationOptions = {}) {
     this.httpServer = this.instance.server;
+    this.return503OnClosing = !!options?.return503OnClosing;
     if (options?.forceCloseConnections) {
       this.trackOpenConnections();
     }

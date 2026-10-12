@@ -461,6 +461,54 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('initHttpServer return503OnClosing', () => {
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    it('should answer 503 with Connection: close once beforeClose() ran', async () => {
+      fastifyAdapter.initHttpServer({ return503OnClosing: true });
+      fastifyAdapter.get('/', () => 'ok');
+
+      const before = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(before.statusCode).toBe(200);
+
+      fastifyAdapter.beforeClose();
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(res.statusCode).toBe(503);
+      expect(res.headers.connection).toBe('close');
+      expect(res.body).toBe('Service Unavailable');
+    });
+
+    it('should answer 503 before Nest middleware runs', async () => {
+      // `NestFactory.create()` calls `init()`, which registers middie,
+      // before the application calls `initHttpServer()`
+      await fastifyAdapter.init();
+      fastifyAdapter.initHttpServer({ return503OnClosing: true });
+      const middleware = vi.fn((_req, _res, next: () => void) => next());
+      fastifyAdapter.use(middleware);
+      fastifyAdapter.get('/', () => 'ok');
+
+      fastifyAdapter.beforeClose();
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(res.statusCode).toBe(503);
+      expect(middleware).not.toHaveBeenCalled();
+    });
+
+    it('should keep serving requests after beforeClose() when return503OnClosing is not set', async () => {
+      fastifyAdapter.initHttpServer({});
+      fastifyAdapter.get('/', () => 'ok');
+
+      fastifyAdapter.beforeClose();
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('ok');
+    });
+  });
+
   describe('useBodyParser', () => {
     const registerEchoRoute = () =>
       fastifyAdapter.post(
