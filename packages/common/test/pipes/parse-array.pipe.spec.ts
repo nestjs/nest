@@ -223,6 +223,55 @@ describe('ParseArrayPipe', () => {
           ),
         ).to.deep.equal([1, 2, -3.5, 1000, 1, 4, 0.5]);
       });
+      it('should reject an array nested in the array when items is Number', async () => {
+        target = new ParseArrayPipe({ items: Number });
+
+        for (const [value, index] of [
+          [[[1]], 0],
+          [[['2']], 0],
+          [[[[3]]], 0],
+          [[1, [2]], 1],
+        ] as const) {
+          await expect(
+            target.transform(value, {} as ArgumentMetadata),
+          ).to.be.rejectedWith(`[${index}] item must be a number`);
+        }
+      });
+      it('should reject an array nested in the array when items is Boolean', async () => {
+        target = new ParseArrayPipe({ items: Boolean });
+
+        for (const [value, index] of [
+          [[[true]], 0],
+          [[['false']], 0],
+          [[true, [false]], 1],
+        ] as const) {
+          await expect(
+            target.transform(value, {} as ArgumentMetadata),
+          ).to.be.rejectedWith(`[${index}] item must be a boolean value`);
+        }
+      });
+      it('should not parse a JSON string nested in the array when items is a class', async () => {
+        class ArrItemWithProp {
+          @IsNumber()
+          number: number;
+        }
+        target = new ParseArrayPipe({ items: ArrItemWithProp });
+
+        await expect(
+          target.transform([['{"number":1}']], {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
+      });
+      it('should keep parsing the items of an array', async () => {
+        target = new ParseArrayPipe({ items: Number });
+        expect(
+          await target.transform([1, '2', '3.5'], {} as ArgumentMetadata),
+        ).to.deep.equal([1, 2, 3.5]);
+
+        target = new ParseArrayPipe({ items: Boolean });
+        expect(
+          await target.transform([true, 'false'], {} as ArgumentMetadata),
+        ).to.deep.equal([true, false]);
+      });
       describe('when "stopAtFirstError" is explicitly turned off', () => {
         it('should validate each item and concat errors', async () => {
           class ArrItemWithProp {
@@ -249,6 +298,23 @@ describe('ParseArrayPipe', () => {
               '[1] number must be a number conforming to the specified constraints',
             ]);
           }
+        });
+
+        it('should report every array nested in the array', async () => {
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+          });
+
+          const error = await pipe
+            .transform([[1], 2, ['3']], {} as ArgumentMetadata)
+            .catch(err => err);
+
+          expect(error).to.be.instanceOf(BadRequestException);
+          expect(error.getResponse().message).to.deep.equal([
+            '[0] item must be a number',
+            '[2] item must be a number',
+          ]);
         });
 
         it('should validate each nested object and concat errors', async () => {
