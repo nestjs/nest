@@ -714,6 +714,30 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('#', 'user.profile.created')).toBe(true);
         expect(matchRmqPattern('#', 'created')).toBe(true);
       });
+
+      it('should match when # is followed by other segments', () => {
+        expect(matchRmqPattern('#.error', 'app.error')).toBe(true);
+        expect(matchRmqPattern('#.error', 'app.db.error')).toBe(true);
+        expect(matchRmqPattern('#.error', 'error')).toBe(true);
+        expect(matchRmqPattern('#.error', 'app.warn')).toBe(false);
+        expect(matchRmqPattern('#.error', 'error.app')).toBe(false);
+      });
+
+      it('should match when # is in the middle', () => {
+        expect(matchRmqPattern('app.#.error', 'app.error')).toBe(true);
+        expect(matchRmqPattern('app.#.error', 'app.db.error')).toBe(true);
+        expect(matchRmqPattern('app.#.error', 'app.db.pool.error')).toBe(true);
+        expect(matchRmqPattern('app.#.error', 'app.db.warn')).toBe(false);
+        expect(matchRmqPattern('app.#.error', 'web.db.error')).toBe(false);
+      });
+
+      it('should combine # with *', () => {
+        expect(matchRmqPattern('*.#.error', 'app.error')).toBe(true);
+        expect(matchRmqPattern('*.#.error', 'a.b.c.error')).toBe(true);
+        expect(matchRmqPattern('*.#.error', 'error')).toBe(false);
+        expect(matchRmqPattern('#.*.error', 'app.db.error')).toBe(true);
+        expect(matchRmqPattern('#.*.error', 'error')).toBe(false);
+      });
     });
 
     describe('edge cases', () => {
@@ -721,12 +745,24 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('user.created', '')).toBe(false);
         expect(matchRmqPattern('*', '')).toBe(false);
         expect(matchRmqPattern('#', '')).toBe(true);
+        expect(matchRmqPattern('#.#', '')).toBe(true);
+        expect(matchRmqPattern('#.#.#', '')).toBe(true);
+        expect(matchRmqPattern('a.#', '')).toBe(false);
+        expect(matchRmqPattern('#.*', '')).toBe(false);
       });
 
       it('should handle single segments', () => {
         expect(matchRmqPattern('user', 'user')).toBe(true);
         expect(matchRmqPattern('*', 'user')).toBe(true);
         expect(matchRmqPattern('#', 'user')).toBe(true);
+      });
+
+      it('should treat empty segments as words', () => {
+        // the broker binds and routes these, so the matcher must accept them
+        expect(matchRmqPattern('a.*', 'a.')).toBe(true);
+        expect(matchRmqPattern('*.*', '.a')).toBe(true);
+        // "#" cannot stand in for a missing word
+        expect(matchRmqPattern('a..#', 'a')).toBe(false);
       });
 
       it('should handle complex $ patterns that previously failed', () => {
