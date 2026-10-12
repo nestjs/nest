@@ -146,7 +146,7 @@ const createApp = async (module: Type<unknown>) => {
   return app;
 };
 
-describe('Global enhancers registered with useExisting or useFactory', () => {
+describe('Global enhancers that depend on request-scoped providers', () => {
   describe('http', () => {
     let app: INestApplication;
 

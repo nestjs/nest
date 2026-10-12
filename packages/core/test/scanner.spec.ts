@@ -603,7 +603,7 @@ describe('DependenciesScanner', () => {
       expect(applySpy).toHaveBeenCalledWith(expectedInstance);
       expect(insertAttachedEnhancerStub).toHaveBeenCalledWith(instanceWrapper);
     });
-    describe('when a provider has no instance because it depends on a request-scoped provider', () => {
+    describe('when a provider depends on a request-scoped provider', () => {
       class AuthGuard {}
 
       const mockWrapper = (wrapper: Partial<InstanceWrapper>) => {
