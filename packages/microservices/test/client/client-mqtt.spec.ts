@@ -265,6 +265,76 @@ describe('ClientMqtt', () => {
         expect(unsubscribeSpy).not.toHaveBeenCalled();
       });
     });
+
+    describe('when publishing fails later', () => {
+      const responseChannel = `${pattern}/reply`;
+      const publishError = new Error('Publish error: Not authorized');
+
+      beforeEach(() => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        // mqtt.js reports a rejected publish through its callback only
+        publishSpy.mockImplementation((_topic, _message, _options, done) =>
+          setImmediate(() => done(publishError)),
+        );
+      });
+
+      it('should fail the request and undo what it had set up', async () => {
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(callback).toHaveBeenCalledWith({ err: publishError });
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+      });
+
+      it('should not fail a request again once it is torn down', async () => {
+        // Another request already uses the channel, so a second undo would
+        // show up in the count
+        client['subscriptionsCount'].set(responseChannel, 1);
+        const callback = vi.fn();
+
+        const teardown = client['publish'](msg, callback);
+        teardown();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(1);
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+      });
+
+      it('should undo the bookkeeping once when the failure is reported synchronously', () => {
+        client['subscriptionsCount'].set(responseChannel, 1);
+        publishSpy.mockImplementation((_topic, _message, _options, done) =>
+          done(publishError),
+        );
+        const callback = vi.fn();
+
+        const teardown = client['publish'](msg, callback);
+        teardown();
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith({ err: publishError });
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(1);
+      });
+
+      it('should keep the request pending when the publish succeeds', async () => {
+        publishSpy.mockImplementation((_topic, _message, _options, done) =>
+          setImmediate(() => done()),
+        );
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(client['routingMap'].has(id)).toBe(true);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(1);
+      });
+    });
   });
   describe('createResponseCallback', () => {
     let callback: ReturnType<typeof vi.fn>, subscription;
