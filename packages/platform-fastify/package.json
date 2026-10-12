@@ -8,6 +8,7 @@
   "main": "./index.js",
   "exports": {
     ".": "./index.js",
+    "./package.json": "./package.json",
     "./multipart": "./multipart/index.js",
     "./*.js": "./*.js",
     "./*": "./*.js"
