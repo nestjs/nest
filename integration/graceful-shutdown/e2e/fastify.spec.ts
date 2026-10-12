@@ -62,12 +62,17 @@ const within = <T>(promise: Promise<T>, ms = 1500) =>
     }),
   ]);
 
+const FASTIFY_503_BODY =
+  '{"error":"Service Unavailable","message":"Service Unavailable","statusCode":503}';
+
 const requestSlow = (port: number, agent: http.Agent | false = false) =>
-  new Promise<http.IncomingMessage>((resolve, reject) => {
+  new Promise<http.IncomingMessage & { body: string }>((resolve, reject) => {
     http
       .get({ host: '127.0.0.1', port, path: '/slow', agent }, res => {
-        res.resume();
-        res.on('end', () => resolve(res));
+        let body = '';
+        res.setEncoding('utf8');
+        res.on('data', chunk => (body += chunk));
+        res.on('end', () => resolve(Object.assign(res, { body })));
       })
       .on('error', reject);
   });
@@ -234,7 +239,9 @@ describe('Graceful Shutdown (Fastify)', () => {
     const queued = requestSlow(port, agent);
 
     expect((await inFlight).statusCode).toBe(200);
-    expect((await queued).statusCode).toBe(503);
+    const queuedRes = await queued;
+    expect(queuedRes.statusCode).toBe(503);
+    expect(queuedRes.body).toBe(FASTIFY_503_BODY);
 
     await closePromise;
     agent.destroy();
@@ -265,6 +272,8 @@ describe('Graceful Shutdown (Fastify)', () => {
     const res = await requestSlow(port, agent);
     expect(res.statusCode).toBe(503);
     expect(res.headers.connection).toBe('close');
+    // Same body as Fastify's own 503 once `close()` runs
+    expect(res.body).toBe(FASTIFY_503_BODY);
     // Rejected before Nest middleware runs, as on Express
     expect(middlewareHits).toBe(1);
 

@@ -478,7 +478,11 @@ describe('FastifyAdapter', () => {
       const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
       expect(res.statusCode).toBe(503);
       expect(res.headers.connection).toBe('close');
-      expect(res.body).toBe('Service Unavailable');
+      expect(res.headers['content-type']).toMatch(/^application\/json/);
+      // The body Fastify itself sends once `close()` runs
+      expect(res.body).toBe(
+        '{"error":"Service Unavailable","message":"Service Unavailable","statusCode":503}',
+      );
     });
 
     it('should answer 503 before Nest middleware runs', async () => {
