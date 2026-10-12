@@ -350,6 +350,12 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
             this.getRequestPattern(pattern),
             serializedPacket,
             this.mergePacketOptions(options),
+            (err?: Error) => {
+              if (err && !isTornDown) {
+                undoBookkeeping();
+                callback({ err });
+              }
+            },
           );
         } catch (err) {
           // The broker can acknowledge the subscription later, so this runs
