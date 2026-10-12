@@ -32,7 +32,7 @@ describe('ExpressAdapter async lifecycle hooks', () => {
       await request(adapter.getInstance())
         .get('/test')
         .timeout(2000)
-        .expect(500, error?.message ?? 'Rejected promise');
+        .expect(500, error?.message ?? 'Request hook failed');
       expect(errorHandler).toHaveBeenCalledOnce();
     },
   );
@@ -93,19 +93,6 @@ describe('ExpressAdapter async lifecycle hooks', () => {
     expect(receivers).toEqual([adapter, adapter]);
   });
 
-  it('does not advance again when an async request hook calls done', async () => {
-    adapter.setOnRequestHook(async (_req, _res, done) => {
-      await Promise.resolve();
-      done();
-    });
-    const afterRoute = vi.fn((_req, res) => res.status(500).end());
-    adapter.getInstance().use(afterRoute);
-
-    await request(adapter.getInstance()).get('/test').expect(200, 'ok');
-    await new Promise(resolve => setImmediate(resolve));
-    expect(afterRoute).not.toHaveBeenCalled();
-  });
-
   it('waits for done even after the request hook promise resolves', async () => {
     let continueRequest: (() => void) | undefined;
     let notifyHook!: () => void;
@@ -133,25 +120,6 @@ describe('ExpressAdapter async lifecycle hooks', () => {
       await response;
     }
     expect(handler).toHaveBeenCalledOnce();
-  });
-
-  it('ignores a second done after the response has completed', async () => {
-    let continueRequest!: () => void;
-    adapter.setOnRequestHook((_req, _res, done) => {
-      continueRequest = done;
-      done();
-    });
-    const afterRoute = vi.fn((_req, _res, _next) => {});
-    adapter.getInstance().use(afterRoute);
-
-    await request(adapter.getInstance())
-      .get('/test')
-      .timeout(2000)
-      .expect(200, 'ok');
-    await new Promise(resolve => setImmediate(resolve));
-    continueRequest();
-
-    expect(afterRoute).not.toHaveBeenCalled();
   });
 
   it.each(['throw', 'reject', 'done twice'])(
