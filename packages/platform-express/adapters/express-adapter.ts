@@ -96,16 +96,52 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       }
 
       if (this.onRequestHook) {
-        return this.onRequestHook.apply(this, [req, res, next]);
+        this.runRequestHook(this.onRequestHook, req, res, next);
       } else {
         next();
       }
     });
   }
 
+  private runRequestHook(
+    hook: (
+      req: express.Request,
+      res: express.Response,
+      done: () => void,
+    ) => Promise<void> | void,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ): void {
+    let completed = false;
+    const doneOnce = (err?: unknown) => {
+      if (completed) {
+        if (err) {
+          this.logger.error(err);
+        }
+        return;
+      }
+      completed = true;
+      next(err);
+    };
+
+    try {
+      // Keep rejections behind the same guard as done(), not Express's next().
+      const result = hook.call(this, req, res, doneOnce);
+      if (result && typeof result.then === 'function') {
+        result.then(undefined, err =>
+          doneOnce(err || new Error('Rejected promise')),
+        );
+      }
+    } catch (err) {
+      doneOnce(err || new Error('Request hook failed'));
+    }
+  }
+
   /**
    * Registers a request hook. Call `done()` to continue processing the request.
-   * Thrown errors and rejected promises are forwarded to Express error handlers.
+   * Only the first completion is forwarded to Express. Errors after `done()`
+   * are logged without advancing the request again.
    */
   public setOnRequestHook(
     onRequestHook: (

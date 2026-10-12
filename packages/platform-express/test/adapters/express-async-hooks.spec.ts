@@ -52,6 +52,33 @@ describe('ExpressAdapter async lifecycle hooks', () => {
       .expect(500, error.message);
   });
 
+  it('ignores done after a request hook has already failed', async () => {
+    const error = new Error('Hook rejected');
+    let continueRequest!: () => void;
+    adapter.setOnRequestHook((_req, _res, done) => {
+      continueRequest = done;
+      return Promise.reject(error);
+    });
+    const handler = vi.fn((_req, res) => res.send('unexpected'));
+    adapter.get('/failed', handler);
+    const errorHandler = vi.fn<ErrorRequestHandler>((err, _req, res, _next) => {
+      res.status(500).send(err.message);
+    });
+    adapter.getInstance().use(errorHandler);
+    const afterError = vi.fn((_req, res) => res.end());
+    adapter.getInstance().use(afterError);
+
+    await request(adapter.getInstance())
+      .get('/failed')
+      .timeout(2000)
+      .expect(500, error.message);
+    continueRequest();
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(afterError).not.toHaveBeenCalled();
+    expect(errorHandler).toHaveBeenCalledOnce();
+  });
+
   it('keeps the adapter as the receiver of callback hooks', async () => {
     const receivers: unknown[] = [];
     adapter.setOnRequestHook(function (this: ExpressAdapter, _req, _res, done) {
@@ -108,25 +135,84 @@ describe('ExpressAdapter async lifecycle hooks', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 
-  it('forwards a request hook rejection after done to the error handler', async () => {
-    const error = new Error('Late rejection');
+  it('ignores a second done after the response has completed', async () => {
+    let continueRequest!: () => void;
     adapter.setOnRequestHook((_req, _res, done) => {
+      continueRequest = done;
       done();
-      const result = Promise.reject(error);
-      result.catch(() => {});
-      return result;
     });
-    const errorHandler = vi.fn<ErrorRequestHandler>(
-      (_err, _req, _res, _next) => {},
-    );
-    adapter.getInstance().use(errorHandler);
+    const afterRoute = vi.fn((_req, _res, _next) => {});
+    adapter.getInstance().use(afterRoute);
 
-    await request(adapter.getInstance()).get('/test').expect(200, 'ok');
+    await request(adapter.getInstance())
+      .get('/test')
+      .timeout(2000)
+      .expect(200, 'ok');
     await new Promise(resolve => setImmediate(resolve));
-    expect(errorHandler).toHaveBeenCalledOnce();
-    expect(errorHandler.mock.calls[0][0]).toBe(error);
-    expect(errorHandler.mock.calls[0][2].headersSent).toBe(true);
+    continueRequest();
+
+    expect(afterRoute).not.toHaveBeenCalled();
   });
+
+  it.each(['throw', 'reject', 'done twice'])(
+    'keeps an asynchronous route running after the hook completes (%s)',
+    async completion => {
+      const error = new Error('Late hook failure');
+      const logError = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+      adapter.setOnRequestHook((_req, _res, done) => {
+        done();
+        if (completion === 'done twice') {
+          done();
+        } else if (completion === 'throw') {
+          throw error;
+        } else {
+          return Promise.reject(error);
+        }
+      });
+      let finishRoute!: () => void;
+      const routeFinished = new Promise<void>(resolve => {
+        finishRoute = resolve;
+      });
+      const handler = vi.fn(async (_req, res) => {
+        try {
+          await new Promise(resolve => setImmediate(resolve));
+          res.send('ok');
+        } finally {
+          finishRoute();
+        }
+      });
+      adapter.get('/delayed', handler);
+      const notFound = vi.fn((_req, res) => res.status(404).end());
+      adapter.getInstance().use(notFound);
+      const errorHandler = vi.fn<ErrorRequestHandler>(
+        (err, _req, res, _next) => {
+          if (!res.headersSent) {
+            res.status(500).send(err.message);
+          }
+        },
+      );
+      adapter.getInstance().use(errorHandler);
+
+      const response = await request(adapter.getInstance())
+        .get('/delayed')
+        .timeout(2000);
+      await routeFinished;
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(response.status).toBe(200);
+      expect(response.text).toBe('ok');
+      expect(handler).toHaveBeenCalledOnce();
+      expect(notFound).not.toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      if (completion === 'done twice') {
+        expect(logError).not.toHaveBeenCalled();
+      } else {
+        expect(logError).toHaveBeenCalledExactlyOnceWith(error);
+      }
+    },
+  );
 
   it.each(['throw', 'reject'])(
     'logs response hook errors after sending the response (%s)',
