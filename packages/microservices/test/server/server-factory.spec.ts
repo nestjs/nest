@@ -130,5 +130,66 @@ describe('ServerFactory', () => {
       expect(server instanceof ServerGrpc).toBe(true);
       expect(server.transportId === transportId).toBe(true);
     });
+
+    describe('when options are omitted', () => {
+      it.each([
+        ['tcp', Transport.TCP],
+        ['redis', Transport.REDIS],
+        ['nats', Transport.NATS],
+        ['mqtt', Transport.MQTT],
+        ['rmq', Transport.RMQ],
+        ['kafka', Transport.KAFKA],
+      ] as const)(
+        'should pass an empty options object to the %s server',
+        (_, transport) => {
+          const server = ServerFactory.create({ transport });
+
+          expect((server as any).options).toEqual({});
+        },
+      );
+
+      it('should let the nats server handle a "ping" status', async () => {
+        const server = ServerFactory.create({
+          transport: Transport.NATS,
+        }) as ServerNats;
+        const client = {
+          status: () => ({
+            async *[Symbol.asyncIterator]() {
+              yield { type: 'ping', pendingPings: 1 };
+            },
+          }),
+        };
+
+        await expect(
+          server.handleStatusUpdates(client as any),
+        ).resolves.toBeUndefined();
+      });
+
+      it('should let the kafka server create a client', async () => {
+        const server = ServerFactory.create({
+          transport: Transport.KAFKA,
+        }) as ServerKafka;
+
+        const client = await server.createClient();
+
+        expect(client.consumer).toBeTypeOf('function');
+      });
+
+      it('should let the rmq server set up a channel', async () => {
+        const server = ServerFactory.create({
+          transport: Transport.RMQ,
+        }) as ServerRMQ;
+        const channel = {
+          assertQueue: vi.fn(() => ({ queue: 'default' })),
+          prefetch: vi.fn(),
+          consume: vi.fn(),
+        };
+        const callback = vi.fn();
+
+        await server.setupChannel(channel as any, callback);
+
+        expect(callback).toHaveBeenCalled();
+      });
+    });
   });
 });

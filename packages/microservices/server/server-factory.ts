@@ -1,6 +1,7 @@
 import { Transport } from '../enums/transport.enum.js';
 import {
   CustomStrategy,
+  GrpcOptions,
   KafkaOptions,
   MicroserviceOptions,
   MqttOptions,
@@ -19,7 +20,7 @@ import { ServerTCP } from './server-tcp.js';
 
 export class ServerFactory {
   public static create(microserviceOptions: MicroserviceOptions) {
-    const { transport, options } = microserviceOptions as Exclude<
+    const { transport, options = {} } = microserviceOptions as Exclude<
       MicroserviceOptions,
       CustomStrategy
     >;
@@ -31,7 +32,7 @@ export class ServerFactory {
       case Transport.MQTT:
         return new ServerMqtt(options as Required<MqttOptions>['options']);
       case Transport.GRPC:
-        return new ServerGrpc(options);
+        return new ServerGrpc(options as GrpcOptions['options']);
       case Transport.KAFKA:
         return new ServerKafka(options as Required<KafkaOptions>['options']);
       case Transport.RMQ:
