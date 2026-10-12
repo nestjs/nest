@@ -113,12 +113,29 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   public async close(): Promise<void> {
     this.handleClose();
-    this.channel && (await this.channel.close());
-    this.client && (await this.client.close());
-    this.channel = null;
-    this.client = null;
-    this.isInitialConnect = true;
-    this.pendingEventListeners = [];
+    try {
+      // The connection has to be closed even when the channel close fails,
+      // otherwise it stays open after close() reported the error.
+      const results = await Promise.allSettled([
+        this.channel?.close(),
+        this.client?.close(),
+      ]);
+      const [failure, ...otherFailures] = results.filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      );
+      otherFailures.forEach(({ reason }) => this.logger.error(reason));
+      if (failure) {
+        throw failure.reason;
+      }
+    } finally {
+      // The state must be reset even when a close fails, otherwise a later
+      // connect() reuses the stale channel and connection.
+      this.channel = null;
+      this.client = null;
+      this.isInitialConnect = true;
+      this.pendingEventListeners = [];
+    }
   }
 
   public handleClose() {
