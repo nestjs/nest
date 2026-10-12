@@ -86,19 +86,27 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     super(instance || express());
     this.instance!.use((req, res, next) => {
       if (this.onResponseHook) {
-        res.on('finish', () => {
-          void this.onResponseHook!.apply(this, [req, res]);
+        res.on('finish', async () => {
+          try {
+            await this.onResponseHook!.apply(this, [req, res]);
+          } catch (err) {
+            this.logger.error(err);
+          }
         });
       }
 
       if (this.onRequestHook) {
-        void this.onRequestHook.apply(this, [req, res, next]);
+        return this.onRequestHook.apply(this, [req, res, next]);
       } else {
         next();
       }
     });
   }
 
+  /**
+   * Registers a request hook. Call `done()` to continue processing the request.
+   * Thrown errors and rejected promises are forwarded to Express error handlers.
+   */
   public setOnRequestHook(
     onRequestHook: (
       req: express.Request,
@@ -109,6 +117,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     this.onRequestHook = onRequestHook;
   }
 
+  /**
+   * Registers a hook to run after the response has been sent.
+   * Thrown errors and rejected promises are logged.
+   */
   public setOnResponseHook(
     onResponseHook: (
       req: express.Request,
