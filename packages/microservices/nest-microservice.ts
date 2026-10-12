@@ -281,9 +281,7 @@ export class NestMicroservice
       await super.init();
       await this.registerModules();
     } finally {
-      if (this.microserviceConfig?.autoFlushLogs ?? true) {
-        this.flushLogs();
-      }
+      this.flushLogsIfAutoFlushEnabled();
     }
     return this;
   }
@@ -300,18 +298,14 @@ export class NestMicroservice
         await this.registerModules();
       } catch (err) {
         // The server never starts, so its callback below can't flush them.
-        if (this.microserviceConfig?.autoFlushLogs ?? true) {
-          this.flushLogs();
-        }
+        this.flushLogsIfAutoFlushEnabled();
         throw err;
       }
     }
 
     return new Promise<any>((resolve, reject) => {
       this.serverInstance.listen((err, info) => {
-        if (this.microserviceConfig?.autoFlushLogs ?? true) {
-          this.flushLogs();
-        }
+        this.flushLogsIfAutoFlushEnabled();
         if (err) {
           return reject(err as Error);
         }

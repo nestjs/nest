@@ -262,11 +262,9 @@ export class NestApplicationContext<
       await this.initializationPromise;
     } catch (err) {
       // A successful initialization leaves the buffered logs to "useLogger()".
-      // A failed one flushes them, because "createApplicationContext()" then
-      // never returns the context to call it on.
-      if (this.appOptions?.autoFlushLogs ?? true) {
-        this.flushLogs();
-      }
+      // A failed one flushes them: "createApplicationContext()" never returns
+      // the context to call it on.
+      this.flushLogsIfAutoFlushEnabled();
       throw err;
     }
 
@@ -333,6 +331,12 @@ export class NestApplicationContext<
    */
   public flushLogs() {
     Logger.flush();
+  }
+
+  protected flushLogsIfAutoFlushEnabled() {
+    if (this.appOptions?.autoFlushLogs ?? true) {
+      this.flushLogs();
+    }
   }
 
   /**

@@ -216,9 +216,7 @@ export class NestApplication
       // Without this, an application that is never started with "listen()"
       // (e.g. serverless handlers, e2e tests) would buffer logs forever, and
       // one that fails to initialize would never print them.
-      if (this.appOptions?.autoFlushLogs ?? true) {
-        this.flushLogs();
-      }
+      this.flushLogsIfAutoFlushEnabled();
     }
     return this;
   }
@@ -453,9 +451,7 @@ export class NestApplication
         port,
         ...listenFnArgs,
         (...originalCallbackArgs: unknown[]) => {
-          if (this.appOptions?.autoFlushLogs ?? true) {
-            this.flushLogs();
-          }
+          this.flushLogsIfAutoFlushEnabled();
           if (originalCallbackArgs[0] instanceof Error) {
             return reject(originalCallbackArgs[0]);
           }

@@ -273,7 +273,9 @@ describe('NestMicroservice', () => {
   describe('buffered logs', () => {
     let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
 
-    const createFailingInstance = () => {
+    const createFailingInstance = (
+      createConfig: (strategy: Server) => any = strategy => ({ strategy }),
+    ) => {
       const strategy = new (class extends Server {
         listen = vi.fn();
         close = vi.fn();
@@ -282,7 +284,7 @@ describe('NestMicroservice', () => {
       })();
       const instance = new NestMicroservice(
         mockContainer,
-        { strategy },
+        createConfig(strategy),
         mockGraphInspector,
         mockAppConfig,
       );
@@ -318,6 +320,21 @@ describe('NestMicroservice', () => {
         true,
       );
       expect(Logger['isBufferAttached']).toBe(false);
+    });
+
+    it('should keep them buffered when autoFlushLogs is false on an async config', async () => {
+      const instance = createFailingInstance(strategy => ({
+        useFactory: () => ({ strategy }),
+        inject: [],
+        autoFlushLogs: false,
+      }));
+
+      await expect(instance.init()).rejects.toThrow('init failed');
+
+      expect(printed().some(line => line.includes('buffered message'))).toBe(
+        false,
+      );
+      expect(Logger['isBufferAttached']).toBe(true);
     });
 
     it('should flush them when listen() fails to initialize', async () => {
