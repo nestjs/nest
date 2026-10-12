@@ -577,6 +577,7 @@ describe('DependenciesScanner', () => {
       const expectedInstance = {};
       const instanceWrapper = {
         instance: expectedInstance,
+        isDependencyTreeStatic: () => true,
       } as unknown as InstanceWrapper;
       vi.spyOn(container, 'getModules').mockImplementation(
         () =>
@@ -638,7 +639,7 @@ describe('DependenciesScanner', () => {
           new RequestScopedGlobalEnhancerException(
             APP_GUARD,
             'useExisting: AuthGuard',
-            true,
+            'useExisting',
           ),
         );
       });
@@ -654,7 +655,23 @@ describe('DependenciesScanner', () => {
           new RequestScopedGlobalEnhancerException(
             APP_GUARD,
             'useFactory',
-            false,
+            'useFactory',
+          ),
+        );
+      });
+      it('should throw for a class whose dependency is request-scoped', () => {
+        mockWrapper({
+          instance: Object.create(AuthGuard.prototype),
+          isAlias: false,
+          metatype: AuthGuard,
+          isDependencyTreeStatic: () => false,
+        });
+
+        expect(() => scanner.applyApplicationProviders()).toThrow(
+          new RequestScopedGlobalEnhancerException(
+            APP_GUARD,
+            'useClass: AuthGuard',
+            'useClass',
           ),
         );
       });

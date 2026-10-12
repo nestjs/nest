@@ -2,9 +2,13 @@ import { REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE } from '../messages.js';
 import { RuntimeException } from './runtime.exception.js';
 
 export class RequestScopedGlobalEnhancerException extends RuntimeException {
-  constructor(enhancerToken: string, provider: string, isAlias: boolean) {
+  constructor(
+    enhancerToken: string,
+    provider: string,
+    kind: 'useClass' | 'useExisting' | 'useFactory',
+  ) {
     super(
-      REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE(enhancerToken, provider, isAlias),
+      REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE(enhancerToken, provider, kind),
     );
   }
 }

@@ -284,6 +284,33 @@ describe('Global enhancers registered with useExisting or useFactory', () => {
       );
     });
 
+    it('should fail at startup for a class', async () => {
+      await expect(
+        compile(
+          createModule([
+            { provide: APP_GUARD, useClass: ImplicitlyScopedDenyGuard },
+          ]),
+        ),
+      ).rejects.toThrow(
+        'The APP_GUARD provider (useClass: ImplicitlyScopedDenyGuard) depends on a request-scoped provider, so it would run with its dependencies undefined. Mark the class with @Injectable({ scope: Scope.REQUEST }), or set "scope: Scope.REQUEST" on the provider.',
+      );
+    });
+
+    it('should deny the request when the class provider sets the scope', async () => {
+      const app = await createApp(
+        createModule([
+          {
+            provide: APP_GUARD,
+            useClass: ImplicitlyScopedDenyGuard,
+            scope: Scope.REQUEST,
+          },
+        ]),
+      );
+
+      await request(app.getHttpServer()).get('/first').expect(403);
+      await app.close();
+    });
+
     it('should fail at startup for a factory', async () => {
       await expect(
         compile(
