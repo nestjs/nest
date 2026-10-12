@@ -11,6 +11,7 @@ import {
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception.js';
 import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception.js';
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception.js';
+import { RequestScopedGlobalEnhancerException } from './errors/exceptions/request-scoped-global-enhancer.exception.js';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception.js';
 import { getClassScope } from './helpers/get-class-scope.js';
 import { NestContainer } from './injector/container.js';
@@ -445,10 +446,7 @@ export class DependenciesScanner {
   public isCustomProvider(
     provider: Provider,
   ): provider is
-    | ClassProvider
-    | ValueProvider
-    | FactoryProvider
-    | ExistingProvider {
+    ClassProvider | ValueProvider | FactoryProvider | ExistingProvider {
     return provider && !isNil((provider as any).provide);
   }
 
@@ -470,6 +468,13 @@ export class DependenciesScanner {
     let scope = (provider as ClassProvider | FactoryProvider).scope;
     if (isNil(scope) && (provider as ClassProvider).useClass) {
       scope = getClassScope((provider as ClassProvider).useClass);
+    }
+    // An alias of a class takes the scope of that class, as with `useClass`.
+    // Otherwise an alias of a request-scoped class is registered as a static
+    // enhancer that never gets an instance.
+    const existing = (provider as ExistingProvider).useExisting;
+    if (isNil(scope) && isFunction(existing)) {
+      scope = getClassScope(existing as Type<unknown>);
     }
     this.applicationProvidersApplyMap.push({
       type,
@@ -493,8 +498,7 @@ export class DependenciesScanner {
           | typeof APP_INTERCEPTOR
       ];
     const factoryOrClassProvider = newProvider as
-      | FactoryProvider
-      | ClassProvider;
+      FactoryProvider | ClassProvider;
     if (this.isRequestOrTransient(factoryOrClassProvider.scope!)) {
       return this.container.addInjectable(newProvider, token, enhancerSubtype);
     }
@@ -699,9 +703,32 @@ export class DependenciesScanner {
           'providers',
         )!;
         this.graphInspector.insertAttachedEnhancer(instanceWrapper);
+        // An alias or a factory that depends on a request-scoped provider has no
+        // static instance. Registering `null` would drop the enhancer silently
+        // (a global guard would never run), so fail at startup instead. A static
+        // factory that returns nothing on purpose is still skipped.
+        if (
+          isNil(instanceWrapper.instance) &&
+          !instanceWrapper.isDependencyTreeStatic()
+        ) {
+          throw new RequestScopedGlobalEnhancerException(
+            type as string,
+            this.describeEnhancerProvider(instanceWrapper),
+            instanceWrapper.isAlias,
+          );
+        }
         applyProvidersMap[type as string](instanceWrapper.instance);
       },
     );
+  }
+
+  private describeEnhancerProvider(wrapper: InstanceWrapper): string {
+    if (!wrapper.isAlias) {
+      return 'useFactory';
+    }
+    const [target] = wrapper.inject ?? [];
+    const name = isFunction(target) ? target.name : String(target);
+    return `useExisting: ${name}`;
   }
 
   public getApplyProvidersMap(): { [type: string]: Function } {
