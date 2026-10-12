@@ -52,6 +52,18 @@ export interface MultipartLimits {
   parts?: number;
   /** For multipart forms, the max number of header key => value pairs to parse (Default: 2000) */
   headerPairs?: number;
+  /**
+   * Max nesting depth of field names; `a[b][c]` has 2 levels (Default:
+   * Infinity). Like `fieldNameSize`, it does not fall back to the options
+   * `@fastify/multipart` was registered with.
+   */
+  fieldNestingDepth?: number;
+  /**
+   * Max numeric array index accepted in field names; `a[3]` uses index 3
+   * (Default: Infinity). Like `fieldNameSize`, it does not fall back to the
+   * options `@fastify/multipart` was registered with.
+   */
+  fieldArrayIndexLimit?: number;
 }
 
 /**
