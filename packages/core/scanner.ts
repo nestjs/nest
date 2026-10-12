@@ -44,6 +44,7 @@ import {
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception';
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
+import { RequestScopedGlobalEnhancerException } from './errors/exceptions/request-scoped-global-enhancer.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
 import { NestContainer } from './injector/container';
@@ -473,6 +474,13 @@ export class DependenciesScanner {
     if (isNil(scope) && (provider as ClassProvider).useClass) {
       scope = getClassScope((provider as ClassProvider).useClass);
     }
+    // An alias of a class takes the scope of that class, as with `useClass`.
+    // Otherwise an alias of a request-scoped class is registered as a static
+    // enhancer that never gets an instance.
+    const existing = (provider as ExistingProvider).useExisting;
+    if (isNil(scope) && isFunction(existing)) {
+      scope = getClassScope(existing as Type<unknown>);
+    }
     this.applicationProvidersApplyMap.push({
       type,
       moduleKey: token,
@@ -701,9 +709,32 @@ export class DependenciesScanner {
           'providers',
         )!;
         this.graphInspector.insertAttachedEnhancer(instanceWrapper);
+        // An alias or a factory that depends on a request-scoped provider has no
+        // static instance. Registering `null` would drop the enhancer silently
+        // (a global guard would never run), so fail at startup instead. A static
+        // factory that returns nothing on purpose is still skipped.
+        if (
+          isNil(instanceWrapper.instance) &&
+          !instanceWrapper.isDependencyTreeStatic()
+        ) {
+          throw new RequestScopedGlobalEnhancerException(
+            type as string,
+            this.describeEnhancerProvider(instanceWrapper),
+            instanceWrapper.isAlias,
+          );
+        }
         applyProvidersMap[type as string](instanceWrapper.instance);
       },
     );
+  }
+
+  private describeEnhancerProvider(wrapper: InstanceWrapper): string {
+    if (!wrapper.isAlias) {
+      return 'useFactory';
+    }
+    const [target] = wrapper.inject ?? [];
+    const name = isFunction(target) ? target.name : String(target);
+    return `useExisting: ${name}`;
   }
 
   public getApplyProvidersMap(): { [type: string]: Function } {
