@@ -592,6 +592,7 @@ describe('DependenciesScanner', () => {
       const expectedInstance = {};
       const instanceWrapper = {
         instance: expectedInstance,
+        isDependencyTreeStatic: () => true,
       } as unknown as InstanceWrapper;
       mockContainer.expects('getModules').callsFake(() => ({
         get: () => ({
@@ -615,7 +616,7 @@ describe('DependenciesScanner', () => {
       expect(applySpy.calledWith(expectedInstance)).to.be.true;
       expect(insertAttachedEnhancerStub.calledWith(instanceWrapper)).to.be.true;
     });
-    describe('when a provider has no instance because it depends on a request-scoped provider', () => {
+    describe('when a provider depends on a request-scoped provider', () => {
       class AuthGuard {}
 
       const mockWrapper = (wrapper: Partial<InstanceWrapper>) => {
@@ -647,7 +648,7 @@ describe('DependenciesScanner', () => {
           new RequestScopedGlobalEnhancerException(
             APP_GUARD,
             'useExisting: AuthGuard',
-            true,
+            'useExisting',
           ).message,
         );
       });
@@ -664,7 +665,24 @@ describe('DependenciesScanner', () => {
           new RequestScopedGlobalEnhancerException(
             APP_GUARD,
             'useFactory',
-            false,
+            'useFactory',
+          ).message,
+        );
+      });
+      it('should throw for a class whose dependency is request-scoped', () => {
+        mockWrapper({
+          instance: Object.create(AuthGuard.prototype),
+          isAlias: false,
+          metatype: AuthGuard,
+          isDependencyTreeStatic: () => false,
+        });
+
+        expect(() => scanner.applyApplicationProviders()).to.throw(
+          RequestScopedGlobalEnhancerException,
+          new RequestScopedGlobalEnhancerException(
+            APP_GUARD,
+            'useClass: AuthGuard',
+            'useClass',
           ).message,
         );
       });

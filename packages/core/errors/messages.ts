@@ -253,12 +253,14 @@ export const INVALID_CLASS_SCOPE_MESSAGE = (
 export const REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE = (
   enhancerToken: string,
   provider: string,
-  isAlias: boolean,
+  kind: 'useClass' | 'useExisting' | 'useFactory',
 ) =>
-  `The ${enhancerToken} provider (${provider}) depends on a request-scoped provider, so it would never run. ${
-    isAlias
-      ? `Point "useExisting" at a class marked with @Injectable({ scope: Scope.REQUEST }), or use a factory provider with "scope: Scope.REQUEST".`
-      : `Set "scope: Scope.REQUEST" on the factory provider.`
+  `The ${enhancerToken} provider (${provider}) depends on a request-scoped provider, ${
+    {
+      useClass: `so it would run with its dependencies undefined. Mark the class with @Injectable({ scope: Scope.REQUEST }), or set "scope: Scope.REQUEST" on the provider.`,
+      useExisting: `so it would never run. Point "useExisting" at a class marked with @Injectable({ scope: Scope.REQUEST }), or use a factory provider with "scope: Scope.REQUEST".`,
+      useFactory: `so it would never run. Set "scope: Scope.REQUEST" on the factory provider.`,
+    }[kind]
   }`;
 
 export const UNKNOWN_REQUEST_MAPPING = (metatype: Type) => {
