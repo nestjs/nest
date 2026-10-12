@@ -493,7 +493,14 @@ export class WebSocketsController {
         return await scopedMethod?.apply(contextInstance, args);
       } catch (err) {
         if (!targetCallback) {
-          throw err;
+          // The gateway failed to resolve and has no hook whose exception
+          // filters could handle the error. Nothing awaits this handler, so
+          // rethrowing would end as an unhandled rejection.
+          this.logger.error(
+            `Failed to resolve ${instance.constructor.name} on client ${methodName === 'handleConnection' ? 'connection' : 'disconnection'}`,
+            (err as Error)?.stack,
+          );
+          return;
         }
         this.handleLifecycleHookError(
           instance,
