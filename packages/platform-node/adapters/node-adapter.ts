@@ -471,10 +471,14 @@ export class NodeAdapter extends AbstractHttpAdapter<
         res,
       );
 
+    // The first layer of the router: NestApplication calls initHttpServer()
+    // before any middleware is registered, so requests are turned away while
+    // the shutdown hooks run (beforeClose()) before Nest middleware runs
     if (options?.return503OnClosing) {
       this.use((req: NodeRequest, res: NodeResponse, next: Function) => {
         if (this.isShuttingDown) {
           res.setHeader('Connection', 'close');
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
           res.statusCode = 503;
           res.end('Service Unavailable');
         } else {

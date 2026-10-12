@@ -2072,7 +2072,46 @@ describe('NodeAdapter', () => {
           expect(before.headers.connection).toBe('keep-alive');
           expect(after.status).toBe(503);
           expect(after.headers.connection).toBe('close');
+          expect(after.headers['content-type']).toBe(
+            'text/plain; charset=utf-8',
+          );
           expect(after.text).toBe('Service Unavailable');
+        } finally {
+          agent.destroy();
+        }
+      });
+
+      it('should answer 503 before the middleware registered after initHttpServer()', async () => {
+        const port = await startServer({ return503OnClosing: true });
+        const middleware = vi.fn((req: unknown, res: unknown, next: Next) =>
+          next(),
+        );
+        adapter.use(middleware);
+        routeToRoot();
+
+        adapter.beforeClose();
+        const res = await request(port);
+
+        expect(res.status).toBe(503);
+        expect(middleware).not.toHaveBeenCalled();
+      });
+
+      it('should leave kept-alive connections open during the shutdown hooks with forceCloseConnections', async () => {
+        const port = await startServer({
+          return503OnClosing: true,
+          forceCloseConnections: true,
+        });
+        routeToRoot();
+        const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+
+        try {
+          await request(port, { agent });
+          // Only close() destroys the open connections
+          adapter.beforeClose();
+          const during = await request(port, { agent });
+
+          expect(during.status).toBe(503);
+          expect(during.headers.connection).toBe('close');
         } finally {
           agent.destroy();
         }

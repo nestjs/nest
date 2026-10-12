@@ -1,13 +1,54 @@
+import {
+  INestApplication,
+  Injectable,
+  Module,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NodeAdapter } from '@nestjs/platform-node';
-import { INestApplication } from '@nestjs/common';
 import * as http from 'http';
+import * as net from 'net';
 import { AppModule } from '../src/app.module.js';
+
+let shutdownHookEntered: Promise<void>;
+let enterShutdownHook: () => void;
+let shutdownHookReleased: Promise<void>;
+let releaseShutdownHook: () => void;
+
+@Injectable()
+class SlowShutdownHook implements OnModuleDestroy {
+  onModuleDestroy() {
+    enterShutdownHook();
+    return shutdownHookReleased;
+  }
+}
+
+@Module({ imports: [AppModule], providers: [SlowShutdownHook] })
+class SlowShutdownModule {}
+
+const requestSlow = (port: number, agent: http.Agent | false = false) =>
+  new Promise<http.IncomingMessage>((resolve, reject) => {
+    http
+      .get({ host: '127.0.0.1', port, path: '/slow', agent }, res => {
+        res.resume();
+        res.on('end', () => resolve(res));
+      })
+      .on('error', reject);
+  });
 
 describe('Graceful Shutdown (Node)', () => {
   let app: INestApplication;
 
+  beforeEach(() => {
+    shutdownHookEntered = new Promise(resolve => (enterShutdownHook = resolve));
+    shutdownHookReleased = new Promise(
+      resolve => (releaseShutdownHook = resolve),
+    );
+  });
+
   afterEach(async () => {
+    // Lets a close() that is stuck on a held hook settle
+    releaseShutdownHook();
     if (app) {
       await app.close();
     }
@@ -90,4 +131,52 @@ describe('Graceful Shutdown (Node)', () => {
     await closePromise;
     agent.destroy();
   }, 10000);
+
+  it('should return 503 with Connection: close while the shutdown hooks run when return503OnClosing is enabled', async () => {
+    app = await NestFactory.create(SlowShutdownModule, new NodeAdapter(), {
+      return503OnClosing: true,
+      logger: false,
+    });
+    let middlewareHits = 0;
+    app.use((_req: unknown, _res: unknown, next: () => void) => {
+      middlewareHits += 1;
+      next();
+    });
+    await app.listen(0, '127.0.0.1');
+    const { port } = app.getHttpServer().address() as net.AddressInfo;
+    const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+
+    expect((await requestSlow(port, agent)).statusCode).toBe(200);
+    expect(middlewareHits).toBe(1);
+
+    const closePromise = app.close();
+    await shutdownHookEntered;
+
+    // Sent on the kept-alive socket while onModuleDestroy() is still pending
+    const res = await requestSlow(port, agent);
+    expect(res.statusCode).toBe(503);
+    expect(res.headers.connection).toBe('close');
+    // Rejected before Nest middleware runs
+    expect(middlewareHits).toBe(1);
+
+    releaseShutdownHook();
+    await closePromise;
+    agent.destroy();
+  });
+
+  it('should keep serving requests while the shutdown hooks run when return503OnClosing is not set', async () => {
+    app = await NestFactory.create(SlowShutdownModule, new NodeAdapter(), {
+      logger: false,
+    });
+    await app.listen(0, '127.0.0.1');
+    const { port } = app.getHttpServer().address() as net.AddressInfo;
+
+    const closePromise = app.close();
+    await shutdownHookEntered;
+
+    expect((await requestSlow(port)).statusCode).toBe(200);
+
+    releaseShutdownHook();
+    await closePromise;
+  });
 });
