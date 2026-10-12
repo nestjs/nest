@@ -75,7 +75,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   private onRequestHook?: (
     req: express.Request,
     res: express.Response,
-    done: () => void,
+    done: (err?: Error) => void,
   ) => Promise<void> | void;
   private onResponseHook?: (
     req: express.Request,
@@ -86,29 +86,73 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     super(instance || express());
     this.instance!.use((req, res, next) => {
       if (this.onResponseHook) {
-        res.on('finish', () => {
-          void this.onResponseHook!.apply(this, [req, res]);
+        res.on('finish', async () => {
+          try {
+            await this.onResponseHook!.apply(this, [req, res]);
+          } catch (err) {
+            this.logger.error(err);
+          }
         });
       }
 
       if (this.onRequestHook) {
-        void this.onRequestHook.apply(this, [req, res, next]);
+        this.runRequestHook(req, res, next);
       } else {
         next();
       }
     });
   }
 
+  private runRequestHook(
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ): void {
+    let completed = false;
+    const doneOnce = (err?: unknown) => {
+      if (completed) {
+        if (err) {
+          this.logger.error(err);
+        }
+        return;
+      }
+      completed = true;
+      next(err);
+    };
+
+    try {
+      // Not returned to Express: rejections share the once-guard with done()
+      const result = this.onRequestHook!.call(this, req, res, doneOnce);
+      if (result && typeof result.then === 'function') {
+        result.then(undefined, err =>
+          doneOnce(err || new Error('Request hook failed')),
+        );
+      }
+    } catch (err) {
+      doneOnce(err || new Error('Request hook failed'));
+    }
+  }
+
+  /**
+   * Registers a request hook. Call `done()` to continue processing the request;
+   * resolving the returned promise does not continue it. Only the first
+   * completion is forwarded to Express. Errors after `done()` are logged
+   * without advancing the request again.
+   */
   public setOnRequestHook(
     onRequestHook: (
       req: express.Request,
       res: express.Response,
-      done: () => void,
+      done: (err?: Error) => void,
     ) => Promise<void> | void,
   ) {
     this.onRequestHook = onRequestHook;
   }
 
+  /**
+   * Registers a hook to run after the response has been sent.
+   * Thrown errors and rejected promises are logged.
+   */
   public setOnResponseHook(
     onResponseHook: (
       req: express.Request,
