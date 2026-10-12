@@ -55,6 +55,22 @@ describe('appendField', () => {
     ).toEqual({ a: { 0: 'x', k: 'y' } });
   });
 
+  it('should turn a sparse array into an object by its items only', () => {
+    const store = Object.create(null);
+
+    appendField(store, 'a[4294967294]', 'last');
+    appendField(store, 'a[name]', 'named');
+
+    expect({ ...store.a }).toEqual({ '4294967294': 'last', name: 'named' });
+  });
+
+  it('should refuse to append to an array that has the maximum length', () => {
+    const store = Object.create(null);
+    appendField(store, 'a[4294967294]', 'last');
+
+    expect(appendField(store, 'a[]', 'more')).toBe(false);
+  });
+
   it('should keep a scalar under the empty key when it gains children', () => {
     expect(
       build([
