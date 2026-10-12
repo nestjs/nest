@@ -16,6 +16,11 @@ const packageRoots = new Map<string, string>([
   ['@nestjs/common', path.join(workspaceRoot, 'packages/common')],
   ['@nestjs/core', path.join(workspaceRoot, 'packages/core')],
   ['@nestjs/microservices', path.join(workspaceRoot, 'packages/microservices')],
+  ['@nestjs/platform-bun', path.join(workspaceRoot, 'packages/platform-bun')],
+  [
+    '@nestjs/platform-bun-ws',
+    path.join(workspaceRoot, 'packages/platform-bun-ws'),
+  ],
   [
     '@nestjs/platform-express',
     path.join(workspaceRoot, 'packages/platform-express'),

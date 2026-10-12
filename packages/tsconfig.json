@@ -11,6 +11,12 @@
       "path": "./microservices/tsconfig.build.json"
     },
     {
+      "path": "./platform-bun/tsconfig.build.json"
+    },
+    {
+      "path": "./platform-bun-ws/tsconfig.build.json"
+    },
+    {
       "path": "./platform-express/tsconfig.build.json"
     },
     {
