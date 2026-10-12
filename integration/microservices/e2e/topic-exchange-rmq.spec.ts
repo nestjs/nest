@@ -32,6 +32,18 @@ describe('RabbitMQ transport (Topic Exchange - wildcards)', () => {
     return request(server).get('/topic-exchange').expect(200, 'wildcard.a.b');
   });
 
+  it(`should route a mid-pattern '#' that spans several words`, () => {
+    return request(server)
+      .get('/topic-exchange/app.db.error')
+      .expect(200, 'app.db.error');
+  });
+
+  it(`should route a mid-pattern '#' that spans no words`, () => {
+    return request(server)
+      .get('/topic-exchange/app.error')
+      .expect(200, 'app.error');
+  });
+
   afterEach(async () => {
     await app.close();
   });
