@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -29,8 +29,18 @@ export class RMQTopicExchangeController {
     return lastValueFrom(this.client.send<string>('wildcard.a.b', 1));
   }
 
+  @Get('topic-exchange/:routingKey')
+  async topicExchangeRoutingKey(@Param('routingKey') routingKey: string) {
+    return lastValueFrom(this.client.send<string>(routingKey, 1));
+  }
+
   @MessagePattern('wildcard.*.*')
   handleTopicExchange(@Ctx() ctx: RmqContext): string {
+    return ctx.getPattern();
+  }
+
+  @MessagePattern('app.#.error')
+  handleMidPatternHash(@Ctx() ctx: RmqContext): string {
     return ctx.getPattern();
   }
 }
