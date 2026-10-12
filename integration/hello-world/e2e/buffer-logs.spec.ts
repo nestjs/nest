@@ -1,6 +1,26 @@
-import { INestApplication, LoggerService } from '@nestjs/common';
+import {
+  INestApplication,
+  Injectable,
+  Logger,
+  LoggerService,
+  Module,
+  OnModuleInit,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module.js';
+
+@Injectable()
+class DatabaseService implements OnModuleInit {
+  private readonly logger = new Logger(DatabaseService.name);
+
+  async onModuleInit() {
+    this.logger.warn('Connecting to the database');
+    throw new Error('Database unavailable');
+  }
+}
+
+@Module({ providers: [DatabaseService] })
+class FailingModule {}
 
 class CollectingLogger implements LoggerService {
   readonly messages: string[] = [];
@@ -17,7 +37,7 @@ class CollectingLogger implements LoggerService {
 }
 
 describe('Buffered logs', () => {
-  let app: INestApplication;
+  let app: INestApplication | undefined;
   let logger: CollectingLogger;
 
   beforeEach(() => {
@@ -25,7 +45,8 @@ describe('Buffered logs', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
+    app = undefined;
   });
 
   it('should flush buffered logs on init() when the app never listens', async () => {
@@ -60,5 +81,33 @@ describe('Buffered logs', () => {
 
     app.flushLogs();
     expect(logger.messages).toContain('Nest application successfully started');
+  });
+
+  describe('when initialization fails', () => {
+    it('should flush them when init() rejects', async () => {
+      app = await NestFactory.create(FailingModule, {
+        bufferLogs: true,
+        logger,
+      });
+
+      await app
+        .init()
+        .catch((err: Error) => new Logger('Bootstrap').error(err.message));
+
+      expect(logger.messages).toContain('Starting Nest application...');
+      expect(logger.messages).toContain('Connecting to the database');
+      expect(logger.messages).toContain('Database unavailable');
+    });
+
+    it('should flush them when a standalone application fails to initialize', async () => {
+      await NestFactory.createApplicationContext(FailingModule, {
+        bufferLogs: true,
+        logger,
+      }).catch((err: Error) => new Logger('Bootstrap').error(err.message));
+
+      expect(logger.messages).toContain('Starting Nest application...');
+      expect(logger.messages).toContain('Connecting to the database');
+      expect(logger.messages).toContain('Database unavailable');
+    });
   });
 });
