@@ -334,6 +334,27 @@ describe('createParamDecorator', () => {
         });
       });
 
+      describe('with options whose pipes contain an undefined entry (no data)', () => {
+        const pipe = new ParseIntPipe();
+        class Test {
+          public test(
+            @Decorator({ schema: mockSchema, pipes: [pipe, undefined as any] })
+            param,
+          ) {}
+        }
+        it('should still treat the object as options', () => {
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key].data).toBeUndefined();
+          expect(metadata[key].schema).toBe(mockSchema);
+          expect(metadata[key].pipes).toContain(pipe);
+        });
+      });
+
       describe('with data, pipes, and schema option', () => {
         const data = 'testData';
         const pipe = new ParseIntPipe();

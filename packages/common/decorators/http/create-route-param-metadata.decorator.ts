@@ -67,7 +67,9 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
         (data.schema === undefined ||
           isFunction(data.schema?.['~standard']?.validate)) &&
         (data.pipes === undefined ||
-          (Array.isArray(data.pipes) && data.pipes.every(isPipe)));
+          (Array.isArray(data.pipes) &&
+            // Falsy entries are allowed, as the pipes context filters them out
+            data.pipes.every(pipe => isNil(pipe) || isPipe(pipe))));
 
       // Check if the last pipe argument is actually an options object
       const lastPipeArg =
