@@ -473,12 +473,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   private matchRmqPattern(pattern: string, routingKey: string): boolean {
-    if (!routingKey) {
-      return pattern === RMQ_WILDCARD_ALL;
-    }
-
-    const patternSegments = pattern.split(RMQ_SEPARATOR);
-    const routingKeySegments = routingKey.split(RMQ_SEPARATOR);
+    // The broker splits an empty key into no words at all, so "#" and "#.#"
+    // match it
+    const patternSegments = pattern ? pattern.split(RMQ_SEPARATOR) : [];
+    const routingKeySegments = routingKey
+      ? routingKey.split(RMQ_SEPARATOR)
+      : [];
     const routingKeySegmentsLength = routingKeySegments.length;
 
     // matched[j] is true when the pattern segments read so far match
@@ -499,6 +499,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
           matched[j - 1] &&
           (currentPattern === RMQ_WILDCARD_SINGLE ||
             currentPattern === routingKeySegments[j - 1]);
+      }
+      if (!next.includes(true)) {
+        return false;
       }
       matched = next;
     }

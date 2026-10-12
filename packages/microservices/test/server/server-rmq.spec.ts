@@ -733,6 +733,10 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('user.created', '')).toBe(false);
         expect(matchRmqPattern('*', '')).toBe(false);
         expect(matchRmqPattern('#', '')).toBe(true);
+        expect(matchRmqPattern('#.#', '')).toBe(true);
+        expect(matchRmqPattern('#.#.#', '')).toBe(true);
+        expect(matchRmqPattern('a.#', '')).toBe(false);
+        expect(matchRmqPattern('#.*', '')).toBe(false);
       });
 
       it('should handle single segments', () => {
