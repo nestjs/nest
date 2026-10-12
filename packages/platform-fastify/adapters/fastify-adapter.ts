@@ -357,12 +357,18 @@ export class FastifyAdapter<
     // which is after the shutdown hooks. Added here rather than in
     // `initHttpServer()` so that it runs before Nest middleware:
     // `NestFactory.create()` calls `init()`, which registers middie, first.
+    // Answers with the same body as Fastify's own 503, so that clients get
+    // one response shape for the whole shutdown.
     this.instance.addHook('onRequest', (request, reply, done) => {
       if (this.return503OnClosing && this.isShuttingDown) {
         if (request.raw.httpVersionMajor !== 2) {
           reply.header('Connection', 'close');
         }
-        reply.code(503).send('Service Unavailable');
+        reply.code(503).send({
+          error: 'Service Unavailable',
+          message: 'Service Unavailable',
+          statusCode: 503,
+        });
       } else {
         done();
       }
