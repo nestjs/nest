@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core/application-config.js';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
 import { Transport } from '@nestjs/microservices/enums/index.js';
@@ -266,6 +267,68 @@ describe('NestMicroservice', () => {
       await instance.close();
 
       expect(process.listenerCount('SIGTERM')).to.equal(baseline);
+    });
+  });
+
+  describe('buffered logs', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+
+    const createFailingInstance = () => {
+      const strategy = new (class extends Server {
+        listen = vi.fn();
+        close = vi.fn();
+        on = vi.fn();
+        unwrap = vi.fn();
+      })();
+      const instance = new NestMicroservice(
+        mockContainer,
+        { strategy },
+        mockGraphInspector,
+        mockAppConfig,
+      );
+      vi.spyOn(instance, 'registerModules').mockRejectedValue(
+        new Error('init failed'),
+      );
+      return instance;
+    };
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      Logger.attachBuffer();
+      new Logger('Bootstrap').log('buffered message');
+    });
+
+    afterEach(() => {
+      Logger.detachBuffer();
+      Logger['logBuffer'] = [];
+      processStdoutWriteSpy.mockRestore();
+    });
+
+    const printed = () =>
+      processStdoutWriteSpy.mock.calls.map(([chunk]) => String(chunk));
+
+    it('should flush them when init() fails', async () => {
+      const instance = createFailingInstance();
+
+      await expect(instance.init()).rejects.toThrow('init failed');
+
+      expect(printed().some(line => line.includes('buffered message'))).toBe(
+        true,
+      );
+      expect(Logger['isBufferAttached']).toBe(false);
+    });
+
+    it('should flush them when listen() fails to initialize', async () => {
+      const instance = createFailingInstance();
+
+      await expect(instance.listen()).rejects.toThrow('init failed');
+
+      expect(printed().some(line => line.includes('buffered message'))).toBe(
+        true,
+      );
+      expect(Logger['isBufferAttached']).toBe(false);
     });
   });
 

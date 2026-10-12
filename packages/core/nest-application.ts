@@ -190,31 +190,35 @@ export class NestApplication
       return this;
     }
 
-    // Lazy-load optional modules (ESM-compatible)
-    await Promise.all([
-      this.loadSocketModule(),
-      this.loadMicroservicesModule(),
-    ]);
-    this.applyOptions();
-    this.securityHook?.init(this.config);
-    await this.httpAdapter?.init?.();
+    try {
+      // Lazy-load optional modules (ESM-compatible)
+      await Promise.all([
+        this.loadSocketModule(),
+        this.loadMicroservicesModule(),
+      ]);
+      this.applyOptions();
+      this.securityHook?.init(this.config);
+      await this.httpAdapter?.init?.();
 
-    const useBodyParser =
-      this.appOptions && this.appOptions.bodyParser !== false;
-    useBodyParser && this.registerParserMiddleware();
+      const useBodyParser =
+        this.appOptions && this.appOptions.bodyParser !== false;
+      useBodyParser && this.registerParserMiddleware();
 
-    await this.registerModules();
-    await this.registerRouter();
-    await this.callInitHook();
-    await this.registerRouterHooks();
-    await this.callBootstrapHook();
+      await this.registerModules();
+      await this.registerRouter();
+      await this.callInitHook();
+      await this.registerRouterHooks();
+      await this.callBootstrapHook();
 
-    this.isInitialized = true;
-    this.logger.log(MESSAGES.APPLICATION_READY);
-    // Without this, an application that is never started with "listen()"
-    // (e.g. serverless handlers, e2e tests) would buffer logs forever.
-    if (this.appOptions?.autoFlushLogs ?? true) {
-      this.flushLogs();
+      this.isInitialized = true;
+      this.logger.log(MESSAGES.APPLICATION_READY);
+    } finally {
+      // Without this, an application that is never started with "listen()"
+      // (e.g. serverless handlers, e2e tests) would buffer logs forever, and
+      // one that fails to initialize would never print them.
+      if (this.appOptions?.autoFlushLogs ?? true) {
+        this.flushLogs();
+      }
     }
     return this;
   }

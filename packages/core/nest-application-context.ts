@@ -258,7 +258,17 @@ export class NestApplicationContext<
     this.initializationPromise = this.callInitHook().then(() =>
       this.callBootstrapHook(),
     );
-    await this.initializationPromise;
+    try {
+      await this.initializationPromise;
+    } catch (err) {
+      // A successful initialization leaves the buffered logs to "useLogger()".
+      // A failed one flushes them, because "createApplicationContext()" then
+      // never returns the context to call it on.
+      if (this.appOptions?.autoFlushLogs ?? true) {
+        this.flushLogs();
+      }
+      throw err;
+    }
 
     this.isInitialized = true;
     return this;

@@ -275,12 +275,15 @@ export class NestMicroservice
       return this;
     }
 
-    // Lazy-load optional socket module (ESM-compatible)
-    await this.loadSocketModule();
-    await super.init();
-    await this.registerModules();
-    if (this.microserviceConfig?.autoFlushLogs ?? true) {
-      this.flushLogs();
+    try {
+      // Lazy-load optional socket module (ESM-compatible)
+      await this.loadSocketModule();
+      await super.init();
+      await this.registerModules();
+    } finally {
+      if (this.microserviceConfig?.autoFlushLogs ?? true) {
+        this.flushLogs();
+      }
     }
     return this;
   }
@@ -292,7 +295,17 @@ export class NestMicroservice
    */
   public async listen(): Promise<any> {
     this.assertNotInPreviewMode('listen');
-    !this.isInitialized && (await this.registerModules());
+    if (!this.isInitialized) {
+      try {
+        await this.registerModules();
+      } catch (err) {
+        // The server never starts, so its callback below can't flush them.
+        if (this.microserviceConfig?.autoFlushLogs ?? true) {
+          this.flushLogs();
+        }
+        throw err;
+      }
+    }
 
     return new Promise<any>((resolve, reject) => {
       this.serverInstance.listen((err, info) => {

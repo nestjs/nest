@@ -1,14 +1,30 @@
 import {
   INestApplication,
   INestMicroservice,
+  Injectable,
+  Logger,
   LoggerService,
   Module,
+  OnModuleInit,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 @Module({})
 class AppModule {}
+
+@Injectable()
+class DatabaseService implements OnModuleInit {
+  private readonly logger = new Logger(DatabaseService.name);
+
+  async onModuleInit() {
+    this.logger.warn('Connecting to the database');
+    throw new Error('Database unavailable');
+  }
+}
+
+@Module({ providers: [DatabaseService] })
+class FailingModule {}
 
 class CollectingLogger implements LoggerService {
   readonly messages: string[] = [];
@@ -81,5 +97,39 @@ describe('Buffered logs (microservice)', () => {
     await hybrid.init();
 
     expect(logger.messages).toContain('Nest application successfully started');
+  });
+
+  describe('when initialization fails', () => {
+    const createFailingMicroservice = () =>
+      NestFactory.createMicroservice<MicroserviceOptions>(FailingModule, {
+        transport: Transport.TCP,
+        options: { host: '127.0.0.1', port: 0 },
+        bufferLogs: true,
+        logger,
+      });
+
+    it('should flush buffered logs when init() rejects', async () => {
+      app = await createFailingMicroservice();
+
+      await app
+        .init()
+        .catch((err: Error) => new Logger('Bootstrap').error(err.message));
+
+      expect(logger.messages).toContain('Starting Nest application...');
+      expect(logger.messages).toContain('Connecting to the database');
+      expect(logger.messages).toContain('Database unavailable');
+    });
+
+    it('should flush buffered logs when listen() rejects', async () => {
+      app = await createFailingMicroservice();
+
+      await app
+        .listen()
+        .catch((err: Error) => new Logger('Bootstrap').error(err.message));
+
+      expect(logger.messages).toContain('Starting Nest application...');
+      expect(logger.messages).toContain('Connecting to the database');
+      expect(logger.messages).toContain('Database unavailable');
+    });
   });
 });
