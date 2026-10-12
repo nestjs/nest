@@ -247,22 +247,17 @@ export class RouterExplorer {
         };
 
         if (!deferRegistration) {
-          this.copyMetadataToCallback(targetCallback, routeHandler);
-
-          const httpAdapter = this.container.getHttpAdapterRef();
-          const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
-          let handler = routeHandler;
-          if (onRouteTriggered) {
-            handler = (...args: unknown[]) => {
-              onRouteTriggered(requestMethod, path);
-              return routeHandler(...args);
-            };
-          }
-          Object.defineProperty(handler, 'name', {
-            configurable: true,
-            value: `${instanceWrapper.name}.${methodName}`,
-          });
-          routerMethodRef(normalizedPath, handler);
+          routerMethodRef(
+            normalizedPath,
+            this.createAdapterHandler(
+              routeHandler,
+              targetCallback,
+              requestMethod,
+              path,
+              instanceWrapper,
+              methodName,
+            ),
+          );
         }
 
         onRouteResolved?.({
@@ -321,20 +316,51 @@ export class RouterExplorer {
       .get(router, route.method)
       .bind(router);
 
-    this.copyMetadataToCallback(route.targetCallback, route.handler);
-    const normalizedPath = route.path;
-    const rawPath = route.rawPath ?? route.path;
+    routerMethodRef(
+      route.path,
+      this.createAdapterHandler(
+        route.handler,
+        route.targetCallback,
+        route.method,
+        route.rawPath ?? route.path,
+        route.instanceWrapper,
+        route.methodName,
+      ),
+    );
+  }
+
+  /**
+   * Returns the function to register on the HTTP adapter for a route. When a
+   * route-triggered hook is set, that is a wrapper around the route handler,
+   * so it also gets the route metadata and the properties set by the version
+   * filter, which adapters read route options from (e.g. Fastify's config,
+   * constraints, schema and version).
+   */
+  private createAdapterHandler(
+    routeHandler: Function,
+    targetCallback: RouterProxyCallback,
+    requestMethod: RequestMethod,
+    path: string,
+    instanceWrapper: InstanceWrapper,
+    methodName: string,
+  ): Function {
+    this.copyMetadataToCallback(targetCallback, routeHandler);
 
     const httpAdapter = this.container.getHttpAdapterRef();
     const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
+    let handler = routeHandler;
     if (onRouteTriggered) {
-      routerMethodRef(normalizedPath, (...args: unknown[]) => {
-        onRouteTriggered(route.method, rawPath);
-        return route.handler(...args);
-      });
-    } else {
-      routerMethodRef(normalizedPath, route.handler);
+      handler = Object.assign((...args: unknown[]) => {
+        onRouteTriggered(requestMethod, path);
+        return routeHandler(...args);
+      }, routeHandler);
+      this.copyMetadataToCallback(targetCallback, handler);
     }
+    Object.defineProperty(handler, 'name', {
+      configurable: true,
+      value: `${instanceWrapper.name}.${methodName}`,
+    });
+    return handler;
   }
 
   private applyHostFilter(
