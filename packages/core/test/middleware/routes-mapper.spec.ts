@@ -1,3 +1,4 @@
+import { MODULE_PATH } from '../../../common/constants.js';
 import { Version, VersioningType } from '../../../common/index.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import {
@@ -55,6 +56,52 @@ describe('RoutesMapper', () => {
       { path: '/test/versioned', method: RequestMethod.GET, version: '1' },
     ]);
   });
+
+  describe('when joining a controller path', () => {
+    @Controller('tail/')
+    class TrailingSlashRoute {
+      @Get('child')
+      public getChild() {}
+    }
+
+    const mountAt = (modulePath: string) => {
+      class RoutedModule {}
+      Reflect.defineMetadata(MODULE_PATH, modulePath, RoutedModule);
+      vi.spyOn(mapper as any, 'getHostModuleOfController').mockReturnValue({
+        metatype: RoutedModule,
+      });
+    };
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it('should not double the slash after a controller path ending in a slash', () => {
+      expect(mapper.mapRouteToRouteInfo(TrailingSlashRoute)).toEqual([
+        { path: '/tail/child', method: RequestMethod.GET },
+      ]);
+    });
+
+    it.each([
+      { modulePath: '/', expected: '/test/test' },
+      { modulePath: '/parent', expected: '/parent/test/test' },
+    ])(
+      'should join the module path $modulePath without a double slash',
+      ({ modulePath, expected }) => {
+        mountAt(modulePath);
+        expect(mapper.mapRouteToRouteInfo(TestRoute)[0]).toEqual({
+          path: expected,
+          method: RequestMethod.GET,
+        });
+      },
+    );
+
+    it('should join a module path with a controller path ending in a slash', () => {
+      mountAt('/parent');
+      expect(mapper.mapRouteToRouteInfo(TrailingSlashRoute)).toEqual([
+        { path: '/parent/tail/child', method: RequestMethod.GET },
+      ]);
+    });
+  });
+
   @Controller(['test', 'test2'])
   class TestRouteWithMultiplePaths {
     @RequestMapping({ path: 'test' })
