@@ -703,18 +703,18 @@ export class DependenciesScanner {
           'providers',
         )!;
         this.graphInspector.insertAttachedEnhancer(instanceWrapper);
-        // An alias or a factory that depends on a request-scoped provider has no
-        // static instance. Registering `null` would drop the enhancer silently
-        // (a global guard would never run), so fail at startup instead. A static
-        // factory that returns nothing on purpose is still skipped.
-        if (
-          isNil(instanceWrapper.instance) &&
-          !instanceWrapper.isDependencyTreeStatic()
-        ) {
+        // An enhancer registered as static whose dependency tree is
+        // request-scoped has no usable static instance: an alias or a factory
+        // has none, and a class has only a prototype whose constructor never
+        // ran. Fail at startup instead of dropping it or running it half-built.
+        // A static factory that returns nothing on purpose is still skipped.
+        if (!instanceWrapper.isDependencyTreeStatic()) {
+          const [kind, provider] =
+            this.describeEnhancerProvider(instanceWrapper);
           throw new RequestScopedGlobalEnhancerException(
             type as string,
-            this.describeEnhancerProvider(instanceWrapper),
-            instanceWrapper.isAlias,
+            provider,
+            kind,
           );
         }
         applyProvidersMap[type as string](instanceWrapper.instance);
@@ -722,13 +722,18 @@ export class DependenciesScanner {
     );
   }
 
-  private describeEnhancerProvider(wrapper: InstanceWrapper): string {
-    if (!wrapper.isAlias) {
-      return 'useFactory';
+  private describeEnhancerProvider(
+    wrapper: InstanceWrapper,
+  ): ['useClass' | 'useExisting' | 'useFactory', string] {
+    if (wrapper.isAlias) {
+      const [target] = wrapper.inject ?? [];
+      const name = isFunction(target) ? target.name : String(target);
+      return ['useExisting', `useExisting: ${name}`];
     }
-    const [target] = wrapper.inject ?? [];
-    const name = isFunction(target) ? target.name : String(target);
-    return `useExisting: ${name}`;
+    if (isNil(wrapper.inject)) {
+      return ['useClass', `useClass: ${wrapper.metatype!.name}`];
+    }
+    return ['useFactory', 'useFactory'];
   }
 
   public getApplyProvidersMap(): { [type: string]: Function } {
