@@ -49,6 +49,17 @@ describe('ServerNats', () => {
         expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
+    it('should log a failing status iterator instead of rejecting', async () => {
+      const error = new Error('status failed');
+      const logErrorSpy = vi.spyOn(untypedServer.logger, 'error');
+      client.status.mockReturnValue({
+        [Symbol.asyncIterator]: () => ({ next: () => Promise.reject(error) }),
+      });
+      vi.spyOn(server, 'start').mockImplementation(() => {});
+
+      await server.listen(callbackSpy as any);
+      await vi.waitFor(() => expect(logErrorSpy).toHaveBeenCalledWith(error));
+    });
   });
   describe('close', () => {
     const natsClient = { close: vi.fn() };
@@ -478,6 +489,26 @@ describe('ServerNats', () => {
       expect(logSpy).toHaveBeenCalledWith(
         `NatsStatus: type: "warn", data: "{}".`,
       );
+    });
+    it('should log a throwing listener and keep handling statuses', async () => {
+      const error = new Error('listener failed');
+      const logErrorSpy = vi.spyOn(untypedServer.logger, 'error');
+      const reconnectListener = vi.fn();
+      server.on('disconnect', () => {
+        throw error;
+      });
+      server.on('reconnect', reconnectListener);
+      const serverMock = {
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {
+            yield { type: 'disconnect', server: 'localhost' };
+            yield { type: 'reconnect', server: 'localhost' };
+          },
+        }),
+      };
+      await server.handleStatusUpdates(serverMock as any);
+      expect(logErrorSpy).toHaveBeenCalledWith(error);
+      expect(reconnectListener).toHaveBeenCalledWith('localhost');
     });
   });
 });

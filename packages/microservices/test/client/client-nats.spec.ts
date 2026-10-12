@@ -655,6 +655,42 @@ describe('ClientNats', () => {
         'NatsStatus: type: "warn", data: "{}".',
       );
     });
+    it('should log a throwing listener and keep handling statuses', async () => {
+      const error = new Error('listener failed');
+      const logErrorSpy = vi.spyOn(untypedClient.logger, 'error');
+      const reconnectListener = vi.fn();
+      client.on('disconnect', () => {
+        throw error;
+      });
+      client.on('reconnect', reconnectListener);
+      const clientMock = {
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {
+            yield { type: 'disconnect', server: 'localhost' };
+            yield { type: 'reconnect', server: 'localhost' };
+          },
+        }),
+      };
+      untypedClient.natsClient = clientMock;
+      await client.handleStatusUpdates(clientMock as any);
+      expect(logErrorSpy).toHaveBeenCalledWith(error);
+      expect(reconnectListener).toHaveBeenCalledWith('localhost');
+    });
+  });
+  describe('when the status iterator fails', () => {
+    it('should log the error instead of rejecting', async () => {
+      const client = new ClientNats({});
+      const error = new Error('status failed');
+      const logErrorSpy = vi.spyOn((client as any).logger, 'error');
+      vi.spyOn(client, 'createClient').mockResolvedValue({
+        status: () => ({
+          [Symbol.asyncIterator]: () => ({ next: () => Promise.reject(error) }),
+        }),
+      } as any);
+
+      await client.connect();
+      await vi.waitFor(() => expect(logErrorSpy).toHaveBeenCalledWith(error));
+    });
   });
   describe('when the client gives up', () => {
     let client: ClientNats;
