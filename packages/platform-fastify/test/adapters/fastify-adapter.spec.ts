@@ -1,5 +1,6 @@
+import { RequestMethod } from '@nestjs/common';
 import { expect } from 'chai';
-import { FastifyRequest } from 'fastify';
+import { FastifyRequest, fastify } from 'fastify';
 import * as sinon from 'sinon';
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
 
@@ -11,6 +12,69 @@ describe('FastifyAdapter', () => {
   });
 
   afterEach(() => sinon.restore());
+
+  describe('getRouteMatchingOptions', () => {
+    for (const { source, createAdapter, expected } of [
+      {
+        source: 'the defaults',
+        createAdapter: () => new FastifyAdapter(),
+        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+      },
+      {
+        source: '"routerOptions"',
+        createAdapter: () =>
+          new FastifyAdapter({
+            routerOptions: { caseSensitive: false, ignoreTrailingSlash: true },
+          }),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+      {
+        source: 'the top-level router options',
+        createAdapter: () =>
+          new FastifyAdapter({
+            caseSensitive: false,
+            ignoreTrailingSlash: true,
+          }),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+      {
+        source: 'an instance created without "routerOptions"',
+        createAdapter: () => new FastifyAdapter(fastify()),
+        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+      },
+      {
+        source: 'the top-level router options of an instance',
+        createAdapter: () =>
+          new FastifyAdapter(
+            fastify({ caseSensitive: false, ignoreTrailingSlash: true }),
+          ),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+    ]) {
+      it(`should follow ${source}`, () => {
+        expect(createAdapter().getRouteMatchingOptions()).to.deep.equal(
+          expected,
+        );
+      });
+    }
+  });
+
+  describe('createMiddlewareFactory', () => {
+    it('should run middleware on an instance created without "routerOptions"', async () => {
+      const adapter = new FastifyAdapter(fastify());
+      const middleware = sinon.spy((_req, _res, next: Function) => next());
+      const register = await adapter.createMiddlewareFactory(RequestMethod.ALL);
+      register('/cats', middleware);
+      adapter.get('/cats', () => 'cats');
+
+      const res = await adapter.inject({ method: 'GET', url: '/cats' });
+
+      expect(res.statusCode).to.equal(200);
+      expect(res.body).to.equal('cats');
+      expect(middleware.calledOnce).to.be.true;
+      await adapter.close();
+    });
+  });
 
   describe('empty route parameters', () => {
     beforeEach(() => {

@@ -324,6 +324,22 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return 'express';
   }
 
+  // The return type is spelled out (rather than "RouteMatchingOptions") so
+  // that the declarations still compile against an older "@nestjs/common"
+  public getRouteMatchingOptions(): {
+    caseSensitive: boolean;
+    ignoreTrailingSlash: boolean;
+  } {
+    // Routes are registered on the application router, which takes the
+    // "case sensitive routing" and "strict routing" settings in effect when
+    // it is created and ignores later changes
+    const router = this.getInstance().router;
+    return {
+      caseSensitive: !!router?.caseSensitive,
+      ignoreTrailingSlash: !router?.strict,
+    };
+  }
+
   public applyVersionFilter(
     handler: Function,
     version: VersionValue,

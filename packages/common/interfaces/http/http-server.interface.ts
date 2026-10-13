@@ -14,6 +14,23 @@ export type RequestHandler<TRequest = any, TResponse = any> = (
   next?: Function,
 ) => any;
 
+/**
+ * How a router matches request paths against route paths, returned by
+ * {@link HttpServer.getRouteMatchingOptions}.
+ *
+ * @publicApi
+ */
+export interface RouteMatchingOptions {
+  /**
+   * Whether `/Users` and `/users` are different paths.
+   */
+  caseSensitive: boolean;
+  /**
+   * Whether `/users/` is served by the `/users` route.
+   */
+  ignoreTrailingSlash: boolean;
+}
+
 export interface HttpServer<
   TRequest = any,
   TResponse = any,
@@ -101,4 +118,14 @@ export interface HttpServer<
     versioningOptions: VersioningOptions,
   ): (req: TRequest, res: TResponse, next: () => void) => Function;
   normalizePath?(path: string): string;
+  /**
+   * Tells the core how the underlying router matches request paths, so that
+   * the routes excluded with `MiddlewareConsumer.exclude()` are matched the
+   * same way: a request only skips the middleware when the router serves it
+   * with the excluded route. Called once per `forRoutes()` call, during
+   * `app.init()`. When not implemented, excluded routes are matched
+   * case-insensitively and ignoring a trailing slash, like Express does by
+   * default.
+   */
+  getRouteMatchingOptions?(): RouteMatchingOptions;
 }

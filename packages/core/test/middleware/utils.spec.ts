@@ -39,6 +39,58 @@ describe('middleware utils', () => {
         },
       ]);
     });
+    describe('when route matching options are given', () => {
+      const matches = (
+        path: string,
+        options: { caseSensitive: boolean; ignoreTrailingSlash: boolean },
+        url: string,
+      ) => mapToExcludeRoute([path], options)[0].pathRegex.test(url);
+
+      it('should match paths case-sensitively when the router does', () => {
+        const options = { caseSensitive: true, ignoreTrailingSlash: true };
+        expect(matches('users/login', options, '/users/login')).to.equal(true);
+        expect(matches('users/login', options, '/users/LOGIN')).to.equal(false);
+      });
+      it('should match paths case-insensitively when the router does', () => {
+        const options = { caseSensitive: false, ignoreTrailingSlash: true };
+        expect(matches('users/login', options, '/users/LOGIN')).to.equal(true);
+      });
+      it('should match a trailing slash only when the router ignores it', () => {
+        expect(
+          matches(
+            'users/login',
+            { caseSensitive: false, ignoreTrailingSlash: false },
+            '/users/login/',
+          ),
+        ).to.equal(false);
+        expect(
+          matches(
+            'users/login',
+            { caseSensitive: false, ignoreTrailingSlash: true },
+            '/users/login/',
+          ),
+        ).to.equal(true);
+      });
+      it('should match an excluded path written with a trailing slash like its route', () => {
+        const strict = { caseSensitive: true, ignoreTrailingSlash: false };
+        expect(matches('users/login/', strict, '/users/login')).to.equal(true);
+        expect(matches('users/login/', strict, '/users/login/')).to.equal(
+          false,
+        );
+
+        const loose = { caseSensitive: true, ignoreTrailingSlash: true };
+        expect(matches('users/login/', loose, '/users/login')).to.equal(true);
+        expect(matches('users/login/', loose, '/users/login/')).to.equal(true);
+        expect(matches('users/login/', loose, '/users/login//')).to.equal(
+          false,
+        );
+      });
+      it('should keep matching the root path', () => {
+        const strict = { caseSensitive: true, ignoreTrailingSlash: false };
+        expect(matches('/', strict, '/')).to.equal(true);
+        expect(matches('/', strict, '/users')).to.equal(false);
+      });
+    });
   });
   describe('filterMiddleware', () => {
     let middleware: any[];
@@ -47,6 +99,39 @@ describe('middleware utils', () => {
     });
     it('should return filtered middleware', () => {
       expect(filterMiddleware(middleware, [], noopAdapter)).to.have.length(2);
+    });
+    describe('when the adapter tells how its router matches paths', () => {
+      class StrictRouterAdapter extends NoopHttpAdapter {
+        getRouteMatchingOptions() {
+          return { caseSensitive: true, ignoreTrailingSlash: false };
+        }
+      }
+
+      it('should skip the middleware only for requests the router serves with an excluded route', () => {
+        const adapter = new StrictRouterAdapter({});
+        sinon.stub(adapter, 'getRequestMethod').returns('GET');
+        const getRequestUrl = sinon.stub(adapter, 'getRequestUrl');
+        const fn = sinon.spy();
+        const next = sinon.spy();
+        const [Middleware] = filterMiddleware(
+          [fn],
+          [{ path: 'users/login', method: RequestMethod.GET }],
+          adapter,
+        );
+        const instance = new Middleware();
+
+        getRequestUrl.returns('/users/login?redirect=1');
+        instance.use({}, {}, next);
+        expect(next.calledOnce).to.be.true;
+        expect(fn.called).to.be.false;
+
+        for (const url of ['/users/LOGIN', '/users/Login', '/users/login/']) {
+          getRequestUrl.returns(url);
+          instance.use({}, {}, next);
+        }
+        expect(fn.callCount).to.equal(3);
+        expect(next.calledOnce).to.be.true;
+      });
     });
   });
   describe('mapToClass', () => {

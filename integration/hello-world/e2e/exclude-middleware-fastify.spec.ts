@@ -89,6 +89,113 @@ class TestModule {
   }
 }
 
+@Controller('users')
+class UsersController {
+  @Get('login')
+  login() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':id')
+  findOne() {
+    return RETURN_VALUE;
+  }
+}
+
+@Controller('files')
+class FilesController {
+  @Get('public')
+  public() {
+    return RETURN_VALUE;
+  }
+
+  @Get('*')
+  findAll() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [UsersController, FilesController],
+})
+class RouteMatchingModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
+      .exclude('users/login', 'files/public')
+      .forRoutes(UsersController, FilesController);
+  }
+}
+
+describe('Exclude middleware (fastify) - route matching', () => {
+  let app: INestApplication;
+
+  const createApp = async (adapter: FastifyAdapter) => {
+    app = (
+      await Test.createTestingModule({
+        imports: [RouteMatchingModule],
+      }).compile()
+    ).createNestApplication<NestFastifyApplication>(adapter);
+
+    await app.init();
+    await app.getHttpAdapter().getInstance().ready();
+  };
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  describe('by default', () => {
+    beforeEach(() => createApp(new FastifyAdapter()));
+
+    it(`should exclude "/users/login" endpoint`, () => {
+      return request(app.getHttpServer())
+        .get('/users/login')
+        .expect(200, RETURN_VALUE);
+    });
+
+    it(`should not exclude "/users/LOGIN", which the router serves with "/users/:id"`, () => {
+      return request(app.getHttpServer())
+        .get('/users/LOGIN')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+
+    it(`should not exclude "/files/public/", which the router serves with "/files/*"`, () => {
+      return request(app.getHttpServer())
+        .get('/files/public/')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+  });
+
+  describe('when the router is case-insensitive', () => {
+    beforeEach(() =>
+      createApp(
+        new FastifyAdapter({ routerOptions: { caseSensitive: false } }),
+      ),
+    );
+
+    it(`should exclude "/users/LOGIN", which the router serves with "/users/login"`, () => {
+      return request(app.getHttpServer())
+        .get('/users/LOGIN')
+        .expect(200, RETURN_VALUE);
+    });
+  });
+
+  describe('when the router ignores a trailing slash', () => {
+    beforeEach(() =>
+      createApp(
+        new FastifyAdapter({ routerOptions: { ignoreTrailingSlash: true } }),
+      ),
+    );
+
+    it(`should exclude "/files/public/", which the router serves with "/files/public"`, () => {
+      return request(app.getHttpServer())
+        .get('/files/public/')
+        .expect(200, RETURN_VALUE);
+    });
+  });
+});
+
 describe('Exclude middleware (fastify)', () => {
   let app: INestApplication;
 
