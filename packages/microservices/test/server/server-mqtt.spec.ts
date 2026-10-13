@@ -607,6 +607,8 @@ describe('ServerMqtt', () => {
       ['sport/+', 'sport'],
       ['sport/+/score', 'sport/score'],
       ['sport/+', 'sport//'],
+      ['a//#', 'a'],
+      ['/+//#', '/'],
     ])(
       'should reject a different number of topic levels in %s against %s',
       (pattern, topic) => {
