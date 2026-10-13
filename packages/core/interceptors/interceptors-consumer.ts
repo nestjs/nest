@@ -23,11 +23,11 @@ export class InterceptorsConsumer {
 
     const nextFn = async (i = 0) => {
       if (i >= interceptors.length) {
-        return defer(AsyncResource.bind(() => this.transformDeferred(next)));
+        return defer(bindAsyncScope(() => this.transformDeferred(next)));
       }
       const handler: CallHandler = {
         handle: () =>
-          defer(AsyncResource.bind(() => nextFn(i + 1))).pipe(mergeAll()),
+          defer(bindAsyncScope(() => nextFn(i + 1))).pipe(mergeAll()),
       };
       return interceptors[i].intercept(context, handler);
     };
@@ -48,7 +48,7 @@ export class InterceptorsConsumer {
 
   public transformDeferred(next: () => Promise<any>): Observable<any> {
     // Call next() eagerly here — this method is invoked inside
-    // defer(AsyncResource.bind(...)), so the async context (e.g. AsyncLocalStorage)
+    // defer(bindAsyncScope(...)), so the async context (e.g. AsyncLocalStorage)
     // is correctly inherited. Deferring next() into the subscriber function would
     // lose that context because the subscriber is called outside the bound scope.
     const nextPromise = next();
@@ -82,4 +82,16 @@ export class InterceptorsConsumer {
       };
     });
   }
+}
+
+/**
+ * Same as `AsyncResource.bind(fn)`: the resource is created here, so `fn` runs
+ * in this call's async context (AsyncLocalStorage stores included) each time it
+ * is invoked. `AsyncResource.bind()` also defines a deprecated `asyncResource`
+ * accessor on every function it returns, which makes it about 25 times slower,
+ * and this runs once per interceptor, plus once, on every request.
+ */
+function bindAsyncScope<T>(fn: () => T): () => T {
+  const resource = new AsyncResource(fn.name || 'bound-anonymous-fn');
+  return () => resource.runInAsyncScope(fn);
 }

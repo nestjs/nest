@@ -1,5 +1,5 @@
 import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
-import { AsyncLocalStorage } from 'async_hooks';
+import { AsyncLocalStorage, createHook } from 'async_hooks';
 import { Observable, defer, lastValueFrom, merge, of, retry } from 'rxjs';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
 
@@ -108,6 +108,26 @@ describe('InterceptorsConsumer', () => {
         );
         const result = await transformToResult(intercepted);
         expect(result).toBe('hello');
+      });
+
+      it('should run each step in an async resource created when it is reached', async () => {
+        const types: string[] = [];
+        const hook = createHook({
+          init: (_id, type) => type !== 'PROMISE' && types.push(type),
+        }).enable();
+        try {
+          const intercepted = await consumer.intercept(
+            [{ intercept: (_context, next) => next.handle() }],
+            null!,
+            { constructor: null },
+            null!,
+            () => Promise.resolve('value'),
+          );
+          expect(await transformToResult(intercepted)).toBe('value');
+        } finally {
+          hook.disable();
+        }
+        expect(types).toEqual(['bound-anonymous-fn', 'bound-anonymous-fn']);
       });
     });
 
