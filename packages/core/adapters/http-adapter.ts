@@ -36,9 +36,10 @@ import { serializeCookie } from '../helpers/cookies/serialize-cookie.js';
  *
  * Every remaining {@link HttpServer} member is declared abstract here, even
  * the ones the interface marks optional, so subclasses cannot forget them.
- * `setBaseViewsDir()`, `useBodyParser()` and `isRouteOrderSensitive()` are
- * not declared on this class; implement them when the platform supports
- * them (see {@link HttpServer} for what the core does when they are absent).
+ * `setBaseViewsDir()`, `useBodyParser()`, `isRouteOrderSensitive()` and
+ * `getRouteMatchingOptions()` are not declared on this class; implement them
+ * when the platform supports them (see {@link HttpServer} for what the core
+ * does when they are absent).
  *
  * Keep in mind that the core also reads and writes properties of the request
  * object (`body`, `params`, `query`, `headers`, ...), that Server-Sent Events

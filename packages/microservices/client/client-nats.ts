@@ -117,7 +117,9 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     this.natsClient = natsClient;
 
     this._status$.next(NatsStatus.CONNECTED);
-    void this.handleStatusUpdates(this.natsClient);
+    this.handleStatusUpdates(this.natsClient).catch(err =>
+      this.logger.error(err),
+    );
     return this.natsClient;
   }
 
@@ -148,74 +150,80 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       if (this.natsClient !== client) {
         return;
       }
-      switch (status.type) {
-        case 'error':
-          this.logger.error(
-            `NatsError: type: "${status.type}", error: "${status.error}".`,
-          );
-          break;
-
-        case 'disconnect':
-          this.connectionPromise = Promise.reject(
-            'Error: Connection lost. Trying to reconnect...',
-          );
-          // Prevent unhandled promise rejection
-          this.connectionPromise.catch(() => {});
-
-          this.logger.error(`NatsError: type: "${status.type}".`);
-
-          this._status$.next(NatsStatus.DISCONNECTED);
-          this.statusEventEmitter.emit(
-            NatsEventsMap.DISCONNECT,
-            status.server as string,
-          );
-          break;
-
-        case 'reconnecting':
-          this._status$.next(NatsStatus.RECONNECTING);
-          break;
-
-        case 'reconnect':
-          this.connectionPromise = Promise.resolve(client);
-          this.logger.log(`NatsStatus: type: "${status.type}".`);
-
-          this._status$.next(NatsStatus.CONNECTED);
-          this.statusEventEmitter.emit(
-            NatsEventsMap.RECONNECT,
-            status.server as string,
-          );
-          break;
-
-        case 'ping':
-          if (this.options.debug) {
-            this.logger.debug(
-              `NatsStatus: type: "${status.type}", pending pings: "${status.pendingPings}".`,
+      try {
+        switch (status.type) {
+          case 'error':
+            this.logger.error(
+              `NatsError: type: "${status.type}", error: "${status.error}".`,
             );
+            break;
+
+          case 'disconnect':
+            this.connectionPromise = Promise.reject(
+              'Error: Connection lost. Trying to reconnect...',
+            );
+            // Prevent unhandled promise rejection
+            this.connectionPromise.catch(() => {});
+
+            this.logger.error(`NatsError: type: "${status.type}".`);
+
+            this._status$.next(NatsStatus.DISCONNECTED);
+            this.statusEventEmitter.emit(
+              NatsEventsMap.DISCONNECT,
+              status.server as string,
+            );
+            break;
+
+          case 'reconnecting':
+            this._status$.next(NatsStatus.RECONNECTING);
+            break;
+
+          case 'reconnect':
+            this.connectionPromise = Promise.resolve(client);
+            this.logger.log(`NatsStatus: type: "${status.type}".`);
+
+            this._status$.next(NatsStatus.CONNECTED);
+            this.statusEventEmitter.emit(
+              NatsEventsMap.RECONNECT,
+              status.server as string,
+            );
+            break;
+
+          case 'ping':
+            if (this.options.debug) {
+              this.logger.debug(
+                `NatsStatus: type: "${status.type}", pending pings: "${status.pendingPings}".`,
+              );
+            }
+            break;
+
+          case 'update':
+            this.logger.log(
+              `NatsStatus: type: "${status.type}", added: "${status.added}", deleted: "${status.deleted}".`,
+            );
+            this.statusEventEmitter.emit(NatsEventsMap.UPDATE, {
+              added: status.added,
+              deleted: status.deleted,
+            });
+            break;
+
+          default: {
+            const data =
+              'data' in status && isObject(status.data)
+                ? JSON.stringify(status.data)
+                : 'data' in status
+                  ? status.data
+                  : '';
+            this.logger.log(
+              `NatsStatus: type: "${status.type}", data: "${data}".`,
+            );
+            break;
           }
-          break;
-
-        case 'update':
-          this.logger.log(
-            `NatsStatus: type: "${status.type}", added: "${status.added}", deleted: "${status.deleted}".`,
-          );
-          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, {
-            added: status.added,
-            deleted: status.deleted,
-          });
-          break;
-
-        default: {
-          const data =
-            'data' in status && isObject(status.data)
-              ? JSON.stringify(status.data)
-              : 'data' in status
-                ? status.data
-                : '';
-          this.logger.log(
-            `NatsStatus: type: "${status.type}", data: "${data}".`,
-          );
-          break;
         }
+      } catch (err) {
+        // A throwing listener must neither end the status updates nor
+        // escape as an unhandled rejection
+        this.logger.error(err);
       }
     }
     // The status iterator only completes once the client has given up: it was

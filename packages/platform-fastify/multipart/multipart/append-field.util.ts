@@ -116,11 +116,13 @@ function setValue(ctx: any, step: PathStep, current: any, value: unknown): any {
       }
       obj = Object.create(null);
       ctx[step.key] = obj;
-      current.forEach((item: unknown, i: number) => {
-        if (item !== undefined) {
-          obj['' + i] = item;
+      // Only the indices that hold a value, so that the work depends on the
+      // number of items rather than on the length of a sparse array.
+      for (const index of Object.keys(current)) {
+        if (current[index] !== undefined) {
+          obj[index] = current[index];
         }
-      });
+      }
       return obj;
     case 'scalar':
       obj = Object.create(null);
@@ -132,8 +134,9 @@ function setValue(ctx: any, step: PathStep, current: any, value: unknown): any {
 
 /**
  * Appends a text field to `store` using multer's bracket notation.
- * Returns `false` (leaving `store` untouched) for names that would pollute a
- * prototype.
+ * Returns `false` for names it cannot apply: names that would pollute a
+ * prototype (leaving `store` untouched) and appends to an array that already
+ * has the maximum length.
  */
 export function appendField(
   store: object,
@@ -144,9 +147,16 @@ export function appendField(
   if (steps.some(step => FORBIDDEN_KEYS.has(String(step.key)))) {
     return false;
   }
-  steps.reduce(
-    (ctx, step) => setValue(ctx, step, ctx[step.key], value),
-    store as any,
-  );
+  try {
+    steps.reduce(
+      (ctx, step) => setValue(ctx, step, ctx[step.key], value),
+      store as any,
+    );
+  } catch (err) {
+    if (err instanceof RangeError) {
+      return false;
+    }
+    throw err;
+  }
   return true;
 }

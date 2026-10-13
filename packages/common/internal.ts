@@ -46,6 +46,7 @@ export type {
 } from './interfaces/features/arguments-host.interface.js';
 export type {
   RequestHandler,
+  RouteMatchingOptions,
   SecurityRequestHook,
 } from './interfaces/http/http-server.interface.js';
 export type {

@@ -8,30 +8,39 @@ import { isRouteExcluded } from '../router/utils/index.js';
 import type { HttpServer, Type } from '@nestjs/common';
 import {
   type RouteInfo,
+  type RouteMatchingOptions,
   addLeadingSlash,
   isFunction,
   isString,
 } from '@nestjs/common/internal';
 
+/**
+ * Compiles the given routes into exclusion matchers. Without
+ * `matchingOptions`, paths match case-insensitively and ignoring a trailing
+ * slash; pass the router's {@link RouteMatchingOptions} to match requests
+ * exactly like the router does.
+ */
 export const mapToExcludeRoute = (
   routes: (string | RouteInfo)[],
+  matchingOptions?: RouteMatchingOptions,
 ): ExcludeRouteMetadata[] => {
   return routes.map(route => {
     const originalPath = isString(route) ? route : route.path;
     const path = LegacyRouteConverter.tryConvert(originalPath);
 
     try {
+      const pathRegex = compileExcludedPath(path, matchingOptions);
       if (isString(route)) {
         return {
           path,
           requestMethod: RequestMethod.ALL,
-          pathRegex: pathToRegexp(addLeadingSlash(path)).regexp,
+          pathRegex,
         };
       }
       return {
         path,
         requestMethod: route.method,
-        pathRegex: pathToRegexp(addLeadingSlash(path)).regexp,
+        pathRegex,
       };
     } catch (e) {
       if (e instanceof TypeError) {
@@ -42,12 +51,33 @@ export const mapToExcludeRoute = (
   });
 };
 
+function compileExcludedPath(
+  path: string,
+  matchingOptions?: RouteMatchingOptions,
+): RegExp {
+  if (!matchingOptions) {
+    return pathToRegexp(addLeadingSlash(path)).regexp;
+  }
+  // Routes are registered without a trailing slash, so "users/login/" must
+  // match the requests the router serves with the "users/login" route
+  const routePath = path.length > 1 ? path.replace(/\/+$/, '') : path;
+  return pathToRegexp(addLeadingSlash(routePath) || '/', {
+    sensitive: matchingOptions.caseSensitive,
+    trailing: matchingOptions.ignoreTrailingSlash,
+  }).regexp;
+}
+
 export const filterMiddleware = <T extends Function | Type<any> = any>(
   middleware: T[],
   routes: RouteInfo[],
   httpAdapter: HttpServer,
 ) => {
-  const excludedRoutes = mapToExcludeRoute(routes);
+  // Excluded routes must match exactly the requests the router serves with
+  // them, as the middleware is skipped for every request they match
+  const excludedRoutes = mapToExcludeRoute(
+    routes,
+    httpAdapter.getRouteMatchingOptions?.(),
+  );
   return iterate([])
     .concat(middleware)
     .filter(isFunction)

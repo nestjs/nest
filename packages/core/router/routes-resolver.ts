@@ -9,7 +9,6 @@ import {
   MODULE_PATH,
   VERSION_METADATA,
   type Controller,
-  type RouteInfo,
   type VersionValue,
 } from '@nestjs/common/internal';
 import { ApplicationConfig } from '../application-config.js';
@@ -164,11 +163,9 @@ export class RoutesResolver implements Resolver {
     const proxy = this.routerProxy.createProxy(callback, handler);
     const prefix = this.applicationConfig.getGlobalPrefix();
     // `ExcludeRouteMetadata` is core-only, so the adapter gets the `RouteInfo`
-    // shape the interface declares; `path` is already converted by
-    // `mapToExcludeRoute` and `pathRegex` is not needed.
-    const excludedRoutes: RouteInfo[] = (
-      this.applicationConfig.getGlobalPrefixOptions().exclude ?? []
-    ).map(route => ({ path: route.path, method: route.requestMethod }));
+    // shape the interface declares, resolved to the paths excluded routes are
+    // served at (`/v1/hello` rather than `hello` under URI versioning).
+    const excludedRoutes = this.routePathFactory.getExcludedRoutePaths();
     applicationRef.setNotFoundHandler &&
       applicationRef.setNotFoundHandler(proxy, prefix, excludedRoutes);
   }

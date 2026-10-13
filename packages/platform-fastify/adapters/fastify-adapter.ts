@@ -197,6 +197,8 @@ export class FastifyAdapter<
 
   private readonly openConnections = new Set<Duplex>();
   private isClosing = false;
+  private isShuttingDown = false;
+  private return503OnClosing = false;
   private _isParserRegistered: boolean;
   // Fastify's `hasContentTypeParser('application/json')` is always true (built-in
   // parser), so the types registered through `useBodyParser()` are tracked here.
@@ -346,6 +348,27 @@ export class FastifyAdapter<
           reply as TReply,
           done,
         );
+      } else {
+        done();
+      }
+    });
+
+    // Fastify's own `return503OnClosing` only applies once `close()` runs,
+    // which is after the shutdown hooks. Added here rather than in
+    // `initHttpServer()` so that it runs before Nest middleware:
+    // `NestFactory.create()` calls `init()`, which registers middie, first.
+    // Answers with the same body as Fastify's own 503, so that clients get
+    // one response shape for the whole shutdown.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (this.return503OnClosing && this.isShuttingDown) {
+        if (request.raw.httpVersionMajor !== 2) {
+          reply.header('Connection', 'close');
+        }
+        reply.code(503).send({
+          error: 'Service Unavailable',
+          message: 'Service Unavailable',
+          statusCode: 503,
+        });
       } else {
         done();
       }
@@ -758,7 +781,12 @@ export class FastifyAdapter<
     return this.instance.inject(opts!);
   }
 
+  public beforeClose() {
+    this.isShuttingDown = true;
+  }
+
   public async close() {
+    this.isShuttingDown = true;
     this.isClosing = true;
     try {
       this.closeOpenConnections();
@@ -774,6 +802,7 @@ export class FastifyAdapter<
 
   public initHttpServer(options: NestApplicationOptions = {}) {
     this.httpServer = this.instance.server;
+    this.return503OnClosing = !!options?.return503OnClosing;
     if (options?.forceCloseConnections) {
       this.trackOpenConnections();
     }
@@ -1015,6 +1044,27 @@ export class FastifyAdapter<
 
   public isRouteOrderSensitive(): boolean {
     return false;
+  }
+
+  // The return type is spelled out (rather than "RouteMatchingOptions") so
+  // that the declarations still compile against an older "@nestjs/common"
+  public getRouteMatchingOptions(): {
+    caseSensitive: boolean;
+    ignoreTrailingSlash: boolean;
+  } {
+    const initialConfig = this.instance.initialConfig as FastifyServerOptions;
+    // Absent when a Fastify instance created without it is passed in
+    const routerOptions = (initialConfig.routerOptions ??
+      {}) as Partial<FastifyServerOptions>;
+    return {
+      caseSensitive: !(
+        routerOptions.caseSensitive === false ||
+        initialConfig.caseSensitive === false
+      ),
+      ignoreTrailingSlash: !!(
+        routerOptions.ignoreTrailingSlash || initialConfig.ignoreTrailingSlash
+      ),
+    };
   }
 
   public use(...args: any[]) {
@@ -1275,8 +1325,8 @@ export class FastifyAdapter<
 
   private sanitizeUrl(url: string): string {
     const initialConfig = this.instance.initialConfig as FastifyServerOptions;
-    const routerOptions =
-      initialConfig.routerOptions as Partial<FastifyServerOptions>;
+    const routerOptions = (initialConfig.routerOptions ??
+      {}) as Partial<FastifyServerOptions>;
 
     // Absolute-form request targets ("GET http://host/path HTTP/1.1") must be
     // resolved to their path before any other normalization, as the Fastify
@@ -1290,17 +1340,13 @@ export class FastifyAdapter<
       url = this.removeDuplicateSlashes(url);
     }
 
-    if (
-      routerOptions.ignoreTrailingSlash ||
-      initialConfig.ignoreTrailingSlash
-    ) {
+    const { caseSensitive, ignoreTrailingSlash } =
+      this.getRouteMatchingOptions();
+    if (ignoreTrailingSlash) {
       url = this.trimLastSlash(url);
     }
 
-    if (
-      routerOptions.caseSensitive === false ||
-      initialConfig.caseSensitive === false
-    ) {
+    if (!caseSensitive) {
       url = url.toLowerCase();
     }
     return safeDecodeURI(

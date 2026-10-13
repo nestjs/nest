@@ -818,6 +818,19 @@ describe('ClientRMQ', function () {
       });
     });
 
+    it('should still close the connection and reset the state when the channel close rejects', async () => {
+      untypedClient.channel.close = vi
+        .fn()
+        .mockRejectedValue(new Error('Channel closing error'));
+
+      await expect(client.close()).rejects.toThrow('Channel closing error');
+
+      expect(clientCloseSpy).toHaveBeenCalledOnce();
+      expect(untypedClient.channel).toBeNull();
+      expect(untypedClient.client).toBeNull();
+      expect(untypedClient.isInitialConnect).toBe(true);
+    });
+
     it('should fail every pending request and close the channel when a callback throws', async () => {
       vi.spyOn(untypedClient.logger, 'error').mockImplementation(() => {});
       const throwingCallback = vi.fn().mockImplementation(() => {

@@ -4,11 +4,12 @@ import {
   HttpException,
   Logger,
   RawBodyRequest,
+  RequestMethod,
   VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply, FastifyRequest, fastify } from 'fastify';
 
 describe('FastifyAdapter', () => {
   let fastifyAdapter: FastifyAdapter;
@@ -290,6 +291,65 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('getRouteMatchingOptions', () => {
+    it.each([
+      {
+        source: 'the defaults',
+        createAdapter: () => new FastifyAdapter(),
+        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+      },
+      {
+        source: '"routerOptions"',
+        createAdapter: () =>
+          new FastifyAdapter({
+            routerOptions: { caseSensitive: false, ignoreTrailingSlash: true },
+          }),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+      {
+        source: 'the top-level router options',
+        createAdapter: () =>
+          new FastifyAdapter({
+            caseSensitive: false,
+            ignoreTrailingSlash: true,
+          }),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+      {
+        source: 'an instance created without "routerOptions"',
+        createAdapter: () => new FastifyAdapter(fastify()),
+        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+      },
+      {
+        source: 'the top-level router options of an instance',
+        createAdapter: () =>
+          new FastifyAdapter(
+            fastify({ caseSensitive: false, ignoreTrailingSlash: true }),
+          ),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+    ])('should follow $source', ({ createAdapter, expected }) => {
+      expect(createAdapter().getRouteMatchingOptions()).toEqual(expected);
+    });
+  });
+
+  describe('createMiddlewareFactory', () => {
+    it('should run middleware on an instance created without "routerOptions"', async () => {
+      const adapter = new FastifyAdapter(fastify());
+      const middleware = vi.fn((_req, _res, next: Function) => next());
+      const register = await adapter.createMiddlewareFactory(RequestMethod.ALL);
+      register('/cats', middleware);
+      adapter.get('/cats', () => 'cats');
+
+      const res = await adapter.inject({ method: 'GET', url: '/cats' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('cats');
+      expect(middleware).toHaveBeenCalledOnce();
+      await adapter.close();
+    });
+  });
+
   describe('empty route parameters', () => {
     beforeEach(() => {
       fastifyAdapter.setNotFoundHandler((_req, reply) =>
@@ -458,6 +518,58 @@ describe('FastifyAdapter', () => {
 
       await fastifyAdapter.close();
       expect(onCloseCalled).toBe(true);
+    });
+  });
+
+  describe('initHttpServer return503OnClosing', () => {
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    it('should answer 503 with Connection: close once beforeClose() ran', async () => {
+      fastifyAdapter.initHttpServer({ return503OnClosing: true });
+      fastifyAdapter.get('/', () => 'ok');
+
+      const before = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(before.statusCode).toBe(200);
+
+      fastifyAdapter.beforeClose();
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(res.statusCode).toBe(503);
+      expect(res.headers.connection).toBe('close');
+      expect(res.headers['content-type']).toMatch(/^application\/json/);
+      // The body Fastify itself sends once `close()` runs
+      expect(res.body).toBe(
+        '{"error":"Service Unavailable","message":"Service Unavailable","statusCode":503}',
+      );
+    });
+
+    it('should answer 503 before Nest middleware runs', async () => {
+      // `NestFactory.create()` calls `init()`, which registers middie,
+      // before the application calls `initHttpServer()`
+      await fastifyAdapter.init();
+      fastifyAdapter.initHttpServer({ return503OnClosing: true });
+      const middleware = vi.fn((_req, _res, next: () => void) => next());
+      fastifyAdapter.use(middleware);
+      fastifyAdapter.get('/', () => 'ok');
+
+      fastifyAdapter.beforeClose();
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(res.statusCode).toBe(503);
+      expect(middleware).not.toHaveBeenCalled();
+    });
+
+    it('should keep serving requests after beforeClose() when return503OnClosing is not set', async () => {
+      fastifyAdapter.initHttpServer({});
+      fastifyAdapter.get('/', () => 'ok');
+
+      fastifyAdapter.beforeClose();
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('ok');
     });
   });
 

@@ -1,4 +1,10 @@
-import { Injectable, InjectionToken, Provider, Scope } from '@nestjs/common';
+import {
+  Injectable,
+  InjectionToken,
+  Logger,
+  Provider,
+  Scope,
+} from '@nestjs/common';
 import { ContextIdFactory } from '../helpers/context-id-factory.js';
 import { NestContainer } from '../injector/container.js';
 import { Injector } from '../injector/injector.js';
@@ -615,6 +621,54 @@ describe('NestApplicationContext', () => {
       expect(onModuleDestroyStub).toHaveBeenCalledTimes(1);
       expect(beforeApplicationShutdownStub).toHaveBeenCalledTimes(1);
       expect(onApplicationShutdownStub).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('buffered logs', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      Logger.attachBuffer();
+      new Logger('Bootstrap').log('buffered message');
+    });
+
+    afterEach(() => {
+      Logger.detachBuffer();
+      Logger['logBuffer'] = [];
+      processStdoutWriteSpy.mockRestore();
+    });
+
+    const printed = () =>
+      processStdoutWriteSpy.mock.calls.map(([chunk]) => String(chunk));
+
+    it('should flush them when the initialization fails', async () => {
+      class B {
+        onModuleInit() {
+          throw new Error('init failed');
+        }
+      }
+      const applicationContext = await testHelper(A, Scope.DEFAULT, [
+        { provide: B, useClass: B, scope: Scope.DEFAULT },
+      ]);
+
+      await expect(applicationContext.init()).rejects.toThrow('init failed');
+
+      expect(printed().some(line => line.includes('buffered message'))).toBe(
+        true,
+      );
+      expect(Logger['isBufferAttached']).toBe(false);
+    });
+
+    it('should leave them to "useLogger()" when the initialization succeeds', async () => {
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      await applicationContext.init();
+
+      expect(printed()).toEqual([]);
+      expect(Logger['isBufferAttached']).toBe(true);
     });
   });
 

@@ -7,7 +7,9 @@ import {
   Post,
   RequestMethod,
 } from '@nestjs/common';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
+import express from 'express';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
@@ -86,6 +88,86 @@ class TestModule {
       .forRoutes('*path');
   }
 }
+
+@Controller('users')
+class UsersController {
+  @Get('login')
+  login() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':id')
+  findOne() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [UsersController],
+})
+class RouteMatchingModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(MIDDLEWARE_VALUE))
+      .exclude('users/login')
+      .forRoutes(UsersController);
+  }
+}
+
+describe('Exclude middleware - route matching', () => {
+  let app: INestApplication;
+
+  const createApp = async (adapter?: ExpressAdapter) => {
+    const testingModule = await Test.createTestingModule({
+      imports: [RouteMatchingModule],
+    }).compile();
+    app = adapter
+      ? testingModule.createNestApplication(adapter)
+      : testingModule.createNestApplication();
+
+    await listenOnLoopback(app);
+  };
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  describe('by default', () => {
+    beforeEach(() => createApp());
+
+    it(`should exclude "/users/LOGIN", which the router serves with "/users/login"`, () => {
+      return request(app.getHttpServer())
+        .get('/users/LOGIN')
+        .expect(200, RETURN_VALUE);
+    });
+
+    it(`should exclude "/users/login/", which the router serves with "/users/login"`, () => {
+      return request(app.getHttpServer())
+        .get('/users/login/')
+        .expect(200, RETURN_VALUE);
+    });
+  });
+
+  describe('when the router is case-sensitive', () => {
+    beforeEach(() => {
+      const instance = express();
+      instance.set('case sensitive routing', true);
+      return createApp(new ExpressAdapter(instance));
+    });
+
+    it(`should exclude "/users/login" endpoint`, () => {
+      return request(app.getHttpServer())
+        .get('/users/login')
+        .expect(200, RETURN_VALUE);
+    });
+
+    it(`should not exclude "/users/LOGIN", which the router serves with "/users/:id"`, () => {
+      return request(app.getHttpServer())
+        .get('/users/LOGIN')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+  });
+});
 
 describe('Exclude middleware', () => {
   let app: INestApplication;

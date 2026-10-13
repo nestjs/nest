@@ -1,0 +1,15 @@
+# dependencies
+/node_modules
+
+# dist
+/dist
+
+# secrets
+.env
+
+# the local disks (STORAGE_ROOT)
+/storage
+
+# what the Try it steps write
+/try-it/invoice-*.pdf
+/try-it/upload.json

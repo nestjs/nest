@@ -285,6 +285,32 @@ describe('NestApplication', () => {
       expect(printed()).toEqual([]);
       expect(Logger['isBufferAttached']).toBe(true);
     });
+
+    it('should flush them when the initialization fails', async () => {
+      const app = createApp();
+      vi.spyOn(app as any, 'callInitHook').mockRejectedValue(
+        new Error('init failed'),
+      );
+
+      await expect(app.init()).rejects.toThrow('init failed');
+
+      expect(printed().some(line => line.includes('buffered message'))).toBe(
+        true,
+      );
+      expect(Logger['isBufferAttached']).toBe(false);
+    });
+
+    it('should not flush them on a failed init when "autoFlushLogs" is false', async () => {
+      const app = createApp({ autoFlushLogs: false });
+      vi.spyOn(app as any, 'callInitHook').mockRejectedValue(
+        new Error('init failed'),
+      );
+
+      await expect(app.init()).rejects.toThrow('init failed');
+
+      expect(printed()).toEqual([]);
+      expect(Logger['isBufferAttached']).toBe(true);
+    });
   });
 
   describe('use', () => {

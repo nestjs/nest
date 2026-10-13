@@ -16,6 +16,9 @@ const isPipeLike = (value: any): boolean =>
  * arguments identically: a pipe instance that happens to expose a `schema` or
  * `pipes` property must never be mistaken for an options object.
  *
+ * `createParamDecorator` applies a stricter check to its first argument, since
+ * that argument may also be arbitrary custom data.
+ *
  * @internal
  */
 export function isParameterDecoratorOptions(

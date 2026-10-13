@@ -234,10 +234,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       const patternChar = currentPattern[0];
       const currentTopic = topicSegments[i];
 
-      if (!currentTopic && !currentPattern) {
-        continue;
-      }
-      if (!currentTopic && currentPattern !== MQTT_WILDCARD_ALL) {
+      if (isUndefined(currentTopic) && currentPattern !== MQTT_WILDCARD_ALL) {
         return false;
       }
       if (patternChar === MQTT_WILDCARD_ALL) {

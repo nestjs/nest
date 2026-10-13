@@ -30,18 +30,18 @@
   },
   "devDependencies": {
     "@nestjs/cli": "12.0.8",
-    "@nestjs/schematics": "12.0.6",
+    "@nestjs/schematics": "12.0.7",
     "@nestjs/testing": "12.1.2",
-    "@types/node": "24.19.1",
+    "@types/node": "24.19.2",
     "@types/supertest": "7.2.1",
     "oxlint": "1.87.0",
-    "prettier": "3.9.9",
+    "prettier": "3.9.10",
     "supertest": "7.3.1",
     "ts-loader": "9.6.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
-    "vitest": "5.0.3"
+    "vitest": "5.0.4"
   },
   "type": "module"
 }
