@@ -156,14 +156,9 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     pattern: string,
   ) {
     const rawMessage = this.parseMessage(buffer);
-    // With wildcards, "users.*" also matches the reply channel this server
-    // publishes to ("users.created.reply"), so skip its own replies.
     if (
       this.options?.wildcards &&
-      pattern.endsWith(this.getReplyPattern('')) &&
-      !this.getHandlerByPattern(pattern) &&
-      !isUndefined(rawMessage?.id) &&
-      isUndefined(rawMessage?.pattern)
+      this.isOwnReply(channel, pattern, rawMessage)
     ) {
       return;
     }
@@ -198,6 +193,25 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       async () =>
         this.transformToObservable(await handler(packet.data, redisCtx)),
       publish,
+    );
+  }
+
+  /**
+   * With wildcards, a subscription such as "users.*" also matches the channels
+   * this server replies on ("users.created.reply"). Those replies are skipped
+   * unless the subscription itself targets reply channels.
+   */
+  private isOwnReply(
+    subscription: string,
+    channel: string,
+    message: Record<string, any>,
+  ) {
+    const replySuffix = this.getReplyPattern('');
+    return (
+      channel.endsWith(replySuffix) &&
+      !subscription.endsWith(replySuffix) &&
+      !isUndefined(message?.id) &&
+      isUndefined(message?.pattern)
     );
   }
 

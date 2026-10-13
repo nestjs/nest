@@ -363,6 +363,23 @@ describe('ServerRedis', () => {
 
         expect(replyHandler).toHaveBeenCalled();
       });
+      it('should not dispatch an own reply to "users.*" when "users.x.reply" has a handler too', async () => {
+        untypedServer.messageHandlers.set('users.x.reply', vi.fn());
+        const reply = JSON.stringify({ id, response: data, isDisposed: true });
+
+        await server.handleMessage('users.*', reply, null, 'users.x.reply');
+
+        expect(handler).not.toHaveBeenCalled();
+      });
+      it('should dispatch replies to a subscription that targets reply channels', async () => {
+        const monitor = vi.fn();
+        untypedServer.messageHandlers.set('*.reply', monitor);
+        const reply = JSON.stringify({ id, response: data, isDisposed: true });
+
+        await server.handleMessage('*.reply', reply, null, 'users.x.reply');
+
+        expect(monitor).toHaveBeenCalled();
+      });
     });
   });
 
