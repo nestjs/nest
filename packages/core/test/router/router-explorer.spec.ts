@@ -1,3 +1,4 @@
+import { PATH_METADATA } from '../../../common/constants.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import {
   All,
@@ -224,6 +225,85 @@ describe('RouterExplorer', () => {
         STATIC_CONTEXT,
         'test-route',
       );
+    });
+
+    it('should register a route-triggered wrapper with the route metadata, version and name', async () => {
+      const get = vi.fn();
+      const onRouteTriggered = vi.fn();
+      const instance = new TestRoute();
+      const routeHandler = Object.assign(vi.fn(), { version: '1' });
+      container.setHttpAdapter({ getOnRouteTriggered: () => onRouteTriggered });
+      vi.spyOn(routerBuilder as any, 'createCallbackProxy').mockReturnValue(
+        routeHandler,
+      );
+
+      (routerBuilder as any).applyCallbackToRouter(
+        { get },
+        {
+          path: ['test'],
+          requestMethod: RequestMethod.GET,
+          targetCallback: instance.getTest,
+          methodName: 'getTest',
+        },
+        {
+          id: 'test-route',
+          instance,
+          name: TestRoute.name,
+          isDependencyTreeStatic: () => true,
+        } as any,
+        '',
+        { ctrlPath: 'global' },
+        '',
+      );
+
+      const handler = get.mock.calls[0][1];
+      expect(handler).not.toBe(routeHandler);
+      expect(handler.name).toBe('TestRoute.getTest');
+      expect(handler.version).toBe('1');
+      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
+
+      await handler('req', 'res');
+      expect(onRouteTriggered).toHaveBeenCalledWith(
+        RequestMethod.GET,
+        '/global/test',
+      );
+      expect(routeHandler).toHaveBeenCalledWith('req', 'res');
+    });
+  });
+
+  describe('registerResolvedRoute', () => {
+    const createResolvedRoute = (instance: TestRoute, handler: Function) =>
+      ({
+        method: RequestMethod.GET,
+        path: '/global/test',
+        handler,
+        targetCallback: instance.getTest,
+        methodName: 'getTest',
+      }) as any;
+
+    it('should register a route-triggered wrapper with the route metadata and version', async () => {
+      const get = vi.fn();
+      const onRouteTriggered = vi.fn();
+      const instance = new TestRoute();
+      const routeHandler = Object.assign(vi.fn(), { version: '1' });
+      container.setHttpAdapter({ getOnRouteTriggered: () => onRouteTriggered });
+
+      routerBuilder.registerResolvedRoute(
+        { get } as any,
+        createResolvedRoute(instance, routeHandler),
+      );
+
+      const handler = get.mock.calls[0][1];
+      expect(handler).not.toBe(routeHandler);
+      expect(handler.version).toBe('1');
+      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
+
+      await handler('req', 'res');
+      expect(onRouteTriggered).toHaveBeenCalledWith(
+        RequestMethod.GET,
+        '/global/test',
+      );
+      expect(routeHandler).toHaveBeenCalledWith('req', 'res');
     });
   });
 

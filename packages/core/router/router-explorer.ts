@@ -253,10 +253,12 @@ export class RouterExplorer {
           const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
           let handler = routeHandler;
           if (onRouteTriggered) {
-            handler = (...args: unknown[]) => {
+            // Adapters read route options (e.g. the version) from the handler
+            handler = Object.assign((...args: unknown[]) => {
               onRouteTriggered(requestMethod, path);
               return routeHandler(...args);
-            };
+            }, routeHandler);
+            this.copyMetadataToCallback(targetCallback, handler);
           }
           Object.defineProperty(handler, 'name', {
             configurable: true,
@@ -328,10 +330,13 @@ export class RouterExplorer {
     const httpAdapter = this.container.getHttpAdapterRef();
     const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
     if (onRouteTriggered) {
-      routerMethodRef(normalizedPath, (...args: unknown[]) => {
+      // Adapters read route options (e.g. the version) from the handler
+      const handler = Object.assign((...args: unknown[]) => {
         onRouteTriggered(route.method, rawPath);
         return route.handler(...args);
-      });
+      }, route.handler);
+      this.copyMetadataToCallback(route.targetCallback, handler);
+      routerMethodRef(normalizedPath, handler);
     } else {
       routerMethodRef(normalizedPath, route.handler);
     }
