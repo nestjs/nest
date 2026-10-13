@@ -142,6 +142,30 @@ describe('NodeAdapter', () => {
     });
   });
 
+  describe('getRouteMatchingOptions', () => {
+    it('should match paths case-sensitively and ignore a trailing slash, as the router does', async () => {
+      expect(adapter.getRouteMatchingOptions()).toEqual({
+        caseSensitive: true,
+        ignoreTrailingSlash: true,
+      });
+
+      const port = await startServer();
+      adapter.get('/users/login', (req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, 'login'),
+      );
+      adapter.get('/users/:id', (req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, 'by id'),
+      );
+
+      expect((await request(port, { path: '/users/login/' })).text).toBe(
+        'login',
+      );
+      expect((await request(port, { path: '/users/LOGIN' })).text).toBe(
+        'by id',
+      );
+    });
+  });
+
   describe('getInstance', () => {
     it('should return the router, a callable request listener', async () => {
       const router = adapter.getInstance<NodeRouter>();

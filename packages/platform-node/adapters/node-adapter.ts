@@ -527,6 +527,17 @@ export class NodeAdapter extends AbstractHttpAdapter<
     return false;
   }
 
+  // The return type is spelled out (rather than "RouteMatchingOptions") so
+  // that the declarations still compile against an older "@nestjs/common"
+  public getRouteMatchingOptions(): {
+    caseSensitive: boolean;
+    ignoreTrailingSlash: boolean;
+  } {
+    // Like the router (see RouteTable): "/Users" is not "/users", and
+    // "/users/" is served by the "/users" route
+    return { caseSensitive: true, ignoreTrailingSlash: true };
+  }
+
   public applyVersionFilter(
     handler: Function,
     version: VersionValue,

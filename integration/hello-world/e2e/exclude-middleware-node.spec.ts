@@ -88,6 +88,67 @@ class TestModule {
   }
 }
 
+@Controller('users')
+class UsersController {
+  @Get('login')
+  login() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':id')
+  findOne() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [UsersController],
+})
+class RouteMatchingModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(MIDDLEWARE_VALUE))
+      .exclude('users/login')
+      .forRoutes(UsersController);
+  }
+}
+
+describe('Exclude middleware - route matching', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    app = (
+      await Test.createTestingModule({
+        imports: [RouteMatchingModule],
+      }).compile()
+    ).createNestApplication(new NodeAdapter());
+
+    await listenOnLoopback(app);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it(`should exclude "/users/login" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/users/login')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should exclude "/users/login/", which the router serves with "/users/login"`, () => {
+    return request(app.getHttpServer())
+      .get('/users/login/')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude "/users/LOGIN", which the router serves with "/users/:id"`, () => {
+    return request(app.getHttpServer())
+      .get('/users/LOGIN')
+      .expect(200, MIDDLEWARE_VALUE);
+  });
+});
+
 describe('Exclude middleware', () => {
   let app: INestApplication;
 
