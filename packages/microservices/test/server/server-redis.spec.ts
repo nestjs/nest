@@ -314,6 +314,56 @@ describe('ServerRedis', () => {
         expect.any(RedisContext),
       );
     });
+    describe('when wildcards are enabled', () => {
+      let handler: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        untypedServer.options.wildcards = true;
+        handler = vi.fn();
+        untypedServer.messageHandlers = objectToMap({
+          'users.*': handler,
+        });
+      });
+      it.each([
+        ['reply', { id, response: data, isDisposed: true }],
+        ['error reply', { id, status: 'error', err: NO_MESSAGE_HANDLER }],
+      ])("should not dispatch the server's own %s", async (_, packet) => {
+        // "users.*" also matches the reply channel ("users.created.reply").
+        await server.handleMessage(
+          'users.*',
+          JSON.stringify(packet),
+          null,
+          'users.created.reply',
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      });
+      it.each([
+        ['a request', JSON.stringify({ id, pattern: 'users.x.reply', data })],
+        ['a message without an id', JSON.stringify({ data })],
+      ])(
+        'should dispatch %s published to a ".reply" channel',
+        async (_, message) => {
+          await server.handleMessage('users.*', message, null, 'users.x.reply');
+
+          expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
+        },
+      );
+      it('should dispatch a reply to a handler registered on that channel', async () => {
+        const replyHandler = vi.fn();
+        untypedServer.messageHandlers.set('users.x.reply', replyHandler);
+        const reply = JSON.stringify({ id, response: data, isDisposed: true });
+
+        await server.handleMessage(
+          'users.x.reply',
+          reply,
+          null,
+          'users.x.reply',
+        );
+
+        expect(replyHandler).toHaveBeenCalled();
+      });
+    });
   });
 
   describe('processing end hook', () => {

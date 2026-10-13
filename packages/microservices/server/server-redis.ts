@@ -156,6 +156,17 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     pattern: string,
   ) {
     const rawMessage = this.parseMessage(buffer);
+    // With wildcards, "users.*" also matches the reply channel this server
+    // publishes to ("users.created.reply"), so skip its own replies.
+    if (
+      this.options?.wildcards &&
+      pattern.endsWith(this.getReplyPattern('')) &&
+      !this.getHandlerByPattern(pattern) &&
+      !isUndefined(rawMessage?.id) &&
+      isUndefined(rawMessage?.pattern)
+    ) {
+      return;
+    }
     const packet = await this.deserializer.deserialize(rawMessage, { channel });
     const redisCtx = new RedisContext([pattern, packet.metadata]);
 
