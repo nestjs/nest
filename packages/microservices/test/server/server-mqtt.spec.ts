@@ -357,6 +357,26 @@ describe('ServerMqtt', () => {
       );
       expect(handleEventSpy).toHaveBeenCalled();
     });
+    it('should dispatch empty topic levels to a wildcard event handler', async () => {
+      const handler = vi.fn().mockResolvedValue(undefined);
+      const originalPacket = { qos: 1 };
+      server.addHandler('sport/+', handler, true);
+
+      await server.handleMessage(
+        'sport/',
+        Buffer.from(JSON.stringify({ data })),
+        null,
+        originalPacket,
+      );
+
+      expect(handler).toHaveBeenCalledExactlyOnceWith(
+        data,
+        expect.any(MqttContext),
+      );
+      const context = handler.mock.calls[0][1] as MqttContext;
+      expect(context.getTopic()).toBe('sport/');
+      expect(context.getPacket()).toBe(originalPacket);
+    });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       await server.handleMessage(
         channel,
@@ -570,6 +590,41 @@ describe('ServerMqtt', () => {
     });
   });
   describe('matchMqttPattern', () => {
+    it.each([
+      ['sport/+', 'sport/'],
+      ['sport/+/score', 'sport//score'],
+      ['+/score', '/score'],
+      ['+/+', '/'],
+      ['sport/+/+', 'sport//'],
+    ])(
+      'should match an empty topic level in %s against %s',
+      (pattern, topic) => {
+        expect(server.matchMqttPattern(pattern, topic)).toBe(true);
+      },
+    );
+
+    it.each([
+      ['sport/+', 'sport'],
+      ['sport/+/score', 'sport/score'],
+      ['sport/+', 'sport//'],
+      ['a//#', 'a'],
+      ['/+//#', '/'],
+    ])(
+      'should reject a different number of topic levels in %s against %s',
+      (pattern, topic) => {
+        expect(server.matchMqttPattern(pattern, topic)).toBe(false);
+      },
+    );
+
+    it.each([
+      ['sport/+', 'sport/tennis'],
+      ['sport/#', 'sport'],
+      ['sport/#', 'sport/'],
+      ['sport/', 'sport/'],
+    ])('should preserve matching for %s against %s', (pattern, topic) => {
+      expect(server.matchMqttPattern(pattern, topic)).toBe(true);
+    });
+
     it('should return true when topic matches with provided pattern', () => {
       expect(server.matchMqttPattern('root/valid/+', 'root/valid/child')).toBe(
         true,
