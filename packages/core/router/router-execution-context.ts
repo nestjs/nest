@@ -75,6 +75,11 @@ export interface ParamProperties {
   schema?: StandardSchemaV1;
 }
 
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  value !== null &&
+  (typeof value === 'object' || typeof value === 'function') &&
+  typeof (value as PromiseLike<unknown>).then === 'function';
+
 export class RouterExecutionContext {
   private readonly handlerMetadataStorage = new HandlerMetadataStorage();
   private readonly contextUtils = new ContextUtils();
@@ -164,7 +169,8 @@ export class RouterExecutionContext {
         handlerObservable$?: Subject<void>,
       ) =>
       async () => {
-        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+        const pendingPipes = fnApplyPipes && fnApplyPipes(args, req, res, next);
+        pendingPipes && (await pendingPipes);
         const result = callback.apply(instance, args);
         handlerObservable$ &&
           this.notifyIfObservable(result, handlerObservable$);
@@ -421,38 +427,82 @@ export class RouterExecutionContext {
   public createPipesFn(
     pipes: PipeTransform[],
     paramsOptions: (ParamProperties & { metatype?: any })[],
-  ) {
-    const pipesFn = async <TRequest, TResponse>(
+  ):
+    | (<TRequest, TResponse>(
+        args: any[],
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ) => Promise<unknown> | undefined)
+    | null {
+    if (!paramsOptions.length) {
+      return null;
+    }
+    // Which pipes a param runs through is fixed for the route, so it is
+    // worked out once here rather than on every request.
+    const params = paramsOptions.map(
+      ({
+        index,
+        extractValue,
+        type,
+        data,
+        metatype,
+        pipes: paramPipes,
+        schema,
+      }) => {
+        const isPipeable = this.isPipeable(type);
+        return {
+          index,
+          extractValue,
+          isPipeable,
+          metadata: { metatype, type, data, schema } as ArgumentMetadata,
+          pipes: isPipeable ? pipes.concat(paramPipes) : [],
+        };
+      },
+    );
+
+    const applyPipes = async (
+      args: any[],
+      param: (typeof params)[number],
+      value: unknown,
+    ) => {
+      args[param.index] = await this.getParamValue(
+        value,
+        param.metadata,
+        param.pipes,
+      );
+    };
+
+    return <TRequest, TResponse>(
       args: any[],
       req: TRequest,
       res: TResponse,
       next: Function,
     ) => {
-      const resolveParamValue = async (
-        param: ParamProperties & { metatype?: any },
-      ) => {
-        const {
-          index,
-          extractValue,
-          type,
-          data,
-          metatype,
-          pipes: paramPipes,
-          schema,
-        } = param;
-        const value = extractValue(req, res, next);
-
-        args[index] = this.isPipeable(type)
-          ? await this.getParamValue(
-              value,
-              { metatype, type, data, schema } as ArgumentMetadata,
-              pipes.concat(paramPipes),
-            )
-          : value;
-      };
-      await Promise.all(paramsOptions.map(resolveParamValue));
+      // A value no pipe runs on is final once extracted and needs no promise,
+      // unless it is a thenable on a pipeable param, which getParamValue() has
+      // always settled. The rest, and any extractor that throws, go through
+      // one Promise.all() in param order, as before: pipes start in the same
+      // order and the first error is the same one.
+      let pending: Promise<void>[] | undefined;
+      for (let i = 0; i < params.length; i++) {
+        const param = params[i];
+        try {
+          const value = param.extractValue(req, res, next);
+          if (
+            param.isPipeable &&
+            (param.pipes.length > 0 || isThenable(value))
+          ) {
+            (pending ??= []).push(applyPipes(args, param, value));
+          } else {
+            args[param.index] = value;
+          }
+        } catch (err) {
+          (pending ??= []).push(Promise.reject(err));
+        }
+      }
+      return pending && Promise.all(pending);
     };
-    return paramsOptions.length ? pipesFn : null;
   }
 
   public createHandleResponseFn(
