@@ -212,6 +212,6 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
       };
 
       void loadInstance().catch(reject);
-    });
+    }).finally(() => wrapper.detachFromDependencies());
   }
 }

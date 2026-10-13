@@ -469,6 +469,13 @@ export class InstanceWrapper<T = any> {
     return false;
   }
 
+  public detachFromDependencies() {
+    this.getDependencyWrappers().forEach(dependency => {
+      dependencyTreeParents.get(dependency)?.delete(this);
+      dependency.removeTransientInstancesOf(this);
+    });
+  }
+
   public attachRootInquirer(inquirer: InstanceWrapper) {
     if (!this.isTransient) {
       // Only attach root inquirer if the instance wrapper is transient
@@ -543,6 +550,33 @@ export class InstanceWrapper<T = any> {
       parents.add(this);
       dependencyTreeParents.set(wrapper, parents);
     }
+  }
+
+  private getDependencyWrappers(): InstanceWrapper[] {
+    const { dependencies = [], properties = [] } =
+      this[INSTANCE_METADATA_SYMBOL];
+    return [
+      ...dependencies,
+      ...properties.map(({ wrapper }) => wrapper),
+    ].filter(dependency => dependency instanceof InstanceWrapper);
+  }
+
+  private removeTransientInstancesOf(inquirer: InstanceWrapper) {
+    if (!this.transientMap) {
+      return;
+    }
+    // Nested transient instances are keyed `<inquirer id>:<transient id>`
+    for (const inquirerId of this.transientMap.keys()) {
+      if (
+        inquirerId === inquirer.id ||
+        inquirerId.startsWith(`${inquirer.id}:`)
+      ) {
+        this.transientMap.delete(inquirerId);
+      }
+    }
+    this.getDependencyWrappers().forEach(dependency =>
+      dependency.removeTransientInstancesOf(inquirer),
+    );
   }
 
   private resetDependencyTreeState(lookupRegistry = new Set<string>()) {
