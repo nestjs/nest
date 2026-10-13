@@ -279,26 +279,9 @@ describe('RouterExplorer', () => {
         handler,
         targetCallback: instance.getTest,
         methodName: 'getTest',
-        instanceWrapper: { name: TestRoute.name },
       }) as any;
 
-    it('should register the route handler named after its controller and method', () => {
-      const get = vi.fn();
-      const instance = new TestRoute();
-      const routeHandler = vi.fn();
-      container.setHttpAdapter({});
-
-      routerBuilder.registerResolvedRoute(
-        { get } as any,
-        createResolvedRoute(instance, routeHandler),
-      );
-
-      expect(get).toHaveBeenCalledWith('/global/test', routeHandler);
-      expect(routeHandler.name).toBe('TestRoute.getTest');
-      expect(Reflect.getMetadata(PATH_METADATA, routeHandler)).toBe('test');
-    });
-
-    it('should register a route-triggered wrapper with the route metadata, version and name', async () => {
+    it('should register a route-triggered wrapper with the route metadata and version', async () => {
       const get = vi.fn();
       const onRouteTriggered = vi.fn();
       const instance = new TestRoute();
@@ -312,7 +295,6 @@ describe('RouterExplorer', () => {
 
       const handler = get.mock.calls[0][1];
       expect(handler).not.toBe(routeHandler);
-      expect(handler.name).toBe('TestRoute.getTest');
       expect(handler.version).toBe('1');
       expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
 

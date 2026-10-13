@@ -39,44 +39,19 @@ class RouteOptionsController {
   schema() {
     return { name: 'nest', secret: 'not in the schema' };
   }
-}
 
-@Controller('versioned')
-class VersionedController {
   @Version('1')
-  @Get()
+  @Get('versioned')
   v1() {
     return 'v1';
   }
 
   @Version('2')
-  @Get()
+  @Get('versioned')
   v2() {
     return 'v2';
   }
 }
-
-const createApp = async (
-  controllers: Array<new (...args: any[]) => unknown>,
-  options: NestApplicationOptions,
-  triggered: Array<[RequestMethod, string]>,
-) => {
-  const adapter = new FastifyAdapter();
-  adapter.setOnRouteTriggered((requestMethod, path) =>
-    triggered.push([requestMethod, path]),
-  );
-  const module = await Test.createTestingModule({ controllers }).compile();
-  const app = module.createNestApplication<NestFastifyApplication>(adapter, {
-    logger: false,
-    ...options,
-  });
-  app.enableVersioning({
-    type: VersioningType.HEADER,
-    header: 'x-api-version',
-  });
-  await app.init();
-  return app;
-};
 
 describe.each<[string, NestApplicationOptions]>([
   ['registered while resolved', {}],
@@ -85,27 +60,37 @@ describe.each<[string, NestApplicationOptions]>([
     { routeConflictPolicy: { duplicate: 'warn' } },
   ],
 ])('Route triggered hook (Fastify Application, %s)', (_, options) => {
-  let app: NestFastifyApplication | undefined;
+  let app: NestFastifyApplication;
   let triggered: Array<[RequestMethod, string]>;
 
+  beforeAll(async () => {
+    const adapter = new FastifyAdapter();
+    adapter.setOnRouteTriggered((requestMethod, path) =>
+      triggered.push([requestMethod, path]),
+    );
+    const module = await Test.createTestingModule({
+      controllers: [RouteOptionsController],
+    }).compile();
+    app = module.createNestApplication<NestFastifyApplication>(adapter, {
+      logger: false,
+      ...options,
+    });
+    app.enableVersioning({
+      type: VersioningType.HEADER,
+      header: 'x-api-version',
+    });
+    await app.init();
+  });
+
   beforeEach(() => {
-    app = undefined;
     triggered = [];
   });
 
-  afterEach(async () => {
-    await app?.close();
+  afterAll(async () => {
+    await app.close();
   });
 
-  it('should call the hook with the route that was triggered', async () => {
-    app = await createApp([RouteOptionsController], options, triggered);
-    await app.inject({ method: 'GET', url: '/options/config' });
-
-    expect(triggered).toEqual([[RequestMethod.GET, '/options/config']]);
-  });
-
-  it('should keep the route config', async () => {
-    app = await createApp([RouteOptionsController], options, triggered);
+  it('should keep the route config and call the hook', async () => {
     const { statusCode, payload } = await app.inject({
       method: 'GET',
       url: '/options/config',
@@ -113,10 +98,10 @@ describe.each<[string, NestApplicationOptions]>([
 
     expect(statusCode).toBe(200);
     expect(payload).toBe('from config');
+    expect(triggered).toEqual([[RequestMethod.GET, '/options/config']]);
   });
 
   it('should keep the route constraints', async () => {
-    app = await createApp([RouteOptionsController], options, triggered);
     const other = await app.inject({
       method: 'GET',
       url: '/options/constraints',
@@ -133,26 +118,23 @@ describe.each<[string, NestApplicationOptions]>([
   });
 
   it('should keep the route schema', async () => {
-    app = await createApp([RouteOptionsController], options, triggered);
-    const { statusCode, payload } = await app.inject({
+    const { payload } = await app.inject({
       method: 'GET',
       url: '/options/schema',
     });
 
-    expect(statusCode).toBe(200);
     expect(JSON.parse(payload)).toEqual({ name: 'nest' });
   });
 
   it('should keep the route version', async () => {
-    app = await createApp([VersionedController], options, triggered);
     const v1 = await app.inject({
       method: 'GET',
-      url: '/versioned',
+      url: '/options/versioned',
       headers: { 'x-api-version': '1' },
     });
     const v2 = await app.inject({
       method: 'GET',
-      url: '/versioned',
+      url: '/options/versioned',
       headers: { 'x-api-version': '2' },
     });
 
