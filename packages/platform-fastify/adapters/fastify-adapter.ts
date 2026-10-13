@@ -1046,6 +1046,27 @@ export class FastifyAdapter<
     return false;
   }
 
+  // The return type is spelled out (rather than "RouteMatchingOptions") so
+  // that the declarations still compile against an older "@nestjs/common"
+  public getRouteMatchingOptions(): {
+    caseSensitive: boolean;
+    ignoreTrailingSlash: boolean;
+  } {
+    const initialConfig = this.instance.initialConfig as FastifyServerOptions;
+    // Absent when a Fastify instance created without it is passed in
+    const routerOptions = (initialConfig.routerOptions ??
+      {}) as Partial<FastifyServerOptions>;
+    return {
+      caseSensitive: !(
+        routerOptions.caseSensitive === false ||
+        initialConfig.caseSensitive === false
+      ),
+      ignoreTrailingSlash: !!(
+        routerOptions.ignoreTrailingSlash || initialConfig.ignoreTrailingSlash
+      ),
+    };
+  }
+
   public use(...args: any[]) {
     // Fastify requires @fastify/middie plugin to be registered before middleware can be used.
     // If middie is not registered yet, we queue the middleware and register it later during init.
@@ -1304,8 +1325,8 @@ export class FastifyAdapter<
 
   private sanitizeUrl(url: string): string {
     const initialConfig = this.instance.initialConfig as FastifyServerOptions;
-    const routerOptions =
-      initialConfig.routerOptions as Partial<FastifyServerOptions>;
+    const routerOptions = (initialConfig.routerOptions ??
+      {}) as Partial<FastifyServerOptions>;
 
     // Absolute-form request targets ("GET http://host/path HTTP/1.1") must be
     // resolved to their path before any other normalization, as the Fastify
@@ -1319,17 +1340,13 @@ export class FastifyAdapter<
       url = this.removeDuplicateSlashes(url);
     }
 
-    if (
-      routerOptions.ignoreTrailingSlash ||
-      initialConfig.ignoreTrailingSlash
-    ) {
+    const { caseSensitive, ignoreTrailingSlash } =
+      this.getRouteMatchingOptions();
+    if (ignoreTrailingSlash) {
       url = this.trimLastSlash(url);
     }
 
-    if (
-      routerOptions.caseSensitive === false ||
-      initialConfig.caseSensitive === false
-    ) {
+    if (!caseSensitive) {
       url = url.toLowerCase();
     }
     return safeDecodeURI(

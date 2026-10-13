@@ -4,11 +4,12 @@ import {
   HttpException,
   Logger,
   RawBodyRequest,
+  RequestMethod,
   VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply, FastifyRequest, fastify } from 'fastify';
 
 describe('FastifyAdapter', () => {
   let fastifyAdapter: FastifyAdapter;
@@ -287,6 +288,65 @@ describe('FastifyAdapter', () => {
 
       expect(JSON.parse(res.body).got).toEqual(['a=1', 'b=2', 'c=3']);
       await fastifyAdapter.close();
+    });
+  });
+
+  describe('getRouteMatchingOptions', () => {
+    it.each([
+      {
+        source: 'the defaults',
+        createAdapter: () => new FastifyAdapter(),
+        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+      },
+      {
+        source: '"routerOptions"',
+        createAdapter: () =>
+          new FastifyAdapter({
+            routerOptions: { caseSensitive: false, ignoreTrailingSlash: true },
+          }),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+      {
+        source: 'the top-level router options',
+        createAdapter: () =>
+          new FastifyAdapter({
+            caseSensitive: false,
+            ignoreTrailingSlash: true,
+          }),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+      {
+        source: 'an instance created without "routerOptions"',
+        createAdapter: () => new FastifyAdapter(fastify()),
+        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+      },
+      {
+        source: 'the top-level router options of an instance',
+        createAdapter: () =>
+          new FastifyAdapter(
+            fastify({ caseSensitive: false, ignoreTrailingSlash: true }),
+          ),
+        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+      },
+    ])('should follow $source', ({ createAdapter, expected }) => {
+      expect(createAdapter().getRouteMatchingOptions()).toEqual(expected);
+    });
+  });
+
+  describe('createMiddlewareFactory', () => {
+    it('should run middleware on an instance created without "routerOptions"', async () => {
+      const adapter = new FastifyAdapter(fastify());
+      const middleware = vi.fn((_req, _res, next: Function) => next());
+      const register = await adapter.createMiddlewareFactory(RequestMethod.ALL);
+      register('/cats', middleware);
+      adapter.get('/cats', () => 'cats');
+
+      const res = await adapter.inject({ method: 'GET', url: '/cats' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('cats');
+      expect(middleware).toHaveBeenCalledOnce();
+      await adapter.close();
     });
   });
 

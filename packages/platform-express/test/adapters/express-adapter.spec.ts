@@ -124,6 +124,38 @@ describe('ExpressAdapter', () => {
     });
   });
 
+  describe('getRouteMatchingOptions', () => {
+    it('should match paths case-insensitively and ignore a trailing slash by default', () => {
+      expect(expressAdapter.getRouteMatchingOptions()).toEqual({
+        caseSensitive: false,
+        ignoreTrailingSlash: true,
+      });
+    });
+
+    it('should follow the "case sensitive routing" and "strict routing" settings', () => {
+      const app = express();
+      app.set('case sensitive routing', true);
+      app.set('strict routing', true);
+
+      expect(new ExpressAdapter(app).getRouteMatchingOptions()).toEqual({
+        caseSensitive: true,
+        ignoreTrailingSlash: false,
+      });
+    });
+
+    it('should ignore settings changed after the router was created, as the router does', () => {
+      const app = express();
+      app.use((_req, _res, next) => next());
+      app.set('case sensitive routing', true);
+      app.set('strict routing', true);
+
+      expect(new ExpressAdapter(app).getRouteMatchingOptions()).toEqual({
+        caseSensitive: false,
+        ignoreTrailingSlash: true,
+      });
+    });
+  });
+
   describe('createMiddlewareFactory', () => {
     // Plain-path routes such as forRoutes('*') carry no request method
     // (see RoutesMapper.getRouteInfoFromPath).
