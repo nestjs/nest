@@ -921,7 +921,9 @@ export class ConsoleLogger implements LoggerService {
       return false;
     }
 
-    return /^(.)+\n\s+at .+:\d+:\d+/.test(stack!);
+    // `[ \t]+` rather than `\s+`, which also matches "\n" and would make this
+    // unanchored search backtrack quadratically on long runs of newlines.
+    return /\n[ \t]+at .+:\d+:\d+/.test(stack!);
   }
 
   protected getColorByLogLevel(level: LogLevel) {

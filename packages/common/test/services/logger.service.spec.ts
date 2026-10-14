@@ -91,6 +91,17 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
       });
 
+      it('should print one error to the console with stacktrace of a multi-line error message', () => {
+        const message = 'random error';
+        const stacktrace = 'Error: line 1\nline 2\n    at <anonymous>:1:2';
+
+        Logger.error(message, stacktrace);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
+        expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
+      });
+
       it('should print one error without context to the console', () => {
         const message = 'random error without context';
 
