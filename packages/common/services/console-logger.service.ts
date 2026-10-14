@@ -71,28 +71,28 @@ export interface ConsoleLoggerOptions {
   /**
    * Specifies the maximum number of Array, TypedArray, Map, Set, WeakMap, and WeakSet elements to include when formatting.
    * Set to null or Infinity to show all elements. Set to 0 or negative to show no elements.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default 100
    */
   maxArrayLength?: number;
   /**
    * Specifies the maximum number of characters to include when formatting.
    * Set to null or Infinity to show all elements. Set to 0 or negative to show no characters.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default 10000.
    */
   maxStringLength?: number;
   /**
    * If enabled, will sort keys while formatting objects.
    * Can also be a custom sorting function.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default false
    */
   sorted?: boolean | ((a: string, b: string) => number);
   /**
    * Specifies the number of times to recurse while formatting object.
    * This is useful for inspecting large objects. To recurse up to the maximum call stack size pass Infinity or null.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default 5
    */
   depth?: number;
@@ -105,7 +105,7 @@ export interface ConsoleLoggerOptions {
   /**
    * The length at which input values are split across multiple lines. Set to Infinity to format the input as a single line (in combination with "compact" set to true).
    * Default Infinity when "compact" is true, 80 otherwise.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    */
   breakLength?: number;
   /**
@@ -773,7 +773,7 @@ export class ConsoleLogger implements LoggerService {
    * (e.g. a throwing `toJSON()`) makes the whole record fall back to `inspect`.
    */
   protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
-    const replacer = this.stringifyReplacer;
+    const replacer = this.stringifyReplacer.bind(this);
     // Objects on the path from the root to the value being serialized.
     const ancestors: unknown[] = [];
 
@@ -781,7 +781,7 @@ export class ConsoleLogger implements LoggerService {
       return JSON.stringify(
         logObject,
         function (this: unknown, key: string, value: unknown) {
-          value = replacer.call(this, key, value);
+          value = replacer(key, value);
           if (typeof value !== 'object' || value === null) {
             return value;
           }
