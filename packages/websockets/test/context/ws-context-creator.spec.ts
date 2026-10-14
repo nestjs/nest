@@ -16,7 +16,7 @@ import { WsContextCreator } from '../../context/ws-context-creator.js';
 import { WsProxy } from '../../context/ws-proxy.js';
 import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
 import { WsParamsFactory } from '../../factories/ws-params-factory.js';
-import { WsException } from '../../index.js';
+import { MessageBody, WsException } from '../../index.js';
 
 @Injectable()
 class TestGuard {
@@ -142,6 +142,49 @@ describe('WsContextCreator', () => {
             expect(err).toBeInstanceOf(WsException),
           );
         });
+      });
+    });
+    describe('when two gateways have the same class name', () => {
+      const createChatGateway = (field: string) => {
+        class ChatGateway {
+          handle(@MessageBody(field) value: unknown) {
+            return value;
+          }
+        }
+        return ChatGateway;
+      };
+
+      it('should pass each gateway its own message body', async () => {
+        const chat = new (createChatGateway('text'))();
+        const orders = new (createChatGateway('orderId'))();
+        const chatProxy = contextCreator.create(
+          chat,
+          chat.handle,
+          module,
+          'handle',
+        );
+        const ordersProxy = contextCreator.create(
+          orders,
+          orders.handle,
+          module,
+          'handle',
+        );
+        const data = { text: 'hello', orderId: 42 };
+
+        expect(await chatProxy(null, data)).toBe('hello');
+        expect(await ordersProxy(null, data)).toBe(42);
+      });
+      it('should reuse the cached metadata for the same gateway class', () => {
+        const ChatGateway = createChatGateway('text');
+        const metadata = contextCreator.getMetadata(
+          new ChatGateway(),
+          'handle',
+          'ws',
+        );
+
+        expect(
+          contextCreator.getMetadata(new ChatGateway(), 'handle', 'ws'),
+        ).toBe(metadata);
       });
     });
   });
