@@ -210,6 +210,16 @@ function getCharset(req: IncomingMessage): string | undefined {
     return undefined;
   }
   if (header !== cachedHeader) {
+// A client sends the same header with every request, so it is parsed once
+let cachedHeader = '';
+let cachedCharset: string | undefined;
+
+function getCharset(req: IncomingMessage): string | undefined {
+  const header = req.headers['content-type'];
+  if (!header || header.indexOf(';') === -1) {
+    return undefined;
+  }
+  if (header !== cachedHeader) {
     cachedHeader = header;
     try {
       // RFC 9110 parameter parsing (quoted strings included), as body-parser
