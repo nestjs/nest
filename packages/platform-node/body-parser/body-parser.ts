@@ -720,11 +720,10 @@ export function urlencoded(options?: NodeUrlencodedParserOptions): Middleware {
     (buffer, charset) => {
       const text = decode(buffer, charset);
       let parameterCount = 1;
-      for (let i = 0; i < text.length; i++) {
-        if (
-          text.charCodeAt(i) === 38 /* & */ &&
-          ++parameterCount > parameterLimit
-        ) {
+      // As body-parser counts them: indexOf() jumps from one "&" to the next,
+      // several times faster than a loop over every character
+      for (let i = text.indexOf('&'); i !== -1; i = text.indexOf('&', i + 1)) {
+        if (++parameterCount > parameterLimit) {
           throw createHttpError(
             413,
             'too many parameters',
