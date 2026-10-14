@@ -274,6 +274,19 @@ describe('RouterExecutionContext', () => {
                 done();
               });
             }));
+          it('should reject without calling the handler when a param cannot be extracted', async () => {
+            const error = new Error('unreadable body');
+            const unreadable = Object.defineProperty({}, 'body', {
+              get() {
+                throw error;
+              },
+            });
+
+            await expect(proxyContext(unreadable, response, next)).rejects.toBe(
+              error,
+            );
+            expect(applySpy).not.toHaveBeenCalled();
+          });
           it('should throw exception when "tryActivate" returns false', async () => {
             tryActivateStub.mockImplementation(async () => false);
 
@@ -419,6 +432,181 @@ describe('RouterExecutionContext', () => {
       it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
         expect(pipesFn).toBeNull();
+      });
+    });
+    describe('when no pipe runs on a param', () => {
+      const param = (
+        index: number,
+        type: RouteParamtypes | string,
+        extractValue: (...args: any[]) => unknown,
+      ) => ({ index, type, data: undefined, pipes: [], extractValue });
+      const nextParam = param(
+        0,
+        RouteParamtypes.NEXT,
+        (_req, _res, next) => next,
+      );
+
+      it('fills the args without returning a promise', () => {
+        const next = () => {};
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [
+            param(1, RouteParamtypes.PARAM, (req: any) => req.params),
+            nextParam,
+          ],
+        )!;
+        const args = [undefined, undefined];
+        const params = { id: '42' };
+
+        expect(pipesFn(args, { params }, {}, next)).toBeUndefined();
+        expect(args).toEqual([next, params]);
+      });
+      it('ignores global pipes when no param is pipeable', () => {
+        const next = () => {};
+        const globalPipe = { transform: vi.fn() };
+        const pipesFn = contextCreator.createPipesFn(
+          [globalPipe],
+          [nextParam],
+        )!;
+        const args = [undefined];
+
+        expect(pipesFn(args, {}, {}, next)).toBeUndefined();
+        expect(args).toEqual([next]);
+        expect(globalPipe.transform).not.toHaveBeenCalled();
+      });
+      it('settles a thenable a pipeable param resolves to, calling "then()" once', async () => {
+        const thenable = { then: vi.fn(resolve => resolve('user')) };
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [param(0, 'custom', () => thenable)],
+        )!;
+        const args = [undefined];
+
+        await pipesFn(args, {}, {}, () => {});
+
+        expect(args).toEqual(['user']);
+        expect(thenable.then).toHaveBeenCalledOnce();
+      });
+      it('passes a thenable a non-pipeable param resolves to as it is', () => {
+        // e.g. a Fastify reply injected with @Res()
+        const reply = { then: vi.fn() };
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [param(0, RouteParamtypes.RESPONSE, () => reply)],
+        )!;
+        const args = [undefined];
+
+        expect(pipesFn(args, {}, {}, () => {})).toBeUndefined();
+        expect(args).toEqual([reply]);
+        expect(reply.then).not.toHaveBeenCalled();
+      });
+      it('runs every extractor and rejects with the first error', async () => {
+        const first = new Error('first');
+        const last = vi.fn(() => 'last');
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [
+            param(0, RouteParamtypes.REQUEST, () => {
+              throw first;
+            }),
+            param(1, RouteParamtypes.REQUEST, () => {
+              throw new Error('second');
+            }),
+            param(2, RouteParamtypes.REQUEST, last),
+          ],
+        )!;
+
+        await expect(pipesFn([], {}, {}, () => {})).rejects.toBe(first);
+        expect(last).toHaveBeenCalledOnce();
+      });
+      it('rejects with an extractor error before an earlier thenable rejects', async () => {
+        const error = new Error('extractor');
+        const thenable = {
+          then: vi.fn((_resolve, reject) => reject(new Error('thenable'))),
+        };
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [
+            param(0, 'custom', () => thenable),
+            param(1, 'custom', () => {
+              throw error;
+            }),
+          ],
+        )!;
+
+        await expect(pipesFn([], {}, {}, () => {})).rejects.toBe(error);
+        expect(thenable.then).toHaveBeenCalledOnce();
+      });
+    });
+    describe('when a pipe applies', () => {
+      it('runs the global pipes, then the param pipes, on pipeable params only', async () => {
+        const next = () => {};
+        const globalPipe = { transform: vi.fn(async value => `${value}-g`) };
+        const paramPipe = { transform: vi.fn(value => `${value}-p`) };
+        const pipesFn = contextCreator.createPipesFn(
+          [globalPipe],
+          [
+            {
+              index: 0,
+              type: RouteParamtypes.PARAM,
+              data: 'id',
+              pipes: [paramPipe],
+              extractValue: () => '42',
+            },
+            {
+              index: 1,
+              type: RouteParamtypes.NEXT,
+              data: undefined,
+              pipes: [],
+              extractValue: (_req, _res, next) => next,
+            },
+          ],
+        )!;
+        const args = [undefined, undefined];
+
+        await pipesFn(args, {}, {}, next);
+        await pipesFn(args, {}, {}, next);
+
+        expect(args).toEqual(['42-g-p', next]);
+        expect(globalPipe.transform).toHaveBeenCalledTimes(2);
+        expect(globalPipe.transform).toHaveBeenCalledWith('42', {
+          metatype: undefined,
+          type: 'param',
+          data: 'id',
+          schema: undefined,
+        });
+      });
+      it("starts each param's pipes right after extracting it", async () => {
+        const order: string[] = [];
+        const pipe = {
+          transform: (value: string) => {
+            order.push(`transform ${value}`);
+            return value;
+          },
+        };
+        const query = (index: number) => ({
+          index,
+          type: RouteParamtypes.QUERY,
+          data: undefined,
+          pipes: [],
+          extractValue: () => {
+            order.push(`extract ${index}`);
+            return `${index}`;
+          },
+        });
+        const pipesFn = contextCreator.createPipesFn(
+          [pipe],
+          [query(0), query(1)],
+        )!;
+
+        await pipesFn([], {}, {}, () => {});
+
+        expect(order).toEqual([
+          'extract 0',
+          'transform 0',
+          'extract 1',
+          'transform 1',
+        ]);
       });
     });
   });
