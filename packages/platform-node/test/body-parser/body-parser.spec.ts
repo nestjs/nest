@@ -574,6 +574,27 @@ describe('body parsers', () => {
 
       expect(req.body).toBe('héllo');
     });
+
+    it('should read the charset of every request when the Content-Type changes between requests', async () => {
+      const request = await startServer(text());
+      const bodies: unknown[] = [];
+
+      for (const contentType of [
+        'text/plain; charset=iso-8859-1',
+        'text/plain; charset=utf-8',
+        'text/plain',
+        'text/plain; charset=iso-8859-1',
+      ]) {
+        const encoding = contentType.endsWith('iso-8859-1') ? 'latin1' : 'utf8';
+        const { req } = await request({
+          headers: { 'content-type': contentType },
+          body: Buffer.from('café', encoding),
+        });
+        bodies.push(req.body);
+      }
+
+      expect(bodies).toEqual(['café', 'café', 'café', 'café']);
+    });
   });
 
   describe('verify', () => {
