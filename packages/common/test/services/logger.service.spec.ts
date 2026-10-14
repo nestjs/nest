@@ -1521,6 +1521,30 @@ describe('Logger', () => {
         expect(json.error).toBeUndefined();
       });
 
+      it('should print a stack passed as the only argument as the message', () => {
+        const error = new Error('boom');
+
+        new ConsoleLogger('Ctx', { json: true }).error(error.stack);
+        new ConsoleLogger('Ctx', { colors: false }).error(error.stack);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(parseStderr().message).toBe(error.stack);
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
+          `ERROR [Ctx] ${error.stack}`,
+        );
+      });
+
+      it('should print one record when the stack is undefined', () => {
+        new ConsoleLogger('Ctx', { json: true }).error('Failed', undefined);
+        new ConsoleLogger('Ctx', { colors: false }).error('Failed', undefined);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(parseStderr().message).toBe('Failed');
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
+          'ERROR [Ctx] Failed',
+        );
+      });
+
       it('should structure the error when using compact: false', () => {
         const logger = new ConsoleLogger({ json: true, compact: false });
 

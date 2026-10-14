@@ -870,8 +870,11 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected getContextAndStackAndMessagesToPrint(args: unknown[]) {
+    if (args.length === 1) {
+      return { ...this.getContextAndMessagesToPrint(args) };
+    }
     if (args.length === 2) {
-      if (this.isStackFormat(args[1])) {
+      if (this.isStackFormat(args[1]) || isUndefined(args[1])) {
         return {
           messages: [args[0]],
           stack: args[1] as string,
