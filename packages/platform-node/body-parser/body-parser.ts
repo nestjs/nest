@@ -200,19 +200,29 @@ function getMediaType(req: IncomingMessage): string {
     .toLowerCase();
 }
 
+// A client sends the same header with every request, so it is parsed once
+let cachedHeader = '';
+let cachedCharset: string | undefined;
+
 function getCharset(req: IncomingMessage): string | undefined {
   const header = req.headers['content-type'];
   if (!header || header.indexOf(';') === -1) {
     return undefined;
   }
-  try {
-    // RFC 9110 parameter parsing (quoted strings included), as body-parser
-    // does, so that a "charset=" inside another parameter's quoted value is
-    // not mistaken for the charset
-    return contentType.parse(header).parameters.charset?.toLowerCase();
-  } catch {
-    return undefined;
+  if (header !== cachedHeader) {
+    cachedHeader = header;
+    try {
+      // RFC 9110 parameter parsing (quoted strings included), as body-parser
+      // does, so that a "charset=" inside another parameter's quoted value is
+      // not mistaken for the charset
+      cachedCharset = contentType
+        .parse(header)
+        .parameters.charset?.toLowerCase();
+    } catch {
+      cachedCharset = undefined;
+    }
   }
+  return cachedCharset;
 }
 
 function createTypeMatcher(
