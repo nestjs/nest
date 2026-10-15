@@ -91,7 +91,9 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     }
 
     if (
-      err.constructor?.name === 'FastifyError' &&
+      // Fastify's schema validation errors are plain errors with this code
+      (err.constructor?.name === 'FastifyError' ||
+        err.code === 'FST_ERR_VALIDATION') &&
       typeof err.code === 'string' &&
       typeof err.statusCode === 'number'
     ) {
