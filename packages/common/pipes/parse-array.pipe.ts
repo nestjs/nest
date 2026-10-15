@@ -128,7 +128,7 @@ export class ParseArrayPipe implements PipeTransform {
         // that this option is disabled by default
         let errors: string[] = [];
 
-        const targetArray = (value as Array<unknown>).slice();
+        const targetArray = Array.from(value as Array<unknown>);
         for (let i = 0; i < targetArray.length; i++) {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
