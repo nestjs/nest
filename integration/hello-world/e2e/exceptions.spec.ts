@@ -1,13 +1,21 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { Controller, HttpStatus, INestApplication, Post } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
+  RouteSchema,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { RawServerDefault } from 'fastify';
 import request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
+
+@Controller()
+class SchemaController {
+  @RouteSchema({ body: { type: 'object', required: ['name'] } })
+  @Post('schema')
+  create() {}
+}
 
 describe('Error messages', () => {
   let server: RawServerDefault;
@@ -75,7 +83,7 @@ describe('Error messages', () => {
     let app: NestFastifyApplication;
     beforeEach(async () => {
       const module = await Test.createTestingModule({
-        controllers: [ErrorsController],
+        controllers: [ErrorsController, SchemaController],
       }).compile();
 
       app = module.createNestApplication<NestFastifyApplication>(
@@ -143,6 +151,22 @@ describe('Error messages', () => {
           expect(JSON.parse(payload)).toEqual({
             statusCode: 500,
             message: 'Internal server error',
+          });
+        });
+    });
+
+    it(`/POST (BadRequest when the route schema rejects the body)`, async () => {
+      return app
+        .inject({
+          method: 'POST',
+          url: '/schema',
+          payload: {},
+        })
+        .then(({ payload, statusCode }) => {
+          expect(statusCode).toBe(HttpStatus.BAD_REQUEST);
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 400,
+            message: "body must have required property 'name'",
           });
         });
     });

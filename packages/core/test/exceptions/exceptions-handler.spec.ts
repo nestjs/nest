@@ -69,6 +69,19 @@ describe('ExceptionsHandler', () => {
           "Body cannot be empty when content-type is set to 'application/json'",
       });
     });
+    it('should treat fastify validation errors as http errors', () => {
+      const validationError = Object.assign(
+        new Error("body must have required property 'name'"),
+        { statusCode: 400, code: 'FST_ERR_VALIDATION', validation: [] },
+      );
+      handler.next(validationError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(400);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 400,
+        message: "body must have required property 'name'",
+      });
+    });
     it('should not treat errors from external API calls with statusCode as http errors', () => {
       const apiCallError = Object.assign(
         new Error('Some external API call failed'),
