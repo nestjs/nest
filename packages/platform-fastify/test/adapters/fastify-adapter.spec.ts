@@ -549,6 +549,8 @@ describe('FastifyAdapter', () => {
         'GET',
         'HEAD',
         'POST',
+        'PUT',
+        'PATCH',
         'DELETE',
         'OPTIONS',
         'TRACE',
