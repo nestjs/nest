@@ -331,6 +331,23 @@ describe('ListenersController', () => {
         expect(handleSpy.mock.calls[0][0]).toBeInstanceOf(Error);
         expect(handleSpy.mock.calls[0][1]).toBeInstanceOf(ExecutionContextHost);
       });
+
+      it('should run the next event handler', async () => {
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+          undefined,
+          true,
+        );
+        handler.next = vi.fn();
+        await handler('data', 'context');
+
+        expect(handler.next).toHaveBeenCalledExactlyOnceWith('data', 'context');
+      });
     });
   });
 

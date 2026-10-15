@@ -251,6 +251,7 @@ export class ListenersController {
     const isTreeDurable = wrapper.isDependencyTreeDurable();
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
+      const originalArgs = [...args];
       try {
         let contextId: ContextId;
 
@@ -309,7 +310,15 @@ export class ListenersController {
         }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        return exceptionFilter.handle(err, host);
+        const returnValue = exceptionFilter.handle(err, host);
+        if (isEventHandler) {
+          return this.forkJoinHandlersIfAttached(
+            returnValue,
+            originalArgs,
+            requestScopedHandler,
+          );
+        }
+        return returnValue;
       }
     };
     return requestScopedHandler;
