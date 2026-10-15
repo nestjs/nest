@@ -1,4 +1,9 @@
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
+import {
+  FASTIFY_ROUTE_CONFIG_METADATA,
+  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+  FASTIFY_ROUTE_SCHEMA_METADATA,
+} from '../../constants.js';
 import { createError } from '@fastify/error';
 import {
   HttpException,
@@ -501,6 +506,177 @@ describe('FastifyAdapter', () => {
         url: '/neutral',
       });
       expect(res.statusCode).toBe(200);
+    });
+  });
+
+  describe('all', () => {
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    it('should register the route for every supported method', () => {
+      const methods: unknown[] = [];
+      fastifyAdapter
+        .getInstance()
+        .addHook('onRoute', route => methods.push(route.method));
+
+      fastifyAdapter.all('/all', () => 'all');
+
+      expect(methods).toEqual([fastifyAdapter.getInstance().supportedMethods]);
+    });
+
+    const registerVersion = (version: string) =>
+      fastifyAdapter.all(
+        '/all',
+        fastifyAdapter.applyVersionFilter(() => `v${version}`, version, {
+          type: VersioningType.HEADER,
+          header: 'X-API-Version',
+        }),
+      );
+    const send = (method: string, version?: string) =>
+      fastifyAdapter.inject({
+        method: method as 'GET',
+        url: '/all',
+        headers: version ? { 'x-api-version': version } : {},
+        // Fastify requires a content type for QUERY requests
+        ...(method === 'QUERY' && { payload: {} }),
+      });
+
+    it('should only route requests for the version of the handler', async () => {
+      registerVersion('1');
+
+      for (const method of [
+        'GET',
+        'HEAD',
+        'POST',
+        'DELETE',
+        'OPTIONS',
+        'TRACE',
+        'QUERY',
+      ]) {
+        expect((await send(method, '1')).statusCode).toBe(200);
+        expect((await send(method, '2')).statusCode).toBe(404);
+        expect((await send(method)).statusCode).toBe(404);
+      }
+      expect((await send('POST', '1')).body).toBe('v1');
+    });
+
+    it('should route each version to its handler', async () => {
+      registerVersion('1');
+      registerVersion('2');
+
+      for (const method of ['GET', 'POST', 'DELETE'] as const) {
+        expect((await send(method, '1')).body).toBe('v1');
+        expect((await send(method, '2')).body).toBe('v2');
+        expect((await send(method, '3')).statusCode).toBe(404);
+      }
+    });
+
+    it('should match versions from the extractor in order', async () => {
+      const versioningOptions = {
+        type: VersioningType.CUSTOM,
+        extractor: (req: FastifyRequest) =>
+          String(req.headers['x-api-version'] ?? '')
+            .split(',')
+            .filter(Boolean),
+      } as const;
+      fastifyAdapter.all(
+        '/all',
+        fastifyAdapter.applyVersionFilter(
+          () => 'v1 or v2',
+          ['1', '2'],
+          versioningOptions,
+        ),
+      );
+      fastifyAdapter.all(
+        '/all',
+        fastifyAdapter.applyVersionFilter(() => 'v3', '3', versioningOptions),
+      );
+
+      expect((await send('POST', '2')).body).toBe('v1 or v2');
+      expect((await send('POST', '3,1')).body).toBe('v3');
+      expect((await send('POST', '1,3')).body).toBe('v1 or v2');
+      expect((await send('POST', '4')).statusCode).toBe(404);
+      expect((await send('POST')).statusCode).toBe(404);
+    });
+
+    it('should not match an empty route parameter', async () => {
+      fastifyAdapter.all(
+        '/all/:id',
+        (req: FastifyRequest) => (req.params as { id: string }).id,
+      );
+
+      const post = (url: string) =>
+        fastifyAdapter.inject({ method: 'POST', url });
+      expect((await post('/all/1')).body).toBe('1');
+      expect((await post('/all/')).statusCode).toBe(404);
+    });
+
+    it('should apply the route config, constraints and schema', async () => {
+      const handler = (req: FastifyRequest) =>
+        String((req.routeOptions.config as { output?: string }).output);
+      Reflect.defineMetadata(
+        FASTIFY_ROUTE_CONFIG_METADATA,
+        { output: 'config' },
+        handler,
+      );
+      Reflect.defineMetadata(
+        FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+        { host: 'allowed.example.com' },
+        handler,
+      );
+      Reflect.defineMetadata(
+        FASTIFY_ROUTE_SCHEMA_METADATA,
+        {
+          querystring: {
+            type: 'object',
+            properties: { id: { type: 'integer' } },
+            required: ['id'],
+          },
+        },
+        handler,
+      );
+      fastifyAdapter.all('/all', handler);
+
+      const post = (url: string, host: string) =>
+        fastifyAdapter.inject({ method: 'POST', url, headers: { host } });
+      expect((await post('/all?id=1', 'allowed.example.com')).body).toBe(
+        'config',
+      );
+      expect(
+        (await post('/all?id=one', 'allowed.example.com')).statusCode,
+      ).toBe(400);
+      expect((await post('/all?id=1', 'other.example.com')).statusCode).toBe(
+        404,
+      );
+    });
+
+    const sendTo = (host: string) =>
+      fastifyAdapter.inject({ method: 'POST', url: '/all', headers: { host } });
+
+    it('should keep route options passed before the handler', async () => {
+      fastifyAdapter.all(
+        '/all',
+        {
+          constraints: { host: 'allowed.example.com' },
+          config: { output: 'config' },
+        },
+        (req: FastifyRequest) =>
+          String((req.routeOptions.config as { output?: string }).output),
+      );
+
+      expect((await sendTo('allowed.example.com')).body).toBe('config');
+      expect((await sendTo('other.example.com')).statusCode).toBe(404);
+    });
+
+    it('should accept route options that contain the handler', async () => {
+      fastifyAdapter.all('/all', {
+        constraints: { host: 'allowed.example.com' },
+        handler: () => 'all',
+      });
+
+      expect((await sendTo('allowed.example.com')).body).toBe('all');
+      expect((await sendTo('other.example.com')).statusCode).toBe(404);
     });
   });
 
