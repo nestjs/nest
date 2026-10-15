@@ -13,3 +13,13 @@ export const CONNECTION_EVENT = 'connection';
 export const DISCONNECT_EVENT = 'disconnect';
 export const CLOSE_EVENT = 'close';
 export const ERROR_EVENT = 'error';
+
+/**
+ * Key used by `WsAdapter` (`@nestjs/platform-ws`) to store handshake path
+ * params on the WebSocket client. Read this from a guard, interceptor, or
+ * `handleDisconnect`. `handleConnection(client, req)` receives the same map on
+ * `req.params`.
+ *
+ * @publicApi
+ */
+export const WS_PATH_PARAMS = Symbol('WS_PATH_PARAMS');
