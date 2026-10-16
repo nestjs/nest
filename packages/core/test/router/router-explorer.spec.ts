@@ -8,6 +8,7 @@ import {
 } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { VersioningType } from '../../../common/enums/version-type.enum';
+import { NotFoundException } from '../../../common/exceptions/not-found.exception';
 import { Injector } from '../../../core/injector/injector';
 import { ApplicationConfig } from '../../application-config';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
@@ -61,9 +62,10 @@ describe('RouterExplorer', () => {
   let applicationConfig: ApplicationConfig;
   let routePathFactory: RoutePathFactory;
   let graphInspector: GraphInspector;
+  let container: NestContainer;
 
   beforeEach(() => {
-    const container = new NestContainer();
+    container = new NestContainer();
 
     applicationConfig = new ApplicationConfig();
     injector = new Injector();
@@ -203,6 +205,77 @@ describe('RouterExplorer', () => {
         expect(nextSpy.getCall(0).args[0]).to.be.instanceOf(Error);
         expect(nextSpy.getCall(0).args[1]).to.be.instanceOf(
           ExecutionContextHost,
+        );
+      });
+    });
+  });
+
+  describe('applyHostFilter', () => {
+    let handler: sinon.SinonSpy;
+    let hostFilter: (req: any, res: any, next?: () => void) => unknown;
+
+    beforeEach(() => {
+      container.setHttpAdapter({
+        getRequestHostname: (req: any) => req.hostname,
+        getRequestMethod: (req: any) => req.method,
+        getRequestUrl: (req: any) => req.url,
+      });
+      handler = sinon.spy();
+      // We're using type assertion here because `applyHostFilter` is private
+      hostFilter = (routerBuilder as any).applyHostFilter(
+        ':tenant.example.com',
+        handler,
+      );
+    });
+
+    afterEach(() => sinon.restore());
+
+    it('should call the handler with the host params when the host matches', () => {
+      const req: Record<string, any> = { hostname: 'acme.example.com' };
+      hostFilter(req, 'res');
+
+      expect(handler.calledWith(req, 'res', undefined)).to.be.true;
+      expect(req.hosts).to.deep.equal({ tenant: 'acme' });
+    });
+
+    it('should pass a request for another host on to the next route', () => {
+      const next = sinon.spy();
+      hostFilter({ hostname: 'example.org' }, 'res', next);
+
+      expect(next.calledOnce).to.be.true;
+      expect(handler.called).to.be.false;
+    });
+
+    describe('when the adapter cannot pass the request on', () => {
+      const req = { hostname: 'example.org', method: 'GET', url: '/host?a=1' };
+
+      it('should answer a request for another host with 404 without the hosts', () => {
+        sinon.stub((routerBuilder as any).logger, 'warn');
+        let error: unknown;
+        try {
+          hostFilter(req, 'res');
+        } catch (e) {
+          error = e;
+        }
+
+        expect(error).to.be.instanceOf(NotFoundException);
+        expect((error as NotFoundException).getResponse()).to.deep.equal({
+          message: 'Cannot GET /host?a=1',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+        expect(handler.called).to.be.false;
+      });
+
+      it('should warn once that the adapter does not support filtering on hosts', () => {
+        const warn = sinon.stub((routerBuilder as any).logger, 'warn');
+
+        expect(() => hostFilter(req, 'res')).to.throw(NotFoundException);
+        expect(() => hostFilter(req, 'res')).to.throw(NotFoundException);
+
+        expect(warn.calledOnce).to.be.true;
+        expect(warn.firstCall.args[0]).to.include(
+          'HTTP adapter does not support filtering on host: ":tenant.example.com"',
         );
       });
     });

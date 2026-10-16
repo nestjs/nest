@@ -53,12 +53,12 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/host',
       })
-      .then(({ payload }) => {
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).to.equal(404);
         expect(JSON.parse(payload)).to.be.eql({
-          error: 'Internal Server Error',
-          message:
-            'HTTP adapter does not support filtering on host: ":tenant.example.com"',
-          statusCode: 500,
+          error: 'Not Found',
+          message: 'Cannot GET /host',
+          statusCode: 404,
         });
       });
   });
@@ -69,12 +69,12 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/host-array',
       })
-      .then(({ payload }) => {
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).to.equal(404);
         expect(JSON.parse(payload)).to.be.eql({
-          error: 'Internal Server Error',
-          message:
-            'HTTP adapter does not support filtering on hosts: [":tenant.example1.com", ":tenant.example2.com"]',
-          statusCode: 500,
+          error: 'Not Found',
+          message: 'Cannot GET /host-array',
+          statusCode: 404,
         });
       });
   });
