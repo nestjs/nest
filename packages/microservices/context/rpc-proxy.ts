@@ -16,7 +16,7 @@ export class RpcProxy {
           ? result
           : result.pipe(
               catchError(error =>
-                this.flattenAsyncResult(
+                this.transformToObservable(
                   this.handleError(
                     exceptionsHandler,
                     args,
@@ -52,15 +52,14 @@ export class RpcProxy {
     );
   }
 
-  // An async filter resolves to its stream, which `catchError()` would emit as
-  // a value. The server subscribes to it instead when the handler rejects.
-  private flattenAsyncResult(
-    result: Observable<unknown> | Promise<unknown>,
-  ): Observable<unknown> {
-    return result instanceof Promise
-      ? fromPromise(result).pipe(
+  // `catchError()` would emit the stream an async filter resolves to, iterate
+  // a string or an array, and fail on other plain values. Resolve what the
+  // filter returns as when the handler rejects instead.
+  private transformToObservable(result: unknown): Observable<unknown> {
+    return isObservable(result)
+      ? result
+      : fromPromise(Promise.resolve(result)).pipe(
           mergeMap(val => (isObservable(val) ? val : of(val))),
-        )
-      : result;
+        );
   }
 }

@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import type { MockInstance } from 'vitest';
-import { EMPTY, lastValueFrom, of, throwError } from 'rxjs';
+import { EMPTY, lastValueFrom, of, throwError, toArray } from 'rxjs';
 import { RpcProxy } from '../../context/rpc-proxy.js';
 import { RpcException } from '../../exceptions/rpc-exception.js';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
@@ -38,11 +38,8 @@ describe('RpcProxy', () => {
       const proxy = routerProxy.create(async (client, data) => {
         return throwError(() => new RpcException('test'));
       }, handler);
-      (await proxy(null, null)).subscribe({
-        error: () => {
-          expect(handleSpy).toHaveBeenCalledOnce();
-        },
-      });
+      await lastValueFrom(await proxy(null, null)).catch(() => {});
+      expect(handleSpy).toHaveBeenCalledOnce();
     });
   });
 
@@ -210,5 +207,29 @@ describe('RpcProxy', () => {
 
       expect(await lastValueFrom(await proxy(null))).toBeNull();
     });
+  });
+
+  describe('when a filter returns a plain value', () => {
+    it.each([
+      ['a string', 'test'],
+      ['an array', [1, 2]],
+      ['an object', { status: 'ok' }],
+      ['a number', 1],
+    ])(
+      'should emit %s as a single value for a stream that errors',
+      async (_, value) => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [RpcException], func: () => value as any },
+        ]);
+        const proxy = routerProxy.create(
+          async () => throwError(() => new RpcException('test')),
+          handler,
+        );
+
+        expect(
+          await lastValueFrom((await proxy(null)).pipe(toArray())),
+        ).toEqual([value]);
+      },
+    );
   });
 });
