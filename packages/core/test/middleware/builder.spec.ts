@@ -18,6 +18,7 @@ import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
 import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor';
 import { RoutesMapper } from '../../middleware/routes-mapper';
+import { mapToExcludeRoute } from '../../middleware/utils';
 import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
 
 describe('MiddlewareBuilder', () => {
@@ -180,6 +181,58 @@ describe('MiddlewareBuilder', () => {
               ],
             },
           ]);
+        });
+
+        it('should not remove a route the parameterized one is not mounted on', () => {
+          const routes = [
+            { path: '/docs/:id.json', method: RequestMethod.GET },
+            { path: '/docs/admin', method: RequestMethod.GET },
+            { path: '/files/:id', method: RequestMethod.GET },
+            { path: '/files/{*path}', method: RequestMethod.GET },
+            { path: '/files/*path', method: RequestMethod.GET },
+            { path: '/projects/:id/files/*', method: RequestMethod.GET },
+            { path: '/projects/:id/files', method: RequestMethod.GET },
+            { path: '/reports/:id', method: RequestMethod.GET },
+            { path: '/reports/:slug', method: RequestMethod.GET },
+          ];
+          configProxy.forRoutes(...routes);
+
+          expect(builder.build()[0].forRoutes).to.deep.equal(routes);
+        });
+
+        it('should not remove a route of another version than the parameterized one', () => {
+          const routes = [
+            { path: '/accounts/:id', method: RequestMethod.GET, version: '1' },
+            { path: '/accounts/me', method: RequestMethod.GET, version: '2' },
+            {
+              path: '/accounts/:uuid',
+              method: RequestMethod.GET,
+              version: '3',
+            },
+          ];
+          configProxy.forRoutes(...routes);
+
+          expect(builder.build()[0].forRoutes).to.deep.equal(routes);
+        });
+
+        it('should not remove a route excluded from the global prefix, unlike the parameterized one', () => {
+          const appConfig = new ApplicationConfig();
+          appConfig.setGlobalPrefix('api');
+          appConfig.setGlobalPrefixOptions({
+            exclude: mapToExcludeRoute(['users/me']),
+          });
+          builder = new MiddlewareBuilder(
+            new RoutesMapper(new NestContainer(), appConfig),
+            new NoopHttpAdapter({}),
+            new RouteInfoPathExtractor(appConfig),
+          );
+          const routes = [
+            { path: '/users/:id', method: RequestMethod.GET },
+            { path: '/users/me', method: RequestMethod.GET },
+          ];
+          builder.apply([]).forRoutes(...routes);
+
+          expect(builder.build()[0].forRoutes).to.deep.equal(routes);
         });
 
         it('should remove every route overlapping the same parameterized one', () => {
