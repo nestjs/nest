@@ -292,6 +292,8 @@ export class InstanceWrapper<T = any> {
     this.isTreeDurable = !isTreeNonDurable;
     if (this.isTreeDurable) {
       this.printIntrospectedAsDurable();
+    } else {
+      this.invalidateDependencyTreeParents('isTreeDurable');
     }
     return this.isTreeDurable;
   }
@@ -348,6 +350,7 @@ export class InstanceWrapper<T = any> {
     );
     if (!this.isTreeStatic) {
       this.printIntrospectedAsRequestScoped();
+      this.invalidateDependencyTreeParents('isTreeStatic');
     }
     return this.isTreeStatic;
   }
@@ -594,6 +597,23 @@ export class InstanceWrapper<T = any> {
     dependencyTreeParents
       .get(this)
       ?.forEach(parent => parent.resetDependencyTreeState(lookupRegistry));
+  }
+
+  /**
+   * In a circular dependency, the introspection skips a wrapper that is
+   * already being introspected, so the parents in between may cache `true`
+   * before that wrapper turns out not to be static (or durable). Clears what
+   * they cached, so it is computed again with the final answer.
+   */
+  private invalidateDependencyTreeParents(
+    attribute: 'isTreeStatic' | 'isTreeDurable',
+  ) {
+    dependencyTreeParents.get(this)?.forEach(parent => {
+      if (parent[attribute]) {
+        parent[attribute] = undefined;
+        parent.invalidateDependencyTreeParents(attribute);
+      }
+    });
   }
 
   private initialize(
