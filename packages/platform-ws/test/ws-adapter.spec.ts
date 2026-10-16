@@ -2,9 +2,10 @@ import { expect } from 'chai';
 import { EventEmitter, once } from 'events';
 import { createServer } from 'http';
 import { AddressInfo, connect } from 'net';
-import { config, from, mergeAll, of } from 'rxjs';
+import { config, from, isObservable, mergeAll, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { Duplex } from 'stream';
+import { WebSocket } from 'ws';
 import { WsProxy } from '../../websockets/context/ws-proxy';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler';
 import { WebSocketsController } from '../../websockets/web-sockets-controller';
@@ -67,6 +68,172 @@ describe('WsAdapter', () => {
       }
 
       expect(counts.running).to.equal(1000);
+    });
+
+    describe('flow control', () => {
+      const pausableClient = () => {
+        const client = openClient();
+        client.bufferedAmount = 0;
+        client.pause = sinon.spy();
+        client.resume = sinon.spy();
+        client.terminate = sinon.spy(() => (client.readyState = 2)); // CLOSING_STATE
+        client.sendCallbacks = [] as Array<() => void>;
+        client.send = sinon.spy((_: string, callback: () => void) =>
+          client.sendCallbacks.push(callback),
+        );
+        return client;
+      };
+      const bindHandler = (
+        adapter: WsAdapter,
+        client: any,
+        callback: (...args: any[]) => any,
+      ) =>
+        adapter.bindMessageHandlers(
+          client,
+          [
+            {
+              message: 'event',
+              methodName: 'event',
+              callback,
+              isAckHandledManually: false,
+            },
+          ],
+          (data: any) => (isObservable(data) ? data : of(data)),
+        );
+      const waitFor = async (condition: () => boolean, timeout = 2000) => {
+        const deadline = Date.now() + timeout;
+        while (!condition()) {
+          if (Date.now() > deadline) {
+            throw new Error('Timed out waiting for the condition');
+          }
+          await new Promise(resolve => setTimeout(resolve, 5));
+        }
+      };
+
+      it('should stop reading from a client while replies it has not read pile up', () => {
+        const client = pausableClient();
+        bindHandler(new WsAdapter(), client, () => 'reply');
+
+        // the client reads nothing, so what is sent to it stays queued
+        client.bufferedAmount = 2 * 1024 * 1024;
+        client.emit('message', frame({ event: 'event' }));
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.send.callCount).to.equal(2);
+        expect(client.pause.callCount).to.equal(1);
+
+        client.sendCallbacks[0]();
+        expect(client.resume.called).to.be.false;
+
+        // the replies are out, whatever else may still be queued
+        client.sendCallbacks[1]();
+        expect(client.resume.callCount).to.equal(1);
+      });
+
+      it('should stop reading from a client while its messages wait for their turn', () => {
+        const client = pausableClient();
+        const replies: Subject<string>[] = [];
+        bindHandler(
+          new WsAdapter(undefined, { maxConcurrentMessages: 1 }),
+          client,
+          () => {
+            const reply$ = new Subject<string>();
+            replies.push(reply$);
+            return reply$;
+          },
+        );
+
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.pause.called).to.be.false;
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.pause.callCount).to.equal(1);
+
+        replies[0].complete();
+        expect(replies).to.have.length(2);
+        expect(client.resume.callCount).to.equal(1);
+      });
+
+      it('should close a client once more than "maxSendBufferSize" bytes are queued for it', () => {
+        const client = pausableClient();
+        const adapter = new WsAdapter(undefined, { maxSendBufferSize: 1024 });
+        const logWarn = sinon.stub(adapter['logger'], 'warn');
+        client.send = sinon.spy(
+          (payload: string) => (client.bufferedAmount += payload.length),
+        );
+        bindHandler(adapter, client, () => 'x'.repeat(1024));
+
+        client.emit('message', frame({ event: 'event' }));
+
+        expect(client.terminate.callCount).to.equal(1);
+        expect(logWarn.callCount).to.equal(1);
+      });
+
+      it('should not handle the messages of a client with more than "maxSendBufferSize" bytes queued', () => {
+        const client = pausableClient();
+        const callback = sinon.spy();
+        const adapter = new WsAdapter(undefined, { maxSendBufferSize: 1024 });
+        sinon.stub(adapter['logger'], 'warn');
+        bindHandler(adapter, client, callback);
+
+        // e.g. what exception filters sent to a client that reads nothing
+        client.bufferedAmount = 1025;
+        client.emit('message', frame({ event: 'event' }));
+
+        expect(callback.called).to.be.false;
+        expect(client.terminate.callCount).to.equal(1);
+      });
+
+      it('should let 128 MB be queued for a client by default', () => {
+        const client = pausableClient();
+        const callback = sinon.spy();
+        const adapter = new WsAdapter();
+        sinon.stub(adapter['logger'], 'warn');
+        bindHandler(adapter, client, callback);
+
+        client.bufferedAmount = 128 * 1024 * 1024;
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.terminate.called).to.be.false;
+
+        client.bufferedAmount++;
+        client.emit('message', frame({ event: 'event' }));
+        expect(callback.callCount).to.equal(1);
+        expect(client.terminate.callCount).to.equal(1);
+      });
+
+      it('should pace a real client that reads its replies slowly', async () => {
+        const adapter = new WsAdapter();
+        const server = adapter.create(0, {});
+        const reply = 'x'.repeat(64 * 1024);
+        server.on('connection', (client: any) =>
+          bindHandler(adapter, client, () => reply),
+        );
+        await once(server, 'listening');
+        const connected = once(server, 'connection');
+        const client = new WebSocket(`ws://127.0.0.1:${server.address().port}`);
+        try {
+          await once(client, 'open');
+          const [serverClient] = await connected;
+          const pause = sinon.spy(serverClient, 'pause');
+          const resume = sinon.spy(serverClient, 'resume');
+
+          // 6.4 MB of replies, more than the socket buffers hold
+          const count = 100;
+          client.pause();
+          for (let i = 0; i < count; i++) {
+            client.send(JSON.stringify({ event: 'event' }));
+          }
+          await waitFor(() => pause.called);
+
+          let received = 0;
+          client.on('message', () => received++);
+          client.resume();
+          await waitFor(() => received === count);
+          expect(resume.called).to.be.true;
+        } finally {
+          client.terminate();
+          await adapter.close(server);
+          await adapter.dispose();
+        }
+      });
     });
 
     it('should not let a rejecting handler tear down the message stream', async () => {

@@ -120,6 +120,35 @@ describe('mergeMapBounded', () => {
     expect(project.calledOnce).to.be.true;
   });
 
+  it('should report when values start and stop waiting for their turn', () => {
+    const source$ = new Subject<number>();
+    const inners: Subject<never>[] = [];
+    const onBacklog = sinon.spy();
+
+    source$
+      .pipe(
+        mergeMapBounded(
+          value => (inners[value] = new Subject<never>()),
+          1,
+          onBacklog,
+        ),
+      )
+      .subscribe();
+
+    source$.next(0);
+    expect(onBacklog.called).to.be.false;
+
+    source$.next(1);
+    source$.next(2);
+    expect(onBacklog.args).to.deep.equal([[true]]);
+
+    inners[0].complete();
+    expect(onBacklog.args).to.deep.equal([[true]]);
+
+    inners[1].complete();
+    expect(onBacklog.args).to.deep.equal([[true], [false]]);
+  });
+
   it('should not hold values back without a limit', () => {
     const source$ = new Subject<number>();
     const project = sinon.spy(() => new Subject<never>());
