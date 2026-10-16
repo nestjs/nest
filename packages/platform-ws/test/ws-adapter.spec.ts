@@ -1,5 +1,7 @@
-import { EventEmitter } from 'events';
+import { EventEmitter, once } from 'events';
 import { createServer } from 'http';
+import { type AddressInfo, connect } from 'net';
+import type { Duplex } from 'stream';
 import {
   config,
   from,
@@ -316,6 +318,44 @@ describe('WsAdapter', () => {
       }
 
       expect(httpServer.listenerCount('upgrade')).toBe(0);
+    });
+  });
+
+  describe('upgrade listener', () => {
+    it('should close the socket of an upgrade request whose URL cannot be parsed', async () => {
+      const httpServer = createServer();
+      const adapter = new WsAdapter(httpServer);
+      adapter.create(0, { path: '/live' });
+      const upgraded = new Promise<Duplex>(resolve =>
+        httpServer.once('upgrade', (_, socket) => resolve(socket)),
+      );
+      await new Promise<void>(resolve =>
+        httpServer.listen(0, '127.0.0.1', resolve),
+      );
+      const { port } = httpServer.address() as AddressInfo;
+
+      // half-open, so that closing the connection is left to the server
+      const client = connect({ port, host: '127.0.0.1', allowHalfOpen: true });
+      try {
+        client.write(
+          'GET /live HTTP/1.1\r\nHost: a b\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n',
+        );
+        const [reply] = await once(client, 'data');
+        const socket = await upgraded;
+
+        expect(reply.toString()).toMatch(/^HTTP\/1\.1 400\r\n/);
+        // what a client resetting the connection would raise
+        expect(() =>
+          socket.emit('error', new Error('read ECONNRESET')),
+        ).not.toThrow();
+        if (!socket.destroyed) {
+          await once(socket, 'close');
+        }
+      } finally {
+        client.destroy();
+        await adapter.dispose();
+        await new Promise(resolve => httpServer.close(resolve));
+      }
     });
   });
 });
