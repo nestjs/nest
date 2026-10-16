@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable, Writable } from 'stream';
 
 describe('ExpressAdapter', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -436,6 +436,65 @@ describe('ExpressAdapter', () => {
         source.end('second');
         await new Promise(resolve => response.once('end', resolve));
         expect(Buffer.concat(chunks).toString()).toBe('firstsecond');
+      });
+
+      describe('for a HEAD request', () => {
+        // Node discards what is written to a HEAD response, so its write()
+        // never applies backpressure
+        const createHeadResponse = () =>
+          Object.assign(
+            new Writable({
+              write(_chunk, _encoding, callback) {
+                callback();
+              },
+            }),
+            {
+              req: { method: 'HEAD' },
+              getHeader: vi.fn(),
+              setHeader: vi.fn(),
+            },
+          );
+
+        it('should end the response without reading the whole source', async () => {
+          const chunkCount = 1000;
+          const chunk = Buffer.alloc(1024);
+          let reads = 0;
+          const source = new Readable({
+            read() {
+              this.push(++reads > chunkCount ? null : chunk);
+            },
+          });
+          const response = createHeadResponse();
+
+          expressAdapter.reply(response, new StreamableFile(source));
+          await new Promise(resolve => response.once('finish', resolve));
+          await vi.waitFor(() => expect(source.destroyed).toBe(true));
+
+          expect(reads).toBeLessThan(chunkCount);
+        });
+
+        it('should leave an error opening the source to the error handler', async () => {
+          const errorHandler = vi.fn();
+          const source = new Readable({
+            read() {
+              this.destroy(new Error('ENOENT'));
+            },
+          });
+          const response = createHeadResponse();
+
+          expressAdapter.reply(
+            response,
+            new StreamableFile(source).setErrorHandler(errorHandler),
+          );
+          await vi.waitFor(() =>
+            expect(errorHandler).toHaveBeenCalledWith(
+              expect.objectContaining({ message: 'ENOENT' }),
+              response,
+            ),
+          );
+
+          expect(response.writableEnded).toBe(false);
+        });
       });
     });
   });
