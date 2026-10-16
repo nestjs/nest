@@ -52,6 +52,7 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
+import { Readable } from 'stream';
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
 import { safeDecodeURI } from 'find-my-way/lib/url-sanitizer';
@@ -552,6 +553,18 @@ export class FastifyAdapter<
         fastifyReply.header('Content-Length', streamHeaders.length);
       }
       body = stream;
+      // Fastify's HEAD route handler resumes a stream payload, and a route
+      // declared for HEAD (or a raw response) pipes it into a response that
+      // discards it, so the whole source would be read for nothing. Fastify
+      // gets an empty stream instead, as an empty body would reset
+      // Content-Length to 0.
+      if (
+        fastifyReply.raw?.req?.method === 'HEAD' &&
+        isFunction(stream?.destroy)
+      ) {
+        stream.destroy();
+        body = Readable.from([]);
+      }
     }
     if (
       fastifyReply.getHeader('Content-Type') !== undefined &&

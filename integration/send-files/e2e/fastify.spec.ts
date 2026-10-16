@@ -81,4 +81,35 @@ describe('Fastify FileSend', () => {
         expect(payload).to.equal(readmeString);
       });
   });
+  it('should answer a HEAD request with the headers of a file', async () => {
+    return app
+      .inject({ url: '/file/with/headers', method: 'HEAD' })
+      .then(({ statusCode, headers, payload }) => {
+        expect(statusCode).to.equal(200);
+        expect(headers['content-type']).to.equal('text/markdown');
+        expect(headers['content-disposition']).to.equal(
+          'attachment; filename="Readme.md"',
+        );
+        expect(headers['content-length']).to.equal(`${readme.byteLength}`);
+        expect(payload).to.equal('');
+      });
+  });
+  /**
+   * A HEAD request does not read the file, so its answer does not depend on
+   * whether the file can be opened (unlike the error of a GET request).
+   */
+  it('should answer a HEAD request without reading a file that does not exist', async () => {
+    return app
+      .inject({
+        method: 'HEAD',
+        url: '/file/not/exist',
+      })
+      .then(({ statusCode }) => {
+        expect(statusCode).to.equal(200);
+      });
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
 });
