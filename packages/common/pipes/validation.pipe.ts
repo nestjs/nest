@@ -319,19 +319,31 @@ export class ValidationPipe implements PipeTransform<any> {
   protected mapChildrenToValidationErrors(
     error: ValidationError,
     parentPath?: string,
+    validationErrors: ValidationError[] = [],
   ): ValidationError[] {
     if (!(error.children && error.children.length)) {
-      return [error];
+      validationErrors.push(error);
+      return validationErrors;
     }
-    const validationErrors: ValidationError[] = [];
     parentPath = parentPath
       ? `${parentPath}.${error.property}`
       : error.property;
     for (const item of error.children) {
       if (item.children && item.children.length) {
-        validationErrors.push(
-          ...this.mapChildrenToValidationErrors(item, parentPath),
+        // Nested errors go into the same list: copying each level's list into
+        // its parent took as many copies as depth times leaves, and spreading
+        // a long one into push() threw a RangeError.
+        const nested = this.mapChildrenToValidationErrors(
+          item,
+          parentPath,
+          validationErrors,
         );
+        if (nested !== validationErrors) {
+          // an override returned a list of its own
+          for (const nestedError of nested) {
+            validationErrors.push(nestedError);
+          }
+        }
       }
       validationErrors.push(
         this.prependConstraintsWithParentProp(parentPath, item),

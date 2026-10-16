@@ -1,6 +1,7 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import * as sinon from 'sinon';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
   IsArray,
@@ -13,6 +14,7 @@ import {
 import { HttpStatus } from '../../enums';
 import { UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
+import { ValidationError } from '../../interfaces/external/validation-error.interface';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 chai.use(chaiAsPromised);
 
@@ -54,6 +56,63 @@ class TestModelNoValidation {
 }
 
 describe('ValidationPipe', () => {
+  describe('when errors are nested', () => {
+    const nestedErrors: ValidationError[] = [
+      {
+        property: 'parent',
+        children: [
+          {
+            property: 'child',
+            children: [
+              {
+                property: 'name',
+                constraints: { isString: 'name must be a string' },
+              },
+              {
+                property: 'age',
+                constraints: { isInt: 'age must be an integer' },
+              },
+            ],
+          },
+          {
+            property: 'title',
+            constraints: { isString: 'title must be a string' },
+          },
+        ],
+      },
+    ];
+    const list = [
+      'parent.child.name must be a string',
+      'parent.child.age must be an integer',
+      'parent.title must be a string',
+    ];
+
+    it('should add them to a single list rather than copy them for each level', () => {
+      const pipe = new ValidationPipe();
+      const map = sinon.spy(pipe as any, 'mapChildrenToValidationErrors');
+
+      const exception: any = pipe.createExceptionFactory()(nestedErrors);
+      expect(exception.getResponse().message).to.deep.equal(list);
+      expect(map.callCount).to.equal(2);
+      expect(new Set(map.returnValues).size).to.equal(1);
+    });
+    it('should keep the errors that an override returns', () => {
+      class CustomPipe extends ValidationPipe {
+        protected mapChildrenToValidationErrors(
+          error: ValidationError,
+          parentPath?: string,
+        ) {
+          return [...super.mapChildrenToValidationErrors(error, parentPath)];
+        }
+      }
+
+      const exception: any = new CustomPipe().createExceptionFactory()(
+        nestedErrors,
+      );
+      expect(exception.getResponse().message).to.deep.equal(list);
+    });
+  });
+
   let target: ValidationPipe;
   const metadata: ArgumentMetadata = {
     type: 'body',
