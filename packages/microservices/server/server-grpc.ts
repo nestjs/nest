@@ -4,6 +4,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { MESSAGES } from '@nestjs/core/constants';
 import {
   EMPTY,
   Observable,
@@ -331,11 +332,26 @@ export class ServerGrpc extends Server<never, never> {
         this.transportId,
         { ...call, operationId: methodHandler.name } as any,
         async () => {
-          const handler = methodHandler(call.request, call.metadata, call);
-          this.transformToObservable(await handler)
+          let result$: Observable<any>;
+          try {
+            const handler = methodHandler(call.request, call.metadata, call);
+            result$ = this.transformToObservable(await handler);
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection (an
+            // exception filter that throws) would go unhandled
+            this.onProcessingEndHook?.(this.transportId, call.request);
+            return callback(this.toInternalError(err));
+          }
+          result$
             .pipe(throwIfEmpty(() => this.createNoResponseError()))
             .subscribe({
-              next: async data => callback(null, await data),
+              // A response promise that rejects (an interceptor mapping to an
+              // async function) never reaches the exception filters
+              next: data =>
+                Promise.resolve(data).then(
+                  response => callback(null, response),
+                  err => callback(this.toInternalError(err)),
+                ),
               error: (err: any) => {
                 this.onProcessingEndHook?.(this.transportId, call.request);
                 callback(toSendableError(err));
@@ -355,8 +371,16 @@ export class ServerGrpc extends Server<never, never> {
         this.transportId,
         { ...call, operationId: methodHandler.name } as any,
         async () => {
-          const handler = methodHandler(call.request, call.metadata, call);
-          const result$ = this.transformToObservable(await handler);
+          let result$: Observable<any>;
+          try {
+            const handler = methodHandler(call.request, call.metadata, call);
+            result$ = this.transformToObservable(await handler);
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection (an
+            // exception filter that throws) would go unhandled
+            this.onProcessingEndHook?.(this.transportId, call.request);
+            return call.emit('error', this.toInternalError(err));
+          }
           await this.writeObservableToGrpc(result$, call);
 
           this.onProcessingEndHook?.(this.transportId, call.request);
@@ -532,31 +556,43 @@ export class ServerGrpc extends Server<never, never> {
             this.onProcessingEndHook?.(this.transportId, call.request);
           });
 
-          const handler = methodHandler(
-            subject.asObservable(),
-            call.metadata,
-            call,
-          );
-          const res = this.transformToObservable(await handler);
-          if (isResponseStream) {
-            await this.writeObservableToGrpc(res, call);
-          } else {
-            const response = await lastValueFrom(
-              res.pipe(
-                // Ahead of "takeUntil", which completes the stream when the
-                // call is cancelled.
-                throwIfEmpty(() => this.createNoResponseError()),
-                takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
-                catchError(err => {
-                  callback(toSendableError(err), null);
-                  return EMPTY;
-                }),
-                defaultIfEmpty(undefined),
-              ),
+          try {
+            const handler = methodHandler(
+              subject.asObservable(),
+              call.metadata,
+              call,
             );
+            const res = this.transformToObservable(await handler);
+            if (isResponseStream) {
+              await this.writeObservableToGrpc(res, call);
+            } else {
+              const response = await lastValueFrom(
+                res.pipe(
+                  // Ahead of "takeUntil", which completes the stream when the
+                  // call is cancelled.
+                  throwIfEmpty(() => this.createNoResponseError()),
+                  takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
+                  catchError(err => {
+                    callback(toSendableError(err), null);
+                    return EMPTY;
+                  }),
+                  defaultIfEmpty(undefined),
+                ),
+              );
 
-            if (!isUndefined(response)) {
-              callback(null, response);
+              if (!isUndefined(response)) {
+                callback(null, response);
+              }
+            }
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection (an
+            // exception filter that throws, or a response promise that
+            // rejects) would go unhandled
+            const internalError = this.toInternalError(err);
+            if (isResponseStream) {
+              call.emit('error', internalError);
+            } else {
+              callback(internalError, null);
             }
           }
         },
@@ -615,6 +651,16 @@ export class ServerGrpc extends Server<never, never> {
     return {
       code: GRPC_STATUS_INTERNAL,
       details: 'The handler emitted a null response',
+    };
+  }
+
+  // An error that escaped the exception filters is logged rather than sent
+  // to the client, as the built-in filters do with an unknown exception
+  private toInternalError(err: unknown) {
+    this.logger.error(err);
+    return {
+      code: GRPC_STATUS_INTERNAL,
+      details: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
     };
   }
 
