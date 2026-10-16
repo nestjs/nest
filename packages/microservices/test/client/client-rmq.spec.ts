@@ -324,6 +324,18 @@ describe('ClientRMQ', function () {
       });
     });
 
+    it('should not derive a correlation id from the ids before it', () => {
+      for (let i = 0; i < 3; i++) {
+        client['publish']({ pattern, data: 'data' }, () => {});
+      }
+      const [first, second, third] = sendToQueueStub
+        .getCalls()
+        .map(call => call.args[2].correlationId as string);
+
+      expect(second.startsWith(first.slice(1))).to.be.false;
+      expect(third.startsWith(second.slice(1))).to.be.false;
+    });
+
     describe('dispose callback', () => {
       let unsubscribeSpy: sinon.SinonSpy, subscription;
 

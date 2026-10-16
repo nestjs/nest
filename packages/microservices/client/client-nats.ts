@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject } from '@nestjs/common/utils/shared.utils';
+import { randomBytes } from 'crypto';
 import { EventEmitter } from 'stream';
 import { NATS_DEFAULT_URL } from '../constants';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
@@ -209,7 +210,13 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
       const serializedPacket: NatsRecord = this.serializer.serialize(packet);
-      const inbox = natsPackage.createInbox(this.options.inboxPrefix);
+      // A reply is accepted on its inbox even without an id, and createInbox()
+      // names the inbox after a counter that grows by a constant step, so the
+      // name gets random bits too. They stay in the same token, so that
+      // "<prefix>.*" permissions keep matching.
+      const inbox =
+        natsPackage.createInbox(this.options.inboxPrefix) +
+        randomBytes(16).toString('hex');
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,

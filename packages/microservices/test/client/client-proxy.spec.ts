@@ -179,4 +179,18 @@ describe('ClientProxy', function () {
       expect(err$).to.be.instanceOf(Observable);
     });
   });
+
+  describe('assignPacketId', () => {
+    it('should not derive an id from the ids before it', () => {
+      // A reply is matched by its id alone, so a peer that answers one request
+      // must not be able to guess the ids of the others
+      const [first, second, third] = Array.from(
+        { length: 3 },
+        () => client['assignPacketId']({ pattern: 'test', data: {} }).id,
+      );
+
+      expect(second.startsWith(first.slice(1))).to.be.false;
+      expect(third.startsWith(second.slice(1))).to.be.false;
+    });
+  });
 });

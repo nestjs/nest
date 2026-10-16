@@ -1,4 +1,4 @@
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { randomUUID } from 'crypto';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
   throwError as _throw,
@@ -158,7 +158,9 @@ export abstract class ClientProxy<
   }
 
   protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId {
-    const id = randomStringGenerator();
+    // Most transports match a reply to its request by the id alone, so it must
+    // not be guessable from the ids of other requests
+    const id = randomUUID();
     return Object.assign(packet, { id });
   }
 

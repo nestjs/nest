@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
+import { randomUUID } from 'crypto';
 import { EventEmitter } from 'events';
 import {
   EmptyError,
@@ -376,7 +376,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     callback: (packet: WritePacket) => any,
   ): () => void {
     try {
-      const correlationId = randomStringGenerator();
+      // Replies are matched by the correlation id alone, as in assignPacketId()
+      const correlationId = randomUUID();
       const listener = ({
         content,
         options,

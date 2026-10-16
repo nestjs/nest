@@ -59,6 +59,22 @@ describe('ClientNats', () => {
       client['publish'](msg, () => {});
       expect(publishSpy.getCall(0).args[0]).to.be.eql(pattern);
     });
+    it('should add random bits to the reply inbox', () => {
+      // createInbox() names the inbox after a counter that grows by a constant
+      // step, so two inboxes would give the next ones away
+      client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
+      const [first, second] = subscribeSpy
+        .getCalls()
+        .map(call => call.args[0] as string);
+
+      // "_INBOX.<nuid><128 random bits>", in one token as "_INBOX.*" expects
+      expect(first).to.match(/^_INBOX\.[0-9A-Za-z]{22}[0-9a-f]{32}$/);
+      expect(second.slice(-32)).to.not.equal(first.slice(-32));
+      expect(
+        publishSpy.getCalls().map(call => call.args[2].reply),
+      ).to.deep.equal([first, second]);
+    });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
