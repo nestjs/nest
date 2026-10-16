@@ -9,7 +9,13 @@ import {
   fromEvent,
   lastValueFrom,
 } from 'rxjs';
-import { catchError, finalize, takeUntil, throwIfEmpty } from 'rxjs/operators';
+import {
+  catchError,
+  finalize,
+  takeUntil,
+  tap,
+  throwIfEmpty,
+} from 'rxjs/operators';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
 import { GrpcMethodStreamingType } from '../decorators/index.js';
 import { GrpcStatus, Transport } from '../enums/index.js';
@@ -457,8 +463,18 @@ export class ServerGrpc extends Server<never, never> {
       call.on('drain', drain);
       subscription.add(() => call.off('drain', drain));
 
+      // The call is an object mode stream, whose "write" throws on null where
+      // nothing catches it, so null takes the error path instead
+      const values$ = source.pipe(
+        tap(value => {
+          if (value === null) {
+            throw this.createNullResponseError();
+          }
+        }),
+      );
+
       subscription.add(
-        source.subscribe({
+        values$.subscribe({
           next(value) {
             if (writing) {
               writing = call.write(value);
@@ -626,6 +642,13 @@ export class ServerGrpc extends Server<never, never> {
     return {
       code: GrpcStatus.INTERNAL,
       details: 'The handler completed without emitting a response',
+    };
+  }
+
+  private createNullResponseError() {
+    return {
+      code: GrpcStatus.INTERNAL,
+      details: 'The handler emitted a null response',
     };
   }
 

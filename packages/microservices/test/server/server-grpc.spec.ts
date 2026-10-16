@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { join } from 'path';
 import { EventEmitter } from 'events';
+import { Writable } from 'stream';
 import {
   concat,
   EMPTY,
@@ -1505,6 +1506,69 @@ describe('ServerGrpc', () => {
       );
 
       expect(callback.mock.calls[0][0]).toBe(error);
+    });
+  });
+
+  describe('when a response stream emits null', () => {
+    const nullResponseError = {
+      code: GrpcStatus.INTERNAL,
+      details: 'The handler emitted a null response',
+    };
+
+    // An object mode stream, like a grpc-js call: "write(null)" throws
+    function createCall({ highWaterMark = 16 } = {}) {
+      const written: unknown[] = [];
+      const errors: unknown[] = [];
+      const pendingWrites: Array<() => void> = [];
+      const call = Object.assign(
+        new Writable({
+          objectMode: true,
+          highWaterMark,
+          write(chunk, _encoding, callback) {
+            written.push(chunk);
+            pendingWrites.push(callback);
+          },
+        }),
+        { request: {}, metadata: {} },
+      );
+      call.on('error', err => errors.push(err));
+      const flush = () => pendingWrites.splice(0).forEach(write => write());
+      return { call, written, errors, flush };
+    }
+
+    it('should fail the call instead of writing null', async () => {
+      const { call, written, errors } = createCall();
+
+      await server.createStreamServiceMethod(() => of('a', null, 'b'))(
+        call,
+        vi.fn(),
+      );
+
+      expect(written).toEqual(['a']);
+      expect(errors).toEqual([nullResponseError]);
+    });
+
+    it('should fail the call once the responses before null are written', async () => {
+      const { call, written, errors, flush } = createCall({
+        highWaterMark: 1,
+      });
+      const subject = new Subject<string | null>();
+
+      const result = server.createStreamServiceMethod(() => subject)(
+        call,
+        vi.fn(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      subject.next('a');
+      subject.next('b');
+      subject.next(null);
+      flush();
+      expect(errors).toEqual([]);
+      flush();
+      await result;
+
+      expect(written).toEqual(['a', 'b']);
+      expect(errors).toEqual([nullResponseError]);
     });
   });
 
