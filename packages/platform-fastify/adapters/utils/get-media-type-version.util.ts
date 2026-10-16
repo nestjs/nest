@@ -1,3 +1,7 @@
+/**
+ * Splits a header value at separators outside quoted strings in linear time.
+ * Backslash-escaped characters inside quoted strings are treated as literals.
+ */
 const splitOutsideQuotes = (value: string, separator: ',' | ';'): string[] => {
   const parts: string[] = [];
   let start = 0;
@@ -36,10 +40,10 @@ const splitOutsideQuotes = (value: string, separator: ',' | ';'): string[] => {
  * Duplicated in each platform package so that a platform package never
  * depends on a newer `@nestjs/core` than the one installed.
  */
-export function getMediaTypeVersion(
+export const getMediaTypeVersion = (
   acceptHeader: string | string[] | undefined,
   key: string,
-): string | undefined {
+): string | undefined => {
   const mediaRanges = ([] as string[])
     .concat(acceptHeader ?? [])
     .flatMap(value => splitOutsideQuotes(value, ','));
@@ -56,4 +60,4 @@ export function getMediaTypeVersion(
     }
   }
   return undefined;
-}
+};
