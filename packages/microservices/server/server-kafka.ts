@@ -40,7 +40,10 @@ import {
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
 import { Server } from './server.js';
 import { Logger } from '@nestjs/common';
-import { isNil } from '@nestjs/common/internal';
+import { isNil, isString } from '@nestjs/common/internal';
+
+// Topic names the broker accepts
+const KAFKA_TOPIC_NAME_REGEX = /^[a-zA-Z0-9._-]{1,249}$/;
 
 /**
  * @publicApi
@@ -303,6 +306,14 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     // then this is an event (events could still have correlation id)
     if (handler?.isEventHandler || !correlationId || !replyTopic) {
       return this.handleEvent(packet.pattern, packet, kafkaContext);
+    }
+    // The sender picks the reply topic. kafkajs keeps every topic a producer
+    // is asked to send to, so one it cannot encode (such as a name longer
+    // than a Kafka string) would fail every later reply of the producer too.
+    if (!isString(replyTopic) || !KAFKA_TOPIC_NAME_REGEX.test(replyTopic)) {
+      return this.logger.error(
+        `The reply topic of the message is not a valid topic name, so it cannot be answered and has been dropped. Message pattern: ${packet.pattern}`,
+      );
     }
 
     const publish = this.getPublisher(

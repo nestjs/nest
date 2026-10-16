@@ -759,6 +759,29 @@ describe('ClientKafka', () => {
       });
     });
 
+    describe('when the correlation id looks like JSON', () => {
+      it('should look up the pending request by its text', async () => {
+        const jsonCorrelationId = '{"toString":1}';
+        subscription = client.createResponseCallback();
+        client['routingMap'].set(jsonCorrelationId, callback);
+
+        await subscription({
+          ...payload,
+          message: {
+            ...payload.message,
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(jsonCorrelationId),
+            },
+          },
+        });
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith({
+          err: undefined,
+          response: messageValue,
+        });
+      });
+    });
+
     describe('when the parser rejects the message', () => {
       let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
 

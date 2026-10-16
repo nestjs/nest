@@ -485,6 +485,85 @@ describe('ServerKafka', () => {
       expect(handler).toHaveBeenCalled();
     });
 
+    describe('when the reply topic is not a valid topic name', () => {
+      const withReplyTopic = (
+        replyTopicHeader: string,
+      ): EachMessagePayload => ({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopicHeader),
+          },
+        },
+      });
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+      });
+
+      it.each([
+        ['an object', '{}'],
+        ['an array', '["test.topic.reply"]'],
+        ['a schema payload', '\0test.topic.reply'],
+        ['too long', 'a'.repeat(250)],
+        ['made of illegal characters', 'test topic/reply'],
+      ])(
+        'should log an error and not run the handler if it is %s',
+        async (_, replyTopicHeader) => {
+          const handler = vi.fn();
+          untypedServer.messageHandlers = objectToMap({
+            [topic]: handler,
+          });
+          const handleEventSpy = vi.spyOn(server, 'handleEvent');
+
+          await server.handleMessage(withReplyTopic(replyTopicHeader));
+
+          expect(loggerErrorSpy).toHaveBeenCalledOnce();
+          expect(handler).not.toHaveBeenCalled();
+          expect(handleEventSpy).not.toHaveBeenCalled();
+          expect(getPublisherSpy).not.toHaveBeenCalled();
+        },
+      );
+
+      it('should not publish NO_MESSAGE_HANDLER', async () => {
+        await server.handleMessage(withReplyTopic('{}'));
+
+        expect(loggerErrorSpy).toHaveBeenCalledOnce();
+        expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should reply with the correlation id as text', async () => {
+      const jsonCorrelationId = '{"length":200000000}';
+      const getPublisher = vi.spyOn(server, 'getPublisher');
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: vi.fn(),
+      });
+
+      await server.handleMessage({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.CORRELATION_ID]: Buffer.from(jsonCorrelationId),
+          },
+        },
+      });
+
+      expect(getPublisher).toHaveBeenCalledWith(
+        replyTopic,
+        replyPartition,
+        jsonCorrelationId,
+        expect.any(KafkaContext),
+      );
+    });
+
     it('should log and skip a message that the parser rejects', async () => {
       untypedServer.parser = {
         parse: () => {

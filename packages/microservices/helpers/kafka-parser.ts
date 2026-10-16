@@ -1,8 +1,16 @@
+import { KafkaHeaders } from '../enums/kafka-headers.enum.js';
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
 import { KafkaParserConfig } from '../interfaces/index.js';
 import { isNil } from '@nestjs/common/internal';
 
 const DEFAULT_MAX_MESSAGE_SIZE = 16 * 1024 * 1024; // 16 MiB
+// The headers replies are routed with are text. Decoded like the others,
+// the sender of a message could make them an object, an array or a Buffer.
+const TRANSPORT_HEADERS: string[] = [
+  KafkaHeaders.CORRELATION_ID,
+  KafkaHeaders.REPLY_TOPIC,
+  KafkaHeaders.REPLY_PARTITION,
+];
 
 export class KafkaParser {
   protected readonly keepBinary: boolean;
@@ -36,7 +44,9 @@ export class KafkaParser {
     }
     if (!isNil(data.headers)) {
       for (const key of Object.keys(data.headers)) {
-        result.headers[key] = this.decode(data.headers[key]);
+        result.headers[key] = TRANSPORT_HEADERS.includes(key)
+          ? this.decodeAsString(data.headers[key])
+          : this.decode(data.headers[key]);
       }
     } else {
       result.headers = {};
@@ -70,6 +80,10 @@ export class KafkaParser {
       }
     }
     return result;
+  }
+
+  protected decodeAsString(value: Buffer): string | null {
+    return isNil(value) ? null : value.toString();
   }
 
   protected getMessageSize(data: any): number {
