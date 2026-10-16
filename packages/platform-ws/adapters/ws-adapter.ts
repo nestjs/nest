@@ -263,6 +263,12 @@ export class WsAdapter extends AbstractWsAdapter {
           socket.destroy();
         }
       } catch (err) {
+        // Node hands the socket over without listeners of its own, and end()
+        // only half-closes it. A client resetting the connection afterwards
+        // would raise an unhandled 'error' event, and one that never closes
+        // would keep the socket open. ws's own abortHandshake() does the same.
+        socket.on(ERROR_EVENT, () => socket.destroy());
+        socket.once('finish', () => socket.destroy());
         socket.end('HTTP/1.1 400\r\n' + err.message);
       }
     });

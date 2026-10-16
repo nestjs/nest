@@ -1,7 +1,10 @@
 import { expect } from 'chai';
-import { EventEmitter } from 'events';
+import { EventEmitter, once } from 'events';
+import { createServer } from 'http';
+import { AddressInfo, connect } from 'net';
 import { config, from, mergeAll, of } from 'rxjs';
 import * as sinon from 'sinon';
+import { Duplex } from 'stream';
 import { WsProxy } from '../../websockets/context/ws-proxy';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler';
 import { WebSocketsController } from '../../websockets/web-sockets-controller';
@@ -145,6 +148,44 @@ describe('WsAdapter', () => {
 
       expect(callback.calledOnceWithExactly(1, 'push')).to.be.true;
       expect(client.send.calledOnce).to.be.true;
+    });
+  });
+
+  describe('upgrade listener', () => {
+    it('should close the socket of an upgrade request whose URL cannot be parsed', async () => {
+      const httpServer = createServer();
+      const adapter = new WsAdapter(httpServer);
+      adapter.create(0, { path: '/live' });
+      const upgraded = new Promise<Duplex>(resolve =>
+        httpServer.once('upgrade', (_, socket) => resolve(socket)),
+      );
+      await new Promise<void>(resolve =>
+        httpServer.listen(0, '127.0.0.1', resolve),
+      );
+      const { port } = httpServer.address() as AddressInfo;
+
+      // half-open, so that closing the connection is left to the server
+      const client = connect({ port, host: '127.0.0.1', allowHalfOpen: true });
+      try {
+        client.write(
+          'GET /live HTTP/1.1\r\nHost: a b\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n',
+        );
+        const [reply] = await once(client, 'data');
+        const socket = await upgraded;
+
+        expect(reply.toString()).to.match(/^HTTP\/1\.1 400\r\n/);
+        // what a client resetting the connection would raise
+        expect(() =>
+          socket.emit('error', new Error('read ECONNRESET')),
+        ).not.to.throw();
+        if (!socket.destroyed) {
+          await once(socket, 'close');
+        }
+      } finally {
+        client.destroy();
+        await adapter.dispose();
+        await new Promise(resolve => httpServer.close(resolve));
+      }
     });
   });
 });
