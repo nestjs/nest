@@ -419,11 +419,38 @@ describe('ClientRMQ', function () {
 
     it('should forward a message to the request waiting for it', () => {
       const msg = { properties: { correlationId: 'id' }, content: 'content' };
+      const listener = vi.fn();
+      responseEmitter.on(msg.properties.correlationId, listener);
 
       onMessage(msg);
 
       expect(emitSpy).toHaveBeenCalledTimes(1);
       expect(emitSpy).toHaveBeenCalledWith(msg.properties.correlationId, msg);
+      expect(listener).toHaveBeenCalledWith(msg);
+    });
+
+    it('should ignore a message no request waits for', () => {
+      const msg = {
+        properties: { correlationId: 'unknown' },
+        content: 'content',
+      };
+
+      onMessage(msg);
+
+      expect(emitSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not throw on a message whose correlation id is "error"', () => {
+      // Whoever publishes to the reply queue chooses the correlation id, and
+      // an "error" event without a listener throws inside amqplib's dispatch,
+      // which closes the channel and the connection
+      const msg = {
+        properties: { correlationId: 'error' },
+        content: 'content',
+      };
+
+      expect(() => onMessage(msg)).not.toThrow();
+      expect(emitSpy).not.toHaveBeenCalled();
     });
   });
 
