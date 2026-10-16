@@ -422,6 +422,7 @@ export class WebSocketsController {
           instanceWrapper,
           scopedEnhancers,
         );
+        await this.injector.waitForDeferredLoads(contextId);
         return this.contextCreator.create(
           contextInstance,
           contextInstance[methodName],

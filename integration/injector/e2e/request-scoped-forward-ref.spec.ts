@@ -1,4 +1,5 @@
 import {
+  CanActivate,
   Controller,
   forwardRef,
   Get,
@@ -11,6 +12,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import {
+  APP_GUARD,
   ContextId,
   ContextIdFactory,
   ContextIdStrategy,
@@ -18,8 +20,15 @@ import {
   ModuleRef,
   REQUEST,
 } from '@nestjs/core';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  WsException,
+} from '@nestjs/websockets';
 import request from 'supertest';
+import WebSocket from 'ws';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 type Request = { headers: Record<string, string | undefined> };
@@ -329,6 +338,93 @@ describe('Request-scoped providers with a forward reference', () => {
 
       expect(second).toBe(first);
       expect(second.context.tenantId).toBe('acme');
+    });
+  });
+
+  // A default-scoped gateway loads the scoped global enhancers itself, per
+  // connection, after resolving its own context.
+  describe('when a scoped global guard of a gateway depends on it', () => {
+    @Injectable()
+    class AuditLog {}
+
+    @Injectable()
+    class ClientContext {
+      static isAuthorized = false;
+
+      constructor(
+        @Inject(REQUEST) public readonly client: object,
+        @Inject(forwardRef(() => AuditLog)) public readonly log: AuditLog,
+      ) {
+        if (!ClientContext.isAuthorized) {
+          throw new WsException('Unauthorized');
+        }
+      }
+    }
+
+    @Injectable({ scope: Scope.REQUEST })
+    class ClientGuard implements CanActivate {
+      constructor(public readonly context: ClientContext) {}
+
+      canActivate() {
+        return true;
+      }
+    }
+
+    @WebSocketGateway({ path: '/forward-ref' })
+    class Gateway {
+      @SubscribeMessage('open')
+      open() {
+        return { event: 'open', data: 'granted' };
+      }
+    }
+
+    let app: INestApplication;
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    const send = async () => {
+      const moduleRef = await Test.createTestingModule({
+        providers: [
+          AuditLog,
+          ClientContext,
+          Gateway,
+          { provide: APP_GUARD, useClass: ClientGuard },
+        ],
+      }).compile();
+      app = moduleRef.createNestApplication({ logger: false });
+      app.useWebSocketAdapter(new WsAdapter(app));
+      await app.listen(0, '127.0.0.1');
+
+      const client = new WebSocket(
+        `${(await app.getUrl()).replace('http', 'ws')}/forward-ref`,
+      );
+      await new Promise(resolve => client.once('open', resolve));
+      const reply = new Promise<string>(resolve =>
+        client.once('message', data => resolve(data.toString())),
+      );
+      client.send(JSON.stringify({ event: 'open', data: {} }));
+      try {
+        return JSON.parse(await reply);
+      } finally {
+        client.close();
+      }
+    };
+
+    it('should not run the handler when its constructor throws', async () => {
+      ClientContext.isAuthorized = false;
+
+      const reply = await send();
+
+      expect(reply.event).toBe('exception');
+      expect(reply.data.message).toBe('Unauthorized');
+    });
+
+    it('should run the handler once it is constructed', async () => {
+      ClientContext.isAuthorized = true;
+
+      expect(await send()).toEqual({ event: 'open', data: 'granted' });
     });
   });
 });

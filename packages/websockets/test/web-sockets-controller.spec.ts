@@ -525,6 +525,34 @@ describe('WebSocketsController', () => {
       expect(host.switchToWs().getPattern()).toBe('ping');
     });
 
+    it('should not call the handler when a deferred load of its context fails', async () => {
+      const gateway = { onMessage: vi.fn() };
+      const wrapper = new InstanceWrapper({
+        instance: gateway,
+        isResolved: true,
+      });
+      const error = new Error('provider failed to resolve');
+      const exceptionFilter = { handle: vi.fn() };
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadEnhancersPerContext').mockResolvedValue();
+      vi.spyOn(injector, 'waitForDeferredLoads').mockRejectedValue(error);
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      await instance.createRequestScopedHandler(
+        wrapper,
+        { providers: new Map() } as Module,
+        'moduleKey',
+        'onMessage',
+      )({});
+
+      expect(gateway.onMessage).not.toHaveBeenCalled();
+      expect(exceptionFilter.handle.mock.calls[0][0]).toBe(error);
+    });
+
     it('should reuse the same context id for the same client', async () => {
       const client = {};
       const moduleRef = {
