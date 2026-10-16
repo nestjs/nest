@@ -89,7 +89,7 @@ export class BaseWsExceptionFilter<
       payload.cause = this.options.causeFactory!(cause.pattern, cause.data);
     }
 
-    client.emit('exception', payload);
+    this.emitErrorPayload(client, payload);
   }
 
   public handleUnknownError<TClient extends { emit: Function }>(
@@ -107,15 +107,39 @@ export class BaseWsExceptionFilter<
       payload.cause = this.options.causeFactory!(data.pattern, data.data);
     }
 
-    client.emit('exception', payload);
-
+    // Logged first, so that a reply that cannot be sent never hides it
     if (!(exception instanceof IntrinsicException)) {
       const logger = BaseWsExceptionFilter.logger;
       logger.error(exception);
     }
+
+    this.emitErrorPayload(client, payload);
   }
 
   public isExceptionObject(err: any): err is Error {
     return isObject(err) && !!(err as Error).message;
+  }
+
+  /**
+   * Sends the error payload, and sends it again without the "cause" when that
+   * fails. The cause echoes the client's message, which `JSON.parse` accepts
+   * at any depth, while the Socket.IO encoder overflows the stack on it.
+   */
+  private emitErrorPayload<TClient extends { emit: Function }>(
+    client: TClient,
+    payload: ErrorPayload<unknown>,
+  ): void {
+    try {
+      client.emit('exception', payload);
+    } catch (err) {
+      // Without a cause, the payload holds nothing the client sent
+      if (!('cause' in payload)) {
+        throw err;
+      }
+      client.emit('exception', {
+        status: payload.status,
+        message: payload.message,
+      });
+    }
   }
 }

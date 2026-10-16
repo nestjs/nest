@@ -103,6 +103,61 @@ describe('WsExceptionsHandler', () => {
       });
     });
 
+    describe('when the error payload cannot be sent with its cause', () => {
+      let loggerErrorStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(
+          (WsExceptionsHandler as any).logger,
+          'error',
+        );
+      });
+
+      afterEach(() => {
+        loggerErrorStub.restore();
+      });
+
+      it('should log an unknown exception and emit the error without the cause', () => {
+        emitStub.onFirstCall().throws(new RangeError('Maximum call stack'));
+        const error = new Error('test');
+        handler.handle(error, executionContextHost);
+
+        expect(loggerErrorStub.calledWith(error)).to.be.true;
+        expect(emitStub.calledTwice).to.be.true;
+        expect(emitStub.secondCall.args).to.eql([
+          'exception',
+          { status: 'error', message: 'Internal server error' },
+        ]);
+      });
+
+      it('should emit the error again without the cause when "emit" throws', () => {
+        emitStub
+          .onFirstCall()
+          .throws(new RangeError('Maximum call stack size exceeded'));
+        handler.handle(new WsException('Unauthorized'), executionContextHost);
+
+        expect(loggerErrorStub.called).to.be.false;
+        expect(emitStub.calledTwice).to.be.true;
+        expect(emitStub.secondCall.args).to.eql([
+          'exception',
+          { status: 'error', message: 'Unauthorized' },
+        ]);
+      });
+
+      it('should log an unknown exception and rethrow when there is no cause to drop', () => {
+        handler = new WsExceptionsHandler({ includeCause: false });
+        const error = new Error('test');
+        const emitError = new Error('emit');
+        emitStub.throws(emitError);
+
+        expect(() => handler.handle(error, executionContextHost)).to.throw(
+          emitError,
+        );
+        expect(emitStub.calledOnce).to.be.true;
+        expect(loggerErrorStub.calledWith(error)).to.be.true;
+      });
+    });
+
     describe('when "invokeCustomFilters" returns true', () => {
       beforeEach(() => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);
