@@ -37,10 +37,13 @@ import {
   Payload,
   Transport,
 } from '@nestjs/microservices';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
+import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { firstValueFrom, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import request from 'supertest';
+import WebSocket from 'ws';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const TCP_PORT = 3792;
@@ -230,6 +233,29 @@ class EntryProviderConsumerGuard implements CanActivate {
 
   canActivate() {
     return !this.consumer.entryProvider;
+  }
+}
+
+@Injectable({ scope: Scope.TRANSIENT })
+class TransientArrowDenyGuard implements CanActivate {
+  constructor(private readonly gate: Gate) {}
+
+  // An instance property, so a guard whose constructor never ran has none.
+  canActivate = () => this.gate.isOpen();
+}
+
+@WebSocketGateway({ path: '/transient' })
+class TransientGuardedGateway {
+  @UseGuards(TransientArrowDenyGuard)
+  @SubscribeMessage('arrow')
+  arrow() {
+    return { event: 'arrow', data: 'granted' };
+  }
+
+  @UseGuards(TrackingDenyGuard)
+  @SubscribeMessage('method')
+  method() {
+    return { event: 'method', data: 'granted' };
   }
 }
 
@@ -511,5 +537,48 @@ describe('Transient global enhancers', () => {
 
       await expect(handler()).rejects.toThrow('Forbidden resource');
     });
+  });
+
+  // A default-scoped gateway with no scoped global enhancers builds its
+  // handlers once, in the static context.
+  describe('gateway', () => {
+    let app: INestApplication;
+
+    afterEach(async () => {
+      await app?.close();
+    });
+
+    const send = async (event: 'arrow' | 'method') => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [createModule([TransientGuardedGateway], [])],
+      }).compile();
+      app = moduleRef.createNestApplication({ logger: false });
+      app.useWebSocketAdapter(new WsAdapter(app));
+      await app.listen(0, '127.0.0.1');
+
+      const client = new WebSocket(
+        `${(await app.getUrl()).replace('http', 'ws')}/transient`,
+      );
+      await new Promise(resolve => client.once('open', resolve));
+      const reply = new Promise<string>(resolve =>
+        client.once('message', data => resolve(data.toString())),
+      );
+      client.send(JSON.stringify({ event, data: {} }));
+      try {
+        return JSON.parse(await reply);
+      } finally {
+        client.close();
+      }
+    };
+
+    it.each(['arrow', 'method'] as const)(
+      'should deny the message with a transient guard bound by class (%s)',
+      async event => {
+        const reply = await send(event);
+
+        expect(reply.event).toBe('exception');
+        expect(reply.data.message).toBe('Forbidden resource');
+      },
+    );
   });
 });

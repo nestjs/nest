@@ -1,5 +1,6 @@
 import { Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants.js';
 import { Injector } from '@nestjs/core/injector/injector.js';
 import { Module } from '@nestjs/core/injector/module.js';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
@@ -203,6 +204,28 @@ describe('WebSocketsController', () => {
       expect(assignServerToProperties).toHaveBeenCalledWith(
         gateway,
         server.server,
+      );
+    });
+    it('should create the handlers of a static gateway with the gateway as the inquirer', () => {
+      instance.subscribeToServerEvents(
+        {
+          instance: gateway,
+          metatype: Test,
+          id: 'instanceWrapperId',
+          isDependencyTreeStatic: () => true,
+        } as any,
+        { namespace },
+        port,
+        'moduleKey',
+        'instanceWrapperId',
+      );
+      expect(untypedInstance.contextCreator.create).toHaveBeenCalledWith(
+        gateway,
+        handlerCallback,
+        'moduleKey',
+        'methodName',
+        STATIC_CONTEXT,
+        'instanceWrapperId',
       );
     });
     it('should call "subscribeEvents" with expected arguments', () => {

@@ -171,6 +171,7 @@ export class WebSocketsController {
                 moduleKey,
                 methodName,
                 STATIC_CONTEXT,
+                instanceWrapper.id,
               )
             : this.createRequestScopedHandler(
                 instanceWrapper,
