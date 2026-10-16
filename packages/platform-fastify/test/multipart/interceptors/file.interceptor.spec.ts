@@ -119,6 +119,21 @@ describe('FileInterceptor', () => {
       });
     });
 
+    it('should leave limits set to null or undefined to the plugin', async () => {
+      // @fastify/multipart deep-merges these limits over its own, where an
+      // undefined `fileSize` would replace its default with no limit at all.
+      const target = new (FileInterceptor('avatar', {
+        limits: { fileSize: undefined, parts: null!, files: 2 },
+      }))();
+      const req = createFakeRequest([]);
+      await target.intercept(createContext(req), handler);
+
+      expect(req.parts.mock.calls[0][0]).toStrictEqual({
+        throwFileSizeLimit: false,
+        limits: { files: 2 },
+      });
+    });
+
     it('should resolve limits given as a function of the request', async () => {
       const limits = vi.fn(() => ({ fileSize: 3 }));
       const target = new (FileInterceptor('avatar', { limits }))();

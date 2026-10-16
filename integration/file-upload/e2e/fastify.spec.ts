@@ -62,6 +62,13 @@ class FastifyUploadController {
     return { size: file.size };
   }
 
+  // As with `fileSize: config.get(...)` for a setting that is not set.
+  @Post('undefined-limits')
+  @UseInterceptors(FileInterceptor('doc', { limits: { fileSize: undefined } }))
+  undefinedLimits(@UploadedFile() file: any) {
+    return { size: file.size };
+  }
+
   @Post('fields')
   @UseInterceptors(NoFilesInterceptor())
   fields(@Body() body: any) {
@@ -180,6 +187,13 @@ describe('File upload (Fastify)', () => {
         .expect(201);
       await http()
         .post('/plugin-limits')
+        .attach('doc', Buffer.from('123456789'), txt('big.txt'))
+        .expect(413);
+    });
+
+    it('should apply the plugin limits the route leaves undefined', async () => {
+      await http()
+        .post('/undefined-limits')
         .attach('doc', Buffer.from('123456789'), txt('big.txt'))
         .expect(413);
     });

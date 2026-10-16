@@ -25,11 +25,11 @@ export interface MultipartStorageEngine {
 /**
  * Same keys as platform-express's `MulterLimits`.
  *
- * Limits that are not set fall back to the options `@fastify/multipart` was
- * registered with, and then to its own defaults. Unlike multer (which
- * defaults `fileSize` and `parts` to `Infinity`), `@fastify/multipart` caps
- * `fileSize` at the Fastify instance's `bodyLimit` (1 MiB unless configured)
- * and `parts` at 1000.
+ * Limits that are not set, or set to `null` or `undefined`, fall back to the
+ * options `@fastify/multipart` was registered with, and then to its own
+ * defaults. Unlike multer (which defaults `fileSize` and `parts` to
+ * `Infinity`), `@fastify/multipart` caps `fileSize` at the Fastify
+ * instance's `bodyLimit` (1 MiB unless configured) and `parts` at 1000.
  *
  * @publicApi
  */

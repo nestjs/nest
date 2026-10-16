@@ -81,8 +81,11 @@ function assertPluginRegistered(
 
 /**
  * Per-route options handed to `req.parts()`; `@fastify/multipart` deep-merges
- * them over the options the plugin was registered with. `@fastify/busboy`
- * treats `fileSize` and `parts` as "max allowed" (it fires once a limit is
+ * them over the options the plugin was registered with. Limits set to `null`
+ * or `undefined` are left out, as the merge would copy them over the
+ * plugin's limits (and its `fileSize` and `parts` defaults), which
+ * `@fastify/busboy` then reads as no limit. `@fastify/busboy` treats
+ * `fileSize` and `parts` as "max allowed" (it fires once a limit is
  * exceeded), so unlike multer there is no `+1` adjustment. Truncation is
  * detected here (`file.truncated`), so the plugin's own throw is disabled.
  */
@@ -92,7 +95,9 @@ function toBusboyConfig(
 ) {
   const config: Record<string, unknown> = { throwFileSizeLimit: false };
   if (limits) {
-    config.limits = { ...limits };
+    config.limits = Object.fromEntries(
+      Object.entries(limits).filter(([, value]) => value != null),
+    );
   }
   if (options.preservePath !== undefined) {
     config.preservePath = options.preservePath;
