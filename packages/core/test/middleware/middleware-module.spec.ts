@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { RouteInfoPathExtractor } from '@nestjs/core/middleware/route-info-path-extractor';
 import * as chai from 'chai';
 import { expect } from 'chai';
@@ -210,6 +210,86 @@ describe('MiddlewareModule', () => {
         app,
       );
       expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
+    });
+
+    it('should mount a transient middleware and the middleware listed after it', async () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientMiddleware implements NestMiddleware {
+        public use(req, res, next) {}
+      }
+
+      @Injectable()
+      class AnotherMiddleware implements NestMiddleware {
+        public use(req, res, next) {}
+      }
+
+      const route = 'testPath';
+      const configuration = {
+        middleware: [TestMiddleware, TransientMiddleware, AnotherMiddleware],
+        forRoutes: ['test'],
+      };
+
+      const createMiddlewareFactoryStub = sinon
+        .stub()
+        .callsFake(() => () => null);
+      const app = {
+        createMiddlewareFactory: createMiddlewareFactoryStub,
+      };
+
+      const stubContainer = new NestContainer();
+      stubContainer
+        .getModules()
+        .set('Test', new Module(TestModule, stubContainer));
+
+      const container = new MiddlewareContainer(stubContainer);
+      const moduleKey = 'Test';
+      container.insertConfig([configuration], moduleKey);
+
+      const testWrapper = new InstanceWrapper({
+        metatype: TestMiddleware,
+        instance: new TestMiddleware(),
+      });
+      const transientWrapper = new InstanceWrapper({
+        metatype: TransientMiddleware,
+        instance: new TransientMiddleware(),
+        scope: Scope.TRANSIENT,
+      });
+      const anotherWrapper = new InstanceWrapper({
+        metatype: AnotherMiddleware,
+        instance: new AnotherMiddleware(),
+      });
+      const collection = container.getMiddlewareCollection(moduleKey);
+      collection.set(TestMiddleware, testWrapper);
+      collection.set(TransientMiddleware, transientWrapper);
+      collection.set(AnotherMiddleware, anotherWrapper);
+      sinon
+        .stub(stubContainer, 'getModuleByKey')
+        .callsFake(() => new Module(class {}, stubContainer));
+      middlewareModule['container'] = stubContainer;
+
+      const insertClassNodeSpy = sinon.spy(graphInspector, 'insertClassNode');
+      const insertEntrypointDefinitionSpy = sinon.spy(
+        graphInspector,
+        'insertEntrypointDefinition',
+      );
+
+      await middlewareModule.registerRouteMiddleware(
+        container,
+        { path: route, method: RequestMethod.ALL },
+        configuration,
+        moduleKey,
+        app,
+      );
+
+      expect(createMiddlewareFactoryStub.callCount).to.equal(3);
+      expect(
+        insertEntrypointDefinitionSpy.getCalls().map(({ args: [, id] }) => id),
+      ).to.deep.equal([testWrapper.id, transientWrapper.id, anotherWrapper.id]);
+      expect(
+        insertClassNodeSpy
+          .getCalls()
+          .map(({ args: [, wrapper] }) => wrapper.id),
+      ).to.deep.equal([testWrapper.id, transientWrapper.id, anotherWrapper.id]);
     });
 
     it('should insert the expected middleware definition', async () => {
