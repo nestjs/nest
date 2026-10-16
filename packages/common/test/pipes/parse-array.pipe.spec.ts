@@ -290,6 +290,67 @@ describe('ParseArrayPipe', () => {
           await target.transform([true, 'false'], {} as ArgumentMetadata),
         ).toEqual([true, false]);
       });
+      it('should stop validating at the first invalid item', async () => {
+        class ArrItemWithProp {
+          @IsDefined()
+          number: number;
+        }
+        target = new ParseArrayPipe({ items: ArrItemWithProp });
+        const transform = vi.spyOn(target['validationPipe'], 'transform');
+
+        await expect(
+          target.transform([{ number: 1 }, {}, {}, {}], {} as ArgumentMetadata),
+        ).rejects.toThrow(BadRequestException);
+        expect(transform).toHaveBeenCalledTimes(2);
+      });
+      it('should validate one item after the other', async () => {
+        class ArrItem {}
+        target = new ParseArrayPipe({
+          items: ArrItem,
+          forbidUnknownValues: false,
+        });
+        const transform = target['validationPipe'].transform;
+        let pending = 0;
+        let maxPending = 0;
+        vi.spyOn(target['validationPipe'], 'transform').mockImplementation(
+          async (...args) => {
+            maxPending = Math.max(maxPending, ++pending);
+            try {
+              return await transform.apply(target['validationPipe'], args);
+            } finally {
+              pending--;
+            }
+          },
+        );
+
+        const items = await target.transform(
+          [{}, {}, {}],
+          {} as ArgumentMetadata,
+        );
+        expect(items).toHaveLength(3);
+        items.forEach(item => expect(item).toBeInstanceOf(ArrItem));
+        expect(maxPending).toBe(1);
+      });
+      it('should leave the input array unchanged', async () => {
+        const input = ['1', '2'];
+        target = new ParseArrayPipe({ items: Number });
+
+        expect(await target.transform(input, {} as ArgumentMetadata)).toEqual([
+          1, 2,
+        ]);
+        expect(input).toEqual(['1', '2']);
+      });
+      it('should not validate the holes of a sparse array', async () => {
+        const input = ['1', '2', '3'];
+        delete input[1];
+        target = new ParseArrayPipe({ items: Number });
+
+        expect(await target.transform(input, {} as ArgumentMetadata)).toEqual([
+          1,
+          undefined,
+          3,
+        ]);
+      });
       describe('when "stopAtFirstError" is explicitly turned off', () => {
         it('should leave the input array unchanged after successful transformation', async () => {
           const input = ['1', '2'];
@@ -350,6 +411,33 @@ describe('ParseArrayPipe', () => {
               '[1] number must be a number conforming to the specified constraints',
             ]);
           }
+        });
+
+        it('should collect the errors without copying them for each item', async () => {
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+          });
+          // Concatenating each item's error to the list copies every error
+          // collected before it, 4,950 copies for 100 invalid items.
+          const concat = vi.spyOn(Array.prototype, 'concat');
+          let error: any;
+          let copied: number;
+          try {
+            error = await pipe
+              .transform(','.repeat(99), {} as ArgumentMetadata)
+              .catch(err => err);
+            copied = concat.mock.contexts.reduce(
+              (total: number, array: unknown[]) => total + array.length,
+              0,
+            );
+          } finally {
+            concat.mockRestore();
+          }
+
+          expect(error).toBeInstanceOf(BadRequestException);
+          expect(error.getResponse().message).toHaveLength(100);
+          expect(copied).toBeLessThan(100);
         });
 
         it('should report every array nested in the array', async () => {
