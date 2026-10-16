@@ -53,7 +53,7 @@ export class RouterResponseController {
           ? redirectResponse.statusCode
           : HttpStatus.FOUND;
     const url = result && result.url ? result.url : redirectResponse.url;
-    this.applicationRef.redirect(response, statusCode, url);
+    return this.applicationRef.redirect(response, statusCode, url);
   }
 
   public async render<TInput = unknown, TResponse = unknown>(

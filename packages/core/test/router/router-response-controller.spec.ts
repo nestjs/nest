@@ -217,6 +217,28 @@ describe('RouterResponseController', () => {
       await routerResponseController.redirect(null, response, null!);
       expect(redirectSpy.mock.calls[0][0]).toBe(response);
     });
+    it('should wait for the reply that HttpServer.redirect returns', async () => {
+      // Fastify returns its reply, a thenable that settles once the response
+      // is sent. Resolving earlier lets Fastify send the reply a second time.
+      let sendReply!: () => void;
+      const reply = {
+        then: (resolve: () => void) => {
+          sendReply = resolve;
+        },
+      };
+      vi.spyOn(adapter, 'redirect').mockReturnValue(reply);
+      const redirected = vi.fn();
+
+      const redirect = routerResponseController
+        .redirect(null, {}, { url: 'redirect url' })
+        .then(redirected);
+      await new Promise(resolve => setImmediate(resolve));
+      expect(redirected).not.toHaveBeenCalled();
+
+      sendReply();
+      await redirect;
+      expect(redirected).toHaveBeenCalled();
+    });
     describe('status code', () => {
       it('should come from the transformed result if present', async () => {
         vi.spyOn(routerResponseController, 'transformToResult').mockReturnValue(
