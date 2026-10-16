@@ -13,6 +13,7 @@ import { MULTER_MODULE_OPTIONS } from '../files.constants.js';
 import { MulterModuleOptions } from '../interfaces/index.js';
 import { MulterOptions } from '../interfaces/multer-options.interface.js';
 import {
+  applyDefaultLimits,
   mergeMulterOptions,
   transformException,
 } from '../multer/multer.utils.js';
@@ -35,7 +36,9 @@ export function AnyFilesInterceptor(
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.multer = (multer as any)(mergeMulterOptions(options, localOptions));
+      this.multer = (multer as any)(
+        applyDefaultLimits(mergeMulterOptions(options, localOptions)),
+      );
     }
 
     async intercept(

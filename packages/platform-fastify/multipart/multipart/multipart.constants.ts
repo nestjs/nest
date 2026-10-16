@@ -24,6 +24,20 @@ export const multerExceptions = {
 export type MultipartErrorCode = keyof typeof multerExceptions;
 
 /**
+ * Defaults of the field name limits that multer leaves at `Infinity`, which
+ * let a single small request build an arbitrarily deep `req.body`
+ * (`fieldNestingDepth`) or arrays of arbitrary length (`fieldArrayIndexLimit`).
+ * `32` is the nesting depth `body-parser` allows in the urlencoded bodies the
+ * ExpressAdapter parses; `1000` is the number of parameters it parses, and
+ * the number of parts `@fastify/multipart` accepts. Kept identical to
+ * platform-express's `DEFAULT_FIELD_NAME_LIMITS`.
+ */
+export const DEFAULT_FIELD_NAME_LIMITS = {
+  fieldNestingDepth: 32,
+  fieldArrayIndexLimit: 1000,
+} as const;
+
+/**
  * The messages platform-express reports for busboy 1.x parser errors
  * (prefixed with "Multipart: "), which is what multer bundles.
  */

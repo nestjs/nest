@@ -476,6 +476,29 @@ describe('File upload: Express (multer) and Fastify parity', () => {
       }
     });
 
+    it('should limit field name nesting and array indexes by default', async () => {
+      const ok = await expectParity(http =>
+        http
+          .post('/none')
+          .field('a' + '[b]'.repeat(32), 'x')
+          .field('c[1000]', 'y'),
+      );
+      expect(ok.status).toBe(201);
+      for (const [name, message] of [
+        ['a' + '[b]'.repeat(33), 'Field name nesting too deep'],
+        ['c[1001]', 'Field name array index too large'],
+      ]) {
+        const res = await expectParity(http =>
+          http.post('/none').field(name, 'x'),
+        );
+        expect(res.body).toEqual({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: `${message} - ${name}`,
+        });
+      }
+    });
+
     it('should not apply fieldArrayIndexLimit to a name kept as a literal key', async () => {
       const res = await expectParity(http =>
         http.post('/name-limits').field('a[3]x', '1').field('[3]', '2'),

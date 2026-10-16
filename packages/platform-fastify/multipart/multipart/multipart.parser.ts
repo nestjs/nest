@@ -16,6 +16,7 @@ import { memoryStorage } from '../storage/memory.storage.js';
 import { appendField } from './append-field.util.js';
 import {
   busboyExceptions,
+  DEFAULT_FIELD_NAME_LIMITS,
   MISSING_PLUGIN_MESSAGE,
   multerExceptions,
 } from './multipart.constants.js';
@@ -333,20 +334,23 @@ function exceedsArrayIndexLimit(name: string, limit: number) {
 /**
  * `fieldNestingDepth` and `fieldArrayIndexLimit` are multer's own limits
  * (busboy knows neither), so they are checked here, against the decoded name.
+ * Unlike multer, they default to `DEFAULT_FIELD_NAME_LIMITS`.
  */
 function checkFieldNameShape(
   name: string,
   limits: MultipartLimits | undefined,
 ) {
-  if (
-    typeof limits?.fieldNestingDepth === 'number' &&
-    name.split('[').length - 1 > limits.fieldNestingDepth
-  ) {
+  const nestingDepth =
+    limits?.fieldNestingDepth ?? DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth;
+  if (name.split('[').length - 1 > nestingDepth) {
     throw new MultipartError('LIMIT_FIELD_NESTING', name);
   }
+  const arrayIndexLimit =
+    limits?.fieldArrayIndexLimit ??
+    DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit;
   if (
-    typeof limits?.fieldArrayIndexLimit === 'number' &&
-    exceedsArrayIndexLimit(name, limits.fieldArrayIndexLimit)
+    arrayIndexLimit !== Infinity &&
+    exceedsArrayIndexLimit(name, arrayIndexLimit)
   ) {
     throw new MultipartError('LIMIT_FIELD_ARRAY_INDEX', name);
   }

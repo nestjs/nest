@@ -4,9 +4,16 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { isPlainObject } from '@nestjs/common/internal';
-import { multerExceptions, busboyExceptions } from './multer.constants.js';
+import {
+  DEFAULT_FIELD_NAME_LIMITS,
+  multerExceptions,
+  busboyExceptions,
+} from './multer.constants.js';
 import { MulterModuleOptions } from '../interfaces/index.js';
-import { MulterOptions } from '../interfaces/multer-options.interface.js';
+import {
+  MulterLimits,
+  MulterOptions,
+} from '../interfaces/multer-options.interface.js';
 
 /**
  * Merges module-level (global) multer options with interceptor-level (local)
@@ -27,6 +34,36 @@ export function mergeMulterOptions(
     merged.limits = { ...options.limits, ...localOptions.limits };
   }
   return merged;
+}
+
+/**
+ * Sets the field name limits multer leaves at `Infinity` to
+ * `DEFAULT_FIELD_NAME_LIMITS` wherever they are not set. multer only checks
+ * a limit that is present in `limits`, so the defaults are added to the
+ * object, or to the object a function-valued `limits` returns.
+ */
+export function applyDefaultLimits<T extends MulterOptions>(options: T): T {
+  const { limits } = options;
+  return {
+    ...options,
+    limits:
+      typeof limits === 'function'
+        ? (req: any) => withDefaultLimits(limits(req))
+        : withDefaultLimits(limits),
+  };
+}
+
+function withDefaultLimits(
+  limits: MulterLimits | null | undefined,
+): MulterLimits {
+  return {
+    ...limits,
+    fieldNestingDepth:
+      limits?.fieldNestingDepth ?? DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth,
+    fieldArrayIndexLimit:
+      limits?.fieldArrayIndexLimit ??
+      DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit,
+  };
 }
 
 // Multer may add in a 'field' property to the error

@@ -41,10 +41,15 @@ describe('FileInterceptor', () => {
       );
     });
   });
-  it('should merge global and local limits key-by-key', () => {
+  it('should merge global and local limits key-by-key, over the default field name limits', () => {
     const target = new (FileInterceptor('file', {
       limits: { fileSize: 10 },
     }))({ limits: { files: 2 } });
-    expect((target as any).multer.limits).toEqual({ files: 2, fileSize: 10 });
+    expect((target as any).multer.limits).toEqual({
+      files: 2,
+      fileSize: 10,
+      fieldNestingDepth: 32,
+      fieldArrayIndexLimit: 1000,
+    });
   });
 });
