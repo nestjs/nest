@@ -2,6 +2,7 @@ import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-ap
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import {
@@ -71,6 +72,14 @@ export class WebSocketsController {
     instanceWrapperId: string,
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
+    // Transient enhancers are created per host, so those bound to the gateway
+    // can only be found with the gateway as the inquirer. Gateways are not
+    // resolved per connection, so when there are global request-scoped or
+    // transient enhancers, which would then be looked up for the gateway
+    // without ever being created for it, no inquirer is passed.
+    const inquirerId = this.hasGlobalScopedEnhancers()
+      ? undefined
+      : instanceWrapperId;
     const messageHandlers = nativeMessageHandlers.map(
       ({ callback, isAckHandledManually, message, methodName }) => ({
         message,
@@ -80,6 +89,8 @@ export class WebSocketsController {
           callback,
           moduleKey,
           methodName,
+          STATIC_CONTEXT,
+          inquirerId,
         ),
         isAckHandledManually,
       }),
@@ -233,6 +244,14 @@ export class WebSocketsController {
     )) {
       Reflect.set(instance, propertyKey, server);
     }
+  }
+
+  private hasGlobalScopedEnhancers(): boolean {
+    return (
+      this.config.getGlobalRequestGuards().length > 0 ||
+      this.config.getGlobalRequestPipes().length > 0 ||
+      this.config.getGlobalRequestInterceptors().length > 0
+    );
   }
 
   private printSubscriptionLogs(

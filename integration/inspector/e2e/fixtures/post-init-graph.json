@@ -2312,22 +2312,6 @@
       },
       "id": "-1335121169"
     },
-    "-180350082": {
-      "source": "-1550892030",
-      "target": "-593595711",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "CatsModule",
-        "sourceClassName": "CatsController",
-        "targetClassName": "CatsService",
-        "sourceClassToken": "CatsController",
-        "targetClassToken": "CatsService",
-        "targetModuleName": "CatsModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "-180350082"
-    },
     "-296280311": {
       "source": "-1927427604",
       "target": "-234035039",
@@ -2343,6 +2327,22 @@
         "injectionType": "constructor"
       },
       "id": "-296280311"
+    },
+    "-180350082": {
+      "source": "-1550892030",
+      "target": "-593595711",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "CatsModule",
+        "sourceClassName": "CatsController",
+        "targetClassName": "CatsService",
+        "sourceClassToken": "CatsController",
+        "targetClassToken": "CatsService",
+        "targetModuleName": "CatsModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "-180350082"
     },
     "-393224862": {
       "source": "-19112576",

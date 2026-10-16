@@ -38,9 +38,11 @@ import {
   Transport,
 } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
+import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { expect } from 'chai';
 import { firstValueFrom, of } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { io } from 'socket.io-client';
 import * as request from 'supertest';
 
 const TCP_PORT = 3792;
@@ -230,6 +232,29 @@ class EntryProviderConsumerGuard implements CanActivate {
 
   canActivate() {
     return !this.consumer.entryProvider;
+  }
+}
+
+@Injectable({ scope: Scope.TRANSIENT })
+class TransientArrowDenyGuard implements CanActivate {
+  constructor(private readonly gate: Gate) {}
+
+  // An instance property, so a guard whose constructor never ran has none.
+  canActivate = () => this.gate.isOpen();
+}
+
+@WebSocketGateway()
+class TransientGuardedGateway {
+  @UseGuards(TransientArrowDenyGuard)
+  @SubscribeMessage('arrow')
+  arrow() {
+    return { event: 'arrow', data: 'granted' };
+  }
+
+  @UseGuards(TrackingDenyGuard)
+  @SubscribeMessage('method')
+  method() {
+    return { event: 'method', data: 'granted' };
   }
 }
 
@@ -528,6 +553,45 @@ describe('Transient global enhancers', () => {
 
       const error = await getError(() => handler());
       expect(error?.message).to.equal('Forbidden resource');
+    });
+  });
+
+  // A default-scoped gateway with no scoped global enhancers builds its
+  // handlers once, in the static context.
+  describe('gateway', () => {
+    let app: INestApplication;
+
+    afterEach(async () => {
+      await app?.close();
+    });
+
+    const send = async (event: 'arrow' | 'method') => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [createModule([TransientGuardedGateway], [])],
+      }).compile();
+      app = moduleRef.createNestApplication({ logger: false });
+      await app.listen(0, '127.0.0.1');
+
+      const client = io(await app.getUrl(), { transports: ['websocket'] });
+      const reply = new Promise<{ event: string; data: any }>(resolve => {
+        client.once('exception', data => resolve({ event: 'exception', data }));
+        client.once(event, data => resolve({ event, data }));
+      });
+      client.emit(event, {});
+      try {
+        return await reply;
+      } finally {
+        client.close();
+      }
+    };
+
+    (['arrow', 'method'] as const).forEach(event => {
+      it(`should deny the message with a transient guard bound by class (${event})`, async () => {
+        const reply = await send(event);
+
+        expect(reply.event).to.equal('exception');
+        expect(reply.data.message).to.equal('Forbidden resource');
+      });
     });
   });
 });

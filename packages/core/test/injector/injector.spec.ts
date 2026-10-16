@@ -395,7 +395,7 @@ describe('Injector', () => {
       expect(loadEnhancersPerContext.called).to.be.false;
     });
 
-    describe('enhancers of a static entry provider', () => {
+    describe('enhancers of a static provider', () => {
       @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
       class EntryProvider {}
 
@@ -460,15 +460,23 @@ describe('Injector', () => {
         expect(loadInstance.calledOnce).to.be.true;
       });
 
-      it('should not load the enhancers of a provider that is not an entry provider', async () => {
-        addEnhancer(PlainProvider, Scope.TRANSIENT);
+      it('should also load them for a provider that is not an entry provider (e.g., a gateway)', async () => {
+        const enhancer = addEnhancer(PlainProvider, Scope.TRANSIENT);
+        const provider = moduleRef.providers.get(PlainProvider)!;
 
-        await injector.loadProvider(
-          moduleRef.providers.get(PlainProvider)!,
-          moduleRef,
-        );
+        await injector.loadProvider(provider, moduleRef);
 
-        expect(loadInstance.calledOnce).to.be.true;
+        expect(
+          loadInstance.calledWith(
+            enhancer,
+            moduleRef.injectables,
+            moduleRef,
+            sinon.match({
+              contextId: STATIC_CONTEXT,
+              inquirer: provider,
+            }),
+          ),
+        ).to.be.true;
       });
     });
   });

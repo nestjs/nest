@@ -17,6 +17,7 @@ import {
 } from '@nestjs/core/helpers/context-utils';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
 import {
   InterceptorsConsumer,
@@ -59,6 +60,8 @@ export class WsContextCreator {
     callback: (...args: unknown[]) => void,
     moduleKey: string,
     methodName: string,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): (...args: any[]) => Promise<void> {
     const contextType: ContextType = 'ws';
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
@@ -70,21 +73,29 @@ export class WsContextCreator {
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
 
     const paramsMetadata = getParamsMetadata(moduleKey);

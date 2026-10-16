@@ -1,5 +1,7 @@
 import { NestContainer } from '@nestjs/core';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
+import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { expect } from 'chai';
 import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
@@ -158,6 +160,45 @@ describe('WebSocketsController', () => {
       );
       expect(assignServerToProperties.calledWith(gateway, server.server)).to.be
         .true;
+    });
+    it('should create the handlers of a static gateway with the gateway as the inquirer', () => {
+      instance.subscribeToServerEvents(
+        gateway,
+        { namespace },
+        port,
+        'moduleKey',
+        'instanceWrapperId',
+      );
+      expect(
+        untypedInstance.contextCreator.create.calledWith(
+          gateway,
+          handlerCallback,
+          'moduleKey',
+          'methodName',
+          STATIC_CONTEXT,
+          'instanceWrapperId',
+        ),
+      ).to.be.true;
+    });
+    it('should create the handlers without an inquirer when there are global scoped enhancers', () => {
+      config.addGlobalRequestGuard(new InstanceWrapper());
+      instance.subscribeToServerEvents(
+        gateway,
+        { namespace },
+        port,
+        'moduleKey',
+        'instanceWrapperId',
+      );
+      expect(
+        untypedInstance.contextCreator.create.calledWith(
+          gateway,
+          handlerCallback,
+          'moduleKey',
+          'methodName',
+          STATIC_CONTEXT,
+          undefined,
+        ),
+      ).to.be.true;
     });
     it('should call "subscribeEvents" with expected arguments', () => {
       instance.subscribeToServerEvents(
