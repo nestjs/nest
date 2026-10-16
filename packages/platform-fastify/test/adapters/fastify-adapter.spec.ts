@@ -766,6 +766,78 @@ describe('FastifyAdapter', () => {
       });
       expect(res.statusCode).toBe(200);
     });
+
+    describe('when the extractor of custom versioning throws', () => {
+      const handler = vi.fn(() => 'found');
+      const middleware = vi.fn((_req, _res, next: Function) => next());
+
+      beforeEach(async () => {
+        handler.mockClear();
+        middleware.mockClear();
+        fastifyAdapter.setErrorHandler((err: Error, _req, reply) =>
+          reply.code(500).send(`error handler: ${err.message}`),
+        );
+        fastifyAdapter.setNotFoundHandler((_req, reply) =>
+          reply.code(404).send('not found'),
+        );
+        const register = await fastifyAdapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/{*path}', middleware);
+        const extractor = (req: { headers: Record<string, unknown> }) => {
+          if (req.headers['x-throw']) {
+            throw new Error('extractor failed');
+          }
+          return '1';
+        };
+        fastifyAdapter.get(
+          '/versioned',
+          fastifyAdapter.applyVersionFilter(handler, '1', {
+            type: VersioningType.CUSTOM,
+            extractor,
+          }),
+        );
+        fastifyAdapter.get(
+          '/neutral',
+          fastifyAdapter.applyVersionFilter(handler, VERSION_NEUTRAL, {
+            type: VersioningType.CUSTOM,
+            extractor,
+          }),
+        );
+      });
+
+      it.each(['/versioned', '/neutral', '/unknown'])(
+        'should pass the exception to the error handler for "%s"',
+        async url => {
+          const res = await fastifyAdapter.inject({
+            method: 'GET',
+            url,
+            headers: { 'x-throw': '1' },
+          });
+
+          expect(res.statusCode).toBe(500);
+          expect(res.body).toBe('error handler: extractor failed');
+          expect(handler).not.toHaveBeenCalled();
+          expect(middleware).not.toHaveBeenCalled();
+        },
+      );
+
+      it('should route the next request', async () => {
+        await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/versioned',
+          headers: { 'x-throw': '1' },
+        });
+
+        const res = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/versioned',
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBe('found');
+      });
+    });
   });
 
   describe('all', () => {
