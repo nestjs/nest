@@ -274,6 +274,19 @@ export class FastifyAdapter<
       }
     });
 
+    // Passes requests whose target middleware cannot be matched against to
+    // the not-found handler (see `isRoutableRequestTarget()`). Added here,
+    // like the hook above, so that it runs before Nest middleware. A request
+    // the router did not match is already on its way to the not-found
+    // handler.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (request.is404 || this.isRoutableRequestTarget(request.raw.url)) {
+        done();
+      } else {
+        reply.callNotFound();
+      }
+    });
+
     this.instance.addHook('onResponse', (request, reply, done) => {
       if (this.onResponseHook) {
         this.onResponseHook(request as TRequest, reply as TReply, done);
@@ -1050,5 +1063,26 @@ export class FastifyAdapter<
       return url;
     }
     return pathStart === -1 ? '/' : url.slice(pathStart);
+  }
+
+  /**
+   * Whether the request target is in origin-form ("/users") or in the
+   * absolute-form of an "http(s)" URL ("http://host/users"), the only forms
+   * middleware paths can match.
+   *
+   * Node.js accepts other targets too (e.g. "GET *users HTTP/1.1").
+   * "find-my-way" routes those as if their first character were the leading
+   * "/" ("*users" is served by the "/users" route), while no middleware path
+   * matches them, so the route would run without its middleware. They are
+   * answered by the not-found handler instead, as with the ExpressAdapter,
+   * whose router never matches a path that does not start with "/".
+   *
+   * That includes the asterisk-form "OPTIONS *" (RFC 9112, section 3.2.4),
+   * which asks about the server as a whole rather than about a resource:
+   * Nest has no handler for it, and "find-my-way" would serve it with the
+   * "OPTIONS /" route.
+   */
+  private isRoutableRequestTarget(url: string | undefined): boolean {
+    return !!url && this.getPathFromRequestTarget(url).charCodeAt(0) === 47;
   }
 }

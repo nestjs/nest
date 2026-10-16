@@ -1,6 +1,7 @@
 import { RequestMethod } from '@nestjs/common';
 import { expect } from 'chai';
 import { FastifyRequest, fastify } from 'fastify';
+import { inject } from 'light-my-request';
 import * as sinon from 'sinon';
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
 
@@ -168,6 +169,88 @@ describe('FastifyAdapter', () => {
         'UsersController.findOne',
         'UsersController.findOne',
       ]);
+    });
+  });
+
+  describe('request targets', () => {
+    const handler = sinon.spy(() => 'found');
+    const middleware = sinon.spy((_req, _res, next: Function) => next());
+
+    /**
+     * "light-my-request" always sends an origin-form request target, so the
+     * target is set on the request before it reaches the router.
+     */
+    const injectRequestTarget = async (method: string, target: string) => {
+      const instance = fastifyAdapter.getInstance();
+      await instance.ready();
+      return inject(
+        (req, res) => {
+          req.url = target;
+          instance.routing(req as any, res as any);
+        },
+        { method: method as any, url: '/' },
+      );
+    };
+
+    beforeEach(async () => {
+      handler.resetHistory();
+      middleware.resetHistory();
+      fastifyAdapter.setNotFoundHandler((_req, reply) =>
+        reply.code(404).send('not found'),
+      );
+      const register = await fastifyAdapter.createMiddlewareFactory(
+        RequestMethod.ALL,
+      );
+      register('/users', middleware);
+      fastifyAdapter.get('/users', handler);
+      fastifyAdapter.options('/', handler);
+    });
+
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    for (const target of [
+      '/users',
+      'http://localhost/users',
+      'https://localhost/users',
+    ]) {
+      it(`should run the middleware and the route for "${target}"`, async () => {
+        const res = await injectRequestTarget('GET', target);
+
+        expect(res.statusCode).to.equal(200);
+        expect(res.body).to.equal('found');
+        expect(middleware.calledOnce).to.be.true;
+      });
+    }
+
+    for (const target of ['*users', 'users', '*', 'ftp://localhost/users']) {
+      it(`should pass a request for "${target}" to the not-found handler`, async () => {
+        const res = await injectRequestTarget('GET', target);
+
+        expect(res.statusCode).to.equal(404);
+        expect(res.body).to.equal('not found');
+        expect(handler.called).to.be.false;
+        expect(middleware.called).to.be.false;
+      });
+    }
+
+    it('should pass "OPTIONS *" to the not-found handler rather than to the "OPTIONS /" route', async () => {
+      const res = await injectRequestTarget('OPTIONS', '*');
+
+      expect(res.statusCode).to.equal(404);
+      expect(res.body).to.equal('not found');
+      expect(handler.called).to.be.false;
+    });
+
+    it('should pass a request the router did not match to the not-found handler', async () => {
+      const warn = sinon.spy(fastifyAdapter.getInstance().log, 'warn');
+
+      const res = await injectRequestTarget('GET', '*unknown');
+
+      expect(res.statusCode).to.equal(404);
+      expect(res.body).to.equal('not found');
+      expect(warn.called).to.be.false;
     });
   });
 });

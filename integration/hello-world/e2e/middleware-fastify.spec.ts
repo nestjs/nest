@@ -1001,7 +1001,7 @@ describe('Middleware (FastifyAdapter)', () => {
     });
   });
 
-  describe('absolute-form request target', () => {
+  describe('request target forms', () => {
     const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
     const HANDLER_RETURN_VALUE = 'handler_return';
 
@@ -1030,12 +1030,12 @@ describe('Middleware (FastifyAdapter)', () => {
      * "supertest" and "light-my-request" always send origin-form request
      * targets, so the request has to be written to the socket manually.
      */
-    const sendRawRequest = (requestTarget: string) =>
+    const sendRawRequest = (requestTarget: string, method = 'GET') =>
       new Promise<{ statusCode: number; body: string }>((resolve, reject) => {
         let response = '';
         const socket = connect(port, '127.0.0.1', () => {
           socket.write(
-            `GET ${requestTarget} HTTP/1.1\r\n` +
+            `${method} ${requestTarget} HTTP/1.1\r\n` +
               `Host: 127.0.0.1:${port}\r\n` +
               `Connection: close\r\n\r\n`,
           );
@@ -1092,6 +1092,30 @@ describe('Middleware (FastifyAdapter)', () => {
       const response = await sendRawRequest(`HTTP://127.0.0.1:${port}//USERS/`);
       expect(response.statusCode).to.equal(200);
       expect(response.body).to.equal(MIDDLEWARE_RETURN_VALUE);
+    });
+
+    it('does not run the route without its middleware for a request target starting with "*"', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest('*users');
+      expect(response.statusCode).to.equal(404);
+      expect(JSON.parse(response.body)).to.deep.equal({
+        message: 'Cannot GET *users',
+        error: 'Not Found',
+        statusCode: 404,
+      });
+    });
+
+    it('answers "OPTIONS *" with the not-found handler', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest('*', 'OPTIONS');
+      expect(response.statusCode).to.equal(404);
+      expect(JSON.parse(response.body)).to.deep.equal({
+        message: 'Cannot OPTIONS *',
+        error: 'Not Found',
+        statusCode: 404,
+      });
     });
   });
 
