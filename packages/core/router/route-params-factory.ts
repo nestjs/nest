@@ -1,5 +1,5 @@
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface.js';
-import { RouteParamtypes } from '@nestjs/common/internal';
+import { isNil, isObject, RouteParamtypes } from '@nestjs/common/internal';
 import type { ApplicationConfig } from '../application-config.js';
 import {
   getRequestCookie,
@@ -7,6 +7,21 @@ import {
   getRequestSignedCookie,
   getRequestSignedCookies,
 } from '../helpers/cookies/request-cookies.js';
+
+/**
+ * A key picks a property of an object body. Of an array, a Buffer or a
+ * primitive the client sent instead, it picks only an own property (an
+ * element, a length), not a prototype member: `Buffer#parent` exposes memory
+ * shared with other requests, and a built-in function such as
+ * `Array.prototype.values` passes for a DTO without required properties.
+ * Objects keep resolving inherited properties, as a custom body parser may
+ * build class instances.
+ */
+const getBodyProperty = (body: unknown, key: string) =>
+  (isObject(body) && !Array.isArray(body) && !ArrayBuffer.isView(body)) ||
+  (!isNil(body) && Object.hasOwn(Object(body), key))
+    ? (body as Record<string, any>)[key]
+    : undefined;
 
 export class RouteParamsFactory implements IRouteParamsFactory {
   constructor(private readonly config?: ApplicationConfig) {}
@@ -28,7 +43,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
       case RouteParamtypes.RESPONSE:
         return res as any;
       case RouteParamtypes.BODY:
-        return data && req.body ? req.body[data] : req.body;
+        return data && req.body ? getBodyProperty(req.body, data) : req.body;
       case RouteParamtypes.RAW_BODY:
         return req.rawBody;
       case RouteParamtypes.PARAM:

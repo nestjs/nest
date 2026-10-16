@@ -23,6 +23,35 @@ describe('WsParamsFactory', () => {
             factory.exchangeKeyForValue(WsParamtype.PAYLOAD, 'data', args),
           ).toEqual(data.data);
         });
+        describe('with parameter extraction', () => {
+          const extract = (payload: unknown, key: string) =>
+            factory.exchangeKeyForValue(WsParamtype.PAYLOAD, key, [
+              client,
+              payload,
+            ]);
+
+          it('should not resolve the key against the prototype of an array, a Buffer or a primitive', () => {
+            expect(extract(Buffer.from('x'), 'parent')).toBeUndefined();
+            expect(extract(Buffer.from('x'), 'buffer')).toBeUndefined();
+            expect(extract([], 'values')).toBeUndefined();
+            expect(extract('text', 'search')).toBeUndefined();
+            expect(extract(1, 'toFixed')).toBeUndefined();
+            expect(extract(null, 'data')).toBeUndefined();
+          });
+          it('should still resolve their own properties', () => {
+            expect(extract(['a'], '0')).toBe('a');
+            expect(extract(['a'], 'length')).toBe(1);
+            expect(extract('text', 'length')).toBe(4);
+          });
+          it('should still resolve the inherited properties of an object', () => {
+            class Message {
+              get text() {
+                return 'hi';
+              }
+            }
+            expect(extract(new Message(), 'text')).toBe('hi');
+          });
+        });
       });
       describe(`WsParamtype.SOCKET`, () => {
         it('should return a connected socket object', () => {
