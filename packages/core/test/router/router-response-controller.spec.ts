@@ -5,7 +5,12 @@ import { NEVER, Observable, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
-import { HttpStatus, RequestMethod } from '../../../common';
+import {
+  HttpStatus,
+  Logger,
+  type MessageEvent,
+  RequestMethod,
+} from '../../../common';
 import { SSE_ABORT_CONTROLLER } from '../../../common/decorators/http/sse-signal.decorator';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { RouterResponseController } from '../../router/router-response-controller';
@@ -892,6 +897,95 @@ data: test
       expect(teardown.calledOnce).to.be.true;
       expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).to.be.true;
       expect(request.socket.listenerCount('close')).to.equal(0);
+    });
+
+    describe('when the client stops reading', () => {
+      // A destination that never accepts a chunk, like the socket of a client
+      // that reads nothing
+      class StalledSink extends Writable {
+        constructor() {
+          super({ highWaterMark: 1 });
+        }
+
+        _write() {}
+      }
+
+      const data = 'x'.repeat(64 * 1024);
+
+      const emitOnSeparateTurns = async (
+        producer: Subject<MessageEvent>,
+        count: number,
+        createEvent: () => MessageEvent = () => ({ data }),
+      ) => {
+        for (let i = 0; i < count; i++) {
+          producer.next(createEvent());
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      };
+
+      beforeEach(() => {
+        sinon.stub(Logger.prototype, 'warn');
+      });
+
+      afterEach(() => {
+        sinon.restore();
+      });
+
+      it('should drop the connection once too much event data waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        // 8M characters, about 2M of which the streams buffer themselves
+        await emitOnSeparateTurns(producer, 128);
+
+        expect(response.destroyed).to.be.true;
+        await lifecycle;
+        expect(producer.observed).to.be.false;
+        request.destroy();
+      });
+
+      it('should count event data given as an object', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await emitOnSeparateTurns(producer, 128, () => ({ data: { data } }));
+
+        expect(response.destroyed).to.be.true;
+        await lifecycle;
+        expect(producer.observed).to.be.false;
+        request.destroy();
+      });
+
+      it('should keep the connection while less event data waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await emitOnSeparateTurns(producer, 48);
+
+        expect(response.destroyed).to.be.false;
+        expect(producer.observed).to.be.true;
+        response.destroy();
+        await lifecycle;
+        request.destroy();
+      });
     });
 
     describe('when there is an error before headers are committed', () => {
