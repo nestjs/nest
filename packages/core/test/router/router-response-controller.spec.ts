@@ -1,7 +1,7 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import { IncomingMessage, ServerResponse } from 'http';
-import { Observable, of, Subject } from 'rxjs';
+import { NEVER, Observable, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
@@ -917,6 +917,64 @@ data: test
         } catch (e) {
           expect(e.message).to.equal('Some error');
         }
+      });
+
+      describe('when the headers cannot be written', () => {
+        // Node validates header values in writeHead(), which Fastify calls
+        // with the headers set on the reply, e.g. one taken from a query param
+        class SinkWithInvalidHeader extends Writable {
+          readonly error = Object.assign(
+            new TypeError('Invalid character in header content ["x-query"]'),
+            { code: 'ERR_INVALID_CHAR' },
+          );
+          writeHead = sinon.stub().throws(this.error);
+
+          _write(
+            chunk: any,
+            encoding: string,
+            callback: (error?: Error | null) => void,
+          ): void {
+            callback();
+          }
+        }
+
+        (
+          [
+            ['when they are committed after subscribing', () => NEVER],
+            ['with the first event', () => of({ data: 'hello' })],
+          ] as const
+        ).forEach(([name, createProducer]) => {
+          it(`should reject ${name}`, async () => {
+            const teardown = sinon.spy();
+            const producer = new Observable(subscriber => {
+              const subscription = createProducer().subscribe(subscriber);
+              return () => {
+                subscription.unsubscribe();
+                teardown();
+              };
+            });
+            const response = new SinkWithInvalidHeader();
+            const request = new PassThrough();
+
+            try {
+              await routerResponseController.sse(
+                producer,
+                response as unknown as ServerResponse,
+                request as unknown as IncomingMessage,
+              );
+              expect.fail('should have rejected');
+            } catch (err) {
+              expect(err).to.equal(response.error);
+            }
+            await new Promise(resolve => setImmediate(resolve));
+
+            expect(teardown.calledOnce).to.be.true;
+            expect(response.writableEnded).to.be.false;
+            expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).to.be
+              .true;
+            request.destroy();
+          });
+        });
       });
     });
 

@@ -203,6 +203,40 @@ describe('Sse (Fastify Application)', () => {
     });
   });
 
+  describe('headers set on the reply', () => {
+    beforeEach(async () => {
+      const moduleFixture = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleFixture.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter({
+          forceCloseConnections: true,
+        }),
+      );
+
+      await app.listen(0);
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    ['sse/query-header', 'sse/query-header/first-event'].forEach(path => {
+      it(`answers 500 when one is not a valid header value (${path})`, async () => {
+        const url = await app.getUrl();
+
+        const response = await fetch(`${url}/${path}?value=%E2%82%AC`);
+
+        expect(response.status).to.equal(500);
+        await response.text();
+        const valid = await fetch(`${url}/sse/burst?n=1&size=1`);
+        expect(valid.status).to.equal(200);
+        await valid.text();
+      });
+    });
+  });
+
   describe('Promise<Observable> disconnect handling', () => {
     beforeEach(async () => {
       const moduleFixture = await Test.createTestingModule({

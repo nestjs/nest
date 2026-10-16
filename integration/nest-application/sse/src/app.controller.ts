@@ -1,6 +1,7 @@
 import {
   Body,
   CallHandler,
+  CanActivate,
   Controller,
   ExecutionContext,
   Get,
@@ -13,12 +14,13 @@ import {
   RequestMethod,
   Sse,
   SseSignal,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import { IsInt } from 'class-validator';
 import { IncomingMessage } from 'node:http';
-import { EMPTY, interval, map, Observable, of } from 'rxjs';
+import { EMPTY, interval, map, NEVER, Observable, of } from 'rxjs';
 
 class SseQueryDto {
   @Type(() => Number)
@@ -30,6 +32,19 @@ class SseQueryDto {
 class PassthroughInterceptor implements NestInterceptor {
   intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle();
+  }
+}
+
+// Sets a header on the reply from a query param, before the handler runs
+@Injectable()
+class ReplyQueryHeaderGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const http = context.switchToHttp();
+    const { value } = http.getRequest<{ query: { value: string } }>().query;
+    http
+      .getResponse<{ header(name: string, value: string): unknown }>()
+      .header('x-query', value);
+    return true;
   }
 }
 
@@ -67,6 +82,18 @@ export class AppController {
     return interval(1000).pipe(
       map(() => ({ data: { hello: 'world' } }) as MessageEvent),
     );
+  }
+
+  @Sse('sse/query-header')
+  @UseGuards(ReplyQueryHeaderGuard)
+  sseQueryHeader(): Observable<MessageEvent> {
+    return NEVER;
+  }
+
+  @Sse('sse/query-header/first-event')
+  @UseGuards(ReplyQueryHeaderGuard)
+  sseQueryHeaderFirstEvent(): Observable<MessageEvent> {
+    return of({ data: 'hello' });
   }
 
   @Sse('sse/validated')

@@ -119,7 +119,6 @@ export class SseStream extends Transform {
     if (this._destination.writableEnded) {
       return;
     }
-    this._headersCommitted = true;
     const statusCode = this._statusCode ?? 200;
     const additionalHeaders = this._additionalHeaders;
     if (this._destination.writeHead) {
@@ -138,6 +137,9 @@ export class SseStream extends Transform {
       });
       this._destination.flushHeaders?.();
     }
+    // Only once writeHead() has returned: Node validates the header values
+    // there, and if it throws, nothing has been sent yet.
+    this._headersCommitted = true;
     this._destination.write('\n');
   }
 

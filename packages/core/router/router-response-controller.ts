@@ -159,6 +159,27 @@ export class RouterResponseController {
         }
       };
 
+      // Node validates the header values only once they are written, and they
+      // are also written outside the handler's promise chain (from a timer),
+      // where a throw would go uncaught. The error is handed to the exception
+      // filters, which can still answer as no header has been sent. The
+      // stream is unpiped first, as the pipe would otherwise end the response
+      // with it.
+      const commitHeaders = (): boolean => {
+        try {
+          stream.commitHeaders();
+          return true;
+        } catch (err) {
+          settled = true;
+          finalize();
+          subscription?.unsubscribe();
+          stream.unpipe(response);
+          endStream();
+          reject(err);
+          return false;
+        }
+      };
+
       const onClose = () => {
         if (settled || closeRequested) {
           return;
@@ -263,10 +284,9 @@ export class RouterResponseController {
           // skip the write. Otherwise headers are sent immediately rather
           // than waiting for the first Observable emission.
           setTimeout(() => {
-            if (settled) {
+            if (settled || !commitHeaders()) {
               return;
             }
-            stream.commitHeaders();
             // A HEAD response has no body, so it is complete once the headers
             // are sent. Left open, it would hold back the next request on the
             // same keep-alive connection until the producer completes.
