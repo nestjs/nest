@@ -188,4 +188,37 @@ describe('WsAdapter', () => {
       }
     });
   });
+
+  describe('create (own port and path)', () => {
+    const getFreePort = async () => {
+      const probe = createServer();
+      await new Promise<void>(resolve => probe.listen(0, '127.0.0.1', resolve));
+      const { port } = probe.address() as AddressInfo;
+      await new Promise(resolve => probe.close(resolve));
+      return port;
+    };
+    let adapter: WsAdapter;
+    let port: number;
+
+    beforeEach(async () => {
+      adapter = new WsAdapter();
+      port = await getFreePort();
+    });
+    afterEach(() => adapter.dispose());
+
+    it('should answer a request that is not an upgrade with 426', async () => {
+      adapter.create(port, { path: '/chat' });
+      const httpServer = adapter['httpServersRegistry'].get(port);
+      if (!httpServer.listening) {
+        await once(httpServer, 'listening');
+      }
+
+      const response = await fetch(`http://127.0.0.1:${port}/chat`, {
+        signal: AbortSignal.timeout(1000),
+      });
+
+      expect(response.status).to.equal(426);
+      expect(await response.text()).to.equal('Upgrade Required');
+    });
+  });
 });
