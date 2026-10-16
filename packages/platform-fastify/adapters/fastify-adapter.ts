@@ -157,6 +157,8 @@ export class FastifyAdapter<
   private isMiddieRegistered: boolean;
   private pendingMiddlewares: Array<{ args: any[] }> = [];
   private versioningOptions?: VersioningOptions;
+  // Exceptions thrown by the extractor of custom versioning, by raw request
+  private readonly versionExtractorErrors = new WeakMap<object, unknown>();
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
@@ -222,7 +224,15 @@ export class FastifyAdapter<
       }
       // Custom Versioning Handler
       else if (this.versioningOptions?.type === VersioningType.CUSTOM) {
-        return this.versioningOptions.extractor(req);
+        try {
+          return this.versioningOptions.extractor(req);
+        } catch (err) {
+          // Fastify routes the request, and so calls the extractor, before
+          // anything could catch the exception. It is passed to the error
+          // handler from an `onRequest` hook instead (see the constructor).
+          this.versionExtractorErrors.set(req, err);
+          return undefined;
+        }
       }
       return undefined;
     },
@@ -285,6 +295,22 @@ export class FastifyAdapter<
       } else {
         reply.callNotFound();
       }
+    });
+
+    // Passes an exception thrown by the extractor of custom versioning while
+    // Fastify routed the request (see `versionConstraint`) to the error
+    // handler, for matched and unmatched routes alike. Added here, like the
+    // hooks above, so that it runs before Nest middleware.
+    this.instance.addHook('onRequest', (request, _reply, done) => {
+      if (!this.versionExtractorErrors.has(request.raw)) {
+        done();
+        return;
+      }
+      const err = this.versionExtractorErrors.get(request.raw);
+      this.versionExtractorErrors.delete(request.raw);
+      done(
+        (err as Error) || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR(),
+      );
     });
 
     this.instance.addHook('onResponse', (request, reply, done) => {

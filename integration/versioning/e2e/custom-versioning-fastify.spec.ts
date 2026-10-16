@@ -1,4 +1,8 @@
-import { INestApplication, VersioningType } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  VersioningType,
+} from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -958,6 +962,66 @@ describe('Custom Versioning (fastify)', () => {
       it('No Header', () => {
         return request(app.getHttpServer()).get('/foo/bar').expect(404);
       });
+    });
+
+    after(async () => {
+      await app.close();
+    });
+  });
+
+  // ======================================================================== //
+  // Fastify calls the extractor while it routes the request
+  describe('with an extractor that throws', () => {
+    before(async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleRef.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+        { logger: false },
+      );
+      app.enableVersioning({
+        type: VersioningType.CUSTOM,
+        extractor: (request: FastifyRequest) => {
+          if (request.headers['x-throw'] === 'http-exception') {
+            throw new BadRequestException('Invalid version');
+          }
+          if (request.headers['x-throw'] === 'error') {
+            throw new Error('extractor failure');
+          }
+          return extractor(request);
+        },
+      });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it('answers an HttpException with its response', () => {
+      return request(app.getHttpServer())
+        .get('/')
+        .set({ 'x-throw': 'http-exception' })
+        .expect(400, {
+          statusCode: 400,
+          message: 'Invalid version',
+          error: 'Bad Request',
+        });
+    });
+
+    it('answers another exception with 500 and keeps serving requests', async () => {
+      await request(app.getHttpServer())
+        .get('/')
+        .set({ 'x-throw': 'error' })
+        .expect(500, {
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+
+      await request(app.getHttpServer())
+        .get('/')
+        .set({ Accept: 'application/foo.v1+json' })
+        .expect(200)
+        .expect('Hello World V1!');
     });
 
     after(async () => {
