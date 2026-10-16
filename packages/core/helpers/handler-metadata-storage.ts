@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { ContextId } from '../injector/instance-wrapper.js';
 import { HeaderStream } from '../router/sse-stream.js';
 import { ParamProperties } from './context-utils.js';
-import type { Type } from '@nestjs/common';
+import type { StreamableFile, Type } from '@nestjs/common';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 
@@ -14,6 +14,7 @@ export type HandlerResponseBasicFn = <TResult, TResponse>(
   res: TResponse,
   req?: any,
   handlerObservable$?: Observable<unknown>,
+  handlerFiles?: StreamableFile[],
 ) => any;
 
 export type HandleSseResponseFn = <

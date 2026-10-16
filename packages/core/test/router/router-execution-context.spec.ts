@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception.js';
 import { EventEmitter } from 'events';
 import {
+  concatMap,
   lastValueFrom,
   Observable,
   of,
@@ -15,6 +16,7 @@ import {
   HttpException,
   HttpStatus,
   RouteParamMetadata,
+  StreamableFile,
 } from '../../../common/index.js';
 import { AbstractHttpAdapter } from '../../adapters/index.js';
 import { ApplicationConfig } from '../../application-config.js';
@@ -900,6 +902,94 @@ describe('RouterExecutionContext', () => {
 
         expect(producer.tornDown).toBe(true);
         expect(adapterReplySpy).not.toHaveBeenCalled();
+      });
+
+      it('should destroy the stream of a StreamableFile it does not send', async () => {
+        const stream = new PassThrough();
+        const files = new Subject<StreamableFile>();
+
+        const pending = handler(files, response, request);
+        files.next(new StreamableFile(stream));
+        request.socket.emit('close');
+        await pending;
+
+        expect(adapterReplySpy).not.toHaveBeenCalled();
+        expect(stream.destroyed).toBe(true);
+      });
+
+      it('should destroy the stream of a StreamableFile an interceptor holds', async () => {
+        const stream = new PassThrough();
+        let holding!: () => void;
+        const held = new Promise<void>(resolve => (holding = resolve));
+        vi.spyOn(contextCreator, 'getMetadata').mockReturnValue({
+          argsLength: 0,
+          fnHandleResponse: handler,
+          isSseHandler: false,
+          paramtypes: [],
+          getParamsMetadata: vi.fn().mockReturnValue([]),
+          httpStatusCode: 200,
+          hasCustomHeaders: false,
+          responseHeaders: [],
+        } as any);
+        vi.spyOn(contextCreator, 'createGuardsFn').mockReturnValue(null as any);
+        vi.spyOn(contextCreator, 'createPipesFn').mockReturnValue(null as any);
+        vi.spyOn(
+          (contextCreator as any).interceptorsContextCreator,
+          'create',
+        ).mockReturnValue([
+          {
+            // e.g. writing an audit log entry before passing the file on
+            intercept: (_, next) =>
+              next.handle().pipe(
+                concatMap(async file => {
+                  holding();
+                  await new Promise(() => {});
+                  return file;
+                }),
+              ),
+          },
+        ]);
+        const proxy = contextCreator.create(
+          {} as any,
+          { apply: () => of(new StreamableFile(stream)) } as any,
+          '',
+          '',
+          0,
+        );
+
+        const pending = proxy(request, response, vi.fn());
+        await held;
+        request.socket.emit('close');
+        await pending;
+
+        expect(adapterReplySpy).not.toHaveBeenCalled();
+        expect(stream.destroyed).toBe(true);
+      });
+    });
+
+    describe('when the adapter fails to send a StreamableFile', () => {
+      it('should destroy its stream', async () => {
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          false,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        // e.g. a header value Node.js rejects
+        const error = new TypeError('Invalid character in header content');
+        vi.spyOn(adapter, 'reply').mockImplementation(() => {
+          throw error;
+        });
+        const stream = new PassThrough();
+
+        await expect(handler(new StreamableFile(stream), {})).rejects.toBe(
+          error,
+        );
+        expect(stream.destroyed).toBe(true);
       });
     });
 
