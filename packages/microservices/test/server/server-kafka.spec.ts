@@ -3,6 +3,7 @@ import { EMPTY, of, throwError } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { KafkaRetriableException } from '../../exceptions/index.js';
 import {
   EachMessagePayload,
@@ -482,6 +483,28 @@ describe('ServerKafka', () => {
 
       await server.handleMessage(payload);
       expect(handler).toHaveBeenCalled();
+    });
+
+    it('should log and skip a message that the parser rejects', async () => {
+      untypedServer.parser = {
+        parse: () => {
+          throw new MaxPacketLengthExceededException(17);
+        },
+      };
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: handler,
+      });
+      const loggerErrorSpy = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+
+      // A rejection would make kafkajs redeliver the message
+      await expect(server.handleMessage(payload)).resolves.toBeUndefined();
+
+      expect(loggerErrorSpy).toHaveBeenCalledOnce();
+      expect(handler).not.toHaveBeenCalled();
+      expect(getPublisherSpy).not.toHaveBeenCalled();
     });
   });
 

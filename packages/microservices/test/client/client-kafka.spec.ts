@@ -4,6 +4,7 @@ import { ClientKafka } from '../../client/client-kafka.js';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaHeaders } from '../../enums/index.js';
 import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception.js';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import {
   ConsumerGroupJoinEvent,
   EachMessagePayload,
@@ -754,6 +755,57 @@ describe('ClientKafka', () => {
       });
 
       it('should not call callback', () => {
+        expect(callback).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when the parser rejects the message', () => {
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        untypedClient.parser = {
+          parse: () => {
+            throw new MaxPacketLengthExceededException(17);
+          },
+        };
+        loggerErrorSpy = vi
+          .spyOn(untypedClient.logger, 'error')
+          .mockImplementation(() => {});
+        subscription = client.createResponseCallback();
+        client['routingMap'].set(correlationId, callback);
+      });
+
+      it('should log and skip the message, and fail the pending request', async () => {
+        // A rejection would make kafkajs redeliver the message
+        await expect(subscription(payload)).resolves.toBeUndefined();
+
+        expect(loggerErrorSpy).toHaveBeenCalledOnce();
+        expect(callback).toHaveBeenCalledExactlyOnceWith({
+          err: expect.any(MaxPacketLengthExceededException),
+          isDisposed: true,
+        });
+      });
+
+      it('should skip the message when its correlation id cannot be decoded', async () => {
+        const correlationIdHeader = {
+          toString: () => {
+            throw new RangeError(
+              'Cannot create a string longer than 0x1fffffe8 characters',
+            );
+          },
+        };
+
+        await expect(
+          subscription({
+            ...payload,
+            message: {
+              ...payload.message,
+              headers: { [KafkaHeaders.CORRELATION_ID]: correlationIdHeader },
+            },
+          }),
+        ).resolves.toBeUndefined();
+
+        expect(loggerErrorSpy).toHaveBeenCalledOnce();
         expect(callback).not.toHaveBeenCalled();
       });
     });

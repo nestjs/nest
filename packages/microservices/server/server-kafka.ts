@@ -270,12 +270,20 @@ export class ServerKafka extends Server<never, KafkaStatus> {
 
   public async handleMessage(payload: EachMessagePayload) {
     const channel = payload.topic;
-    const rawMessage = this.parser!.parse<KafkaMessage>(
-      Object.assign(payload.message, {
-        topic: payload.topic,
-        partition: payload.partition,
-      }),
-    );
+    let rawMessage: KafkaMessage;
+    try {
+      rawMessage = this.parser!.parse<KafkaMessage>(
+        Object.assign(payload.message, {
+          topic: payload.topic,
+          partition: payload.partition,
+        }),
+      );
+    } catch (err) {
+      // A rejection would make kafkajs redeliver the message forever
+      return this.logger.error(
+        `Message skipped (topic "${channel}", partition ${payload.partition}, offset ${payload.message.offset}): ${err.message}`,
+      );
+    }
     const headers = rawMessage.headers as unknown as Record<string, any>;
     const correlationId = headers[KafkaHeaders.CORRELATION_ID];
     const replyTopic = headers[KafkaHeaders.REPLY_TOPIC];
