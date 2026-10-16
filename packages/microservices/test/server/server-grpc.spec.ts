@@ -2,9 +2,10 @@ import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import { join } from 'path';
-import { EMPTY, ReplaySubject, Subject, throwError } from 'rxjs';
+import { EMPTY, of, ReplaySubject, Subject, throwError } from 'rxjs';
 import { ignoreElements } from 'rxjs/operators';
 import * as sinon from 'sinon';
+import { Writable } from 'stream';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
 import * as grpcHelpers from '../../helpers/grpc-helpers';
@@ -1090,6 +1091,69 @@ describe('ServerGrpc', () => {
       );
 
       expect(callback.firstCall.args[0]).to.equal(error);
+    });
+  });
+
+  describe('when a response stream emits null', () => {
+    const nullResponseError = {
+      code: GRPC_STATUS_INTERNAL,
+      details: 'The handler emitted a null response',
+    };
+
+    // An object mode stream, like a grpc-js call: "write(null)" throws
+    function createCall({ highWaterMark = 16 } = {}) {
+      const written: unknown[] = [];
+      const errors: unknown[] = [];
+      const pendingWrites: Array<() => void> = [];
+      const call = Object.assign(
+        new Writable({
+          objectMode: true,
+          highWaterMark,
+          write(chunk, _encoding, callback) {
+            written.push(chunk);
+            pendingWrites.push(callback);
+          },
+        }),
+        { request: {}, metadata: {} },
+      );
+      call.on('error', err => errors.push(err));
+      const flush = () => pendingWrites.splice(0).forEach(write => write());
+      return { call, written, errors, flush };
+    }
+
+    it('should fail the call instead of writing null', async () => {
+      const { call, written, errors } = createCall();
+
+      await server.createStreamServiceMethod(() => of('a', null, 'b'))(
+        call,
+        sinon.spy(),
+      );
+
+      expect(written).to.deep.equal(['a']);
+      expect(errors).to.deep.equal([nullResponseError]);
+    });
+
+    it('should fail the call once the responses before null are written', async () => {
+      const { call, written, errors, flush } = createCall({
+        highWaterMark: 1,
+      });
+      const subject = new Subject<string | null>();
+
+      const result = server.createStreamServiceMethod(() => subject)(
+        call,
+        sinon.spy(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      subject.next('a');
+      subject.next('b');
+      subject.next(null);
+      flush();
+      expect(errors).to.deep.equal([]);
+      flush();
+      await result;
+
+      expect(written).to.deep.equal(['a', 'b']);
+      expect(errors).to.deep.equal([nullResponseError]);
     });
   });
 
