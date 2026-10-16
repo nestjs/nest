@@ -52,6 +52,18 @@ const defaultMessageParser: WsMessageParser = (data: WsData) => {
   return JSON.parse(data.toString());
 };
 
+// What ws answers on the servers it creates itself. A request left without an
+// answer keeps its connection open, and Node goes on queueing the requests
+// pipelined behind it until the heap runs out.
+const rejectNonUpgradeRequest: http.RequestListener = (_, res) => {
+  const body = http.STATUS_CODES[426]!;
+  res.writeHead(426, {
+    'Content-Length': body.length,
+    'Content-Type': 'text/plain',
+  });
+  res.end(body);
+};
+
 /**
  * @publicApi
  */
@@ -293,7 +305,7 @@ export class WsAdapter extends AbstractWsAdapter {
 
   protected ensureHttpServerExists(
     port: number,
-    httpServer = http.createServer(),
+    httpServer = http.createServer(rejectNonUpgradeRequest),
   ) {
     if (this.httpServersRegistry.has(port)) {
       return;
