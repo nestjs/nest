@@ -71,36 +71,19 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
             // Falsy entries are allowed, as the pipes context filters them out
             data.pipes.every(pipe => isNil(pipe) || isPipe(pipe))));
 
-      // Check if the last pipe argument is actually an options object
-      const lastPipeArg =
-        paramPipes.length > 0 ? paramPipes[paramPipes.length - 1] : undefined;
-      const isLastPipeOptions =
-        !isDataOptions && isParameterDecoratorOptions(lastPipeArg);
-
-      let finalData: any;
+      const finalData: any = isDataOptions ? undefined : paramData;
       let finalSchema: StandardSchemaV1 | undefined;
-      let finalPipes: (Type<PipeTransform> | PipeTransform | FactoryData)[];
+      const finalPipes: (Type<PipeTransform> | PipeTransform)[] = [];
 
-      if (isDataOptions) {
-        const opts = data as unknown as ParameterDecoratorOptions;
-        finalData = undefined;
-        finalSchema = opts.schema;
-        // Merge positional pipes passed after the options object
-        finalPipes = [...((opts.pipes ?? []) as any[]), ...paramPipes];
-      } else if (isLastPipeOptions) {
-        const opts = lastPipeArg as unknown as ParameterDecoratorOptions;
-        finalData = paramData;
-        finalSchema = opts.schema;
-        finalPipes = [
-          ...paramPipes.slice(0, -1),
-          ...((opts.pipes ?? []) as any[]),
-        ];
-      } else {
-        finalData = paramData;
-        finalSchema = undefined;
-        finalPipes = paramPipes as (
-          Type<PipeTransform> | PipeTransform | FactoryData
-        )[];
+      // Options objects may also appear among the pipes, at any position.
+      // Their pipes are merged in place, and the first schema found is used.
+      for (const arg of isDataOptions ? [data, ...paramPipes] : paramPipes) {
+        if (isParameterDecoratorOptions(arg)) {
+          finalSchema ??= arg.schema;
+          finalPipes.push(...(arg.pipes ?? []));
+        } else {
+          finalPipes.push(arg as Type<PipeTransform> | PipeTransform);
+        }
       }
 
       Reflect.defineMetadata(
@@ -112,7 +95,7 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
           factory,
           finalData,
           finalSchema,
-          ...(finalPipes as PipeTransform[]),
+          ...finalPipes,
         ),
         target.constructor,
         key!,
