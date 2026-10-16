@@ -2,6 +2,7 @@ import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { createContextId } from '../../helpers';
+import { getClassRef } from '../../helpers/class-ref-registry';
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 
@@ -28,6 +29,14 @@ describe('InstanceWrapper', () => {
       expect(
         instance.getInstanceByContextId(STATIC_CONTEXT).instance,
       ).to.be.eql(partial.instance);
+    });
+    it('should register the metatype as the class of its instances', () => {
+      class Mixin {}
+      class Host {}
+      Host.prototype.constructor = Mixin;
+
+      new InstanceWrapper({ metatype: Host });
+      expect(getClassRef(new Host())).to.equal(Host);
     });
   });
 
@@ -1010,6 +1019,16 @@ describe('InstanceWrapper', () => {
         });
 
         expect(wrapper.metatype).to.be.eql(TestClass);
+      });
+
+      it('should register the given class as the class of its instances', () => {
+        class Mixin {}
+        class Host {}
+        Host.prototype.constructor = Mixin;
+
+        const wrapper = new InstanceWrapper();
+        wrapper.mergeWith({ useClass: Host, provide: 'token' });
+        expect(getClassRef(new Host())).to.equal(Host);
       });
     });
 

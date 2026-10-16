@@ -7,6 +7,7 @@ import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
 import { NestContainer } from '../../../core/injector/container';
+import { InstanceWrapper } from '../../../core/injector/instance-wrapper';
 import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
@@ -128,6 +129,35 @@ describe('WsContextCreator', () => {
             expect(err).to.be.instanceOf(WsException),
           );
         });
+      });
+    });
+    describe('when the "constructor" of the gateway prototype was overwritten', () => {
+      it('should apply the class-level guards of the registered class', async () => {
+        class Mixin {}
+        @UseGuards({ canActivate: () => false })
+        class MixedIn {
+          handle() {
+            return 'handled';
+          }
+        }
+        // What mixin helpers copying every property of the prototype do
+        MixedIn.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: MixedIn });
+
+        const gateway = new MixedIn();
+        const proxy = contextCreator.create(
+          gateway,
+          gateway.handle,
+          module,
+          'handle',
+        );
+        let error: unknown;
+        try {
+          await proxy(null, 'data');
+        } catch (err) {
+          error = err;
+        }
+        expect(error).to.be.instanceOf(WsException);
       });
     });
   });

@@ -1,3 +1,4 @@
+import { UseGuards } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
@@ -72,6 +73,31 @@ describe('GuardsContextCreator', () => {
         expect(
           guardsContextCreator.createConcreteContext(guardTypeRefs),
         ).to.have.length(2);
+      });
+    });
+  });
+
+  describe('create', () => {
+    describe('when the "constructor" of the host prototype was overwritten', () => {
+      it('should reflect class-level guards from the registered class', () => {
+        @UseGuards(Guard2)
+        class Mixin {}
+        @UseGuards(Guard1)
+        class Host {
+          handler() {}
+        }
+        // What mixin helpers copying every property of the prototype do
+        Host.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: Host });
+
+        const instance = new Host();
+        const result = guardsContextCreator.create(
+          instance,
+          instance.handler,
+          'test',
+        );
+        expect(result).to.have.length(1);
+        expect(result[0]).to.equal(guards[0].instance);
       });
     });
   });

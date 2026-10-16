@@ -9,6 +9,7 @@ import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
 import { ModulesContainer } from '../../injector/modules-container';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
@@ -58,6 +59,21 @@ describe('ExternalContextCreator', () => {
       contextCreator.create({ foo: 'bar' }, callback, '', '', null!);
       expect(getContextModuleKeySpy.called).to.be.true;
       done();
+    });
+    describe('when the "constructor" of the host prototype was overwritten', () => {
+      it('should look the module up by the registered class', () => {
+        class Mixin {}
+        class Host {}
+        Host.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: Host });
+
+        const getContextModuleKeySpy = sinon.spy(
+          contextCreator,
+          'getContextModuleKey',
+        );
+        contextCreator.create(new Host(), callback, '', '', null!);
+        expect(getContextModuleKeySpy.calledWith(Host)).to.be.true;
+      });
     });
     describe('returns proxy function', () => {
       let proxyContext;

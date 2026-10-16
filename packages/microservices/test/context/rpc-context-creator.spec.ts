@@ -8,6 +8,7 @@ import { ApplicationConfig } from '../../../core/application-config';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
 import { NestContainer } from '../../../core/injector/container';
+import { InstanceWrapper } from '../../../core/injector/instance-wrapper';
 import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
@@ -136,6 +137,35 @@ describe('RpcContextCreator', () => {
             expect(err).to.be.instanceOf(RpcException),
           );
         });
+      });
+    });
+    describe('when the "constructor" of the controller prototype was overwritten', () => {
+      it('should apply the class-level guards of the registered class', async () => {
+        class Mixin {}
+        @UseGuards({ canActivate: () => false })
+        class MixedIn {
+          handle() {
+            return of('handled');
+          }
+        }
+        // What mixin helpers copying every property of the prototype do
+        MixedIn.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: MixedIn });
+
+        const controller = new MixedIn();
+        const proxy = contextCreator.create(
+          controller,
+          controller.handle,
+          module,
+          'handle',
+        );
+        let error: unknown;
+        try {
+          await proxy('data');
+        } catch (err) {
+          error = err;
+        }
+        expect(error).to.be.instanceOf(RpcException);
       });
     });
   });

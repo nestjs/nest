@@ -19,6 +19,7 @@ import {
   InterceptorsContextCreator,
 } from '../interceptors';
 import { PipesConsumer, PipesContextCreator } from '../pipes';
+import { getClassRef } from './class-ref-registry';
 import { ContextUtils, ParamProperties } from './context-utils';
 import { ExternalErrorProxy } from './external-proxy';
 import { HandlerMetadataStorage } from './handler-metadata-storage';
@@ -106,7 +107,7 @@ export class ExternalContextCreator {
     },
     contextType: TContext = 'http' as TContext,
   ) {
-    const moduleKey = this.getContextModuleKey(instance.constructor);
+    const moduleKey = this.getContextModuleKey(getClassRef(instance));
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
       TParamsMetadata,
       TContext

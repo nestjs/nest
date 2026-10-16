@@ -9,6 +9,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { registerClassRef } from '../helpers/class-ref-registry';
 import { UuidFactory } from '../inspector/uuid-factory';
 import { STATIC_CONTEXT } from './constants';
 import {
@@ -98,6 +99,9 @@ export class InstanceWrapper<T = any> {
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
   ) {
     this.initialize(metadata);
+    if (this.isNewable()) {
+      registerClassRef(this.metatype!);
+    }
     this[INSTANCE_ID_SYMBOL] =
       metadata[INSTANCE_ID_SYMBOL] ?? this.generateUuid();
   }
@@ -493,6 +497,7 @@ export class InstanceWrapper<T = any> {
     } else if (isClassProvider(provider)) {
       this.inject = null;
       this.metatype = provider.useClass;
+      registerClassRef(provider.useClass);
     } else if (isFactoryProvider(provider)) {
       this.metatype = provider.useFactory;
       this.inject = provider.inject || [];
