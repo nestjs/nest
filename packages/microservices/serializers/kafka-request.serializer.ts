@@ -30,7 +30,13 @@ export class KafkaRequestSerializer implements Serializer<
     // correlation metadata into the returned headers, and the caller's record
     // may be frozen, reused or sent concurrently.
     const record = (isNotKafkaMessage ? { value } : value) as KafkaRequest;
-    const request: KafkaRequest = { ...record, headers: { ...record.headers } };
+    // Spreading a string or an array (as an echo handler may return them)
+    // would turn each of its characters or items into a header
+    const headers =
+      isObject(record.headers) && !Array.isArray(record.headers)
+        ? { ...record.headers }
+        : {};
+    const request: KafkaRequest = { ...record, headers };
 
     request.value = this.encode(request.value);
     if (!isNil(request.key)) {

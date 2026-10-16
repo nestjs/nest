@@ -146,6 +146,31 @@ describe('KafkaRequestSerializer', () => {
     });
   });
 
+  describe('serialize a kafka message whose headers are not an object', () => {
+    // An echo handler returns them as the sender of the request chose them
+    it.each([
+      ['a string', 'AAAA'],
+      ['an array', ['A', 'A']],
+      ['a number', 1234],
+      ['null', null],
+    ])('should send no headers if they are %s', async (_, headers) => {
+      expect(await instance.serialize({ value: 'x', headers })).toEqual({
+        value: 'x',
+        headers: {},
+      });
+    });
+
+    it('should send the headers of a class instance', async () => {
+      class Headers {
+        tenant = 'custom';
+      }
+
+      expect(
+        await instance.serialize({ value: 'x', headers: new Headers() }),
+      ).toEqual({ value: 'x', headers: { tenant: 'custom' } });
+    });
+  });
+
   describe('serialize without mutating the caller record', () => {
     it('should not mutate the record passed in', async () => {
       const record = {
