@@ -328,4 +328,84 @@ describe('RouteInfoPathExtractor', () => {
       ).toEqual(['/cats']);
     });
   });
+
+  describe('extractExcludedRoutesCoveredBy', () => {
+    let routeInfoPathExtractor: RouteInfoPathExtractor;
+
+    beforeEach(() => {
+      const appConfig = new ApplicationConfig();
+      appConfig.enableVersioning({
+        type: VersioningType.URI,
+      });
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute([
+          { path: 'health', method: RequestMethod.GET },
+          'users/me',
+          'users/:id/avatar',
+        ]),
+      });
+      routeInfoPathExtractor = new RouteInfoPathExtractor(appConfig);
+    });
+
+    it(`should return the excluded routes that a route not excluded itself covers`, () => {
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/health',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([{ path: '/health', method: RequestMethod.GET }]);
+
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/users/:id',
+          method: RequestMethod.GET,
+          version: '1',
+        }),
+      ).toEqual([
+        { path: '/users/me', method: RequestMethod.GET, version: '1' },
+      ]);
+    });
+
+    it(`should not return the excluded routes the route does not cover`, () => {
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/health',
+          method: RequestMethod.POST,
+        }),
+      ).toEqual([]);
+
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/users',
+          method: RequestMethod.GET,
+        }),
+      ).toEqual([]);
+    });
+
+    it(`should return nothing for a route that is excluded itself or a wildcard`, () => {
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/users/me',
+          method: RequestMethod.GET,
+        }),
+      ).toEqual([]);
+
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '*',
+          method: RequestMethod.ALL,
+        }),
+      ).toEqual([]);
+    });
+
+    it(`should skip the excluded routes with parameters or wildcards`, () => {
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/users/:id/:part',
+          method: RequestMethod.GET,
+        }),
+      ).toEqual([]);
+    });
+  });
 });
