@@ -93,6 +93,33 @@ describe('Fastify FileSend', () => {
         expect(statusCode).toBe(500);
       });
   });
+  it('should answer a HEAD request with the headers of a file', async () => {
+    return app
+      .inject({ url: '/file/with/headers', method: 'HEAD' })
+      .then(({ statusCode, headers, payload }) => {
+        expect(statusCode).toBe(200);
+        expect(headers['content-type']).toBe('text/markdown');
+        expect(headers['content-disposition']).toBe(
+          'attachment; filename="Readme.md"',
+        );
+        expect(headers['content-length']).toBe(`${readme.byteLength}`);
+        expect(payload).toBe('');
+      });
+  });
+  /**
+   * A HEAD request does not read the file, so its answer does not depend on
+   * whether the file can be opened (unlike the 500 of a GET request).
+   */
+  it('should answer a HEAD request without reading a file that does not exist', async () => {
+    return app
+      .inject({
+        method: 'HEAD',
+        url: '/file/not/exist',
+      })
+      .then(({ statusCode }) => {
+        expect(statusCode).toBe(200);
+      });
+  });
 
   afterEach(async () => {
     await app.close();

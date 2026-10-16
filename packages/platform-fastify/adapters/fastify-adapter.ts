@@ -48,7 +48,7 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
-import { Duplex } from 'stream';
+import { Duplex, Readable } from 'stream';
 import middie from '@fastify/middie';
 import {
   type SecurityRequestHook,
@@ -708,6 +708,18 @@ export class FastifyAdapter<
         fastifyReply.header('Content-Length', streamHeaders.length);
       }
       body = stream;
+      // Fastify's HEAD route handler resumes a stream payload, and a route
+      // declared for HEAD (or a raw response) pipes it into a response that
+      // discards it, so the whole source would be read for nothing. Fastify
+      // gets an empty stream instead, as an empty body would reset
+      // Content-Length to 0.
+      if (
+        fastifyReply.raw?.req?.method === 'HEAD' &&
+        isFunction(stream?.destroy)
+      ) {
+        stream.destroy();
+        body = Readable.from([]);
+      }
     }
     const responseContentType = fastifyReply.getHeader('Content-Type');
     if (
