@@ -174,6 +174,28 @@ describe('Server', () => {
         });
       });
     });
+    describe('when a reply cannot be published', () => {
+      it('should log the error and still send the replies behind it', async () => {
+        const error = new Error('cannot serialize');
+        const loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+        const respond = sinon.stub();
+        respond.onFirstCall().rejects(error);
+        respond.resolves();
+
+        try {
+          server.send(of('first', 'second'), respond);
+          await new Promise(resolve => setImmediate(resolve));
+        } finally {
+          loggerErrorStub.restore();
+        }
+
+        expect(loggerErrorStub.calledWith(error)).to.be.true;
+        expect(respond.getCalls().map(call => call.args[0])).to.deep.equal([
+          { response: 'first' },
+          { response: 'second', isDisposed: true },
+        ]);
+      });
+    });
     describe('when the stream emits many values', () => {
       const flush = () => new Promise(resolve => setImmediate(resolve));
 

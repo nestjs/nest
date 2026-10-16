@@ -193,8 +193,15 @@ export abstract class Server<
         process.nextTick(async () => {
           while (nextIndex < dataQueue.length) {
             const packet = dataQueue[nextIndex++];
-            if (packet) {
+            if (!packet) {
+              continue;
+            }
+            try {
               await respond(packet);
+            } catch (err) {
+              // A reply that cannot be published must neither surface as an
+              // unhandled rejection nor stop the replies queued behind it.
+              this.logger.error(err);
             }
           }
           dataQueue.length = 0;

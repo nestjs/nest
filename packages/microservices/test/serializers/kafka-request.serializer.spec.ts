@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { KafkaHeaders } from '../../enums/kafka-headers.enum';
+import { MaxKafkaHeadersExceededException } from '../../errors/max-kafka-headers-exceeded.exception';
 import { KafkaRequestSerializer } from '../../serializers/kafka-request.serializer';
 
 describe('KafkaRequestSerializer', () => {
@@ -135,6 +136,36 @@ describe('KafkaRequestSerializer', () => {
         headers: new Headers(),
       });
       expect({ ...serialized.headers }).to.deep.equal({ tenant: 'custom' });
+    });
+  });
+
+  describe('serialize a kafka message with many header values', () => {
+    // kafkajs encodes each of them as a header, at about 1 kB apiece
+    it('should send 10000 header values', () => {
+      const headers = { repeated: new Array(9_999).fill(''), single: '' };
+
+      expect(instance.serialize({ value: 'x', headers }).headers).to.deep.equal(
+        headers,
+      );
+    });
+
+    it('should throw on more header values', () => {
+      expect(() =>
+        instance.serialize({
+          value: 'x',
+          headers: { repeated: new Array(10_000).fill(''), single: '' },
+        }),
+      ).to.throw(MaxKafkaHeadersExceededException);
+    });
+
+    it('should throw on more headers', () => {
+      const headers = Object.fromEntries(
+        Array.from({ length: 10_001 }, (_, index) => [`header${index}`, '']),
+      );
+
+      expect(() => instance.serialize({ value: 'x', headers })).to.throw(
+        MaxKafkaHeadersExceededException,
+      );
     });
   });
 
