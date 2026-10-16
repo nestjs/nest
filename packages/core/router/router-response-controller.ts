@@ -23,10 +23,11 @@ import { isNil, isObject, isString } from '@nestjs/common/internal';
 
 /**
  * Characters of event data that may wait for an SSE client that is not
- * reading them before its connection is dropped. Events wait once the
- * stream and socket buffers are full, as a producer cannot be paused.
+ * reading them before its connection is dropped, unless the route sets its
+ * own `maxPendingDataLength` (see `@Sse()`). Events wait once the stream and
+ * socket buffers are full, as a producer cannot be paused.
  */
-const MAX_PENDING_DATA_LENGTH = 4 * 1024 * 1024;
+const DEFAULT_MAX_PENDING_DATA_LENGTH = 4 * 1024 * 1024;
 
 function getDataLength(message: MessageEvent): number {
   return (
@@ -131,6 +132,7 @@ export class RouterResponseController {
     options?: {
       additionalHeaders?: AdditionalHeadersSource;
       statusCode?: StatusCodeSource;
+      maxPendingDataLength?: number;
     },
   ) {
     // It's possible that we sent headers already so don't use a stream
@@ -236,6 +238,8 @@ export class RouterResponseController {
           });
 
           let pendingDataLength = 0;
+          const maxPendingDataLength =
+            options?.maxPendingDataLength ?? DEFAULT_MAX_PENDING_DATA_LENGTH;
           subscription = observableResult
             .pipe(
               map((message): MessageEvent => {
@@ -262,15 +266,17 @@ export class RouterResponseController {
               // Past a limit, the connection is dropped as if the client had
               // disconnected, rather than holding events for a client that may
               // never read them. An EventSource then reconnects, and sends the
-              // id of the last event it received.
+              // id of the last event it received. A limit of 0, like Infinity,
+              // keeps every event.
               tap(message => {
                 pendingDataLength += getDataLength(message);
                 if (
-                  pendingDataLength > MAX_PENDING_DATA_LENGTH &&
+                  maxPendingDataLength &&
+                  pendingDataLength > maxPendingDataLength &&
                   stream.writableNeedDrain
                 ) {
                   this.logger.warn(
-                    `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${MAX_PENDING_DATA_LENGTH}`,
+                    `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
                   );
                   (response as { destroy?(): void }).destroy?.();
                   onClose();

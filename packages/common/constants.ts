@@ -40,6 +40,7 @@ export const HEADERS_METADATA = '__headers__';
 export const REDIRECT_METADATA = '__redirect__';
 export const RESPONSE_PASSTHROUGH_METADATA = '__responsePassthrough__';
 export const SSE_METADATA = '__sse__';
+export const SSE_OPTIONS_METADATA = '__sseOptions__';
 export const VERSION_METADATA = '__version__';
 export const INJECTABLE_WATERMARK = '__injectable__';
 export const CONTROLLER_WATERMARK = '__controller__';

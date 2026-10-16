@@ -1152,6 +1152,53 @@ data: test
         await lifecycle;
         request.destroy();
       });
+
+      it('should drop the connection once more event data than the route allows waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          { maxPendingDataLength: 1024 },
+        );
+        // Kept under the default limit
+        await emitOnSeparateTurns(producer, 48);
+
+        expect(response.destroyed).toBe(true);
+        await lifecycle;
+        expect(producer.observed).toBe(false);
+        expect(Logger.prototype.warn).toHaveBeenCalledWith(
+          expect.stringContaining('exceeds the maximum allowed 1024'),
+        );
+        request.destroy();
+      });
+
+      it.each([0, Infinity])(
+        'should keep the connection when the route lifts the limit with %s',
+        async maxPendingDataLength => {
+          const producer = new Subject<MessageEvent>();
+          const response = new StalledSink();
+          const request = new PassThrough();
+
+          const lifecycle = routerResponseController.sse(
+            producer,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+            { maxPendingDataLength },
+          );
+          // Dropped under the default limit
+          await emitOnSeparateTurns(producer, 128);
+
+          expect(response.destroyed).toBe(false);
+          expect(producer.observed).toBe(true);
+          response.destroy();
+          await lifecycle;
+          request.destroy();
+        },
+      );
     });
 
     it('should commit headers on next tick without waiting for first emission', async () => {

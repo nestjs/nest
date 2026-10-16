@@ -11,6 +11,7 @@ import {
 } from 'rxjs';
 import { PassThrough } from 'stream';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { Sse } from '../../../common/decorators/http/sse.decorator.js';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
 import {
   HttpException,
@@ -1058,7 +1059,7 @@ describe('RouterExecutionContext', () => {
         vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -1083,7 +1084,7 @@ describe('RouterExecutionContext', () => {
         vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -1116,7 +1117,7 @@ describe('RouterExecutionContext', () => {
         vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -1154,7 +1155,7 @@ describe('RouterExecutionContext', () => {
         vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -1191,7 +1192,7 @@ describe('RouterExecutionContext', () => {
         vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -1230,7 +1231,7 @@ describe('RouterExecutionContext', () => {
         vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -1271,7 +1272,7 @@ describe('RouterExecutionContext', () => {
         vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -1288,6 +1289,32 @@ describe('RouterExecutionContext', () => {
         );
         result.complete();
         await handled;
+      });
+
+      it('should pass the maximum pending data length of the route to the SSE response', async () => {
+        class TestController {
+          @Sse('events', { maxPendingDataLength: 1024 })
+          events() {}
+        }
+        const sse = vi
+          .spyOn(contextCreator['responseController'], 'sse')
+          .mockResolvedValue(undefined);
+        const result = of('test');
+        const response = new PassThrough();
+        const request = new PassThrough();
+
+        const handler = contextCreator.createHandleResponseFn(
+          TestController.prototype.events,
+          true,
+        ) as HandlerResponseBasicFn;
+        await handler(result, response, request);
+
+        expect(sse).toHaveBeenCalledWith(
+          result,
+          response,
+          request,
+          expect.objectContaining({ maxPendingDataLength: 1024 }),
+        );
       });
     });
   });

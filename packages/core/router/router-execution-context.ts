@@ -2,6 +2,7 @@ import type {
   ArgumentMetadata,
   ContextType,
   RouteParamMetadata,
+  SseOptions,
 } from '@nestjs/common';
 import {
   type CanActivate,
@@ -25,6 +26,7 @@ import {
   ROUTE_ARGS_METADATA,
   RouteParamtypes,
   SSE_METADATA,
+  SSE_OPTIONS_METADATA,
 } from '@nestjs/common/internal';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { IncomingMessage } from 'http';
@@ -352,6 +354,12 @@ export class RouterExecutionContext {
     return Reflect.getMetadata(SSE_METADATA, callback);
   }
 
+  public reflectSseOptions(
+    callback: (...args: unknown[]) => unknown,
+  ): SseOptions | undefined {
+    return Reflect.getMetadata(SSE_OPTIONS_METADATA, callback);
+  }
+
   public exchangeKeysForValues(
     keys: string[],
     metadata: Record<number, RouteParamMetadata>,
@@ -552,6 +560,8 @@ export class RouterExecutionContext {
     }
     const isSseHandler = !!this.reflectSse(callback);
     if (isSseHandler) {
+      const maxPendingDataLength =
+        this.reflectSseOptions(callback)?.maxPendingDataLength;
       return async <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
@@ -569,6 +579,7 @@ export class RouterExecutionContext {
           {
             additionalHeaders: () => res.getHeaders?.(),
             statusCode: () => res.statusCode ?? rawResponse.statusCode,
+            maxPendingDataLength,
           },
         );
       };
