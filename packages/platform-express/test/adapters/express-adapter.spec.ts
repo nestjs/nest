@@ -11,8 +11,52 @@ describe('ExpressAdapter', () => {
   describe('reply', () => {
     let expressAdapter: ExpressAdapter;
 
+    const createResponse = () => ({
+      status: sinon.stub(),
+      send: sinon.stub(),
+      json: sinon.stub(),
+      getHeader: sinon.stub(),
+      setHeader: sinon.stub(),
+    });
+
     beforeEach(() => {
       expressAdapter = new ExpressAdapter(express());
+    });
+
+    it('should force a JSON content type for error bodies sent with a non-JSON content type', () => {
+      const response = createResponse();
+      response.getHeader.returns('text/html');
+      sinon.stub((expressAdapter as any).logger, 'warn');
+
+      expressAdapter.reply(response, { statusCode: 400, message: 'Oops' }, 400);
+
+      expect(response.setHeader.calledWith('Content-Type', 'application/json'))
+        .to.be.true;
+    });
+
+    it('should force a JSON content type for error bodies without a "statusCode"', () => {
+      const response = createResponse();
+      response.getHeader.returns('text/html');
+      const warnStub = sinon.stub((expressAdapter as any).logger, 'warn');
+      // A custom HttpException body, e.g. new HttpException({ ... }, 404)
+      const body = { status: 404, error: '<img src=x onerror=alert(1)>' };
+
+      expressAdapter.reply(response, body, 404);
+
+      expect(response.setHeader.calledWith('Content-Type', 'application/json'))
+        .to.be.true;
+      expect(warnStub.called).to.be.true;
+      expect(response.json.calledWith(body)).to.be.true;
+    });
+
+    it('should keep the content type of a text body sent with an error status', () => {
+      const response = createResponse();
+      response.getHeader.returns('text/html');
+
+      expressAdapter.reply(response, '<h1>Not found</h1>', 404);
+
+      expect(response.setHeader.called).to.be.false;
+      expect(response.send.calledWith('<h1>Not found</h1>')).to.be.true;
     });
 
     describe('when the body is a StreamableFile', () => {
