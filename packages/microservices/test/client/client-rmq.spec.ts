@@ -575,6 +575,18 @@ describe('ClientRMQ', function () {
       });
     });
 
+    it('should not derive a correlation id from the ids before it', () => {
+      for (let i = 0; i < 3; i++) {
+        client['publish']({ pattern, data: 'data' }, () => {});
+      }
+      const [first, second, third] = sendToQueueStub.mock.calls.map(
+        ([, , options]) => options.correlationId as string,
+      );
+
+      expect(second.startsWith(first.slice(1))).toBe(false);
+      expect(third.startsWith(second.slice(1))).toBe(false);
+    });
+
     describe('dispose callback', () => {
       let unsubscribeSpy: ReturnType<typeof vi.fn>, subscription;
 

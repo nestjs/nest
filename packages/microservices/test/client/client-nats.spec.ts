@@ -61,6 +61,23 @@ describe('ClientNats', () => {
       client['publish'](msg, () => {});
       expect(publishSpy.mock.calls[0][0]).toEqual(pattern);
     });
+    it('should add random bits to the reply inbox', () => {
+      // createInbox() names the inbox after a counter that grows by a constant
+      // step, so two inboxes would give the next ones away
+      client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
+      const [first, second] = subscribeSpy.mock.calls.map(
+        ([inbox]) => inbox as string,
+      );
+
+      // "_INBOX.<nuid><128 random bits>", in one token as "_INBOX.*" expects
+      expect(first).toMatch(/^_INBOX\.[0-9A-Za-z]{22}[0-9a-f]{32}$/);
+      expect(second.slice(-32)).not.toBe(first.slice(-32));
+      expect(publishSpy.mock.calls.map(([, , opts]) => opts.reply)).toEqual([
+        first,
+        second,
+      ]);
+    });
     describe('on error', () => {
       let serializeStub: ReturnType<typeof vi.fn>;
       beforeEach(() => {

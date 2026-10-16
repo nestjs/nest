@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { isObject, loadPackageSync } from '@nestjs/common/internal';
+import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
 import { createRequire } from 'module';
 import { NATS_DEFAULT_URL } from '../constants.js';
@@ -316,7 +317,13 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       const serializedPacket: NatsRecord = this.serializer.serialize(
         packet,
       ) as NatsRecord;
-      const inbox = natsPackage.createInbox(this.options.inboxPrefix);
+      // A reply is accepted on its inbox even without an id, and createInbox()
+      // names the inbox after a counter that grows by a constant step, so the
+      // name gets random bits too. They stay in the same token, so that
+      // "<prefix>.*" permissions keep matching.
+      const inbox =
+        natsPackage.createInbox(this.options.inboxPrefix) +
+        randomBytes(16).toString('hex');
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,

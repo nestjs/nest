@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+import { randomUUID } from 'crypto';
 import { createRequire } from 'module';
 import { EventEmitter } from 'events';
 import {
@@ -34,12 +35,7 @@ import { RmqRecord } from '../record-builders/index.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
-import {
-  loadPackageSync,
-  randomStringGenerator,
-  isFunction,
-  isString,
-} from '@nestjs/common/internal';
+import { loadPackageSync, isFunction, isString } from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -471,7 +467,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   ): () => void {
     let cleanup = () => {};
     try {
-      const correlationId = randomStringGenerator();
+      // Replies are matched by the correlation id alone, as in assignPacketId()
+      const correlationId = randomUUID();
       const listener = ({
         content,
         options,
