@@ -24,6 +24,31 @@ describe('RpcParamsFactory', () => {
             factory.exchangeKeyForValue(RpcParamtype.PAYLOAD, 'data', args),
           ).to.be.eql(payload.data);
         });
+        describe('with parameter extraction', () => {
+          const extract = (value: unknown, key: string) =>
+            factory.exchangeKeyForValue(RpcParamtype.PAYLOAD, key, [
+              value,
+              ctx,
+            ]);
+
+          it('should not resolve the key against the prototype of an array, a Buffer or a primitive', () => {
+            expect(extract(Buffer.from('x'), 'parent')).to.be.undefined;
+            expect(extract([], 'values')).to.be.undefined;
+            expect(extract('text', 'search')).to.be.undefined;
+            expect(extract(null, 'data')).to.be.undefined;
+          });
+          it('should still resolve their own properties', () => {
+            expect(extract(['a'], '0')).to.equal('a');
+            expect(extract('text', 'length')).to.equal(4);
+          });
+          it('should still resolve the inherited properties of an object', () => {
+            // e.g. a deserializer that decodes protobuf messages, whose
+            // default field values live on the prototype
+            class Message {}
+            Object.assign(Message.prototype, { text: '' });
+            expect(extract(new Message(), 'text')).to.equal('');
+          });
+        });
       });
       describe(`RpcParamtype.CONTEXT`, () => {
         it('should return a ctx object', () => {

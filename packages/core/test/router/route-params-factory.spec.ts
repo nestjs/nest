@@ -71,6 +71,27 @@ describe('RouteParamsFactory', () => {
             untypedFactory.exchangeKeyForValue(RouteParamtypes.BODY, ...args),
           ).to.be.eql(req.body);
         });
+        describe('with a key', () => {
+          const extract = (body: unknown, key: string) =>
+            factory.exchangeKeyForValue(RouteParamtypes.BODY, key, {
+              req: { body },
+              res,
+              next,
+            });
+
+          it('should return a property of the body object', () => {
+            expect(extract(req.body, 'foo')).to.equal('bar');
+          });
+          it('should not resolve the key against the prototype of an array, a Buffer or a primitive', () => {
+            expect(extract(Buffer.from('x'), 'parent')).to.be.undefined;
+            expect(extract([], 'values')).to.be.undefined;
+            expect(extract('text', 'search')).to.be.undefined;
+          });
+          it('should still resolve their own properties', () => {
+            expect(extract(['a'], '0')).to.equal('a');
+            expect(extract('text', 'length')).to.equal(4);
+          });
+        });
       });
       describe(`RouteParamtypes.RAW_BODY`, () => {
         it('should return rawBody buffer', () => {
