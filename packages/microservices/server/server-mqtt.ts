@@ -242,7 +242,13 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
-    const route = this.getRouteFromPattern(pattern);
+    // The topic is matched as the broker delivered it, which is what its ACLs
+    // checked: decoded as JSON, '"admin/reset"' would reach the handler of
+    // "admin/reset". Only the topic of an object pattern is decoded, so that
+    // its keys are sorted as the handler's are.
+    const route = pattern.startsWith('{')
+      ? this.getRouteFromPattern(pattern)
+      : pattern;
     if (this.messageHandlers.has(route)) {
       return this.messageHandlers.get(route) || null;
     }
