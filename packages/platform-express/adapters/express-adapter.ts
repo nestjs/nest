@@ -254,7 +254,6 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   public createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any {
-    const handledRequests = new WeakMap<Function, WeakSet<object>>();
     return (path: string, callback: Function) => {
       try {
         // The core marks an exact-match path with a trailing "$" (e.g. "/api$").
@@ -270,18 +269,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         }
         // Express routes are not strict, so "/api" also matches "/api/", which
         // the wildcard path registered next to it may match too ("/api/{*path}"
-        // does, "/api/*path" does not). The middleware runs for the first of
-        // its paths that matches a request, and not again for the others.
-        const requests = handledRequests.get(callback) ?? new WeakSet();
-        handledRequests.set(callback, requests);
-        const handler = (req: any, res: any, next: Function) => {
-          if (requests.has(req)) {
-            return next();
-          }
-          requests.add(req);
-          return callback(req, res, next);
-        };
-        return router.call(this.instance, convertedPath, handler);
+        // does, "/api/*path" does not). The core runs the middleware for the
+        // first of its paths that matches a request only.
+        return router.call(this.instance, convertedPath, callback);
       } catch (e) {
         if (e instanceof TypeError) {
           LegacyRouteConverter.printError(path);

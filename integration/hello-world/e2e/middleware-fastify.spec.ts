@@ -820,6 +820,60 @@ describe('Middleware (FastifyAdapter)', () => {
     });
   });
 
+  describe('should run middleware once on routes excluded from the global prefix with the root path', () => {
+    @Controller()
+    class CountingController {
+      @Get('metrics')
+      metrics(@Req() req: FastifyRequest) {
+        return { runs: req.raw['runs'] ?? 0 };
+      }
+
+      @Get('data')
+      data(@Req() req: FastifyRequest) {
+        return { runs: req.raw['runs'] ?? 0 };
+      }
+    }
+
+    @Module({
+      controllers: [CountingController],
+    })
+    class CountingModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.runs = (req.runs ?? 0) + 1;
+            next();
+          })
+          .forRoutes('{*path}');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [CountingModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    });
+
+    it(`GET forRoutes('{*path}') with the root path and another route excluded from the global prefix`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/', 'metrics'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/metrics')
+        .expect(200, { runs: 1 });
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, { runs: 1 });
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
   describe('should respect fastify routing options', () => {
     const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
 

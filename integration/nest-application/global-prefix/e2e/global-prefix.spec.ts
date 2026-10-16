@@ -142,6 +142,24 @@ describe('Global prefix', () => {
     await request(server).get('/api/count').expect(200, '2');
   });
 
+  it(`should run a wildcard middleware bound to a method under the prefix when the root path is excluded`, async () => {
+    app.setGlobalPrefix('/api', { exclude: ['/', 'health'] });
+
+    server = app.getHttpServer();
+    await app.init();
+
+    await request(server)
+      .get('/api/hello/foo')
+      .expect(200, 'Hello: Data attached in middleware');
+    await request(server)
+      .get('/api/params')
+      .expect(200, { path: ['params'] });
+    await request(server)
+      .get('/')
+      .expect(200, 'Extras: Data attached in middleware, Count: 3');
+    await request(server).get('/api/count').expect(200, '4');
+  });
+
   afterEach(async () => {
     await app.close();
   });

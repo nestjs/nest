@@ -18,6 +18,7 @@ import { GraphInspector } from '../../inspector/graph-inspector';
 import { MiddlewareBuilder } from '../../middleware/builder';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareModule } from '../../middleware/middleware-module';
+import { mapToExcludeRoute } from '../../middleware/utils';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
@@ -210,6 +211,66 @@ describe('MiddlewareModule', () => {
         app,
       );
       expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
+    });
+
+    it('should mount the middleware on each path, the root path first, and run it once for a request', async () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({ exclude: mapToExcludeRoute(['/']) });
+      middlewareModule['routeInfoPathExtractor'] = new RouteInfoPathExtractor(
+        appConfig,
+      );
+      const configuration = {
+        middleware: [TestMiddleware],
+        forRoutes: ['*'],
+      };
+
+      const router = sinon.spy();
+      const app = {
+        createMiddlewareFactory: sinon.stub().resolves(router),
+      };
+
+      const stubContainer = new NestContainer();
+      const container = new MiddlewareContainer(stubContainer);
+      const moduleKey = 'Test';
+      stubContainer
+        .getModules()
+        .set(moduleKey, new Module(TestModule, stubContainer));
+      container.insertConfig([configuration], moduleKey);
+
+      const instance = new TestMiddleware();
+      const useSpy = sinon.spy(instance, 'use');
+      container.getMiddlewareCollection(moduleKey).set(
+        TestMiddleware,
+        new InstanceWrapper({
+          metatype: TestMiddleware,
+          instance,
+        }),
+      );
+      middlewareModule['container'] = stubContainer;
+
+      await middlewareModule.registerRouteMiddleware(
+        container,
+        { path: '*', method: RequestMethod.ALL },
+        configuration,
+        moduleKey,
+        app,
+      );
+      expect(router.getCalls().map(({ args: [path] }) => path)).to.deep.equal([
+        '/',
+        '/api$',
+        '/api/*',
+      ]);
+
+      const req = {};
+      const next = sinon.spy();
+      for (const {
+        args: [, handler],
+      } of router.getCalls()) {
+        await handler(req, {}, next);
+      }
+      expect(useSpy.calledOnce).to.be.true;
+      expect(next.callCount).to.equal(2);
     });
 
     it('should mount a transient middleware and the middleware listed after it', async () => {

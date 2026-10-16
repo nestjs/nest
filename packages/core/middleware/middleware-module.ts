@@ -345,11 +345,27 @@ export class MiddlewareModule<
           }
           return next();
         };
-    const pathsToApplyMiddleware = [] as string[];
-    paths.some(path => path.match(/^\/?$/))
-      ? pathsToApplyMiddleware.push('/')
-      : pathsToApplyMiddleware.push(...paths);
-    pathsToApplyMiddleware.forEach(path => router(path, middlewareFunction));
+    // The paths may overlap (e.g. "/" and "/api/*" when the root path is
+    // excluded from the global prefix): the middleware runs for the first of
+    // them that matches a request, and the others skip that request
+    const handledRequests = new WeakSet<object>();
+    const handler = <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      if (handledRequests.has(req as object)) {
+        return next();
+      }
+      handledRequests.add(req as object);
+      return middlewareFunction(req, res, next);
+    };
+    // The root path goes first: mounted with Express "use()", it then runs
+    // the middleware for every request, with "req.url" left as it is
+    const pathsToApplyMiddleware = paths
+      .map(path => path || '/')
+      .sort((a, b) => Number(b === '/') - Number(a === '/'));
+    pathsToApplyMiddleware.forEach(path => router(path, handler));
   }
 
   private getContextId(request: unknown, isTreeDurable: boolean): ContextId {
