@@ -173,6 +173,11 @@ describe('Injector', () => {
       );
     });
 
+    it('should keep the wrapper in the collection', () => {
+      injector.loadPrototype(test, moduleDeps.providers);
+      expect(moduleDeps.providers.get('Test')).to.equal(test);
+    });
+
     it('should return undefined when collection is nil', () => {
       const result = injector.loadPrototype(test, null!);
       expect(result).to.be.undefined;

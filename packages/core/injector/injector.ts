@@ -131,11 +131,10 @@ export class Injector {
     const target = collection.get(token)!;
     const instance = target.createPrototype(contextId);
     if (instance) {
-      const wrapper = new InstanceWrapper({
-        ...target,
-        instance,
-      });
-      collection.set(token, wrapper);
+      // Update the wrapper in place instead of replacing it with a copy, as
+      // hosts (e.g., the classes its enhancers are bound to) keep a reference
+      // to it and must be notified of the dependencies it gets later.
+      target.setInstanceByContextId(contextId, { instance });
     }
   }
 
