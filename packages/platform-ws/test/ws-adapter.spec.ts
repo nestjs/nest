@@ -260,6 +260,37 @@ describe('WsAdapter', () => {
       expect(logError.mock.calls[0][0]).toBeInstanceOf(RangeError);
       expect(replies).toEqual([{ event: 'echo', data: 'ok' }]);
     });
+
+    it('should not handle messages from a client the server has started closing', () => {
+      const adapter = new WsAdapter();
+      const client = new EventEmitter() as any;
+      client.readyState = 1; // OPEN_STATE
+      client.send = vi.fn();
+      const callback = vi.fn().mockReturnValue('reply');
+
+      adapter.bindMessageHandlers(
+        client,
+        [
+          {
+            message: 'push',
+            methodName: 'push',
+            callback,
+            isAckHandledManually: false,
+          },
+        ],
+        (data: any) => of(data),
+      );
+
+      client.emit('message', frame({ event: 'push', data: 1 }));
+      // e.g. handleConnection() called client.close(): ws still emits what
+      // the client sent before it received the close frame
+      client.readyState = 2; // CLOSING_STATE
+      client.emit('message', frame({ event: 'push', data: 2 }));
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith(1, 'push');
+      expect(client.send).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('dispose', () => {
