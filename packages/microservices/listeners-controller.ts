@@ -21,6 +21,7 @@ import {
 } from './context/rpc-metadata-constants.js';
 import { BaseRpcContext } from './ctx-host/base-rpc.context.js';
 import { Transport } from './enums/index.js';
+import { RpcExceptionsHandler } from './exceptions/rpc-exceptions-handler.js';
 import {
   MessageHandler,
   PatternMetadata,
@@ -57,7 +58,6 @@ export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
     new MetadataScanner(),
   );
-  private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
     private readonly clientsContainer: ClientsContainer,
@@ -272,6 +272,9 @@ export class ListenersController {
     const { instance } = wrapper;
 
     const isTreeDurable = wrapper.isDependencyTreeDurable();
+    // Kept per controller and pattern, not per handler function: controllers
+    // that inherit the handler from a base class can declare different filters
+    let exceptionFilter: RpcExceptionsHandler | undefined;
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
       const originalArgs = [...args];
@@ -320,17 +323,11 @@ export class ListenersController {
         }
         return returnValue;
       } catch (err) {
-        let exceptionFilter = this.exceptionFiltersCache.get(
+        exceptionFilter ??= this.exceptionFiltersContext.create(
+          instance,
           instance[methodKey],
+          moduleKey,
         );
-        if (!exceptionFilter) {
-          exceptionFilter = this.exceptionFiltersContext.create(
-            instance,
-            instance[methodKey],
-            moduleKey,
-          );
-          this.exceptionFiltersCache.set(instance[methodKey], exceptionFilter);
-        }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
         const returnValue = exceptionFilter.handle(

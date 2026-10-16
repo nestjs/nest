@@ -392,6 +392,57 @@ describe('ListenersController', () => {
 
         expect(handleSpy.mock.calls[0][2]).toBe(true);
       });
+
+      it('should delegate errors to the filters of the controller that inherits the handler', async () => {
+        class BaseController {
+          handle() {}
+        }
+        class FirstController extends BaseController {}
+        class SecondController extends BaseController {}
+
+        const firstWrapper = new InstanceWrapper({
+          instance: new FirstController(),
+        });
+        const secondWrapper = new InstanceWrapper({
+          instance: new SecondController(),
+        });
+        const firstExceptionsHandler = { handle: vi.fn() };
+        const secondExceptionsHandler = { handle: vi.fn() };
+        vi.spyOn(exceptionFiltersContext, 'create').mockImplementation(
+          instance =>
+            (instance === firstWrapper.instance
+              ? firstExceptionsHandler
+              : secondExceptionsHandler) as any,
+        );
+        vi.spyOn(injector, 'loadPerContext').mockImplementation(() => {
+          throw new Error();
+        });
+
+        // Event handlers, as only those of both controllers stay registered
+        const firstHandler = instance.createRequestScopedHandler(
+          firstWrapper,
+          patterns,
+          module,
+          moduleKey,
+          'handle',
+          undefined,
+          true,
+        );
+        const secondHandler = instance.createRequestScopedHandler(
+          secondWrapper,
+          patterns,
+          module,
+          moduleKey,
+          'handle',
+          undefined,
+          true,
+        );
+        await firstHandler('data');
+        await secondHandler('data');
+
+        expect(firstExceptionsHandler.handle).toHaveBeenCalledOnce();
+        expect(secondExceptionsHandler.handle).toHaveBeenCalledOnce();
+      });
     });
   });
 
