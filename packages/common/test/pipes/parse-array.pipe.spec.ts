@@ -4,6 +4,7 @@ import {
   IsDate,
   IsDefined,
   IsNumber,
+  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
@@ -278,6 +279,28 @@ describe('ParseArrayPipe', () => {
         await expect(
           target.transform([['{"number":1}']], {} as ArgumentMetadata),
         ).rejects.toThrow(BadRequestException);
+      });
+      it('should reject items that are not objects when items is a class', async () => {
+        class ArrItemAllOptional {
+          @IsOptional()
+          @IsNumber()
+          number: number;
+        }
+        target = new ParseArrayPipe({ items: ArrItemAllOptional });
+
+        for (const value of [[[{ number: 1 }]], [7], ['x'], '[{"number":1}]']) {
+          await expect(
+            target.transform(value, {} as ArgumentMetadata),
+          ).rejects.toMatchObject({
+            response: { message: ['Validation failed (object is expected)'] },
+          });
+        }
+        const items = await target.transform(
+          '{},{"number":1}',
+          {} as ArgumentMetadata,
+        );
+        expect(items).toEqual([{}, { number: 1 }]);
+        items.forEach(item => expect(item).toBeInstanceOf(ArrItemAllOptional));
       });
       it('should keep parsing the items of an array', async () => {
         target = new ParseArrayPipe({ items: Number });
