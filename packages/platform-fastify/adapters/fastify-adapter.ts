@@ -55,6 +55,7 @@ import {
   type VersionValue,
   loadPackage,
   tryLoadPackage,
+  isFunction,
   isNil,
   isString,
   isUndefined,
@@ -602,6 +603,11 @@ export class FastifyAdapter<
   }
 
   public all(...args: any[]) {
+    // Routes registered by Nest ("path, handler") get the route options
+    // (e.g. the version), with the same methods as "fastify.all()".
+    if (args.length === 2 && isFunction(args[1])) {
+      return this.injectRouteOptions(this.instance.supportedMethods, ...args);
+    }
     const handlerRef = args[args.length - 1];
     args[args.length - 1] = this.requireNonEmptyParams(args[0], handlerRef);
     return (this.instance.all as any)(...args);
@@ -1207,7 +1213,7 @@ export class FastifyAdapter<
   }
 
   private injectRouteOptions(
-    routerMethodKey: Uppercase<HTTPMethods>,
+    routerMethodKey: Uppercase<HTTPMethods> | string[],
     ...args: any[]
   ) {
     const handlerRef = args[args.length - 1];
@@ -1239,7 +1245,10 @@ export class FastifyAdapter<
       handler: this.requireNonEmptyParams(args[0], handlerRef),
     };
 
-    if (!this.instance.supportedMethods.includes(routerMethodKey)) {
+    if (
+      isString(routerMethodKey) &&
+      !this.instance.supportedMethods.includes(routerMethodKey)
+    ) {
       this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
     }
 

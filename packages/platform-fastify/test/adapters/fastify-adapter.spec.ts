@@ -1,4 +1,9 @@
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
+import {
+  FASTIFY_ROUTE_CONFIG_METADATA,
+  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+  FASTIFY_ROUTE_SCHEMA_METADATA,
+} from '../../constants.js';
 import { createError } from '@fastify/error';
 import {
   HttpException,
@@ -407,6 +412,35 @@ describe('FastifyAdapter', () => {
       expect(res.body).toBe('found');
     });
 
+    it('should pass a request with an empty parameter to the not-found handler for versioned routes registered with all()', async () => {
+      const handler = vi.fn(() => 'found');
+      fastifyAdapter.all(
+        '/actions/:id/run',
+        fastifyAdapter.applyVersionFilter(handler, '1', {
+          type: VersioningType.HEADER,
+          header: 'X-API-Version',
+        }),
+      );
+      const headers = { 'x-api-version': '1' };
+
+      for (const method of ['GET', 'POST'] as const) {
+        const res = await fastifyAdapter.inject({
+          method,
+          url: '/actions//run',
+          headers,
+        });
+        expect(res.statusCode).toBe(404);
+      }
+      expect(handler).not.toHaveBeenCalled();
+
+      const res = await fastifyAdapter.inject({
+        method: 'POST',
+        url: '/actions/1/run',
+        headers,
+      });
+      expect(res.body).toBe('found');
+    });
+
     it('should pass a request with an empty parameter to the not-found handler for routes registered with all()', async () => {
       const handler = vi.fn(() => 'found');
       fastifyAdapter.all('/actions/:id/run', handler);
@@ -501,6 +535,118 @@ describe('FastifyAdapter', () => {
         url: '/neutral',
       });
       expect(res.statusCode).toBe(200);
+    });
+  });
+
+  describe('all', () => {
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    const registerVersion = (version: string) =>
+      fastifyAdapter.all(
+        '/all',
+        fastifyAdapter.applyVersionFilter(() => `v${version}`, version, {
+          type: VersioningType.HEADER,
+          header: 'X-API-Version',
+        }),
+      );
+    const send = (method: string, version?: string) =>
+      fastifyAdapter.inject({
+        method: method as 'GET',
+        url: '/all',
+        headers: version ? { 'x-api-version': version } : {},
+        // Fastify requires a content type for QUERY requests
+        ...(method === 'QUERY' && { payload: {} }),
+      });
+
+    it('should register the route for every supported method', () => {
+      const methods: unknown[] = [];
+      fastifyAdapter
+        .getInstance()
+        .addHook('onRoute', route => methods.push(route.method));
+
+      fastifyAdapter.all('/all', () => 'all');
+
+      expect(methods).toEqual([fastifyAdapter.getInstance().supportedMethods]);
+    });
+
+    it('should only route requests for the version of the handler', async () => {
+      registerVersion('1');
+
+      for (const method of fastifyAdapter.getInstance().supportedMethods) {
+        expect((await send(method, '1')).statusCode).toBe(200);
+        expect((await send(method, '2')).statusCode).toBe(404);
+        expect((await send(method)).statusCode).toBe(404);
+      }
+    });
+
+    it('should route each version to its handler', async () => {
+      registerVersion('1');
+      registerVersion('2');
+
+      expect((await send('POST', '1')).body).toBe('v1');
+      expect((await send('POST', '2')).body).toBe('v2');
+    });
+
+    it('should apply the route config, constraints and schema', async () => {
+      const handler = (req: FastifyRequest) =>
+        String((req.routeOptions.config as { output?: string }).output);
+      Reflect.defineMetadata(
+        FASTIFY_ROUTE_CONFIG_METADATA,
+        { output: 'config' },
+        handler,
+      );
+      Reflect.defineMetadata(
+        FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+        { host: 'allowed.example.com' },
+        handler,
+      );
+      Reflect.defineMetadata(
+        FASTIFY_ROUTE_SCHEMA_METADATA,
+        {
+          querystring: {
+            type: 'object',
+            properties: { id: { type: 'integer' } },
+            required: ['id'],
+          },
+        },
+        handler,
+      );
+      fastifyAdapter.all('/all', handler);
+
+      const post = (url: string, host: string) =>
+        fastifyAdapter.inject({ method: 'POST', url, headers: { host } });
+      expect((await post('/all?id=1', 'allowed.example.com')).body).toBe(
+        'config',
+      );
+      expect(
+        (await post('/all?id=one', 'allowed.example.com')).statusCode,
+      ).toBe(400);
+      expect((await post('/all?id=1', 'other.example.com')).statusCode).toBe(
+        404,
+      );
+    });
+
+    it('should keep the route options passed by the caller', async () => {
+      fastifyAdapter.all(
+        '/options',
+        { config: { output: 'config' } },
+        (req: FastifyRequest) =>
+          String((req.routeOptions.config as { output?: string }).output),
+      );
+      fastifyAdapter.all('/handler', {
+        constraints: { host: 'allowed.example.com' },
+        handler: () => 'all',
+      });
+
+      const post = (url: string, host = 'allowed.example.com') =>
+        fastifyAdapter.inject({ method: 'POST', url, headers: { host } });
+      expect((await post('/options')).body).toBe('config');
+      expect((await post('/handler')).body).toBe('all');
+      expect((await post('/handler', 'other.example.com')).statusCode).toBe(
+        404,
+      );
     });
   });
 
