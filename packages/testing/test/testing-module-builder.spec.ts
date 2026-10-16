@@ -354,6 +354,85 @@ describe('TestingModuleBuilder', () => {
       expect(instance.transient.dep).toEqual({ mockValue: 'mocked-dep' });
     });
 
+    it('should use mocker for unresolved properties of request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class NeedsMissing {
+        @Inject(MissingDepClass)
+        public readonly dep: MissingDepClass;
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(NeedsMissing);
+      expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved properties of transient providers used by request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NeedsMissing {
+        @Inject(MissingDepClass)
+        public readonly dep: MissingDepClass;
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class Consumer {
+        constructor(public readonly transient: NeedsMissing) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [Consumer, NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(Consumer);
+      expect(instance.transient.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should not create extra transient instances when a mocker is set', async () => {
+      let created = 0;
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NestedTransient {
+        constructor() {
+          created++;
+        }
+      }
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        constructor(public readonly nested: NestedTransient) {}
+      }
+
+      @Injectable()
+      class ConsumerA {
+        constructor(public readonly transient: TransientService) {}
+      }
+
+      @Injectable()
+      class ConsumerB {
+        constructor(public readonly transient: TransientService) {}
+      }
+
+      await Test.createTestingModule({
+        providers: [ConsumerA, ConsumerB, TransientService, NestedTransient],
+      })
+        .useMocker(() => undefined)
+        .compile();
+
+      expect(created).toBe(2);
+    });
+
     it('should use mocker for unresolved dependencies of request-scoped factory providers', async () => {
       @Injectable()
       class MissingDepClass {}

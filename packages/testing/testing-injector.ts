@@ -59,11 +59,16 @@ export class TestingInjector extends Injector {
     wrapper: InstanceWrapper,
     moduleRef: Module,
   ) {
-    const [dependencies] = isNil(wrapper.inject)
-      ? this.getClassDependencies(wrapper)
-      : this.getFactoryProviderDependencies(wrapper);
-    await Promise.allSettled(
-      dependencies.map((param, index) =>
+    const isFactory = !isNil(wrapper.inject);
+    const [dependencies] = isFactory
+      ? this.getFactoryProviderDependencies(wrapper)
+      : this.getClassDependencies(wrapper);
+    // Factory providers have no property dependencies
+    const properties = isFactory
+      ? []
+      : this.reflectProperties(wrapper.metatype as Type);
+    await Promise.allSettled([
+      ...dependencies.map((param, index) =>
         this.resolveSingleParam(
           wrapper,
           param as Type | string | symbol,
@@ -73,7 +78,17 @@ export class TestingInjector extends Injector {
           index,
         ),
       ),
-    );
+      ...properties.map(({ key, name }) =>
+        this.resolveSingleParam(
+          wrapper,
+          name as Type | string | symbol,
+          { key, name: name as Type | string | symbol },
+          moduleRef,
+          { contextId: STATIC_CONTEXT },
+          key,
+        ),
+      ),
+    ]);
   }
 
   public async resolveComponentWrapper<T>(
