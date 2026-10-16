@@ -114,6 +114,33 @@ describe('JsonSocket', () => {
       }).to.throw(MaxPacketLengthExceededException);
     });
 
+    it('does not keep data without a delimiter beyond the size of a content length', () => {
+      // Every read scans the buffered data for the delimiter, so data that
+      // never contains one must not pile up and be scanned again and again.
+      const bufferLengths: number[] = [];
+      const errors: unknown[] = [];
+      for (let i = 0; i < 100; i++) {
+        try {
+          (jsonSocket as any).handleData('1');
+        } catch (err) {
+          errors.push(err);
+        }
+        bufferLengths.push((jsonSocket as any).buffer.length);
+      }
+
+      expect(Math.max(...bufferLengths)).to.equal(32);
+      expect(bufferLengths[32]).to.equal(0);
+      expect(errors).to.have.lengthOf(3);
+      expect(errors[0]).to.be.instanceOf(CorruptedPacketLengthException);
+    });
+
+    it('accepts a content length that is split across reads', () => {
+      (jsonSocket as any).handleData('1');
+      (jsonSocket as any).handleData('0#{"x":1234}');
+
+      expect(received).to.deep.equal([{ x: 1234 }]);
+    });
+
     it('resets state after a corrupted length so subsequent valid frames are processed', () => {
       expect(() => (jsonSocket as any).handleData('bad#')).to.throw(
         CorruptedPacketLengthException,
