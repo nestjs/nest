@@ -36,7 +36,7 @@ import {
 } from '../interfaces/packet.interface.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { Server } from './server.js';
-import { isNil, isUndefined } from '@nestjs/common/internal';
+import { isNil, isString, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -54,6 +54,8 @@ type Message = any;
 type Channel = any;
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
+// In bytes, for an AMQP short string such as "replyTo" or "correlationId"
+const MAX_SHORT_STRING_LENGTH = 255;
 
 /**
  * @publicApi
@@ -409,6 +411,17 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     correlationId: string,
     context: RmqContext,
   ): Promise<unknown> {
+    // Both come from the request. amqplib decodes invalid UTF-8 in them to
+    // longer strings than it can encode again, and once it throws on one, the
+    // channel wrapper never settles the publish nor releases the reply.
+    const isTooLong = (value: unknown) =>
+      isString(value) && Buffer.byteLength(value) > MAX_SHORT_STRING_LENGTH;
+    if (isTooLong(replyTo) || isTooLong(correlationId)) {
+      this.logger.error(
+        `Dropped a reply whose "replyTo" or "correlationId" is longer than ${MAX_SHORT_STRING_LENGTH} bytes.`,
+      );
+      return Promise.resolve();
+    }
     const outgoingResponse = this.serializer.serialize(
       message as unknown as OutgoingResponse,
     );

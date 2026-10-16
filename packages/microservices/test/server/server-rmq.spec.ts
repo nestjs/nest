@@ -605,6 +605,46 @@ describe('ServerRMQ', () => {
         server.sendMessage({ test: true }, 'test', '0', context),
       ).rejects.toBe(error);
     });
+    describe('when "replyTo" or "correlationId" is too long for AMQP', () => {
+      // amqplib decodes 86 bytes of invalid UTF-8 as 86 replacement
+      // characters, which take 258 bytes to encode again
+      const tooLong = '�'.repeat(86);
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+      });
+
+      it('should drop the reply and log an error', async () => {
+        await server.sendMessage({ test: true }, tooLong, '0', context);
+        await server.sendMessage({ test: true }, 'test', tooLong, context);
+
+        expect(channel.sendToQueue).not.toHaveBeenCalled();
+        expect(loggerErrorSpy).toHaveBeenCalledTimes(2);
+      });
+      it('should publish values of up to 255 bytes', () => {
+        const longest = 'a'.repeat(255);
+
+        server.sendMessage({ test: true }, longest, longest, context);
+
+        expect(channel.sendToQueue).toHaveBeenCalledWith(
+          longest,
+          expect.any(Buffer),
+          { correlationId: longest },
+        );
+      });
+      it('should publish a reply without "replyTo" as before', () => {
+        server.sendMessage({ test: true }, undefined, '0', context);
+
+        expect(channel.sendToQueue).toHaveBeenCalledWith(
+          undefined,
+          expect.any(Buffer),
+          { correlationId: '0' },
+        );
+      });
+    });
     describe('when the response is a record', () => {
       const replyTo = 'test';
       const correlationId = '0';
