@@ -1,14 +1,26 @@
 import { iterate } from 'iterare';
+import { pathToRegexp } from 'path-to-regexp';
+import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
 import { filterMiddleware } from './utils.js';
-import type { HttpServer, MiddlewareConsumer, Type } from '@nestjs/common';
+import type {
+  HttpServer,
+  MiddlewareConsumer,
+  RequestMethod,
+  Type,
+} from '@nestjs/common';
 import {
   type MiddlewareConfigProxy,
   type MiddlewareConfiguration,
   type RouteInfo,
-  stripEndSlash,
 } from '@nestjs/common/internal';
+
+/**
+ * Characters with a meaning in a route path (parameters, wildcards, groups),
+ * and the "$" that marks an exact-match path.
+ */
+const ROUTE_PATTERN_CHARS = /[:*?+()[\]{}!\\$]/;
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
@@ -102,37 +114,53 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         .toArray();
     }
 
+    /**
+     * Removes the routes that a parameterized route of the same method is
+     * mounted on as well (e.g. "/users/me" next to "/users/:id"), so that
+     * the middleware runs once for them. Only a route without parameters or
+     * wildcards is removed, and only when the parameterized route matches
+     * every path it would be mounted on (global prefix and version included).
+     */
     private removeOverlappedRoutes(routes: RouteInfo[]) {
-      const regexMatchParams = /(:[^/]*)/g;
-      const wildcard = '([^/]*)';
       const routesWithRegex = routes
         .filter(route => route.path.includes(':'))
         .map(route => ({
           method: route.method,
-          path: route.path,
-          // No `g` flag: each regex is reused across every route below, and a
-          // global regex advances `lastIndex` on a match, so the next `test()`
-          // would resume mid-string and fail the `^` anchor. The pattern is
-          // anchored and only used with `test()`, so `g` buys nothing anyway.
-          regex: new RegExp(
-            '^(' + route.path.replace(regexMatchParams, wildcard) + ')$',
-          ),
+          regexes: this.compileMountPaths(route),
         }));
 
       return routes.filter(route => {
-        const isOverlapped = (item: { regex: RegExp } & RouteInfo): boolean => {
-          if (route.method !== item.method) {
-            return false;
-          }
-          const normalizedRoutePath = stripEndSlash(route.path);
-          return (
-            normalizedRoutePath !== item.path &&
-            item.regex.test(normalizedRoutePath)
+        const mountPaths = this.routeInfoPathExtractor.extractPathsFrom(route);
+        if (mountPaths.some(path => ROUTE_PATTERN_CHARS.test(path))) {
+          return true;
+        }
+        const isOverlapped = (item: {
+          method: RequestMethod;
+          regexes: RegExp[];
+        }): boolean =>
+          route.method === item.method &&
+          mountPaths.every(path =>
+            item.regexes.some(regex => regex.test(path)),
           );
-        };
-        const routeMatch = routesWithRegex.find(isOverlapped);
-        return routeMatch === undefined;
+        return !routesWithRegex.some(isOverlapped);
       });
+    }
+
+    private compileMountPaths(route: RouteInfo): RegExp[] {
+      try {
+        return this.routeInfoPathExtractor.extractPathsFrom(route).map(
+          path =>
+            pathToRegexp(
+              LegacyRouteConverter.tryConvert(path.replace(/\$$/, ''), {
+                logs: false,
+              }),
+              { sensitive: true },
+            ).regexp,
+        );
+      } catch {
+        // The adapter reports a path it cannot mount; it covers nothing here
+        return [];
+      }
     }
   };
 }
