@@ -5,6 +5,16 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { expect } from 'chai';
+import {
+  EMPTY,
+  lastValueFrom,
+  map,
+  Observable,
+  tap,
+  throwError,
+  timer,
+  toArray,
+} from 'rxjs';
 import * as sinon from 'sinon';
 import { GraphInspector } from '../../core/inspector/graph-inspector';
 import { MetadataScanner } from '../../core/metadata-scanner';
@@ -17,6 +27,7 @@ import {
   EventOrMessageListenerDefinition,
   ListenerMetadataExplorer,
 } from '../listener-metadata-explorer';
+import { MessageHandler } from '../interfaces/message-handler.interface';
 import { ListenersController } from '../listeners-controller';
 
 describe('ListenersController', () => {
@@ -267,6 +278,97 @@ describe('ListenersController', () => {
           ExecutionContextHost,
         );
       });
+    });
+  });
+
+  describe('forkJoinHandlersIfAttached', () => {
+    let sideEffects: string[];
+
+    beforeEach(() => {
+      sideEffects = [];
+    });
+
+    // Resolves after a tick, like a handler that awaits I/O, and records a
+    // side effect that only happens if nobody cancels the subscription.
+    const slowHandlerResult = (name: string) =>
+      timer(10).pipe(
+        tap(() => sideEffects.push(name)),
+        map(() => name),
+      );
+
+    const createHandlerChain = ([
+      returnValue,
+      ...rest
+    ]: Observable<unknown>[]): MessageHandler => {
+      const handler: MessageHandler = async (...args: unknown[]) =>
+        instance.forkJoinHandlersIfAttached(returnValue, args, handler);
+      if (rest.length > 0) {
+        handler.next = createHandlerChain(rest);
+      }
+      return handler;
+    };
+
+    const emissionsOf = async (handler: MessageHandler) =>
+      lastValueFrom(
+        instance.transformToObservable(await handler('data')).pipe(toArray()),
+      );
+
+    const rejectionOf = async (promise: Promise<unknown>) => {
+      try {
+        await promise;
+      } catch (err) {
+        return err;
+      }
+      throw new Error('Expected the promise to reject');
+    };
+
+    it('should return the value untouched when there is no next handler', () => {
+      const returnValue = slowHandlerResult('a');
+      const lastHandler = createHandlerChain([returnValue]);
+
+      expect(
+        instance.forkJoinHandlersIfAttached(returnValue, [], lastHandler),
+      ).to.equal(returnValue);
+    });
+
+    it('should run the next handler when the current one completes empty', async () => {
+      const emissions = await emissionsOf(
+        createHandlerChain([EMPTY, slowHandlerResult('next')]),
+      );
+
+      expect(sideEffects).to.deep.equal(['next']);
+      expect(emissions).to.have.length(1);
+    });
+
+    it('should still fail the join when one handler errors', async () => {
+      const failure = new Error('handler failed');
+
+      const error = await rejectionOf(
+        emissionsOf(
+          createHandlerChain([
+            slowHandlerResult('current'),
+            throwError(() => failure),
+          ]),
+        ),
+      );
+      expect(error).to.equal(failure);
+      expect(sideEffects).to.deep.equal(['current']);
+    });
+
+    it('should run the next handlers when the current one errors', async () => {
+      const failure = new Error('handler failed');
+
+      const error = await rejectionOf(
+        emissionsOf(
+          createHandlerChain([
+            throwError(() => failure),
+            slowHandlerResult('second'),
+            slowHandlerResult('third'),
+          ]),
+        ),
+      );
+      expect(error).to.equal(failure);
+      expect([...sideEffects].sort()).to.deep.equal(['second', 'third']);
     });
   });
 

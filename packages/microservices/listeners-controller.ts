@@ -14,9 +14,12 @@ import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
 import {
+  catchError,
+  defaultIfEmpty,
   forkJoin,
   from as fromPromise,
   isObservable,
+  map,
   mergeMap,
   Observable,
   ObservedValueOf,
@@ -41,6 +44,10 @@ import {
 } from './listener-metadata-explorer';
 import { ServerGrpc } from './server';
 import { Server } from './server/server';
+
+type SettledHandlerResult =
+  | { hasFailed: false; value: unknown }
+  | { hasFailed: true; error: unknown };
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
@@ -193,12 +200,36 @@ export class ListenersController {
       const returnedValueWrapper = handlerRef.next(
         ...(originalArgs as Parameters<MessageHandler>),
       );
+      // `forkJoin` unsubscribes the other sources as soon as one completes
+      // empty or errors, which would cancel the sibling handlers. Each handler
+      // settles on its own instead, and an error fails the join only once
+      // every handler has finished.
       return forkJoin({
-        current: this.transformToObservable(currentReturnValue),
-        next: this.transformToObservable(returnedValueWrapper),
-      });
+        current: this.settleHandlerResult(currentReturnValue),
+        next: this.settleHandlerResult(returnedValueWrapper),
+      }).pipe(
+        map(({ current, next }) => {
+          if (current.hasFailed) {
+            throw current.error;
+          }
+          if (next.hasFailed) {
+            throw next.error;
+          }
+          return { current: current.value, next: next.value };
+        }),
+      );
     }
     return currentReturnValue;
+  }
+
+  private settleHandlerResult(
+    resultOrDeferred: Promise<unknown> | Observable<unknown>,
+  ): Observable<SettledHandlerResult> {
+    return this.transformToObservable(resultOrDeferred).pipe(
+      defaultIfEmpty(undefined),
+      map((value): SettledHandlerResult => ({ hasFailed: false, value })),
+      catchError(error => of<SettledHandlerResult>({ hasFailed: true, error })),
+    );
   }
 
   public assignClientsToProperties(instance: Controller) {
