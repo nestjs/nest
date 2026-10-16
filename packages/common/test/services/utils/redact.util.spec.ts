@@ -234,6 +234,52 @@ describe('createRedactor', () => {
     });
   });
 
+  describe('shared objects', () => {
+    it('should copy an object that is referenced several times once', () => {
+      const shared = { password: 'a' };
+
+      const redacted = redact(['password'], { a: shared, b: [shared] }) as {
+        a: object;
+        b: object[];
+      };
+
+      expect(redacted.a).toEqual({ password: '[REDACTED]' });
+      expect(redacted.b[0]).toBe(redacted.a);
+    });
+
+    it('should apply a dotted path to each reference to a shared object', () => {
+      const shared = { password: 'a' };
+
+      expect(
+        redact(['org.user.password'], {
+          org: { user: shared },
+          team: { user: shared },
+        }),
+      ).toEqual({
+        org: { user: { password: '[REDACTED]' } },
+        team: { user: { password: 'a' } },
+      });
+    });
+
+    it('should not traverse a shared object once per reference', () => {
+      // The shape of class-validator errors: every child error has the
+      // validated array as its "target".
+      const target = [{ password: 'a' }, ...new Array(1_000).fill(0)];
+      const errors = target.map(() => ({ target }));
+      // Every path through the layers leads to the same object.
+      let layers: object = { password: 'a' };
+      for (let i = 0; i < 16; i++) {
+        layers = { a: layers, b: layers };
+      }
+
+      const redacted = redact(['password'], { errors, layers }) as any;
+
+      expect(redacted.errors[0].target[0]).toEqual({ password: '[REDACTED]' });
+      expect(redacted.errors[1_000].target).toBe(redacted.errors[0].target);
+      expect(redacted.layers.a).toBe(redacted.layers.b);
+    });
+  });
+
   describe('copies', () => {
     it('should not mutate the input', () => {
       const value = Object.freeze({
