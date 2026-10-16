@@ -276,6 +276,12 @@ export const REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE = (
     }[kind]
   }`;
 
+export const UNINSTANTIATED_GLOBAL_ENHANCER_MESSAGE = (
+  enhancerToken: string,
+  provider: string,
+) =>
+  `The ${enhancerToken} provider (${provider}) was not instantiated, as one of its dependencies was not, so it can't be applied.`;
+
 export const UNKNOWN_REQUEST_MAPPING = (metatype: Type) => {
   const className = metatype.name;
   return className
