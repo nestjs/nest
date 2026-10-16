@@ -33,7 +33,9 @@ export class KafkaRequestSerializer implements Serializer<
     if (!isNil(value.key)) {
       value.key = this.encode(value.key);
     }
-    if (isNil(value.headers)) {
+    // A string or an array (as an echo handler may return them) would turn
+    // each of its characters or items into a header
+    if (!isObject(value.headers) || Array.isArray(value.headers)) {
       value.headers = {};
     }
     return value;

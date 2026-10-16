@@ -105,6 +105,39 @@ describe('KafkaRequestSerializer', () => {
     });
   });
 
+  describe('serialize a kafka message whose headers are not an object', () => {
+    // An echo handler returns them as the sender of the request chose them
+    (
+      [
+        ['a string', 'AAAA'],
+        ['an array', ['A', 'A']],
+        ['a number', 1234],
+        ['null', null],
+      ] as const
+    ).forEach(([description, headers]) => {
+      it(`should send no headers if they are ${description}`, async () => {
+        expect(await instance.serialize({ value: 'x', headers })).to.deep.equal(
+          {
+            value: 'x',
+            headers: {},
+          },
+        );
+      });
+    });
+
+    it('should send the headers of a class instance', async () => {
+      class Headers {
+        tenant = 'custom';
+      }
+
+      const serialized = await instance.serialize({
+        value: 'x',
+        headers: new Headers(),
+      });
+      expect({ ...serialized.headers }).to.deep.equal({ tenant: 'custom' });
+    });
+  });
+
   describe('serialize kafka message', () => {
     it('kafka message without key', async () => {
       expect(
