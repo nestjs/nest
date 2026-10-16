@@ -1,4 +1,5 @@
 import { RequestMethod } from '@nestjs/common';
+import { VersionValue } from '@nestjs/common/interfaces';
 
 export interface ExcludeRouteMetadata {
   /**
@@ -15,4 +16,10 @@ export interface ExcludeRouteMetadata {
    * HTTP request method (e.g., GET, POST).
    */
   requestMethod: RequestMethod;
+
+  /**
+   * Version(s) of the route, if any. With URI versioning, it is part of the
+   * path as well.
+   */
+  version?: VersionValue;
 }

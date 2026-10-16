@@ -92,6 +92,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           this.middleware,
           this.excludedRoutes,
           this.builder.getHttpAdapter(),
+          this.routeInfoPathExtractor.getVersioningOptions(),
         ),
         forRoutes,
       };

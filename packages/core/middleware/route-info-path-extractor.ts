@@ -169,6 +169,10 @@ export class RouteInfoPathExtractor {
     );
   }
 
+  public getVersioningOptions(): VersioningOptions | undefined {
+    return this.versioningConfig;
+  }
+
   public extractPathFrom(route: RouteInfo): string[] {
     if (this.isAWildcard(route.path) && !route.version) {
       return [addLeadingSlash(route.path)];
