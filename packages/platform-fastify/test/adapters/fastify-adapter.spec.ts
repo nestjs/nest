@@ -366,6 +366,68 @@ describe('FastifyAdapter', () => {
       expect(middleware).toHaveBeenCalledOnce();
       await adapter.close();
     });
+
+    // The proxies of `RouterProxy` reject when the exception layer throws
+    // while it answers an error thrown by the middleware
+    describe('when the middleware rejects', () => {
+      const handler = vi.fn(() => 'cats');
+
+      beforeEach(() => {
+        handler.mockClear();
+        fastifyAdapter.setErrorHandler((err: Error, _req, reply) =>
+          reply.code(500).send(`error handler: ${err.message}`),
+        );
+      });
+
+      afterEach(async () => {
+        await fastifyAdapter.close();
+      });
+
+      it('should pass the rejection to the error handler', async () => {
+        const register = await fastifyAdapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/cats', async () => {
+          throw new Error('exception layer failed');
+        });
+        fastifyAdapter.get('/cats', handler);
+
+        const res = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/cats',
+        });
+
+        expect(res.statusCode).toBe(500);
+        expect(res.body).toBe('error handler: exception layer failed');
+        expect(handler).not.toHaveBeenCalled();
+      });
+
+      it('should log a rejection that follows a call to "next"', async () => {
+        const error = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+        let rejection!: Promise<void>;
+        const register = await fastifyAdapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/cats', (_req: unknown, _res: unknown, next: () => void) => {
+          next();
+          rejection = Promise.reject(new Error('exception layer failed'));
+          return rejection;
+        });
+        fastifyAdapter.get('/cats', handler);
+
+        const res = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/cats',
+        });
+        await rejection.catch(() => {});
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBe('cats');
+        expect(error).toHaveBeenCalledOnce();
+      });
+    });
   });
 
   describe('empty route parameters', () => {

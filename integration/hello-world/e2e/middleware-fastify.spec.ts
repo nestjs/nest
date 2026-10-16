@@ -12,6 +12,7 @@ import {
   Query,
   Req,
   RequestMethod,
+  UnauthorizedException,
   VersioningType,
 } from '@nestjs/common';
 import {
@@ -1070,6 +1071,9 @@ describe('Middleware (FastifyAdapter)', () => {
         if (req.headers['x-throw'] === 'unknown-error') {
           throw new Error('middleware failure');
         }
+        if (req.headers['x-throw'] === 'error-body') {
+          throw new UnauthorizedException(new Error('invalid signature'));
+        }
         next();
       }
     }
@@ -1121,6 +1125,19 @@ describe('Middleware (FastifyAdapter)', () => {
           statusCode: 500,
           message: 'Internal server error',
         });
+    });
+
+    // The exception layer fails to send an "Error" body on the raw response
+    // middleware receives
+    it('should send the internal server error response when the exception layer fails', async () => {
+      await request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'error-body')
+        .expect(500, {
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+      await request(app.getHttpServer()).get('/protected').expect(200);
     });
 
     afterEach(async () => {

@@ -1080,7 +1080,7 @@ export class FastifyAdapter<
         // ref https://github.com/fastify/middie/pull/55
         this.instance.use(
           normalizedPath,
-          (req: any, res: any, next: Function) => {
+          (req: any, res: any, next: (err?: Error) => void) => {
             const queryParamsIndex = req.originalUrl.indexOf('?');
             let pathname =
               queryParamsIndex >= 0
@@ -1097,7 +1097,7 @@ export class FastifyAdapter<
                 return next();
               }
             }
-            return callback(req, res, next);
+            this.runMiddleware(callback, req, res, next);
           },
         );
       } catch (e) {
@@ -1107,6 +1107,38 @@ export class FastifyAdapter<
         throw e;
       }
     };
+  }
+
+  private runMiddleware(
+    middleware: Function,
+    req: unknown,
+    res: unknown,
+    next: (err?: Error) => void,
+  ): void {
+    let completed = false;
+    const nextOnce = (err?: Error) => {
+      if (completed) return;
+      completed = true;
+      next(err);
+    };
+    try {
+      // middie discards the return value, so the promise is observed here:
+      // the proxies of `RouterProxy` reject when the exception layer throws.
+      // Its resolution is not passed to `next`, as a middleware that answers
+      // the request does not call it.
+      const result = middleware(req, res, nextOnce);
+      if (result && typeof result.then === 'function') {
+        result.then(undefined, (err: Error) => {
+          if (completed) {
+            this.logger.error(err);
+            return;
+          }
+          nextOnce(err || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR());
+        });
+      }
+    } catch (err) {
+      nextOnce(err);
+    }
   }
 
   public getType(): string {
