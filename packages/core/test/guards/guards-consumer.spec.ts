@@ -45,6 +45,34 @@ describe('GuardsConsumer', () => {
           expect(canActivate).to.be.true;
         });
       });
+      describe('when a guard returns an Observable from another copy of rxjs', () => {
+        it('should use the value it emits', async () => {
+          // Not an instance of the "Observable" class imported here
+          const source$ = of(false);
+          const foreign$ = {
+            lift: source$.lift.bind(source$),
+            subscribe: source$.subscribe.bind(source$),
+          };
+          const canActivate = await consumer.tryActivate(
+            [...guards, { canActivate: () => foreign$ }],
+            [],
+            { constructor: null },
+            null!,
+          );
+          expect(canActivate).to.be.false;
+        });
+      });
+      describe('when a guard returns a Promise of an Observable', () => {
+        it('should use the value the Observable emits', async () => {
+          const canActivate = await consumer.tryActivate(
+            [...guards, { canActivate: async () => of(false) }],
+            [],
+            { constructor: null },
+            null!,
+          );
+          expect(canActivate).to.be.false;
+        });
+      });
       describe('when sync guards initialize AsyncLocalStorages', () => {
         it('should keep local storages accessible', async () => {
           const storage1 = new AsyncLocalStorage<number>();
