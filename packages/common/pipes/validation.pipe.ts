@@ -282,9 +282,9 @@ export class ValidationPipe implements PipeTransform<any> {
     delete value.__proto__;
     delete value.prototype;
 
-    // Only delete constructor if it's NOT a built-in type
-    const constructorType = value?.constructor;
-    if (constructorType && !BUILT_IN_TYPES.includes(constructorType)) {
+    // Only delete constructor if it's NOT a built-in type, whatever its value:
+    // a falsy one (null, 0, false, "") shadows the prototype's all the same
+    if (!BUILT_IN_TYPES.includes(value.constructor)) {
       delete value.constructor;
     }
 

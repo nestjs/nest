@@ -657,6 +657,21 @@ describe('ValidationPipe', () => {
         expect(value.nested).to.not.have.ownProperty('constructor');
       });
 
+      it('should strip constructor whatever its value', () => {
+        for (const constructor of [null, 0, false, '']) {
+          const value = { constructor, nested: { constructor } };
+          target['stripProtoKeys'](value);
+          expect(Object.keys(value)).to.deep.equal(['nested']);
+          expect(Object.keys(value.nested)).to.deep.equal([]);
+        }
+      });
+
+      it('should leave objects without a prototype as they are', () => {
+        const value = Object.assign(Object.create(null), { id: 1 });
+        target['stripProtoKeys'](value);
+        expect(value).to.deep.equal({ id: 1 });
+      });
+
       it('should strip __proto__ from objects', () => {
         const value = { __proto__: { malicious: 'code' } };
         target['stripProtoKeys'](value);
