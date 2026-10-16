@@ -313,6 +313,23 @@ export class FastifyAdapter<
       instanceOrOptions && (instanceOrOptions as TInstance).server
         ? instanceOrOptions
         : fastify({
+            // The router answers a malformed URL (400) or an over-long route
+            // parameter (414) before any hook runs, so the security hook (see
+            // `registerSecurityHook()`) runs here, for its headers.
+            frameworkErrors: (
+              error: FastifyError,
+              request: FastifyRequest,
+              reply: FastifyReply,
+            ) => {
+              try {
+                this.securityHook?.(request as unknown as TRequest, reply.raw);
+              } catch {
+                // The request is rejected either way, and a throw here would
+                // escape the router. `request.params` and `request.query`
+                // are null, so a CSRF `exclude` predicate may throw.
+              }
+              reply.send(error);
+            },
             ...(instanceOrOptions as FastifyServerOptions),
             routerOptions: {
               ...this.getTopLevelRouterOptions(

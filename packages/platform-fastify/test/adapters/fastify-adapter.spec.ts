@@ -573,6 +573,69 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('requests rejected by the router', () => {
+    const securityHook = (_req: unknown, res: any) => {
+      res.setHeader('x-security-hook', 'ran');
+      return undefined;
+    };
+
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    it.each([
+      ['a malformed percent-encoding', '/items/%', 400, 'FST_ERR_BAD_URL'],
+      [
+        'an over-long parameter',
+        `/items/${'a'.repeat(101)}`,
+        414,
+        'FST_ERR_MAX_PARAM_LENGTH',
+      ],
+    ])(
+      'should run the security hook for a request with %s',
+      async (_name, url, statusCode, code) => {
+        const handler = vi.fn(() => 'found');
+        const hook = vi.fn(securityHook);
+        fastifyAdapter.get('/items/:id', handler);
+        fastifyAdapter.registerSecurityHook(hook);
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+        expect(res.statusCode).toBe(statusCode);
+        expect(JSON.parse(res.body)).toMatchObject({ statusCode, code });
+        expect(res.headers['x-security-hook']).toBe('ran');
+        expect(hook).toHaveBeenCalledOnce();
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
+
+    it("should send the router's error when the security hook throws", async () => {
+      fastifyAdapter.registerSecurityHook((req, res) => {
+        securityHook(req, res);
+        throw new TypeError('the request has no params');
+      });
+
+      const res = await fastifyAdapter.inject({ method: 'POST', url: '/%' });
+
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body)).toMatchObject({ code: 'FST_ERR_BAD_URL' });
+      expect(res.headers['x-security-hook']).toBe('ran');
+    });
+
+    it('should keep a "frameworkErrors" option passed to the adapter', async () => {
+      const frameworkErrors = vi.fn((_error, _req, reply: FastifyReply) =>
+        reply.code(400).send('custom'),
+      );
+      fastifyAdapter = new FastifyAdapter({ frameworkErrors });
+      fastifyAdapter.registerSecurityHook(securityHook);
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/%' });
+
+      expect(res.body).toBe('custom');
+      expect(frameworkErrors).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('applyVersionFilter', () => {
     const registerVersionNeutralRoute = (
       type: VersioningType.MEDIA_TYPE | VersioningType.HEADER,

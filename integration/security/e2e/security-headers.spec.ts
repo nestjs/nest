@@ -94,6 +94,20 @@ describe.each(adapters)('Security headers (%s)', (_name, createAdapter) => {
       expectDefaultHeaders(res.headers);
     });
 
+    // Fastify's router answers these before any hook runs.
+    it('sets them on requests rejected by the router', async () => {
+      const server = app.getHttpServer();
+      const badUrl = await request(server).post('/hooks/github/%').expect(400);
+      expectDefaultHeaders(badUrl.headers);
+
+      if (app.getHttpAdapter().getType() === 'fastify') {
+        const longParam = await request(server)
+          .post(`/hooks/${'a'.repeat(101)}`)
+          .expect(414);
+        expectDefaultHeaders(longParam.headers);
+      }
+    });
+
     it('sets them on Server-Sent Events streams', async () => {
       const res = await request(app.getHttpServer())
         .get('/events')
