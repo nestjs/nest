@@ -14,7 +14,7 @@ import {
   isUndefined,
   stripEndSlash,
 } from '@nestjs/common/internal';
-import { type Type, VERSION_NEUTRAL } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 
 export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;
@@ -80,9 +80,6 @@ export class RoutesMapper {
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
 
-    const toUndefinedIfNeural = (version: VersionValue) =>
-      version === VERSION_NEUTRAL ? undefined : version;
-
     const toRouteInfo = (
       item: RouteDefinition,
       prefix: string,
@@ -98,15 +95,17 @@ export class RoutesMapper {
           path: endpointPath,
           method: item.requestMethod,
         };
+        // A VERSION_NEUTRAL route is kept apart from a route without a
+        // version, which is also served under the default version
         const version = item.version ?? controllerVersion;
         if (version && versioningConfig) {
           if (typeof version !== 'string' && Array.isArray(version)) {
-            return version.map(v => ({
+            return version.map((v): RouteInfo => ({
               ...routeInfo,
-              version: toUndefinedIfNeural(v),
+              version: v,
             }));
           }
-          routeInfo.version = toUndefinedIfNeural(version);
+          routeInfo.version = version;
         }
 
         return routeInfo;

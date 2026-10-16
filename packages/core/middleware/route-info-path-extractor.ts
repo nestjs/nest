@@ -27,7 +27,11 @@ export class RouteInfoPathExtractor {
     this.versioningConfig = this.applicationConfig.getVersioning();
   }
 
-  public extractPathsFrom({ path, method, version }: RouteInfo): string[] {
+  public extractPathsFrom({
+    path,
+    method,
+    version = this.getVersionOfUnversionedRoutes(),
+  }: RouteInfo): string[] {
     const versionPaths = this.extractVersionPathFrom(version);
 
     if (this.isAWildcard(path)) {
@@ -109,6 +113,31 @@ export class RouteInfoPathExtractor {
     return versionPaths.map(
       versionPath => this.prefixPath + versionPath + addLeadingSlash(path),
     );
+  }
+
+  /**
+   * Returns the versions a route given without a version (e.g.
+   * `forRoutes('cats')`) may be served under: no version, as for a
+   * version-neutral controller, and the default version, under which
+   * controllers without a version are served.
+   */
+  private getVersionOfUnversionedRoutes(): VersionValue | undefined {
+    if (this.versioningConfig?.type !== VersioningType.URI) {
+      return;
+    }
+    const { defaultVersion } = this.versioningConfig;
+    if (!defaultVersion) {
+      return;
+    }
+    const versions = new Set<string | typeof VERSION_NEUTRAL>([
+      VERSION_NEUTRAL,
+    ]);
+    if (Array.isArray(defaultVersion)) {
+      defaultVersion.forEach(version => versions.add(version));
+    } else {
+      versions.add(defaultVersion);
+    }
+    return [...versions];
   }
 
   private extractVersionPathFrom(versionValue?: VersionValue): string[] {
