@@ -78,6 +78,38 @@ describe('RouterExceptionFilters', () => {
         const expectedResult = applicationConfig.getGlobalFilters();
         expect(exceptionFilter.getGlobalMetadata()).toBe(expectedResult);
       });
+
+      it('should warn once that request-scoped and transient global filters are left out', () => {
+        const warnSpy = vi
+          .spyOn((RouterExceptionFilters as any).logger, 'warn')
+          .mockImplementation(() => {});
+        vi.spyOn(applicationConfig, 'getGlobalRequestFilters').mockReturnValue([
+          new InstanceWrapper({ scope: Scope.REQUEST }),
+        ]);
+        // e.g. the one of the middleware module
+        const otherExceptionFilter = new RouterExceptionFilters(
+          new NestContainer(),
+          applicationConfig,
+          new NoopHttpAdapter({}),
+        );
+
+        exceptionFilter.getGlobalMetadata();
+        exceptionFilter.getGlobalMetadata();
+        otherExceptionFilter.getGlobalMetadata();
+
+        expect(warnSpy).toHaveBeenCalledOnce();
+        expect(warnSpy.mock.calls[0][0]).toContain('outside of controllers');
+      });
+
+      it('should not warn without request-scoped or transient global filters', () => {
+        const warnSpy = vi
+          .spyOn((RouterExceptionFilters as any).logger, 'warn')
+          .mockImplementation(() => {});
+
+        exceptionFilter.getGlobalMetadata();
+
+        expect(warnSpy).not.toHaveBeenCalled();
+      });
     });
     describe('otherwise', () => {
       it('should merge static global with request/transient scoped filters', () => {

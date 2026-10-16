@@ -1,4 +1,4 @@
-import type { HttpServer } from '@nestjs/common';
+import { type HttpServer, Logger } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context.js';
@@ -14,6 +14,11 @@ import {
 } from '@nestjs/common/internal';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
+  private static readonly logger = new Logger(RouterExceptionFilters.name);
+  // Applications already warned about their request-scoped or transient
+  // global filters (see "getGlobalMetadata()")
+  private static readonly warnedConfigs = new WeakSet<ApplicationConfig>();
+
   constructor(
     container: NestContainer,
     private readonly config: ApplicationConfig,
@@ -52,6 +57,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
   ): T {
     const globalFilters = this.config.getGlobalFilters() as T;
     if (contextId === STATIC_CONTEXT && !inquirerId) {
+      this.warnAboutScopedGlobalFilters();
       return globalFilters;
     }
     const scopedFilterWrappers =
@@ -68,5 +74,23 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
       .toArray();
 
     return globalFilters.concat(scopedFilters) as T;
+  }
+
+  /**
+   * Handlers that are not built for a controller (middleware, the "not found"
+   * handler, the exception layer) have no request to resolve request-scoped
+   * or transient global filters for, so these filters are left out.
+   */
+  private warnAboutScopedGlobalFilters() {
+    if (
+      isEmptyArray(this.config.getGlobalRequestFilters()) ||
+      RouterExceptionFilters.warnedConfigs.has(this.config)
+    ) {
+      return;
+    }
+    RouterExceptionFilters.warnedConfigs.add(this.config);
+    RouterExceptionFilters.logger.warn(
+      'Global exception filters (APP_FILTER) with request or transient scope are not applied to exceptions thrown outside of controllers, e.g. in middleware, for unknown routes or while parsing the request body. Register a global filter without a scope as well to handle them.',
+    );
   }
 }
