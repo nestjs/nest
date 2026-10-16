@@ -4,6 +4,33 @@ import { ClientRMQ } from '../../client/client-rmq.js';
 import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { RmqRecord } from '../../record-builders/index.js';
 
+// amqplib settles a channel close on the broker's reply, which never arrives
+// once the connection is closed.
+const closeChannelOnlyWhileConnected = (
+  closeChannel: ReturnType<typeof vi.fn>,
+  closeConnection: ReturnType<typeof vi.fn>,
+) => {
+  let connectionClosed = false;
+  closeChannel.mockImplementation(
+    () =>
+      new Promise<void>(resolve =>
+        setImmediate(() => !connectionClosed && resolve()),
+      ),
+  );
+  closeConnection.mockImplementation(async () => {
+    connectionClosed = true;
+  });
+};
+
+const settledWithin = (promise: Promise<unknown>, ms = 50) =>
+  Promise.race([
+    promise.then(
+      () => 'resolved',
+      () => 'rejected',
+    ),
+    new Promise(resolve => setTimeout(() => resolve('pending'), ms)),
+  ]);
+
 describe('ClientRMQ', function () {
   let client: ClientRMQ;
   let untypedClient: any;
@@ -185,7 +212,10 @@ describe('ClientRMQ', function () {
 
   describe('connect (channel setup errors)', () => {
     let rmqClient: ClientRMQ;
-    let manager: EventEmitter & { createChannel: ReturnType<typeof vi.fn> };
+    let manager: EventEmitter & {
+      createChannel: ReturnType<typeof vi.fn>;
+      close: ReturnType<typeof vi.fn>;
+    };
     let channel: EventEmitter & { close: ReturnType<typeof vi.fn> };
     let logError: ReturnType<typeof vi.spyOn>;
     const setupError = new Error('PRECONDITION_FAILED');
@@ -221,6 +251,42 @@ describe('ClientRMQ', function () {
       await connection.catch(() => {});
 
       expect(logError).toHaveBeenCalledWith(setupError);
+    });
+
+    it('should still close the connection it discards when the channel close rejects', async () => {
+      channel.close.mockRejectedValue(new Error('Channel closing error'));
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      channel.emit('error', setupError);
+
+      await expect(connection).rejects.toBe(setupError);
+      expect(manager.close).toHaveBeenCalled();
+    });
+
+    it('should reject with the setup error when the connection close rejects', async () => {
+      manager.close.mockRejectedValue(new Error('Connection closing error'));
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      channel.emit('error', setupError);
+
+      await expect(connection).rejects.toBe(setupError);
+    });
+
+    describe('when the channel close waits for the broker', () => {
+      beforeEach(() => {
+        closeChannelOnlyWhileConnected(channel.close, manager.close);
+      });
+
+      it('should close the channel before the connection it discards', async () => {
+        const connection = rmqClient.connect();
+        manager.emit('connect');
+        channel.emit('error', setupError);
+
+        expect(await settledWithin(connection)).toBe('rejected');
+        expect(channel.close.mock.invocationCallOrder[0]).toBeLessThan(
+          manager.close.mock.invocationCallOrder[0],
+        );
+      });
     });
 
     it('should try again on the next call instead of caching the setup error', async () => {
@@ -829,6 +895,19 @@ describe('ClientRMQ', function () {
       expect(untypedClient.channel).toBeNull();
       expect(untypedClient.client).toBeNull();
       expect(untypedClient.isInitialConnect).toBe(true);
+    });
+
+    describe('when the channel close waits for the broker', () => {
+      beforeEach(() => {
+        closeChannelOnlyWhileConnected(channelCloseSpy, clientCloseSpy);
+      });
+
+      it('should close the channel before the connection', async () => {
+        expect(await settledWithin(client.close())).toBe('resolved');
+        expect(channelCloseSpy.mock.invocationCallOrder[0]).toBeLessThan(
+          clientCloseSpy.mock.invocationCallOrder[0],
+        );
+      });
     });
 
     it('should fail every pending request and close the channel when a callback throws', async () => {
