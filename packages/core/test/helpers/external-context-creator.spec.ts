@@ -1,5 +1,8 @@
-import { ForbiddenException } from '@nestjs/common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { ForbiddenException, SetMetadata } from '@nestjs/common';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  ENTRY_PROVIDER_WATERMARK,
+} from '@nestjs/common/constants';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
 import { of } from 'rxjs';
@@ -8,6 +11,7 @@ import { ExternalExceptionFilterContext } from '../../exceptions/external-except
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
+import { STATIC_CONTEXT } from '../../injector/constants';
 import { NestContainer } from '../../injector/container';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
@@ -73,6 +77,53 @@ describe('ExternalContextCreator', () => {
         );
         contextCreator.create(new Host(), callback, '', '', null!);
         expect(getContextModuleKeySpy.calledWith(Host)).to.be.true;
+      });
+    });
+    describe('when no inquirer id is given', () => {
+      @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+      class EntryProvider {}
+
+      class PlainProvider {}
+
+      let moduleRef: Module;
+
+      beforeEach(() => {
+        const modules = new ModulesContainer();
+        moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider(EntryProvider);
+        moduleRef.addProvider(PlainProvider);
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should look up the enhancers of an entry provider with that provider as the inquirer', () => {
+        const instance = new EntryProvider();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(
+          (guardsContextCreator.create as sinon.SinonStub).calledWith(
+            instance,
+            callback,
+            'key',
+            STATIC_CONTEXT,
+            moduleRef.providers.get(EntryProvider)!.id,
+          ),
+        ).to.be.true;
+      });
+
+      it('should not use any other provider as the inquirer', () => {
+        const instance = new PlainProvider();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(
+          (guardsContextCreator.create as sinon.SinonStub).calledWith(
+            instance,
+            callback,
+            'key',
+            STATIC_CONTEXT,
+            undefined,
+          ),
+        ).to.be.true;
       });
     });
     describe('returns proxy function', () => {

@@ -299,6 +299,24 @@ export class Injector {
       moduleRef,
       resolutionContext,
     );
+    if (
+      resolutionContext.contextId === STATIC_CONTEXT &&
+      !resolutionContext.inquirer &&
+      moduleRef.entryProviders.includes(wrapper) &&
+      wrapper.isDependencyTreeStatic()
+    ) {
+      // A static entry provider never gets a per-request load either, so its
+      // transient enhancers must exist for the provider before the first call.
+      // Only its bootstrap load (no inquirer) waits for them, as they may depend
+      // on a provider that is itself waiting for this one. The non-transient
+      // ones are shared, and get loaded with the injectables of the module.
+      const enhancers = wrapper.getEnhancersMetadata() || [];
+      return this.loadEnhancers(
+        STATIC_CONTEXT,
+        wrapper,
+        enhancers.filter(item => item.isTransient),
+      );
+    }
     await this.loadEnhancersPerContext(
       wrapper,
       resolutionContext.contextId,

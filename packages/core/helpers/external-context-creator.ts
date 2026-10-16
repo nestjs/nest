@@ -107,7 +107,13 @@ export class ExternalContextCreator {
     },
     contextType: TContext = 'http' as TContext,
   ) {
-    const moduleKey = this.getContextModuleKey(getClassRef(instance));
+    const classRef = getClassRef(instance);
+    const moduleKey = this.getContextModuleKey(classRef);
+    // Transient enhancers are created per host, so those of a static entry
+    // provider can only be found with that provider as the inquirer.
+    inquirerId ??= this.modulesContainer
+      .get(moduleKey)
+      ?.entryProviders.find(item => item.token === classRef)?.id;
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
       TParamsMetadata,
       TContext
