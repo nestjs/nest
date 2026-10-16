@@ -1,5 +1,5 @@
 import type { CanActivate } from '@nestjs/common';
-import { lastValueFrom, Observable } from 'rxjs';
+import { isObservable, lastValueFrom, Observable } from 'rxjs';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import type { ContextType } from '@nestjs/common';
 import { type Controller, isEmptyArray } from '@nestjs/common/internal';
@@ -49,9 +49,12 @@ export class GuardsConsumer {
   public async pickResult(
     result: boolean | Promise<boolean> | Observable<boolean>,
   ): Promise<boolean> {
-    if (result instanceof Observable) {
-      return lastValueFrom(result);
+    // "isObservable()" also recognises Observables created by another copy
+    // of rxjs, which are not instances of the "Observable" class imported here
+    const value = await result;
+    if (isObservable(value)) {
+      return lastValueFrom(value);
     }
-    return result;
+    return value;
   }
 }
