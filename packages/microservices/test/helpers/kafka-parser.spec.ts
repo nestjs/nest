@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { KafkaHeaders } from '../../enums/kafka-headers.enum';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import { KafkaParser } from '../../helpers/kafka-parser';
 
 describe('KafkaParser', () => {
@@ -125,6 +126,70 @@ describe('KafkaParser', () => {
           [KafkaHeaders.CORRELATION_ID]: 'correlation-id',
         },
       });
+    });
+
+    describe('when the message exceeds "maxMessageSize"', () => {
+      beforeEach(() => {
+        kafkaParser = new KafkaParser({ maxMessageSize: 16 });
+      });
+
+      it('should parse a message of exactly that size', () => {
+        expect(
+          kafkaParser.parse({
+            key: Buffer.from('12'),
+            headers: { custom: Buffer.from('34') },
+            value: Buffer.from('[5678]'),
+          }),
+        ).to.deep.equal({
+          key: '12',
+          headers: { custom: '34' },
+          value: [5678],
+        });
+      });
+
+      it('should throw on a large value', () => {
+        expect(() =>
+          kafkaParser.parse({ value: Buffer.alloc(17, '[') }),
+        ).to.throw(MaxPacketLengthExceededException);
+      });
+
+      it('should throw on a large key', () => {
+        expect(() =>
+          kafkaParser.parse({ key: Buffer.alloc(17, '['), value: null }),
+        ).to.throw(MaxPacketLengthExceededException);
+      });
+
+      it('should throw on many headers', () => {
+        const headers = Object.fromEntries(
+          [...'abcdefghijklmnopq'].map(name => [name, Buffer.alloc(0)]),
+        );
+        expect(() => kafkaParser.parse({ headers, value: null })).to.throw(
+          MaxPacketLengthExceededException,
+        );
+      });
+
+      it('should throw on a large repeated header', () => {
+        expect(() =>
+          kafkaParser.parse({
+            headers: { custom: [Buffer.alloc(5, '['), Buffer.alloc(6, '[')] },
+            value: null,
+          }),
+        ).to.throw(MaxPacketLengthExceededException);
+      });
+
+      it('should not count the value when "keepBinary" is set', () => {
+        kafkaParser = new KafkaParser({ keepBinary: true, maxMessageSize: 16 });
+        const value = Buffer.alloc(17, '[');
+        expect(kafkaParser.parse({ value }).value).to.equal(value);
+      });
+    });
+
+    it('should limit the message size to 16 MiB by default', () => {
+      // The limit is checked before anything is decoded
+      const value = { length: 16 * 1024 * 1024 + 1 };
+      expect(() => kafkaParser.parse({ value })).to.throw(
+        MaxPacketLengthExceededException,
+      );
     });
 
     it('should decode the headers the transport routes replies with as text', () => {

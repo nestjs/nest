@@ -351,6 +351,13 @@ export interface RmqOptions {
  */
 export interface KafkaParserConfig {
   keepBinary?: boolean;
+  /**
+   * Maximum size of a message in bytes, after decompression: its key, its
+   * headers and, unless `keepBinary` is set, its value. A larger message is
+   * logged and skipped instead of being decoded.
+   * @default 16777216 (16 MiB)
+   */
+  maxMessageSize?: number;
 }
 
 /**

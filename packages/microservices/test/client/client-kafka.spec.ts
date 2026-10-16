@@ -6,6 +6,7 @@ import { ClientKafka } from '../../client/client-kafka';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
 import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import {
   ConsumerGroupJoinEvent,
   EachMessagePayload,
@@ -540,6 +541,56 @@ describe('ClientKafka', () => {
             response: messageValue,
           }),
         ).to.be.true;
+      });
+    });
+
+    describe('when the parser rejects the message', () => {
+      let loggerErrorStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        untypedClient.parser = {
+          parse: () => {
+            throw new MaxPacketLengthExceededException(17);
+          },
+        };
+        loggerErrorStub = sinon.stub(untypedClient.logger, 'error');
+        subscription = client.createResponseCallback();
+        client['routingMap'].set(correlationId, callback);
+      });
+
+      it('should log and skip the message, and fail the pending request', async () => {
+        // A rejection would make kafkajs redeliver the message
+        expect(await subscription(payload)).to.be.undefined;
+
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args[0].err).to.be.instanceOf(
+          MaxPacketLengthExceededException,
+        );
+        expect(callback.firstCall.args[0].isDisposed).to.be.true;
+      });
+
+      it('should skip the message when its correlation id cannot be decoded', async () => {
+        const correlationIdHeader = {
+          toString: () => {
+            throw new RangeError(
+              'Cannot create a string longer than 0x1fffffe8 characters',
+            );
+          },
+        };
+
+        expect(
+          await subscription({
+            ...payload,
+            message: {
+              ...payload.message,
+              headers: { [KafkaHeaders.CORRELATION_ID]: correlationIdHeader },
+            },
+          }),
+        ).to.be.undefined;
+
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(callback.called).to.be.false;
       });
     });
 

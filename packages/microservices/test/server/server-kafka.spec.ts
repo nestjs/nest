@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaContext } from '../../ctx-host';
 import { KafkaHeaders } from '../../enums';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import {
   EachMessagePayload,
   KafkaMessage,
@@ -443,6 +444,26 @@ describe('ServerKafka', () => {
 
       await server.handleMessage(payload);
       expect(handler.called).to.be.true;
+    });
+
+    it('should log and skip a message that the parser rejects', async () => {
+      untypedServer.parser = {
+        parse: () => {
+          throw new MaxPacketLengthExceededException(17);
+        },
+      };
+      const handler = sinon.spy();
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: handler,
+      });
+      const loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+
+      // A rejection would make kafkajs redeliver the message
+      expect(await server.handleMessage(payload)).to.be.undefined;
+
+      expect(loggerErrorStub.calledOnce).to.be.true;
+      expect(handler.called).to.be.false;
+      expect(getPublisherSpy.called).to.be.false;
     });
 
     describe('when the reply topic is not a valid topic name', () => {
