@@ -5,8 +5,20 @@ import {
   Server as NetServer,
   Socket as NetSocket,
 } from 'net';
-import { of, throwError as _throw } from 'rxjs';
+import { Observable, of, tap, throwError as _throw } from 'rxjs';
+import { CallHandler } from '../../../common/index.js';
+import { ApplicationConfig } from '../../../core/application-config.js';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator.js';
+import { NestContainer } from '../../../core/injector/container.js';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator.js';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
+import { RpcContextCreator } from '../../context/rpc-context-creator.js';
+import { RpcProxy } from '../../context/rpc-proxy.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { TcpSocket } from '../../helpers/tcp-socket.js';
 import { ServerTCP } from '../../server/server-tcp.js';
@@ -38,9 +50,10 @@ describe('ServerTCP', () => {
         () => socket,
       );
     });
-    it('should bind message and error events to handler', () => {
+    it('should bind message, error and close events to handler', () => {
       server.bindHandler(null!);
-      expect(socket.on).toHaveBeenCalledTimes(2);
+      const events = socket.on.mock.calls.map(([event]) => event);
+      expect(new Set(events)).toEqual(new Set(['message', 'error', 'close']));
     });
     it('should track the accepted socket so that it can be closed on shutdown', () => {
       const netSocket = { on: vi.fn(), destroy: vi.fn() };
@@ -369,6 +382,124 @@ describe('ServerTCP', () => {
       expect(endHook).toHaveBeenCalledOnce();
     });
   });
+
+  describe('when the peer disconnects', () => {
+    const msg = { pattern: 'test', data: 'tests', id: '3' };
+    let socket: EventEmitter & { sendMessage: ReturnType<typeof vi.fn> };
+
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+    const createStream = () => {
+      const stream = { subscribed: false, tornDown: false };
+      const observable = new Observable(() => {
+        stream.subscribed = true;
+        return () => (stream.tornDown = true);
+      });
+      return { stream, observable };
+    };
+
+    beforeEach(() => {
+      socket = Object.assign(new EventEmitter(), { sendMessage: vi.fn() });
+      vi.spyOn(server, 'getSocketInstance' as any).mockReturnValue(socket);
+      vi.spyOn(untypedServer, 'handleError').mockImplementation(() => {});
+      server.bindHandler(null!);
+    });
+
+    it.each(['close', 'error'])(
+      'should end the stream of a handler that returned an Observable on "%s"',
+      async event => {
+        const { stream, observable } = createStream();
+        const endHook = vi.fn();
+        untypedServer.onProcessingEndHook = endHook;
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: async () => observable,
+        });
+
+        await server.handleMessage(socket as any, msg);
+        expect(stream.subscribed).toBe(true);
+
+        socket.emit(event, new Error('read ECONNRESET'));
+
+        expect(stream.tornDown).toBe(true);
+        expect(endHook).toHaveBeenCalledOnce();
+      },
+    );
+    it('should not subscribe to an Observable returned after the peer has disconnected', async () => {
+      const { stream, observable } = createStream();
+      untypedServer.messageHandlers = objectToMap({
+        [msg.pattern]: async () => observable,
+      });
+
+      socket.emit('close');
+      await server.handleMessage(socket as any, msg);
+
+      expect(stream.subscribed).toBe(false);
+    });
+
+    describe('and the handler has an interceptor', () => {
+      let interceptorWork: ReturnType<typeof vi.fn>;
+
+      const createHandler = (handle: () => unknown) => {
+        const container: any = new NestContainer();
+        const interceptorsContextCreator = new InterceptorsContextCreator(
+          container,
+        );
+        vi.spyOn(interceptorsContextCreator, 'create').mockReturnValue([
+          {
+            intercept: (_context: unknown, next: CallHandler) =>
+              next.handle().pipe(tap(value => interceptorWork(value))),
+          },
+        ] as any);
+        const contextCreator = new RpcContextCreator(
+          new RpcProxy(),
+          new ExceptionFiltersContext(container, new ApplicationConfig()),
+          new PipesContextCreator(container),
+          new PipesConsumer(),
+          new GuardsContextCreator(container),
+          new GuardsConsumer(),
+          interceptorsContextCreator,
+          new InterceptorsConsumer(),
+        );
+        const controller = { handle };
+        return contextCreator.create(controller, handle, 'module', 'handle');
+      };
+
+      beforeEach(() => {
+        interceptorWork = vi.fn();
+      });
+
+      it('should let the interceptor finish when the handler resolves to a value', async () => {
+        let resolveValue: (value: string) => void;
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: createHandler(
+            () => new Promise(resolve => (resolveValue = resolve)),
+          ),
+        });
+
+        await server.handleMessage(socket as any, msg);
+        await flush();
+        socket.emit('close');
+        resolveValue!('value');
+        await flush();
+
+        expect(interceptorWork).toHaveBeenCalledWith('value');
+      });
+      it('should end the stream once the handler resolves to an Observable', async () => {
+        const { stream, observable } = createStream();
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: createHandler(async () => observable),
+        });
+
+        await server.handleMessage(socket as any, msg);
+        await flush();
+        expect(stream.subscribed).toBe(true);
+
+        socket.emit('close');
+
+        expect(stream.tornDown).toBe(true);
+      });
+    });
+  });
+
   describe('handleClose', () => {
     describe('pending retries', () => {
       let listen: ReturnType<typeof vi.fn>;

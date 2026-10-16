@@ -1,6 +1,6 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { firstValueFrom, lastValueFrom, Observable, of, toArray } from 'rxjs';
-import { Injectable, UseGuards, UsePipes } from '../../../common';
+import { CallHandler, Injectable, UseGuards, UsePipes } from '../../../common';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { ApplicationConfig } from '../../../core/application-config';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
@@ -12,7 +12,10 @@ import { InterceptorsContextCreator } from '../../../core/interceptors/intercept
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { RpcContextCreator } from '../../context/rpc-context-creator';
+import {
+  getHandlerObservableNotifier,
+  RpcContextCreator,
+} from '../../context/rpc-context-creator';
 import { RpcProxy } from '../../context/rpc-proxy';
 import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
 import { RpcParamsFactory } from '../../factories/rpc-params-factory';
@@ -189,6 +192,95 @@ describe('RpcContextCreator', () => {
         );
         await expect(proxy('data')).rejects.toBeInstanceOf(RpcException);
       });
+    });
+  });
+
+  describe('getHandlerObservableNotifier', () => {
+    class Controller {
+      handle(data: string): unknown {
+        return data;
+      }
+    }
+    const passThrough = {
+      intercept: (_context: unknown, next: CallHandler) => next.handle(),
+    };
+
+    const callProxy = async (
+      handle: () => unknown,
+      context: object,
+      { interceptors = [passThrough], hooks = [] as unknown[] } = {},
+    ) => {
+      const container: any = new NestContainer();
+      const interceptorsContextCreator = new InterceptorsContextCreator(
+        container,
+      );
+      vi.spyOn(interceptorsContextCreator, 'create').mockReturnValue(
+        interceptors as any,
+      );
+      const creator = new RpcContextCreator(
+        rpcProxy,
+        exceptionFiltersContext,
+        pipesCreator as any,
+        pipesConsumer as any,
+        guardsContextCreator as any,
+        guardsConsumer as any,
+        interceptorsContextCreator as any,
+        new InterceptorsConsumer() as any,
+        { getGlobalPreRequestHooks: () => hooks } as any,
+      );
+      const controller = new Controller();
+      controller.handle = handle;
+
+      const proxy = creator.create(controller, handle, module, 'handle');
+      const result = await proxy('data', context);
+      await lastValueFrom(result, { defaultValue: undefined });
+    };
+
+    it.each([
+      ['returns', () => of('value')],
+      ['resolves to', async () => of('value')],
+    ])(
+      'should report through the context that the handler %s an Observable',
+      async (_, handle) => {
+        const context = {};
+        const onHandlerObservable = vi.fn();
+
+        await callProxy(handle, context);
+        getHandlerObservableNotifier(context)!.subscribe(onHandlerObservable);
+
+        expect(onHandlerObservable).toHaveBeenCalledOnce();
+      },
+    );
+    it.each([
+      ['returns', () => 'value'],
+      ['resolves to', async () => 'value'],
+    ])('should not report that the handler %s a value', async (_, handle) => {
+      const context = {};
+      const onHandlerObservable = vi.fn();
+
+      await callProxy(handle, context);
+      getHandlerObservableNotifier(context)!.subscribe(onHandlerObservable);
+
+      expect(onHandlerObservable).not.toHaveBeenCalled();
+    });
+    it('should report it when only pre-request hooks wrap the result', async () => {
+      const context = {};
+      const onHandlerObservable = vi.fn();
+
+      await callProxy(() => of('value'), context, {
+        interceptors: [],
+        hooks: [(_ctx: unknown, next: () => Observable<unknown>) => next()],
+      });
+      getHandlerObservableNotifier(context)!.subscribe(onHandlerObservable);
+
+      expect(onHandlerObservable).toHaveBeenCalledOnce();
+    });
+    it('should not track the context when the result is not wrapped', async () => {
+      const context = {};
+
+      await callProxy(() => of('value'), context, { interceptors: [] });
+
+      expect(getHandlerObservableNotifier(context)).toBeUndefined();
     });
   });
 
