@@ -1,5 +1,7 @@
 import type { NestContainer } from '@nestjs/core';
 import type { ContextId } from '@nestjs/core/injector/instance-wrapper.js';
+import type { Type } from '@nestjs/common';
+import { isNil } from '@nestjs/common/internal';
 import { MockFactory } from './interfaces/index.js';
 import {
   STATIC_CONTEXT,
@@ -28,6 +30,50 @@ export class TestingInjector extends Injector {
 
   public setContainer(container: NestContainer) {
     this.container = container;
+  }
+
+  // Request-scoped and transient providers are not loaded at compile time,
+  // and the injector that resolves them later has no mocker. So the mocker
+  // registers their missing dependencies here, without creating instances.
+  public async loadProvider(
+    wrapper: InstanceWrapper,
+    moduleRef: Module,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
+  ) {
+    if (
+      this.mocker &&
+      this.shouldSkipProviderLoading(wrapper, resolutionContext)
+    ) {
+      // A dependency that cannot be mocked fails later, at resolve time,
+      // exactly as it does without this lookup.
+      await this.mockMissingDependencies(wrapper, moduleRef).catch(
+        () => undefined,
+      );
+    }
+    return super.loadProvider(wrapper, moduleRef, resolutionContext);
+  }
+
+  // Waits for every lookup, so each missing dependency is mocked
+  // before compile() returns.
+  private async mockMissingDependencies(
+    wrapper: InstanceWrapper,
+    moduleRef: Module,
+  ) {
+    const [dependencies] = isNil(wrapper.inject)
+      ? this.getClassDependencies(wrapper)
+      : this.getFactoryProviderDependencies(wrapper);
+    await Promise.allSettled(
+      dependencies.map((param, index) =>
+        this.resolveSingleParam(
+          wrapper,
+          param as Type | string | symbol,
+          { index, dependencies },
+          moduleRef,
+          { contextId: STATIC_CONTEXT },
+          index,
+        ),
+      ),
+    );
   }
 
   public async resolveComponentWrapper<T>(

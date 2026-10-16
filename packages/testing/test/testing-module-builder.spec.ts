@@ -1,4 +1,5 @@
 import { Module as ModuleDecorator, Injectable, Scope } from '@nestjs/common';
+import { UndefinedDependencyException } from '@nestjs/core/errors/exceptions/undefined-dependency.exception';
 import {
   UuidFactory,
   UuidFactoryMode,
@@ -303,6 +304,109 @@ describe('TestingModuleBuilder', () => {
 
       const instance = module.get(NeedsMissing);
       expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved dependencies of request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class NeedsMissing {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(NeedsMissing);
+      expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved dependencies of transient providers used by request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NeedsMissing {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class Consumer {
+        constructor(public readonly transient: NeedsMissing) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [Consumer, NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(Consumer);
+      expect(instance.transient.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved dependencies of request-scoped factory providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      const module = await Test.createTestingModule({
+        providers: [
+          {
+            provide: 'NEEDS_MISSING',
+            useFactory: (dep: MissingDepClass) => ({ dep }),
+            inject: [MissingDepClass],
+            scope: Scope.REQUEST,
+          },
+        ],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve('NEEDS_MISSING');
+      expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should fail on resolve, not on compile, when the mocker skips a dependency of a request-scoped provider', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class NeedsMissing {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [NeedsMissing],
+      })
+        .useMocker(() => undefined)
+        .compile();
+
+      await expect(module.resolve(NeedsMissing)).rejects.toThrow(
+        "Nest can't resolve dependencies of the NeedsMissing",
+      );
+    });
+
+    it('should fail on resolve, not on compile, when a request-scoped factory provider has an undefined dependency', async () => {
+      const module = await Test.createTestingModule({
+        providers: [
+          {
+            provide: 'NEEDS_UNDEFINED',
+            useFactory: (dep: unknown) => ({ dep }),
+            inject: [undefined as any],
+            scope: Scope.REQUEST,
+          },
+        ],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      await expect(module.resolve('NEEDS_UNDEFINED')).rejects.toThrow(
+        UndefinedDependencyException,
+      );
     });
 
     it('should support compiling with snapshot option', async () => {
