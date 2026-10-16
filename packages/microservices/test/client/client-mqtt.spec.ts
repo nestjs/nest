@@ -77,6 +77,18 @@ describe('ClientMqtt', () => {
       client['publish'](msg, () => {});
       expect(client['routingMap'].has(id)).toBe(true);
     });
+    it('should not keep a count for the reply topics no request waits on', () => {
+      // Patterns may be built from request data, e.g. one per device
+      for (const device of ['a', 'b', 'c']) {
+        const dispose = client['publish'](
+          { pattern: `devices/${device}`, data: 'data' },
+          () => {},
+        );
+        dispose();
+      }
+
+      expect(client['subscriptionsCount'].size).toBe(0);
+    });
     describe('on error', () => {
       beforeEach(() => {
         assignStub.mockImplementation(() => {
@@ -215,7 +227,7 @@ describe('ClientMqtt', () => {
         client['publish'](msg, vi.fn());
 
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
       });
 
       it('should undo it as well when the subscription is acknowledged later', () => {
@@ -229,7 +241,7 @@ describe('ClientMqtt', () => {
         acknowledge();
 
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
         expect(callback).toHaveBeenCalledWith({
           err: expect.objectContaining({ message: 'Send error' }),
         });
@@ -249,7 +261,7 @@ describe('ClientMqtt', () => {
         teardown();
 
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
         expect(unsubscribeSpy).not.toHaveBeenCalled();
       });
 
@@ -287,7 +299,7 @@ describe('ClientMqtt', () => {
 
         expect(callback).toHaveBeenCalledWith({ err: publishError });
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
       });
 
       it('should not fail a request again once it is torn down', async () => {
