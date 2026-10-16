@@ -3,6 +3,7 @@ import { join } from 'path';
 import { EventEmitter } from 'events';
 import { Writable } from 'stream';
 import {
+  BehaviorSubject,
   concat,
   EMPTY,
   lastValueFrom,
@@ -547,7 +548,12 @@ describe('ServerGrpc', () => {
     });
     describe('on call', () => {
       it('should call native & callback methods', async () => {
-        const call = { write: vi.fn(), end: vi.fn() };
+        const call = {
+          write: vi.fn(),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
+        };
         const callback = vi.fn();
         const native = vi.fn();
 
@@ -561,6 +567,8 @@ describe('ServerGrpc', () => {
           request: { data: [1, 2, 3] },
           write: vi.fn(),
           end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
         };
         const callback = vi.fn();
         const error = new Error('handler threw');
@@ -580,7 +588,12 @@ describe('ServerGrpc', () => {
       });
 
       it('should fail the call when the handler completes without a response', async () => {
-        const call = { write: vi.fn(), end: vi.fn() };
+        const call = {
+          write: vi.fn(),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
+        };
         const callback = vi.fn();
 
         await server.createUnaryServiceMethod(() => EMPTY)(call, callback);
@@ -592,7 +605,12 @@ describe('ServerGrpc', () => {
       });
 
       it('should await when a promise is return by the native', async () => {
-        const call = { write: vi.fn(), end: vi.fn() };
+        const call = {
+          write: vi.fn(),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
+        };
         const callback = vi.fn();
 
         const native = vi.fn().mockReturnValue(
@@ -1475,6 +1493,78 @@ describe('ServerGrpc', () => {
           call.request,
         );
       });
+    });
+  });
+
+  describe('when a unary call is cancelled', () => {
+    // grpc-js emits "cancelled" when the client cancels, when the deadline
+    // expires, when the connection drops and once the call has been answered
+    function createCall({ cancelled = false } = {}) {
+      return Object.assign(new EventEmitter(), {
+        request: { id: 1 },
+        metadata: {},
+        cancelled,
+      });
+    }
+
+    function cancelCall(call: ReturnType<typeof createCall>) {
+      call.cancelled = true;
+      call.emit(CANCELLED_EVENT, 'cancelled');
+    }
+
+    function bindEndHook() {
+      const endHook = vi.fn();
+      untypedServer.onProcessingEndHook = endHook;
+      return endHook;
+    }
+
+    it('should unsubscribe from a response stream that has not emitted', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+      const response$ = new Subject<string>();
+
+      await server.createUnaryServiceMethod(() => response$)(call, callback);
+      expect(response$.observed).toBe(true);
+      cancelCall(call);
+
+      expect(response$.observed).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+
+    it('should unsubscribe from a response stream that stays open once the call is answered', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+      const response$ = new BehaviorSubject('hero');
+
+      await server.createUnaryServiceMethod(() => response$)(call, callback);
+      await new Promise(resolve => setImmediate(resolve));
+      expect(callback).toHaveBeenCalledExactlyOnceWith(null, 'hero');
+      cancelCall(call);
+
+      expect(response$.observed).toBe(false);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should not subscribe to the response stream if the call was cancelled while the handler ran', async () => {
+      const endHook = bindEndHook();
+      const call = createCall({ cancelled: true });
+      const callback = vi.fn();
+      const response$ = new Subject<string>();
+
+      await server.createUnaryServiceMethod(() => response$)(call, callback);
+
+      expect(response$.observed).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
     });
   });
 

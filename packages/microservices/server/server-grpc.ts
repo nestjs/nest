@@ -359,9 +359,18 @@ export class ServerGrpc extends Server<never, never> {
             runEndHook();
             return callback(this.toInternalError(err));
           }
+          if (call.cancelled) {
+            // The client is already gone, and the "cancelled" event that
+            // would end the subscription has fired before it could be
+            // listened for.
+            return runEndHook();
+          }
           result$
             .pipe(
+              // Ahead of "takeUntil", which completes the stream when the
+              // call is cancelled (and once it has been answered).
               throwIfEmpty(() => this.createNoResponseError()),
+              takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
               finalize(runEndHook),
             )
             .subscribe({
