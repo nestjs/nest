@@ -130,6 +130,16 @@ export interface TcpOptions {
      * is dropped once this limit is passed. Set to 0 to disable.
      */
     maxSendBufferSize?: number;
+    /**
+     * How long the responses queued for a peer may go without any of them
+     * being written out, while reading from that peer is suspended, before
+     * the connection is dropped, in milliseconds (default: 30000). The timer
+     * is refreshed whenever queued responses have been written out in full,
+     * so a peer that keeps reading is given more time, while one that stops
+     * reading can no longer hold its responses, up to "maxSendBufferSize",
+     * in memory indefinitely. Set to 0 to disable.
+     */
+    drainTimeout?: number;
   };
 }
 

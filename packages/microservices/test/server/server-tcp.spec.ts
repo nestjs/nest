@@ -493,4 +493,24 @@ describe('ServerTCP', () => {
       });
     });
   });
+
+  describe('drainTimeout', () => {
+    describe('when drainTimeout is not provided', () => {
+      it('should use default drainTimeout', () => {
+        const server = new ServerTCP({});
+        const socket = new NetSocket();
+        const jsonSocket = server['getSocketInstance'](socket);
+        expect(jsonSocket['drainTimeout']).toBe(30_000);
+      });
+    });
+
+    describe('when drainTimeout is provided', () => {
+      it('should pass drainTimeout to JsonSocket', () => {
+        const server = new ServerTCP({ drainTimeout: 5000 });
+        const socket = new NetSocket();
+        const jsonSocket = server['getSocketInstance'](socket);
+        expect(jsonSocket['drainTimeout']).toBe(5000);
+      });
+    });
+  });
 });
