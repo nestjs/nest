@@ -1,4 +1,4 @@
-import { VersioningType } from '@nestjs/common';
+import { VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import {
   RouteInfo,
   VersioningOptions,
@@ -29,13 +29,22 @@ export class RouteInfoPathExtractor {
     this.versioningConfig = this.applicationConfig.getVersioning();
   }
 
-  public extractPathsFrom({ path, method, version }: RouteInfo): string[] {
+  public extractPathsFrom({
+    path,
+    method,
+    version = this.getVersionOfUnversionedRoutes(),
+  }: RouteInfo): string[] {
     const versionPaths = this.extractVersionPathFrom(version);
 
     if (this.isAWildcard(path)) {
+      // VERSION_NEUTRAL has no version segment, so its wildcard already covers
+      // every versioned path; registering both would run the middleware twice.
+      const wildcardVersionPaths = versionPaths.includes('')
+        ? []
+        : versionPaths;
       const entries =
-        versionPaths.length > 0
-          ? versionPaths
+        wildcardVersionPaths.length > 0
+          ? wildcardVersionPaths
               .map(versionPath => [
                 this.prefixPath + versionPath + '$',
                 this.prefixPath + versionPath + addLeadingSlash(path),
@@ -108,6 +117,31 @@ export class RouteInfoPathExtractor {
     );
   }
 
+  /**
+   * Returns the versions a route given without a version (e.g.
+   * `forRoutes('cats')`) may be served under: no version, as for a
+   * version-neutral controller, and the default version, under which
+   * controllers without a version are served.
+   */
+  private getVersionOfUnversionedRoutes(): VersionValue | undefined {
+    if (this.versioningConfig?.type !== VersioningType.URI) {
+      return;
+    }
+    const { defaultVersion } = this.versioningConfig;
+    if (!defaultVersion) {
+      return;
+    }
+    const versions = new Set<string | typeof VERSION_NEUTRAL>([
+      VERSION_NEUTRAL,
+    ]);
+    if (Array.isArray(defaultVersion)) {
+      defaultVersion.forEach(version => versions.add(version));
+    } else {
+      versions.add(defaultVersion);
+    }
+    return [...versions];
+  }
+
   private extractVersionPathFrom(versionValue?: VersionValue): string[] {
     if (!versionValue || this.versioningConfig?.type !== VersioningType.URI)
       return [];
@@ -115,12 +149,14 @@ export class RouteInfoPathExtractor {
     const versionPrefix = this.routePathFactory.getVersionPrefix(
       this.versioningConfig,
     );
+    const toVersionPath = (version: string | typeof VERSION_NEUTRAL) =>
+      version === VERSION_NEUTRAL
+        ? ''
+        : addLeadingSlash(versionPrefix + version);
 
     if (Array.isArray(versionValue)) {
-      return versionValue.map(version =>
-        addLeadingSlash(versionPrefix + version.toString()),
-      );
+      return versionValue.map(toVersionPath);
     }
-    return [addLeadingSlash(versionPrefix + versionValue.toString())];
+    return [toVersionPath(versionValue)];
   }
 }

@@ -4,13 +4,15 @@ import {
   INestApplication,
   MiddlewareConsumer,
   Module,
+  Req,
   RequestMethod,
+  Type,
   Version,
   VersioningOptions,
   VersioningType,
   VERSION_NEUTRAL,
 } from '@nestjs/common';
-import { CustomVersioningOptions } from '@nestjs/common/interfaces';
+import { CustomVersioningOptions, RouteInfo } from '@nestjs/common/interfaces';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -148,6 +150,92 @@ describe('Middleware', () => {
 
   afterEach(async () => {
     await app.close();
+  });
+});
+
+@Controller('dogs')
+class DogsController {
+  @Get()
+  findAll(@Req() req: { runs?: number }) {
+    return `${req.runs ?? 0}`;
+  }
+}
+
+@Controller({ path: 'dogs', version: VERSION_NEUTRAL })
+class NeutralDogsController {
+  @Get('neutral')
+  findNeutral(@Req() req: { runs?: number }) {
+    return `${req.runs ?? 0}`;
+  }
+}
+
+@Controller({ path: 'dogs', version: ['1', VERSION_NEUTRAL] })
+class MultipleDogsController {
+  @Get('multiple')
+  findMultiple(@Req() req: { runs?: number }) {
+    return `${req.runs ?? 0}`;
+  }
+}
+
+describe('Middleware - URI versioning with a default version', () => {
+  let app: INestApplication;
+
+  const createApp = async (
+    ...routes: (string | Type<any> | RouteInfo)[]
+  ): Promise<void> => {
+    @Module({
+      controllers: [
+        DogsController,
+        NeutralDogsController,
+        MultipleDogsController,
+      ],
+    })
+    class DogsModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.runs = (req.runs ?? 0) + 1;
+            next();
+          })
+          .forRoutes(...routes);
+      }
+    }
+
+    app = (
+      await Test.createTestingModule({
+        imports: [DogsModule],
+      }).compile()
+    ).createNestApplication();
+    app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+    await app.init();
+  };
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it(`forRoutes('dogs') should run on "/v1/dogs"`, async () => {
+    await createApp('dogs');
+    await request(app.getHttpServer()).get('/v1/dogs').expect(200, '1');
+  });
+
+  it(`forRoutes({ path: 'dogs', method: RequestMethod.GET }) should run on "/v1/dogs"`, async () => {
+    await createApp({ path: 'dogs', method: RequestMethod.GET });
+    await request(app.getHttpServer()).get('/v1/dogs').expect(200, '1');
+  });
+
+  it(`forRoutes(NeutralDogsController) should only run on its own routes`, async () => {
+    await createApp(NeutralDogsController);
+    await request(app.getHttpServer()).get('/dogs/neutral').expect(200, '1');
+    await request(app.getHttpServer()).get('/v1/dogs').expect(200, '0');
+  });
+
+  it(`forRoutes(MultipleDogsController) should run once on each of its routes`, async () => {
+    await createApp(MultipleDogsController);
+    await request(app.getHttpServer()).get('/dogs/multiple').expect(200, '1');
+    await request(app.getHttpServer())
+      .get('/v1/dogs/multiple')
+      .expect(200, '1');
   });
 });
 

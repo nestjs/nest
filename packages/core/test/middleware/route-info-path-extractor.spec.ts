@@ -1,4 +1,4 @@
-import { RequestMethod, VersioningType } from '@nestjs/common';
+import { RequestMethod, VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
 import { mapToExcludeRoute } from '@nestjs/core/middleware/utils';
 import { expect } from 'chai';
@@ -92,6 +92,143 @@ describe('RouteInfoPathExtractor', () => {
         }),
       ).to.eql(['/api/v1/bar']);
     });
+
+    it(`should not add a version segment for VERSION_NEUTRAL`, () => {
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: 'cats',
+          method: RequestMethod.GET,
+          version: VERSION_NEUTRAL,
+        }),
+      ).to.eql(['/cats']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: 'cats',
+          method: RequestMethod.GET,
+          version: ['1', VERSION_NEUTRAL],
+        }),
+      ).to.eql(['/v1/cats', '/cats']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+          version: ['1', VERSION_NEUTRAL],
+        }),
+      ).to.eql(['/*']);
+    });
+
+    describe('when a default version is set', () => {
+      const withDefaultVersion = (
+        defaultVersion: string | typeof VERSION_NEUTRAL | string[],
+      ) => {
+        appConfig.enableVersioning({
+          type: VersioningType.URI,
+          defaultVersion,
+        });
+        routeInfoPathExtractor = new RouteInfoPathExtractor(appConfig);
+      };
+
+      it(`should also add the default version segment to a route without a version`, () => {
+        withDefaultVersion('1');
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: 'cats',
+            method: RequestMethod.GET,
+          }),
+        ).to.eql(['/cats', '/v1/cats']);
+
+        withDefaultVersion(['1', '2']);
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: 'cats',
+            method: RequestMethod.GET,
+          }),
+        ).to.eql(['/cats', '/v1/cats', '/v2/cats']);
+      });
+
+      it(`should not add it twice for a VERSION_NEUTRAL default version`, () => {
+        withDefaultVersion(VERSION_NEUTRAL);
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: 'cats',
+            method: RequestMethod.GET,
+          }),
+        ).to.eql(['/cats']);
+      });
+
+      it(`should only add the version segment of a route with a version`, () => {
+        withDefaultVersion('1');
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: 'cats',
+            method: RequestMethod.GET,
+            version: '2',
+          }),
+        ).to.eql(['/v2/cats']);
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: 'cats',
+            method: RequestMethod.GET,
+            version: VERSION_NEUTRAL,
+          }),
+        ).to.eql(['/cats']);
+      });
+
+      it(`should add the default version segment to the routes excluded from the global prefix`, () => {
+        withDefaultVersion('1');
+        Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+        Reflect.set(
+          routeInfoPathExtractor,
+          'excludedGlobalPrefixRoutes',
+          mapToExcludeRoute(['foo']),
+        );
+
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: '*',
+            method: RequestMethod.ALL,
+          }),
+        ).to.eql(['/api$', '/api/*', '/foo', '/v1/foo']);
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: 'bar',
+            method: RequestMethod.ALL,
+          }),
+        ).to.eql(['/api/bar', '/api/v1/bar']);
+      });
+
+      it(`should not add it to an excluded route`, () => {
+        withDefaultVersion('1');
+        expect(
+          routeInfoPathExtractor.extractPathFrom({
+            path: 'cats',
+            method: RequestMethod.GET,
+          }),
+        ).to.eql(['/cats']);
+      });
+    });
+
+    it(`should not add a version segment for VERSION_NEUTRAL when set global prefix`, () => {
+      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: 'cats',
+          method: RequestMethod.GET,
+          version: ['1', VERSION_NEUTRAL],
+        }),
+      ).to.eql(['/api/v1/cats', '/api/cats']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+          version: ['1', VERSION_NEUTRAL],
+        }),
+      ).to.eql(['/api$', '/api/*']);
+    });
   });
 
   describe('extractPathFrom', () => {
@@ -180,6 +317,16 @@ describe('RouteInfoPathExtractor', () => {
           version: '1',
         }),
       ).to.eql(['/api/v1/bar']);
+    });
+
+    it(`should not add a version segment for VERSION_NEUTRAL`, () => {
+      expect(
+        routeInfoPathExtractor.extractPathFrom({
+          path: 'cats',
+          method: RequestMethod.GET,
+          version: VERSION_NEUTRAL,
+        }),
+      ).to.eql(['/cats']);
     });
   });
 });
