@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import { createRequire } from 'module';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { MIDDLEWARE_COOKIE_HEADER } from '../src/session-cookie.middleware.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const require = createRequire(import.meta.url);
@@ -254,6 +255,18 @@ describe.each(adapters)('Cookies (%s)', (_name, createAdapter) => {
           .expect(200);
 
         expect(setCookieHeaders(res)).toEqual(['session=abc', 'a=1; Path=/']);
+      });
+
+      it('should keep a cookie that a Nest middleware set with setCookie()', async () => {
+        const res = await request(app.getHttpServer())
+          .get('/set')
+          .set(MIDDLEWARE_COOKIE_HEADER, '1')
+          .expect(200);
+        const cookies = setCookieHeaders(res);
+
+        expect(cookies).toHaveLength(4);
+        expect(cookies[0]).toBe('session=abc; Path=/');
+        expect(cookies[1]).toBe('a=1; Path=/');
       });
 
       it('should round-trip the cookies it sets', async () => {

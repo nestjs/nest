@@ -400,6 +400,73 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('header helpers on the raw response', () => {
+    it('should set and append a header when given the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.setHeader(reply.raw, 'x-a', '1');
+        fastifyAdapter.appendHeader(reply.raw, 'x-a', '2');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply.raw, 'x-a'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['1', '2']);
+      expect(res.headers['x-a']).toEqual(['1', '2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append set-cookie values when given the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply.raw, 'set-cookie', 'a=1');
+        fastifyAdapter.appendHeader(reply.raw, 'set-cookie', 'b=2');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual(['a=1', 'b=2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append to a header that is already an array on the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('set-cookie', ['a=1', 'b=2']);
+        fastifyAdapter.appendHeader(reply.raw, 'set-cookie', 'c=3');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual(['a=1', 'b=2', 'c=3']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append to a number header on the raw response as strings', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('x-n', 5);
+        fastifyAdapter.appendHeader(reply.raw, 'x-n', '6');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply.raw, 'x-n'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['5', '6']);
+      await fastifyAdapter.close();
+    });
+  });
+
   describe('getRouteMatchingOptions', () => {
     it.each([
       {
