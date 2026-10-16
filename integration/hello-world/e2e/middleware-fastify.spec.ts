@@ -998,6 +998,64 @@ describe('Middleware (FastifyAdapter)', () => {
       });
     });
 
+    describe('[caseSensitive] attribute set to false', () => {
+      @Controller('tasks')
+      class TasksController {
+        @Get()
+        findAll() {
+          return 'tasks';
+        }
+      }
+
+      @Module({
+        controllers: [TasksController],
+      })
+      class TasksModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply((req, res, next) => res.end(MIDDLEWARE_RETURN_VALUE))
+            .forRoutes(TasksController);
+        }
+      }
+
+      const createApp = async (adapter: FastifyAdapter) => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TasksModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(adapter);
+
+        await app.init();
+      };
+
+      // "%E2%84%AA" (KELVIN SIGN) lower-cases to "k" once decoded, so the
+      // router serves "/tas%E2%84%AAs" with the "/tasks" route
+      for (const url of ['/TASKS', '/tas%E2%84%AAs']) {
+        it(`GET forRoutes(TasksController) (${url})`, async () => {
+          await createApp(
+            new FastifyAdapter({ routerOptions: { caseSensitive: false } }),
+          );
+
+          const { payload } = await app.inject({ method: 'GET', url });
+          expect(payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+        });
+      }
+
+      it('GET forRoutes(TasksController) (/tas%E2%84%AAs, top-level option)', async () => {
+        await createApp(new FastifyAdapter({ caseSensitive: false }));
+
+        const { payload } = await app.inject({
+          method: 'GET',
+          url: '/tas%E2%84%AAs',
+        });
+        expect(payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+    });
+
     describe('[useSemicolonDelimiter] attribute', () => {
       beforeEach(async () => {
         app = (
