@@ -10,6 +10,7 @@ import { TcpSocket } from './tcp-socket.js';
 const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
 const DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT = 30_000;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024; // 128 MBs in bytes
+const MAX_CONTENT_LENGTH_SIZE = 32; // in characters, a string length never has more than 16 digits
 
 export interface JsonSocketOptions {
   maxBufferSize?: number;
@@ -120,6 +121,16 @@ export class JsonSocket extends TcpSocket {
          * if not, the end of the buffer string might be in the middle of a content length string
          */
         if (i === -1) {
+          // Data that cannot be a content length would otherwise be kept and
+          // scanned again on every read until a delimiter arrives
+          if (this.buffer.length > MAX_CONTENT_LENGTH_SIZE) {
+            const rawContentLength = this.buffer.substring(
+              0,
+              MAX_CONTENT_LENGTH_SIZE,
+            );
+            this.buffer = '';
+            throw new CorruptedPacketLengthException(rawContentLength);
+          }
           break;
         }
         const rawContentLength = this.buffer.substring(0, i);
