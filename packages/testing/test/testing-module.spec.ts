@@ -1,4 +1,4 @@
-import { Module as ModuleDecorator } from '@nestjs/common';
+import { Injectable, Module as ModuleDecorator, Scope } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -178,6 +178,67 @@ describe('TestingModule', () => {
 
       const selected = module.select(ChildModule);
       expect(selected.get('TOKEN')).toBe('selected-value');
+    });
+  });
+
+  // @see https://github.com/nestjs/nest/issues/18160
+  describe('useMocker with request-scoped providers', () => {
+    class MissingDep {}
+
+    @Injectable({ scope: Scope.REQUEST })
+    class RequestConsumer {
+      constructor(public readonly dep: MissingDep) {}
+    }
+
+    it('should mock dependencies of request-scoped providers resolved via resolve()', async () => {
+      const module = await Test.createTestingModule({
+        providers: [RequestConsumer],
+      })
+        .useMocker(() => ({ mocked: true }))
+        .compile();
+
+      const instance = await module.resolve(RequestConsumer);
+      expect(instance.dep).toEqual({ mocked: true });
+      await module.close();
+    });
+
+    it('should mock dependencies of transient providers used by request-scoped providers', async () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        constructor(public readonly dep: MissingDep) {}
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class RequestConsumerWithTransient {
+        constructor(public readonly svc: TransientService) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [RequestConsumerWithTransient, TransientService],
+      })
+        .useMocker(() => ({ mocked: true }))
+        .compile();
+
+      const instance = await module.resolve(RequestConsumerWithTransient);
+      expect(instance.svc.dep).toEqual({ mocked: true });
+      await module.close();
+    });
+
+    it('should keep mocking dependencies of default-scoped providers via get()', async () => {
+      @Injectable()
+      class DefaultConsumer {
+        constructor(public readonly dep: MissingDep) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [DefaultConsumer],
+      })
+        .useMocker(() => ({ mocked: true }))
+        .compile();
+
+      const instance = module.get(DefaultConsumer);
+      expect(instance.dep).toEqual({ mocked: true });
+      await module.close();
     });
   });
 

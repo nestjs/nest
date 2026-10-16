@@ -1,19 +1,14 @@
 import type { NestContainer } from '@nestjs/core';
-import type { ContextId } from '@nestjs/core/injector/instance-wrapper.js';
+import type { Injectable } from '@nestjs/common';
 import { MockFactory } from './interfaces/index.js';
 import {
   STATIC_CONTEXT,
   Injector,
   type InjectorDependencyContext,
+  type ResolutionContext,
   InstanceWrapper,
   type Module,
 } from '@nestjs/core/internal';
-
-interface ResolutionContext {
-  contextId: ContextId;
-  inquirer?: InstanceWrapper;
-  effectiveInquirerId?: string;
-}
 
 /**
  * @publicApi
@@ -28,6 +23,23 @@ export class TestingInjector extends Injector {
 
   public setContainer(container: NestContainer) {
     this.container = container;
+  }
+
+  /**
+   * @see https://github.com/nestjs/nest/issues/18160
+   */
+  protected shouldSkipProviderLoading(
+    wrapper: InstanceWrapper<Injectable>,
+    resolutionContext: ResolutionContext,
+  ): boolean {
+    // `useMocker()` registers mocks as a side effect of resolving the
+    // dependencies of request-scoped/transient providers at bootstrap.
+    // Skipping them (per #16939) leaves their missing dependencies
+    // unmocked, breaking `moduleRef.resolve()`.
+    if (this.mocker) {
+      return false;
+    }
+    return super.shouldSkipProviderLoading(wrapper, resolutionContext);
   }
 
   public async resolveComponentWrapper<T>(

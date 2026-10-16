@@ -81,7 +81,7 @@ export interface InjectorDependencyContext {
   dependencies?: InjectorDependency[];
 }
 
-interface ResolutionContext {
+export interface ResolutionContext {
   contextId: ContextId;
   inquirer?: InstanceWrapper;
   effectiveInquirerId?: string;
@@ -1125,7 +1125,7 @@ export class Injector {
     );
   }
 
-  private shouldSkipProviderLoading(
+  protected shouldSkipProviderLoading(
     wrapper: InstanceWrapper<Injectable>,
     resolutionContext: ResolutionContext,
   ): boolean {

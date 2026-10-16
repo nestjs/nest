@@ -19,7 +19,11 @@ export { DependenciesScanner } from './scanner.js';
 
 // Injector
 export { STATIC_CONTEXT } from './injector/constants.js';
-export { Injector, InjectorDependencyContext } from './injector/injector.js';
+export {
+  Injector,
+  InjectorDependencyContext,
+  ResolutionContext,
+} from './injector/injector.js';
 export { InstanceLoader } from './injector/instance-loader.js';
 export { InstanceWrapper } from './injector/instance-wrapper.js';
 export { InternalCoreModule } from './injector/internal-core-module/index.js';
