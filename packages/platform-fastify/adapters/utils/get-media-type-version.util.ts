@@ -1,3 +1,27 @@
+const splitOutsideQuotes = (value: string, separator: ',' | ';'): string[] => {
+  const parts: string[] = [];
+  let start = 0;
+  let isQuoted = false;
+  const len = value.length;
+  for (let index = 0; index < len; index++) {
+    const character = value[index];
+    if (isQuoted && character === '\\') {
+      // A quoted-pair consumes the next character, including an escaped quote.
+      index++;
+    } else if (character === '"') {
+      isQuoted = !isQuoted;
+    } else if (character === separator && !isQuoted) {
+      parts.push(value.slice(start, index));
+      start = index + 1;
+    }
+  }
+  if (isQuoted) {
+    return [];
+  }
+  parts.push(value.slice(start));
+  return parts;
+};
+
 /**
  * Returns the version carried by an `Accept` header for media type versioning,
  * e.g. `2` for `application/json;v=2` with the `v=` key.
@@ -19,7 +43,6 @@ export function getMediaTypeVersion(
   const mediaRanges = ([] as string[])
     .concat(acceptHeader ?? [])
     .flatMap(value => splitOutsideQuotes(value, ','));
-
   for (const mediaRange of mediaRanges) {
     const [, ...parameters] = splitOutsideQuotes(mediaRange, ';');
     for (const parameter of parameters) {
@@ -33,27 +56,4 @@ export function getMediaTypeVersion(
     }
   }
   return undefined;
-}
-
-function splitOutsideQuotes(value: string, separator: ',' | ';'): string[] {
-  const parts: string[] = [];
-  let start = 0;
-  let isQuoted = false;
-
-  for (let index = 0; index < value.length; index++) {
-    const character = value[index];
-    if (isQuoted && character === '\\') {
-      // A quoted-pair consumes the next character, including an escaped quote.
-      index++;
-    } else if (character === '"') {
-      isQuoted = !isQuoted;
-    } else if (character === separator && !isQuoted) {
-      parts.push(value.slice(start, index));
-      start = index + 1;
-    }
-  }
-
-  if (isQuoted) return [];
-  parts.push(value.slice(start));
-  return parts;
 }
