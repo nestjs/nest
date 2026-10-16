@@ -104,6 +104,20 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalRequestGuards()).toContain(guard);
     });
+    it('should keep static and request guards in the order they were bound', () => {
+      appConfig.addGlobalRequestGuard('request1' as any);
+      appConfig.addGlobalGuard('static1' as any);
+      appConfig.addGlobalRequestGuard('request2' as any);
+      appConfig.useGlobalGuards('static2' as any, 'static3' as any);
+
+      expect(appConfig.getGlobalGuardsInBindingOrder()).toEqual([
+        'request1',
+        'static1',
+        'request2',
+        'static2',
+        'static3',
+      ]);
+    });
   });
   describe('PreRequestHooks', () => {
     it('should set global preRequest hooks', () => {

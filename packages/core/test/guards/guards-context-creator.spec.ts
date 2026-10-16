@@ -165,26 +165,33 @@ describe('GuardsContextCreator', () => {
       });
     });
     describe('otherwise', () => {
-      it('should merge static global with request/transient scoped guards', () => {
-        const globalGuards: any = ['test'];
+      it('should resolve request/transient scoped guards in the order they were bound', () => {
         const instanceWrapper = new InstanceWrapper();
-        const instance = 'request-scoped';
-        const scopedGuardWrappers = [instanceWrapper];
-
-        vi.spyOn(applicationConfig, 'getGlobalGuards').mockImplementation(
-          () => globalGuards,
-        );
-        vi.spyOn(
-          applicationConfig,
-          'getGlobalRequestGuards',
-        ).mockImplementation(() => scopedGuardWrappers);
         vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
-          () => ({ instance }) as any,
+          () => ({ instance: 'request-scoped' }) as any,
         );
+        applicationConfig.addGlobalGuard('first' as any);
+        applicationConfig.addGlobalRequestGuard(instanceWrapper);
+        applicationConfig.useGlobalGuards('last' as any);
 
-        expect(guardsContextCreator.getGlobalMetadata({ id: 3 })).toEqual(
-          expect.arrayContaining([instance, ...globalGuards]),
+        expect(guardsContextCreator.getGlobalMetadata({ id: 3 })).toEqual([
+          'first',
+          'request-scoped',
+          'last',
+        ]);
+      });
+
+      it('should skip scoped guards with no instance in the context', () => {
+        const instanceWrapper = new InstanceWrapper();
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () => undefined as any,
         );
+        applicationConfig.addGlobalRequestGuard(instanceWrapper);
+        applicationConfig.addGlobalGuard('static' as any);
+
+        expect(guardsContextCreator.getGlobalMetadata({ id: 3 })).toEqual([
+          'static',
+        ]);
       });
     });
   });

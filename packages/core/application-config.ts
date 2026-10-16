@@ -32,6 +32,11 @@ export class ApplicationConfig {
   private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] =
     [];
   private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
+  // Static guards and the wrappers of request/transient scoped ones, in the
+  // order they were bound, which is the order they run in
+  private readonly globalGuardsInBindingOrder: Array<
+    CanActivate | InstanceWrapper<CanActivate>
+  > = [];
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
 
@@ -103,10 +108,12 @@ export class ApplicationConfig {
 
   public addGlobalGuard(guard: CanActivate) {
     this.globalGuards.push(guard);
+    this.globalGuardsInBindingOrder.push(guard);
   }
 
   public useGlobalGuards(...guards: CanActivate[]) {
     this.globalGuards = this.globalGuards.concat(guards);
+    this.globalGuardsInBindingOrder.push(...guards);
   }
 
   public addGlobalRequestInterceptor(
@@ -137,10 +144,17 @@ export class ApplicationConfig {
 
   public addGlobalRequestGuard(wrapper: InstanceWrapper<CanActivate>) {
     this.globalRequestGuards.push(wrapper);
+    this.globalGuardsInBindingOrder.push(wrapper);
   }
 
   public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
     return this.globalRequestGuards;
+  }
+
+  public getGlobalGuardsInBindingOrder(): Array<
+    CanActivate | InstanceWrapper<CanActivate>
+  > {
+    return this.globalGuardsInBindingOrder;
   }
 
   public registerPreRequestHook(...hooks: PreRequestHook[]) {
