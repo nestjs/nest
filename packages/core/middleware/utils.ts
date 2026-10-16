@@ -75,6 +75,19 @@ const EXACT_ROUTE_MATCHING: RouteMatchingOptions = {
   ignoreTrailingSlash: false,
 };
 
+/**
+ * Characters with a meaning in a route path (parameters, wildcards, groups),
+ * and the "$" that marks an exact-match path.
+ */
+const ROUTE_PATTERN_CHARS = /[:*?+()[\]{}!\\$]/;
+
+/**
+ * Tells whether a route path matches no other path than itself.
+ */
+export function isStaticPath(path: string): boolean {
+  return !ROUTE_PATTERN_CHARS.test(path);
+}
+
 export const filterMiddleware = <T extends Function | Type<any> = any>(
   middleware: T[],
   routes: RouteInfo[],

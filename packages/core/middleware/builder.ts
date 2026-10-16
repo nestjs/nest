@@ -14,13 +14,7 @@ import { pathToRegexp } from 'path-to-regexp';
 import { LegacyRouteConverter } from '../router/legacy-route-converter';
 import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
-import { filterMiddleware } from './utils';
-
-/**
- * Characters with a meaning in a route path (parameters, wildcards, groups),
- * and the "$" that marks an exact-match path.
- */
-const ROUTE_PATTERN_CHARS = /[:*?+()[\]{}!\\$]/;
+import { filterMiddleware, isStaticPath } from './utils';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
@@ -90,7 +84,9 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       const { middlewareCollection } = this.builder;
 
       const flattedRoutes = this.getRoutesFlatList(routes);
-      const forRoutes = this.removeOverlappedRoutes(flattedRoutes);
+      const forRoutes = this.removeOverlappedRoutes(
+        this.addCoveredExcludedRoutes(flattedRoutes),
+      );
       const configuration = {
         middleware: filterMiddleware(
           this.middleware,
@@ -115,6 +111,31 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     }
 
     /**
+     * Adds the routes excluded from the global prefix that a route covers
+     * without being excluded itself (e.g. "users/me" for "users/:id"): the
+     * router serves them outside of the prefix the route is mounted under.
+     */
+    private addCoveredExcludedRoutes(routes: RouteInfo[]): RouteInfo[] {
+      const allRoutes = [...routes];
+      for (const route of routes) {
+        for (const excludedRoute of this.routeInfoPathExtractor.extractExcludedRoutesCoveredBy(
+          route,
+        )) {
+          const isListed = allRoutes.some(
+            item =>
+              item.path === excludedRoute.path &&
+              item.method === excludedRoute.method &&
+              item.version === excludedRoute.version,
+          );
+          if (!isListed) {
+            allRoutes.push(excludedRoute);
+          }
+        }
+      }
+      return allRoutes;
+    }
+
+    /**
      * Removes the routes that a parameterized route of the same method is
      * mounted on as well (e.g. "/users/me" next to "/users/:id"), so that
      * the middleware runs once for them. Only a route without parameters or
@@ -131,7 +152,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
       return routes.filter(route => {
         const mountPaths = this.routeInfoPathExtractor.extractPathsFrom(route);
-        if (mountPaths.some(path => ROUTE_PATTERN_CHARS.test(path))) {
+        if (!mountPaths.every(isStaticPath)) {
           return true;
         }
         const isOverlapped = (item: {

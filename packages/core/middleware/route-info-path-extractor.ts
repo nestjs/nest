@@ -8,10 +8,13 @@ import {
   addLeadingSlash,
   stripEndSlash,
 } from '@nestjs/common/utils/shared.utils';
+import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
-import { isRouteExcluded } from '../router/utils';
+import { LegacyRouteConverter } from '../router/legacy-route-converter';
+import { isRequestMethodAll, isRouteExcluded } from '../router/utils';
 import { RoutePathFactory } from './../router/route-path-factory';
+import { isStaticPath } from './utils';
 
 export class RouteInfoPathExtractor {
   private readonly routePathFactory: RoutePathFactory;
@@ -69,6 +72,57 @@ export class RouteInfoPathExtractor {
     }
 
     return this.extractNonWildcardPathsFrom({ path, method, version });
+  }
+
+  /**
+   * Returns the routes excluded from the global prefix (without parameters or
+   * wildcards) that the route covers without being excluded itself, such as
+   * "users/me" for "users/:id", or a `GET` exclusion for a route of every
+   * method: the router serves them without the prefix, out of the reach of
+   * the paths the route is mounted on.
+   */
+  public extractExcludedRoutesCoveredBy({
+    path,
+    method,
+    version,
+  }: RouteInfo): RouteInfo[] {
+    if (
+      !Array.isArray(this.excludedGlobalPrefixRoutes) ||
+      this.isAWildcard(path) ||
+      isRouteExcluded(this.excludedGlobalPrefixRoutes, path, method)
+    ) {
+      return [];
+    }
+    let routeRegex: RegExp;
+    try {
+      routeRegex = pathToRegexp(
+        LegacyRouteConverter.tryConvert(addLeadingSlash(path), { logs: false }),
+      ).regexp;
+    } catch {
+      // The adapter reports a path it cannot mount
+      return [];
+    }
+    return this.excludedGlobalPrefixRoutes.flatMap(excludedRoute => {
+      const excludedPath = addLeadingSlash(excludedRoute.path);
+      const excludedMethod = isRequestMethodAll(excludedRoute.requestMethod)
+        ? method
+        : excludedRoute.requestMethod;
+      if (
+        !isStaticPath(excludedPath) ||
+        !routeRegex.test(excludedPath) ||
+        !(isRequestMethodAll(method) || method === excludedMethod)
+      ) {
+        return [];
+      }
+      const routeInfo: RouteInfo = {
+        path: excludedPath,
+        method: excludedMethod,
+      };
+      if (version) {
+        routeInfo.version = version;
+      }
+      return [routeInfo];
+    });
   }
 
   public extractPathFrom(route: RouteInfo): string[] {
