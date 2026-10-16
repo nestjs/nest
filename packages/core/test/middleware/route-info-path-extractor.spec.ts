@@ -408,5 +408,57 @@ describe('RouteInfoPathExtractor', () => {
         }),
       ).to.eql([]);
     });
+
+    it(`should return the root route of a controller excluded by an optional wildcard`, () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['reports/{*path}', 'files/:name']),
+      });
+      routeInfoPathExtractor = new RouteInfoPathExtractor(appConfig);
+
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/reports',
+          method: -1 as RequestMethod,
+        }),
+      ).to.eql([{ path: '/reports/', method: -1 }]);
+      expect(
+        routeInfoPathExtractor.extractExcludedRoutesCoveredBy({
+          path: '/files',
+          method: RequestMethod.GET,
+        }),
+      ).to.eql([]);
+    });
+  });
+
+  describe('extractPathsFrom with a route excluded by an optional wildcard', () => {
+    it(`should also return the parent path of the excluded route`, () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute([
+          'reports/{*path}',
+          'legacy/*',
+          'files/:name',
+        ]),
+      });
+      const routeInfoPathExtractor = new RouteInfoPathExtractor(appConfig);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+        }),
+      ).to.eql([
+        '/api$',
+        '/api/*',
+        '/reports/{*path}',
+        '/reports',
+        '/legacy/{*path}',
+        '/legacy',
+        '/files/:name',
+      ]);
+    });
   });
 });
