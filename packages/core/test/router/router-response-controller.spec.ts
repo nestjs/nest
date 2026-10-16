@@ -859,6 +859,41 @@ data: test
       request.destroy();
     });
 
+    it('should end the response to a HEAD request once the headers are committed', async () => {
+      const writeHead = sinon.spy();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      Object.assign(response, { writeHead, flushHeaders: sinon.spy() });
+      const request = Object.assign(attachSocket(new PassThrough()), {
+        method: 'HEAD',
+      });
+      const teardown = sinon.spy();
+      // A producer that never completes, like an interval
+      const result = new Observable<string>(() => teardown);
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(response.writableEnded).to.be.true;
+      await ssePromise;
+
+      expect(writeHead.calledOnce).to.be.true;
+      expect(writeHead.firstCall.args[0]).to.equal(200);
+      expect(writeHead.firstCall.args[1]).to.include({
+        'Content-Type': 'text/event-stream',
+      });
+      expect(teardown.calledOnce).to.be.true;
+      expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).to.be.true;
+      expect(request.socket.listenerCount('close')).to.equal(0);
+    });
+
     describe('when there is an error before headers are committed', () => {
       it('should reject the promise so the exception filter can set the status', async () => {
         const result = new Subject();
