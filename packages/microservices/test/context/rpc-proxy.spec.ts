@@ -186,4 +186,29 @@ describe('RpcProxy', () => {
       expect(logSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('when a filter returns a falsy value', () => {
+    beforeEach(() => {
+      handler.setCustomFilters([
+        { exceptionMetatypes: [RpcException], func: () => null as any },
+      ]);
+    });
+
+    it('should emit it for a handler that rejects', async () => {
+      const proxy = routerProxy.create(async () => {
+        throw new RpcException('test');
+      }, handler);
+
+      expect(await lastValueFrom(await proxy(null))).toBeNull();
+    });
+
+    it('should emit it for a stream that errors', async () => {
+      const proxy = routerProxy.create(
+        async () => throwError(() => new RpcException('test')),
+        handler,
+      );
+
+      expect(await lastValueFrom(await proxy(null))).toBeNull();
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, lastValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { RpcException } from '../../exceptions/rpc-exception.js';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
@@ -70,6 +70,42 @@ describe('RpcExceptionsHandler', () => {
         expect(result).toEqual(observable$);
       });
     });
+    describe('when a filter catches the exception', () => {
+      class TestException extends RpcException {}
+
+      it.each([null, false, 0, ''])(
+        'should emit %j when the filter returns it',
+        async value => {
+          handler.setCustomFilters([
+            { exceptionMetatypes: [TestException], func: () => value as any },
+          ]);
+          const result$ = handler.handle(new TestException('test'), null!);
+          expect(await lastValueFrom(result$)).toBe(value);
+        },
+      );
+      it('should handle the exception itself when the filter returns nothing', async () => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [TestException], func: () => undefined as any },
+        ]);
+        await expect(
+          lastValueFrom(handler.handle(new TestException('test'), null!)),
+        ).rejects.toEqual({ status: 'error', message: 'test' });
+      });
+    });
+    describe('when no filter catches the exception', () => {
+      it('should handle the exception itself', async () => {
+        class AnotherTestException {}
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [AnotherTestException],
+            func: () => null as any,
+          },
+        ]);
+        await expect(
+          lastValueFrom(handler.handle(new RpcException('test'), null!)),
+        ).rejects.toEqual({ status: 'error', message: 'test' });
+      });
+    });
   });
   describe('setCustomFilters', () => {
     const filters = ['test', 'test2'];
@@ -83,8 +119,8 @@ describe('RpcExceptionsHandler', () => {
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
-      it('should return identity', () => {
-        expect(handler.invokeCustomFilters(null, null!)).toBeNull();
+      it('should return undefined', () => {
+        expect(handler.invokeCustomFilters(null, null!)).toBeUndefined();
       });
     });
     describe('when filters array is not empty', () => {
@@ -109,9 +145,11 @@ describe('RpcExceptionsHandler', () => {
           expect(funcSpy).toHaveBeenCalledWith(exception, null);
         });
         it('should return stream', () => {
-          expect(
-            handler.invokeCustomFilters(new TestException(), null!),
-          ).not.toBeNull();
+          const stream$ = of(true);
+          funcSpy.mockReturnValue(stream$);
+          expect(handler.invokeCustomFilters(new TestException(), null!)).toBe(
+            stream$,
+          );
         });
       });
       describe('when filter does not exists in filters array', () => {
@@ -119,10 +157,10 @@ describe('RpcExceptionsHandler', () => {
           handler.invokeCustomFilters(new TestException(), null!);
           expect(funcSpy).not.toHaveBeenCalled();
         });
-        it('should return null', () => {
+        it('should return undefined', () => {
           expect(
             handler.invokeCustomFilters(new TestException(), null!),
-          ).toBeNull();
+          ).toBeUndefined();
         });
       });
     });
