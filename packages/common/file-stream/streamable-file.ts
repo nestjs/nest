@@ -53,6 +53,10 @@ export class StreamableFile {
       };
     } else if (bufferOrReadStream.pipe && isFunction(bufferOrReadStream.pipe)) {
       this.stream = bufferOrReadStream;
+      // an "error" emitted before an adapter listens must not crash the process
+      if (isFunction(this.stream.on)) {
+        this.stream.on('error', () => {});
+      }
     }
   }
 

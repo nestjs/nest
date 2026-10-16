@@ -392,6 +392,20 @@ describe('ExpressAdapter', () => {
         await new Promise(resolve => response.once('end', resolve));
         expect(Buffer.concat(chunks).toString()).toBe('firstsecond');
       });
+
+      it('should pass an error the source emitted before the reply to the error handler', async () => {
+        const source = new PassThrough();
+        const errorHandler = vi.fn();
+        const file = new StreamableFile(source).setErrorHandler(errorHandler);
+        const response = createStreamResponse();
+        const error = new Error('ENOENT');
+        source.destroy(error);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, file);
+
+        expect(errorHandler).toHaveBeenCalledWith(error, response);
+      });
     });
   });
 

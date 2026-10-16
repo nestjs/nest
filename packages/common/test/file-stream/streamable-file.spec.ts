@@ -9,6 +9,11 @@ describe('StreamableFile', () => {
       const streamableFile = new StreamableFile(stream);
       expect(streamableFile.getStream()).toBe(stream);
     });
+    it('should handle an error emitted before the stream is consumed', () => {
+      const stream = new Readable();
+      new StreamableFile(stream);
+      expect(() => stream.emit('error', new Error('ENOENT'))).not.toThrow();
+    });
   });
   describe('when input is an object with "pipe" method', () => {
     it('should assign it to a stream class property', () => {
