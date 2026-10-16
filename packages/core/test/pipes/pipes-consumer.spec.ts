@@ -47,6 +47,32 @@ describe('PipesConsumer', () => {
           });
       }));
 
+    describe('when the value is a promise', () => {
+      it('should pass the resolved value to the first pipe', async () => {
+        const result = await consumer.apply(
+          Promise.resolve(value),
+          { metatype, type, data },
+          transforms,
+        );
+        expect(transforms[0].transform.mock.calls[0][0]).toBe(value);
+        expect(result).toEqual(3);
+      });
+
+      it('should reject without calling any pipe when it rejects', async () => {
+        const error = new Error('rejected');
+        await expect(
+          consumer.apply(
+            Promise.reject(error),
+            { metatype, type, data },
+            transforms,
+          ),
+        ).rejects.toBe(error);
+        transforms.forEach(pipe =>
+          expect(pipe.transform).not.toHaveBeenCalled(),
+        );
+      });
+    });
+
     describe('schema propagation', () => {
       it('should pass schema to each pipe transform', async () => {
         const mockSchema = {
