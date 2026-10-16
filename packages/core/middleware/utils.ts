@@ -67,16 +67,24 @@ function compileExcludedPath(
   }).regexp;
 }
 
+const EXACT_ROUTE_MATCHING: RouteMatchingOptions = {
+  caseSensitive: true,
+  ignoreTrailingSlash: false,
+};
+
 export const filterMiddleware = <T extends Function | Type<any> = any>(
   middleware: T[],
   routes: RouteInfo[],
   httpAdapter: HttpServer,
 ) => {
   // Excluded routes must match exactly the requests the router serves with
-  // them, as the middleware is skipped for every request they match
+  // them, as the middleware is skipped for every request they match. When
+  // the adapter does not tell how its router matches paths, they match
+  // exactly, so that a more lenient router runs the middleware for the
+  // variants of an excluded path rather than skipping it
   const excludedRoutes = mapToExcludeRoute(
     routes,
-    httpAdapter.getRouteMatchingOptions?.(),
+    httpAdapter.getRouteMatchingOptions?.() ?? EXACT_ROUTE_MATCHING,
   );
   return iterate([])
     .concat(middleware)

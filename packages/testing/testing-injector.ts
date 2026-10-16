@@ -135,10 +135,11 @@ export class TestingInjector extends Injector {
     if (!mockedInstance) {
       throw err;
     }
+    // The mock is a single value, so it stays static whatever the scope of
+    // the provider it replaces or the provider that depends on it.
     const newWrapper = new InstanceWrapper({
       name,
       isAlias: false,
-      scope: wrapper.scope,
       instance: mockedInstance,
       isResolved: true,
       host: moduleRef,

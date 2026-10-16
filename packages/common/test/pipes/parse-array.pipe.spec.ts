@@ -291,6 +291,40 @@ describe('ParseArrayPipe', () => {
         ).toEqual([true, false]);
       });
       describe('when "stopAtFirstError" is explicitly turned off', () => {
+        it('should leave the input array unchanged after successful transformation', async () => {
+          const input = ['1', '2'];
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+          });
+
+          const transformed = await pipe.transform(
+            input,
+            {} as ArgumentMetadata,
+          );
+
+          expect(transformed).toEqual([1, 2]);
+          expect(input).toEqual(['1', '2']);
+        });
+
+        it('should leave the input array unchanged when validation fails', async () => {
+          const input = ['1', 'invalid', '3'];
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+          });
+
+          const error = await pipe
+            .transform(input, {} as ArgumentMetadata)
+            .catch(err => err);
+
+          expect(error).toBeInstanceOf(BadRequestException);
+          expect(error.getResponse().message).toEqual([
+            '[1] item must be a number',
+          ]);
+          expect(input).toEqual(['1', 'invalid', '3']);
+        });
+
         it('should validate each item and concat errors', async () => {
           class ArrItemWithProp {
             @IsNumber()

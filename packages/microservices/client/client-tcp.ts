@@ -162,16 +162,14 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     }
     // Pass the framing options only if socketClass is JsonSocket
     // For custom socket classes, users should handle them in their own implementation
-    const hasJsonSocketOptions =
-      this.maxBufferSize !== undefined ||
-      this.incompleteMessageTimeout !== undefined ||
-      this.maxSendBufferSize !== undefined;
-
-    if (hasJsonSocketOptions && this.socketClass === JsonSocket) {
+    if (this.socketClass === JsonSocket) {
       return new this.socketClass(socket, {
         maxBufferSize: this.maxBufferSize,
         incompleteMessageTimeout: this.incompleteMessageTimeout,
         maxSendBufferSize: this.maxSendBufferSize,
+        // Reading replies is what lets the server drain and read the queued
+        // requests, so pausing reads here deadlocks both ends
+        pauseOnBackpressure: false,
       });
     }
     return new this.socketClass(socket);

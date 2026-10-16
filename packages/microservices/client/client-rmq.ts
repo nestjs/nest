@@ -114,12 +114,14 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   public async close(): Promise<void> {
     this.handleClose();
     try {
-      // The connection has to be closed even when the channel close fails,
-      // otherwise it stays open after close() reported the error.
-      const results = await Promise.allSettled([
-        this.channel?.close(),
-        this.client?.close(),
-      ]);
+      // The channel goes first, as amqplib settles its close on the broker's
+      // reply, which never arrives once the connection is closed. The
+      // connection is still closed when the channel close fails, otherwise it
+      // stays open after close() reported the error.
+      const results = [
+        ...(await Promise.allSettled([this.channel?.close()])),
+        ...(await Promise.allSettled([this.client?.close()])),
+      ];
       const [failure, ...otherFailures] = results.filter(
         (result): result is PromiseRejectedResult =>
           result.status === 'rejected',
@@ -224,7 +226,9 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.connectionPromise = null;
       this.isInitialConnect = true;
     }
-    await Promise.allSettled([client.close(), channel?.close()]);
+    // The channel is closed first, for the same reason as in close().
+    await channel?.close().catch(() => {});
+    await client.close().catch(() => {});
   }
 
   public createChannel(): Promise<void> {

@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -194,6 +195,22 @@ describe.each(adapters)('Security headers (%s)', (_name, createAdapter) => {
         expect(res.headers['x-powered-by']).toBe('Express');
       }
     });
+  });
+
+  // `NestFactory.create()` initializes the adapter before the application can
+  // be configured. On Fastify, that registers middie, which runs Nest
+  // middleware.
+  it('sets them on responses ended by Nest middleware (NestFactory.create())', async () => {
+    app = await NestFactory.create(AppModule, createAdapter(), {
+      logger: false,
+    });
+    app.useSecurityHeaders();
+    await listenOnLoopback(app);
+
+    const res = await request(app.getHttpServer())
+      .get('/middleware')
+      .expect(200, 'answered by middleware');
+    expectDefaultHeaders(res.headers);
   });
 
   // Express sets X-Powered-By before any middleware runs, so the security

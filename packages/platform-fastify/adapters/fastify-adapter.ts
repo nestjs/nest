@@ -213,6 +213,7 @@ export class FastifyAdapter<
     reply: TReply,
     done: (err?: Error) => void,
   ) => void | Promise<void>;
+  private securityHook?: SecurityRequestHook<TRequest>;
   private isMiddieRegistered: boolean;
   private multipartMode: 'auto' | 'eager' | 'off' = 'auto';
   private multipartOptions: FastifyMultipartOptions = {};
@@ -369,6 +370,22 @@ export class FastifyAdapter<
           message: 'Service Unavailable',
           statusCode: 503,
         });
+      } else {
+        done();
+      }
+    });
+
+    // The request hook of `app.enableCsrfProtection()` and
+    // `app.useSecurityHeaders()` (see `registerSecurityHook()`). Added here
+    // for the same reason as the hook above: it must run before Nest
+    // middleware, and `NestFactory.create()` registers middie before either
+    // method can be called. After the `503` hook, as on Express.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (this.securityHook) {
+        done(
+          this.securityHook(request as TRequest, reply.raw) as
+            FastifyError | undefined,
+        );
       } else {
         done();
       }
@@ -898,19 +915,18 @@ export class FastifyAdapter<
 
   /**
    * Runs the request hook of the built-in HTTP security features in an
-   * `onRequest` hook: before middie (Nest middleware), content-type parsing,
-   * guards and handlers, and also for unmatched routes. Headers set by the
-   * hook go to the Node.js response (`reply.raw`): Fastify merges them into
-   * every response it sends, errors and `404`s included, while
+   * `onRequest` hook added by the constructor: before middie (Nest middleware
+   * and `app.use()` middleware, whenever they are registered), content-type
+   * parsing, guards and handlers, and also for unmatched routes. Headers set
+   * by the hook go to the Node.js response (`reply.raw`): Fastify merges them
+   * into every response it sends, errors and `404`s included, while
    * `reply.header()` / `@Header()` values take precedence, and responses
-   * written to `reply.raw` directly (e.g. `@Sse()`) carry them too. A
-   * rejection goes to `done(error)`, i.e. to the Nest exception layer
+   * written to `reply.raw` directly (e.g. `@Sse()`, or middleware) carry them
+   * too. A rejection goes to `done(error)`, i.e. to the Nest exception layer
    * installed with `setErrorHandler()`.
    */
   public registerSecurityHook(hook: SecurityRequestHook<TRequest>) {
-    this.instance.addHook('onRequest', (request, reply, done) => {
-      done(hook(request as TRequest, reply.raw) as FastifyError | undefined);
-    });
+    this.securityHook = hook;
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {

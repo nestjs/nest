@@ -588,11 +588,15 @@ export interface HttpServer<
    * features is enabled. The hook must run for every request (matched routes,
    * unmatched requests, routes outside the global prefix) before Nest
    * middleware, guards and route handlers, and before body parsing when the
-   * platform allows it; registering a framework-level middleware or request
-   * hook at call time satisfies that on Express and Fastify. It receives the
-   * request and the Node.js `ServerResponse` (`reply.raw` on Fastify), on
-   * which it may set headers that route handlers, `@Header()` and exception
-   * filters can still override.
+   * platform allows it. Registering a framework-level middleware at call time
+   * satisfies that on Express. An adapter whose {@link HttpServer.init} sets
+   * up what runs Nest middleware cannot register at call time, as
+   * `NestFactory.create()` calls `init()` first: `FastifyAdapter` adds its
+   * request hook in the constructor, and only stores the hook here.
+   *
+   * The hook receives the request and the Node.js `ServerResponse`
+   * (`reply.raw` on Fastify), on which it may set headers that route
+   * handlers, `@Header()` and exception filters can still override.
    *
    * When the hook returns an error, the adapter must not continue to the
    * route: it hands the error to the exception layer installed through
@@ -706,9 +710,10 @@ export interface HttpServer<
    * the routes excluded with `MiddlewareConsumer.exclude()` are matched the
    * same way: a request only skips the middleware when the router serves it
    * with the excluded route. Called once per `forRoutes()` call, during
-   * `app.init()`. When not implemented, excluded routes are matched
-   * case-insensitively and ignoring a trailing slash, like Express does by
-   * default.
+   * `app.init()`. When not implemented, excluded routes are matched exactly:
+   * case-sensitively and without an optional trailing slash. With a more
+   * lenient router, a request for `/Users/login/` then runs the middleware
+   * excluded for `users/login` rather than skipping it.
    */
   getRouteMatchingOptions?(): RouteMatchingOptions;
 }
