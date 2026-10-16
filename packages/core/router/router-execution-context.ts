@@ -5,6 +5,7 @@ import {
   ParamData,
   PipeTransform,
   RequestMethod,
+  SseOptions,
   StreamableFile,
 } from '@nestjs/common';
 import {
@@ -15,6 +16,7 @@ import {
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
   SSE_METADATA,
+  SSE_OPTIONS_METADATA,
 } from '@nestjs/common/constants';
 import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { SSE_ABORT_CONTROLLER } from '@nestjs/common/decorators/http/sse-signal.decorator';
@@ -339,6 +341,12 @@ export class RouterExecutionContext {
     return Reflect.getMetadata(SSE_METADATA, callback);
   }
 
+  public reflectSseOptions(
+    callback: (...args: unknown[]) => unknown,
+  ): SseOptions | undefined {
+    return Reflect.getMetadata(SSE_OPTIONS_METADATA, callback);
+  }
+
   public exchangeKeysForValues(
     keys: string[],
     metadata: Record<number, RouteParamMetadata>,
@@ -493,6 +501,8 @@ export class RouterExecutionContext {
     }
     const isSseHandler = !!this.reflectSse(callback);
     if (isSseHandler) {
+      const maxPendingDataLength =
+        this.reflectSseOptions(callback)?.maxPendingDataLength;
       return async <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
@@ -512,6 +522,7 @@ export class RouterExecutionContext {
             statusCode:
               (res as { statusCode?: number }).statusCode ??
               (rawResponse as { statusCode?: number }).statusCode,
+            maxPendingDataLength,
           },
         );
       };

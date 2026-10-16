@@ -988,6 +988,54 @@ data: test
         await lifecycle;
         request.destroy();
       });
+
+      it('should drop the connection once more event data than the route allows waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          { maxPendingDataLength: 1024 },
+        );
+        // Kept under the default limit
+        await emitOnSeparateTurns(producer, 48);
+
+        expect(response.destroyed).to.be.true;
+        await lifecycle;
+        expect(producer.observed).to.be.false;
+        expect(
+          (Logger.prototype.warn as sinon.SinonStub).calledWith(
+            sinon.match('exceeds the maximum allowed 1024'),
+          ),
+        ).to.be.true;
+        request.destroy();
+      });
+
+      [0, Infinity].forEach(maxPendingDataLength => {
+        it(`should keep the connection when the route lifts the limit with ${maxPendingDataLength}`, async () => {
+          const producer = new Subject<MessageEvent>();
+          const response = new StalledSink();
+          const request = new PassThrough();
+
+          const lifecycle = routerResponseController.sse(
+            producer,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+            { maxPendingDataLength },
+          );
+          // Dropped under the default limit
+          await emitOnSeparateTurns(producer, 128);
+
+          expect(response.destroyed).to.be.false;
+          expect(producer.observed).to.be.true;
+          response.destroy();
+          await lifecycle;
+          request.destroy();
+        });
+      });
     });
 
     describe('when there is an error before headers are committed', () => {

@@ -19,6 +19,7 @@ import {
   StreamableFile,
 } from '../../../common';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
+import { Sse } from '../../../common/decorators/http/sse.decorator';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
 import { ApplicationConfig } from '../../application-config';
@@ -860,7 +861,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -880,7 +881,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -911,7 +912,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -947,7 +948,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null!,
+          () => {},
           true,
           undefined,
           200,
@@ -960,6 +961,35 @@ describe('RouterExecutionContext', () => {
             sinon.match.hasNested('access-control-headers', 'at-handle-time'),
           ),
         ).to.be.true;
+      });
+
+      it('should pass the maximum pending data length of the route to the SSE response', async () => {
+        class TestController {
+          @Sse('events', { maxPendingDataLength: 1024 })
+          events() {}
+        }
+        const sse = sinon
+          .stub(contextCreator['responseController'], 'sse')
+          .resolves(undefined);
+        const result = of('test');
+        const response = new PassThrough();
+        const request = new PassThrough();
+
+        const handler = contextCreator.createHandleResponseFn(
+          TestController.prototype.events,
+          true,
+        ) as HandlerResponseBasicFn;
+        await handler(result, response, request);
+
+        expect(sse.calledOnce).to.be.true;
+        expect(sse.firstCall.args.slice(0, 3)).to.deep.equal([
+          result,
+          response,
+          request,
+        ]);
+        expect(sse.firstCall.args[3]).to.include({
+          maxPendingDataLength: 1024,
+        });
       });
     });
   });
