@@ -33,7 +33,19 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   expectedType?: Type<any>;
   validatorPackage?: ValidatorPackage;
   transformerPackage?: TransformerPackage;
+  /**
+   * Maximum total length, in characters, of the messages in an error response
+   * of the built-in exception factory, counting the property path that comes
+   * with each message. The errors past it are left out, and a last message
+   * says so. Set it to `Infinity` to lift the limit.
+   *
+   * @default 1_000_000
+   */
+  maxErrorMessagesLength?: number;
 }
+
+const DEFAULT_MAX_ERROR_MESSAGES_LENGTH = 1_000_000;
+const OMITTED_ERRORS_MESSAGE = 'Further validation errors were omitted';
 
 let classValidator: ValidatorPackage = {} as any;
 let classTransformer: TransformerPackage = {} as any;
@@ -59,6 +71,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected expectedType: Type<any> | undefined;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
+  protected maxErrorMessagesLength: number;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -72,6 +85,7 @@ export class ValidationPipe implements PipeTransform<any> {
       validatorPackage,
       transformerPackage,
       validateCustomDecorators,
+      maxErrorMessagesLength,
       ...validatorOptions
     } = options;
 
@@ -84,6 +98,8 @@ export class ValidationPipe implements PipeTransform<any> {
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
+    this.maxErrorMessagesLength =
+      maxErrorMessagesLength ?? DEFAULT_MAX_ERROR_MESSAGES_LENGTH;
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
     classValidator = this.loadValidator(validatorPackage);
@@ -201,9 +217,52 @@ export class ValidationPipe implements PipeTransform<any> {
       if (this.isDetailedOutputDisabled) {
         return new HttpErrorByCode[this.errorHttpStatusCode]();
       }
-      const errors = this.flattenValidationErrors(validationErrors);
+      const budget = {
+        remaining: this.maxErrorMessagesLength,
+        isExceeded: false,
+      };
+      validationErrors = this.limitValidationErrors(validationErrors, budget);
+      let errors = this.flattenValidationErrors(validationErrors);
+      if (budget.isExceeded) {
+        errors = [...errors, OMITTED_ERRORS_MESSAGE];
+      }
       return new HttpErrorByCode[this.errorHttpStatusCode](errors);
     };
+  }
+
+  /**
+   * Leaves out the errors that come after the first "maxErrorMessagesLength"
+   * characters of messages. Each message counts with the path of its
+   * property, which is what makes the response to a deeply nested payload
+   * grow faster than the payload. The errors past the limit are not visited.
+   */
+  protected limitValidationErrors(
+    validationErrors: ValidationError[],
+    budget: { remaining: number; isExceeded: boolean },
+    parentPathLength = 0,
+  ): ValidationError[] {
+    const limited: ValidationError[] = [];
+    let isChanged = false;
+    for (const error of validationErrors) {
+      if (budget.remaining <= 0) {
+        budget.isExceeded = true;
+        return limited;
+      }
+      const pathLength = parentPathLength + String(error.property).length + 1;
+      for (const key in error.constraints) {
+        budget.remaining -= pathLength + String(error.constraints[key]).length;
+      }
+      const children =
+        error.children &&
+        this.limitValidationErrors(error.children, budget, pathLength);
+      if (children === error.children) {
+        limited.push(error);
+      } else {
+        limited.push({ ...error, children });
+        isChanged = true;
+      }
+    }
+    return isChanged ? limited : validationErrors;
   }
 
   protected toValidate(metadata: ArgumentMetadata): boolean {

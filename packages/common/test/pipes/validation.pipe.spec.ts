@@ -113,6 +113,97 @@ describe('ValidationPipe', () => {
     });
   });
 
+  describe('option: "maxErrorMessagesLength"', () => {
+    const omitted = 'Further validation errors were omitted';
+    const errors: ValidationError[] = [
+      { property: 'a', constraints: { isString: 'a must be a string' } },
+      {
+        property: 'b',
+        children: [
+          { property: 'c', constraints: { isString: 'c must be a string' } },
+          { property: 'd', constraints: { isString: 'd must be a string' } },
+        ],
+      },
+    ];
+    const messageOf = (pipe: ValidationPipe, errors: ValidationError[]) =>
+      (pipe.createExceptionFactory()(errors) as any).getResponse().message;
+
+    it('should leave out the messages past the limit and say so', () => {
+      const pipe = new ValidationPipe({ maxErrorMessagesLength: 30 });
+      expect(messageOf(pipe, errors)).to.deep.equal([
+        'a must be a string',
+        'b.c must be a string',
+        omitted,
+      ]);
+    });
+    it('should not read the errors past the limit', () => {
+      const reads: string[] = [];
+      const children = new Proxy(
+        Array.from({ length: 1000 }, (_, i) => ({
+          property: `${i}`,
+          constraints: { isString: 'must be a string' },
+        })),
+        {
+          get(target, key, receiver) {
+            if (typeof key === 'string' && /^\d+$/.test(key)) {
+              reads.push(key);
+            }
+            return Reflect.get(target, key, receiver);
+          },
+        },
+      );
+      const pipe = new ValidationPipe({ maxErrorMessagesLength: 50 });
+
+      const message: string[] = messageOf(pipe, [
+        { property: 'items', children },
+      ]);
+      expect(message[message.length - 1]).to.equal(omitted);
+      expect(reads.length).to.be.lessThan(10);
+    });
+    it('should keep every message when the limit is lifted', () => {
+      const pipe = new ValidationPipe({ maxErrorMessagesLength: Infinity });
+      expect(messageOf(pipe, errors)).to.deep.equal([
+        'a must be a string',
+        'b.c must be a string',
+        'b.d must be a string',
+      ]);
+    });
+    it('should limit the messages to about a million characters by default', () => {
+      // 1,200 errors 500 levels deep, each message about 1,000 characters
+      // long; the walks recurse once per level, so the depth stays well
+      // within the stack of a worker thread.
+      let error: any = {
+        property: 'x',
+        children: Array.from({ length: 1200 }, () => ({
+          property: 'y',
+          constraints: { isString: 'y must be a string' },
+        })),
+      };
+      for (let depth = 0; depth < 500; depth++) {
+        error = { property: 'x', children: [error] };
+      }
+
+      const message: string[] = messageOf(new ValidationPipe(), [error]);
+      const length = message.reduce((total, item) => total + item.length, 0);
+      expect(message[message.length - 1]).to.equal(omitted);
+      expect(length).to.be.greaterThan(990_000);
+      expect(length).to.be.lessThan(1_010_000);
+    });
+    it('should add the omission to a copy of the errors', () => {
+      class CustomPipe extends ValidationPipe {
+        protected flattenValidationErrors(validationErrors: ValidationError[]) {
+          return Object.freeze(
+            super.flattenValidationErrors(validationErrors),
+          ) as string[];
+        }
+      }
+
+      expect(
+        messageOf(new CustomPipe({ maxErrorMessagesLength: 30 }), errors),
+      ).to.deep.equal(['a must be a string', 'b.c must be a string', omitted]);
+    });
+  });
+
   let target: ValidationPipe;
   const metadata: ArgumentMetadata = {
     type: 'body',
@@ -979,6 +1070,13 @@ describe('ValidationPipe', () => {
       target = new ValidationPipe({
         transformerPackage: require('class-transformer'),
       });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const result = await target.transform(testObj, metadata);
+      expect(result).to.equal(testObj);
+    });
+
+    it('should return the original value when maxErrorMessagesLength is provided', async () => {
+      target = new ValidationPipe({ maxErrorMessagesLength: 1000 });
       const testObj = { prop1: 'value1', prop2: 'value2' };
       const result = await target.transform(testObj, metadata);
       expect(result).to.equal(testObj);
