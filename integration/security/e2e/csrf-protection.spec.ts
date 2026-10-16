@@ -6,6 +6,7 @@ import {
   INestApplication,
   RequestMethod,
 } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -158,6 +159,50 @@ describe.each(adapters)('CSRF protection (%s)', (_name, createAdapter) => {
         .set('Host', HOST)
         .set('Sec-Fetch-Site', 'cross-site')
         .expect(403);
+    });
+
+    it('runs before Nest middleware', () => {
+      return request(app.getHttpServer())
+        .post('/middleware')
+        .set('Host', HOST)
+        .set('Sec-Fetch-Site', 'cross-site')
+        .expect(403);
+    });
+  });
+
+  // Unlike `Test.createNestApplication()`, `NestFactory.create()` initializes
+  // the adapter before the application can be configured. On Fastify, that
+  // registers middie, which runs Nest middleware.
+  describe('with an application created by NestFactory.create()', () => {
+    beforeEach(async () => {
+      app = await NestFactory.create(AppModule, createAdapter(), {
+        logger: false,
+      });
+      app.enableCsrfProtection();
+      app.use('/use', (_req: unknown, res: { end(body: string): void }) =>
+        res.end('answered by app.use()'),
+      );
+      await listenOnLoopback(app);
+    });
+
+    it('runs before Nest middleware and middleware added afterwards', async () => {
+      const post = (path: string) =>
+        request(app.getHttpServer())
+          .post(path)
+          .set('Host', HOST)
+          .set('Sec-Fetch-Site', 'cross-site');
+
+      await post('/middleware').expect(403);
+      await post('/use').expect(403);
+      await post('/items').expect(403);
+    });
+
+    it('allows a same-origin POST to reach middleware', () => {
+      return request(app.getHttpServer())
+        .post('/middleware')
+        .set('Host', HOST)
+        .set('Sec-Fetch-Site', 'same-origin')
+        .expect(200, 'answered by middleware');
     });
   });
 

@@ -50,9 +50,10 @@ export interface INestApplication<
    *
    * Must be called once, before `app.init()` / `app.listen()`. The check runs
    * before Nest middleware, body parsing, guards and handlers. It shares one
-   * request hook with `app.useSecurityHeaders()`, registered where the first
-   * of the two is called: middleware registered with `app.use()` before that
-   * runs before the check.
+   * request hook with `app.useSecurityHeaders()`. On Express, the hook is
+   * registered where the first of the two is called, so middleware registered
+   * with `app.use()` before that runs before the check. On Fastify, the check
+   * runs before all middleware.
    *
    * @param {CsrfProtectionOptions} options
    * @returns {this}
@@ -71,9 +72,10 @@ export interface INestApplication<
    * route.
    *
    * Must be called once, before `app.init()` / `app.listen()`. It shares one
-   * request hook with `app.enableCsrfProtection()`, registered where the
-   * first of the two is called: middleware registered with `app.use()` before
-   * that runs first, so responses it ends itself do not carry the headers.
+   * request hook with `app.enableCsrfProtection()`. On Express, the hook is
+   * registered where the first of the two is called, so middleware registered
+   * with `app.use()` before that runs first, and responses it ends itself do
+   * not carry the headers. On Fastify, the hook runs before all middleware.
    *
    * @param {SecurityHeadersOptions} options
    * @returns {this}
