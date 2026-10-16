@@ -12,6 +12,7 @@ import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { RequestScopedGlobalEnhancerException } from '../errors/exceptions/request-scoped-global-enhancer.exception';
 import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception';
+import { UninstantiatedGlobalEnhancerException } from '../errors/exceptions/uninstantiated-global-enhancer.exception';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { GraphInspector } from '../inspector/graph-inspector';
@@ -621,6 +622,7 @@ describe('DependenciesScanner', () => {
       const instanceWrapper = {
         instance: expectedInstance,
         isDependencyTreeStatic: () => true,
+        getInstanceByContextId: () => ({ isResolved: true }),
       } as unknown as InstanceWrapper;
       mockContainer.expects('getModules').callsFake(() => ({
         get: () => ({
@@ -719,6 +721,10 @@ describe('DependenciesScanner', () => {
           instance: null,
           isAlias: false,
           isDependencyTreeStatic: () => true,
+          getInstanceByContextId: () => ({
+            instance: null,
+            isResolved: true,
+          }),
         });
         const applySpy = sinon.spy();
         sinon.stub(scanner, 'getApplyProvidersMap').callsFake(() => ({
@@ -727,6 +733,39 @@ describe('DependenciesScanner', () => {
 
         expect(() => scanner.applyApplicationProviders()).not.to.throw();
         expect(applySpy.calledWith(null)).to.be.true;
+      });
+    });
+    describe('when a static provider has never been instantiated', () => {
+      class AuthGuard {}
+
+      it('should throw', () => {
+        untypedScanner.applicationProvidersApplyMap = [
+          {
+            moduleKey: 'moduleToken',
+            providerKey: 'providerToken',
+            type: APP_GUARD,
+          },
+        ];
+        const wrapper = new InstanceWrapper({
+          isAlias: true,
+          metatype: (instance: unknown) => instance,
+          inject: [AuthGuard],
+          isResolved: false,
+        });
+        mockContainer.expects('getModules').callsFake(() => ({
+          get: () => ({
+            providers: { get: () => wrapper },
+          }),
+        }));
+        sinon.stub(graphInspector, 'insertAttachedEnhancer');
+
+        expect(() => scanner.applyApplicationProviders()).to.throw(
+          UninstantiatedGlobalEnhancerException,
+          new UninstantiatedGlobalEnhancerException(
+            APP_GUARD,
+            'useExisting: AuthGuard',
+          ).message,
+        );
       });
     });
     it('should apply each globally scoped provider', () => {

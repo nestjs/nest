@@ -46,7 +46,9 @@ import { InvalidClassModuleException } from './errors/exceptions/invalid-class-m
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
 import { RequestScopedGlobalEnhancerException } from './errors/exceptions/request-scoped-global-enhancer.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
+import { UninstantiatedGlobalEnhancerException } from './errors/exceptions/uninstantiated-global-enhancer.exception';
 import { getClassScope } from './helpers/get-class-scope';
+import { STATIC_CONTEXT } from './injector/constants';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { InternalCoreModuleFactory } from './injector/internal-core-module/internal-core-module-factory';
@@ -736,6 +738,16 @@ export class DependenciesScanner {
             type as string,
             provider,
             kind,
+          );
+        }
+        // The same goes for a static enhancer that was never instantiated.
+        if (
+          !instanceWrapper.getInstanceByContextId(STATIC_CONTEXT).isResolved
+        ) {
+          const [, provider] = this.describeEnhancerProvider(instanceWrapper);
+          throw new UninstantiatedGlobalEnhancerException(
+            type as string,
+            provider,
           );
         }
         applyProvidersMap[type as string](instanceWrapper.instance);
