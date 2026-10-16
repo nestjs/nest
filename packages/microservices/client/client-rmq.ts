@@ -246,8 +246,16 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
-      (msg: ConsumeMessage | null) =>
-        this.responseEmitter.emit(msg!.properties.correlationId, msg),
+      (msg: ConsumeMessage | null) => {
+        // Whoever publishes to the reply queue chooses the correlation id, so
+        // only the ids of pending requests become event names: an "error"
+        // event nobody listens to throws inside amqplib's dispatch, which
+        // closes the channel and the connection.
+        const correlationId = msg!.properties.correlationId;
+        if (this.responseEmitter.listenerCount(correlationId) > 0) {
+          this.responseEmitter.emit(correlationId, msg);
+        }
+      },
       {
         noAck,
       },

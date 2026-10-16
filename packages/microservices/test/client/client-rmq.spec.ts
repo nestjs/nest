@@ -178,6 +178,57 @@ describe('ClientRMQ', function () {
       await client.consumeChannel(channel);
       expect(consumeStub.called).to.be.true;
     });
+
+    describe('when a reply arrives', () => {
+      let responseEmitter: EventEmitter;
+      let emitSpy: sinon.SinonSpy;
+      let onMessage: (msg: any) => void;
+
+      beforeEach(async () => {
+        responseEmitter = new EventEmitter();
+        client['responseEmitter'] = responseEmitter;
+        emitSpy = sinon.spy(responseEmitter, 'emit');
+        channel.consume = sinon.stub().resolves();
+        await client.consumeChannel(channel);
+        onMessage = channel.consume.firstCall.args[1];
+      });
+
+      it('should forward a message to the request waiting for it', () => {
+        const msg = { properties: { correlationId: 'id' }, content: 'content' };
+        const listener = sinon.spy();
+        responseEmitter.on(msg.properties.correlationId, listener);
+
+        onMessage(msg);
+
+        expect(emitSpy.calledOnceWith(msg.properties.correlationId, msg)).to.be
+          .true;
+        expect(listener.calledWith(msg)).to.be.true;
+      });
+
+      it('should ignore a message no request waits for', () => {
+        const msg = {
+          properties: { correlationId: 'unknown' },
+          content: 'content',
+        };
+
+        onMessage(msg);
+
+        expect(emitSpy.called).to.be.false;
+      });
+
+      it('should not throw on a message whose correlation id is "error"', () => {
+        // Whoever publishes to the reply queue chooses the correlation id, and
+        // an "error" event without a listener throws inside amqplib's dispatch,
+        // which closes the channel and the connection
+        const msg = {
+          properties: { correlationId: 'error' },
+          content: 'content',
+        };
+
+        expect(() => onMessage(msg)).to.not.throw();
+        expect(emitSpy.called).to.be.false;
+      });
+    });
   });
 
   describe('setupChannel', () => {
