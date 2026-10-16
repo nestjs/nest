@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { throwError as _throw, lastValueFrom, Observable, of } from 'rxjs';
+import {
+  throwError as _throw,
+  lastValueFrom,
+  Observable,
+  of,
+  Subject,
+} from 'rxjs';
 import * as sinon from 'sinon';
 import { Server } from '../../server/server';
 
@@ -151,6 +157,57 @@ describe('Server', () => {
             ).to.be.true;
           });
         });
+      });
+    });
+    describe('when the stream emits many values', () => {
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+
+      it('should not shift each reply off the queue', async () => {
+        // Each shift() moves the replies queued behind the one it removes, so
+        // draining a stream of n replies that way takes time quadratic in n
+        const shift = Array.prototype.shift;
+        const shifted: unknown[] = [];
+        Array.prototype.shift = function (this: unknown[]) {
+          const item = shift.call(this);
+          shifted.push(item);
+          return item;
+        };
+        sendSpy = sinon.spy();
+        try {
+          server.send(of('first', 'second', 'third'), sendSpy);
+          await flush();
+        } finally {
+          Array.prototype.shift = shift;
+        }
+
+        expect(sendSpy.getCalls().map(call => call.args)).to.deep.equal([
+          [{ response: 'first' }],
+          [{ response: 'second' }],
+          [{ response: 'third', isDisposed: true }],
+        ]);
+        expect(shifted).to.not.deep.include({ response: 'first' });
+      });
+
+      it('should send the completion on its own once the last reply is out', async () => {
+        let sent: () => void = () => {};
+        sendSpy = sinon.stub();
+        (sendSpy as sinon.SinonStub)
+          .onFirstCall()
+          .callsFake(() => new Promise<void>(resolve => (sent = resolve)));
+        (sendSpy as sinon.SinonStub).resolves(undefined);
+        const subject = new Subject<string>();
+
+        server.send(subject, sendSpy);
+        subject.next('first');
+        await flush();
+        subject.complete();
+        sent();
+        await flush();
+
+        expect(sendSpy.getCalls().map(call => call.args)).to.deep.equal([
+          [{ response: 'first' }],
+          [{ isDisposed: true }],
+        ]);
       });
     });
   });

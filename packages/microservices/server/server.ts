@@ -175,9 +175,12 @@ export abstract class Server<
     respond: (data: WritePacket) => Promise<unknown> | void,
   ): Subscription {
     const dataQueue: WritePacket[] = [];
+    // The queue is read through an index and emptied once drained, as each
+    // shift() would move all the packets queued behind the one it removes
+    let nextIndex = 0;
     let isProcessing = false;
     const scheduleOnNextTick = (data: WritePacket) => {
-      if (data.isDisposed && dataQueue.length > 0) {
+      if (data.isDisposed && dataQueue.length > nextIndex) {
         dataQueue[dataQueue.length - 1].isDisposed = true;
       } else {
         dataQueue.push(data);
@@ -185,12 +188,14 @@ export abstract class Server<
       if (!isProcessing) {
         isProcessing = true;
         process.nextTick(async () => {
-          while (dataQueue.length > 0) {
-            const packet = dataQueue.shift();
+          while (nextIndex < dataQueue.length) {
+            const packet = dataQueue[nextIndex++];
             if (packet) {
               await respond(packet);
             }
           }
+          dataQueue.length = 0;
+          nextIndex = 0;
           isProcessing = false;
         });
       }
