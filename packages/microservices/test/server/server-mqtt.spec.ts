@@ -402,6 +402,30 @@ describe('ServerMqtt', () => {
       );
       expect(handler).toHaveBeenCalledWith(data, expect.any(MqttContext));
     });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+      const request = Buffer.from(JSON.stringify({ pattern: '', data, id }));
+
+      await server.handleMessage(channel, request, null);
+      await server.handleMessage(channel, request, null);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(getPublisherSpy).toHaveBeenCalledTimes(2);
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        response: 'stored',
+        isDisposed: true,
+      });
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
+    });
   });
 
   describe('processing end hook', () => {

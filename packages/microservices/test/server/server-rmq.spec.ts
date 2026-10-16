@@ -330,6 +330,31 @@ describe('ServerRMQ', () => {
       await server.handleMessage(msg, '');
       expect(handler).toHaveBeenCalledOnce();
     });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [pattern]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+
+      await server.handleMessage(msg, '');
+      await server.handleMessage(msg, '');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(sendMessageStub).toHaveBeenCalledTimes(2);
+      expect(sendMessageStub).toHaveBeenCalledWith(
+        { response: 'stored', isDisposed: true },
+        undefined,
+        1,
+        expect.any(RmqContext),
+      );
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
+    });
     it('should not throw if the message is an invalid json', async () => {
       const invalidMsg = {
         content: {

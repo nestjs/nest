@@ -275,6 +275,30 @@ describe('ServerRedis', () => {
       await server.handleMessage(channel, '', null, channel);
       expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
     });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+      const request = JSON.stringify({ id, pattern: channel, data });
+
+      await server.handleMessage(channel, request, null, channel);
+      await server.handleMessage(channel, request, null, channel);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(getPublisherSpy).toHaveBeenCalledTimes(2);
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        response: 'stored',
+        isDisposed: true,
+      });
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
+    });
     it('should expose the packet metadata on the context', async () => {
       const handler = vi.fn();
       const metadata = { traceId: 'trace-1' };

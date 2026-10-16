@@ -54,6 +54,11 @@ export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 
 export const NO_EVENT_HANDLER = (text: TemplateStringsArray, pattern: string) =>
   `There is no matching event handler defined in the remote service. Event pattern: ${pattern}`;
+export const EVENT_HANDLER_REPLY_DEPRECATED = (
+  text: TemplateStringsArray,
+  pattern: string,
+) =>
+  `DEPRECATED! An @EventPattern handler replied to a request sent with "send()". In the next major version, @EventPattern handlers will not reply to "send()": use @MessagePattern for handlers that reply, or send events with "emit()" instead. Pattern: ${pattern}`;
 export const NO_MESSAGE_HANDLER = `There is no matching message handler defined in the remote service.`;
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
 export const CONNECTION_FAILED_MESSAGE =

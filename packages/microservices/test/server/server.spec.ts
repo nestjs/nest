@@ -493,6 +493,37 @@ describe('Server', () => {
     });
   });
 
+  describe('warnIfEventHandlerReplies', () => {
+    let warnSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+    });
+
+    it('should warn once per event handler that replying to requests is deprecated', () => {
+      const created = Object.assign(async () => null, { isEventHandler: true });
+      const deleted = Object.assign(async () => null, { isEventHandler: true });
+
+      untypedServer.warnIfEventHandlerReplies(created, 'user.created');
+      untypedServer.warnIfEventHandlerReplies(created, 'user.created');
+      untypedServer.warnIfEventHandlerReplies(deleted, 'user.deleted');
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .*@EventPattern handlers will not reply to "send\(\)".* Pattern: user\.created$/,
+      );
+      expect(warnSpy.mock.calls[1][0]).toMatch(/Pattern: user\.deleted$/);
+    });
+
+    it('should not warn for a message handler', () => {
+      untypedServer.warnIfEventHandlerReplies(async () => null, 'user.get');
+
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('runWithProcessingHooks', () => {
     const context = new BaseRpcContext([]);
 

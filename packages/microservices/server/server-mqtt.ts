@@ -181,6 +181,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       };
       return publish(noHandlerPacket);
     }
+    this.warnIfEventHandlerReplies(handler, channel);
     return this.handleRequest(
       mqttContext,
       async () =>

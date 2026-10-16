@@ -176,6 +176,7 @@ export class ServerNats<
       };
       return publish(noHandlerPacket);
     }
+    this.warnIfEventHandlerReplies(handler, channel);
     return this.handleRequest(
       natsCtx,
       async () =>

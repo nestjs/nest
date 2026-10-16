@@ -188,6 +188,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       };
       return publish(noHandlerPacket);
     }
+    this.warnIfEventHandlerReplies(handler, channel);
     return this.handleRequest(
       redisCtx,
       async () =>

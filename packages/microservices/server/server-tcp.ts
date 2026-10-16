@@ -143,6 +143,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       });
       return socket.sendMessage(noHandlerPacket);
     }
+    this.warnIfEventHandlerReplies(handler, pattern);
     return this.handleRequest(
       tcpContext,
       async () =>

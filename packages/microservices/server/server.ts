@@ -16,7 +16,11 @@ import {
   finalize,
   mergeMap,
 } from 'rxjs/operators';
-import { NO_EVENT_HANDLER, UNSERIALIZABLE_PATTERN } from '../constants.js';
+import {
+  EVENT_HANDLER_REPLY_DEPRECATED,
+  NO_EVENT_HANDLER,
+  UNSERIALIZABLE_PATTERN,
+} from '../constants.js';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context.js';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer.js';
 import { Transport } from '../enums/index.js';
@@ -59,6 +63,11 @@ export abstract class Server<
 
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger: LoggerService = new Logger(Server.name);
+  /**
+   * Event handlers that have replied to a request, so that the deprecation
+   * is logged once per pattern.
+   */
+  private readonly eventHandlersThatReplied = new WeakSet<MessageHandler>();
   /**
    * Whether this transport hands an event handler failure to its client
    * library, which then reports it. The base `handleEvent` connects the
@@ -263,6 +272,23 @@ export abstract class Server<
       const response$ = await produce();
       this.send(response$.pipe(finalize(runEndHook)), respond);
     });
+  }
+
+  /**
+   * Logs a deprecation warning the first time an event handler is about to
+   * reply to a request (a packet with an id, sent with `ClientProxy#send`).
+   * Event handlers still reply to requests, except on Kafka, but will not in
+   * the next major version.
+   */
+  protected warnIfEventHandlerReplies(
+    handler: MessageHandler,
+    pattern: string,
+  ) {
+    if (!handler.isEventHandler || this.eventHandlersThatReplied.has(handler)) {
+      return;
+    }
+    this.eventHandlersThatReplied.add(handler);
+    this.logger.warn(EVENT_HANDLER_REPLY_DEPRECATED`${pattern}`);
   }
 
   /**

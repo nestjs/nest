@@ -381,6 +381,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         rmqContext,
       );
 
+    this.warnIfEventHandlerReplies(handler, pattern);
     return this.handleRequest(
       rmqContext,
       async () =>

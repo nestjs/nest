@@ -260,6 +260,30 @@ describe('ServerTCP', () => {
       const context = handler.mock.calls[0][1];
       expect(context.getMetadata()).toEqual(metadata);
     });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [msg.pattern]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+
+      await server.handleMessage(socket, msg);
+      await server.handleMessage(socket, msg);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(socket.sendMessage).toHaveBeenCalledTimes(2);
+      expect(socket.sendMessage).toHaveBeenCalledWith({
+        id: msg.id,
+        response: 'stored',
+        isDisposed: true,
+      });
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
+    });
     it('should send NO_MESSAGE_HANDLER error if pattern is too deeply nested to be serialized', async () => {
       const deeplyNestedMsg = {
         ...msg,
