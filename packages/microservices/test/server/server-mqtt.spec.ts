@@ -771,4 +771,34 @@ describe('ServerMqtt', () => {
       ).toBe(false);
     });
   });
+  describe('getHandlerByPattern', () => {
+    // A broker takes '"admin/reset"' for a topic of its own, which an ACL
+    // that denies "admin/#" lets through
+    it('should not route a quoted topic to the handler of the unquoted one', () => {
+      server.addHandler('admin/reset', vi.fn());
+
+      expect(server.getHandlerByPattern('"admin/reset"')).toBeNull();
+    });
+    it('should not match a quoted topic against wildcard patterns as unquoted', () => {
+      server.addHandler('admin/+', vi.fn());
+
+      expect(server.getHandlerByPattern('"admin/reset"')).toBeNull();
+    });
+    it('should not route a number written differently to its handler', () => {
+      server.addHandler(1000, vi.fn());
+
+      expect(server.getHandlerByPattern('1e3')).toBeNull();
+    });
+    it('should route the topic of an object pattern to its handler', () => {
+      const handler = vi.fn();
+      server.addHandler({ cmd: 'sum', role: 'math' }, handler);
+
+      expect(server.getHandlerByPattern('{"cmd":"sum","role":"math"}')).toBe(
+        handler,
+      );
+      expect(
+        server.getHandlerByPattern('{ "role": "math", "cmd": "sum" }'),
+      ).toBe(handler);
+    });
+  });
 });
