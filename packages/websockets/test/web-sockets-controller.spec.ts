@@ -552,6 +552,52 @@ describe('WebSocketsController', () => {
       expect(perContextMethod).toHaveBeenCalledWith(client, 'first');
       expect(perContextMethod).toHaveBeenCalledWith(client, 'second');
     });
+
+    it('should delegate errors to the filters of the gateway that inherits the handler', async () => {
+      class BaseGateway {
+        onMessage() {}
+      }
+      class FirstGateway extends BaseGateway {}
+      class SecondGateway extends BaseGateway {}
+
+      const firstWrapper = new InstanceWrapper({
+        instance: new FirstGateway(),
+        scope: Scope.REQUEST,
+      });
+      const secondWrapper = new InstanceWrapper({
+        instance: new SecondGateway(),
+        scope: Scope.REQUEST,
+      });
+      const moduleRef = { providers: new Map() } as Module;
+      const firstExceptionsHandler = { handle: vi.fn() };
+      const secondExceptionsHandler = { handle: vi.fn() };
+      vi.spyOn(exceptionFiltersContext, 'create').mockImplementation(
+        gateway =>
+          (gateway === firstWrapper.instance
+            ? firstExceptionsHandler
+            : secondExceptionsHandler) as any,
+      );
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+
+      await instance.createRequestScopedHandler(
+        firstWrapper,
+        moduleRef,
+        'moduleKey',
+        'onMessage',
+      )({});
+      await instance.createRequestScopedHandler(
+        secondWrapper,
+        moduleRef,
+        'moduleKey',
+        'onMessage',
+      )({});
+
+      expect(firstExceptionsHandler.handle).toHaveBeenCalledOnce();
+      expect(secondExceptionsHandler.handle).toHaveBeenCalledOnce();
+    });
   });
   describe('createRequestScopedEventHandler', () => {
     it('should release a singleton connection context even without a disconnect hook', async () => {
@@ -921,6 +967,54 @@ describe('WebSocketsController', () => {
         'handleDisconnect',
       ]);
     });
+
+    it('should delegate errors to the filters of the gateway that inherits the hook', async () => {
+      class BaseGateway {
+        handleConnection() {}
+      }
+      class FirstGateway extends BaseGateway {}
+      class SecondGateway extends BaseGateway {}
+
+      const firstWrapper = new InstanceWrapper({
+        instance: new FirstGateway(),
+        scope: Scope.REQUEST,
+      });
+      const secondWrapper = new InstanceWrapper({
+        instance: new SecondGateway(),
+        scope: Scope.REQUEST,
+      });
+      const moduleRef = { providers: new Map() } as Module;
+      const firstExceptionsHandler = { handle: vi.fn() };
+      const secondExceptionsHandler = { handle: vi.fn() };
+      vi.spyOn(exceptionFiltersContext, 'create').mockImplementation(
+        gateway =>
+          (gateway === firstWrapper.instance
+            ? firstExceptionsHandler
+            : secondExceptionsHandler) as any,
+      );
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+
+      await instance.createRequestScopedEventHandler(
+        firstWrapper,
+        moduleRef,
+        'moduleKey',
+        'handleConnection',
+        {},
+      )({});
+      await instance.createRequestScopedEventHandler(
+        secondWrapper,
+        moduleRef,
+        'moduleKey',
+        'handleConnection',
+        {},
+      )({});
+
+      expect(firstExceptionsHandler.handle).toHaveBeenCalledOnce();
+      expect(secondExceptionsHandler.handle).toHaveBeenCalledOnce();
+    });
   });
   describe('createStaticEventHandler', () => {
     let exceptionFilter: { handle: ReturnType<typeof vi.fn> };
@@ -1014,6 +1108,41 @@ describe('WebSocketsController', () => {
       expect(host.switchToWs().getClient()).toBe(client);
       expect(host.switchToWs().getData()).toBe('transport close');
       expect(host.switchToWs().getPattern()).toBe('handleDisconnect');
+    });
+
+    it('should delegate errors to the filters of the gateway that inherits the hook', () => {
+      class BaseGateway {
+        handleConnection() {
+          throw new Error();
+        }
+      }
+      class FirstGateway extends BaseGateway {}
+      class SecondGateway extends BaseGateway {}
+
+      const firstGateway = new FirstGateway();
+      const secondGateway = new SecondGateway();
+      const firstExceptionsHandler = { handle: vi.fn() };
+      const secondExceptionsHandler = { handle: vi.fn() };
+      vi.spyOn(exceptionFiltersContext, 'create').mockImplementation(
+        gateway =>
+          (gateway === firstGateway
+            ? firstExceptionsHandler
+            : secondExceptionsHandler) as any,
+      );
+
+      instance.createStaticEventHandler(
+        firstGateway,
+        'moduleKey',
+        'handleConnection',
+      )!({});
+      instance.createStaticEventHandler(
+        secondGateway,
+        'moduleKey',
+        'handleConnection',
+      )!({});
+
+      expect(firstExceptionsHandler.handle).toHaveBeenCalledOnce();
+      expect(secondExceptionsHandler.handle).toHaveBeenCalledOnce();
     });
   });
   describe('getConnectionHandler', () => {
