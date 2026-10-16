@@ -2,6 +2,7 @@ import type { HttpServer } from '@nestjs/common';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config.js';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception.js';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler.js';
 import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
 import { ContextIdFactory } from '../helpers/context-id-factory.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
@@ -66,7 +67,6 @@ export class RouterExplorer {
   private readonly logger = new Logger(RouterExplorer.name, {
     timestamp: true,
   });
-  private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
     metadataScanner: MetadataScanner,
@@ -456,6 +456,9 @@ export class RouterExplorer {
     const collection = moduleRef.controllers;
 
     const isTreeDurable = instanceWrapper.isDependencyTreeDurable();
+    // Kept per route, not per handler function: controllers that inherit
+    // the handler from a base class can declare different filters
+    let exceptionFilter: ExceptionsHandler | undefined;
 
     return async <TRequest extends Record<any, any>, TResponse>(
       req: TRequest,
@@ -480,17 +483,11 @@ export class RouterExplorer {
           instanceWrapper.id,
         )(req, res, next);
       } catch (err) {
-        let exceptionFilter = this.exceptionFiltersCache.get(
+        exceptionFilter ??= this.exceptionsFilter.create(
+          instance,
           instance[methodName],
+          moduleKey,
         );
-        if (!exceptionFilter) {
-          exceptionFilter = this.exceptionsFilter.create(
-            instance,
-            instance[methodName],
-            moduleKey,
-          );
-          this.exceptionFiltersCache.set(instance[methodName], exceptionFilter);
-        }
         const host = new ExecutionContextHost([req, res, next]);
         exceptionFilter.next(err, host);
       }

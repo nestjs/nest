@@ -369,6 +369,49 @@ describe('RouterExplorer', () => {
         expect(nextSpy.mock.calls[0][0]).toBeInstanceOf(Error);
         expect(nextSpy.mock.calls[0][1]).toBeInstanceOf(ExecutionContextHost);
       });
+
+      it('should delegate errors to the filters of the controller that inherits the handler', async () => {
+        class BaseController {
+          list() {}
+        }
+        class FirstController extends BaseController {}
+        class SecondController extends BaseController {}
+
+        const firstWrapper = new InstanceWrapper({
+          instance: new FirstController(),
+        });
+        const secondWrapper = new InstanceWrapper({
+          instance: new SecondController(),
+        });
+        const firstExceptionsHandler = { next: vi.fn() };
+        const secondExceptionsHandler = { next: vi.fn() };
+        vi.spyOn(exceptionsFilter, 'create').mockImplementation(
+          instance =>
+            (instance === firstWrapper.instance
+              ? firstExceptionsHandler
+              : secondExceptionsHandler) as any,
+        );
+
+        const firstHandler = routerBuilder.createRequestScopedHandler(
+          firstWrapper,
+          RequestMethod.GET,
+          module,
+          moduleKey,
+          'list',
+        );
+        const secondHandler = routerBuilder.createRequestScopedHandler(
+          secondWrapper,
+          RequestMethod.GET,
+          module,
+          moduleKey,
+          'list',
+        );
+        await firstHandler(null!, null, null!);
+        await secondHandler(null!, null, null!);
+
+        expect(firstExceptionsHandler.next).toHaveBeenCalledOnce();
+        expect(secondExceptionsHandler.next).toHaveBeenCalledOnce();
+      });
     });
   });
 
