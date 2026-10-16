@@ -523,6 +523,24 @@ describe('ClientTCP', () => {
     });
   });
 
+  describe('write backpressure', () => {
+    it('should keep reading replies while its own writes are backed up', () => {
+      const jsonSocket = new ClientTCP({}).createSocket();
+      const netSocket = jsonSocket.netSocket;
+      vi.spyOn(netSocket, 'write').mockReturnValue(false);
+      const pauseSpy = vi.spyOn(netSocket, 'pause');
+      const replies: unknown[] = [];
+      jsonSocket.on('message', message => replies.push(message));
+
+      jsonSocket.sendMessage({ id: '1', pattern: 'sum', data: [1, 2] });
+      const reply = JSON.stringify({ id: '1', response: 3, isDisposed: true });
+      netSocket.emit('data', Buffer.from(`${reply.length}#${reply}`));
+
+      expect(replies).toEqual([{ id: '1', response: 3, isDisposed: true }]);
+      expect(pauseSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('maxBufferSize', () => {
     const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4;
 

@@ -15,6 +15,7 @@ export interface JsonSocketOptions {
   maxBufferSize?: number;
   incompleteMessageTimeout?: number;
   maxSendBufferSize?: number;
+  pauseOnBackpressure?: boolean;
 }
 
 export class JsonSocket extends TcpSocket {
@@ -26,6 +27,7 @@ export class JsonSocket extends TcpSocket {
   private readonly maxBufferSize: number;
   private readonly incompleteMessageTimeout: number;
   private readonly maxSendBufferSize: number;
+  private readonly pauseOnBackpressure: boolean;
   private incompleteMessageTimer: NodeJS.Timeout | null = null;
   private isBackpressured = false;
 
@@ -36,6 +38,7 @@ export class JsonSocket extends TcpSocket {
       options?.incompleteMessageTimeout ?? DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT;
     this.maxSendBufferSize =
       options?.maxSendBufferSize ?? DEFAULT_MAX_SEND_BUFFER_SIZE;
+    this.pauseOnBackpressure = options?.pauseOnBackpressure ?? true;
 
     this.socket.on(TcpEventsMap.CLOSE, () =>
       this.clearIncompleteMessageTimer(),
@@ -54,7 +57,7 @@ export class JsonSocket extends TcpSocket {
     // never reads the responses makes the process buffer every response in
     // memory. Reading is suspended until the peer catches up, which also stops
     // further requests from that peer being turned into more queued responses.
-    if (flushed === false) {
+    if (flushed === false && this.pauseOnBackpressure) {
       this.applyBackpressure();
     }
     this.assertSendBufferWithinLimit();
