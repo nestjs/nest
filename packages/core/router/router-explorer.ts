@@ -47,7 +47,7 @@ import {
 import {
   RequestMethod,
   VersioningType,
-  InternalServerErrorException,
+  NotFoundException,
   type Type,
   Logger,
 } from '@nestjs/common';
@@ -368,11 +368,12 @@ export class RouterExplorer {
       return { regexp: host, keys: [] };
     });
 
-    const unsupportedFilteringErrorMessage = Array.isArray(host)
+    const unsupportedFilteringMessage = Array.isArray(host)
       ? `HTTP adapter does not support filtering on hosts: ["${host.join(
           '", "',
         )}"]`
       : `HTTP adapter does not support filtering on host: "${host}"`;
+    let hasWarnedOfUnsupportedFiltering = false;
 
     return <TRequest extends Record<string, any> = any, TResponse = any>(
       req: TRequest,
@@ -396,9 +397,18 @@ export class RouterExplorer {
         }
       }
       if (!next) {
-        throw new InternalServerErrorException(
-          unsupportedFilteringErrorMessage,
-        );
+        // The adapter cannot pass the request on to another route. Tell the
+        // developer once, and answer as if no route matched, without the
+        // hosts this route is bound to.
+        if (!hasWarnedOfUnsupportedFiltering) {
+          hasWarnedOfUnsupportedFiltering = true;
+          this.logger.warn(
+            `${unsupportedFilteringMessage}. Requests for other hosts are answered with 404 instead of being passed on to other routes.`,
+          );
+        }
+        const method = httpAdapterRef.getRequestMethod(req);
+        const url = httpAdapterRef.getRequestUrl(req);
+        throw new NotFoundException(`Cannot ${method} ${url}`);
       }
       return next();
     };

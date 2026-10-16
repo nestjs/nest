@@ -7,6 +7,7 @@ import {
 } from '../../../common/decorators/http/request-mapping.decorator.js';
 import { RequestMethod } from '../../../common/enums/request-method.enum.js';
 import { VersioningType } from '../../../common/enums/version-type.enum.js';
+import { NotFoundException } from '../../../common/exceptions/not-found.exception.js';
 import { Injector } from '../../../core/injector/injector.js';
 import { ApplicationConfig } from '../../application-config.js';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception.js';
@@ -411,6 +412,81 @@ describe('RouterExplorer', () => {
 
         expect(firstExceptionsHandler.next).toHaveBeenCalledOnce();
         expect(secondExceptionsHandler.next).toHaveBeenCalledOnce();
+      });
+    });
+  });
+
+  describe('applyHostFilter', () => {
+    let handler: ReturnType<typeof vi.fn>;
+    let hostFilter: (req: any, res: any, next?: () => void) => unknown;
+
+    beforeEach(() => {
+      container.setHttpAdapter({
+        getRequestHostname: (req: any) => req.hostname,
+        getRequestMethod: (req: any) => req.method,
+        getRequestUrl: (req: any) => req.url,
+      });
+      handler = vi.fn();
+      // We're using type assertion here because `applyHostFilter` is private
+      hostFilter = (routerBuilder as any).applyHostFilter(
+        ':tenant.example.com',
+        handler,
+      );
+    });
+
+    it('should call the handler with the host params when the host matches', () => {
+      const req: Record<string, any> = { hostname: 'acme.example.com' };
+      hostFilter(req, 'res');
+
+      expect(handler).toHaveBeenCalledWith(req, 'res', undefined);
+      expect(req.hosts).toEqual({ tenant: 'acme' });
+    });
+
+    it('should pass a request for another host on to the next route', () => {
+      const next = vi.fn();
+      hostFilter({ hostname: 'example.org' }, 'res', next);
+
+      expect(next).toHaveBeenCalledOnce();
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    describe('when the adapter cannot pass the request on', () => {
+      const req = { hostname: 'example.org', method: 'GET', url: '/host?a=1' };
+
+      it('should answer a request for another host with 404 without the hosts', () => {
+        vi.spyOn((routerBuilder as any).logger, 'warn').mockImplementation(
+          () => {},
+        );
+        let error: unknown;
+        try {
+          hostFilter(req, 'res');
+        } catch (e) {
+          error = e;
+        }
+
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect((error as NotFoundException).getResponse()).toEqual({
+          message: 'Cannot GET /host?a=1',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+        expect(handler).not.toHaveBeenCalled();
+      });
+
+      it('should warn once that the adapter does not support filtering on hosts', () => {
+        const warn = vi
+          .spyOn((routerBuilder as any).logger, 'warn')
+          .mockImplementation(() => {});
+
+        expect(() => hostFilter(req, 'res')).toThrow(NotFoundException);
+        expect(() => hostFilter(req, 'res')).toThrow(NotFoundException);
+
+        expect(warn).toHaveBeenCalledOnce();
+        expect(warn).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'HTTP adapter does not support filtering on host: ":tenant.example.com"',
+          ),
+        );
       });
     });
   });
