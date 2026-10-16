@@ -1,8 +1,8 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { expect } from 'chai';
-import { of } from 'rxjs';
+import { lastValueFrom, of } from 'rxjs';
 import * as sinon from 'sinon';
-import { Injectable, UseGuards, UsePipes } from '../../../common';
+import { CallHandler, Injectable, UseGuards, UsePipes } from '../../../common';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { ApplicationConfig } from '../../../core/application-config';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
@@ -13,7 +13,10 @@ import { InterceptorsContextCreator } from '../../../core/interceptors/intercept
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { RpcContextCreator } from '../../context/rpc-context-creator';
+import {
+  getHandlerObservableNotifier,
+  RpcContextCreator,
+} from '../../context/rpc-context-creator';
 import { RpcProxy } from '../../context/rpc-proxy';
 import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
 import { RpcParamsFactory } from '../../factories/rpc-params-factory';
@@ -134,6 +137,87 @@ describe('RpcContextCreator', () => {
           );
         });
       });
+    });
+  });
+
+  describe('getHandlerObservableNotifier', () => {
+    class Controller {
+      handle(data: string): unknown {
+        return data;
+      }
+    }
+    const passThrough = {
+      intercept: (_context: unknown, next: CallHandler) => next.handle(),
+    };
+
+    const callProxy = async (
+      handle: () => unknown,
+      context: object,
+      { interceptors = [passThrough] as unknown[] } = {},
+    ) => {
+      const container: any = new NestContainer();
+      const interceptorsContextCreator = new InterceptorsContextCreator(
+        container,
+      );
+      sinon
+        .stub(interceptorsContextCreator, 'create')
+        .returns(interceptors as any);
+      const creator = new RpcContextCreator(
+        rpcProxy,
+        exceptionFiltersContext,
+        pipesCreator as any,
+        pipesConsumer as any,
+        guardsContextCreator as any,
+        guardsConsumer as any,
+        interceptorsContextCreator as any,
+        new InterceptorsConsumer() as any,
+      );
+      const controller = new Controller();
+      controller.handle = handle;
+
+      const proxy = creator.create(controller, handle as any, module, 'handle');
+      const result = await proxy('data', context);
+      await lastValueFrom(result, { defaultValue: undefined });
+    };
+
+    (
+      [
+        ['returns', () => of('value')],
+        ['resolves to', async () => of('value')],
+      ] as const
+    ).forEach(([description, handle]) => {
+      it(`should report through the context that the handler ${description} an Observable`, async () => {
+        const context = {};
+        const onHandlerObservable = sinon.spy();
+
+        await callProxy(handle, context);
+        getHandlerObservableNotifier(context)!.subscribe(onHandlerObservable);
+
+        expect(onHandlerObservable.calledOnce).to.be.true;
+      });
+    });
+    (
+      [
+        ['returns', () => 'value'],
+        ['resolves to', async () => 'value'],
+      ] as const
+    ).forEach(([description, handle]) => {
+      it(`should not report that the handler ${description} a value`, async () => {
+        const context = {};
+        const onHandlerObservable = sinon.spy();
+
+        await callProxy(handle, context);
+        getHandlerObservableNotifier(context)!.subscribe(onHandlerObservable);
+
+        expect(onHandlerObservable.called).to.be.false;
+      });
+    });
+    it('should not track the context when the result is not wrapped', async () => {
+      const context = {};
+
+      await callProxy(() => of('value'), context, { interceptors: [] });
+
+      expect(getHandlerObservableNotifier(context)).to.be.undefined;
     });
   });
 

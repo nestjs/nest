@@ -1,12 +1,26 @@
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import {
   AddressInfo,
   createConnection,
   Server as NetServer,
   Socket as NetSocket,
 } from 'net';
+import { Observable, tap } from 'rxjs';
 import * as sinon from 'sinon';
+import { CallHandler } from '../../../common';
+import { ApplicationConfig } from '../../../core/application-config';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
+import { NestContainer } from '../../../core/injector/container';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { RpcContextCreator } from '../../context/rpc-context-creator';
+import { RpcProxy } from '../../context/rpc-proxy';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { TcpSocket } from '../../helpers/tcp-socket';
 import { ServerTCP } from '../../server/server-tcp';
@@ -35,9 +49,13 @@ describe('ServerTCP', () => {
     beforeEach(() => {
       sinon.stub(server, 'getSocketInstance' as any).callsFake(() => socket);
     });
-    it('should bind message and error events to handler', () => {
+    it('should bind message, error and close events to handler', () => {
+      socket.on.resetHistory();
       server.bindHandler(null!);
-      expect(socket.on.calledTwice).to.be.true;
+      const events = socket.on.getCalls().map(call => call.args[0]);
+      expect(new Set(events)).to.deep.equal(
+        new Set(['message', 'error', 'close']),
+      );
     });
     it('should track the accepted socket so that it can be closed on shutdown', () => {
       const netSocket = { on: sinon.spy(), destroy: sinon.spy() };
@@ -202,6 +220,127 @@ describe('ServerTCP', () => {
       };
       await server.handleMessage(socket, deeplyNestedEvent);
       expect(handleEventStub.calledOnce).to.be.true;
+    });
+  });
+  describe('when the peer disconnects', () => {
+    const msg = { pattern: 'test', data: 'tests', id: '3' };
+    let socket: EventEmitter & { sendMessage: sinon.SinonSpy };
+
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+    const createStream = () => {
+      const stream = { subscribed: false, tornDown: false };
+      const observable = new Observable(() => {
+        stream.subscribed = true;
+        return () => (stream.tornDown = true);
+      });
+      return { stream, observable };
+    };
+
+    beforeEach(() => {
+      socket = Object.assign(new EventEmitter(), { sendMessage: sinon.spy() });
+      sinon.stub(server, 'getSocketInstance' as any).returns(socket);
+      sinon.stub(untypedServer, 'handleError');
+      server.bindHandler(null!);
+    });
+
+    ['close', 'error'].forEach(event => {
+      it(`should end the stream of a handler that returned an Observable on "${event}"`, async () => {
+        const { stream, observable } = createStream();
+        const endHook = sinon.spy();
+        untypedServer.onProcessingEndHook = endHook;
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: async () => observable,
+        });
+
+        await server.handleMessage(socket as any, msg);
+        expect(stream.subscribed).to.be.true;
+
+        socket.emit(event, new Error('read ECONNRESET'));
+
+        expect(stream.tornDown).to.be.true;
+        await flush();
+        expect(endHook.calledOnce).to.be.true;
+      });
+    });
+    it('should not subscribe to an Observable returned after the peer has disconnected', async () => {
+      const { stream, observable } = createStream();
+      untypedServer.messageHandlers = objectToMap({
+        [msg.pattern]: async () => observable,
+      });
+
+      socket.emit('close');
+      await server.handleMessage(socket as any, msg);
+
+      expect(stream.subscribed).to.be.false;
+    });
+
+    describe('and the handler has an interceptor', () => {
+      let interceptorWork: sinon.SinonSpy;
+
+      const createHandler = (handle: () => unknown) => {
+        const container: any = new NestContainer();
+        const interceptorsContextCreator = new InterceptorsContextCreator(
+          container,
+        );
+        sinon.stub(interceptorsContextCreator, 'create').returns([
+          {
+            intercept: (_context: unknown, next: CallHandler) =>
+              next.handle().pipe(tap(value => interceptorWork(value))),
+          },
+        ] as any);
+        const contextCreator = new RpcContextCreator(
+          new RpcProxy(),
+          new ExceptionFiltersContext(container, new ApplicationConfig()),
+          new PipesContextCreator(container),
+          new PipesConsumer(),
+          new GuardsContextCreator(container),
+          new GuardsConsumer(),
+          interceptorsContextCreator,
+          new InterceptorsConsumer(),
+        );
+        const controller = { handle };
+        return contextCreator.create(
+          controller,
+          handle as any,
+          'module',
+          'handle',
+        );
+      };
+
+      beforeEach(() => {
+        interceptorWork = sinon.spy();
+      });
+
+      it('should let the interceptor finish when the handler resolves to a value', async () => {
+        let resolveValue: (value: string) => void;
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: createHandler(
+            () => new Promise(resolve => (resolveValue = resolve)),
+          ),
+        });
+
+        await server.handleMessage(socket as any, msg);
+        await flush();
+        socket.emit('close');
+        resolveValue!('value');
+        await flush();
+
+        expect(interceptorWork.calledWith('value')).to.be.true;
+      });
+      it('should end the stream once the handler resolves to an Observable', async () => {
+        const { stream, observable } = createStream();
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: createHandler(async () => observable),
+        });
+
+        await server.handleMessage(socket as any, msg);
+        await flush();
+        expect(stream.subscribed).to.be.true;
+
+        socket.emit('close');
+
+        expect(stream.tornDown).to.be.true;
+      });
     });
   });
   describe('handleClose', () => {

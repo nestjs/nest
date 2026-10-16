@@ -7,7 +7,7 @@ import {
   Controller,
   PipeTransform,
 } from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
@@ -23,13 +23,35 @@ import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-con
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { Observable } from 'rxjs';
+import { isObservable, Observable, ReplaySubject, Subject } from 'rxjs';
 import { PARAM_ARGS_METADATA } from '../constants';
 import { RpcException } from '../exceptions';
 import { RpcParamsFactory } from '../factories/rpc-params-factory';
 import { ExceptionFiltersContext } from './exception-filters-context';
 import { DEFAULT_CALLBACK_METADATA } from './rpc-metadata-constants';
 import { RpcProxy } from './rpc-proxy';
+
+/**
+ * Notifiers that emit once the handler itself has returned (or resolved to)
+ * an Observable, keyed by the context (the second argument) it was called
+ * with. Only kept when interceptors hand back an Observable in place of its
+ * result.
+ */
+const handlerObservableNotifiers = new WeakMap<object, Subject<void>>();
+
+/**
+ * Returns a notifier that emits once the handler called with `context` has
+ * returned (or resolved to) an Observable. Returns `undefined` when the
+ * result of the handler is not wrapped by interceptors, which leaves the
+ * caller to look at it directly.
+ */
+export function getHandlerObservableNotifier(
+  context: unknown,
+): Observable<void> | undefined {
+  return isObject(context)
+    ? handlerObservableNotifiers.get(context)
+    : undefined;
+}
 
 type RpcParamProperties = ParamProperties & { metatype?: any };
 export interface RpcHandlerMetadata {
@@ -114,16 +136,33 @@ export class RpcContextCreator {
       contextType,
     );
 
-    const handler = (initialArgs: unknown[], args: unknown[]) => async () => {
-      if (fnApplyPipes) {
-        await fnApplyPipes(initialArgs, ...args);
-        return callback.apply(instance, initialArgs);
-      }
-      return callback.apply(instance, args);
-    };
+    const handler =
+      (
+        initialArgs: unknown[],
+        args: unknown[],
+        handlerObservable$?: Subject<void>,
+      ) =>
+      async () => {
+        fnApplyPipes && (await fnApplyPipes(initialArgs, ...args));
+        const result = callback.apply(
+          instance,
+          fnApplyPipes ? initialArgs : args,
+        );
+        handlerObservable$ &&
+          this.notifyIfObservable(result, handlerObservable$);
+        return result;
+      };
+
+    // Interceptors always hand back an Observable, so whether the handler
+    // itself returned one can only be observed where it runs. Transports read
+    // it with "getHandlerObservableNotifier".
+    const isResultWrapped = !isEmpty(interceptors);
 
     return this.rpcProxy.create(async (...args: unknown[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
+      const handlerObservable$ = isResultWrapped
+        ? this.attachHandlerObservableNotifier(args[1])
+        : undefined;
       fnCanActivate && (await fnCanActivate(args));
 
       return this.interceptorsConsumer.intercept(
@@ -131,7 +170,7 @@ export class RpcContextCreator {
         args,
         instance,
         callback,
-        handler(initialArgs, args),
+        handler(initialArgs, args, handlerObservable$),
         contextType,
       ) as Promise<Observable<unknown>>;
     }, exceptionHandler);
@@ -279,5 +318,40 @@ export class RpcContextCreator {
     return isEmpty(pipes)
       ? value
       : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
+  }
+
+  /**
+   * Returns the notifier of the context, which all the handlers called with
+   * it share (e.g. the event handlers of one pattern).
+   */
+  private attachHandlerObservableNotifier(
+    context: unknown,
+  ): Subject<void> | undefined {
+    if (!isObject(context)) {
+      return undefined;
+    }
+    let handlerObservable$ = handlerObservableNotifiers.get(context);
+    if (!handlerObservable$) {
+      handlerObservable$ = new ReplaySubject<void>(1);
+      handlerObservableNotifiers.set(context, handlerObservable$);
+    }
+    return handlerObservable$;
+  }
+
+  private notifyIfObservable(
+    result: unknown,
+    handlerObservable$: Subject<void>,
+  ) {
+    if (isObservable(result)) {
+      handlerObservable$.next();
+    } else if (result instanceof Promise) {
+      // Only native promises are observed: calling `then()` on an arbitrary
+      // thenable (e.g. a lazy query builder) could repeat its side effects.
+      // This extra reaction leaves the handler's own promise chain untouched.
+      result.then(
+        value => isObservable(value) && handlerObservable$.next(),
+        () => undefined,
+      );
+    }
   }
 }

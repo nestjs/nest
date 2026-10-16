@@ -2,6 +2,8 @@ import { Type } from '@nestjs/common';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
+import { isObservable, Observable, of, ReplaySubject } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
   EADDRINUSE,
@@ -10,6 +12,7 @@ import {
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
+import { getHandlerObservableNotifier } from '../context/rpc-context-creator';
 import { TcpContext } from '../ctx-host/tcp.context';
 import { Transport } from '../enums';
 import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events';
@@ -55,6 +58,15 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
    * shutdown and handlers keep running on already established connections.
    */
   protected readonly openSockets = new Set<Socket>();
+  /**
+   * Notifiers that emit once a socket bound by "bindHandler" can no longer be
+   * written to. They replay, so that a response stream that only starts after
+   * the peer has gone ends right away as well.
+   */
+  protected readonly disconnectNotifiers = new WeakMap<
+    TcpSocket,
+    Observable<void>
+  >();
 
   constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
@@ -100,6 +112,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.trackOpenSocket(socket);
 
     const readSocket = this.getSocketInstance(socket);
+    this.trackDisconnect(readSocket);
     readSocket.on('message', (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg).catch(err => this.handleError(err)),
     );
@@ -132,8 +145,10 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       this.transportId,
       tcpContext,
       async () => {
-        const response$ = this.transformToObservable(
+        const response$ = this.endOnDisconnect(
           await handler(packet.data, tcpContext),
+          tcpContext,
+          socket,
         );
 
         response$ &&
@@ -253,6 +268,41 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected closeOpenSockets() {
     this.openSockets.forEach(socket => socket.destroy());
     this.openSockets.clear();
+  }
+
+  /**
+   * Notes when the socket can no longer be written to: "TcpSocket" drops every
+   * message once the socket has closed or errored.
+   */
+  protected trackDisconnect(socket: TcpSocket) {
+    const disconnect$ = new ReplaySubject<void>(1);
+    socket.on(TcpEventsMap.CLOSE, () => disconnect$.next());
+    socket.on(TcpEventsMap.ERROR, () => disconnect$.next());
+    this.disconnectNotifiers.set(socket, disconnect$);
+  }
+
+  /**
+   * Turns a handler result into the response stream. As for HTTP, the stream
+   * ends once the peer disconnects only if the handler itself returned (or
+   * resolved to) an Observable: any other handler, and the interceptors
+   * around it, run to completion.
+   */
+  protected endOnDisconnect(
+    result: unknown,
+    context: TcpContext,
+    socket: TcpSocket,
+  ): Observable<unknown> {
+    const response$ = this.transformToObservable(result);
+    const disconnect$ = this.disconnectNotifiers.get(socket);
+    if (!isObservable(result) || !disconnect$) {
+      return response$;
+    }
+    // Without interceptors, "result" is what the handler returned
+    const handlerObservable$: Observable<unknown> =
+      getHandlerObservableNotifier(context) ?? of(null);
+    return response$.pipe(
+      takeUntil(handlerObservable$.pipe(switchMap(() => disconnect$))),
+    );
   }
 
   protected getSocketInstance(socket: Socket): TcpSocket {
