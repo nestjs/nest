@@ -8,21 +8,45 @@ import {
   filter,
   first,
   map,
-  mergeMap,
   share,
   takeUntil,
 } from 'rxjs/operators';
 import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/internal';
-import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
+import {
+  DEFAULT_MAX_CONCURRENT_MESSAGES,
+  DISCONNECT_EVENT,
+  mergeMapBounded,
+} from '@nestjs/websockets/internal';
+
+type IoAdapterOptions = {
+  /**
+   * How many messages of one event a client may have handled at the same
+   * time. Later ones wait for their turn. Set it to `Infinity` to lift the
+   * limit.
+   *
+   * @default 1000
+   */
+  maxConcurrentMessages?: number;
+};
 
 /**
  * @publicApi
  */
 export class IoAdapter extends AbstractWsAdapter {
   protected readonly logger = new Logger(IoAdapter.name);
+  protected readonly maxConcurrentMessages: number;
   private readonly disconnectMap = new WeakMap<Socket, Observable<any>>();
+
+  constructor(
+    appOrHttpServer?: INestApplicationContext | object,
+    options?: IoAdapterOptions,
+  ) {
+    super(appOrHttpServer);
+    this.maxConcurrentMessages =
+      options?.maxConcurrentMessages ?? DEFAULT_MAX_CONCURRENT_MESSAGES;
+  }
 
   public create(
     port: number,
@@ -59,7 +83,9 @@ export class IoAdapter extends AbstractWsAdapter {
 
     handlers.forEach(({ message, callback, isAckHandledManually }) => {
       const source$ = fromEvent(socket, message).pipe(
-        mergeMap((payload: any) => {
+        // How many messages are pending at once is up to the client: engine.io
+        // hands over a whole polling payload before any handler can settle.
+        mergeMapBounded((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
           // defer turns a sync throw into an error notification and catchError
           // stops it from tearing down this event's stream, which would silence
@@ -73,7 +99,7 @@ export class IoAdapter extends AbstractWsAdapter {
               return EMPTY;
             }),
           );
-        }),
+        }, this.maxConcurrentMessages),
         takeUntil(disconnect$),
       );
       source$.subscribe(([response, ack, isAckHandledManually]) => {

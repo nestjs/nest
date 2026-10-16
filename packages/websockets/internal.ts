@@ -7,3 +7,4 @@
  */
 
 export * from './constants.js';
+export * from './utils/merge-map-bounded.util.js';
