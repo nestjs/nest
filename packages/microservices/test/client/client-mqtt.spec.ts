@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import { EMPTY } from 'rxjs';
 import { ClientMqtt } from '../../client/client-mqtt.js';
+import { MQTT_MAX_TOPIC_LENGTH } from '../../constants.js';
+import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception.js';
 import { ReadPacket } from '../../interfaces/index.js';
 import { MqttRecord } from '../../record-builders/index.js';
 
@@ -118,6 +120,52 @@ describe('ClientMqtt', () => {
         expect(client['subscriptionsCount'].has(`${pattern}/reply`)).toBe(
           false,
         );
+      });
+    });
+    describe('when a topic would exceed the maximum topic length', () => {
+      // A pattern that leaves just enough room for "/reply"
+      const longestPattern = 'a'.repeat(
+        MQTT_MAX_TOPIC_LENGTH - '/reply'.length,
+      );
+
+      it('should fail the request without subscribing or publishing', () => {
+        const callback = vi.fn();
+
+        client['publish'](
+          { pattern: `${longestPattern}a`, data: 'data' },
+          callback,
+        );
+
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.any(MaxMqttTopicLengthExceededException),
+        });
+        expect(subscribeSpy).not.toHaveBeenCalled();
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].size).toBe(0);
+      });
+      it('should count the length in bytes', () => {
+        const callback = vi.fn();
+
+        // "é" takes two bytes
+        client['publish'](
+          { pattern: `${longestPattern.slice(1)}é`, data: 'data' },
+          callback,
+        );
+
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.any(MaxMqttTopicLengthExceededException),
+        });
+        expect(subscribeSpy).not.toHaveBeenCalled();
+      });
+      it('should send a request whose topics fit', () => {
+        const callback = vi.fn();
+
+        client['publish']({ pattern: longestPattern, data: 'data' }, callback);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(subscribeSpy.mock.calls[0][0]).toBe(`${longestPattern}/reply`);
+        expect(publishSpy.mock.calls[0][0]).toBe(longestPattern);
       });
     });
     describe('when disposed before the subscription is confirmed', () => {
@@ -929,6 +977,14 @@ describe('ClientMqtt', () => {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).toBeInstanceOf(Error),
       );
+    });
+    it('should not publish an event whose topic exceeds the maximum topic length', () => {
+      const pattern = 'a'.repeat(MQTT_MAX_TOPIC_LENGTH + 1);
+
+      expect(() => client['dispatchEvent']({ pattern, data: 'data' })).toThrow(
+        MaxMqttTopicLengthExceededException,
+      );
+      expect(publishStub).not.toHaveBeenCalled();
     });
     describe('headers', () => {
       it('should not generate headers if none are configured', async () => {

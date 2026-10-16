@@ -1,7 +1,13 @@
 import { createRequire } from 'module';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
-import { ECONNREFUSED, ENOTFOUND, MQTT_DEFAULT_URL } from '../constants.js';
+import {
+  ECONNREFUSED,
+  ENOTFOUND,
+  MQTT_DEFAULT_URL,
+  MQTT_MAX_TOPIC_LENGTH,
+} from '../constants.js';
+import { MaxMqttTopicLengthExceededException } from '../errors/max-mqtt-topic-length-exceeded.exception.js';
 import {
   MqttEvents,
   MqttEventsMap,
@@ -320,6 +326,8 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResponsePattern(pattern);
+      this.assertTopicLength(this.getRequestPattern(pattern));
+      this.assertTopicLength(responseChannel);
 
       // Counted right away rather than once published: a request that waits
       // for the broker to acknowledge the subscription depends on it as well,
@@ -407,6 +415,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    this.assertTopicLength(pattern);
     const options =
       isObject(packet?.data) && packet.data instanceof MqttRecord
         ? packet.data.options
@@ -442,6 +451,21 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       this.subscriptionsCount.set(channel, count);
     } else {
       this.subscriptionsCount.delete(channel);
+    }
+  }
+
+  /**
+   * A topic's length is encoded in two bytes. mqtt.js only fails on a longer
+   * topic once it has written the start of the packet, so the broker would
+   * read the packets sent after it as the rest of that packet.
+   */
+  protected assertTopicLength(topic: string) {
+    const length = Buffer.byteLength(topic);
+    if (length > MQTT_MAX_TOPIC_LENGTH) {
+      throw new MaxMqttTopicLengthExceededException(
+        length,
+        MQTT_MAX_TOPIC_LENGTH,
+      );
     }
   }
 
