@@ -47,15 +47,18 @@ export function getMediaTypeVersion(
   const mediaRanges = ([] as string[])
     .concat(acceptHeader ?? [])
     .flatMap(value => splitOutsideQuotes(value, ','));
+
   for (const mediaRange of mediaRanges) {
     const [, ...parameters] = splitOutsideQuotes(mediaRange, ';');
     for (const parameter of parameters) {
       const trimmedParameter = parameter.trim();
       if (trimmedParameter.startsWith(key)) {
         const version = trimmedParameter.slice(key.length);
-        return version.startsWith('"') && version.endsWith('"')
-          ? version.slice(1, -1).replace(/\\([\s\S])/g, '$1')
-          : version;
+        if (version.startsWith('"') && version.endsWith('"')) {
+          return version.slice(1, -1).replace(/\\([\s\S])/g, '$1');
+        } else {
+          return version;
+        }
       }
     }
   }
