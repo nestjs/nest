@@ -191,6 +191,10 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
         this.tlsOptions,
         this.bindHandler.bind(this),
       );
+      // "bindHandler" only runs once the TLS handshake is over. The raw socket
+      // is tracked from the moment it is accepted, so that "close" also tears
+      // down connections that are still in the middle of their handshake.
+      this.server.on('connection', socket => this.trackOpenSocket(socket));
     } else {
       // TLS disabled, use net server
       this.server = net.createServer(this.bindHandler.bind(this));
