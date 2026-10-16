@@ -271,8 +271,19 @@ export class RouterResponseController {
           // skip the write. Otherwise headers are sent immediately rather
           // than waiting for the first Observable emission.
           setTimeout(() => {
-            if (!settled) {
-              stream.commitHeaders();
+            if (settled) {
+              return;
+            }
+            stream.commitHeaders();
+            // A HEAD response has no body, so it is complete once the headers
+            // are sent. Left open, it would hold back the next request on the
+            // same keep-alive connection until the producer completes.
+            if (request.method === 'HEAD') {
+              settled = true;
+              finalize();
+              subscription?.unsubscribe();
+              endStream();
+              resolve();
             }
           }, 0);
         })

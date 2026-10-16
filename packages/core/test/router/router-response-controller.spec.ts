@@ -1093,6 +1093,40 @@ data: test
       request.destroy();
     });
 
+    it('should end the response to a HEAD request once the headers are committed', async () => {
+      const writeHead = vi.fn();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      Object.assign(response, { writeHead, flushHeaders: vi.fn() });
+      const request = Object.assign(attachSocket(new PassThrough()), {
+        method: 'HEAD',
+      });
+      const teardown = vi.fn();
+      // A producer that never completes, like an interval
+      const result = new Observable<string>(() => teardown);
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      await vi.waitFor(() => expect(response.writableEnded).toBe(true));
+      await ssePromise;
+
+      expect(writeHead).toHaveBeenCalledOnce();
+      expect(writeHead).toHaveBeenCalledWith(
+        200,
+        expect.objectContaining({ 'Content-Type': 'text/event-stream' }),
+      );
+      expect(teardown).toHaveBeenCalledOnce();
+      expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).toBe(true);
+      expect(request.socket.listenerCount('close')).toBe(0);
+    });
+
     it('should write number and boolean data as JSON', async () => {
       class Sink extends Writable {
         private readonly chunks: string[] = [];
