@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { join } from 'path';
 import { EventEmitter } from 'events';
-import { Writable } from 'stream';
+import { Duplex, Writable } from 'stream';
 import {
   BehaviorSubject,
   concat,
@@ -14,7 +14,7 @@ import {
   toArray,
   throwError,
 } from 'rxjs';
-import { ignoreElements, map } from 'rxjs/operators';
+import { ignoreElements, map, tap } from 'rxjs/operators';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
 import { GrpcMethodStreamingType, GrpcStatus } from '../../index.js';
@@ -914,6 +914,68 @@ describe('ServerGrpc', () => {
           }
         });
       });
+    });
+  });
+
+  describe('when the client of a bidirectional call does not read the responses', () => {
+    // Like a grpc-js call: a response is written once the client reads it,
+    // and the requests are read for as long as the call is flowing
+    function createCall() {
+      const pendingWrites: Array<() => void> = [];
+      const call = Object.assign(
+        new Duplex({
+          objectMode: true,
+          readableHighWaterMark: 1,
+          writableHighWaterMark: 1,
+          read() {},
+          write(_chunk, _encoding, callback) {
+            pendingWrites.push(callback);
+          },
+        }),
+        { request: {}, metadata: {}, cancelled: false },
+      );
+      const readResponses = () =>
+        pendingWrites.splice(0).forEach(write => write());
+      return { call, readResponses };
+    }
+
+    const tick = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should stop reading requests until the client reads the responses', async () => {
+      const { call, readResponses } = createCall();
+      const handled: number[] = [];
+      const echo = (requests: any) => {
+        requests.drainBuffer?.();
+        return requests.pipe(tap((request: number) => handled.push(request)));
+      };
+
+      const result = server.createRequestStreamMethod(echo, true)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      for (let request = 0; request < 5; request++) {
+        call.push(request);
+      }
+      await tick();
+
+      expect(handled).toEqual([0]);
+      expect(call.isPaused()).toBe(true);
+
+      readResponses();
+      await tick();
+      expect(handled).toEqual([0, 1]);
+
+      while (handled.length < 5) {
+        readResponses();
+        await tick();
+      }
+      call.push(null);
+      await tick();
+      readResponses();
+      await result;
+
+      expect(handled).toEqual([0, 1, 2, 3, 4]);
     });
   });
 

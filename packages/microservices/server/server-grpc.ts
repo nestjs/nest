@@ -63,6 +63,9 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   on: Function;
   off: Function;
   emit: Function;
+  // Of the request stream, which only a call that streams requests has
+  pause?: Function;
+  resume?: Function;
   cancelled?: boolean;
 }
 
@@ -428,7 +431,8 @@ export class ServerGrpc extends Server<never, never> {
    * Writes an observable to a GRPC call.
    *
    * This function will ensure that backpressure is managed while writing values
-   * that come from an observable to a GRPC call.
+   * that come from an observable to a GRPC call. On a bidirectional call, the
+   * requests stop being read while the client is not reading the responses.
    *
    * @param source The observable we want to write out to the GRPC call.
    * @param call The GRPC call we want to write to.
@@ -451,6 +455,7 @@ export class ServerGrpc extends Server<never, never> {
       let error: any;
       let shouldResolveAfterDraining = false;
       let writing = true;
+      let requestsPaused = false;
 
       // Used to manage finalization
       const subscription = new Subscription();
@@ -470,17 +475,22 @@ export class ServerGrpc extends Server<never, never> {
 
       const drain = () => {
         writing = true;
-        while (valuesWaitingToBeDrained.length > 0) {
-          const value = valuesWaitingToBeDrained.shift();
-          if (writing) {
-            // The first time `call.write` returns false, we need to stop.
-            // It wrote the value, but it won't write anything else.
-            writing = call.write(value);
-            if (!writing) {
-              // We can't write anymore so we need to wait for the drain event
-              return;
-            }
-          }
+        let written = 0;
+        while (writing && written < valuesWaitingToBeDrained.length) {
+          // The first time `call.write` returns false, we need to stop.
+          // It wrote the value, but it won't write anything else.
+          writing = call.write(valuesWaitingToBeDrained[written++]);
+        }
+        // Removed at once, as shifting them one by one is quadratic
+        valuesWaitingToBeDrained.splice(0, written);
+        if (!writing) {
+          // We can't write anymore so we need to wait for the drain event
+          return;
+        }
+        if (requestsPaused) {
+          // The client has read the responses, so read its requests again
+          requestsPaused = false;
+          call.resume?.();
         }
 
         if (shouldResolveAfterDraining) {
@@ -511,6 +521,12 @@ export class ServerGrpc extends Server<never, never> {
           next(value) {
             if (writing) {
               writing = call.write(value);
+              if (!writing && call.pause) {
+                // The responses to the requests read meanwhile would all be
+                // buffered here, as the client is not reading them.
+                call.pause();
+                requestsPaused = true;
+              }
             } else {
               // If we can't write, that's because we need to
               // wait for the drain event before we can write again
