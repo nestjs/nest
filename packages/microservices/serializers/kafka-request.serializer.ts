@@ -1,3 +1,4 @@
+import { MaxKafkaHeadersExceededException } from '../errors/max-kafka-headers-exceeded.exception.js';
 import { Serializer } from '../interfaces/serializer.interface.js';
 import {
   isNil,
@@ -6,6 +7,10 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
+
+// kafkajs encodes each value of the headers (a repeated header has several)
+// as a header of its own, at about 1 kB apiece
+const MAX_HEADER_VALUES = 10_000;
 
 export interface KafkaRequest<T = any> {
   key: Buffer | string | null;
@@ -34,9 +39,19 @@ export class KafkaRequestSerializer implements Serializer<
     // would turn each of its characters or items into a header
     const headers =
       isObject(record.headers) && !Array.isArray(record.headers)
-        ? { ...record.headers }
+        ? record.headers
         : {};
-    const request: KafkaRequest = { ...record, headers };
+    let headerValues = 0;
+    for (const headerValue of Object.values(headers)) {
+      headerValues += Array.isArray(headerValue) ? headerValue.length : 1;
+    }
+    if (headerValues > MAX_HEADER_VALUES) {
+      throw new MaxKafkaHeadersExceededException(
+        headerValues,
+        MAX_HEADER_VALUES,
+      );
+    }
+    const request: KafkaRequest = { ...record, headers: { ...headers } };
 
     request.value = this.encode(request.value);
     if (!isNil(request.key)) {
