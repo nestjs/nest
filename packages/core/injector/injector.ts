@@ -289,6 +289,9 @@ export class Injector {
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ) {
     if (this.shouldSkipProviderLoading(wrapper, resolutionContext)) {
+      if (!resolutionContext.inquirer) {
+        await this.lookupSkippedProviderDependencies(wrapper, moduleRef);
+      }
       return;
     }
     const providers = moduleRef.providers;
@@ -1125,7 +1128,75 @@ export class Injector {
     );
   }
 
-  protected shouldSkipProviderLoading(
+  /**
+   * Request-scoped and transient providers are not created at bootstrap, so
+   * their dependencies are only looked up here, without creating anything.
+   * A missing dependency then fails at bootstrap rather than on first use.
+   * Every lookup is awaited before the first failure is thrown.
+   */
+  protected async lookupSkippedProviderDependencies(
+    wrapper: InstanceWrapper<Injectable>,
+    moduleRef: Module,
+  ) {
+    const isFactoryProvider = !isNil(wrapper.inject);
+    if (!isFactoryProvider && !isFunction(wrapper.metatype)) {
+      return;
+    }
+    const [dependencies, optionalDependenciesIds] = isFactoryProvider
+      ? this.getFactoryProviderDependencies(wrapper)
+      : this.getClassDependencies(wrapper);
+    const properties = isFactoryProvider
+      ? []
+      : this.reflectProperties(wrapper.metatype as Type<any>);
+
+    const lookup = async (
+      param: unknown,
+      dependencyContext: InjectorDependencyContext,
+      keyOrIndex: string | symbol | number,
+      isOptional: boolean,
+    ) => {
+      try {
+        await this.resolveSingleParam(
+          wrapper,
+          param as Type | string | symbol,
+          dependencyContext,
+          moduleRef,
+          { contextId: STATIC_CONTEXT },
+          keyOrIndex,
+        );
+      } catch (err) {
+        if (!isOptional) {
+          throw err;
+        }
+      }
+    };
+    const results = await Promise.allSettled([
+      ...dependencies.map((param, index) =>
+        lookup(
+          param,
+          { index, dependencies },
+          index,
+          optionalDependenciesIds.includes(index),
+        ),
+      ),
+      ...properties.map(({ key, name, isOptional }) =>
+        lookup(
+          name,
+          { key, name: name as Function | string | symbol },
+          key,
+          !!isOptional,
+        ),
+      ),
+    ]);
+    const failure = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (failure) {
+      throw failure.reason;
+    }
+  }
+
+  private shouldSkipProviderLoading(
     wrapper: InstanceWrapper<Injectable>,
     resolutionContext: ResolutionContext,
   ): boolean {
