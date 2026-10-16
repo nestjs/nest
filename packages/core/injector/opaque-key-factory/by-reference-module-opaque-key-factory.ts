@@ -32,7 +32,8 @@ export class ByReferenceModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory
     dynamicMetadata: Partial<DynamicModule> | undefined,
     originalRef: Type | DynamicModule | ForwardReference,
   ): string {
-    if (originalRef[K_MODULE_ID]) {
+    // Own property only: a subclass would inherit the id of the module it extends.
+    if (Object.prototype.hasOwnProperty.call(originalRef, K_MODULE_ID)) {
       return originalRef[K_MODULE_ID];
     }
 
