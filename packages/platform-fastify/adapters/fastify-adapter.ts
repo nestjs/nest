@@ -914,13 +914,24 @@ export class FastifyAdapter<
   }
 
   public appendHeader(response: any, name: string, value: string) {
+    // A set-cookie value can live on the reply or only on the raw response
+    // (e.g., set by a middleware). Reply.getHeader() reads both, and the
+    // merged list is written to both: reply.send() sends the reply headers,
+    // while a hijacked reply or a handler that ends reply.raw sends the raw
+    // ones.
+    if (String(name).toLowerCase() === 'set-cookie') {
+      const current = response.getHeader(name);
+      const values =
+        current === undefined ? [value] : [current, value].flat().map(String);
+      response.removeHeader(name);
+      response.header(name, values);
+      if (!response.raw.headersSent) {
+        response.raw.setHeader(name, values);
+      }
+      return response;
+    }
     const current = response.getHeader(name);
     if (current === undefined) {
-      return response.header(name, value);
-    }
-    // Fastify Reply.header() already concatenates set-cookie.
-    // Re-passing the accumulated list would duplicate previous cookies.
-    if (String(name).toLowerCase() === 'set-cookie') {
       return response.header(name, value);
     }
     const values = Array.isArray(current) ? current : [current];
