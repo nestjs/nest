@@ -115,10 +115,13 @@ describe('ClientMqtt', () => {
         expect(callback).toHaveBeenCalledWith({ err: error });
         expect(publishSpy).not.toHaveBeenCalled();
         expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].has(`${pattern}/reply`)).toBe(
+          false,
+        );
       });
     });
     describe('when disposed before the subscription is confirmed', () => {
-      it('should not publish, count the subscription, nor unsubscribe', () => {
+      it('should not publish and give the subscription up again', () => {
         let confirmSubscription: () => void = () => {};
         subscribeSpy.mockImplementation((name, fn) => {
           confirmSubscription = () => fn();
@@ -134,9 +137,35 @@ describe('ClientMqtt', () => {
         expect(client['subscriptionsCount'].has(`${pattern}/reply`)).toBe(
           false,
         );
+        expect(unsubscribeSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}/reply`,
+        );
+        expect(callback).not.toHaveBeenCalled();
+      });
+    });
+    describe('when a request finishes while another waits for the subscription', () => {
+      it('should keep the response pattern subscribed for the waiting one', () => {
+        // Like mqtt.js, confirm a topic that is already being subscribed to
+        // right away, and the first subscription once the broker answers
+        const topics = new Set<string>();
+        let confirmSubscription: () => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          if (topics.has(name)) {
+            return fn();
+          }
+          topics.add(name);
+          confirmSubscription = () => fn();
+        });
+        unsubscribeSpy.mockImplementation(name => topics.delete(name));
+
+        client['publish'](msg, vi.fn());
+        const disposeOther = client['publish'](msg, vi.fn());
+        disposeOther();
+        confirmSubscription();
+
         expect(unsubscribeSpy).not.toHaveBeenCalled();
-        expect(callback).not.toHaveBeenCalled();
-        expect(callback).not.toHaveBeenCalled();
+        expect(publishSpy).toHaveBeenCalledTimes(2);
+        expect(client['subscriptionsCount'].get(`${pattern}/reply`)).toBe(1);
       });
     });
     describe('dispose callback', () => {

@@ -315,19 +315,25 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    let undoBookkeeping = () => {};
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResponsePattern(pattern);
 
-      let subscriptionsCount =
+      // Counted right away rather than once published: a request that waits
+      // for the broker to acknowledge the subscription depends on it as well,
+      // so a concurrent request that finishes first must not unsubscribe.
+      const subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
-      let isPublished = false;
-      let isTornDown = false;
+      this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
+      let isCounted = true;
 
-      const undoBookkeeping = () => {
-        isTornDown = true;
-        isPublished = false;
+      undoBookkeeping = () => {
+        if (!isCounted) {
+          return;
+        }
+        isCounted = false;
         this.setSubscriptionsCount(
           responseChannel,
           (this.subscriptionsCount.get(responseChannel) || 1) - 1,
@@ -336,13 +342,10 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       };
 
       const publishPacket = () => {
-        if (isTornDown) {
+        if (!isCounted) {
           return;
         }
-        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
-        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
-        isPublished = true;
 
         try {
           const options =
@@ -357,7 +360,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
             serializedPacket,
             this.mergePacketOptions(options),
             (err?: Error) => {
-              if (err && !isTornDown) {
+              if (err && isCounted) {
                 undoBookkeeping();
                 callback({ err });
               }
@@ -366,34 +369,37 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         } catch (err) {
           // The broker can acknowledge the subscription later, so this runs
           // outside the outer catch and has to undo its own work. Only the
-          // bookkeeping though: a concurrent request on this pattern may still
-          // be waiting for its own subscribe reply, so the broker subscription
-          // is left to self-heal, as in #17671.
+          // bookkeeping though, as in #17822: the next request on this
+          // pattern reuses the subscription.
           undoBookkeeping();
           callback({ err });
         }
       };
 
       const cleanup = () => {
-        isTornDown = true;
-        if (!isPublished) {
+        if (!isCounted) {
           return;
         }
-        isPublished = false;
+        isCounted = false;
         this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
 
       if (subscriptionsCount <= 0) {
-        this.mqttClient!.subscribe(responseChannel, (err: any) =>
-          err ? callback({ err }) : publishPacket(),
-        );
+        this.mqttClient!.subscribe(responseChannel, (err: any) => {
+          if (err) {
+            undoBookkeeping();
+            return callback({ err });
+          }
+          publishPacket();
+        });
       } else {
         publishPacket();
       }
 
       return cleanup;
     } catch (err) {
+      undoBookkeeping();
       callback({ err });
       return () => {};
     }
