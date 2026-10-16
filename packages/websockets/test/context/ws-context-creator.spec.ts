@@ -6,6 +6,7 @@ import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator.js';
 import { STATIC_CONTEXT } from '../../../core/injector/constants.js';
 import { NestContainer } from '../../../core/injector/container.js';
+import { InstanceWrapper } from '../../../core/injector/instance-wrapper.js';
 import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer.js';
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer.js';
@@ -185,6 +186,29 @@ describe('WsContextCreator', () => {
         expect(
           contextCreator.getMetadata(new ChatGateway(), 'handle', 'ws'),
         ).toBe(metadata);
+      });
+    });
+    describe('when the "constructor" of the gateway prototype was overwritten', () => {
+      it('should apply the class-level guards of the registered class', async () => {
+        class Mixin {}
+        @UseGuards({ canActivate: () => false })
+        class MixedIn {
+          handle() {
+            return 'handled';
+          }
+        }
+        // What mixin helpers copying every property of the prototype do
+        MixedIn.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: MixedIn });
+
+        const gateway = new MixedIn();
+        const proxy = contextCreator.create(
+          gateway,
+          gateway.handle,
+          module,
+          'handle',
+        );
+        await expect(proxy(null, 'data')).rejects.toBeInstanceOf(WsException);
       });
     });
   });

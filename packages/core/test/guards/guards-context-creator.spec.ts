@@ -1,3 +1,4 @@
+import { UseGuards } from '@nestjs/common';
 import { ApplicationConfig } from '../../application-config.js';
 import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
@@ -70,6 +71,31 @@ describe('GuardsContextCreator', () => {
         expect(
           guardsContextCreator.createConcreteContext(guardTypeRefs),
         ).toHaveLength(2);
+      });
+    });
+  });
+
+  describe('create', () => {
+    describe('when the "constructor" of the host prototype was overwritten', () => {
+      it('should reflect class-level guards from the registered class', () => {
+        @UseGuards(Guard2)
+        class Mixin {}
+        @UseGuards(Guard1)
+        class Host {
+          handler() {}
+        }
+        // What mixin helpers copying every property of the prototype do
+        Host.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: Host });
+
+        const instance = new Host();
+        const result = guardsContextCreator.create(
+          instance,
+          instance.handler,
+          'test',
+        );
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe(guards[0].instance);
       });
     });
   });

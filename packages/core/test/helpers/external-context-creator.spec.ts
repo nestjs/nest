@@ -7,6 +7,7 @@ import { GuardsConsumer } from '../../guards/guards-consumer.js';
 import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
 import { ExternalContextCreator } from '../../helpers/external-context-creator.js';
 import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { ModulesContainer } from '../../injector/modules-container.js';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
@@ -58,6 +59,21 @@ describe('ExternalContextCreator', () => {
         expect(getContextModuleKeySpy).toHaveBeenCalled();
         done();
       }));
+    describe('when the "constructor" of the host prototype was overwritten', () => {
+      it('should look the module up by the registered class', () => {
+        class Mixin {}
+        class Host {}
+        Host.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: Host });
+
+        const getContextModuleKeySpy = vi.spyOn(
+          contextCreator,
+          'getContextModuleKey',
+        );
+        contextCreator.create(new Host(), callback, '', '', null!);
+        expect(getContextModuleKeySpy).toHaveBeenCalledWith(Host);
+      });
+    });
     describe('returns proxy function', () => {
       let proxyContext;
       let instance;

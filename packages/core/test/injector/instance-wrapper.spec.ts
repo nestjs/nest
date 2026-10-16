@@ -1,4 +1,5 @@
 import { Injectable, Scope } from '@nestjs/common';
+import { getClassRef } from '../../helpers/class-ref-registry.js';
 import { createContextId } from '../../helpers/index.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
@@ -26,6 +27,14 @@ describe('InstanceWrapper', () => {
       expect(instance.getInstanceByContextId(STATIC_CONTEXT).instance).toEqual(
         partial.instance,
       );
+    });
+    it('should register the metatype as the class of its instances', () => {
+      class Mixin {}
+      class Host {}
+      Host.prototype.constructor = Mixin;
+
+      new InstanceWrapper({ metatype: Host });
+      expect(getClassRef(new Host())).toBe(Host);
     });
   });
 
@@ -1009,6 +1018,16 @@ describe('InstanceWrapper', () => {
         });
 
         expect(wrapper.metatype).toEqual(TestClass);
+      });
+
+      it('should register the given class as the class of its instances', () => {
+        class Mixin {}
+        class Host {}
+        Host.prototype.constructor = Mixin;
+
+        const wrapper = new InstanceWrapper();
+        wrapper.mergeWith({ useClass: Host, provide: 'token' });
+        expect(getClassRef(new Host())).toBe(Host);
       });
 
       it('should reset a previously resolved instance in the STATIC_CONTEXT', () => {

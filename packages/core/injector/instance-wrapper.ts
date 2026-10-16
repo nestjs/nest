@@ -15,6 +15,7 @@ import {
   randomStringGenerator,
 } from '@nestjs/common/internal';
 import { iterate } from 'iterare';
+import { registerClassRef } from '../helpers/class-ref-registry.js';
 import { getClassScope } from '../helpers/get-class-scope.js';
 import { isDurable } from '../helpers/is-durable.js';
 import { UuidFactory } from '../inspector/uuid-factory.js';
@@ -116,6 +117,9 @@ export class InstanceWrapper<T = any> {
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
   ) {
     this.initialize(metadata);
+    if (this.isNewable()) {
+      registerClassRef(this.metatype!);
+    }
     this[INSTANCE_ID_SYMBOL] =
       metadata[INSTANCE_ID_SYMBOL] ?? this.generateUuid();
   }
@@ -518,6 +522,7 @@ export class InstanceWrapper<T = any> {
     } else if (isClassProvider(provider)) {
       this.inject = null;
       this.metatype = provider.useClass;
+      registerClassRef(provider.useClass);
       this.scope = getClassScope(provider.useClass) ?? Scope.DEFAULT;
       this.durable = isDurable(provider.useClass);
       if (this.scope === Scope.TRANSIENT && !this.transientMap) {
