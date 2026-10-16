@@ -254,12 +254,34 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   public createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any {
+    const handledRequests = new WeakMap<Function, WeakSet<object>>();
     return (path: string, callback: Function) => {
       try {
-        const convertedPath = LegacyRouteConverter.tryConvert(path);
-        return this.routerMethodFactory
-          .get(this.instance, requestMethod)
-          .call(this.instance, convertedPath, callback);
+        // The core marks an exact-match path with a trailing "$" (e.g. "/api$").
+        // Express 5 reads "$" literally and "use()" matches by prefix, so strip
+        // the marker and register the path as an exact "all()" route instead.
+        const isExactPath = path.endsWith('$');
+        const convertedPath = LegacyRouteConverter.tryConvert(
+          isExactPath ? path.slice(0, -1) : path,
+        );
+        let router = this.routerMethodFactory.get(this.instance, requestMethod);
+        if (isExactPath && router === this.instance.use) {
+          router = this.instance.all;
+        }
+        // Express routes are not strict, so "/api" also matches "/api/", which
+        // the wildcard path registered next to it may match too ("/api/{*path}"
+        // does, "/api/*path" does not). The middleware runs for the first of
+        // its paths that matches a request, and not again for the others.
+        const requests = handledRequests.get(callback) ?? new WeakSet();
+        handledRequests.set(callback, requests);
+        const handler = (req: any, res: any, next: Function) => {
+          if (requests.has(req)) {
+            return next();
+          }
+          requests.add(req);
+          return callback(req, res, next);
+        };
+        return router.call(this.instance, convertedPath, handler);
       } catch (e) {
         if (e instanceof TypeError) {
           LegacyRouteConverter.printError(path);
