@@ -727,6 +727,25 @@ describe('InstanceWrapper', () => {
     });
   });
 
+  describe('addPropertiesMetadata', () => {
+    it('should replace the metadata of a key that is already registered', () => {
+      const instance = new InstanceWrapper();
+      const [first, second, other] = [
+        new InstanceWrapper(),
+        new InstanceWrapper(),
+        new InstanceWrapper(),
+      ];
+      instance.addPropertiesMetadata('key1', first);
+      instance.addPropertiesMetadata('key2', other);
+      instance.addPropertiesMetadata('key1', second);
+
+      expect(instance.getPropertiesMetadata()).toEqual([
+        { key: 'key1', wrapper: second },
+        { key: 'key2', wrapper: other },
+      ]);
+    });
+  });
+
   describe('addEnhancerMetadata', () => {
     it('should add enhancers metadata', () => {
       const instance = new InstanceWrapper();

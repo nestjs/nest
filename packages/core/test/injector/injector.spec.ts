@@ -1098,6 +1098,33 @@ describe('Injector', () => {
       await injector.resolveProperties(wrapper, null!, null!, { id: 2 });
       expect(loadPropertiesMetadataSpy).toHaveBeenCalled();
     });
+
+    it('should resolve each property if properties metadata is incomplete', async () => {
+      class Host {
+        @Inject('Provider1') key1: unknown;
+        @Inject('Provider2') key2: unknown;
+      }
+      const wrapper = new InstanceWrapper({ name: 'Host', metatype: Host });
+      wrapper.addPropertiesMetadata('key1', new InstanceWrapper());
+
+      const loadPropertiesMetadataSpy = vi.spyOn(
+        injector,
+        'loadPropertiesMetadata',
+      );
+      const resolveSingleParamSpy = vi
+        .spyOn(injector, 'resolveSingleParam')
+        .mockImplementation(async () => new InstanceWrapper());
+      vi.spyOn(injector, 'resolveComponentHost').mockImplementation(
+        async () => new InstanceWrapper(),
+      );
+
+      await injector.resolveProperties(wrapper, null!, null!, {
+        contextId: { id: 2 },
+      });
+
+      expect(loadPropertiesMetadataSpy).not.toHaveBeenCalled();
+      expect(resolveSingleParamSpy).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('getClassDependencies', () => {

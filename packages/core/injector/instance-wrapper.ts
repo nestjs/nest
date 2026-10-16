@@ -239,10 +239,15 @@ export class InstanceWrapper<T = any> {
     if (!this[INSTANCE_METADATA_SYMBOL].properties) {
       this[INSTANCE_METADATA_SYMBOL].properties = [];
     }
-    this[INSTANCE_METADATA_SYMBOL].properties.push({
-      key,
-      wrapper,
-    });
+    // A property that is never registered (e.g., the inquirer) keeps every
+    // resolution on the slow path, which registers the others again.
+    const properties = this[INSTANCE_METADATA_SYMBOL].properties;
+    const index = properties.findIndex(item => item.key === key);
+    if (index === -1) {
+      properties.push({ key, wrapper });
+    } else {
+      properties[index] = { key, wrapper };
+    }
     this.registerDependencyTreeParent(wrapper);
     this.resetDependencyTreeState();
   }

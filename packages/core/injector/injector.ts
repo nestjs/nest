@@ -807,7 +807,10 @@ export class Injector {
       return [];
     }
     const metadata = wrapper.getPropertiesMetadata();
-    if (metadata && resolutionContext.contextId !== STATIC_CONTEXT) {
+    if (
+      resolutionContext.contextId !== STATIC_CONTEXT &&
+      this.hasCompletePropertiesMetadata(wrapper, metadata)
+    ) {
       return this.loadPropertiesMetadata(
         metadata,
         resolutionContext.contextId,
@@ -1358,6 +1361,26 @@ export class Injector {
     }
 
     return true;
+  }
+
+  private hasCompletePropertiesMetadata<T>(
+    wrapper: InstanceWrapper<T>,
+    metadata: PropertyMetadata[] | undefined,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    // The fast path requires every injected property to be registered.
+    // While another request is still registering dependency metadata,
+    // the missing properties would be left `undefined`.
+    const properties = wrapper.metatype
+      ? this.reflectProperties(wrapper.metatype as Type<any>)
+      : [];
+
+    return properties.every(({ key }) =>
+      metadata.some(item => item.key === key),
+    );
   }
 
   private resolveScopedComponentHost(
