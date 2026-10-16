@@ -94,6 +94,31 @@ describe('middleware utils', () => {
     it('should return filtered middleware', () => {
       expect(filterMiddleware(middleware, [], noopAdapter)).toHaveLength(2);
     });
+    const expectSkippedOnlyForExactMatches = (adapter: NoopHttpAdapter) => {
+      vi.spyOn(adapter, 'getRequestMethod').mockReturnValue('GET');
+      const getRequestUrl = vi.spyOn(adapter, 'getRequestUrl');
+      const fn = vi.fn();
+      const next = vi.fn();
+      const [Middleware] = filterMiddleware(
+        [fn],
+        [{ path: 'users/login', method: RequestMethod.GET }],
+        adapter,
+      );
+      const instance = new Middleware();
+
+      getRequestUrl.mockReturnValue('/users/login?redirect=1');
+      instance.use({}, {}, next);
+      expect(next).toHaveBeenCalledOnce();
+      expect(fn).not.toHaveBeenCalled();
+
+      for (const url of ['/users/LOGIN', '/users/Login', '/users/login/']) {
+        getRequestUrl.mockReturnValue(url);
+        instance.use({}, {}, next);
+      }
+      expect(fn).toHaveBeenCalledTimes(3);
+      expect(next).toHaveBeenCalledOnce();
+    };
+
     describe('when the adapter tells how its router matches paths', () => {
       class StrictRouterAdapter extends NoopHttpAdapter {
         getRouteMatchingOptions() {
@@ -102,29 +127,12 @@ describe('middleware utils', () => {
       }
 
       it('should skip the middleware only for requests the router serves with an excluded route', () => {
-        const adapter = new StrictRouterAdapter({});
-        vi.spyOn(adapter, 'getRequestMethod').mockReturnValue('GET');
-        const getRequestUrl = vi.spyOn(adapter, 'getRequestUrl');
-        const fn = vi.fn();
-        const next = vi.fn();
-        const [Middleware] = filterMiddleware(
-          [fn],
-          [{ path: 'users/login', method: RequestMethod.GET }],
-          adapter,
-        );
-        const instance = new Middleware();
-
-        getRequestUrl.mockReturnValue('/users/login?redirect=1');
-        instance.use({}, {}, next);
-        expect(next).toHaveBeenCalledOnce();
-        expect(fn).not.toHaveBeenCalled();
-
-        for (const url of ['/users/LOGIN', '/users/Login', '/users/login/']) {
-          getRequestUrl.mockReturnValue(url);
-          instance.use({}, {}, next);
-        }
-        expect(fn).toHaveBeenCalledTimes(3);
-        expect(next).toHaveBeenCalledOnce();
+        expectSkippedOnlyForExactMatches(new StrictRouterAdapter({}));
+      });
+    });
+    describe('when the adapter does not tell how its router matches paths', () => {
+      it('should skip the middleware only for requests matching an excluded route exactly', () => {
+        expectSkippedOnlyForExactMatches(new NoopHttpAdapter({}));
       });
     });
   });
