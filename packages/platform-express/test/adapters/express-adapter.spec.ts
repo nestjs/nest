@@ -198,38 +198,17 @@ describe('ExpressAdapter', () => {
       },
     );
 
-    it('should run the middleware once for a request matching more than one of its paths', () => {
+    it('should register the middleware itself on the exact-match path', () => {
       const allSpy = vi.spyOn(expressAdapter.getInstance(), 'all');
-      const useSpy = vi.spyOn(expressAdapter.getInstance(), 'use');
       const middleware = vi.fn();
-      const next = vi.fn();
 
-      const registerMiddleware =
-        expressAdapter.createMiddlewareFactory(NO_REQUEST_METHOD);
-      registerMiddleware('/api$', middleware);
-      registerMiddleware('/api/{*path}', middleware);
-      const [, exactHandler] = allSpy.mock.calls[0] as unknown as [
-        string,
-        Function,
-      ];
-      const [, wildcardHandler] = useSpy.mock.calls[0] as unknown as [
-        string,
-        Function,
-      ];
+      expressAdapter.createMiddlewareFactory(NO_REQUEST_METHOD)(
+        '/api$',
+        middleware,
+      );
 
-      // Both "/api" (not strict) and "/api/{*path}" match "/api/", while
-      // "/api/*path" would not
-      const req = { path: '/api/' };
-      exactHandler(req, {}, next);
-      expect(middleware).toHaveBeenCalledExactlyOnceWith(req, {}, next);
-
-      wildcardHandler(req, {}, next);
-      expect(middleware).toHaveBeenCalledOnce();
-      expect(next).toHaveBeenCalledOnce();
-
-      const anotherReq = { path: '/api/' };
-      wildcardHandler(anotherReq, {}, next);
-      expect(middleware).toHaveBeenLastCalledWith(anotherReq, {}, next);
+      // "/api" also matches "/api/", which "/api/*path" would not
+      expect(allSpy).toHaveBeenCalledExactlyOnceWith('/api', middleware);
     });
   });
 

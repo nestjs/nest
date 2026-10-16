@@ -15,6 +15,7 @@ import { GraphInspector } from '../../inspector/graph-inspector.js';
 import { MiddlewareBuilder } from '../../middleware/builder.js';
 import { MiddlewareContainer } from '../../middleware/container.js';
 import { MiddlewareModule } from '../../middleware/middleware-module.js';
+import { mapToExcludeRoute } from '../../middleware/utils.js';
 import { RouterExceptionFilters } from '../../router/router-exception-filters.js';
 import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
@@ -205,6 +206,64 @@ describe('MiddlewareModule', () => {
         app,
       );
       expect(createMiddlewareFactoryStub).toHaveBeenCalledOnce();
+    });
+
+    it('should mount the middleware on each path, the root path first, and run it once for a request', async () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({ exclude: mapToExcludeRoute(['/']) });
+      middlewareModule['routeInfoPathExtractor'] = new RouteInfoPathExtractor(
+        appConfig,
+      );
+      const configuration = {
+        middleware: [TestMiddleware],
+        forRoutes: ['*'],
+      };
+
+      const router = vi.fn();
+      const app = {
+        createMiddlewareFactory: vi.fn().mockResolvedValue(router),
+      };
+
+      const stubContainer = new NestContainer();
+      const container = new MiddlewareContainer(stubContainer);
+      const moduleKey = 'Test';
+      stubContainer
+        .getModules()
+        .set(moduleKey, new Module(TestModule, stubContainer));
+      container.insertConfig([configuration], moduleKey);
+
+      const instance = new TestMiddleware();
+      const useSpy = vi.spyOn(instance, 'use');
+      container.getMiddlewareCollection(moduleKey).set(
+        TestMiddleware,
+        new InstanceWrapper({
+          metatype: TestMiddleware,
+          instance,
+        }),
+      );
+      middlewareModule['container'] = stubContainer;
+
+      await middlewareModule.registerRouteMiddleware(
+        container,
+        { path: '*', method: RequestMethod.ALL },
+        configuration,
+        moduleKey,
+        app,
+      );
+      expect(router.mock.calls.map(([path]) => path)).toEqual([
+        '/',
+        '/api$',
+        '/api/*',
+      ]);
+
+      const req = {};
+      const next = vi.fn();
+      for (const [, handler] of router.mock.calls) {
+        await handler(req, {}, next);
+      }
+      expect(useSpy).toHaveBeenCalledOnce();
+      expect(next).toHaveBeenCalledTimes(2);
     });
 
     it('should mount a transient middleware and the middleware listed after it', async () => {
