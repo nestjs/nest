@@ -21,7 +21,11 @@ export function stripProtoKeys(value: any): void {
   }
 
   if (Array.isArray(value)) {
-    for (const v of value) {
+    // Only the items that are present: the length of a sparse array (e.g.
+    // one built from a multipart field named `tags[4294967294]`) can be far
+    // beyond its number of items, and a loop over every index would block
+    // the event loop for as long. `Object.values()` skips the holes.
+    for (const v of Object.values(value)) {
       stripProtoKeys(v);
     }
     return;

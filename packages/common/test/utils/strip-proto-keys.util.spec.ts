@@ -84,6 +84,31 @@ describe('stripProtoKeys', () => {
       const value = { dates: [new Date(), new Date()] };
       expect(() => stripProtoKeys(value)).not.toThrow();
     });
+
+    it('should only read the items of a sparse array, not every index', () => {
+      const items: any[] = [];
+      items[999] = { constructor: 'malicious' };
+      const reads: PropertyKey[] = [];
+      const value = {
+        items: new Proxy(items, {
+          get(target, key, receiver) {
+            reads.push(key);
+            return Reflect.get(target, key, receiver);
+          },
+        }),
+      };
+      stripProtoKeys(value);
+      expect(reads).toEqual(['999']);
+      expect(items[999]).not.toHaveProperty('constructor');
+    });
+
+    it('should strip the items of a sparse array with the largest index', () => {
+      const items: any[] = [];
+      items[2 ** 32 - 2] = { constructor: 'malicious' };
+      stripProtoKeys({ items });
+      expect(items).toHaveLength(2 ** 32 - 1);
+      expect(items[2 ** 32 - 2]).not.toHaveProperty('constructor');
+    });
   });
 
   describe('Issue #16195: Jest useFakeTimers compatibility', () => {
