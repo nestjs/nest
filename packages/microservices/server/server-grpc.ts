@@ -59,6 +59,7 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   on: Function;
   off: Function;
   emit: Function;
+  cancelled?: boolean;
 }
 
 function toWellFormed(text: unknown) {
@@ -342,8 +343,19 @@ export class ServerGrpc extends Server<never, never> {
             this.onProcessingEndHook?.(this.transportId, call.request);
             return callback(this.toInternalError(err));
           }
+          if (call.cancelled) {
+            // The client is already gone, and the "cancelled" event that
+            // would end the subscription has fired before it could be
+            // listened for.
+            return this.onProcessingEndHook?.(this.transportId, call.request);
+          }
           result$
-            .pipe(throwIfEmpty(() => this.createNoResponseError()))
+            .pipe(
+              // Ahead of "takeUntil", which completes the stream when the
+              // call is cancelled (and once it has been answered).
+              throwIfEmpty(() => this.createNoResponseError()),
+              takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
+            )
             .subscribe({
               // A response promise that rejects (an interceptor mapping to an
               // async function) never reaches the exception filters
