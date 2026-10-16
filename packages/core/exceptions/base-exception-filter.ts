@@ -9,6 +9,7 @@ import {
   Logger,
   Optional,
 } from '@nestjs/common';
+import { STATUS_CODES } from 'http';
 import { AbstractHttpAdapter } from '../adapters/index.js';
 import { MESSAGES } from '../constants.js';
 import { HttpAdapterHost } from '../helpers/http-adapter-host.js';
@@ -58,7 +59,13 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     const body = this.isHttpError(exception)
       ? {
           statusCode: exception.statusCode,
-          message: exception.message,
+          // "http-errors" sets "expose" to false when the message must not
+          // reach the client (5xx errors, file system errors from "send")
+          message:
+            exception.expose === false
+              ? (STATUS_CODES[exception.statusCode] ??
+                MESSAGES.UNKNOWN_EXCEPTION_MESSAGE)
+              : exception.message,
         }
       : {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -85,7 +92,9 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
    * Checks if the thrown error is a FastifyError or comes from the "http-errors" library.
    * @param err error object
    */
-  public isHttpError(err: any): err is { statusCode: number; message: string } {
+  public isHttpError(
+    err: any,
+  ): err is { statusCode: number; message: string; expose?: boolean } {
     if (!err || typeof err !== 'object') {
       return false;
     }

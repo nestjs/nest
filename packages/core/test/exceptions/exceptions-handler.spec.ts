@@ -160,6 +160,31 @@ describe('ExceptionsHandler', () => {
           message: 'User does not exist',
         });
       });
+      it('should not send the message of an error that must not be exposed', () => {
+        // What "send" (res.sendFile(), express.static()) passes to next()
+        const error = createHttpError(
+          404,
+          new Error("ENOENT: no such file or directory, stat '/srv/files/a'"),
+          { expose: false },
+        );
+        handler.next(error, new ExecutionContextHost([0, response]));
+
+        expect(statusStub).toHaveBeenCalledWith(404);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 404,
+          message: 'Not Found',
+        });
+      });
+      it('should not send the message of a 5xx error by default', () => {
+        const error = new createHttpError.BadGateway('connect 10.0.0.1:5432');
+        handler.next(error, new ExecutionContextHost([0, response]));
+
+        expect(statusStub).toHaveBeenCalledWith(502);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 502,
+          message: 'Bad Gateway',
+        });
+      });
     });
     describe('when exception is an instance of HttpException', () => {
       it('should send expected response status code and json object', () => {
