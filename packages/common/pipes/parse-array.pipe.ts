@@ -126,7 +126,7 @@ export class ParseArrayPipe implements PipeTransform {
       if (this.options.stopAtFirstError === false) {
         // strict compare to "false" to make sure
         // that this option is disabled by default
-        let errors: string[] = [];
+        const errors: string[] = [];
 
         const targetArray = value as Array<unknown>;
         for (let i = 0; i < targetArray.length; i++) {
@@ -146,7 +146,16 @@ export class ParseArrayPipe implements PipeTransform {
             } else {
               message = err;
             }
-            errors = errors.concat(message);
+            // Appended in place, since `concat()` would copy all the errors so
+            // far for each invalid item, and one at a time, since one item can
+            // have more errors than `push(...message)` takes arguments.
+            if (Array.isArray(message)) {
+              for (const item of message) {
+                errors.push(item);
+              }
+            } else {
+              errors.push(message);
+            }
           }
         }
         if (errors.length > 0) {
@@ -154,7 +163,20 @@ export class ParseArrayPipe implements PipeTransform {
         }
         return targetArray;
       } else {
-        value = await Promise.all(value.map(toClassInstance));
+        // One item at a time, up to the first that fails: validating them all
+        // at once kept the validation and the exception of every item alive
+        // together, and a string splits into up to one item per character.
+        const targetArray = value as Array<unknown>;
+        const items: unknown[] = [];
+        for (let i = 0; i < targetArray.length; i++) {
+          // As with `map()`, the holes of a sparse array are not validated.
+          items.push(
+            i in targetArray
+              ? await toClassInstance(targetArray[i], i)
+              : undefined,
+          );
+        }
+        value = items;
       }
     }
     return value;

@@ -1,6 +1,7 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import * as sinon from 'sinon';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -272,6 +273,66 @@ describe('ParseArrayPipe', () => {
           await target.transform([true, 'false'], {} as ArgumentMetadata),
         ).to.deep.equal([true, false]);
       });
+      it('should stop validating at the first invalid item', async () => {
+        class ArrItemWithProp {
+          @IsDefined()
+          number: number;
+        }
+        target = new ParseArrayPipe({ items: ArrItemWithProp });
+        const transform = sinon.spy(target['validationPipe'], 'transform');
+
+        await expect(
+          target.transform([{ number: 1 }, {}, {}, {}], {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
+        expect(transform.callCount).to.equal(2);
+      });
+      it('should validate one item after the other', async () => {
+        class ArrItem {}
+        target = new ParseArrayPipe({
+          items: ArrItem,
+          forbidUnknownValues: false,
+        });
+        const transform = target['validationPipe'].transform;
+        let pending = 0;
+        let maxPending = 0;
+        sinon
+          .stub(target['validationPipe'], 'transform')
+          .callsFake(async (...args) => {
+            maxPending = Math.max(maxPending, ++pending);
+            try {
+              return await transform.apply(target['validationPipe'], args);
+            } finally {
+              pending--;
+            }
+          });
+
+        const items = await target.transform(
+          [{}, {}, {}],
+          {} as ArgumentMetadata,
+        );
+        expect(items).to.have.length(3);
+        items.forEach(item => expect(item).to.be.instanceOf(ArrItem));
+        expect(maxPending).to.equal(1);
+      });
+      it('should leave the input array unchanged', async () => {
+        const input = ['1', '2'];
+        target = new ParseArrayPipe({ items: Number });
+
+        expect(
+          await target.transform(input, {} as ArgumentMetadata),
+        ).to.deep.equal([1, 2]);
+        expect(input).to.deep.equal(['1', '2']);
+      });
+      it('should not validate the holes of a sparse array', async () => {
+        const input = ['1', '2', '3'];
+        // eslint-disable-next-line @typescript-eslint/no-array-delete
+        delete input[1];
+        target = new ParseArrayPipe({ items: Number });
+
+        expect(
+          await target.transform(input, {} as ArgumentMetadata),
+        ).to.deep.equal([1, undefined, 3]);
+      });
       describe('when "stopAtFirstError" is explicitly turned off', () => {
         it('should validate each item and concat errors', async () => {
           class ArrItemWithProp {
@@ -298,6 +359,33 @@ describe('ParseArrayPipe', () => {
               '[1] number must be a number conforming to the specified constraints',
             ]);
           }
+        });
+
+        it('should collect the errors without copying them for each item', async () => {
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+          });
+          // Concatenating each item's error to the list copies every error
+          // collected before it, 4,950 copies for 100 invalid items.
+          const concat = sinon.spy(Array.prototype, 'concat');
+          let error: any;
+          let copied: number;
+          try {
+            error = await pipe
+              .transform(','.repeat(99), {} as ArgumentMetadata)
+              .catch(err => err);
+            copied = concat.thisValues.reduce(
+              (total: number, array: unknown[]) => total + array.length,
+              0,
+            );
+          } finally {
+            concat.restore();
+          }
+
+          expect(error).to.be.instanceOf(BadRequestException);
+          expect(error.getResponse().message).to.have.length(100);
+          expect(copied).to.be.lessThan(100);
         });
 
         it('should report every array nested in the array', async () => {
