@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
   HttpStatus,
+  Logger,
   type MessageEvent,
   RequestMethod,
   SSE_ABORT_CONTROLLER,
@@ -1078,6 +1079,76 @@ data: test
         await new Promise(resolve => process.nextTick(resolve));
 
         expect(maxDrainListenersExceededWarning).toBe(null);
+      });
+    });
+
+    describe('when the client stops reading', () => {
+      // A destination that never accepts a chunk, like the socket of a client
+      // that reads nothing
+      class StalledSink extends Writable {
+        constructor() {
+          super({ highWaterMark: 1 });
+        }
+
+        _write() {}
+      }
+
+      const data = 'x'.repeat(64 * 1024);
+
+      const emitOnSeparateTurns = async (
+        producer: Subject<MessageEvent>,
+        count: number,
+      ) => {
+        for (let i = 0; i < count; i++) {
+          producer.next({ data });
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      };
+
+      beforeEach(() => {
+        vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it('should drop the connection once too much event data waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        // 8M characters, about 2M of which the streams buffer themselves
+        await emitOnSeparateTurns(producer, 128);
+
+        expect(response.destroyed).toBe(true);
+        await lifecycle;
+        expect(producer.observed).toBe(false);
+        request.destroy();
+      });
+
+      it('should keep the connection while less event data waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await emitOnSeparateTurns(producer, 48);
+
+        expect(response.destroyed).toBe(false);
+        expect(producer.observed).toBe(true);
+        response.destroy();
+        await lifecycle;
+        request.destroy();
       });
     });
 
