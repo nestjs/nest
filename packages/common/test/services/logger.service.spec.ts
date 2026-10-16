@@ -285,6 +285,48 @@ describe('Logger', () => {
       });
     });
 
+    describe('when json mode is enabled and a record is long', () => {
+      let processStdoutWriteStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        processStdoutWriteStub = sinon.stub(process.stdout, 'write');
+      });
+
+      afterEach(() => {
+        processStdoutWriteStub.restore();
+      });
+
+      it('should cut a record short instead of repeating a shared object without bounds', () => {
+        const logger = new ConsoleLogger({ json: true });
+        // The shape of class-validator errors: every child error has the
+        // validated array as its "target".
+        const target = new Array(1_000).fill(0.1234567890123456);
+        const errors = target.map(() => ({ target }));
+
+        logger.log({ errors });
+
+        expect(processStdoutWriteStub.calledOnce).to.be.true;
+        const output: string = processStdoutWriteStub.firstCall.firstArg;
+        // In full, "errors" would be about 19 million characters long.
+        expect(output.length).to.be.lessThan(1_100_000);
+        const json = JSON.parse(output);
+        expect(json.level).to.equal('log');
+        expect(json.message.errors).to.have.length(1_000);
+        expect(json.message.errors[0]).to.deep.equal({ target });
+        expect(json.message.errors[999]).to.equal('[Truncated]');
+      });
+
+      it('should write a long record in full when nothing is repeated', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const items = Array.from({ length: 50_000 }, (_, id) => ({ id }));
+
+        logger.log({ items });
+
+        const json = JSON.parse(processStdoutWriteStub.firstCall.firstArg);
+        expect(json.message.items).to.deep.equal(items);
+      });
+    });
+
     describe('when the default logger is used, json mode is enabled and compact is false (utils.inspect)', () => {
       const logger = new ConsoleLogger({ json: true, compact: false });
 

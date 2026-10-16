@@ -11,6 +11,13 @@ import { LoggerService, LogLevel } from './logger.service';
 import { isLogLevelEnabled } from './utils/is-log-level-enabled.util';
 
 const DEFAULT_DEPTH = 5;
+/**
+ * The approximate number of characters up to which a record is serialized in
+ * JSON mode. An object is written out once per reference to it, so a small
+ * value can expand to a huge record; past this length, objects and strings
+ * are replaced with "[Truncated]".
+ */
+const MAX_JSON_LENGTH = 1_000_000;
 
 /**
  * @publicApi
@@ -32,6 +39,9 @@ export interface ConsoleLoggerOptions {
   prefix?: string;
   /**
    * If enabled, will print the log message in JSON format.
+   * Unless `colors` are enabled or `compact` is not true, a record is cut short
+   * at about 1,000,000 characters: what comes past that point is replaced with
+   * "[Truncated]".
    */
   json?: boolean;
   /**
@@ -364,7 +374,7 @@ export class ConsoleLogger implements LoggerService {
     const logObject = this.getJsonLogObject(message, options);
     const formattedMessage =
       !this.options.colors && this.inspectOptions.compact === true
-        ? JSON.stringify(logObject, this.stringifyReplacer)
+        ? this.stringifyJsonLogObject(logObject)
         : inspect(logObject, this.inspectOptions);
     if (this.options.forceConsole) {
       if (options.writeStreamType === 'stderr') {
@@ -530,6 +540,37 @@ export class ConsoleLogger implements LoggerService {
     }
 
     return inspectOptions;
+  }
+
+  /**
+   * Serializes a JSON log object, replacing whatever comes past
+   * `MAX_JSON_LENGTH` characters with "[Truncated]".
+   */
+  protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
+    const replacer = this.stringifyReplacer;
+    // Approximate length of the output so far (array indices aren't written).
+    let length = 0;
+
+    return JSON.stringify(
+      logObject,
+      function (this: unknown, key: string, value: unknown) {
+        value = replacer.call(this, key, value);
+        length +=
+          (Array.isArray(this) ? 0 : key.length) +
+          (isString(value) || typeof value === 'number'
+            ? String(value).length
+            : 1);
+        if (length > MAX_JSON_LENGTH) {
+          // A primitive in place of an object is not descended into, so the
+          // walk stops here on every branch past the limit.
+          return isString(value) ||
+            (typeof value === 'object' && value !== null)
+            ? '[Truncated]'
+            : value;
+        }
+        return value;
+      },
+    );
   }
 
   protected stringifyReplacer(key: string, value: unknown) {
