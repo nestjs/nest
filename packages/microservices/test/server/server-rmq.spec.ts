@@ -1,6 +1,10 @@
 import { EventEmitter } from 'events';
 import { of } from 'rxjs';
-import { NO_MESSAGE_HANDLER, RMQ_DEFAULT_QUEUE } from '../../constants.js';
+import {
+  CONSUMER_CANCELLED_RMQ_MESSAGE,
+  NO_MESSAGE_HANDLER,
+  RMQ_DEFAULT_QUEUE,
+} from '../../constants.js';
 import { RmqContext } from '../../ctx-host/index.js';
 import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
@@ -517,6 +521,26 @@ describe('ServerRMQ', () => {
       await onMessage({});
 
       expect(handleErrorSpy).toHaveBeenCalledWith(error);
+    });
+    it('should set the channel up and consume again when the broker cancels the consumer', async () => {
+      const loggerErrorSpy = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      const callback = vi.fn();
+      await server.setupChannel(channel, callback);
+      const [, onMessage] = channel.consume.mock.calls[0];
+
+      // amqplib calls the consumer with "null" once the broker has cancelled
+      // it, e.g. because its queue was deleted
+      await onMessage(null);
+
+      expect(channel.assertQueue).toHaveBeenCalledTimes(2);
+      expect(channel.consume).toHaveBeenCalledTimes(2);
+      expect(channel.consume.mock.calls[1][0]).toBe(queue);
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        CONSUMER_CANCELLED_RMQ_MESSAGE,
+      );
+      expect(callback).toHaveBeenCalledOnce();
     });
     it('should call "resolve" function', async () => {
       const resolve = vi.fn();

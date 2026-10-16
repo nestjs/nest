@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
+  CONSUMER_CANCELLED_RMQ_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
   RMQ_SEPARATOR,
@@ -336,7 +337,11 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     channel: any,
   ): Promise<void> {
     if (isNil(message)) {
-      return;
+      // amqplib calls the consumer with "null" once the broker has cancelled
+      // it (e.g., its queue was deleted). The connection stays up, so nothing
+      // else would set the channel up (and consume) again.
+      this.logger.error(CONSUMER_CANCELLED_RMQ_MESSAGE);
+      return this.setupChannel(channel, () => {});
     }
     const { content, properties } = message;
     const rawMessage = this.parseMessageContent(content);
