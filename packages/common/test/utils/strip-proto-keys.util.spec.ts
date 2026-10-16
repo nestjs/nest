@@ -43,6 +43,21 @@ describe('stripProtoKeys', () => {
       expect(value.nested).not.toHaveProperty('constructor');
     });
 
+    it('should strip constructor whatever its value', () => {
+      for (const constructor of [null, 0, false, '']) {
+        const value = { constructor, nested: { constructor } };
+        stripProtoKeys(value);
+        expect(Object.keys(value)).toEqual(['nested']);
+        expect(Object.keys(value.nested)).toEqual([]);
+      }
+    });
+
+    it('should leave objects without a prototype as they are', () => {
+      const value = Object.assign(Object.create(null), { id: 1 });
+      stripProtoKeys(value);
+      expect(value).toEqual({ id: 1 });
+    });
+
     it('should strip __proto__ from objects', () => {
       const value = { __proto__: { malicious: 'code' } };
       stripProtoKeys(value);
