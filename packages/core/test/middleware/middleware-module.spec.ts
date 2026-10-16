@@ -48,6 +48,7 @@ describe('MiddlewareModule', () => {
       new NestContainer(),
       appConfig,
       new NoopHttpAdapter({}),
+      new Injector(),
     );
     middlewareModule['routeInfoPathExtractor'] = new RouteInfoPathExtractor(
       appConfig,
@@ -56,6 +57,7 @@ describe('MiddlewareModule', () => {
       container,
       appConfig,
       new NoopHttpAdapter({}),
+      new Injector(),
     );
     middlewareModule['graphInspector'] = graphInspector;
   });

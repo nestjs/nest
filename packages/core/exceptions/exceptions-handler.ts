@@ -11,7 +11,10 @@ import type { ArgumentsHost } from '@nestjs/common';
 export class ExceptionsHandler extends BaseExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
 
-  public next(exception: Error | HttpException, ctx: ArgumentsHost) {
+  public next(
+    exception: Error | HttpException,
+    ctx: ArgumentsHost,
+  ): void | Promise<void> {
     if (this.invokeCustomFilters(exception, ctx)) {
       return;
     }

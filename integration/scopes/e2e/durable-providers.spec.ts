@@ -122,6 +122,26 @@ describe('Durable providers', () => {
       expect(result.body).toEqual({ tenantId: '52', instanceCounter: 1 });
     });
 
+    it(`should run a durable global filter when no controller is involved`, async () => {
+      const sendMalformedBody = (tenantId: number) =>
+        request(server)
+          .post('/durable')
+          .set({ ['x-tenant-id']: String(tenantId) })
+          .set('content-type', 'application/json')
+          .send('{oops');
+
+      let result = await sendMalformedBody(2001);
+      expect(result.body).toEqual({ tenantId: '2001', instanceCounter: 1 });
+
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(2001, resolve, '/durable/filter'),
+      );
+      expect(result.body).toEqual({ tenantId: '2001', instanceCounter: 2 });
+
+      result = await sendMalformedBody(2002);
+      expect(result.body).toEqual({ tenantId: '2002', instanceCounter: 1 });
+    });
+
     it(`should return the same tenantId both from durable request scoped service and non-durable request scoped service`, async () => {
       let result: request.Response;
       result = await new Promise<request.Response>(resolve =>
