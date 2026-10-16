@@ -952,6 +952,43 @@ describe('InstanceWrapper', () => {
         ).toBe(false);
       });
     });
+    describe('when both wrapper and inquirer are transient', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.TRANSIENT });
+      const inquirer = new InstanceWrapper({ scope: Scope.TRANSIENT });
+
+      it('should return true if root inquirer is not transient', () => {
+        const rootInquirer = new InstanceWrapper();
+        expect(wrapper.isStatic(STATIC_CONTEXT, inquirer, rootInquirer)).toBe(
+          true,
+        );
+      });
+
+      it('should return false if root inquirer is transient', () => {
+        const rootInquirer = new InstanceWrapper({ scope: Scope.TRANSIENT });
+        expect(wrapper.isStatic(STATIC_CONTEXT, inquirer, rootInquirer)).toBe(
+          false,
+        );
+      });
+
+      it('should return true if there is no root inquirer', () => {
+        expect(wrapper.isStatic(STATIC_CONTEXT, inquirer)).toBe(true);
+      });
+
+      it('should not read the root inquirer attached to the inquirer', () => {
+        const otherInquirer = new InstanceWrapper({ scope: Scope.TRANSIENT });
+        otherInquirer.attachRootInquirer(
+          new InstanceWrapper({ scope: Scope.TRANSIENT }),
+        );
+        expect(
+          wrapper.isStatic(
+            STATIC_CONTEXT,
+            otherInquirer,
+            new InstanceWrapper(),
+          ),
+        ).toBe(true);
+        expect(wrapper.isStatic(STATIC_CONTEXT, otherInquirer)).toBe(true);
+      });
+    });
   });
 
   describe('getStaticTransientInstances', () => {

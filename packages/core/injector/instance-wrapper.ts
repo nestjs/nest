@@ -443,6 +443,7 @@ export class InstanceWrapper<T = any> {
   public isStatic(
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,
+    rootInquirer?: InstanceWrapper,
   ): boolean {
     if (!this.isDependencyTreeStatic() || contextId !== STATIC_CONTEXT) {
       return false;
@@ -456,7 +457,6 @@ export class InstanceWrapper<T = any> {
     const isInquirerRequestScoped =
       inquirer && !inquirer.isDependencyTreeStatic();
     const isStaticTransient = this.isTransient && !isInquirerRequestScoped;
-    const rootInquirer = inquirer?.getRootInquirer();
 
     // Transient provider inquired by non-transient (e.g., DEFAULT -> TRANSIENT)
     if (isStaticTransient && inquirer && !inquirer.isTransient) {
@@ -483,6 +483,11 @@ export class InstanceWrapper<T = any> {
     });
   }
 
+  /**
+   * @deprecated The injector no longer reads the root inquirer from the
+   * wrapper (see `isStatic`), as it may be overwritten by a concurrent
+   * resolution for another consumer.
+   */
   public attachRootInquirer(inquirer: InstanceWrapper) {
     if (!this.isTransient) {
       // Only attach root inquirer if the instance wrapper is transient
@@ -491,6 +496,11 @@ export class InstanceWrapper<T = any> {
     this.rootInquirer = inquirer.getRootInquirer() ?? inquirer;
   }
 
+  /**
+   * @deprecated The injector no longer reads the root inquirer from the
+   * wrapper (see `isStatic`), as it may be overwritten by a concurrent
+   * resolution for another consumer.
+   */
   getRootInquirer(): InstanceWrapper | undefined {
     return this.rootInquirer;
   }

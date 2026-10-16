@@ -85,6 +85,12 @@ interface ResolutionContext {
   contextId: ContextId;
   inquirer?: InstanceWrapper;
   effectiveInquirerId?: string;
+  /**
+   * The root inquirer of a transient `inquirer` that has a parent inquirer.
+   * It belongs to the resolution, not to the wrapper, as a transient provider
+   * is resolved for all of its consumers concurrently.
+   */
+  rootInquirer?: InstanceWrapper;
 }
 
 export class Injector {
@@ -364,7 +370,7 @@ export class Injector {
           // When `inquirer` is transient too, inherit the parent inquirer
           // This is required to ensure that transient providers are only resolved
           // when requested
-          resolutionContext.inquirer.attachRootInquirer(parentInquirer);
+          resolutionContext.rootInquirer = parentInquirer;
         }
         const nestedResolutionContext =
           this.getStaticTransientResolutionContext(
@@ -1093,11 +1099,13 @@ export class Injector {
     contextId: ContextId,
     inquirer?: InstanceWrapper,
     effectiveInquirerId?: string,
+    rootInquirer?: InstanceWrapper,
   ): ResolutionContext {
     return {
       contextId,
       inquirer,
       effectiveInquirerId,
+      rootInquirer,
     };
   }
 
@@ -1116,6 +1124,7 @@ export class Injector {
       wrapper.isStatic(
         resolutionContext.contextId,
         resolutionContext.inquirer,
+        resolutionContext.rootInquirer,
       ) ||
       wrapper.isInRequestScope(
         resolutionContext.contextId,
@@ -1215,6 +1224,8 @@ export class Injector {
         this.createResolutionContext(
           resolutionContext.contextId,
           resolutionContext.inquirer,
+          undefined,
+          resolutionContext.rootInquirer,
         ),
       );
     const shouldSkipForStaticBootstrap =
@@ -1237,10 +1248,10 @@ export class Injector {
     resolutionContext: ResolutionContext,
     parentInquirer: InstanceWrapper | undefined,
   ): InstanceWrapper | undefined {
-    const { inquirer, contextId } = resolutionContext;
+    const { inquirer, contextId, rootInquirer } = resolutionContext;
     if (dependency?.isTransient && inquirer?.isTransient && parentInquirer) {
       if (contextId === STATIC_CONTEXT) {
-        return inquirer.getRootInquirer() ?? parentInquirer;
+        return rootInquirer ?? parentInquirer;
       }
       return parentInquirer;
     }
@@ -1298,14 +1309,23 @@ export class Injector {
     resolutionContext: ResolutionContext,
     parentInquirer: InstanceWrapper | undefined,
   ): ResolutionContext {
+    const effectiveInquirer = this.getEffectiveInquirer(
+      dependency,
+      resolutionContext,
+      parentInquirer,
+    );
     return this.createResolutionContext(
       resolutionContext.contextId,
-      this.getEffectiveInquirer(dependency, resolutionContext, parentInquirer),
+      effectiveInquirer,
       this.getEffectiveInquirerId(
         dependency,
         resolutionContext,
         parentInquirer,
       ),
+      // The root inquirer is the one of `inquirer`
+      effectiveInquirer === resolutionContext.inquirer
+        ? resolutionContext.rootInquirer
+        : undefined,
     );
   }
 
