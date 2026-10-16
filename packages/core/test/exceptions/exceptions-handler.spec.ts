@@ -1,6 +1,7 @@
 import { HttpException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import createHttpError from 'http-errors';
+import { of, throwError } from 'rxjs';
 import { AbstractHttpAdapter } from '../../adapters/index.js';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception.js';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler.js';
@@ -256,6 +257,42 @@ describe('ExceptionsHandler', () => {
             ),
           ),
         } as any);
+
+        expect(statusStub).not.toHaveBeenCalled();
+        expect(jsonStub).not.toHaveBeenCalled();
+      });
+    });
+    // What an RPC exception filter (such as GrpcExceptionFilter) does when a
+    // hybrid application binds it to its HTTP routes as a global filter
+    describe('when a custom filter returns a stream', () => {
+      it('should answer as if no filter had matched', () => {
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: () => throwError(() => ({ code: 2 })),
+          },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(404);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 404,
+          message: 'Not Found',
+        });
+      });
+
+      it('should not answer again if the filter has answered', () => {
+        vi.spyOn(adapter, 'isHeadersSent').mockReturnValue(true);
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => of(null) },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
 
         expect(statusStub).not.toHaveBeenCalled();
         expect(jsonStub).not.toHaveBeenCalled();
