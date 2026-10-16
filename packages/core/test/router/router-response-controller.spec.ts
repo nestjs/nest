@@ -4,7 +4,9 @@ import { EMPTY, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
+  BadRequestException,
   HttpStatus,
+  IntrinsicException,
   Logger,
   type MessageEvent,
   RequestMethod,
@@ -1298,6 +1300,18 @@ data: test
     });
 
     describe('when there is an error', () => {
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+      });
+
+      afterEach(() => {
+        loggerErrorSpy.mockRestore();
+      });
+
       it('should reject when the stream errors before headers are committed', async () => {
         const result = new Subject();
         const response = new Writable();
@@ -1405,55 +1419,88 @@ data: test
         });
       });
 
-      it('should write the error message to the stream', async () => {
-        let resolveFirstChunk: (() => void) | undefined;
-        const firstChunkWritten = new Promise<void>(resolve => {
-          resolveFirstChunk = resolve;
-        });
+      // The headers are out, so no exception filter can answer anymore
+      it.each([
+        ['an HttpException', new BadRequestException('Some error'), true],
+        [
+          'an "http-errors" error',
+          Object.assign(new Error('Some error'), {
+            status: 404,
+            statusCode: 404,
+            expose: true,
+          }),
+          true,
+        ],
+        [
+          'an http error-shaped value',
+          { statusCode: 404, message: 'Some error' },
+          true,
+        ],
+        ['an Error', new Error('Some error'), false],
+        ['a string', 'Some error', false],
+        ['an IntrinsicException', new IntrinsicException('Some error'), false],
+      ])(
+        'should write the message BaseExceptionFilter would send for %s',
+        async (_, error, isMessageSent) => {
+          let resolveFirstChunk: (() => void) | undefined;
+          const firstChunkWritten = new Promise<void>(resolve => {
+            resolveFirstChunk = resolve;
+          });
 
-        class Sink extends Writable {
-          private readonly chunks: string[] = [];
+          class Sink extends Writable {
+            private readonly chunks: string[] = [];
 
-          _write(
-            chunk: any,
-            encoding: string,
-            callback: (error?: Error | null) => void,
-          ): void {
-            this.chunks.push(chunk);
-            resolveFirstChunk?.();
-            resolveFirstChunk = undefined;
-            callback();
+            _write(
+              chunk: any,
+              encoding: string,
+              callback: (error?: Error | null) => void,
+            ): void {
+              this.chunks.push(chunk);
+              resolveFirstChunk?.();
+              resolveFirstChunk = undefined;
+              callback();
+            }
+
+            get content() {
+              return this.chunks.join('');
+            }
           }
 
-          get content() {
-            return this.chunks.join('');
-          }
-        }
+          const written = (stream: Writable) =>
+            new Promise((resolve, reject) =>
+              stream.on('error', reject).on('finish', resolve),
+            );
 
-        const written = (stream: Writable) =>
-          new Promise((resolve, reject) =>
-            stream.on('error', reject).on('finish', resolve),
+          const result = new Subject();
+          const response = new Sink();
+          const request = new PassThrough();
+          const promise = routerResponseController.sse(
+            result,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
           );
 
-        const result = new Subject();
-        const response = new Sink();
-        const request = new PassThrough();
-        const promise = routerResponseController.sse(
-          result,
-          response as unknown as ServerResponse,
-          request as unknown as IncomingMessage,
-        );
+          result.next('hello');
+          await firstChunkWritten;
+          result.error(error);
+          request.destroy();
 
-        result.next('hello');
-        await firstChunkWritten;
-        result.error(new Error('Some error'));
-        request.destroy();
-
-        await promise;
-        await written(response);
-        expect(response.content).toContain('event: error');
-        expect(response.content).toContain('data: Some error');
-      });
+          await promise;
+          await written(response);
+          expect(response.content).toContain('event: error');
+          if (isMessageSent) {
+            expect(response.content).toContain('data: Some error\n');
+          } else {
+            expect(response.content).toContain('data: Internal server error\n');
+            expect(response.content).not.toContain('Some error');
+          }
+          if (error instanceof IntrinsicException) {
+            expect(loggerErrorSpy).not.toHaveBeenCalled();
+          } else {
+            expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+          }
+        },
+      );
 
       it('should write an error event and end the stream when a message cannot be serialized', async () => {
         class Sink extends Writable {
@@ -1489,9 +1536,7 @@ data: test
         await new Promise(resolve => setTimeout(resolve, 10));
 
         expect(response.content).toContain('event: error');
-        expect(response.content).toContain(
-          'data: Do not know how to serialize a BigInt',
-        );
+        expect(response.content).toContain('data: Internal server error');
         expect(response.content).not.toContain('data: after');
         expect(response.writableFinished).toBe(true);
         request.destroy();

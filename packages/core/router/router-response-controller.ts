@@ -1,6 +1,8 @@
 import {
+  HttpException,
   type HttpServer,
   HttpStatus,
+  IntrinsicException,
   Logger,
   RequestMethod,
   type MessageEvent,
@@ -9,6 +11,8 @@ import {
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
 import { catchError, concatMap, map, tap } from 'rxjs/operators';
+import { MESSAGES } from '../constants.js';
+import { BaseExceptionFilter } from '../exceptions/base-exception-filter.js';
 import {
   AdditionalHeadersSource,
   StatusCodeSource,
@@ -43,6 +47,7 @@ export interface RedirectResponse {
 
 export class RouterResponseController {
   private readonly logger = new Logger(RouterResponseController.name);
+  private readonly exceptionFilter = new BaseExceptionFilter();
 
   constructor(private readonly applicationRef: HttpServer) {}
 
@@ -285,7 +290,18 @@ export class RouterResponseController {
                   throw err;
                 }
 
-                const data = err instanceof Error ? err.message : err;
+                // No exception filter can answer once the headers are out, so
+                // BaseExceptionFilter's rules apply here: the client is only
+                // sent the message of an HTTP error, and any error but an
+                // IntrinsicException is logged.
+                const data =
+                  err instanceof HttpException ||
+                  this.exceptionFilter.isHttpError(err)
+                    ? err.message
+                    : MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
+                if (!(err instanceof IntrinsicException)) {
+                  this.logger.error(err);
+                }
                 stream.writeMessage({ type: 'error', data }, writeError => {
                   if (writeError) {
                     this.logger.error(writeError);

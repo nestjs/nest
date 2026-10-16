@@ -268,7 +268,7 @@ describe('Sse (Fastify Application)', () => {
       expect(response.status).toBe(200);
       expect(body).toContain('data: {"n":1}');
       expect(body).toContain(
-        'event: error\nid: 2\ndata: Do not know how to serialize a BigInt',
+        'event: error\nid: 2\ndata: Internal server error',
       );
       expect(body).not.toContain('data: {"n":3}');
     });
