@@ -120,9 +120,12 @@ describe('StreamableFile', () => {
         expect(res.send.called).to.be.false;
       });
 
-      it('should set status code to BAD_REQUEST and send error message', () => {
+      it('should set status code to BAD_REQUEST and log the error instead of sending its message', () => {
         const stream = new Readable();
-        const streamableFile = new StreamableFile(stream);
+        const errorLogger = sinon.spy();
+        const streamableFile = new StreamableFile(stream).setErrorLogger(
+          errorLogger,
+        );
         const res = {
           destroyed: false,
           headersSent: false,
@@ -130,12 +133,15 @@ describe('StreamableFile', () => {
           end: sinon.spy(),
           send: sinon.spy(),
         };
-        const error = new Error('test error message');
+        const error = new Error(
+          "ENOENT: no such file or directory, open '/srv/reports/q3.csv'",
+        );
 
         streamableFile.errorHandler(error, res as any);
 
         expect(res.statusCode).to.equal(HttpStatus.BAD_REQUEST);
-        expect(res.send.calledOnceWith('test error message')).to.be.true;
+        expect(res.send.calledOnceWith('Bad Request')).to.be.true;
+        expect(errorLogger.calledWith(error)).to.be.true;
       });
     });
   });
