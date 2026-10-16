@@ -220,7 +220,13 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       // mqtt reconnects on the same client only while reconnectPeriod is set.
       // Once it gives up, drop the client so the next connect() call starts
       // over instead of returning the promise of a connection that is gone.
-      if (client === this.mqttClient && !client.reconnecting) {
+      // A reconnect the broker refused (CONNACK error) leaves "reconnecting"
+      // set although mqtt gives up then too, so also check that its own
+      // "close" listener, which runs first, scheduled another attempt. Its
+      // timer is null when there is none.
+      const willReconnect =
+        client.reconnecting && client.reconnectTimer !== null;
+      if (client === this.mqttClient && !willReconnect) {
         this.discardClient(client);
       }
     });

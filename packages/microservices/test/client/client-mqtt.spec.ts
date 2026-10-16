@@ -721,6 +721,45 @@ describe('ClientMqtt', () => {
       expect(untyped.connectionPromise).toBeNull();
     });
 
+    it('should drop a closed client whose reconnect the broker refused', () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const mqttClient = fakeClient(1000);
+      // What mqtt leaves behind once a CONNACK error suppressed reconnecting
+      mqttClient.reconnecting = true;
+      mqttClient.reconnectTimer = null;
+      untyped.mqttClient = mqttClient;
+      untyped.connectionPromise = Promise.reject(new Error('Connection lost'));
+      untyped.connectionPromise.catch(() => {});
+      const callback = vi.fn();
+      untyped.routingMap.set('pending id', callback);
+
+      mqtt.registerCloseListener(mqttClient);
+      mqttClient.emit('close');
+
+      expect(untyped.mqttClient).toBeNull();
+      expect(untyped.connectionPromise).toBeNull();
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+    });
+
+    it('should keep a closed client that has a reconnect scheduled', () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const mqttClient = fakeClient(1000);
+      mqttClient.reconnecting = true;
+      mqttClient.reconnectTimer = {};
+      untyped.mqttClient = mqttClient;
+      untyped.connectionPromise = Promise.resolve();
+
+      mqtt.registerCloseListener(mqttClient);
+      mqttClient.emit('close');
+
+      expect(untyped.mqttClient).toBe(mqttClient);
+      expect(untyped.connectionPromise).not.toBeNull();
+    });
+
     it('should let the next client handle responses after a connected client gave up', async () => {
       const mqtt = new ClientMqtt({});
       const untyped: any = mqtt;
