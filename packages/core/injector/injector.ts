@@ -1125,7 +1125,7 @@ export class Injector {
     );
   }
 
-  private shouldSkipProviderLoading(
+  protected shouldSkipProviderLoading(
     wrapper: InstanceWrapper<Injectable>,
     resolutionContext: ResolutionContext,
   ): boolean {
