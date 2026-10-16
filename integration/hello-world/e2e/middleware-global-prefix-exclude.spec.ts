@@ -94,3 +94,61 @@ describe.each([
     });
   },
 );
+
+@Controller('reports')
+class ReportsController {
+  @Get()
+  findAll() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':id')
+  findOne() {
+    return RETURN_VALUE;
+  }
+}
+
+describe.each([
+  ['Express', () => undefined],
+  ['Fastify', () => new FastifyAdapter()],
+])(
+  'Middleware - controller root excluded from the global prefix by a wildcard (%s)',
+  (_, createAdapter) => {
+    let app: INestApplication;
+
+    const createApp = async (route: string) => {
+      @Module({
+        controllers: [ReportsController],
+      })
+      class ReportsModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
+            .forRoutes(route);
+        }
+      }
+
+      app = (
+        await Test.createTestingModule({ imports: [ReportsModule] }).compile()
+      ).createNestApplication(createAdapter());
+      // The router tests the root route of the controller as "/reports/",
+      // which the exclusion matches, and serves it at "/reports"
+      app.setGlobalPrefix('api', { exclude: ['reports/{*path}'] });
+      await listenOnLoopback(app);
+    };
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it.each(['{*path}', 'reports'])(
+      `forRoutes('%s') should run on "/reports"`,
+      async route => {
+        await createApp(route);
+        await request(app.getHttpServer())
+          .get('/reports')
+          .expect(200, MIDDLEWARE_VALUE);
+      },
+    );
+  },
+);

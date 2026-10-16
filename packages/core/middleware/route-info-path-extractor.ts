@@ -59,12 +59,12 @@ export class RouteInfoPathExtractor {
         ? [
             ...entries,
             ...this.excludedGlobalPrefixRoutes
-              .map(route =>
-                Array.isArray(versionPaths) && versionPaths.length > 0
-                  ? versionPaths.map(v => v + addLeadingSlash(route.path))
-                  : addLeadingSlash(route.path),
-              )
-              .flat(),
+              .flatMap(route => this.getPathsOfExcludedRoute(route))
+              .flatMap(excludedPath =>
+                versionPaths.length > 0
+                  ? versionPaths.map(v => v + excludedPath)
+                  : [excludedPath],
+              ),
           ]
         : entries;
     }
@@ -73,11 +73,15 @@ export class RouteInfoPathExtractor {
   }
 
   /**
-   * Returns the routes excluded from the global prefix (without parameters or
-   * wildcards) that the route covers without being excluded itself, such as
-   * "users/me" for "users/:id", or a `GET` exclusion for a route of every
-   * method: the router serves them without the prefix, out of the reach of
-   * the paths the route is mounted on.
+   * Returns the routes excluded from the global prefix that the route covers
+   * without being excluded itself: the router serves them without the
+   * prefix, out of the reach of the paths the route is mounted on. These are
+   * the excluded routes without parameters or wildcards that the route
+   * matches, such as "users/me" for "users/:id" (or a `GET` exclusion for a
+   * route of every method), and the root route of a controller at the
+   * route's own path, which an exclusion ending in an optional segment such
+   * as "reports/{*path}" takes out of the prefix (see
+   * `isExcludedWithTrailingSlash()`).
    */
   public extractExcludedRoutesCoveredBy({
     path,
@@ -105,15 +109,22 @@ export class RouteInfoPathExtractor {
       const excludedMethod = isRequestMethodAll(excludedRoute.requestMethod)
         ? method
         : excludedRoute.requestMethod;
-      if (
-        !isStaticPath(excludedPath) ||
-        !routeRegex.test(excludedPath) ||
-        !(isRequestMethodAll(method) || method === excludedMethod)
-      ) {
+      if (!(isRequestMethodAll(method) || method === excludedMethod)) {
+        return [];
+      }
+      // Mounted with the trailing slash, like the root route of a controller
+      // passed to forRoutes(), so that it is not under the prefix either
+      const coveredPath =
+        isStaticPath(excludedPath) && routeRegex.test(excludedPath)
+          ? excludedPath
+          : this.isExcludedWithTrailingSlash(excludedRoute, path)
+            ? stripEndSlash(addLeadingSlash(path)) + '/'
+            : undefined;
+      if (!coveredPath) {
         return [];
       }
       const routeInfo: RouteInfo = {
-        path: excludedPath,
+        path: coveredPath,
         method: excludedMethod,
       };
       if (version) {
@@ -121,6 +132,39 @@ export class RouteInfoPathExtractor {
       }
       return [routeInfo];
     });
+  }
+
+  /**
+   * Returns the paths the router serves a route excluded from the global
+   * prefix at: those of its pattern and, for a pattern ending in an optional
+   * segment such as "reports/{*path}", the parent path ("/reports") (see
+   * `isExcludedWithTrailingSlash()`).
+   */
+  private getPathsOfExcludedRoute(route: ExcludeRouteMetadata): string[] {
+    const excludedPath = addLeadingSlash(route.path);
+    const parentPath = excludedPath.slice(0, excludedPath.lastIndexOf('/'));
+    return this.isExcludedWithTrailingSlash(route, parentPath)
+      ? [excludedPath, parentPath]
+      : [excludedPath];
+  }
+
+  /**
+   * Tells whether the exclusion takes a route at the path out of the global
+   * prefix only through a trailing slash: the router tests the root route of
+   * a controller with one ("/reports/"), which an exclusion ending in an
+   * optional segment matches ("reports/{*path}"), and serves it at
+   * "/reports", which the exclusion does not match.
+   */
+  private isExcludedWithTrailingSlash(
+    { pathRegex }: ExcludeRouteMetadata,
+    path: string,
+  ): boolean {
+    const pathWithoutSlash = stripEndSlash(addLeadingSlash(path));
+    return (
+      pathWithoutSlash !== '' &&
+      pathRegex.test(pathWithoutSlash + '/') &&
+      !pathRegex.test(pathWithoutSlash)
+    );
   }
 
   public extractPathFrom(route: RouteInfo): string[] {
