@@ -961,10 +961,12 @@ export class ServerGrpc extends Server<never, never> {
         },
       }),
       next: (value: T) => {
-        if (!hasDrained) {
-          replayBuffer!.next(value);
+        if (replayBuffer) {
+          replayBuffer.next(value);
         }
-        subject.next(value);
+        if (!hasDrained || !replayBuffer) {
+          subject.next(value);
+        }
       },
       error: (err: any) => {
         replayBuffer?.error(err);

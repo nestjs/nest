@@ -6,6 +6,7 @@ import {
   BehaviorSubject,
   concat,
   EMPTY,
+  firstValueFrom,
   lastValueFrom,
   NEVER,
   of,
@@ -976,6 +977,52 @@ describe('ServerGrpc', () => {
       await result;
 
       expect(handled).toEqual([0, 1, 2, 3, 4]);
+    });
+  });
+
+  describe('bufferUntilDrained', () => {
+    const tick = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should preserve message order while replay is pending', async () => {
+      const buffer = untypedServer.bufferUntilDrained();
+      buffer.next('first');
+      const stream = buffer.subject.asObservable();
+      stream.drainBuffer();
+      const result = lastValueFrom(stream.pipe(toArray()));
+
+      buffer.next('second');
+      await tick();
+      buffer.next('third');
+      buffer.complete();
+
+      expect(await result).toEqual(['first', 'second', 'third']);
+    });
+
+    it('should retain messages received before subscribing to the pending replay', async () => {
+      const buffer = untypedServer.bufferUntilDrained();
+      buffer.next('first');
+      const stream = buffer.subject.asObservable();
+      stream.drainBuffer();
+      buffer.next('second');
+      buffer.complete();
+
+      expect(await lastValueFrom(stream.pipe(toArray()))).toEqual([
+        'first',
+        'second',
+      ]);
+    });
+
+    it('should deliver messages to consumers before replay is requested', async () => {
+      const buffer = untypedServer.bufferUntilDrained();
+      const stream = buffer.subject.asObservable();
+      const result = firstValueFrom(stream);
+
+      buffer.next('first');
+
+      expect(await result).toBe('first');
+      stream.drainBuffer();
+      buffer.complete();
+      await tick();
     });
   });
 
