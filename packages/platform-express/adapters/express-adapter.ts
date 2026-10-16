@@ -170,6 +170,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       return response.send();
     }
     if (body instanceof StreamableFile) {
+      // A stream that failed before the reply (e.g. while an interceptor
+      // awaited) has already emitted its 'error' event.
+      const { errored } = body.getStream();
+      if (errored) {
+        return body.errorHandler(errored, response);
+      }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {

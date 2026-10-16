@@ -10,12 +10,14 @@ import {
   Logger,
   RawBodyRequest,
   RequestMethod,
+  StreamableFile,
   VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest, fastify } from 'fastify';
 import { inject } from 'light-my-request';
+import { PassThrough } from 'stream';
 
 describe('FastifyAdapter', () => {
   let fastifyAdapter: FastifyAdapter;
@@ -110,6 +112,16 @@ describe('FastifyAdapter', () => {
         'Content-Type',
         'application/json',
       );
+    });
+
+    it('should destroy the stream of a StreamableFile once the reply was sent', () => {
+      // e.g. by Fastify's `handlerTimeout`: send() then drops the stream
+      const reply = { ...createReply(), sent: true };
+      const source = new PassThrough();
+
+      fastifyAdapter.reply(reply as any, new StreamableFile(source));
+
+      expect(source.destroyed).toBe(true);
     });
   });
 

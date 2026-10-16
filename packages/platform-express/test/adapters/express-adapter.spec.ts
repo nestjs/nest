@@ -392,6 +392,22 @@ describe('ExpressAdapter', () => {
         await vi.waitFor(() => expect(source.destroyed).toBe(true));
       });
 
+      it('should report a source that failed before the reply to the error handler', async () => {
+        // e.g. ENOENT from `fs.createReadStream()` while an interceptor awaits
+        const source = new PassThrough();
+        const errorHandler = vi.fn();
+        const file = new StreamableFile(source).setErrorHandler(errorHandler);
+        const response = createStreamResponse();
+        const error = new Error('ENOENT');
+        source.destroy(error);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, file);
+
+        expect(errorHandler).toHaveBeenCalledWith(error, response);
+        expect(response.setHeader).not.toHaveBeenCalled();
+      });
+
       it('should not destroy a source that has ended', async () => {
         const source = new PassThrough({ autoDestroy: false });
         const response = createStreamResponse();
