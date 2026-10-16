@@ -93,6 +93,8 @@ export class WsAdapter extends AbstractWsAdapter {
       namespace?: string;
       server?: any;
       path?: string;
+      host?: string;
+      backlog?: number;
     };
     if (wsOptions?.namespace) {
       const error = new Error(
@@ -123,7 +125,9 @@ export class WsAdapter extends AbstractWsAdapter {
       // sharing a single HTTP/S server running on different port
       // than a regular HTTP application
       const httpServer = this.ensureHttpServerExists(port);
-      httpServer?.listen(port);
+      // ws listens with "host" and "backlog" only on a server it creates
+      // itself, and the one below has none (noServer)
+      httpServer?.listen(port, wsOptions.host, wsOptions.backlog);
 
       const wsServer = this.bindErrorHandler(
         new wsPackage.Server({

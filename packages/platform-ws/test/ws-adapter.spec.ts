@@ -220,5 +220,18 @@ describe('WsAdapter', () => {
       expect(response.status).to.equal(426);
       expect(await response.text()).to.equal('Upgrade Required');
     });
+
+    it('should listen on the host from the options', async () => {
+      adapter.create(port, { path: '/chat', host: '127.0.0.1' });
+      const httpServer = adapter['httpServersRegistry'].get(port);
+      if (!httpServer.listening) {
+        await once(httpServer, 'listening');
+      }
+
+      expect(httpServer.address()).to.include({
+        address: '127.0.0.1',
+        port,
+      });
+    });
   });
 });
