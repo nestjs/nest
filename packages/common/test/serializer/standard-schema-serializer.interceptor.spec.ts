@@ -27,7 +27,7 @@ describe('StandardSchemaSerializerInterceptor', () => {
 
   beforeEach(() => {
     mockReflector = {
-      getAllAndOverride: vi.fn().mockReturnValue(undefined),
+      getAll: vi.fn().mockReturnValue([undefined, undefined]),
     };
 
     mockExecutionContext = {
@@ -91,9 +91,12 @@ describe('StandardSchemaSerializerInterceptor', () => {
         interceptor = new StandardSchemaSerializerInterceptor(mockReflector, {
           schema: defaultSchema,
         });
-        mockReflector.getAllAndOverride.mockReturnValue({
-          schema: contextSchema,
-        });
+        mockReflector.getAll.mockReturnValue([
+          {
+            schema: contextSchema,
+          },
+          undefined,
+        ]);
         const response = { id: 1 };
         (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
           of(response),
@@ -105,6 +108,63 @@ describe('StandardSchemaSerializerInterceptor', () => {
         );
         const result = await lastValueFrom(result$);
         expect(result).toEqual({ id: 1, fromContext: true });
+      });
+
+      it('should keep the class schema when the handler only sets validateOptions', async () => {
+        const validateSpy = vi.fn((value: any) => ({
+          value: { id: value.id },
+        }));
+        const classSchema = createSchema(validateSpy);
+        const handlerOpts: StandardSchemaV1.Options = {
+          libraryOptions: { from: 'handler' },
+        };
+        interceptor = new StandardSchemaSerializerInterceptor(mockReflector);
+        mockReflector.getAll.mockReturnValue([
+          { validateOptions: handlerOpts },
+          { schema: classSchema },
+        ]);
+        const response = { id: 1, password: 'secret' };
+        (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+          of(response),
+        );
+
+        const result$ = interceptor.intercept(
+          mockExecutionContext,
+          mockCallHandler,
+        );
+        expect(await lastValueFrom(result$)).toEqual({ id: 1 });
+        expect(validateSpy).toHaveBeenCalledWith(response, handlerOpts);
+      });
+
+      it('should use the handler schema with the class validateOptions', async () => {
+        const classSchema = createSchema(value => ({
+          value: { ...(value as any), fromClass: true },
+        }));
+        const validateSpy = vi.fn((value: any) => ({
+          value: { ...value, fromHandler: true },
+        }));
+        const classOpts: StandardSchemaV1.Options = {
+          libraryOptions: { from: 'class' },
+        };
+        interceptor = new StandardSchemaSerializerInterceptor(mockReflector);
+        mockReflector.getAll.mockReturnValue([
+          { schema: createSchema(validateSpy) },
+          { schema: classSchema, validateOptions: classOpts },
+        ]);
+        const response = { id: 1 };
+        (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+          of(response),
+        );
+
+        const result$ = interceptor.intercept(
+          mockExecutionContext,
+          mockCallHandler,
+        );
+        expect(await lastValueFrom(result$)).toEqual({
+          id: 1,
+          fromHandler: true,
+        });
+        expect(validateSpy).toHaveBeenCalledWith(response, classOpts);
       });
     });
 
@@ -277,9 +337,12 @@ describe('StandardSchemaSerializerInterceptor', () => {
       interceptor = new StandardSchemaSerializerInterceptor(mockReflector, {
         schema,
       });
-      mockReflector.getAllAndOverride.mockReturnValue({
-        validateOptions: contextOpts,
-      });
+      mockReflector.getAll.mockReturnValue([
+        {
+          validateOptions: contextOpts,
+        },
+        undefined,
+      ]);
       const response = { id: 1 };
       (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
         of(response),
@@ -308,9 +371,12 @@ describe('StandardSchemaSerializerInterceptor', () => {
         schema,
         validateOptions: defaultOpts,
       });
-      mockReflector.getAllAndOverride.mockReturnValue({
-        validateOptions: contextOpts,
-      });
+      mockReflector.getAll.mockReturnValue([
+        {
+          validateOptions: contextOpts,
+        },
+        undefined,
+      ]);
       const response = { id: 1 };
       (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
         of(response),

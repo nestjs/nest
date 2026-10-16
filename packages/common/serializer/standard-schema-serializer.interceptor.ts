@@ -124,9 +124,21 @@ export class StandardSchemaSerializerInterceptor implements NestInterceptor {
   protected getContextOptions(
     context: ExecutionContext,
   ): StandardSchemaSerializerContextOptions | undefined {
-    return this.reflector.getAllAndOverride(CLASS_SERIALIZER_OPTIONS, [
+    const [handlerOptions, classOptions]: (
+      StandardSchemaSerializerContextOptions | undefined
+    )[] = this.reflector.getAll(CLASS_SERIALIZER_OPTIONS, [
       context.getHandler(),
       context.getClass(),
     ]);
+    if (!handlerOptions || !classOptions) {
+      return handlerOptions ?? classOptions;
+    }
+    // Key by key, so that a handler that only sets "validateOptions" (or the
+    // options of another serializer) doesn't drop the schema of its class
+    return {
+      schema: handlerOptions.schema ?? classOptions.schema,
+      validateOptions:
+        handlerOptions.validateOptions ?? classOptions.validateOptions,
+    };
   }
 }
