@@ -9,6 +9,7 @@ import { RequestMethod } from '../../../common/enums/request-method.enum.js';
 import { MiddlewareConfiguration } from '../../../common/interfaces/index.js';
 import { ApplicationConfig } from '../../application-config.js';
 import { NestContainer } from '../../injector/container.js';
+import { Module } from '../../injector/module.js';
 import { RoutesMapper } from '../../middleware/routes-mapper.js';
 
 describe('RoutesMapper', () => {
@@ -67,9 +68,9 @@ describe('RoutesMapper', () => {
     const mountAt = (modulePath: string) => {
       class RoutedModule {}
       Reflect.defineMetadata(MODULE_PATH, modulePath, RoutedModule);
-      vi.spyOn(mapper as any, 'getHostModuleOfController').mockReturnValue({
-        metatype: RoutedModule,
-      });
+      vi.spyOn(mapper as any, 'getHostModulesOfController').mockReturnValue([
+        { metatype: RoutedModule },
+      ]);
     };
 
     afterEach(() => vi.restoreAllMocks());
@@ -99,6 +100,54 @@ describe('RoutesMapper', () => {
       expect(mapper.mapRouteToRouteInfo(TrailingSlashRoute)).toEqual([
         { path: '/parent/tail/child', method: RequestMethod.GET },
       ]);
+    });
+  });
+
+  describe('when the controller is declared by more than one module', () => {
+    let container: NestContainer;
+
+    const declareIn = (modulePath?: string) => {
+      class HostModule {}
+      if (modulePath) {
+        Reflect.defineMetadata(MODULE_PATH, modulePath, HostModule);
+      }
+      const moduleRef = new Module(HostModule, container);
+      moduleRef.addController(TestRoute);
+      container.getModules().set(`${modulePath}`, moduleRef);
+    };
+
+    beforeEach(() => {
+      container = new NestContainer();
+      const appConfig = new ApplicationConfig();
+      appConfig.enableVersioning({ type: VersioningType.URI });
+      mapper = new RoutesMapper(container, appConfig);
+    });
+
+    it('should map its routes under the path of each module', () => {
+      declareIn('/first');
+      declareIn('/second');
+      declareIn();
+
+      expect(
+        mapper
+          .mapRouteToRouteInfo(TestRoute)
+          .filter(({ method }) => method === RequestMethod.DELETE),
+      ).toEqual([
+        { path: '/first/test/another', method: RequestMethod.DELETE },
+        { path: '/second/test/another', method: RequestMethod.DELETE },
+        { path: '/test/another', method: RequestMethod.DELETE },
+      ]);
+    });
+
+    it('should map its routes once for modules sharing a path', () => {
+      declareIn('/');
+      declareIn();
+
+      expect(
+        mapper
+          .mapRouteToRouteInfo(TestRoute)
+          .filter(({ method }) => method === RequestMethod.DELETE),
+      ).toEqual([{ path: '/test/another', method: RequestMethod.DELETE }]);
     });
   });
 

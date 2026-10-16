@@ -76,3 +76,64 @@ describe('RouterModule with Middleware functions', () => {
     await app.close();
   });
 });
+
+@Controller('shared')
+class SharedController {
+  @Get()
+  findAll() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [SharedController],
+})
+class FirstHostModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(SCOPED_VALUE))
+      .forRoutes(SharedController);
+  }
+}
+
+@Module({
+  controllers: [SharedController],
+})
+class SecondHostModule {}
+
+describe('RouterModule with Middleware functions - controller in more than one module', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    app = (
+      await Test.createTestingModule({
+        imports: [
+          FirstHostModule,
+          SecondHostModule,
+          RouterModule.register([
+            { path: 'first', module: FirstHostModule },
+            { path: 'second', module: SecondHostModule },
+          ]),
+        ],
+      }).compile()
+    ).createNestApplication();
+
+    await listenOnLoopback(app);
+  });
+
+  it(`forRoutes(SharedController) - /first/shared`, () => {
+    return request(app.getHttpServer())
+      .get('/first/shared')
+      .expect(200, SCOPED_VALUE);
+  });
+
+  it(`forRoutes(SharedController) - /second/shared`, () => {
+    return request(app.getHttpServer())
+      .get('/second/shared')
+      .expect(200, SCOPED_VALUE);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+});
