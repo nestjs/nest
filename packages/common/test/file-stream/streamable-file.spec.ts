@@ -9,6 +9,13 @@ describe('StreamableFile', () => {
       const streamableFile = new StreamableFile(stream);
       expect(streamableFile.getStream()).toBe(stream);
     });
+    it('should handle errors the stream emits before it is sent', () => {
+      // e.g. ENOENT from `fs.createReadStream()` while an interceptor awaits
+      const stream = new Readable({ read() {} });
+      new StreamableFile(stream);
+      expect(() => stream.emit('error', new Error('ENOENT'))).not.toThrow();
+      expect(() => stream.emit('error', new Error('EIO'))).not.toThrow();
+    });
   });
   describe('when input is an object with "pipe" method', () => {
     it('should assign it to a stream class property', () => {
