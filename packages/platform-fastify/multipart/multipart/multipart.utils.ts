@@ -30,6 +30,11 @@ export function mergeMultipartOptions(
   if (isPlainObject(options.limits) && isPlainObject(localOptions.limits)) {
     merged.limits = { ...options.limits, ...localOptions.limits };
   }
+  // `dest` and `storage` both say where files go, and `resolveStorage()`
+  // prefers `storage`, so a global storage engine would shadow a local `dest`.
+  if (localOptions.dest && !localOptions.storage) {
+    delete merged.storage;
+  }
   return merged;
 }
 

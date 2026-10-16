@@ -21,6 +21,18 @@ describe('mergeMulterOptions', () => {
     const merged = mergeMulterOptions({ dest: '/global' }, { dest: '/local' });
     expect(merged.dest).toBe('/local');
   });
+  it('should let a local "dest" override a global "storage"', () => {
+    const merged = mergeMulterOptions(
+      { storage: multer.memoryStorage() },
+      { dest: '/local' },
+    );
+    expect(merged).toEqual({ dest: '/local' });
+  });
+  it('should keep a global "storage" when the route sets no "dest"', () => {
+    const storage = multer.memoryStorage();
+    const merged = mergeMulterOptions({ storage }, { preservePath: true });
+    expect(merged.storage).toBe(storage);
+  });
   it('should merge limits key-by-key instead of replacing the whole object', () => {
     const merged = mergeMulterOptions(
       { limits: { files: 2, fieldNameSize: 100 } },
