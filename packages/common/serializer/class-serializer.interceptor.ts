@@ -15,6 +15,11 @@ import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
 import { ClassSerializerContextOptions } from './class-serializer.interfaces.js';
 
 let classTransformer: any = {} as any;
+// The package of the interceptor created last, which may still be loading.
+// "intercept()" resolves it into "classTransformer", so that an interceptor
+// created while responses are serialized (e.g. a request-scoped one) doesn't
+// put a promise in place of the package they use.
+let pendingClassTransformer: any;
 
 export interface PlainLiteralObject {
   [key: string]: any;
@@ -42,20 +47,23 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     @Optional()
     protected readonly defaultOptions: ClassSerializerInterceptorOptions = {},
   ) {
-    classTransformer =
+    pendingClassTransformer =
       defaultOptions?.transformerPackage ??
       loadPackage(
         'class-transformer',
         'ClassSerializerInterceptor',
         () => import('class-transformer'),
       );
+    if (!(pendingClassTransformer instanceof Promise)) {
+      classTransformer = pendingClassTransformer;
+    }
   }
 
   async intercept(
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
-    classTransformer = (await classTransformer) as TransformerPackage;
+    classTransformer = (await pendingClassTransformer) as TransformerPackage;
 
     const contextOptions = this.getContextOptions(context);
     const options = {

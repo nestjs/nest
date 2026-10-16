@@ -188,6 +188,22 @@ describe('ClassSerializerInterceptor', () => {
       });
     });
 
+    it('should serialize a response while another interceptor is created', async () => {
+      class User {
+        id = 1;
+        @Exclude()
+        password = 'secret';
+      }
+      interceptor = new ClassSerializerInterceptor(mockReflector);
+      const next: CallHandler = { handle: () => of(new User()) };
+
+      const result$ = await interceptor.intercept(mockExecutionContext, next);
+      // e.g. a request-scoped interceptor, created for another request
+      new ClassSerializerInterceptor(mockReflector);
+
+      expect(await firstValueFrom(result$)).toEqual({ id: 1 });
+    });
+
     describe('with class-transformer groups', () => {
       @Exclude()
       class UserDto {
