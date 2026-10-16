@@ -102,9 +102,26 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public async close(): Promise<void> {
-    this.channel && (await this.channel.close());
-    this.server && (await this.server.close());
-    this.pendingEventListeners = [];
+    try {
+      // The channel goes first, as amqplib settles its close on the broker's
+      // reply, which never arrives once the connection is closed. The
+      // connection is still closed when the channel close fails, otherwise
+      // the connection manager keeps reconnecting after close() rejected.
+      const results = [
+        ...(await Promise.allSettled([this.channel?.close()])),
+        ...(await Promise.allSettled([this.server?.close()])),
+      ];
+      const [failure, ...otherFailures] = results.filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      );
+      otherFailures.forEach(({ reason }) => this.logger.error(reason));
+      if (failure) {
+        throw failure.reason;
+      }
+    } finally {
+      this.pendingEventListeners = [];
+    }
   }
 
   public async start(
@@ -178,7 +195,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
           return;
         }
         if (++this.connectionAttempts === maxConnectionAttempts) {
-          await this.close();
+          await this.close().catch(err => this.logger.error(err));
           settleListenCallback(
             error.err ?? new Error(CONNECTION_FAILED_MESSAGE),
           );

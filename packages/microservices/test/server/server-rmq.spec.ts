@@ -153,6 +153,24 @@ describe('ServerRMQ', () => {
         expect(listenCallback).toHaveBeenCalledOnce();
         expect(listenCallback).toHaveBeenCalledWith(connectionError);
       });
+      it('should still call the callback when closing fails', async () => {
+        const connectionError = new Error('ECONNREFUSED');
+        const closeError = new Error('close failed');
+        const handlers = new Map<string, (error: object) => Promise<void>>();
+        client.once = vi.fn((event, handler) => handlers.set(event, handler));
+        untypedServer.options = { maxConnectionAttempts: 1 };
+        vi.spyOn(server, 'close').mockRejectedValue(closeError);
+        const logError = vi
+          .spyOn(server['logger'], 'error')
+          .mockImplementation(() => {});
+        const listenCallback = vi.fn<(err?: unknown) => void>();
+
+        await server.listen(listenCallback);
+        await handlers.get('connectFailed')?.({ err: connectionError });
+
+        expect(logError).toHaveBeenCalledWith(closeError);
+        expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
+      });
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
@@ -181,6 +199,51 @@ describe('ServerRMQ', () => {
     it('should close channel', async () => {
       await server.close();
       expect(rmqChannel.close).toHaveBeenCalled();
+    });
+    it('should close the channel before the connection', async () => {
+      let closeChannel!: () => void;
+      untypedServer.channel = {
+        close: vi.fn(
+          () => new Promise<void>(resolve => (closeChannel = resolve)),
+        ),
+      };
+      const connection = { close: vi.fn() };
+      untypedServer.server = connection;
+
+      const closing = server.close();
+      await new Promise(resolve => setImmediate(resolve));
+      expect(connection.close).not.toHaveBeenCalled();
+
+      closeChannel();
+      await closing;
+      expect(connection.close).toHaveBeenCalledOnce();
+    });
+    it('should close the connection when closing the channel fails', async () => {
+      const channelError = new Error('channel close failed');
+      untypedServer.channel = {
+        close: vi.fn().mockRejectedValue(channelError),
+      };
+      const connection = { close: vi.fn() };
+      untypedServer.server = connection;
+
+      await expect(server.close()).rejects.toBe(channelError);
+      expect(connection.close).toHaveBeenCalledOnce();
+    });
+    it('should log the connection close error when both closes fail', async () => {
+      const channelError = new Error('channel close failed');
+      const connectionError = new Error('connection close failed');
+      untypedServer.channel = {
+        close: vi.fn().mockRejectedValue(channelError),
+      };
+      untypedServer.server = {
+        close: vi.fn().mockRejectedValue(connectionError),
+      };
+      const logError = vi
+        .spyOn(server['logger'], 'error')
+        .mockImplementation(() => {});
+
+      await expect(server.close()).rejects.toBe(channelError);
+      expect(logError).toHaveBeenCalledWith(connectionError);
     });
   });
 
