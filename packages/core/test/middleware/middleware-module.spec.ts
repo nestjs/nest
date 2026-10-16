@@ -8,6 +8,7 @@ import { ApplicationConfig } from '../../application-config.js';
 import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception.js';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception.js';
 import { NestContainer } from '../../injector/container.js';
+import { Injector } from '../../injector/injector.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { GraphInspector } from '../../inspector/graph-inspector.js';
@@ -347,6 +348,84 @@ describe('MiddlewareModule', () => {
         },
         expect.any(String),
       );
+    });
+
+    it('should delegate errors to the filters of the middleware that inherits "use"', async () => {
+      class BaseMiddleware implements NestMiddleware {
+        public use(req, res, next) {}
+      }
+      class FirstMiddleware extends BaseMiddleware {}
+      class SecondMiddleware extends BaseMiddleware {}
+
+      const configuration = {
+        middleware: [FirstMiddleware, SecondMiddleware],
+        forRoutes: ['test'],
+      };
+      const handlers: Function[] = [];
+      const app = {
+        createMiddlewareFactory: () => (path: string, handler: Function) =>
+          handlers.push(handler),
+      };
+
+      const stubContainer = new NestContainer();
+      stubContainer
+        .getModules()
+        .set('Test', new Module(TestModule, stubContainer));
+
+      const container = new MiddlewareContainer(stubContainer);
+      const moduleKey = 'Test';
+      container.insertConfig([configuration], moduleKey);
+
+      const firstWrapper = new InstanceWrapper({
+        metatype: FirstMiddleware,
+        instance: new FirstMiddleware(),
+        scope: Scope.REQUEST,
+      });
+      const secondWrapper = new InstanceWrapper({
+        metatype: SecondMiddleware,
+        instance: new SecondMiddleware(),
+        scope: Scope.REQUEST,
+      });
+      const collection = container.getMiddlewareCollection(moduleKey);
+      collection.set(FirstMiddleware, firstWrapper);
+      collection.set(SecondMiddleware, secondWrapper);
+      vi.spyOn(stubContainer, 'getModuleByKey').mockImplementation(
+        () => new Module(class {}, stubContainer),
+      );
+      vi.spyOn(stubContainer, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      middlewareModule['container'] = stubContainer;
+
+      const injector = new Injector();
+      vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+      middlewareModule['injector'] = injector;
+
+      const firstExceptionsHandler = { next: vi.fn() };
+      const secondExceptionsHandler = { next: vi.fn() };
+      vi.spyOn(
+        middlewareModule['routerExceptionFilter'],
+        'create',
+      ).mockImplementation(
+        instance =>
+          (instance === firstWrapper.instance
+            ? firstExceptionsHandler
+            : secondExceptionsHandler) as any,
+      );
+
+      await middlewareModule.registerRouteMiddleware(
+        container,
+        { path: 'test', method: RequestMethod.ALL },
+        configuration,
+        moduleKey,
+        app,
+      );
+      const [firstHandler, secondHandler] = handlers;
+      await firstHandler({}, null, null);
+      await secondHandler({}, null, null);
+
+      expect(firstExceptionsHandler.next).toHaveBeenCalledOnce();
+      expect(secondExceptionsHandler.next).toHaveBeenCalledOnce();
     });
   });
 });

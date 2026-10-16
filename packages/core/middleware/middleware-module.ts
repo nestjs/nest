@@ -2,6 +2,7 @@ import { type HttpServer, type InjectionToken, Logger } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler.js';
 import { ContextIdFactory } from '../helpers/context-id-factory.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
@@ -36,7 +37,6 @@ export class MiddlewareModule<
     NestApplicationContextOptions,
 > {
   private readonly routerProxy = new RouterProxy();
-  private readonly exceptionFiltersCache = new WeakMap();
   private readonly logger = new Logger(MiddlewareModule.name);
 
   private injector: Injector;
@@ -260,6 +260,9 @@ export class MiddlewareModule<
     }
 
     const isTreeDurable = wrapper.isDependencyTreeDurable();
+    // Kept per route, not per "use" function: middleware that inherits it
+    // from a base class can declare different filters
+    let exceptionsHandler: ExceptionsHandler | undefined;
 
     await this.registerHandler(
       applicationRef,
@@ -283,15 +286,11 @@ export class MiddlewareModule<
           );
           return proxy(req, res, next);
         } catch (err) {
-          let exceptionsHandler = this.exceptionFiltersCache.get(instance.use);
-          if (!exceptionsHandler) {
-            exceptionsHandler = this.routerExceptionFilter.create(
-              instance,
-              instance.use,
-              undefined,
-            );
-            this.exceptionFiltersCache.set(instance.use, exceptionsHandler);
-          }
+          exceptionsHandler ??= this.routerExceptionFilter.create(
+            instance,
+            instance.use,
+            undefined,
+          );
           const host = new ExecutionContextHost([req, res, next]);
           exceptionsHandler.next(err, host);
         }
