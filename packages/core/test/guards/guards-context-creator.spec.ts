@@ -72,6 +72,21 @@ describe('GuardsContextCreator', () => {
           guardsContextCreator.createConcreteContext(guardTypeRefs),
         ).toHaveLength(2);
       });
+      it('should keep classes without a name', () => {
+        const AnonymousGuard = (() => class {})();
+        const wrapper = {
+          instance: { canActivate: () => true },
+          getInstanceByContextId: () => wrapper,
+        };
+        getSpy.mockReturnValue({
+          injectables: new Map([[AnonymousGuard, wrapper]]),
+        });
+
+        expect(AnonymousGuard.name).toBe('');
+        expect(
+          guardsContextCreator.createConcreteContext([AnonymousGuard]),
+        ).toEqual([wrapper.instance]);
+      });
     });
   });
 
