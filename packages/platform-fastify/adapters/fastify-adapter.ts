@@ -526,6 +526,12 @@ export class FastifyAdapter<
       fastifyReply.status(statusCode);
     }
     if (body instanceof StreamableFile) {
+      const stream = body.getStream();
+      // Once the reply was sent (e.g. by `handlerTimeout`), send() drops the
+      // stream without consuming or destroying it.
+      if (fastifyReply.sent && isFunction(stream?.destroy)) {
+        stream.destroy();
+      }
       const streamHeaders = body.getHeaders();
       if (
         fastifyReply.getHeader('Content-Type') === undefined &&
@@ -545,7 +551,7 @@ export class FastifyAdapter<
       ) {
         fastifyReply.header('Content-Length', streamHeaders.length);
       }
-      body = body.getStream();
+      body = stream;
     }
     if (
       fastifyReply.getHeader('Content-Type') !== undefined &&

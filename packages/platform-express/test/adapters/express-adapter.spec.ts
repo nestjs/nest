@@ -132,6 +132,22 @@ describe('ExpressAdapter', () => {
         await new Promise(resolve => response.once('end', resolve));
         expect(Buffer.concat(chunks).toString()).to.equal('firstsecond');
       });
+
+      it('should report a source that failed before the reply to the error handler', async () => {
+        // e.g. ENOENT from `fs.createReadStream()` while an interceptor awaits
+        const source = new PassThrough();
+        const errorHandler = sinon.stub();
+        const file = new StreamableFile(source).setErrorHandler(errorHandler);
+        const response = createStreamResponse();
+        const error = new Error('ENOENT');
+        source.destroy(error);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, file);
+
+        expect(errorHandler.calledWith(error, response)).to.be.true;
+        expect(response.setHeader.called).to.be.false;
+      });
     });
   });
 

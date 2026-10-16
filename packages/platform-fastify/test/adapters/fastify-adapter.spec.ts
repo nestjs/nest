@@ -1,6 +1,7 @@
 import {
   Logger,
   RequestMethod,
+  StreamableFile,
   VERSION_NEUTRAL,
   VersioningType,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { expect } from 'chai';
 import { FastifyInstance, FastifyRequest, fastify } from 'fastify';
 import { inject } from 'light-my-request';
 import * as sinon from 'sinon';
+import { PassThrough } from 'stream';
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
 
 describe('FastifyAdapter', () => {
@@ -561,6 +563,25 @@ describe('FastifyAdapter', () => {
 
       expect(res.statusCode).to.equal(200);
       expect(res.body).to.equal('found');
+    });
+  });
+
+  describe('reply', () => {
+    const createReply = () => ({
+      status: sinon.stub(),
+      send: sinon.stub(),
+      getHeader: sinon.stub(),
+      header: sinon.stub(),
+    });
+
+    it('should destroy the stream of a StreamableFile once the reply was sent', () => {
+      // e.g. by Fastify's `handlerTimeout`: send() then drops the stream
+      const reply = { ...createReply(), sent: true };
+      const source = new PassThrough();
+
+      fastifyAdapter.reply(reply as any, new StreamableFile(source));
+
+      expect(source.destroyed).to.be.true;
     });
   });
 });
