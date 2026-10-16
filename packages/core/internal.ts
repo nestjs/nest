@@ -57,6 +57,7 @@ export { BaseExceptionFilterContext } from './exceptions/base-exception-filter-c
 
 // Router
 export { LegacyRouteConverter } from './router/legacy-route-converter.js';
+export { isRejectedByPipes } from './router/rejected-by-pipes.js';
 export { REQUEST_CONTEXT_ID } from './router/request/request-constants.js';
 
 // Inspector

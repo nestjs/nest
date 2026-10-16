@@ -57,6 +57,7 @@ import { InterceptorsContextCreator } from '../interceptors/interceptors-context
 import { PipesConsumer } from '../pipes/pipes-consumer.js';
 import { PipesContextCreator } from '../pipes/pipes-context-creator.js';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface.js';
+import { markRejectedByPipes } from './rejected-by-pipes.js';
 import {
   CustomHeader,
   RedirectResponse,
@@ -172,8 +173,15 @@ export class RouterExecutionContext {
         handlerFiles: StreamableFile[] = [],
       ) =>
       async () => {
-        const pendingPipes = fnApplyPipes && fnApplyPipes(args, req, res, next);
-        pendingPipes && (await pendingPipes);
+        try {
+          const pendingPipes =
+            fnApplyPipes && fnApplyPipes(args, req, res, next);
+          pendingPipes && (await pendingPipes);
+        } catch (err) {
+          // e.g. for upload interceptors to remove the files they stored
+          markRejectedByPipes(req);
+          throw err;
+        }
         const result = callback.apply(instance, args);
         if (!handlerObservable$) {
           return result;

@@ -218,7 +218,7 @@ function storeFile(
   );
 }
 
-function removeFiles(
+export function removeFiles(
   storage: MultipartStorageEngine,
   req: FastifyRequest,
   files: UploadedMultipartFile[],
@@ -410,20 +410,21 @@ function readFilePart(
 
 /**
  * Parses the multipart body with multer's semantics and populates
- * `req.body` and `req.file` / `req.files`. Requests that are not multipart
- * are passed through untouched, as multer does.
+ * `req.body` and `req.file` / `req.files`, and returns the stored files.
+ * Requests that are not multipart are passed through untouched, as multer
+ * does.
  */
 export async function processMultipart(
   request: FastifyRequest,
   spec: UploadSpec,
   options: MultipartOptions,
   storage: MultipartStorageEngine,
-): Promise<void> {
+): Promise<UploadedMultipartFile[]> {
   const req = request as MultipartRequest;
   assertPluginRegistered(req);
   resetFiles(req);
   if (!req.isMultipart()) {
-    return;
+    return [];
   }
 
   const filesLeft = new Map<string, number>();
@@ -506,6 +507,7 @@ export async function processMultipart(
       break;
     }
   }
+  return stored;
 }
 
 /**

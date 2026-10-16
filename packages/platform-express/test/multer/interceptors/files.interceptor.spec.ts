@@ -1,6 +1,8 @@
-import { CallHandler } from '@nestjs/common';
+import { BadRequestException, CallHandler } from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { of } from 'rxjs';
+import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
+import { lastValueFrom, of, throwError } from 'rxjs';
+import { Writable } from 'stream';
 import { FilesInterceptor } from '../../../multer/interceptors/files.interceptor.js';
 
 describe('FilesInterceptor', () => {
@@ -40,6 +42,37 @@ describe('FilesInterceptor', () => {
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
         error => expect(error).not.toBeUndefined(),
+      );
+    });
+    it('should remove the stored files when the pipes reject the request', async () => {
+      const file = { fieldname: 'file' };
+      const storage = { _removeFile: vi.fn((_req, _file, cb) => cb(null)) };
+      const target = new (FilesInterceptor('file'))();
+      (target as any).multer = {
+        array: () => (req, _res, next) => {
+          req.files = [file];
+          next();
+        },
+        storage,
+      };
+      const req: any = {};
+      const res = new Writable({ write: (_chunk, _encoding, cb) => cb() });
+      const error = new BadRequestException('Validation failed');
+      markRejectedByPipes(req);
+
+      const result$ = await target.intercept(
+        new ExecutionContextHost([req, res]),
+        { handle: () => throwError(() => error) },
+      );
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      res.end();
+
+      await vi.waitFor(() =>
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          file,
+          expect.any(Function),
+        ),
       );
     });
   });

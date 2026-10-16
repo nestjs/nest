@@ -4,6 +4,9 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { isPlainObject } from '@nestjs/common/internal';
+import { isRejectedByPipes } from '@nestjs/core/internal';
+import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
+import { finished } from 'stream';
 import {
   DEFAULT_FIELD_NAME_LIMITS,
   multerExceptions,
@@ -69,6 +72,41 @@ function withDefaultLimits(
       limits?.fieldArrayIndexLimit ??
       DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit,
   };
+}
+
+/**
+ * Removes the files multer stored for `req` when the route's pipes reject
+ * the request (e.g. `ParseFilePipe`): the route handler never sees them, and
+ * nothing else would remove them. They are removed once the response has
+ * been sent, as an exception filter may still use (or remove) them.
+ */
+export function removeFilesOnPipeRejection<T>(
+  storage: any,
+  req: any,
+  res: any,
+): MonoTypeOperatorFunction<T> {
+  return catchError(err => {
+    if (isRejectedByPipes(req)) {
+      finished(res, () => {
+        for (const file of storedFiles(req)) {
+          try {
+            storage._removeFile(req, file, () => undefined);
+          } catch {
+            // The request has failed already.
+          }
+        }
+      });
+    }
+    return throwError(() => err);
+  });
+}
+
+function storedFiles(req: any): any[] {
+  const { file, files } = req;
+  if (file) {
+    return [file];
+  }
+  return Array.isArray(files) ? files : Object.values(files ?? {}).flat();
 }
 
 // Multer may add in a 'field' property to the error

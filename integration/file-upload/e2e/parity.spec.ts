@@ -643,6 +643,29 @@ describe('File upload: Express (multer) and Fastify parity', () => {
       expect(readdirSync(dirs.fastify)).toEqual([]);
     });
 
+    it('should remove the stored files when a pipe rejects the request', async () => {
+      const res = await expectParity(http =>
+        http
+          .post('/disk-validated')
+          .field('count', 'not a number')
+          .attach('docs', text('fine'), txt('1.txt'))
+          .attach('docs', text('fine too'), txt('2.txt')),
+      );
+      expect(res).toEqual({
+        status: 400,
+        body: {
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Validation failed (numeric string is expected)',
+        },
+      });
+      // Removed once the response has been sent.
+      await vi.waitFor(() => {
+        expect(readdirSync(dirs.express)).toEqual([]);
+        expect(readdirSync(dirs.fastify)).toEqual([]);
+      });
+    });
+
     it('should report a storage engine error', async () => {
       // Large enough that the file is still arriving when the engine fails.
       const res = await expectParity(http =>

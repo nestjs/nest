@@ -29,6 +29,7 @@ import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.j
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator.js';
 import { PipesConsumer } from '../../pipes/pipes-consumer.js';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator.js';
+import { isRejectedByPipes } from '../../router/rejected-by-pipes.js';
 import { RouteParamsFactory } from '../../router/route-params-factory.js';
 import { RouterExecutionContext } from '../../router/router-execution-context.js';
 import { HeaderStream } from '../../router/sse-stream.js';
@@ -184,6 +185,53 @@ describe('RouterExecutionContext', () => {
         await proxy({}, {}, vi.fn());
 
         expect(thenable.then).toHaveBeenCalledOnce();
+      });
+    });
+
+    describe('when the pipes reject the request', () => {
+      const createProxy = (pipesFn: Function, apply: () => unknown) => {
+        vi.spyOn(contextCreator, 'getMetadata').mockReturnValue({
+          argsLength: 1,
+          fnHandleResponse: vi.fn(),
+          isSseHandler: false,
+          paramtypes: [],
+          getParamsMetadata: vi.fn().mockReturnValue([]),
+          httpStatusCode: 200,
+          hasCustomHeaders: false,
+          responseHeaders: [],
+        } as any);
+        vi.spyOn(contextCreator, 'createGuardsFn').mockReturnValue(null as any);
+        vi.spyOn(contextCreator, 'createPipesFn').mockReturnValue(
+          pipesFn as any,
+        );
+        return contextCreator.create({} as any, { apply } as any, '', '', 0);
+      };
+
+      it('should record that the route handler did not run', async () => {
+        const error = new HttpException('Validation failed', 400);
+        const apply = vi.fn();
+        const req = {};
+        const proxy = createProxy(() => Promise.reject(error), apply);
+
+        await expect(proxy(req, {}, vi.fn())).rejects.toBe(error);
+
+        expect(apply).not.toHaveBeenCalled();
+        expect(isRejectedByPipes(req)).toBe(true);
+      });
+
+      it('should not record a request whose route handler fails', async () => {
+        const error = new Error('handler failed');
+        const req = {};
+        const proxy = createProxy(
+          () => Promise.resolve(),
+          () => {
+            throw error;
+          },
+        );
+
+        await expect(proxy(req, {}, vi.fn())).rejects.toBe(error);
+
+        expect(isRejectedByPipes(req)).toBe(false);
       });
     });
 

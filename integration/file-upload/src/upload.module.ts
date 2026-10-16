@@ -6,6 +6,7 @@ import {
   MaxFileSizeValidator,
   Module,
   ParseFilePipe,
+  ParseIntPipe,
   Post,
   UploadedFile,
   UploadedFiles,
@@ -209,6 +210,17 @@ export function createUploadModule(
     )
     disk(@UploadedFiles() files: any) {
       return { files: describeFiles(files) };
+    }
+
+    // A pipe rejects the request after the files were stored, so the route
+    // handler never sees them.
+    @Post('disk-validated')
+    @UseInterceptors(api.FilesInterceptor('docs', 5, { dest: uploadDir }))
+    diskValidated(
+      @UploadedFiles() files: any,
+      @Body('count', ParseIntPipe) count: number,
+    ) {
+      return { files: describeFiles(files), count };
     }
 
     // A third-party storage engine: multer's own disk storage.

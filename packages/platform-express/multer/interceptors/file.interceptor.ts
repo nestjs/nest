@@ -15,6 +15,7 @@ import { MulterOptions } from '../interfaces/multer-options.interface.js';
 import {
   applyDefaultLimits,
   mergeMulterOptions,
+  removeFilesOnPipeRejection,
   transformException,
 } from '../multer/multer.utils.js';
 
@@ -62,7 +63,15 @@ export function FileInterceptor(
           },
         ),
       );
-      return next.handle();
+      return next
+        .handle()
+        .pipe(
+          removeFilesOnPipeRejection(
+            this.multer.storage,
+            ctx.getRequest(),
+            ctx.getResponse(),
+          ),
+        );
     }
   }
   const Interceptor = mixin(MixinInterceptor);

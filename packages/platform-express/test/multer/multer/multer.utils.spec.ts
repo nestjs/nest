@@ -11,10 +11,13 @@ import {
 import {
   applyDefaultLimits,
   mergeMulterOptions,
+  removeFilesOnPipeRejection,
   transformException,
 } from '../../../multer/multer/multer.utils.js';
 import { MulterOptions } from '../../../multer/interfaces/multer-options.interface.js';
-import { Readable } from 'stream';
+import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
+import { lastValueFrom, throwError } from 'rxjs';
+import { Readable, Writable } from 'stream';
 
 describe('mergeMulterOptions', () => {
   it('should let local options override top-level global options', () => {
@@ -193,6 +196,61 @@ describe('applyDefaultLimits', () => {
       );
       expect(dig(body, 33)).toHaveLength(1002);
     });
+  });
+});
+
+describe('removeFilesOnPipeRejection', () => {
+  const error = new BadRequestException('Validation failed');
+  const createStorage = () => ({
+    _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+  });
+  const createResponse = () =>
+    new Writable({ write: (_chunk, _encoding, cb) => cb() });
+  const fail = (storage: any, req: any, res: Writable) =>
+    lastValueFrom(
+      throwError(() => error).pipe(
+        removeFilesOnPipeRejection(storage, req, res),
+      ),
+    );
+
+  it.each([
+    ['req.file', (file: object) => ({ file })],
+    ['req.files', (file: object) => ({ files: [file] })],
+    ['req.files by field', (file: object) => ({ files: { docs: [file] } })],
+  ])(
+    'should remove %s once the response is sent when the pipes rejected the request',
+    async (_, createRequest) => {
+      const storage = createStorage();
+      const file = { fieldname: 'docs', path: '/uploads/a' };
+      const req = createRequest(file);
+      const res = createResponse();
+      markRejectedByPipes(req);
+
+      await expect(fail(storage, req, res)).rejects.toBe(error);
+      // An exception filter may still use the files until the response is out.
+      expect(storage._removeFile).not.toHaveBeenCalled();
+      res.end();
+
+      await vi.waitFor(() =>
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          file,
+          expect.any(Function),
+        ),
+      );
+    },
+  );
+
+  it('should keep the files when the route handler failed', async () => {
+    const storage = createStorage();
+    const req = { file: { fieldname: 'doc', path: '/uploads/a' } };
+    const res = createResponse();
+
+    await expect(fail(storage, req, res)).rejects.toBe(error);
+    res.end();
+    await new Promise(resolve => setImmediate(resolve));
+
+    expect(storage._removeFile).not.toHaveBeenCalled();
   });
 });
 
