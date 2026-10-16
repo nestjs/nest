@@ -1,5 +1,8 @@
-import { Optional, Scope } from '@nestjs/common';
-import { PARAMTYPES_METADATA } from '@nestjs/common/constants.js';
+import { Optional, Scope, SetMetadata, type Type } from '@nestjs/common';
+import {
+  ENTRY_PROVIDER_WATERMARK,
+  PARAMTYPES_METADATA,
+} from '@nestjs/common/constants.js';
 import { Inject } from '../../../common/decorators/core/inject.decorator.js';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
 import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception.js';
@@ -432,6 +435,81 @@ describe('Injector', () => {
 
       expect(loadInstance).not.toHaveBeenCalled();
       expect(loadEnhancersPerContext).not.toHaveBeenCalled();
+    });
+
+    describe('enhancers of a static entry provider', () => {
+      @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+      class EntryProvider {}
+
+      class PlainProvider {}
+
+      let moduleRef: Module;
+      let loadInstance: ReturnType<typeof vi.fn>;
+
+      const addEnhancer = (host: Type<unknown>, scope?: Scope) => {
+        moduleRef.addProvider(host);
+
+        const enhancer = new InstanceWrapper({ host: moduleRef, scope });
+        moduleRef.providers.get(host)!.addEnhancerMetadata(enhancer);
+        return enhancer;
+      };
+
+      beforeEach(() => {
+        moduleRef = new Module(class {}, new NestContainer());
+        loadInstance = vi.fn();
+        injector.loadInstance = loadInstance;
+      });
+
+      it('should load each transient enhancer in the static context with the provider as inquirer', async () => {
+        const enhancer = addEnhancer(EntryProvider, Scope.TRANSIENT);
+        const provider = moduleRef.providers.get(EntryProvider)!;
+
+        await injector.loadProvider(provider, moduleRef);
+
+        expect(loadInstance).toHaveBeenCalledWith(
+          enhancer,
+          moduleRef.injectables,
+          moduleRef,
+          expect.objectContaining({
+            contextId: STATIC_CONTEXT,
+            inquirer: provider,
+          }),
+        );
+      });
+
+      it('should leave the default scoped enhancers to the injectables load', async () => {
+        addEnhancer(EntryProvider);
+
+        await injector.loadProvider(
+          moduleRef.providers.get(EntryProvider)!,
+          moduleRef,
+        );
+
+        expect(loadInstance).toHaveBeenCalledOnce();
+      });
+
+      it('should not wait for the enhancers when the provider is loaded as a dependency', async () => {
+        addEnhancer(EntryProvider, Scope.TRANSIENT);
+
+        await injector.loadProvider(
+          moduleRef.providers.get(EntryProvider)!,
+          moduleRef,
+          { contextId: STATIC_CONTEXT, inquirer: new InstanceWrapper() },
+        );
+
+        expect(loadInstance).toHaveBeenCalledOnce();
+      });
+
+      it('should not load the enhancers of a provider that is not an entry provider', async () => {
+        addEnhancer(PlainProvider, Scope.TRANSIENT);
+
+        await injector.loadProvider(
+          moduleRef.providers.get(PlainProvider)!,
+          moduleRef,
+        );
+
+        expect(loadInstance).toHaveBeenCalledOnce();
+      });
     });
   });
 

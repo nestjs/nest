@@ -10,16 +10,25 @@ import {
   Get,
   INestApplication,
   INestMicroservice,
+  Inject,
   Injectable,
   Module,
   NestInterceptor,
   PipeTransform,
   Provider,
   Scope,
+  SetMetadata,
   Type,
   UseGuards,
 } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ENTRY_PROVIDER_WATERMARK } from '@nestjs/common/internal';
+import {
+  APP_FILTER,
+  APP_GUARD,
+  APP_INTERCEPTOR,
+  APP_PIPE,
+  ExternalContextCreator,
+} from '@nestjs/core';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -191,6 +200,36 @@ class MessageController {
   @MessagePattern('fail')
   fail() {
     throw new Error('boom');
+  }
+}
+
+// Marked the way `@Resolver()` of @nestjs/graphql marks a resolver.
+@Injectable()
+@SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+class EntryProvider {
+  constructor(@Inject('SLOW') _slow: unknown) {}
+
+  read() {
+    return 'ok';
+  }
+
+  @UseGuards(TrackingDenyGuard)
+  guarded() {
+    return 'ok';
+  }
+}
+
+@Injectable()
+class EntryProviderConsumer {
+  constructor(readonly entryProvider: EntryProvider) {}
+}
+
+@Injectable({ scope: Scope.TRANSIENT })
+class EntryProviderConsumerGuard implements CanActivate {
+  constructor(private readonly consumer: EntryProviderConsumer) {}
+
+  canActivate() {
+    return !this.consumer.entryProvider;
   }
 }
 
@@ -408,6 +447,69 @@ describe('Transient global enhancers', () => {
       await expect(firstValueFrom(client.send('fail', {}))).resolves.toBe(
         'recovered',
       );
+    });
+  });
+
+  // Handlers built the way @nestjs/graphql builds those of a static resolver
+  describe('entry provider', () => {
+    let app: INestApplication;
+
+    const createHandler = async (
+      providers: Provider[],
+      methodName: 'read' | 'guarded' = 'read',
+    ) => {
+      app = await createApp(
+        createModule(
+          [
+            ...providers,
+            EntryProvider,
+            {
+              provide: 'SLOW',
+              useFactory: () => new Promise(resolve => setTimeout(resolve, 10)),
+            },
+          ],
+          [],
+        ),
+      );
+      const instance = app.get(EntryProvider);
+      return app
+        .get(ExternalContextCreator)
+        .create(instance, instance[methodName], methodName);
+    };
+
+    afterEach(async () => {
+      await app?.close();
+    });
+
+    it('should deny the call when the global guard is transient', async () => {
+      const handler = await createHandler([
+        { provide: APP_GUARD, useClass: TransientDenyGuard },
+      ]);
+
+      await expect(handler()).rejects.toThrow('Forbidden resource');
+    });
+
+    it('should wrap the result when the global interceptor is transient', async () => {
+      const handler = await createHandler([
+        { provide: APP_INTERCEPTOR, useClass: PrefixInterceptor },
+      ]);
+
+      await expect(handler()).resolves.toBe('intercepted:ok');
+    });
+
+    it('should give the provider a constructed instance of a method level transient guard', async () => {
+      const handler = await createHandler([], 'guarded');
+
+      await expect(handler()).rejects.toThrow('Forbidden resource');
+    });
+
+    it('should bootstrap when the guard depends on a provider that waits for the entry provider', async () => {
+      const handler = await createHandler([
+        EntryProviderConsumer,
+        { provide: APP_GUARD, useClass: EntryProviderConsumerGuard },
+      ]);
+
+      await expect(handler()).rejects.toThrow('Forbidden resource');
     });
   });
 });

@@ -1,11 +1,15 @@
-import { ForbiddenException } from '@nestjs/common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants.js';
+import { ForbiddenException, SetMetadata } from '@nestjs/common';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  ENTRY_PROVIDER_WATERMARK,
+} from '@nestjs/common/constants.js';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
 import { of } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context.js';
 import { GuardsConsumer } from '../../guards/guards-consumer.js';
 import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
 import { ExternalContextCreator } from '../../helpers/external-context-creator.js';
+import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
@@ -72,6 +76,49 @@ describe('ExternalContextCreator', () => {
         );
         contextCreator.create(new Host(), callback, '', '', null!);
         expect(getContextModuleKeySpy).toHaveBeenCalledWith(Host);
+      });
+    });
+    describe('when no inquirer id is given', () => {
+      @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+      class EntryProvider {}
+
+      class PlainProvider {}
+
+      let moduleRef: Module;
+
+      beforeEach(() => {
+        const modules = new ModulesContainer();
+        moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider(EntryProvider);
+        moduleRef.addProvider(PlainProvider);
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should look up the enhancers of an entry provider with that provider as the inquirer', () => {
+        const instance = new EntryProvider();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          moduleRef.providers.get(EntryProvider)!.id,
+        );
+      });
+
+      it('should not use any other provider as the inquirer', () => {
+        const instance = new PlainProvider();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          undefined,
+        );
       });
     });
     describe('returns proxy function', () => {
