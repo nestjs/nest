@@ -123,9 +123,10 @@ export interface HttpServer<
    * the routes excluded with `MiddlewareConsumer.exclude()` are matched the
    * same way: a request only skips the middleware when the router serves it
    * with the excluded route. Called once per `forRoutes()` call, during
-   * `app.init()`. When not implemented, excluded routes are matched
-   * case-insensitively and ignoring a trailing slash, like Express does by
-   * default.
+   * `app.init()`. When not implemented, excluded routes are matched exactly:
+   * case-sensitively and without an optional trailing slash. With a more
+   * lenient router, a request for `/Users/login/` then runs the middleware
+   * excluded for `users/login` rather than skipping it.
    */
   getRouteMatchingOptions?(): RouteMatchingOptions;
 }
