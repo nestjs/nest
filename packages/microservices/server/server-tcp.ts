@@ -40,6 +40,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly maxBufferSize?: number;
   protected readonly incompleteMessageTimeout?: number;
   protected readonly maxSendBufferSize?: number;
+  protected readonly drainTimeout?: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
   protected tlsOptions?: TlsOptions;
@@ -67,6 +68,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       'incompleteMessageTimeout',
     );
     this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
+    this.drainTimeout = this.getOptionsProp(options, 'drainTimeout');
 
     this.init();
     this.initializeSerializer(options);
@@ -259,13 +261,15 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     const hasJsonSocketOptions =
       this.maxBufferSize !== undefined ||
       this.incompleteMessageTimeout !== undefined ||
-      this.maxSendBufferSize !== undefined;
+      this.maxSendBufferSize !== undefined ||
+      this.drainTimeout !== undefined;
 
     if (hasJsonSocketOptions && this.socketClass === JsonSocket) {
       return new this.socketClass(socket, {
         maxBufferSize: this.maxBufferSize,
         incompleteMessageTimeout: this.incompleteMessageTimeout,
         maxSendBufferSize: this.maxSendBufferSize,
+        drainTimeout: this.drainTimeout,
       });
     }
     return new this.socketClass(socket);
