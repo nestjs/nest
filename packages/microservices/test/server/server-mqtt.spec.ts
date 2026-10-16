@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { MQTT_MAX_TOPIC_LENGTH, NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { MqttContext } from '../../ctx-host/index.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception.js';
 import { MqttRecordBuilder } from '../../record-builders/index.js';
 import { ServerMqtt } from '../../server/server-mqtt.js';
@@ -481,6 +482,25 @@ describe('ServerMqtt', () => {
       expect(warnSpy.mock.calls[0][0]).toMatch(
         /^DEPRECATED! .* Pattern: test$/,
       );
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries the id, so it would be serialized for each of them
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      const error = await server
+        .handleMessage(
+          channel,
+          Buffer.from(JSON.stringify({ pattern: '', data, id: [[['a']]] })),
+          null,
+        )
+        .catch(err => err);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(getPublisherSpy).not.toHaveBeenCalled();
+      expect(error).toBeInstanceOf(InvalidPacketIdException);
     });
   });
 

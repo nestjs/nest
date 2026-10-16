@@ -6,6 +6,7 @@ import {
   Subject,
 } from 'rxjs';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { Server } from '../../server/server.js';
 
 class TestServer extends Server {
@@ -293,6 +294,21 @@ describe('Server', () => {
       untypedServer.messageHandlers = messageHandlers;
       expect(server.getHandlers()).toBe(messageHandlers);
       untypedServer.messageHandlers = original;
+    });
+  });
+
+  describe('assertValidPacketId', () => {
+    it('should accept a number or a string of up to 256 characters', () => {
+      for (const id of [1, 'a'.repeat(256)]) {
+        expect(() => untypedServer.assertValidPacketId(id)).not.toThrow();
+      }
+    });
+    it('should reject any other id', () => {
+      for (const id of ['a'.repeat(257), [['a']], { id: 'a' }, null, true]) {
+        expect(() => untypedServer.assertValidPacketId(id)).toThrow(
+          InvalidPacketIdException,
+        );
+      }
     });
   });
 

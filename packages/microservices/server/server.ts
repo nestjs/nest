@@ -24,6 +24,7 @@ import {
 import { BaseRpcContext } from '../ctx-host/base-rpc.context.js';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer.js';
 import { Transport } from '../enums/index.js';
+import { InvalidPacketIdException } from '../errors/invalid-packet-id.exception.js';
 import { ConsumerDeserializer } from '../interfaces/deserializer.interface.js';
 import {
   ClientOptions,
@@ -44,10 +45,13 @@ import { IdentitySerializer } from '../serializers/identity.serializer.js';
 import { transformPatternToRoute } from '../utils/index.js';
 import { ITransportServer, Logger, type LoggerService } from '@nestjs/common';
 import {
+  isNumber,
   isString,
   loadPackage,
   loadPackageSync,
 } from '@nestjs/common/internal';
+
+const MAX_PACKET_ID_LENGTH = 256;
 
 /**
  * @publicApi
@@ -473,5 +477,21 @@ export abstract class Server<
     } catch {
       return UNSERIALIZABLE_PATTERN;
     }
+  }
+
+  /**
+   * Throws unless the id of an incoming request is a number or a short string.
+   *
+   * Ids are client-controlled and every reply to the request carries a copy,
+   * so a long string or a nested value would be copied and serialized once
+   * per reply, which a handler that streams its response multiplies.
+   *
+   * @param  {unknown} id - request id
+   */
+  protected assertValidPacketId(id: unknown) {
+    if (isNumber(id) || (isString(id) && id.length <= MAX_PACKET_ID_LENGTH)) {
+      return;
+    }
+    throw new InvalidPacketIdException(MAX_PACKET_ID_LENGTH);
   }
 }

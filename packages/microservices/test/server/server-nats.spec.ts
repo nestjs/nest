@@ -2,6 +2,7 @@ import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { NatsContext } from '../../ctx-host/index.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { NatsRecordBuilder } from '../../record-builders/index.js';
 import { ServerNats } from '../../server/server-nats.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -293,6 +294,33 @@ describe('ServerNats', () => {
       expect(warnSpy.mock.calls[0][0]).toMatch(
         /^DEPRECATED! .* Pattern: test$/,
       );
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries a copy of the id
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+      const data = JSON.stringify({
+        pattern: channel,
+        data: 'test',
+        id: 'a'.repeat(257),
+      });
+      const natsMsg: NatsMsg = {
+        data,
+        subject: channel,
+        sid: +id,
+        respond: vi.fn(),
+        json: () => JSON.parse(data),
+      };
+
+      const error = await server
+        .handleMessage(channel, natsMsg)
+        .catch(err => err);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(getPublisherSpy).not.toHaveBeenCalled();
+      expect(error).toBeInstanceOf(InvalidPacketIdException);
     });
     describe('when an event subject matches the subject of a request', () => {
       let eventHandler: ReturnType<typeof vi.fn>;

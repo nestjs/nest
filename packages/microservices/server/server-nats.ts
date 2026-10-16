@@ -162,6 +162,7 @@ export class ServerNats<
     if (isUndefined((message as IncomingRequest).id)) {
       return this.handleEvent(channel, message, natsCtx);
     }
+    this.assertValidPacketId((message as IncomingRequest).id);
     const publish = this.getPublisher(
       natsMsg,
       (message as IncomingRequest).id,

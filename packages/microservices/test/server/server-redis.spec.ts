@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { RedisContext } from '../../ctx-host/index.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { ServerRedis } from '../../server/server-redis.js';
 import { objectToMap } from './utils/object-to-map.js';
 
@@ -298,6 +299,26 @@ describe('ServerRedis', () => {
       expect(warnSpy.mock.calls[0][0]).toMatch(
         /^DEPRECATED! .* Pattern: test$/,
       );
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries the id, so it would be serialized for each of them
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      const error = await server
+        .handleMessage(
+          channel,
+          JSON.stringify({ id: [[['nested']]], pattern: channel, data }),
+          null,
+          channel,
+        )
+        .catch(err => err);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(getPublisherSpy).not.toHaveBeenCalled();
+      expect(error).toBeInstanceOf(InvalidPacketIdException);
     });
     it('should expose the packet metadata on the context', async () => {
       const handler = vi.fn();
