@@ -80,27 +80,20 @@ describe('RouterExceptionFilters', () => {
       });
     });
     describe('otherwise', () => {
-      it('should merge static global with request/transient scoped filters', () => {
-        const globalFilters: any = ['test'];
+      it('should resolve request/transient scoped filters in the order they were bound', () => {
         const instanceWrapper = new InstanceWrapper();
-        const instance = 'request-scoped';
-        const scopedFilterWrappers = [instanceWrapper];
-
-        vi.spyOn(applicationConfig, 'getGlobalFilters').mockImplementation(
-          () => globalFilters,
-        );
-        vi.spyOn(
-          applicationConfig,
-          'getGlobalRequestFilters',
-        ).mockImplementation(() => scopedFilterWrappers);
         vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
-          () => ({ instance }) as any,
+          () => ({ instance: 'request-scoped' }) as any,
         );
+        applicationConfig.addGlobalFilter('first' as any);
+        applicationConfig.addGlobalRequestFilter(instanceWrapper);
+        applicationConfig.useGlobalFilters('last' as any);
 
-        const result = exceptionFilter.getGlobalMetadata({ id: 3 });
-        expect(result).toEqual(
-          expect.arrayContaining([instance, ...globalFilters]),
-        );
+        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).toEqual([
+          'first',
+          'request-scoped',
+          'last',
+        ]);
       });
     });
     describe('when a ContextIdStrategy is applied', () => {
@@ -122,10 +115,8 @@ describe('RouterExceptionFilters', () => {
           instance: 'request-scoped',
         });
 
-        vi.spyOn(
-          applicationConfig,
-          'getGlobalRequestFilters',
-        ).mockImplementation(() => [durableWrapper, requestWrapper]);
+        applicationConfig.addGlobalRequestFilter(durableWrapper);
+        applicationConfig.addGlobalRequestFilter(requestWrapper);
 
         expect(exceptionFilter.getGlobalMetadata(contextId)).toEqual([
           'durable',

@@ -107,18 +107,10 @@ export class GuardsContextCreator extends ContextCreator {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalGuards;
     }
-    // Resolve request/transient scoped guards where they were bound, so that
-    // global guards run in the order they were bound, whatever their scope
-    return iterate(this.config.getGlobalGuardsInBindingOrder())
-      .map(guard =>
-        guard instanceof InstanceWrapper
-          ? guard.getInstanceByContextId(
-              this.getContextId(contextId, guard),
-              inquirerId,
-            )?.instance
-          : guard,
-      )
-      .filter(guard => !!guard)
-      .toArray() as T;
+    return this.resolveGlobalEnhancers(
+      this.config.getGlobalGuardsInBindingOrder(),
+      contextId,
+      inquirerId,
+    ) as T;
   }
 }

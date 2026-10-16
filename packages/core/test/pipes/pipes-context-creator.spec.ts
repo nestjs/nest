@@ -101,25 +101,20 @@ describe('PipesContextCreator', () => {
       });
     });
     describe('otherwise', () => {
-      it('should merge static global with request/transient scoped pipes', () => {
-        const globalPipes: any = ['test'];
+      it('should resolve request/transient scoped pipes in the order they were bound', () => {
         const instanceWrapper = new InstanceWrapper();
-        const instance = 'request-scoped';
-        const scopedPipeWrappers = [instanceWrapper];
-
-        vi.spyOn(applicationConfig, 'getGlobalPipes').mockImplementation(
-          () => globalPipes,
-        );
-        vi.spyOn(applicationConfig, 'getGlobalRequestPipes').mockImplementation(
-          () => scopedPipeWrappers,
-        );
         vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
-          () => ({ instance }) as any,
+          () => ({ instance: 'request-scoped' }) as any,
         );
+        applicationConfig.addGlobalPipe('first' as any);
+        applicationConfig.addGlobalRequestPipe(instanceWrapper);
+        applicationConfig.useGlobalPipes('last' as any);
 
-        expect(creator.getGlobalMetadata({ id: 3 })).toEqual(
-          expect.arrayContaining([instance, ...globalPipes]),
-        );
+        expect(creator.getGlobalMetadata({ id: 3 })).toEqual([
+          'first',
+          'request-scoped',
+          'last',
+        ]);
       });
     });
   });

@@ -148,25 +148,17 @@ describe('InterceptorsContextCreator', () => {
       });
     });
     describe('otherwise', () => {
-      it('should merge static global with request/transient scoped interceptors', () => {
-        const globalInterceptors: any = ['test'];
+      it('should resolve request/transient scoped interceptors in the order they were bound', () => {
         const instanceWrapper = new InstanceWrapper();
-        const instance = 'request-scoped';
-        const scopedInterceptorWrappers = [instanceWrapper];
-
-        vi.spyOn(applicationConfig, 'getGlobalInterceptors').mockImplementation(
-          () => globalInterceptors,
-        );
-        vi.spyOn(
-          applicationConfig,
-          'getGlobalRequestInterceptors',
-        ).mockImplementation(() => scopedInterceptorWrappers);
         vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
-          () => ({ instance }) as any,
+          () => ({ instance: 'request-scoped' }) as any,
         );
+        applicationConfig.addGlobalInterceptor('first' as any);
+        applicationConfig.addGlobalRequestInterceptor(instanceWrapper);
+        applicationConfig.useGlobalInterceptors('last' as any);
 
         expect(interceptorsContextCreator.getGlobalMetadata({ id: 3 })).toEqual(
-          expect.arrayContaining([instance, ...globalInterceptors]),
+          ['first', 'request-scoped', 'last'],
         );
       });
     });

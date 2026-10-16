@@ -32,8 +32,18 @@ export class ApplicationConfig {
   private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] =
     [];
   private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
-  // Static guards and the wrappers of request/transient scoped ones, in the
-  // order they were bound, which is the order they run in
+  // Static enhancers and the wrappers of request/transient scoped ones, in
+  // the order they were bound, which decides the order they run in (for
+  // filters, the one bound last takes precedence)
+  private readonly globalPipesInBindingOrder: Array<
+    PipeTransform | InstanceWrapper<PipeTransform>
+  > = [];
+  private readonly globalFiltersInBindingOrder: Array<
+    ExceptionFilter | InstanceWrapper<ExceptionFilter>
+  > = [];
+  private readonly globalInterceptorsInBindingOrder: Array<
+    NestInterceptor | InstanceWrapper<NestInterceptor>
+  > = [];
   private readonly globalGuardsInBindingOrder: Array<
     CanActivate | InstanceWrapper<CanActivate>
   > = [];
@@ -68,10 +78,12 @@ export class ApplicationConfig {
 
   public addGlobalPipe(pipe: PipeTransform<any>) {
     this.globalPipes.push(pipe);
+    this.globalPipesInBindingOrder.push(pipe);
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]) {
     this.globalPipes = this.globalPipes.concat(pipes);
+    this.globalPipesInBindingOrder.push(...pipes);
   }
 
   public getGlobalFilters(): ExceptionFilter[] {
@@ -80,10 +92,12 @@ export class ApplicationConfig {
 
   public addGlobalFilter(filter: ExceptionFilter) {
     this.globalFilters.push(filter);
+    this.globalFiltersInBindingOrder.push(filter);
   }
 
   public useGlobalFilters(...filters: ExceptionFilter[]) {
     this.globalFilters = this.globalFilters.concat(filters);
+    this.globalFiltersInBindingOrder.push(...filters);
   }
 
   public getGlobalPipes(): PipeTransform<any>[] {
@@ -96,10 +110,12 @@ export class ApplicationConfig {
 
   public addGlobalInterceptor(interceptor: NestInterceptor) {
     this.globalInterceptors.push(interceptor);
+    this.globalInterceptorsInBindingOrder.push(interceptor);
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
     this.globalInterceptors = this.globalInterceptors.concat(interceptors);
+    this.globalInterceptorsInBindingOrder.push(...interceptors);
   }
 
   public getGlobalGuards(): CanActivate[] {
@@ -120,6 +136,7 @@ export class ApplicationConfig {
     wrapper: InstanceWrapper<NestInterceptor>,
   ) {
     this.globalRequestInterceptors.push(wrapper);
+    this.globalInterceptorsInBindingOrder.push(wrapper);
   }
 
   public getGlobalRequestInterceptors(): InstanceWrapper<NestInterceptor>[] {
@@ -128,6 +145,7 @@ export class ApplicationConfig {
 
   public addGlobalRequestPipe(wrapper: InstanceWrapper<PipeTransform>) {
     this.globalRequestPipes.push(wrapper);
+    this.globalPipesInBindingOrder.push(wrapper);
   }
 
   public getGlobalRequestPipes(): InstanceWrapper<PipeTransform>[] {
@@ -136,6 +154,7 @@ export class ApplicationConfig {
 
   public addGlobalRequestFilter(wrapper: InstanceWrapper<ExceptionFilter>) {
     this.globalRequestFilters.push(wrapper);
+    this.globalFiltersInBindingOrder.push(wrapper);
   }
 
   public getGlobalRequestFilters(): InstanceWrapper<ExceptionFilter>[] {
@@ -149,6 +168,24 @@ export class ApplicationConfig {
 
   public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
     return this.globalRequestGuards;
+  }
+
+  public getGlobalPipesInBindingOrder(): Array<
+    PipeTransform | InstanceWrapper<PipeTransform>
+  > {
+    return this.globalPipesInBindingOrder;
+  }
+
+  public getGlobalFiltersInBindingOrder(): Array<
+    ExceptionFilter | InstanceWrapper<ExceptionFilter>
+  > {
+    return this.globalFiltersInBindingOrder;
+  }
+
+  public getGlobalInterceptorsInBindingOrder(): Array<
+    NestInterceptor | InstanceWrapper<NestInterceptor>
+  > {
+    return this.globalInterceptorsInBindingOrder;
   }
 
   public getGlobalGuardsInBindingOrder(): Array<

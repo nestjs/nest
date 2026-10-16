@@ -1,8 +1,6 @@
-import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
-import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { RouterProxyCallback } from '../router/router-proxy.js';
 import { BaseExceptionFilterContext } from './base-exception-filter-context.js';
 import { ExternalExceptionsHandler } from './external-exceptions-handler.js';
@@ -56,19 +54,10 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalFilters;
     }
-    const scopedFilterWrappers =
-      this.config.getGlobalRequestFilters() as InstanceWrapper[];
-    const scopedFilters = iterate(scopedFilterWrappers)
-      .map(wrapper =>
-        wrapper.getInstanceByContextId(
-          this.getContextId(contextId, wrapper),
-          inquirerId,
-        ),
-      )
-      .filter(host => !!host)
-      .map(host => host.instance)
-      .toArray();
-
-    return globalFilters.concat(scopedFilters) as T;
+    return this.resolveGlobalEnhancers(
+      this.config.getGlobalFiltersInBindingOrder(),
+      contextId,
+      inquirerId,
+    ) as T;
   }
 }

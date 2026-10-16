@@ -64,6 +64,20 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalRequestPipes()).toContain(pipe);
     });
+    it('should keep static and request pipes in the order they were bound', () => {
+      appConfig.addGlobalRequestPipe('request1' as any);
+      appConfig.addGlobalPipe('static1' as any);
+      appConfig.addGlobalRequestPipe('request2' as any);
+      appConfig.useGlobalPipes('static2' as any, 'static3' as any);
+
+      expect(appConfig.getGlobalPipesInBindingOrder()).toEqual([
+        'request1',
+        'static1',
+        'request2',
+        'static2',
+        'static3',
+      ]);
+    });
   });
   describe('Filters', () => {
     it('should set global filters', () => {
@@ -83,6 +97,20 @@ describe('ApplicationConfig', () => {
       appConfig.addGlobalRequestFilter(filter as any);
 
       expect(appConfig.getGlobalRequestFilters()).toContain(filter);
+    });
+    it('should keep static and request filters in the order they were bound', () => {
+      appConfig.addGlobalRequestFilter('request1' as any);
+      appConfig.addGlobalFilter('static1' as any);
+      appConfig.addGlobalRequestFilter('request2' as any);
+      appConfig.useGlobalFilters('static2' as any, 'static3' as any);
+
+      expect(appConfig.getGlobalFiltersInBindingOrder()).toEqual([
+        'request1',
+        'static1',
+        'request2',
+        'static2',
+        'static3',
+      ]);
     });
   });
   describe('Guards', () => {
@@ -153,6 +181,20 @@ describe('ApplicationConfig', () => {
       appConfig.addGlobalRequestInterceptor(interceptor as any);
 
       expect(appConfig.getGlobalRequestInterceptors()).toContain(interceptor);
+    });
+    it('should keep static and request interceptors in the order they were bound', () => {
+      appConfig.addGlobalRequestInterceptor('request1' as any);
+      appConfig.addGlobalInterceptor('static1' as any);
+      appConfig.addGlobalRequestInterceptor('request2' as any);
+      appConfig.useGlobalInterceptors('static2' as any, 'static3' as any);
+
+      expect(appConfig.getGlobalInterceptorsInBindingOrder()).toEqual([
+        'request1',
+        'static1',
+        'request2',
+        'static2',
+        'static3',
+      ]);
     });
   });
   describe('Versioning', () => {

@@ -1,11 +1,9 @@
 import type { HttpServer } from '@nestjs/common';
-import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context.js';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
-import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { RouterProxyCallback } from './router-proxy.js';
 import {
   EXCEPTION_FILTERS_METADATA,
@@ -54,19 +52,10 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalFilters;
     }
-    const scopedFilterWrappers =
-      this.config.getGlobalRequestFilters() as InstanceWrapper[];
-    const scopedFilters = iterate(scopedFilterWrappers)
-      .map(wrapper =>
-        wrapper.getInstanceByContextId(
-          this.getContextId(contextId, wrapper),
-          inquirerId,
-        ),
-      )
-      .filter(host => !!host)
-      .map(host => host.instance)
-      .toArray();
-
-    return globalFilters.concat(scopedFilters) as T;
+    return this.resolveGlobalEnhancers(
+      this.config.getGlobalFiltersInBindingOrder(),
+      contextId,
+      inquirerId,
+    ) as T;
   }
 }

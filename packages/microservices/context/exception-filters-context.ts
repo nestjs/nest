@@ -1,4 +1,3 @@
-import { iterate } from 'iterare';
 import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler.js';
 import {
@@ -10,7 +9,6 @@ import type { ApplicationConfig, NestContainer } from '@nestjs/core';
 import {
   BaseExceptionFilterContext,
   STATIC_CONTEXT,
-  type InstanceWrapper,
 } from '@nestjs/core/internal';
 
 /**
@@ -56,19 +54,10 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalFilters;
     }
-    const scopedFilterWrappers =
-      this.config.getGlobalRequestFilters() as InstanceWrapper[];
-    const scopedFilters = iterate(scopedFilterWrappers)
-      .map(wrapper =>
-        wrapper.getInstanceByContextId(
-          this.getContextId(contextId, wrapper),
-          inquirerId,
-        ),
-      )
-      .filter(host => !!host)
-      .map(host => host.instance)
-      .toArray();
-
-    return globalFilters.concat(scopedFilters) as T;
+    return this.resolveGlobalEnhancers(
+      this.config.getGlobalFiltersInBindingOrder(),
+      contextId,
+      inquirerId,
+    ) as T;
   }
 }

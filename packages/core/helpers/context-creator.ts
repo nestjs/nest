@@ -1,3 +1,4 @@
+import { iterate } from 'iterare';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper.js';
 import { getClassRef } from './class-ref-registry.js';
@@ -50,6 +51,29 @@ export abstract class ContextCreator {
     metadataKey: string,
   ): T {
     return Reflect.getMetadata(metadataKey, callback);
+  }
+
+  /**
+   * Resolves the request/transient scoped entries of a list of global
+   * enhancers where they were bound, so that the order they were bound in,
+   * whatever their scope, is the order they apply in.
+   */
+  protected resolveGlobalEnhancers<T>(
+    enhancers: Array<T | InstanceWrapper<T>>,
+    contextId: ContextId,
+    inquirerId?: string,
+  ): T[] {
+    return iterate(enhancers)
+      .map(enhancer =>
+        enhancer instanceof InstanceWrapper
+          ? enhancer.getInstanceByContextId(
+              this.getContextId(contextId, enhancer),
+              inquirerId,
+            )?.instance
+          : enhancer,
+      )
+      .filter(enhancer => !!enhancer)
+      .toArray() as T[];
   }
 
   protected getContextId(
