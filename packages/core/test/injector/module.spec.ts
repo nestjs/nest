@@ -1,4 +1,5 @@
-import { Controller, Scope } from '@nestjs/common';
+import { Controller, Scope, SetMetadata } from '@nestjs/common';
+import { ENTRY_PROVIDER_WATERMARK } from '@nestjs/common/constants';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
@@ -107,6 +108,16 @@ describe('Module', () => {
         }),
       ),
     ).to.be.true;
+  });
+
+  it('should add a class provider to the entry providers when its class is an entry provider', () => {
+    @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+    class EntryProvider {}
+
+    moduleRef.addProvider({ provide: 'ENTRY', useClass: EntryProvider });
+    expect(moduleRef.entryProviders).to.deep.equal([
+      moduleRef.providers.get('ENTRY'),
+    ]);
   });
 
   it('should call "addCustomProvider" when "provide" property exists', () => {

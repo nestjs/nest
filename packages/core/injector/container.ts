@@ -3,7 +3,7 @@ import {
   EnhancerSubtype,
   GLOBAL_MODULE_METADATA,
 } from '@nestjs/common/constants';
-import { Injectable, Type } from '@nestjs/common/interfaces';
+import { InjectionToken, Type } from '@nestjs/common/interfaces';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '../application-config';
 import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection';
@@ -273,7 +273,7 @@ export class NestContainer {
     injectable: Provider,
     token: string,
     enhancerSubtype: EnhancerSubtype,
-    host?: Type<Injectable>,
+    host?: InjectionToken,
   ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();

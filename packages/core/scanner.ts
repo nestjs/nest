@@ -255,9 +255,18 @@ export class DependenciesScanner {
         MODULE_METADATA.PROVIDERS as 'providers',
       )!,
     ];
+    const applyProvidersKeys = Object.keys(this.getApplyProvidersMap());
     providers.forEach(provider => {
       this.insertProvider(provider, token);
-      this.reflectDynamicMetadata(provider, token);
+      if (!this.isCustomProvider(provider)) {
+        return this.reflectDynamicMetadata(provider, token);
+      }
+      // The enhancers of the class behind a class provider (e.g., a gateway
+      // registered as `{ provide, useClass }`) are bound to its token.
+      const { provide, useClass } = provider as ClassProvider;
+      if (!applyProvidersKeys.includes(provide as string)) {
+        this.reflectDynamicMetadata(useClass, token, provide);
+      }
     });
   }
 
@@ -275,15 +284,19 @@ export class DependenciesScanner {
     });
   }
 
-  public reflectDynamicMetadata(cls: Type<Injectable>, token: string) {
+  public reflectDynamicMetadata(
+    cls: Type<Injectable>,
+    token: string,
+    hostToken: InjectionToken = cls,
+  ) {
     if (!cls || !cls.prototype) {
       return;
     }
-    this.reflectInjectables(cls, token, GUARDS_METADATA);
-    this.reflectInjectables(cls, token, INTERCEPTORS_METADATA);
-    this.reflectInjectables(cls, token, EXCEPTION_FILTERS_METADATA);
-    this.reflectInjectables(cls, token, PIPES_METADATA);
-    this.reflectParamInjectables(cls, token, ROUTE_ARGS_METADATA);
+    this.reflectInjectables(cls, token, GUARDS_METADATA, hostToken);
+    this.reflectInjectables(cls, token, INTERCEPTORS_METADATA, hostToken);
+    this.reflectInjectables(cls, token, EXCEPTION_FILTERS_METADATA, hostToken);
+    this.reflectInjectables(cls, token, PIPES_METADATA, hostToken);
+    this.reflectParamInjectables(cls, token, ROUTE_ARGS_METADATA, hostToken);
   }
 
   public reflectExports(module: Type<unknown>, token: string) {
@@ -303,6 +316,7 @@ export class DependenciesScanner {
     component: Type<Injectable>,
     token: string,
     metadataKey: string,
+    hostToken: InjectionToken = component,
   ) {
     const controllerInjectables = this.reflectMetadata<Type<Injectable>>(
       metadataKey,
@@ -334,7 +348,7 @@ export class DependenciesScanner {
       this.insertInjectable(
         injectable,
         token,
-        component,
+        hostToken,
         ENHANCER_KEY_TO_SUBTYPE_MAP[metadataKey],
       ),
     );
@@ -343,7 +357,7 @@ export class DependenciesScanner {
         this.insertInjectable(
           injectable,
           token,
-          component,
+          hostToken,
           ENHANCER_KEY_TO_SUBTYPE_MAP[metadataKey],
           methodInjectable.methodKey,
         ),
@@ -355,6 +369,7 @@ export class DependenciesScanner {
     component: Type<Injectable>,
     token: string,
     metadataKey: string,
+    hostToken: InjectionToken = component,
   ) {
     const paramsMethods = this.metadataScanner.getAllMethodNames(
       component.prototype,
@@ -382,7 +397,7 @@ export class DependenciesScanner {
           this.insertInjectable(
             injectable,
             token,
-            component,
+            hostToken,
             'pipe',
             methodKey,
           ),
@@ -514,7 +529,7 @@ export class DependenciesScanner {
   public insertInjectable(
     injectable: Type<Injectable> | object,
     token: string,
-    host: Type<Injectable>,
+    host: InjectionToken,
     subtype: EnhancerSubtype,
     methodKey?: string,
   ) {

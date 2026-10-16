@@ -915,7 +915,12 @@ export class Injector {
   ): Promise<T> {
     if (!wrapper) {
       const injectionToken = (instance as any).constructor!;
-      wrapper = collection.get(injectionToken);
+      wrapper =
+        collection.get(injectionToken) ??
+        // A class provider registered under a token other than its class
+        iterate(collection.values()).find(
+          item => !item.isAlias && item.instance === instance,
+        );
     } else {
       wrapper = collection.get(wrapper.token) ?? wrapper;
     }
