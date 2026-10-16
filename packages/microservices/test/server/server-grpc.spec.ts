@@ -13,7 +13,7 @@ import {
   toArray,
   throwError,
 } from 'rxjs';
-import { ignoreElements } from 'rxjs/operators';
+import { ignoreElements, map } from 'rxjs/operators';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
 import { GrpcMethodStreamingType, GrpcStatus } from '../../index.js';
@@ -21,6 +21,11 @@ import { ServerGrpc } from '../../server/index.js';
 import { objectToMap } from './utils/object-to-map.js';
 
 const CANCELLED_EVENT = 'cancelled';
+
+const internalError = {
+  code: GrpcStatus.INTERNAL,
+  details: 'Internal server error',
+};
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -1163,18 +1168,21 @@ describe('ServerGrpc', () => {
       );
     });
 
-    it('should run the end hook once and pass the error on when the call errors under a consuming handler', async () => {
+    it('should run the end hook once and fail the call when the call errors under a consuming handler', async () => {
       const endHook = bindEndHook();
       const call = createCall();
+      const callback = vi.fn();
+      untypedServer.logger = new NoopLogger();
 
       const result = server.createRequestStreamMethod(consumingHandler, false)(
         call as any,
-        vi.fn(),
+        callback,
       );
       await tick();
       call.emit('error', new Error('boom'));
 
-      await expect(result).rejects.toThrow('boom');
+      await expect(result).resolves.toBeUndefined();
+      expect(callback).toHaveBeenCalledExactlyOnceWith(internalError, null);
       expect(endHook).toHaveBeenCalledExactlyOnceWith(
         server.transportId,
         call.request,
@@ -1260,6 +1268,9 @@ describe('ServerGrpc', () => {
       emit: vi.fn(),
     });
 
+    const spyOnLoggerError = () =>
+      vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+
     describe('createUnaryServiceMethod', () => {
       it('should run the end hook once, with the request, when the handler completes', async () => {
         const endHook = bindHooks();
@@ -1278,34 +1289,63 @@ describe('ServerGrpc', () => {
         );
       });
 
-      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+      // A rejection that bypassed the exception filters (a filter that
+      // throws) would otherwise go unhandled: grpc-js drops the promise
+      it('should run the end hook once and fail the call when the handler rejects', async () => {
         const endHook = bindHooks();
         const call = createCall();
+        const callback = vi.fn();
+        const loggerErrorSpy = spyOnLoggerError();
 
         await expect(
           server.createUnaryServiceMethod(async () => {
             throw error;
-          })(call as any, vi.fn()),
-        ).rejects.toThrow(error);
+          })(call as any, callback),
+        ).resolves.toBeUndefined();
 
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError);
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
         );
       });
+
+      it('should fail the call when a response promise rejects', async () => {
+        bindHooks();
+        const callback = vi.fn();
+        const loggerErrorSpy = spyOnLoggerError();
+
+        await server.createUnaryServiceMethod(() =>
+          of('hero').pipe(
+            map(async () => {
+              throw error;
+            }),
+          ),
+        )(createCall() as any, callback);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError);
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+      });
     });
 
     describe('createStreamServiceMethod', () => {
-      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+      it('should run the end hook once and fail the call when the handler rejects', async () => {
         const endHook = bindHooks();
         const call = createCall();
+        spyOnLoggerError();
 
         await expect(
           server.createStreamServiceMethod(async () => {
             throw error;
           })(call as any, vi.fn()),
-        ).rejects.toThrow(error);
+        ).resolves.toBeUndefined();
 
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+          'error',
+          internalError,
+        );
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
@@ -1314,8 +1354,9 @@ describe('ServerGrpc', () => {
     });
 
     describe('createRequestStreamMethod', () => {
-      it('should run the end hook once when the call ends and the handler then rejects', async () => {
+      it('should run the end hook once and fail the call when the call ends and the handler then rejects', async () => {
         const endHook = bindHooks();
+        const callback = vi.fn();
         const call = {
           ...createCall(),
           // Fires every listener as soon as it is registered, so the call has
@@ -1326,16 +1367,56 @@ describe('ServerGrpc', () => {
             }
           },
         };
+        spyOnLoggerError();
 
         await expect(
           server.createRequestStreamMethod(async () => {
             throw error;
-          }, false)(call as any, vi.fn()),
-        ).rejects.toThrow(error);
+          }, false)(call as any, callback),
+        ).resolves.toBeUndefined();
 
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError, null);
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
+        );
+      });
+
+      it('should fail the call when the response promise rejects', async () => {
+        bindHooks();
+        const callback = vi.fn();
+        const loggerErrorSpy = spyOnLoggerError();
+
+        await expect(
+          server.createRequestStreamMethod(
+            () =>
+              of('hero').pipe(
+                map(async () => {
+                  throw error;
+                }),
+              ),
+            false,
+          )(createCall() as any, callback),
+        ).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError, null);
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+      });
+
+      it('should fail a stream response call when the handler rejects', async () => {
+        bindHooks();
+        const call = createCall();
+        spyOnLoggerError();
+
+        await expect(
+          server.createRequestStreamMethod(async () => {
+            throw error;
+          }, true)(call as any, vi.fn()),
+        ).resolves.toBeUndefined();
+
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+          'error',
+          internalError,
         );
       });
     });
