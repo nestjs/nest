@@ -203,9 +203,6 @@ export class MiddlewareModule<
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
-      if (instanceWrapper.isTransient) {
-        continue;
-      }
 
       this.graphInspector.insertClassNode(
         moduleRef,
@@ -253,7 +250,10 @@ export class MiddlewareModule<
     if (isUndefined(instance?.use)) {
       throw new InvalidMiddlewareException(metatype!.name);
     }
-    const isStatic = wrapper.isDependencyTreeStatic();
+    // A transient middleware is its own inquirer, and the injector creates
+    // such an instance only for a context: it is resolved per request, like a
+    // request-scoped one (its static instance is never constructed)
+    const isStatic = wrapper.isDependencyTreeStatic() && !wrapper.isTransient;
     if (isStatic) {
       const proxy = await this.createProxy(instance);
       return this.registerHandler(applicationRef, routeInfo, proxy);

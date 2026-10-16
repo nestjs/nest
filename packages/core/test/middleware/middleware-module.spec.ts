@@ -207,7 +207,7 @@ describe('MiddlewareModule', () => {
       expect(createMiddlewareFactoryStub).toHaveBeenCalledOnce();
     });
 
-    it('should mount middleware listed after a transient one', async () => {
+    it('should mount a transient middleware and the middleware listed after it', async () => {
       @Injectable({ scope: Scope.TRANSIENT })
       class TransientMiddleware implements NestMiddleware {
         public use(req, res, next) {}
@@ -276,13 +276,13 @@ describe('MiddlewareModule', () => {
         app,
       );
 
-      expect(createMiddlewareFactoryStub).toHaveBeenCalledTimes(2);
+      expect(createMiddlewareFactoryStub).toHaveBeenCalledTimes(3);
       expect(
         insertEntrypointDefinitionSpy.mock.calls.map(([, id]) => id),
-      ).toEqual([testWrapper.id, anotherWrapper.id]);
+      ).toEqual([testWrapper.id, transientWrapper.id, anotherWrapper.id]);
       expect(
         insertClassNodeSpy.mock.calls.map(([, wrapper]) => wrapper.id),
-      ).toEqual([testWrapper.id, anotherWrapper.id]);
+      ).toEqual([testWrapper.id, transientWrapper.id, anotherWrapper.id]);
     });
 
     it('should insert the expected middleware definition', async () => {
