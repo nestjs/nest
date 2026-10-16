@@ -1,5 +1,10 @@
 import { EventEmitter } from 'events';
-import { Socket as NetSocket } from 'net';
+import {
+  AddressInfo,
+  createConnection,
+  Server as NetServer,
+  Socket as NetSocket,
+} from 'net';
 import { of, throwError as _throw } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
@@ -76,6 +81,41 @@ describe('ServerTCP', () => {
 
       expect(openSocket.destroy).toHaveBeenCalled();
       expect(untypedServer.openSockets.size).toEqual(0);
+    });
+    describe('when TLS is enabled', () => {
+      it('should destroy connections whose handshake is not over yet', async () => {
+        const tlsServer = new ServerTCP({
+          host: '127.0.0.1',
+          port: 0,
+          tlsOptions: {},
+        });
+        await new Promise<void>((resolve, reject) =>
+          tlsServer.listen(err => (err ? reject(err) : resolve())),
+        );
+        const netServer = tlsServer.unwrap<NetServer>();
+        const accepted = new Promise<NetSocket>(resolve =>
+          netServer.once('connection', resolve),
+        );
+        // A peer that connects but never starts the TLS handshake
+        const client = createConnection(
+          (netServer.address() as AddressInfo).port,
+          '127.0.0.1',
+        );
+        client.on('error', () => {});
+        const clientClosed = new Promise(resolve =>
+          client.once('close', resolve),
+        );
+        const socket = await accepted;
+        try {
+          tlsServer.close();
+
+          expect(socket.destroyed).toBe(true);
+          await clientClosed;
+        } finally {
+          socket.destroy();
+          client.destroy();
+        }
+      });
     });
   });
   describe('trackOpenSocket', () => {
