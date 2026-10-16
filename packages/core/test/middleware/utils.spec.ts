@@ -270,5 +270,48 @@ describe('middleware utils', () => {
         });
       }
     });
+    describe('when the router ignores a trailing slash', () => {
+      const isExcluded = (exclusions: string[], url: string) => {
+        (adapter.getRequestUrl as sinon.SinonStub).callsFake(() => url);
+        return isMiddlewareRouteExcluded(
+          {},
+          mapToExcludeRoute(exclusions, {
+            caseSensitive: false,
+            ignoreTrailingSlash: true,
+          }),
+          adapter,
+          true,
+        );
+      };
+
+      it('should not exclude "/x/", served by the "/x" route, when only its wildcard is excluded', () => {
+        expect(isExcluded(['invoices/*'], '/invoices/')).to.be.false;
+        expect(isExcluded(['invoices/{*path}'], '/invoices//')).to.be.false;
+        expect(isExcluded(['invoices/*'], '/invoices/abc')).to.be.true;
+        expect(isExcluded(['invoices/*'], '/invoices/abc/')).to.be.true;
+      });
+
+      it('should exclude "/x/" when "/x" is excluded too', () => {
+        expect(isExcluded(['invoices', 'invoices/*'], '/invoices/')).to.be.true;
+        expect(isExcluded(['invoices{/*path}'], '/invoices/')).to.be.true;
+      });
+    });
+    describe('when the router matches a trailing slash exactly', () => {
+      it('should exclude "/x/" when it matches an excluded route', () => {
+        (adapter.getRequestUrl as sinon.SinonStub).callsFake(
+          () => '/invoices/',
+        );
+        expect(
+          isMiddlewareRouteExcluded(
+            {},
+            mapToExcludeRoute(['invoices/*'], {
+              caseSensitive: true,
+              ignoreTrailingSlash: false,
+            }),
+            adapter,
+          ),
+        ).to.be.true;
+      });
+    });
   });
 });

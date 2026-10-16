@@ -193,6 +193,61 @@ describe('Exclude middleware - request targets', () => {
   });
 });
 
+@Controller('invoices')
+class InvoicesController {
+  @Get()
+  findAll() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':token')
+  findShared() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [InvoicesController],
+})
+class TrailingSlashModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(MIDDLEWARE_VALUE))
+      .exclude('invoices/*')
+      .forRoutes(InvoicesController);
+  }
+}
+
+describe('Exclude middleware - trailing slash', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    app = (
+      await Test.createTestingModule({
+        imports: [TrailingSlashModule],
+      }).compile()
+    ).createNestApplication();
+
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it(`should exclude "/invoices/abc" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/invoices/abc')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude "/invoices/", which the router serves with "/invoices"`, () => {
+    return request(app.getHttpServer())
+      .get('/invoices/')
+      .expect(200, MIDDLEWARE_VALUE);
+  });
+});
+
 describe('Exclude middleware - route matching', () => {
   let app: INestApplication;
 
