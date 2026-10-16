@@ -218,7 +218,7 @@ export class Module {
   public addInjectable<T extends Injectable>(
     injectable: Provider,
     enhancerSubtype: EnhancerSubtype,
-    host?: Type<T>,
+    host?: InjectionToken<T>,
   ) {
     if (this.isCustomProvider(injectable)) {
       return this.addCustomProvider(
@@ -257,7 +257,10 @@ export class Module {
   ): InjectionToken;
   public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
     if (this.isCustomProvider(provider)) {
-      if (this.isEntryProvider(provider.provide)) {
+      if (
+        this.isEntryProvider(provider.provide) ||
+        this.isEntryProvider((provider as ClassProvider).useClass)
+      ) {
         this._entryProviderKeys.add(provider.provide);
       }
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);

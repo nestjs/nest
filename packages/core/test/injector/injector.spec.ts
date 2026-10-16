@@ -918,6 +918,28 @@ describe('Injector', () => {
       );
       expect(instance).toBeInstanceOf(TestClass);
     });
+
+    it('should load an instance registered under a token other than its class', async () => {
+      const container = new NestContainer();
+      const moduleCtor = class TestModule {};
+      const { moduleRef } = (await container.addModule(moduleCtor, []))!;
+
+      moduleRef.addProvider({
+        provide: 'TOKEN',
+        useClass: TestClass,
+      });
+      const wrapper = moduleRef.providers.get('TOKEN')!;
+      injector.loadPrototype(wrapper, moduleRef.providers);
+
+      const instance = await injector.loadPerContext(
+        wrapper.instance,
+        moduleRef,
+        moduleRef.providers,
+        STATIC_CONTEXT,
+      );
+      expect(instance).toBeInstanceOf(TestClass);
+      expect(instance).toBe(wrapper.instance);
+    });
   });
 
   describe('loadEnhancersPerContext', () => {

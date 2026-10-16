@@ -267,6 +267,34 @@ describe('DependenciesScanner', () => {
     });
   });
 
+  describe('reflectProviders', () => {
+    class ClassProviderGuard {}
+
+    @Injectable()
+    class GuardedComponent {
+      @UseGuards(ClassProviderGuard)
+      public method() {}
+    }
+
+    @Module({
+      providers: [{ provide: 'GUARDED', useClass: GuardedComponent }],
+    })
+    class ClassProviderModule {}
+
+    it('should register the enhancers of a class provider and bind them to its token', async () => {
+      await scanner.scan(ClassProviderModule);
+
+      const moduleRef = [...container.getModules().values()].find(
+        ({ metatype }) => metatype === ClassProviderModule,
+      )!;
+      const enhancerWrapper = moduleRef.injectables.get(ClassProviderGuard);
+      expect(enhancerWrapper).toBeInstanceOf(InstanceWrapper);
+      expect(
+        moduleRef.providers.get('GUARDED')!.getEnhancersMetadata(),
+      ).toEqual([enhancerWrapper]);
+    });
+  });
+
   describe('insertInjectable', () => {
     class InjectableCls {}
     class HostCls {}
