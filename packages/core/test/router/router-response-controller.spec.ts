@@ -1,6 +1,6 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
-import { EMPTY, Observable, of, Subject, throwError } from 'rxjs';
+import { EMPTY, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
@@ -1278,6 +1278,61 @@ data: test
           request.destroy();
         },
       );
+
+      describe('when the headers cannot be written', () => {
+        // Node validates header values in writeHead(), which Fastify calls
+        // with the headers set on the reply, e.g. one taken from a query param
+        class SinkWithInvalidHeader extends Writable {
+          readonly error = Object.assign(
+            new TypeError('Invalid character in header content ["x-query"]'),
+            { code: 'ERR_INVALID_CHAR' },
+          );
+          writeHead = vi.fn(() => {
+            throw this.error;
+          });
+
+          _write(
+            chunk: any,
+            encoding: string,
+            callback: (error?: Error | null) => void,
+          ): void {
+            callback();
+          }
+        }
+
+        it.each([
+          ['when they are committed after subscribing', () => NEVER],
+          ['when the producer completes without emitting', () => EMPTY],
+          ['with the first event', () => of({ data: 'hello' })],
+        ])('should reject %s', async (_, createProducer) => {
+          const teardown = vi.fn();
+          const producer = new Observable(subscriber => {
+            const subscription = createProducer().subscribe(subscriber);
+            return () => {
+              subscription.unsubscribe();
+              teardown();
+            };
+          });
+          const response = new SinkWithInvalidHeader();
+          const request = new PassThrough();
+
+          await expect(
+            routerResponseController.sse(
+              producer,
+              response as unknown as ServerResponse,
+              request as unknown as IncomingMessage,
+            ),
+          ).rejects.toBe(response.error);
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(teardown).toHaveBeenCalledTimes(1);
+          expect(response.writableEnded).toBe(false);
+          expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).toBe(
+            true,
+          );
+          request.destroy();
+        });
+      });
 
       it('should write the error message to the stream', async () => {
         let resolveFirstChunk: (() => void) | undefined;

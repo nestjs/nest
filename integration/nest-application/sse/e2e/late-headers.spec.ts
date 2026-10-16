@@ -74,4 +74,11 @@ describe.each(adapters)('Sse late headers (%s)', (_name, createAdapter) => {
 
     expect(response.headers.get('content-type')).toBe('text/event-stream');
   });
+
+  it('answers 500 when a header set on the reply is not a valid header value', async () => {
+    const response = await openStream('query-header?value=%E2%82%AC');
+
+    expect(response.status).toBe(500);
+    expect((await openStream('decorator')).status).toBe(200);
+  });
 });

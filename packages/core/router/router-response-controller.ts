@@ -168,6 +168,19 @@ export class RouterResponseController {
         reject(err);
       };
 
+      // Node validates the header values only once they are written, and they
+      // are also written outside the handler's promise chain (from a timer,
+      // or once the producer completes), where a throw would go uncaught.
+      const commitHeaders = (): boolean => {
+        try {
+          stream.commitHeaders();
+          return true;
+        } catch (err) {
+          fail(err);
+          return false;
+        }
+      };
+
       const onClose = () => {
         if (settled) {
           return;
@@ -259,10 +272,12 @@ export class RouterResponseController {
                 if (settled) {
                   return;
                 }
-                settled = true;
                 // An empty producer is still a successful SSE response. Commit
                 // before ending, since the deferred header task will be skipped.
-                stream.commitHeaders();
+                if (!commitHeaders()) {
+                  return;
+                }
+                settled = true;
                 finalize();
                 endStream();
                 resolve();
@@ -281,10 +296,9 @@ export class RouterResponseController {
           // skip the write. Otherwise headers are sent immediately rather
           // than waiting for the first Observable emission.
           setTimeout(() => {
-            if (settled) {
+            if (settled || !commitHeaders()) {
               return;
             }
-            stream.commitHeaders();
             // A HEAD response has no body, so it is complete once the headers
             // are sent. Left open, it would hold back the next request on the
             // same keep-alive connection until the producer completes.

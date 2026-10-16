@@ -158,7 +158,6 @@ export class SseStream extends Transform {
     }
     const statusCode = this.readStatusCode();
     const additionalHeaders = this.readAdditionalHeaders();
-    this._headersCommitted = true;
     if (this._destination.writeHead) {
       const sseHeaders = {
         // See https://github.com/dunglas/mercure/blob/main/subscribe.go#L347-L362
@@ -182,6 +181,9 @@ export class SseStream extends Transform {
       });
       this._destination.flushHeaders?.();
     }
+    // Only once writeHead() has returned: Node validates the header values
+    // there, and if it throws, nothing has been sent yet.
+    this._headersCommitted = true;
     this._destination.write('\n');
   }
 
