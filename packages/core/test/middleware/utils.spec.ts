@@ -245,5 +245,30 @@ describe('middleware utils', () => {
         expect(isMiddlewareRouteExcluded({}, [], adapter)).to.be.false;
       });
     });
+    describe('when the request target is not a plain path', () => {
+      const excludedRoutes = mapToExcludeRoute([
+        'cats/:id/avatar',
+        '*prefix/admin',
+      ]);
+      it('should return true for a path with a query string', () => {
+        (adapter.getRequestUrl as sinon.SinonStub).callsFake(
+          () => '/cats/3/avatar?size=1',
+        );
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).to.be
+          .true;
+      });
+      for (const url of [
+        '/cats/3#/avatar',
+        '/cats/3/avatar#',
+        '/cats/3/avatar?size=1#',
+        'http://localhost/admin',
+      ]) {
+        it(`should return false for ${JSON.stringify(url)}`, () => {
+          (adapter.getRequestUrl as sinon.SinonStub).callsFake(() => url);
+          expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).to.be
+            .false;
+        });
+      }
+    });
   });
 });

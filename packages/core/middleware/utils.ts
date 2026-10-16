@@ -167,7 +167,15 @@ export function isMiddlewareRouteExcluded(
   }
   const reqMethod = httpAdapter.getRequestMethod!(req);
   const originalUrl = httpAdapter.getRequestUrl!(req);
-  const queryParamsIndex = originalUrl ? originalUrl.indexOf('?') : -1;
+  // Such request targets are routed by another path than the one matched
+  // here: the routers end the path at "#" (Express then also reads "\" as
+  // "/"), and route an absolute-form target by the path it contains. Clients
+  // send neither to a server (only proxies get the absolute form), so the
+  // middleware runs for them
+  if (!originalUrl?.startsWith('/') || originalUrl.includes('#')) {
+    return false;
+  }
+  const queryParamsIndex = originalUrl.indexOf('?');
   const pathname =
     queryParamsIndex >= 0
       ? originalUrl.slice(0, queryParamsIndex)
