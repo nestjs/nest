@@ -12,6 +12,7 @@ import {
 import { HttpStatus } from '../../enums/index.js';
 import { UnprocessableEntityException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
+import { ValidationError } from '../../interfaces/external/validation-error.interface.js';
 import { ValidationPipe } from '../../pipes/validation.pipe.js';
 
 @Exclude()
@@ -104,6 +105,89 @@ describe('ValidationPipe', () => {
       'parent.child is invalid',
       'parent.child.name must be a string',
     ]);
+  });
+
+  describe('when errors are nested', () => {
+    const nestedErrors = [
+      {
+        property: 'parent',
+        constraints: { invalid: 'parent is invalid' },
+        children: [
+          {
+            property: 'child',
+            children: [
+              {
+                property: 'name',
+                constraints: { isString: 'name must be a string' },
+              },
+              {
+                property: 'age',
+                constraints: { isInt: 'age must be an integer' },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const list = [
+      'parent is invalid',
+      'parent.child.name must be a string',
+      'parent.child.age must be an integer',
+    ];
+    const grouped = {
+      parent: ['parent is invalid'],
+      'parent.child.name': ['name must be a string'],
+      'parent.child.age': ['age must be an integer'],
+    };
+
+    it('should add them to a single list rather than copy them for each level', () => {
+      const pipe = new ValidationPipe();
+      const map = vi.spyOn(pipe as any, 'mapChildrenToValidationErrors');
+
+      const exception = pipe.createExceptionFactory()(nestedErrors);
+      expect(exception.getResponse().message).toEqual(list);
+      expect(map).toHaveBeenCalledTimes(4);
+      expect(new Set(map.mock.results.map(({ value }) => value)).size).toBe(1);
+    });
+    it('should add them to a single result rather than copy them for each level', () => {
+      const pipe = new ValidationPipe({ errorFormat: 'grouped' });
+      const group = vi.spyOn(pipe as any, 'groupValidationErrors');
+
+      const exception = pipe.createExceptionFactory()(nestedErrors);
+      expect(exception.getResponse().message).toEqual(grouped);
+      expect(group).toHaveBeenCalledTimes(3);
+      expect(new Set(group.mock.results.map(({ value }) => value)).size).toBe(
+        1,
+      );
+    });
+    it('should keep the errors that an override returns', () => {
+      class CustomPipe extends ValidationPipe {
+        protected mapChildrenToValidationErrors(
+          error: ValidationError,
+          parentPath?: string,
+        ) {
+          return [...super.mapChildrenToValidationErrors(error, parentPath)];
+        }
+        protected groupValidationErrors(
+          validationErrors: ValidationError[],
+          parentPath?: string,
+        ) {
+          return {
+            ...super.groupValidationErrors(validationErrors, parentPath),
+          };
+        }
+      }
+
+      expect(
+        new CustomPipe().createExceptionFactory()(nestedErrors).getResponse()
+          .message,
+      ).toEqual(list);
+      expect(
+        new CustomPipe({ errorFormat: 'grouped' })
+          .createExceptionFactory()(nestedErrors)
+          .getResponse().message,
+      ).toEqual(grouped);
+    });
   });
 
   let target: ValidationPipe;

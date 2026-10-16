@@ -347,8 +347,8 @@ export class ValidationPipe implements PipeTransform {
   protected groupValidationErrors(
     validationErrors: ValidationError[],
     parentPath?: string,
+    result: Record<string, string[]> = {},
   ): Record<string, string[]> {
-    const result: Record<string, string[]> = {};
     for (const error of validationErrors) {
       const path = parentPath
         ? `${parentPath}.${error.property}`
@@ -357,7 +357,13 @@ export class ValidationPipe implements PipeTransform {
         result[path] = Object.values(error.constraints);
       }
       if (error.children && error.children.length) {
-        Object.assign(result, this.groupValidationErrors(error.children, path));
+        // Nested errors go into the same result: copying each level's result
+        // into its parent took as many insertions as depth times leaves.
+        const nested = this.groupValidationErrors(error.children, path, result);
+        if (nested !== result) {
+          // an override returned a result of its own
+          Object.assign(result, nested);
+        }
       }
     }
     return result;
@@ -366,23 +372,36 @@ export class ValidationPipe implements PipeTransform {
   protected mapChildrenToValidationErrors(
     error: ValidationError,
     parentPath?: string,
+    validationErrors: ValidationError[] = [],
   ): ValidationError[] {
     const currentError = parentPath
       ? this.prependConstraintsWithParentProp(parentPath, error)
       : error;
     if (!(error.children && error.children.length)) {
-      return [currentError];
+      validationErrors.push(currentError);
+      return validationErrors;
     }
-    const validationErrors: ValidationError[] = error.constraints
-      ? [currentError]
-      : [];
+    if (error.constraints) {
+      validationErrors.push(currentError);
+    }
     parentPath = parentPath
       ? `${parentPath}.${error.property}`
       : error.property;
     for (const item of error.children) {
-      validationErrors.push(
-        ...this.mapChildrenToValidationErrors(item, parentPath),
+      // Nested errors go into the same list: copying each level's list into
+      // its parent took as many copies as depth times leaves, and spreading
+      // a long one into push() threw a RangeError.
+      const nested = this.mapChildrenToValidationErrors(
+        item,
+        parentPath,
+        validationErrors,
       );
+      if (nested !== validationErrors) {
+        // an override returned a list of its own
+        for (const nestedError of nested) {
+          validationErrors.push(nestedError);
+        }
+      }
     }
     return validationErrors;
   }
