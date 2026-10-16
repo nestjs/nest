@@ -57,6 +57,22 @@ class SessionGateway {
   }
 }
 
+@Injectable({ scope: Scope.REQUEST })
+class CurrentUser {
+  constructor() {
+    // e.g. a token check that turns the client away
+    throw new WsException('Unauthorized');
+  }
+}
+
+@UseFilters(EndSessionFilter)
+@WebSocketGateway()
+class UserGateway {
+  constructor(@Inject(CurrentUser) readonly user: CurrentUser) {}
+
+  handleConnection() {}
+}
+
 describe('WebSocketGateway request scope - connection hook errors', () => {
   let app: INestApplication;
   const sockets: Socket[] = [];
@@ -122,6 +138,18 @@ describe('WebSocketGateway request scope - connection hook errors', () => {
 
   it('should run a request-scoped filter with the instance of the connection', async () => {
     await start(true, [Session, SessionGateway]);
+    const client = new WebSocket((await app.getUrl()).replace('http', 'ws'));
+    clients.push(client);
+    const [code, reason] = await once(client, 'close', {
+      signal: AbortSignal.timeout(5000),
+    });
+
+    expect(code).toBe(4401);
+    expect(reason.toString()).toBe('Unauthorized');
+  });
+
+  it('should run a request-scoped filter when the gateway fails to resolve', async () => {
+    await start(true, [Session, CurrentUser, UserGateway]);
     const client = new WebSocket((await app.getUrl()).replace('http', 'ws'));
     clients.push(client);
     const [code, reason] = await once(client, 'close', {

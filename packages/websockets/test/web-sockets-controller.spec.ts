@@ -1064,6 +1064,87 @@ describe('WebSocketsController', () => {
         ),
       );
     });
+
+    describe('when the gateway fails to resolve', () => {
+      class Gateway {
+        handleConnection() {}
+      }
+      const error = new Error('session lookup failed');
+      let gatewayWrapper: any;
+
+      beforeEach(() => {
+        gatewayWrapper = {
+          id: 'gateway-wrapper',
+          isDependencyTreeStatic: () => false,
+          instance: new Gateway(),
+          isDependencyTreeDurable: () => false,
+        };
+        vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+          () => undefined,
+        );
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(error);
+      });
+
+      it('should create its enhancers in the context of the connection before its filters handle the error', async () => {
+        const loadEnhancers = vi
+          .spyOn(injector, 'loadEnhancersPerContext')
+          .mockResolvedValue(undefined);
+        const exceptionFilter = { handle: vi.fn() };
+        const createFilter = vi
+          .spyOn(exceptionFiltersContext, 'create')
+          .mockReturnValue(exceptionFilter as any);
+        const client = {};
+
+        await instance.createRequestScopedEventHandler(
+          gatewayWrapper,
+          { providers: new Map() } as Module,
+          'moduleKey',
+          'handleConnection',
+          {},
+        )(client);
+
+        // the gateway's filters are created along with it, so a request-scoped
+        // one would otherwise be an empty placeholder in this context
+        const contextId = client[REQUEST_CONTEXT_ID as any];
+        expect(loadEnhancers).toHaveBeenCalledWith(
+          gatewayWrapper,
+          contextId,
+          gatewayWrapper,
+        );
+        expect(loadEnhancers.mock.invocationCallOrder[0]).toBeLessThan(
+          createFilter.mock.invocationCallOrder[0],
+        );
+        expect(exceptionFilter.handle).toHaveBeenCalledWith(
+          error,
+          expect.anything(),
+        );
+      });
+
+      it('should log instead of rejecting when its enhancers fail to resolve as well', async () => {
+        vi.spyOn(injector, 'loadEnhancersPerContext').mockRejectedValue(
+          new Error('session lookup failed again'),
+        );
+        const createFilter = vi.spyOn(exceptionFiltersContext, 'create');
+        const loggerError = vi
+          .spyOn(untypedInstance.logger, 'error')
+          .mockImplementation(() => undefined);
+
+        const handler = instance.createRequestScopedEventHandler(
+          gatewayWrapper,
+          { providers: new Map() } as Module,
+          'moduleKey',
+          'handleConnection',
+          {},
+        );
+
+        await expect(handler({})).resolves.toBeUndefined();
+        expect(createFilter).not.toHaveBeenCalled();
+        expect(loggerError).toHaveBeenCalledWith(
+          'Failed to resolve Gateway on client connection',
+          error.stack,
+        );
+      });
+    });
   });
   describe('createStaticEventHandler', () => {
     let exceptionFilter: { handle: ReturnType<typeof vi.fn> };

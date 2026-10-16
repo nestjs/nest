@@ -462,6 +462,7 @@ export class WebSocketsController {
     return async (...args: unknown[]) => {
       const [client] = args;
       let contextId: ContextId | undefined;
+      let isResolved = false;
 
       try {
         contextId = this.getContextId(
@@ -482,6 +483,7 @@ export class WebSocketsController {
               collection,
               contextId,
             );
+        isResolved = true;
         if (!isStatic) {
           this.assignServerToProperties(contextInstance, server);
         }
@@ -493,11 +495,23 @@ export class WebSocketsController {
           // The gateway failed to resolve and has no hook whose exception
           // filters could handle the error. Nothing awaits this handler, so
           // rethrowing would end as an unhandled rejection.
-          this.logger.error(
-            `Failed to resolve ${instance.constructor.name} on client ${methodName === 'handleConnection' ? 'connection' : 'disconnection'}`,
-            (err as Error)?.stack,
-          );
+          this.logResolutionError(instance, methodName, err);
           return;
+        }
+        if (!isResolved && contextId) {
+          // The gateway's enhancers are created in the context of the
+          // connection along with it, so when it failed to resolve, its
+          // filters have to be created here.
+          try {
+            await this.injector.loadEnhancersPerContext(
+              instanceWrapper,
+              contextId,
+              instanceWrapper,
+            );
+          } catch {
+            this.logResolutionError(instance, methodName, err);
+            return;
+          }
         }
         // Built for each connection: a request-scoped filter is only
         // constructed in the context of the connection, and the static one
@@ -520,6 +534,17 @@ export class WebSocketsController {
         }
       }
     };
+  }
+
+  private logResolutionError(
+    instance: NestGateway,
+    methodName: 'handleConnection' | 'handleDisconnect',
+    err: unknown,
+  ) {
+    this.logger.error(
+      `Failed to resolve ${instance.constructor.name} on client ${methodName === 'handleConnection' ? 'connection' : 'disconnection'}`,
+      (err as Error)?.stack,
+    );
   }
 
   // A default-scoped gateway is resolved per connection only for its global
