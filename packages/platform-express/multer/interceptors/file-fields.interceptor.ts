@@ -15,7 +15,10 @@ import {
   MulterField,
   MulterOptions,
 } from '../interfaces/multer-options.interface';
-import { transformException } from '../multer/multer.utils';
+import {
+  removeFilesOnPipeRejection,
+  transformException,
+} from '../multer/multer.utils';
 
 type MulterInstance = any;
 
@@ -61,7 +64,15 @@ export function FileFieldsInterceptor(
           },
         ),
       );
-      return next.handle();
+      return next
+        .handle()
+        .pipe(
+          removeFilesOnPipeRejection(
+            this.multer.storage,
+            ctx.getRequest(),
+            ctx.getResponse(),
+          ),
+        );
     }
   }
   const Interceptor = mixin(MixinInterceptor);

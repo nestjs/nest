@@ -12,7 +12,10 @@ import { Observable } from 'rxjs';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { MulterModuleOptions } from '../interfaces';
 import { MulterOptions } from '../interfaces/multer-options.interface';
-import { transformException } from '../multer/multer.utils';
+import {
+  removeFilesOnPipeRejection,
+  transformException,
+} from '../multer/multer.utils';
 
 type MulterInstance = any;
 
@@ -53,7 +56,15 @@ export function AnyFilesInterceptor(
           resolve();
         }),
       );
-      return next.handle();
+      return next
+        .handle()
+        .pipe(
+          removeFilesOnPipeRejection(
+            this.multer.storage,
+            ctx.getRequest(),
+            ctx.getResponse(),
+          ),
+        );
     }
   }
   const Interceptor = mixin(MixinInterceptor);

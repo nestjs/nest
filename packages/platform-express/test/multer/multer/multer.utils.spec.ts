@@ -9,7 +9,72 @@ import {
   busboyExceptions,
   multerExceptions,
 } from '../../../multer/multer/multer.constants';
-import { transformException } from '../../../multer/multer/multer.utils';
+import {
+  removeFilesOnPipeRejection,
+  transformException,
+} from '../../../multer/multer/multer.utils';
+import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes';
+import { lastValueFrom, throwError } from 'rxjs';
+import * as sinon from 'sinon';
+import { Writable } from 'stream';
+
+describe('removeFilesOnPipeRejection', () => {
+  const error = new BadRequestException('Validation failed');
+  const createStorage = () => ({
+    _removeFile: sinon.stub().callsFake((_req, _file, cb) => cb(null)),
+  });
+  const createResponse = () =>
+    new Writable({ write: (_chunk, _encoding, cb) => cb() });
+  const fail = async (storage: any, req: any, res: Writable) => {
+    try {
+      await lastValueFrom(
+        throwError(() => error).pipe(
+          removeFilesOnPipeRejection(storage, req, res),
+        ),
+      );
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect(err).to.equal(error);
+    }
+  };
+
+  (
+    [
+      ['req.file', (file: object) => ({ file })],
+      ['req.files', (file: object) => ({ files: [file] })],
+      ['req.files by field', (file: object) => ({ files: { docs: [file] } })],
+    ] as const
+  ).forEach(([location, createRequest]) => {
+    it(`should remove ${location} once the response is sent when the pipes rejected the request`, async () => {
+      const storage = createStorage();
+      const file = { fieldname: 'docs', path: '/uploads/a' };
+      const req = createRequest(file);
+      const res = createResponse();
+      markRejectedByPipes(req);
+
+      await fail(storage, req, res);
+      // An exception filter may still use the files until the response is out.
+      expect(storage._removeFile.called).to.be.false;
+      res.end();
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(storage._removeFile.calledWith(req, file, sinon.match.func)).to.be
+        .true;
+    });
+  });
+
+  it('should keep the files when the route handler failed', async () => {
+    const storage = createStorage();
+    const req = { file: { fieldname: 'doc', path: '/uploads/a' } };
+    const res = createResponse();
+
+    await fail(storage, req, res);
+    res.end();
+    await new Promise(resolve => setImmediate(resolve));
+
+    expect(storage._removeFile.called).to.be.false;
+  });
+});
 
 describe('transformException', () => {
   describe('if error does not exist', () => {

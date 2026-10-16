@@ -31,6 +31,7 @@ import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import { isRejectedByPipes } from '../../router/rejected-by-pipes';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { HeaderStream } from '../../router/sse-stream';
@@ -108,6 +109,61 @@ describe('RouterExecutionContext', () => {
 
       expect(fnHandleResponse.calledOnce).to.be.true;
       expect(fnHandleResponse.firstCall.args[0]).to.equal(result);
+    });
+
+    describe('when the pipes reject the request', () => {
+      const createProxy = (pipesFn: Function, apply: () => unknown) => {
+        sinon.stub(contextCreator, 'getMetadata').returns({
+          argsLength: 1,
+          fnHandleResponse: sinon.stub(),
+          isSseHandler: false,
+          paramtypes: [],
+          getParamsMetadata: sinon.stub().returns([]),
+          httpStatusCode: 200,
+          hasCustomHeaders: false,
+          responseHeaders: [],
+        } as any);
+        sinon.stub(contextCreator, 'createGuardsFn').returns(null as any);
+        sinon.stub(contextCreator, 'createPipesFn').returns(pipesFn as any);
+        return contextCreator.create({} as any, { apply } as any, '', '', 0);
+      };
+
+      it('should record that the route handler did not run', async () => {
+        const error = new HttpException('Validation failed', 400);
+        const apply = sinon.stub();
+        const req = {};
+        const proxy = createProxy(() => Promise.reject(error), apply);
+
+        try {
+          await proxy(req, {}, sinon.stub());
+          expect.fail('should have thrown');
+        } catch (err) {
+          expect(err).to.equal(error);
+        }
+
+        expect(apply.called).to.be.false;
+        expect(isRejectedByPipes(req)).to.be.true;
+      });
+
+      it('should not record a request whose route handler fails', async () => {
+        const error = new Error('handler failed');
+        const req = {};
+        const proxy = createProxy(
+          () => Promise.resolve(),
+          () => {
+            throw error;
+          },
+        );
+
+        try {
+          await proxy(req, {}, sinon.stub());
+          expect.fail('should have thrown');
+        } catch (err) {
+          expect(err).to.equal(error);
+        }
+
+        expect(isRejectedByPipes(req)).to.be.false;
+      });
     });
 
     describe('when the route has interceptors', () => {

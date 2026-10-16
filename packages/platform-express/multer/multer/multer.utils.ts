@@ -3,7 +3,56 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
+import { finished } from 'stream';
 import { multerExceptions, busboyExceptions } from './multer.constants';
+
+/**
+ * Set on a request whose pipes rejected it, by the router of
+ * `@nestjs/core` (see `markRejectedByPipes()` there). Read through the
+ * registered symbol rather than an import, so this package still loads with
+ * a version of `@nestjs/core` that does not set it.
+ */
+const REJECTED_BY_PIPES = Symbol.for('nestjs:rejected-by-pipes');
+
+function isRejectedByPipes(req: any): boolean {
+  return req?.[REJECTED_BY_PIPES] === true;
+}
+
+/**
+ * Removes the files multer stored for `req` when the route's pipes reject
+ * the request (e.g. `ParseFilePipe`): the route handler never sees them, and
+ * nothing else would remove them. They are removed once the response has
+ * been sent, as an exception filter may still use (or remove) them.
+ */
+export function removeFilesOnPipeRejection<T>(
+  storage: any,
+  req: any,
+  res: any,
+): MonoTypeOperatorFunction<T> {
+  return catchError(err => {
+    if (isRejectedByPipes(req)) {
+      finished(res, () => {
+        for (const file of storedFiles(req)) {
+          try {
+            storage._removeFile(req, file, () => undefined);
+          } catch {
+            // The request has failed already.
+          }
+        }
+      });
+    }
+    return throwError(() => err);
+  });
+}
+
+function storedFiles(req: any): any[] {
+  const { file, files } = req;
+  if (file) {
+    return [file];
+  }
+  return Array.isArray(files) ? files : Object.values(files ?? {}).flat();
+}
 
 // Multer may add in a 'field' property to the error
 // https://github.com/expressjs/multer/blob/aa42bea6ac7d0cb8fcb279b15a7278cda805dc63/lib/multer-error.js#L19
