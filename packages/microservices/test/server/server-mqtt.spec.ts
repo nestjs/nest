@@ -200,6 +200,40 @@ describe('ServerMqtt', () => {
       expect(mqttClient.end).toHaveBeenCalled();
     });
   });
+  describe('createMqttClient', () => {
+    let connect: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      connect = vi.fn();
+    });
+
+    // Otherwise mqtt makes no further attempt after a CONNACK error, which
+    // leaves the server disconnected for good
+    it('should have mqtt reconnect after the broker refuses a connection', async () => {
+      vi.spyOn(untypedServer, 'loadPackage').mockResolvedValue({ connect });
+      await server.createMqttClient();
+
+      expect(connect).toHaveBeenCalledWith(
+        'mqtt://localhost:1883',
+        expect.objectContaining({ reconnectOnConnackError: true }),
+      );
+    });
+
+    it('should keep "reconnectOnConnackError" when it is set', async () => {
+      const serverWithOption = new ServerMqtt({
+        reconnectOnConnackError: false,
+      });
+      vi.spyOn(serverWithOption as any, 'loadPackage').mockResolvedValue({
+        connect,
+      });
+      await serverWithOption.createMqttClient();
+
+      expect(connect).toHaveBeenCalledWith(
+        'mqtt://localhost:1883',
+        expect.objectContaining({ reconnectOnConnackError: false }),
+      );
+    });
+  });
   describe('bindEvents', () => {
     let onSpy: ReturnType<typeof vi.fn>,
       subscribeSpy: ReturnType<typeof vi.fn>,

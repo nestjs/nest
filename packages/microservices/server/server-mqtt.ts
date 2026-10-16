@@ -139,7 +139,13 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       ServerMqtt.name,
       () => import('mqtt'),
     );
-    return mqttPackage.connect(this.url, this.options as any);
+    // mqtt stops reconnecting for good once the broker refuses a connection
+    // (CONNACK error), which would leave the server disconnected. Retry as
+    // after any other failed attempt, unless told otherwise.
+    return mqttPackage.connect(this.url, {
+      reconnectOnConnackError: true,
+      ...this.options,
+    } as any);
   }
 
   public getMessageHandler(pub: MqttClient) {
