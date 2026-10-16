@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
+import { MQTT_MAX_TOPIC_LENGTH } from '../../constants';
+import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception';
 import { MqttEventsMap } from '../../events/mqtt.events';
 import { ReadPacket } from '../../interfaces';
 import { MqttRecord } from '../../record-builders';
@@ -75,6 +77,55 @@ describe('ClientMqtt', () => {
     it('should add callback to routing map', async () => {
       client['publish'](msg, () => {});
       expect(client['routingMap'].has(id)).to.be.true;
+    });
+    describe('when a topic would exceed the maximum topic length', () => {
+      // A pattern that leaves just enough room for "/reply"
+      const longestPattern = 'a'.repeat(
+        MQTT_MAX_TOPIC_LENGTH - '/reply'.length,
+      );
+
+      it('should fail the request without subscribing or publishing', () => {
+        const callback = sinon.spy();
+
+        client['publish'](
+          { pattern: `${longestPattern}a`, data: 'data' },
+          callback,
+        );
+
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args[0].err).to.be.instanceOf(
+          MaxMqttTopicLengthExceededException,
+        );
+        expect(subscribeSpy.called).to.be.false;
+        expect(publishSpy.called).to.be.false;
+        expect(client['routingMap'].size).to.equal(0);
+        expect(client['subscriptionsCount'].size).to.equal(0);
+      });
+      it('should count the length in bytes', () => {
+        const callback = sinon.spy();
+
+        // "é" takes two bytes
+        client['publish'](
+          { pattern: `${longestPattern.slice(1)}é`, data: 'data' },
+          callback,
+        );
+
+        expect(callback.firstCall.args[0].err).to.be.instanceOf(
+          MaxMqttTopicLengthExceededException,
+        );
+        expect(subscribeSpy.called).to.be.false;
+      });
+      it('should send a request whose topics fit', () => {
+        const callback = sinon.spy();
+
+        client['publish']({ pattern: longestPattern, data: 'data' }, callback);
+
+        expect(callback.called).to.be.false;
+        expect(subscribeSpy.firstCall.args[0]).to.equal(
+          `${longestPattern}/reply`,
+        );
+        expect(publishSpy.firstCall.args[0]).to.equal(longestPattern);
+      });
     });
     describe('on error', () => {
       beforeEach(() => {
@@ -397,6 +448,14 @@ describe('ClientMqtt', () => {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
+    });
+    it('should not publish an event whose topic exceeds the maximum topic length', () => {
+      const pattern = 'a'.repeat(MQTT_MAX_TOPIC_LENGTH + 1);
+
+      expect(() => client['dispatchEvent']({ pattern, data: 'data' })).to.throw(
+        MaxMqttTopicLengthExceededException,
+      );
+      expect(publishStub.called).to.be.false;
     });
     describe('headers', () => {
       it('should not generate headers if none are configured', async () => {

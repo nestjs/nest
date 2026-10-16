@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
+import { MQTT_MAX_TOPIC_LENGTH, NO_MESSAGE_HANDLER } from '../../constants';
 import { MqttContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception';
 import { ServerMqtt } from '../../server/server-mqtt';
 import { objectToMap } from './utils/object-to-map';
 
@@ -216,6 +217,26 @@ describe('ServerMqtt', () => {
 
         expect(handleErrorStub.calledWith(error)).to.be.true;
       });
+      it('should neither run the handler nor reply when the reply topic would be too long', async () => {
+        const handler = sinon.spy();
+        const publish = sinon.spy();
+        const loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+        untypedServer.messageHandlers = objectToMap({ '#': handler });
+
+        // The broker delivers topics up to the limit, "/reply" is added to it
+        await server.getMessageHandler({ publish })(
+          'a'.repeat(MQTT_MAX_TOPIC_LENGTH),
+          Buffer.from(JSON.stringify({ id: '1', data: 'test' })),
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(handler.called).to.be.false;
+        expect(publish.called).to.be.false;
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(loggerErrorStub.firstCall.args[0]).to.be.instanceOf(
+          MaxMqttTopicLengthExceededException,
+        );
+      });
     });
   });
   describe('handleMessage', () => {
@@ -285,6 +306,16 @@ describe('ServerMqtt', () => {
       expect(typeof server.getPublisher(null, context, id)).to.be.eql(
         'function',
       );
+    });
+    it(`should throw if the reply topic would exceed the maximum topic length`, () => {
+      const longestTopic = 'a'.repeat(MQTT_MAX_TOPIC_LENGTH - '/reply'.length);
+
+      expect(() =>
+        server.getPublisher(pub, new MqttContext([`${longestTopic}a`, {}]), id),
+      ).to.throw(MaxMqttTopicLengthExceededException);
+      expect(() =>
+        server.getPublisher(pub, new MqttContext([longestTopic, {}]), id),
+      ).to.not.throw();
     });
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';

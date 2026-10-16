@@ -14,6 +14,7 @@ export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
 export const MQTT_SEPARATOR = '/';
 export const MQTT_WILDCARD_SINGLE = '+';
 export const MQTT_WILDCARD_ALL = '#';
+export const MQTT_MAX_TOPIC_LENGTH = 65535;
 export const RQM_DEFAULT_QUEUE = '';
 export const RQM_DEFAULT_PREFETCH_COUNT = 0;
 export const RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT = false;

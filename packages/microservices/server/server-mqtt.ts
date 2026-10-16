@@ -1,6 +1,7 @@
 import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
   MQTT_DEFAULT_URL,
+  MQTT_MAX_TOPIC_LENGTH,
   MQTT_SEPARATOR,
   MQTT_WILDCARD_ALL,
   MQTT_WILDCARD_SINGLE,
@@ -8,6 +9,7 @@ import {
 } from '../constants';
 import { MqttContext } from '../ctx-host/mqtt.context';
 import { Transport } from '../enums';
+import { MaxMqttTopicLengthExceededException } from '../errors/max-mqtt-topic-length-exceeded.exception';
 import { MqttEvents, MqttEventsMap, MqttStatus } from '../events/mqtt.events';
 import {
   IncomingRequest,
@@ -174,6 +176,9 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     context: MqttContext,
     id: string,
   ): any {
+    // Checked before the handler runs, as none of its replies could be sent
+    this.assertTopicLength(this.getReplyPattern(context.getTopic()));
+
     return (response: any) => {
       Object.assign(response, { id });
 
@@ -262,6 +267,22 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
   public getReplyPattern(pattern: string): string {
     return `${pattern}/reply`;
+  }
+
+  /**
+   * A topic's length is encoded in two bytes, and "/reply" can take a topic
+   * the broker delivered past it. mqtt.js only fails on a longer topic once it
+   * has written the start of the packet, so the broker would read the packets
+   * sent after it as the rest of that packet.
+   */
+  protected assertTopicLength(topic: string) {
+    const length = Buffer.byteLength(topic);
+    if (length > MQTT_MAX_TOPIC_LENGTH) {
+      throw new MaxMqttTopicLengthExceededException(
+        length,
+        MQTT_MAX_TOPIC_LENGTH,
+      );
+    }
   }
 
   public registerErrorListener(client: MqttClient) {
