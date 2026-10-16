@@ -121,6 +121,56 @@ describe('ExternalContextCreator', () => {
         );
       });
     });
+    describe('when the host is registered under a token other than its class', () => {
+      @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+      class Resolver {}
+
+      let wrapper: InstanceWrapper;
+
+      beforeEach(() => {
+        const modules = new ModulesContainer();
+        const moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider({ provide: 'RESOLVER', useClass: Resolver });
+        wrapper = moduleRef.providers.get('RESOLVER')!;
+        wrapper.instance = new Resolver();
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should find its module and inquirer by its instance', () => {
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          wrapper.instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          wrapper.id,
+        );
+      });
+
+      it('should find its module by the inquirer id', () => {
+        const instance = new Resolver();
+        const contextId = { id: 2 };
+        contextCreator.create(
+          instance,
+          callback,
+          '',
+          '',
+          null!,
+          contextId,
+          wrapper.id,
+        );
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'key',
+          contextId,
+          wrapper.id,
+        );
+      });
+    });
     describe('returns proxy function', () => {
       let proxyContext;
       let instance;

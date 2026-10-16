@@ -13,7 +13,7 @@ import { APP_GUARD, ContextIdFactory, ModulesContainer } from '@nestjs/core';
 import { ExternalContextCreator } from '@nestjs/core/helpers/external-context-creator.js';
 import { Injector } from '@nestjs/core/injector/injector.js';
 import { WsAdapter } from '@nestjs/platform-ws';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import WebSocket from 'ws';
 
@@ -26,6 +26,20 @@ class DenyGuard implements CanActivate {
 
 @Injectable({ scope: Scope.REQUEST })
 class RequestScopedDenyGuard implements CanActivate {
+  canActivate() {
+    return false;
+  }
+}
+
+@Injectable({ scope: Scope.REQUEST })
+class RequestScopedAllowGuard implements CanActivate {
+  canActivate() {
+    return true;
+  }
+}
+
+@Injectable({ scope: Scope.TRANSIENT })
+class TransientDenyGuard implements CanActivate {
   canActivate() {
     return false;
   }
@@ -54,6 +68,11 @@ class RequestScopedVaultGateway {
 class PayrollResolver {
   payroll() {
     return 'payroll';
+  }
+
+  @UseGuards(DenyGuard)
+  secret() {
+    return 'secret';
   }
 }
 
@@ -107,19 +126,44 @@ describe('Class providers that host handlers', () => {
   });
 
   describe('when a resolver is registered with "useClass" under another token', () => {
-    it('should run a request-scoped global guard on it', async () => {
-      const moduleRef = await Test.createTestingModule({
+    let moduleRef: TestingModule;
+
+    afterEach(async () => {
+      await moduleRef.close();
+    });
+
+    const compile = async (providers: Provider[]) => {
+      moduleRef = await Test.createTestingModule({
         providers: [
           { provide: 'PAYROLL', useClass: PayrollResolver },
-          { provide: APP_GUARD, useClass: RequestScopedDenyGuard },
+          ...providers,
         ],
       }).compile();
       const hostModule = [...moduleRef.get(ModulesContainer).values()].find(
         ({ providers }) => providers.has('PAYROLL'),
       )!;
-      const wrapper = hostModule.providers.get('PAYROLL')!;
+      return { hostModule, wrapper: hostModule.providers.get('PAYROLL')! };
+    };
 
-      // What @nestjs/graphql does for a resolver that is not static
+    // What @nestjs/graphql does for a static resolver
+    const createStaticHandler = async (
+      providers: Provider[],
+      methodName: 'payroll' | 'secret',
+    ) => {
+      const { wrapper } = await compile(providers);
+      expect(wrapper.isDependencyTreeStatic()).toBe(true);
+      const resolver = wrapper.instance as PayrollResolver;
+      return moduleRef
+        .get(ExternalContextCreator)
+        .create(resolver, resolver[methodName], methodName);
+    };
+
+    // What @nestjs/graphql does for a resolver that is not static
+    const createRequestScopedHandler = async (
+      providers: Provider[],
+      methodName: 'payroll' | 'secret',
+    ) => {
+      const { hostModule, wrapper } = await compile(providers);
       expect(wrapper.isDependencyTreeStatic()).toBe(false);
       const contextId = ContextIdFactory.create();
       moduleRef.registerRequestByContextId({}, contextId);
@@ -129,20 +173,50 @@ describe('Class providers that host handlers', () => {
         hostModule.providers,
         contextId,
       );
-      const handler = moduleRef
+      return moduleRef
         .get(ExternalContextCreator)
         .create(
           resolver,
-          resolver.payroll,
-          'payroll',
+          resolver[methodName],
+          methodName,
           undefined,
           undefined,
           contextId,
           wrapper.id,
         );
+    };
+
+    it('should run a request-scoped global guard on it', async () => {
+      const handler = await createRequestScopedHandler(
+        [{ provide: APP_GUARD, useClass: RequestScopedDenyGuard }],
+        'payroll',
+      );
 
       await expect(handler()).rejects.toBeInstanceOf(ForbiddenException);
-      await moduleRef.close();
+    });
+
+    it('should run its own guards', async () => {
+      const handler = await createStaticHandler([], 'secret');
+
+      await expect(handler()).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('should run its own guards when it is request-scoped', async () => {
+      const handler = await createRequestScopedHandler(
+        [{ provide: APP_GUARD, useClass: RequestScopedAllowGuard }],
+        'secret',
+      );
+
+      await expect(handler()).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('should run a transient global guard on it', async () => {
+      const handler = await createStaticHandler(
+        [{ provide: APP_GUARD, useClass: TransientDenyGuard }],
+        'payroll',
+      );
+
+      await expect(handler()).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 });
