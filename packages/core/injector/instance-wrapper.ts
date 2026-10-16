@@ -222,6 +222,20 @@ export class InstanceWrapper<T = any> {
     collection.delete(contextId);
   }
 
+  /**
+   * Returns the instances that exist for the given context, including those
+   * of every inquirer of a transient provider. Unlike `getInstanceByContextId`,
+   * it does not create one.
+   */
+  public getExistingInstancesByContextId(
+    contextId: ContextId,
+  ): InstancePerContext<T>[] {
+    const collections = [this.values, ...(this.transientMap?.values() ?? [])];
+    return collections
+      .map(collection => collection.get(contextId))
+      .filter(instancePerContext => !isUndefined(instancePerContext));
+  }
+
   public addCtorMetadata(index: number, wrapper: InstanceWrapper) {
     if (!this[INSTANCE_METADATA_SYMBOL].dependencies) {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];
@@ -486,6 +500,24 @@ export class InstanceWrapper<T = any> {
       dependencyTreeParents.get(dependency)?.delete(this);
       dependency.removeTransientInstancesOf(this);
     });
+  }
+
+  /**
+   * Returns the wrappers that depend on this one, directly or through other
+   * wrappers (as a constructor, property or enhancer dependency).
+   */
+  public getDependents(): Set<InstanceWrapper> {
+    const dependents = new Set<InstanceWrapper>();
+    const wrappers: InstanceWrapper[] = [this];
+    while (wrappers.length > 0) {
+      dependencyTreeParents.get(wrappers.pop()!)?.forEach(parent => {
+        if (!dependents.has(parent)) {
+          dependents.add(parent);
+          wrappers.push(parent);
+        }
+      });
+    }
+    return dependents;
   }
 
   /**

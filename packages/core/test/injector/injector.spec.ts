@@ -9,7 +9,7 @@ import { UndefinedDependencyException } from '../../errors/exceptions/undefined-
 import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
 import { Injector, PropertyDependency } from '../../injector/injector.js';
-import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { ContextId, InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { SettlementSignal } from '../../injector/settlement-signal.js';
 
@@ -899,6 +899,156 @@ describe('Injector', () => {
         await expect(
           injector.waitForDeferredLoads({ id: 3 }),
         ).resolves.toBeUndefined();
+      });
+
+      it('should reject with the error of the load it waits for instead of calling loadProvider', async () => {
+        const error = new Error('Test error');
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
+
+        const contextId = { id: 2 };
+        const instanceHost = wrapper.getInstanceByContextId(contextId);
+        // the load that the placeholder handed out belongs to has failed
+        instanceHost.donePromise = Promise.resolve(error);
+
+        const loadStub = vi.spyOn(injector, 'loadProvider');
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+        });
+
+        await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+          error,
+        );
+        expect(loadStub).not.toHaveBeenCalled();
+      });
+
+      describe('and it is durable', () => {
+        let tenant: ContextId;
+        let wrapper: InstanceWrapper;
+        let dependent: InstanceWrapper;
+
+        const createContextId = () => {
+          const contextId: ContextId = {
+            id: Math.random(),
+            getParent: ({ isTreeDurable }) =>
+              isTreeDurable ? tenant : contextId,
+          };
+          return contextId;
+        };
+
+        beforeEach(() => {
+          tenant = { id: 1 };
+          wrapper = new InstanceWrapper({
+            token: 'TenantContext',
+            scope: Scope.REQUEST,
+            durable: true,
+            isResolved: false,
+            forwardRef: true,
+          });
+          wrapper.getInstanceByContextId(tenant).donePromise =
+            Promise.resolve();
+
+          dependent = new InstanceWrapper({
+            token: 'Consumer',
+            metatype: class Consumer {},
+            isResolved: false,
+          });
+          dependent.addCtorMetadata(0, wrapper);
+          // built for the tenant with the placeholder of the provider
+          dependent.setInstanceByContextId(tenant, {
+            instance: {},
+            isResolved: true,
+            isPending: true,
+            donePromise: Promise.resolve(),
+          });
+        });
+
+        it('should make "waitForDeferredLoads" reject for another context that uses a dependent of the provider when loadProvider throws', async () => {
+          const error = new Error('Test error');
+          let failLoad!: (err: unknown) => void;
+          vi.spyOn(injector, 'loadProvider').mockImplementation(
+            () => new Promise((_, reject) => (failLoad = reject)),
+          );
+
+          await injector.resolveComponentHost(module, wrapper, {
+            contextId: createContextId(),
+            inquirer: dependent,
+          });
+          const contextId = createContextId();
+          await injector.resolveComponentHost(module, dependent, {
+            contextId,
+          });
+          failLoad(error);
+
+          await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+            error,
+          );
+        });
+
+        it('should make the contexts waiting for a dependent of the provider reject when loadProvider throws', async () => {
+          const error = new Error('Test error');
+          vi.spyOn(injector, 'loadProvider').mockImplementation(() =>
+            Promise.reject(error),
+          );
+          const settlementSignal = new SettlementSignal();
+          // still being built for the tenant
+          dependent.setInstanceByContextId(tenant, {
+            instance: {},
+            isResolved: false,
+            isPending: true,
+            donePromise: settlementSignal.asPromise(),
+          });
+
+          const contextId = createContextId();
+          await injector.resolveComponentHost(module, wrapper, {
+            contextId,
+            inquirer: dependent,
+          });
+          const waitingLoad = injector.loadInstance(
+            dependent,
+            new Map(),
+            module,
+            { contextId: createContextId() },
+          );
+          await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+            error,
+          );
+          settlementSignal.complete();
+
+          await expect(waitingLoad).rejects.toBe(error);
+        });
+
+        it('should load a dependent of the provider again for the next context when loadProvider throws', async () => {
+          const error = new Error('Test error');
+          const loadStub = vi
+            .spyOn(injector, 'loadProvider')
+            .mockImplementationOnce(() => Promise.reject(error))
+            .mockImplementation(() => Promise.resolve());
+
+          const contextId = createContextId();
+          await injector.resolveComponentHost(module, wrapper, {
+            contextId,
+            inquirer: dependent,
+          });
+          await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+            error,
+          );
+
+          const nextContextId = createContextId();
+          await injector.resolveComponentHost(module, dependent, {
+            contextId: nextContextId,
+          });
+
+          expect(loadStub).toHaveBeenLastCalledWith(dependent, module, {
+            contextId: nextContextId,
+          });
+          await expect(
+            injector.waitForDeferredLoads(nextContextId),
+          ).resolves.toBeUndefined();
+        });
       });
     });
   });

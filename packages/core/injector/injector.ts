@@ -106,6 +106,23 @@ export class Injector {
     ContextId,
     Set<Promise<unknown>>
   >();
+  /**
+   * Deferred loads that are still running, per durable dependent of the
+   * provider being loaded and per context of that dependent (see
+   * `trackDurableDeferredLoad`).
+   */
+  private readonly durableDeferredLoads = new WeakMap<
+    InstanceWrapper,
+    WeakMap<ContextId, Set<Promise<unknown>>>
+  >();
+  /**
+   * Durable instances that may reference the placeholder of a provider whose
+   * deferred load failed, with the error (see `trackDurableDeferredLoad`).
+   */
+  private readonly failedInstances = new WeakMap<
+    InstancePerContext<unknown>,
+    unknown
+  >();
 
   constructor(
     private readonly options?: {
@@ -155,8 +172,13 @@ export class Injector {
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ) {
     const inquirerId = this.getContextInquirerId(resolutionContext);
-    const instanceHost = wrapper.getInstanceByContextId(
-      this.getContextId(resolutionContext.contextId, wrapper),
+    const hostContextId = this.getContextId(
+      resolutionContext.contextId,
+      wrapper,
+    );
+    const instanceHost = this.getInstanceHost(
+      wrapper,
+      hostContextId,
       inquirerId,
     );
 
@@ -173,6 +195,14 @@ export class Injector {
         if (err) {
           throw err;
         }
+        if (this.failedInstances.has(instanceHost)) {
+          throw this.failedInstances.get(instanceHost);
+        }
+        this.linkDurableDeferredLoads(
+          wrapper,
+          resolutionContext.contextId,
+          hostContextId,
+        );
       });
     }
 
@@ -639,7 +669,8 @@ export class Injector {
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ): Promise<InstanceWrapper> {
     const inquirerId = this.getContextInquirerId(resolutionContext);
-    const instanceHost = instanceWrapper.getInstanceByContextId(
+    const instanceHost = this.getInstanceHost(
+      instanceWrapper,
       this.getContextId(resolutionContext.contextId, instanceWrapper),
       inquirerId,
     );
@@ -664,17 +695,26 @@ export class Injector {
        * instantiated beforehand.
        */
       if (instanceHost.donePromise) {
-        const deferredLoad = instanceHost.donePromise.then(() =>
-          this.loadProvider(
+        const deferredLoad = instanceHost.donePromise.then((err?: unknown) => {
+          // The placeholder handed out belongs to the load that failed
+          if (err) {
+            throw err;
+          }
+          return this.loadProvider(
             instanceWrapper,
             instanceWrapper.host ?? moduleRef,
             resolutionContext,
-          ),
-        );
+          );
+        });
         void deferredLoad.catch(err => {
           instanceWrapper.settlementSignal?.error(err);
         });
         this.addDeferredLoad(resolutionContext.contextId, deferredLoad);
+        this.trackDurableDeferredLoad(
+          instanceWrapper,
+          resolutionContext.contextId,
+          deferredLoad,
+        );
       } else {
         /**
          * No load has ever been scheduled for this context (e.g., request-scoped
@@ -702,6 +742,11 @@ export class Injector {
         inquirerId,
       );
     }
+    this.linkDurableDeferredLoads(
+      instanceWrapper,
+      resolutionContext.contextId,
+      this.getContextId(resolutionContext.contextId, instanceWrapper),
+    );
     return instanceWrapper;
   }
 
@@ -1026,9 +1071,10 @@ export class Injector {
 
   /**
    * Waits for the loads deferred while resolving the given context (see
-   * `resolveComponentHost`), and throws if one of them failed. A failed load
-   * is kept, as instances of the context already reference the provider that
-   * it failed to instantiate.
+   * `resolveComponentHost`), including those that the durable instances it
+   * uses were built with (see `trackDurableDeferredLoad`), and throws if one
+   * of them failed. A failed load is kept, as instances of the context already
+   * reference the provider that it failed to instantiate.
    */
   public async waitForDeferredLoads(contextId: ContextId) {
     const deferredLoads = this.deferredLoads.get(contextId);
@@ -1149,6 +1195,104 @@ export class Injector {
       this.deferredLoads.set(contextId, deferredLoads);
     }
     deferredLoads.add(deferredLoad);
+  }
+
+  /**
+   * In a durable context (see `ContextIdStrategy`), the dependents built with
+   * the placeholder of a provider whose load is deferred are shared with the
+   * next contexts mapped to it, which do not wait for that load. Until it
+   * settles, the contexts that use them wait for it as well (see
+   * `linkDurableDeferredLoads`); if it fails, the contexts still waiting for
+   * one of them fail, and the next one that uses them builds them again (see
+   * `getInstanceHost`).
+   */
+  private trackDurableDeferredLoad(
+    wrapper: InstanceWrapper,
+    contextId: ContextId,
+    deferredLoad: Promise<unknown>,
+  ) {
+    if (this.getContextId(contextId, wrapper) === contextId) {
+      return;
+    }
+    const untrackers: Array<() => void> = [];
+    this.forEachDurableDependent(wrapper, contextId, (dependent, hostId) => {
+      const loadsPerContext =
+        this.durableDeferredLoads.get(dependent) ?? new WeakMap();
+      const loads = loadsPerContext.get(hostId) ?? new Set();
+      loads.add(deferredLoad);
+      loadsPerContext.set(hostId, loads);
+      this.durableDeferredLoads.set(dependent, loadsPerContext);
+
+      untrackers.push(() => {
+        loads.delete(deferredLoad);
+        if (loads.size === 0) {
+          loadsPerContext.delete(hostId);
+        }
+      });
+    });
+    const untrack = () => untrackers.forEach(untrackLoad => untrackLoad());
+
+    deferredLoad.then(untrack, (err: unknown) => {
+      // Looked up again, as a context may have built another dependent with
+      // the placeholder in the meantime
+      this.forEachDurableDependent(wrapper, contextId, (dependent, hostId) =>
+        dependent
+          .getExistingInstancesByContextId(hostId)
+          .filter(host => host.isResolved || host.isPending)
+          .forEach(host => this.failedInstances.set(host, err)),
+      );
+      untrack();
+    });
+  }
+
+  /**
+   * Adds the running loads that the instance of the wrapper in a durable
+   * context was built with (see `trackDurableDeferredLoad`) to the loads of
+   * the given context.
+   */
+  private linkDurableDeferredLoads(
+    wrapper: InstanceWrapper,
+    contextId: ContextId,
+    hostContextId: ContextId,
+  ) {
+    if (hostContextId === contextId) {
+      return;
+    }
+    this.durableDeferredLoads
+      .get(wrapper)
+      ?.get(hostContextId)
+      ?.forEach(deferredLoad => this.addDeferredLoad(contextId, deferredLoad));
+  }
+
+  private forEachDurableDependent(
+    wrapper: InstanceWrapper,
+    contextId: ContextId,
+    callback: (dependent: InstanceWrapper, hostContextId: ContextId) => void,
+  ) {
+    for (const dependent of wrapper.getDependents()) {
+      const hostContextId = this.getContextId(contextId, dependent);
+      if (hostContextId !== contextId) {
+        callback(dependent, hostContextId);
+      }
+    }
+  }
+
+  /**
+   * Returns the instance of the wrapper for the given context, or a new one
+   * when it was built with a provider whose deferred load failed (see
+   * `trackDurableDeferredLoad`), so that it is built again.
+   */
+  private getInstanceHost<T>(
+    wrapper: InstanceWrapper<T>,
+    contextId: ContextId,
+    inquirerId: string | undefined,
+  ): InstancePerContext<T> {
+    const instanceHost = wrapper.getInstanceByContextId(contextId, inquirerId);
+    if (!instanceHost.isResolved || !this.failedInstances.has(instanceHost)) {
+      return instanceHost;
+    }
+    wrapper.removeInstanceByContextId(contextId, inquirerId);
+    return wrapper.getInstanceByContextId(contextId, inquirerId);
   }
 
   private getInquirerId(
