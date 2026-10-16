@@ -347,6 +347,8 @@ export class NestApplication
       this.graphInspector,
       applicationConfig,
     );
+    // Optional call, as an older "@nestjs/microservices" may not implement it
+    instance.setIsConnectedToApplication?.(true);
 
     if (!hybridAppOptions.deferInitialization) {
       instance.registerListeners();

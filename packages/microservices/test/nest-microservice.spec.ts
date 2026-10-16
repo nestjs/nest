@@ -114,6 +114,41 @@ describe('NestMicroservice', () => {
     expect(listenSpy).toHaveBeenCalledOnce();
   });
 
+  describe('registerModules', () => {
+    const createInstance = () => {
+      const strategy = new (class extends Server {
+        listen = vi.fn();
+        close = vi.fn();
+        on = vi.fn();
+        unwrap = vi.fn();
+      })();
+      const instance = new NestMicroservice(
+        mockContainer,
+        { strategy },
+        mockGraphInspector,
+        mockAppConfig,
+      );
+      const socketModule = { register: vi.fn() };
+      (instance as any).socketModule = socketModule;
+      return { instance, socketModule };
+    };
+
+    it('should bind the gateways', async () => {
+      const { instance, socketModule } = createInstance();
+
+      await instance.registerModules();
+      expect(socketModule.register).toHaveBeenCalledOnce();
+    });
+
+    it('should leave the gateways to the application it is connected to', async () => {
+      const { instance, socketModule } = createInstance();
+      instance.setIsConnectedToApplication(true);
+
+      await instance.registerModules();
+      expect(socketModule.register).not.toHaveBeenCalled();
+    });
+  });
+
   it('should delegate unwrap() to server', () => {
     const unwrapStub = vi.fn().mockReturnValue('core');
     const strategy = new (class extends Server {
