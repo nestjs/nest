@@ -1,8 +1,14 @@
-import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  NestInterceptor,
+  StreamableFile,
+} from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expect } from 'chai';
 import { Observable, defer, lastValueFrom, merge, of, retry } from 'rxjs';
 import * as sinon from 'sinon';
+import { PassThrough } from 'stream';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
 describe('InterceptorsConsumer', () => {
@@ -208,6 +214,23 @@ describe('InterceptorsConsumer', () => {
 
         expect(subscribed.called).to.be.false;
         expect(teardown.called).to.be.false;
+      });
+
+      it('should destroy the stream of a StreamableFile it drops', async () => {
+        // e.g. one returned after a timeout() interceptor gave up
+        const stream = new PassThrough();
+        let resolveNext!: (file: StreamableFile) => void;
+        const next = () =>
+          new Promise<StreamableFile>(resolve => (resolveNext = resolve));
+
+        const sub = consumer
+          .transformDeferred(next)
+          .subscribe({ error: () => {} });
+        sub.unsubscribe();
+        resolveNext(new StreamableFile(stream));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(stream.destroyed).to.be.true;
       });
     });
   });
