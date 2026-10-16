@@ -133,6 +133,58 @@ describe('RouteSpecificitySorter', () => {
       expect(pathsOf(sorted)).toEqual(['/users/me', '/users']);
     });
 
+    it.each([
+      ['/', '/{*path}'],
+      ['/api', '/api{/*path}'],
+      ['/users', '/users{/:userId}'],
+      ['/files', '/files/{*path}'],
+    ])(
+      'should put `%s` before `%s`, whose optional group also matches it',
+      (exactPath, optionalGroupPath) => {
+        const optionalGroupRoute = makeResolvedRoute({
+          path: optionalGroupPath,
+        });
+        const exactRoute = makeResolvedRoute({ path: exactPath });
+
+        const sorted = RouteSpecificitySorter.sort([
+          optionalGroupRoute,
+          exactRoute,
+        ]);
+
+        expect(pathsOf(sorted)).toEqual([exactPath, optionalGroupPath]);
+      },
+    );
+
+    it('should put the exact route before a catch-all declared ahead of it', () => {
+      const catchAllRoute = makeResolvedRoute({ path: '/users/{*path}' });
+      const parametricRoute = makeResolvedRoute({ path: '/users/:userId' });
+      const staticRoute = makeResolvedRoute({ path: '/users/me' });
+      const exactRoute = makeResolvedRoute({ path: '/users' });
+
+      const sorted = RouteSpecificitySorter.sort([
+        catchAllRoute,
+        parametricRoute,
+        staticRoute,
+        exactRoute,
+      ]);
+
+      expect(pathsOf(sorted)).toEqual([
+        '/users/me',
+        '/users',
+        '/users/:userId',
+        '/users/{*path}',
+      ]);
+    });
+
+    it('should keep a shorter path with a wildcard after the longer paths it can absorb', () => {
+      const shorterRoute = makeResolvedRoute({ path: '/files/*rest' });
+      const longerRoute = makeResolvedRoute({ path: '/files/*rest/:action' });
+
+      const sorted = RouteSpecificitySorter.sort([shorterRoute, longerRoute]);
+
+      expect(pathsOf(sorted)).toEqual(['/files/*rest/:action', '/files/*rest']);
+    });
+
     it('should not mutate the input array', () => {
       const parametricRoute = makeResolvedRoute({ path: '/users/:userId' });
       const staticRoute = makeResolvedRoute({ path: '/users/me' });

@@ -1,7 +1,11 @@
 import { ResolvedRoute } from './interfaces/resolved-route.interface.js';
-import { RouteConflictDetector } from './route-conflict-detector.js';
+import {
+  PathSegment,
+  RouteConflictDetector,
+} from './route-conflict-detector.js';
 
-type SegmentKindOrMissing = 'literal' | 'param' | 'wildcard' | 'missing';
+type SegmentKindOrMissing =
+  'literal' | 'param' | 'wildcard' | 'end' | 'missing';
 
 /**
  * Static utility class that orders resolved routes by specificity so the
@@ -12,17 +16,22 @@ export class RouteSpecificitySorter {
   /**
    * Lower rank means more specific. A literal segment beats a named
    * param, which beats a named wildcard. A position that is absent on
-   * one side is the least specific of all (it means the path is shorter
-   * at that point).
+   * one side means the path is shorter at that point. A shorter path
+   * with a wildcard is the least specific of all (`missing`), as the
+   * wildcard can absorb the extra segments. Without one, it ranks after
+   * a literal but before a param or wildcard (`end`): those can sit in
+   * an optional group (`/users{/:id}`, `/{*path}`) and then also match
+   * the shorter path.
    */
   private static readonly SEGMENT_KIND_RANK: Record<
     SegmentKindOrMissing,
     number
   > = {
     literal: 0,
-    param: 1,
-    wildcard: 2,
-    missing: 3,
+    end: 1,
+    param: 2,
+    wildcard: 3,
+    missing: 4,
   };
 
   /**
@@ -59,13 +68,16 @@ export class RouteSpecificitySorter {
       rightSegments.length,
     );
 
+    const leftEndKind = RouteSpecificitySorter.getEndKind(leftSegments);
+    const rightEndKind = RouteSpecificitySorter.getEndKind(rightSegments);
+
     let specificityDelta = 0;
 
     Array.from({ length: longestPathLength }).forEach((_, segmentIndex) => {
       if (specificityDelta !== 0) return;
 
-      const leftKind = leftSegments[segmentIndex]?.kind ?? 'missing';
-      const rightKind = rightSegments[segmentIndex]?.kind ?? 'missing';
+      const leftKind = leftSegments[segmentIndex]?.kind ?? leftEndKind;
+      const rightKind = rightSegments[segmentIndex]?.kind ?? rightEndKind;
 
       const leftRank = RouteSpecificitySorter.rankSegmentByKind(leftKind);
       const rightRank = RouteSpecificitySorter.rankSegmentByKind(rightKind);
@@ -76,6 +88,12 @@ export class RouteSpecificitySorter {
     });
 
     return specificityDelta;
+  }
+
+  private static getEndKind(segments: PathSegment[]): SegmentKindOrMissing {
+    return segments.some(segment => segment.kind === 'wildcard')
+      ? 'missing'
+      : 'end';
   }
 
   private static rankSegmentByKind(kind: SegmentKindOrMissing): number {

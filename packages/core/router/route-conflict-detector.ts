@@ -16,7 +16,7 @@ import { RouteConflict } from './interfaces/route-conflict.interface.js';
 
 type SegmentKind = 'literal' | 'param' | 'wildcard';
 
-interface PathSegment {
+export interface PathSegment {
   kind: SegmentKind;
   value: string;
 }
