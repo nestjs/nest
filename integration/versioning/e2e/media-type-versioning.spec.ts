@@ -57,6 +57,21 @@ describe('Media Type Versioning', () => {
           .expect('Hello World V2!');
       });
 
+      it.each([
+        'application/json;v="2',
+        'application/json;note="a;v=2',
+        'text/html;note="a,application/json;v=2',
+        'application/json;v=2;note="unterminated',
+      ])(
+        'ignores an unterminated quoted header value: %s',
+        async acceptHeader => {
+          await request(app.getHttpServer())
+            .get('/')
+            .set({ Accept: acceptHeader })
+            .expect(404);
+        },
+      );
+
       it('V2 after other parameters', () => {
         return request(app.getHttpServer())
           .get('/')
@@ -406,6 +421,22 @@ describe('Media Type Versioning', () => {
           .expect(200)
           .expect('Multiple Versions Neutral or 2');
       });
+
+      it.each([
+        'application/json;v="2',
+        'application/json;note="a;v=2',
+        'text/html;note="a,application/json;v=2',
+        'application/json;v=2;note="unterminated',
+      ])(
+        'treats an unterminated quoted header as unversioned: %s',
+        async acceptHeader => {
+          await request(app.getHttpServer())
+            .get('/multiple-neutral')
+            .set({ Accept: acceptHeader })
+            .expect(200)
+            .expect('Multiple Versions Neutral or 2');
+        },
+      );
 
       it('No Version with other parameters', () => {
         return request(app.getHttpServer())
