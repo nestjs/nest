@@ -17,6 +17,27 @@ describe('parseCookieHeader', () => {
     });
   });
 
+  it('should trim tabs around names and values', () => {
+    expect({ ...parseCookieHeader('\ta\t=\t1\t;\t b \t= \t2') }).toEqual({
+      a: '1',
+      b: '2',
+    });
+  });
+
+  it('should trim only spaces and tabs, as user agents do', () => {
+    // A user agent stores "\u00a0__Host-id" as a cookie without the prefix,
+    // so anyone who can set cookies for the domain can set it. Trimming the
+    // no-break space would let it pass for, and shadow, "__Host-id".
+    for (const char of ['\u00a0', '\u000b', '\u000c', '\ufeff', '\u2028']) {
+      const cookies = parseCookieHeader(
+        `${char}__Host-id=forged; __Host-id=genuine; v=${char}1${char}`,
+      );
+      expect(cookies['__Host-id']).toBe('genuine');
+      expect(cookies[`${char}__Host-id`]).toBe('forged');
+      expect(cookies.v).toBe(`${char}1${char}`);
+    }
+  });
+
   it('should split each pair on the first "=" only', () => {
     const cookies = parseCookieHeader('token=abc==; q=a=b');
     expect(cookies.token).toBe('abc==');
