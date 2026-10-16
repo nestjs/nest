@@ -458,9 +458,6 @@ export class WebSocketsController {
       ? this.areGlobalScopedEnhancersDurable()
       : instanceWrapper.isDependencyTreeDurable();
     const targetCallback = instance[methodName];
-    // Kept per gateway, not per hook function: gateways that inherit the
-    // hook from a base class can declare different filters
-    let exceptionFilter: WsExceptionsHandler | undefined;
 
     return async (...args: unknown[]) => {
       const [client] = args;
@@ -502,10 +499,15 @@ export class WebSocketsController {
           );
           return;
         }
-        exceptionFilter ??= this.exceptionFiltersContext.create(
+        // Built for each connection: a request-scoped filter is only
+        // constructed in the context of the connection, and the static one
+        // holds an empty placeholder
+        const exceptionFilter = this.exceptionFiltersContext.create(
           instance,
           targetCallback,
           moduleKey,
+          contextId,
+          instanceWrapper.id,
         );
         this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
       } finally {

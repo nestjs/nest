@@ -1015,6 +1015,55 @@ describe('WebSocketsController', () => {
       expect(firstExceptionsHandler.handle).toHaveBeenCalledOnce();
       expect(secondExceptionsHandler.handle).toHaveBeenCalledOnce();
     });
+
+    it('should resolve the exception filters in the context of each connection', async () => {
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        isDependencyTreeStatic: () => false,
+        instance: {
+          handleConnection() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const createFilter = vi
+        .spyOn(exceptionFiltersContext, 'create')
+        .mockImplementation(() => ({ handle: vi.fn() }) as any);
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      } as never);
+
+      const handler = instance.createRequestScopedEventHandler(
+        gatewayWrapper,
+        { providers: new Map() } as Module,
+        'moduleKey',
+        'handleConnection',
+        {},
+      );
+      const clients = [{}, {}];
+      for (const client of clients) {
+        await handler(client);
+      }
+
+      // a request-scoped filter only has an instance in the context of a
+      // connection, so a handler built for one must not serve the next
+      expect(createFilter).toHaveBeenCalledTimes(2);
+      clients.forEach((client, i) =>
+        expect(createFilter).toHaveBeenNthCalledWith(
+          i + 1,
+          gatewayWrapper.instance,
+          gatewayWrapper.instance.handleConnection,
+          'moduleKey',
+          client[REQUEST_CONTEXT_ID as any],
+          'gateway-wrapper',
+        ),
+      );
+    });
   });
   describe('createStaticEventHandler', () => {
     let exceptionFilter: { handle: ReturnType<typeof vi.fn> };
