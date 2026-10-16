@@ -196,6 +196,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
               inquirer: wrapper,
             },
           );
+          await this.injector.waitForDeferredLoads(contextId ?? STATIC_CONTEXT);
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
           isCreated = true;

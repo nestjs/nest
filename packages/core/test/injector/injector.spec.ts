@@ -791,6 +791,37 @@ describe('Injector', () => {
         expect(errorSpy).toHaveBeenCalledOnce();
         expect(errorSpy).toHaveBeenCalledWith(error);
       });
+
+      it('should make "waitForDeferredLoads" reject for that context when loadProvider throws', async () => {
+        const error = new Error('Test error');
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
+
+        const contextId = { id: 2 };
+        const instanceHost = wrapper.getInstanceByContextId(contextId);
+        instanceHost.donePromise = Promise.resolve();
+
+        vi.spyOn(injector, 'loadProvider').mockImplementation(() =>
+          Promise.reject(error),
+        );
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+        });
+
+        await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+          error,
+        );
+        // the instances of the context reference the provider that failed
+        await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+          error,
+        );
+        await expect(
+          injector.waitForDeferredLoads({ id: 3 }),
+        ).resolves.toBeUndefined();
+      });
     });
   });
 
