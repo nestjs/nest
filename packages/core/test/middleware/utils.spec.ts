@@ -241,6 +241,31 @@ describe('middleware utils', () => {
         expect(isMiddlewareRouteExcluded({}, [], adapter)).toBe(false);
       });
     });
+    describe('when the request target is not a plain path', () => {
+      const excludedRoutes = mapToExcludeRoute([
+        'cats/:id/avatar',
+        '*prefix/admin',
+      ]);
+      it('should return true for a path with a query string', () => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(
+          '/cats/3/avatar?size=1',
+        );
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(
+          true,
+        );
+      });
+      it.each([
+        '/cats/3#/avatar',
+        '/cats/3/avatar#',
+        '/cats/3/avatar?size=1#',
+        'http://localhost/admin',
+      ])('should return false for %j', url => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(
+          false,
+        );
+      });
+    });
     describe('when a HEAD request targets a route excluded for GET', () => {
       const excludedRoutes = mapToExcludeRoute([
         {
