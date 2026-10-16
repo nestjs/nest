@@ -166,9 +166,12 @@ const ABORTED = Symbol('aborted');
  * the engine (e.g. by a `pipeline()` to a file that cannot be written), which
  * reports that error itself.
  *
- * Whatever the engine stores after an abort is removed once it calls back,
- * as multer does: what it stored when it succeeds, and the file at `path`
- * (which engines set before writing, by multer's convention) when it fails.
+ * Whatever the engine stores after an abort is removed, as multer does. The
+ * file at `path` (which engines set before writing, by multer's convention)
+ * is removed right away, as an engine waiting on `pipeline()` never calls
+ * back for a stream destroyed after its last chunk; removing it clears
+ * `path`. What the engine stored is removed once it calls back: what it
+ * returned when it succeeds, and the file at `path` when it fails.
  */
 function storeFile(
   storage: MultipartStorageEngine,
@@ -186,6 +189,10 @@ function storeFile(
         if (!stream.readableEnded && !stream.errored) {
           aborted = true;
           resolve(ABORTED);
+          const partial = file as unknown as UploadedMultipartFile;
+          if (partial.path) {
+            removeFiles(storage, req, [partial]).catch(() => undefined);
+          }
         }
       };
       stream.once('close', onClose);

@@ -251,6 +251,29 @@ describe('FileInterceptor', () => {
         );
       });
 
+      it('should remove the partial file right away, as the storage engine may never call back', async () => {
+        // e.g. an engine waiting on pipeline(), which never settles for a
+        // stream destroyed after its last chunk was pushed
+        const storage = {
+          _handleFile: vi.fn((_req, incoming) => {
+            incoming.path = '/uploads/partial';
+            incoming.stream.resume();
+          }),
+          _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+        };
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const req = createFakeRequest([aborted]);
+
+        await expect(
+          target.intercept(createContext(req), handler),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          expect.objectContaining({ path: '/uploads/partial' }),
+          expect.any(Function),
+        );
+      });
+
       it('should not wait for a storage engine that never calls back', async () => {
         const storage = {
           _handleFile: vi.fn((_req, incoming) => incoming.stream.resume()),

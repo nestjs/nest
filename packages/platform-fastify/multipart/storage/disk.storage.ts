@@ -3,7 +3,8 @@ import { createWriteStream, mkdirSync } from 'fs';
 import { unlink } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { pipeline } from 'stream/promises';
+import type { Readable } from 'stream';
+import { finished, pipeline } from 'stream/promises';
 import type {
   IncomingMultipartFile,
   MultipartStorageEngine,
@@ -41,6 +42,24 @@ function resolveName(
   );
 }
 
+const STREAM_DESTROYED_MESSAGE = 'File stream was destroyed';
+
+/**
+ * Rejects once `stream` is destroyed before its end without an error, as
+ * `@fastify/multipart` does when the form is cut off. `pipeline()` never
+ * settles then if the last chunk had already been pushed: it waits for an
+ * 'end' that is never emitted, with the file still open.
+ */
+function rejectWhenCutOff(stream: Readable) {
+  return new Promise<never>((_resolve, reject) =>
+    stream.once('close', () => {
+      if (!stream.readableEnded && !stream.errored) {
+        reject(new Error(STREAM_DESTROYED_MESSAGE));
+      }
+    }),
+  );
+}
+
 /**
  * Writes each file to disk, with multer's `diskStorage` defaults and file
  * shape (`destination`, `filename`, `path`, `size`).
@@ -68,13 +87,24 @@ export function diskStorage(
   const store = async (req: any, file: IncomingMultipartFile) => {
     const destination = await resolveName(resolveDestination, req, file);
     const filename = await resolveName(resolveFilename, req, file);
+    // As in multer, no file is created for a stream destroyed in the meantime.
+    if (file.stream.destroyed) {
+      throw new Error(STREAM_DESTROYED_MESSAGE);
+    }
     const path = join(destination, filename);
     // As in multer, `path` is known to the file before it is written.
     (file as { path?: string }).path = path;
     const out = createWriteStream(path);
     try {
-      await pipeline(file.stream, out);
+      await Promise.race([
+        pipeline(file.stream, out),
+        rejectWhenCutOff(file.stream),
+      ]);
     } catch (err) {
+      // Removed once closed: a file still being opened would be created
+      // after the unlink.
+      out.destroy();
+      await finished(out).catch(() => undefined);
       await unlink(path).catch(() => undefined);
       throw err;
     }
