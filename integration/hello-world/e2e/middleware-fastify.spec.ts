@@ -1,5 +1,6 @@
 import {
   All,
+  BadRequestException,
   Controller,
   Get,
   Injectable,
@@ -11,6 +12,7 @@ import {
   Query,
   Req,
   RequestMethod,
+  UnauthorizedException,
   VersioningType,
 } from '@nestjs/common';
 import {
@@ -1052,6 +1054,94 @@ describe('Middleware (FastifyAdapter)', () => {
       afterEach(async () => {
         await app.close();
       });
+    });
+  });
+
+  describe('should handle exceptions thrown from a middleware', () => {
+    @Injectable()
+    class ThrowingMiddleware implements NestMiddleware {
+      use(
+        req: FastifyRequest['raw'] & { headers: Record<string, unknown> },
+        res,
+        next: () => void,
+      ) {
+        if (req.headers['x-throw'] === 'http-exception') {
+          throw new BadRequestException('middleware rejection');
+        }
+        if (req.headers['x-throw'] === 'unknown-error') {
+          throw new Error('middleware failure');
+        }
+        if (req.headers['x-throw'] === 'error-body') {
+          throw new UnauthorizedException(new Error('invalid signature'));
+        }
+        next();
+      }
+    }
+
+    @Controller('protected')
+    class ProtectedController {
+      @Get()
+      findAll() {
+        return 'protected';
+      }
+    }
+
+    @Module({
+      controllers: [ProtectedController],
+    })
+    class ThrowingMiddlewareModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer.apply(ThrowingMiddleware).forRoutes(ProtectedController);
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [ThrowingMiddlewareModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it('should send the HttpException response', () => {
+      return request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'http-exception')
+        .expect(400, {
+          statusCode: 400,
+          message: 'middleware rejection',
+          error: 'Bad Request',
+        });
+    });
+
+    it('should send the internal server error response for unknown errors', () => {
+      return request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'unknown-error')
+        .expect(500, {
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    // The exception layer fails to send an "Error" body on the raw response
+    // middleware receives
+    it('should send the internal server error response when the exception layer fails', async () => {
+      await request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'error-body')
+        .expect(500, {
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+      await request(app.getHttpServer()).get('/protected').expect(200);
+    });
+
+    afterEach(async () => {
+      await app.close();
     });
   });
 

@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { expect } from 'chai';
 import { FastifyRequest, fastify } from 'fastify';
 import { inject } from 'light-my-request';
@@ -74,6 +74,66 @@ describe('FastifyAdapter', () => {
       expect(res.body).to.equal('cats');
       expect(middleware.calledOnce).to.be.true;
       await adapter.close();
+    });
+
+    // The proxies of `RouterProxy` reject when the exception layer throws
+    // while it answers an error thrown by the middleware
+    describe('when the middleware rejects', () => {
+      const handler = sinon.spy(() => 'cats');
+
+      beforeEach(() => {
+        handler.resetHistory();
+        fastifyAdapter.setErrorHandler((err: Error, _req, reply) =>
+          reply.code(500).send(`error handler: ${err.message}`),
+        );
+      });
+
+      afterEach(async () => {
+        await fastifyAdapter.close();
+      });
+
+      it('should pass the rejection to the error handler', async () => {
+        const register = await fastifyAdapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/cats', async () => {
+          throw new Error('exception layer failed');
+        });
+        fastifyAdapter.get('/cats', handler);
+
+        const res = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/cats',
+        });
+
+        expect(res.statusCode).to.equal(500);
+        expect(res.body).to.equal('error handler: exception layer failed');
+        expect(handler.called).to.be.false;
+      });
+
+      it('should log a rejection that follows a call to "next"', async () => {
+        const error = sinon.stub(Logger.prototype, 'error');
+        let rejection!: Promise<void>;
+        const register = await fastifyAdapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/cats', (_req: unknown, _res: unknown, next: () => void) => {
+          next();
+          rejection = Promise.reject(new Error('exception layer failed'));
+          return rejection;
+        });
+        fastifyAdapter.get('/cats', handler);
+
+        const res = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/cats',
+        });
+        await rejection.catch(() => {});
+
+        expect(res.statusCode).to.equal(200);
+        expect(res.body).to.equal('cats');
+        expect(error.calledOnce).to.be.true;
+      });
     });
   });
 
