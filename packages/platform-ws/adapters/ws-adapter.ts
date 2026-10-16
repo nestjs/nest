@@ -10,14 +10,8 @@ import {
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
 import * as http from 'http';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
-import {
-  catchError,
-  filter,
-  first,
-  mergeMap,
-  share,
-  takeUntil,
-} from 'rxjs/operators';
+import { catchError, filter, first, share, takeUntil } from 'rxjs/operators';
+import { mergeMapBounded } from '../utils/merge-map-bounded.util';
 
 let wsPackage: any = {};
 
@@ -36,9 +30,18 @@ type WsData = string | Buffer | ArrayBuffer | Buffer[];
 type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
 type WsAdapterOptions = {
   messageParser?: WsMessageParser;
+  /**
+   * How many messages a client may have handled at the same time. Later ones
+   * wait for their turn. Set it to `Infinity` to lift the limit.
+   *
+   * @default 1000
+   */
+  maxConcurrentMessages?: number;
 };
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
+// How many messages of a client are handled at the same time
+const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 
 // What ws answers on the servers it creates itself. A request left without an
 // answer keeps its connection open, and Node goes on queueing the requests
@@ -68,6 +71,7 @@ export class WsAdapter extends AbstractWsAdapter {
   protected messageParser: WsMessageParser = (data: WsData) => {
     return JSON.parse(data.toString());
   };
+  protected readonly maxConcurrentMessages: number;
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
@@ -79,6 +83,8 @@ export class WsAdapter extends AbstractWsAdapter {
     if (options?.messageParser) {
       this.messageParser = options.messageParser;
     }
+    this.maxConcurrentMessages =
+      options?.maxConcurrentMessages ?? DEFAULT_MAX_CONCURRENT_MESSAGES;
   }
 
   public create(
@@ -162,17 +168,21 @@ export class WsAdapter extends AbstractWsAdapter {
       // after handleConnection() called client.close(). Like socket.io does
       // for a disconnected socket, drop those instead of handling them.
       filter(() => client.readyState === READY_STATE.OPEN_STATE),
-      mergeMap(data =>
-        this.bindMessageHandler(data, handlersMap, transform).pipe(
-          filter(result => !isNil(result)),
-          // a handler that rejects through an error filter that rethrows
-          // would error the client's stream and silence every later message;
-          // that rethrow is an app bug, so it gets logged, not dropped silently
-          catchError(err => {
-            this.logger.error(err);
-            return EMPTY;
-          }),
-        ),
+      // How many messages are pending at once is up to the client: ws emits
+      // all the messages of a read before any handler can settle.
+      mergeMapBounded(
+        data =>
+          this.bindMessageHandler(data, handlersMap, transform).pipe(
+            filter(result => !isNil(result)),
+            // a handler that rejects through an error filter that rethrows
+            // would error the client's stream and silence every later message;
+            // that rethrow is an app bug, so it gets logged, not dropped silently
+            catchError(err => {
+              this.logger.error(err);
+              return EMPTY;
+            }),
+          ),
+        this.maxConcurrentMessages,
       ),
       takeUntil(close$),
     );

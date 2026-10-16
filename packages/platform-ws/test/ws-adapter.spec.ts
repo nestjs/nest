@@ -13,6 +13,61 @@ import { WsAdapter } from '../adapters/ws-adapter';
 describe('WsAdapter', () => {
   describe('bindMessageHandlers', () => {
     const frame = (payload: unknown) => ({ data: JSON.stringify(payload) });
+    const bindCountingHandler = (adapter: WsAdapter, client: any) => {
+      const counts = { running: 0, maxRunning: 0, handled: [] as number[] };
+      adapter.bindMessageHandlers(
+        client,
+        [
+          {
+            message: 'test-event',
+            methodName: 'handleTestEvent',
+            callback: async (data: number) => {
+              counts.maxRunning = Math.max(counts.maxRunning, ++counts.running);
+              await Promise.resolve();
+              counts.running--;
+              counts.handled.push(data);
+            },
+            isAckHandledManually: false,
+          },
+        ],
+        (data: any) => from(data),
+      );
+      return counts;
+    };
+    const openClient = () => {
+      const client = new EventEmitter() as any;
+      client.readyState = 1; // OPEN_STATE
+      client.send = sinon.spy();
+      return client;
+    };
+
+    it('should handle at most "maxConcurrentMessages" messages of a client at once', async () => {
+      const client = openClient();
+      const counts = bindCountingHandler(
+        new WsAdapter(undefined, { maxConcurrentMessages: 2 }),
+        client,
+      );
+
+      for (let i = 0; i < 5; i++) {
+        client.emit('message', frame({ event: 'test-event', data: i }));
+      }
+      expect(counts.running).to.equal(2);
+      await new Promise(resolve => setTimeout(resolve, 5));
+
+      expect(counts.maxRunning).to.equal(2);
+      expect(counts.handled).to.deep.equal([0, 1, 2, 3, 4]);
+    });
+
+    it('should handle 1000 messages of a client at once by default', () => {
+      const client = openClient();
+      const counts = bindCountingHandler(new WsAdapter(), client);
+
+      for (let i = 0; i < 1001; i++) {
+        client.emit('message', frame({ event: 'test-event', data: i }));
+      }
+
+      expect(counts.running).to.equal(1000);
+    });
 
     it('should not let a rejecting handler tear down the message stream', async () => {
       const unhandled: unknown[] = [];

@@ -15,6 +15,57 @@ describe('IoAdapter', () => {
   });
 
   describe('bindMessageHandlers', () => {
+    const bindCountingHandler = (adapter: IoAdapter, socket: any) => {
+      const counts = { running: 0, maxRunning: 0, handled: [] as number[] };
+      adapter.bindMessageHandlers(
+        socket,
+        [
+          {
+            message: 'test-event',
+            methodName: 'handleTestEvent',
+            callback: async (data: number) => {
+              counts.maxRunning = Math.max(counts.maxRunning, ++counts.running);
+              await Promise.resolve();
+              counts.running--;
+              counts.handled.push(data);
+            },
+            isAckHandledManually: false,
+          },
+        ],
+        (data: any) => from(data),
+      );
+      return counts;
+    };
+
+    it('should handle at most "maxConcurrentMessages" messages of an event at once', async () => {
+      const socket = new EventEmitter() as any;
+      const counts = bindCountingHandler(
+        new IoAdapter(undefined, { maxConcurrentMessages: 2 }),
+        socket,
+      );
+
+      // a polling payload is dispatched before any handler gets to settle
+      for (let i = 0; i < 5; i++) {
+        socket.emit('test-event', i);
+      }
+      expect(counts.running).to.equal(2);
+      await new Promise(resolve => setTimeout(resolve, 5));
+
+      expect(counts.maxRunning).to.equal(2);
+      expect(counts.handled).to.deep.equal([0, 1, 2, 3, 4]);
+    });
+
+    it('should handle 1000 messages of an event at once by default', () => {
+      const socket = new EventEmitter() as any;
+      const counts = bindCountingHandler(adapter, socket);
+
+      for (let i = 0; i < 1001; i++) {
+        socket.emit('test-event', i);
+      }
+
+      expect(counts.running).to.equal(1000);
+    });
+
     it('should register only one disconnect listener regardless of call count', () => {
       const addListenerSpy = sinon.spy();
       const fakeSocket = {

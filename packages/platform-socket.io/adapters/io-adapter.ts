@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { INestApplicationContext, Logger } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import {
   AbstractWsAdapter,
@@ -11,18 +11,42 @@ import {
   filter,
   first,
   map,
-  mergeMap,
   share,
   takeUntil,
 } from 'rxjs/operators';
 import { Server, ServerOptions, Socket } from 'socket.io';
+import { mergeMapBounded } from '../utils/merge-map-bounded.util';
+
+// How many messages of one event a client may have handled at the same time
+const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
+
+type IoAdapterOptions = {
+  /**
+   * How many messages of one event a client may have handled at the same
+   * time. Later ones wait for their turn. Set it to `Infinity` to lift the
+   * limit.
+   *
+   * @default 1000
+   */
+  maxConcurrentMessages?: number;
+};
 
 /**
  * @publicApi
  */
 export class IoAdapter extends AbstractWsAdapter {
   protected readonly logger = new Logger(IoAdapter.name);
+  protected readonly maxConcurrentMessages: number;
   private readonly disconnectMap = new WeakMap<Socket, Observable<any>>();
+
+  constructor(
+    appOrHttpServer?: INestApplicationContext | object,
+    options?: IoAdapterOptions,
+  ) {
+    super(appOrHttpServer);
+    this.maxConcurrentMessages =
+      options?.maxConcurrentMessages ?? DEFAULT_MAX_CONCURRENT_MESSAGES;
+  }
 
   public create(
     port: number,
@@ -59,7 +83,9 @@ export class IoAdapter extends AbstractWsAdapter {
 
     handlers.forEach(({ message, callback, isAckHandledManually }) => {
       const source$ = fromEvent(socket, message).pipe(
-        mergeMap((payload: any) => {
+        // How many messages are pending at once is up to the client: engine.io
+        // hands over a whole polling payload before any handler can settle.
+        mergeMapBounded((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
           // defer turns a sync throw into an error notification and catchError
           // stops it from tearing down this event's stream, which would silence
@@ -73,7 +99,7 @@ export class IoAdapter extends AbstractWsAdapter {
               return EMPTY;
             }),
           );
-        }),
+        }, this.maxConcurrentMessages),
         takeUntil(disconnect$),
       );
       source$.subscribe(([response, ack, isAckHandledManually]) => {
