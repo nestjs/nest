@@ -701,6 +701,31 @@ describe('ValidationPipe', () => {
         const value = { dates: [new Date(), new Date()] };
         expect(() => target['stripProtoKeys'](value)).to.not.throw();
       });
+
+      it('should only read the items of a sparse array, not every index', () => {
+        const items: any[] = [];
+        items[999] = { constructor: 'malicious' };
+        const reads: PropertyKey[] = [];
+        const value = {
+          items: new Proxy(items, {
+            get(target, key, receiver) {
+              reads.push(key);
+              return Reflect.get(target, key, receiver);
+            },
+          }),
+        };
+        target['stripProtoKeys'](value);
+        expect(reads).to.deep.equal(['999']);
+        expect(items[999]).to.not.have.ownProperty('constructor');
+      });
+
+      it('should strip the items of a sparse array with the largest index', () => {
+        const items: any[] = [];
+        items[2 ** 32 - 2] = { constructor: 'malicious' };
+        target['stripProtoKeys']({ items });
+        expect(items).to.have.length(2 ** 32 - 1);
+        expect(items[2 ** 32 - 2]).to.not.have.ownProperty('constructor');
+      });
     });
 
     describe('Issue #16195: Jest useFakeTimers compatibility', () => {
