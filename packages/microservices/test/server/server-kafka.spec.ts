@@ -444,6 +444,83 @@ describe('ServerKafka', () => {
       await server.handleMessage(payload);
       expect(handler.called).to.be.true;
     });
+
+    describe('when the reply topic is not a valid topic name', () => {
+      const withReplyTopic = (
+        replyTopicHeader: string,
+      ): EachMessagePayload => ({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopicHeader),
+          },
+        } as KafkaMessage,
+      });
+      let loggerErrorStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+      });
+
+      [
+        ['an object', '{}'],
+        ['an array', '["test.topic.reply"]'],
+        ['a schema payload', '\0test.topic.reply'],
+        ['too long', 'a'.repeat(250)],
+        ['made of illegal characters', 'test topic/reply'],
+      ].forEach(([description, replyTopicHeader]) => {
+        it(`should log an error and not run the handler if it is ${description}`, async () => {
+          const handler = sinon.spy();
+          untypedServer.messageHandlers = objectToMap({
+            [topic]: handler,
+          });
+          const handleEventSpy = sinon.spy(server, 'handleEvent');
+
+          await server.handleMessage(withReplyTopic(replyTopicHeader));
+
+          expect(loggerErrorStub.calledOnce).to.be.true;
+          expect(handler.called).to.be.false;
+          expect(handleEventSpy.called).to.be.false;
+          expect(getPublisherSpy.called).to.be.false;
+        });
+      });
+
+      it('should not publish NO_MESSAGE_HANDLER', async () => {
+        await server.handleMessage(withReplyTopic('{}'));
+
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(getPublisherSpy.called).to.be.false;
+      });
+    });
+
+    it('should reply with the correlation id as text', async () => {
+      const jsonCorrelationId = '{"length":200000000}';
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: sinon.spy(),
+      });
+
+      await server.handleMessage({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.CORRELATION_ID]: Buffer.from(jsonCorrelationId),
+          },
+        } as KafkaMessage,
+      });
+
+      expect(
+        (server.getPublisher as sinon.SinonStub).calledWith(
+          replyTopic,
+          replyPartition,
+          jsonCorrelationId,
+          sinon.match.instanceOf(KafkaContext),
+        ),
+      ).to.be.true;
+    });
   });
 
   describe('sendMessage', () => {

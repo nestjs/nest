@@ -1,5 +1,14 @@
 import { isNil } from '@nestjs/common/utils/shared.utils';
+import { KafkaHeaders } from '../enums/kafka-headers.enum';
 import { KafkaParserConfig } from '../interfaces';
+
+// The headers replies are routed with are text. Decoded like the others,
+// the sender of a message could make them an object, an array or a Buffer.
+const TRANSPORT_HEADERS: string[] = [
+  KafkaHeaders.CORRELATION_ID,
+  KafkaHeaders.REPLY_TOPIC,
+  KafkaHeaders.REPLY_PARTITION,
+];
 
 export class KafkaParser {
   protected readonly keepBinary: boolean;
@@ -24,7 +33,9 @@ export class KafkaParser {
     }
     if (!isNil(data.headers)) {
       const decodeHeaderByKey = (key: string) => {
-        result.headers[key] = this.decode(data.headers[key]);
+        result.headers[key] = TRANSPORT_HEADERS.includes(key)
+          ? this.decodeAsString(data.headers[key])
+          : this.decode(data.headers[key]);
       };
       Object.keys(data.headers).forEach(decodeHeaderByKey);
     } else {
@@ -59,5 +70,9 @@ export class KafkaParser {
       }
     }
     return result;
+  }
+
+  protected decodeAsString(value: Buffer): string | null {
+    return isNil(value) ? null : value.toString();
   }
 }

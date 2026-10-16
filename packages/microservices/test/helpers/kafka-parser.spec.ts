@@ -127,6 +127,28 @@ describe('KafkaParser', () => {
       });
     });
 
+    it('should decode the headers the transport routes replies with as text', () => {
+      expect(
+        kafkaParser.parse({
+          headers: {
+            [KafkaHeaders.CORRELATION_ID]: Buffer.from('{"length":200000000}'),
+            [KafkaHeaders.REPLY_TOPIC]: Buffer.from('\0test.topic.reply'),
+            [KafkaHeaders.REPLY_PARTITION]: Buffer.from('[0]'),
+            custom: Buffer.from('{"prop":"value"}'),
+          },
+          value: null,
+        }),
+      ).to.deep.equal({
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: '{"length":200000000}',
+          [KafkaHeaders.REPLY_TOPIC]: '\0test.topic.reply',
+          [KafkaHeaders.REPLY_PARTITION]: '[0]',
+          custom: { prop: 'value' },
+        },
+        value: null,
+      });
+    });
+
     it('parse message multiple times (simulate retry)', () => {
       const message = {
         headers: {
