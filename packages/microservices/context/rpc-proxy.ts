@@ -1,5 +1,5 @@
-import { isObservable, Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { from as fromPromise, isObservable, Observable, of } from 'rxjs';
+import { catchError, mergeMap } from 'rxjs/operators';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler.js';
 import { ExecutionContextHost } from '@nestjs/core/internal';
 
@@ -16,11 +16,13 @@ export class RpcProxy {
           ? result
           : result.pipe(
               catchError(error =>
-                this.handleError(
-                  exceptionsHandler,
-                  args,
-                  error,
-                  reportUnhandledErrors,
+                this.flattenAsyncResult(
+                  this.handleError(
+                    exceptionsHandler,
+                    args,
+                    error,
+                    reportUnhandledErrors,
+                  ),
                 ),
               ),
             );
@@ -48,5 +50,17 @@ export class RpcProxy {
       host,
       reportUnhandledErrors,
     );
+  }
+
+  // An async filter resolves to its stream, which `catchError()` would emit as
+  // a value. The server subscribes to it instead when the handler rejects.
+  private flattenAsyncResult(
+    result: Observable<unknown> | Promise<unknown>,
+  ): Observable<unknown> {
+    return result instanceof Promise
+      ? fromPromise(result).pipe(
+          mergeMap(val => (isObservable(val) ? val : of(val))),
+        )
+      : result;
   }
 }

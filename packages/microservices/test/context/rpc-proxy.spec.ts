@@ -46,6 +46,64 @@ describe('RpcProxy', () => {
     });
   });
 
+  describe('when an async filter returns a failing stream', () => {
+    const error = { status: 'error', message: 'from filter' };
+
+    beforeEach(() => {
+      handler.setCustomFilters([
+        {
+          exceptionMetatypes: [RpcException],
+          func: (async () => throwError(() => error)) as any,
+        },
+      ]);
+    });
+
+    it('should fail with its error for a handler that rejects', async () => {
+      const proxy = routerProxy.create(async () => {
+        throw new RpcException('test');
+      }, handler);
+
+      await expect(lastValueFrom(await proxy(null))).rejects.toBe(error);
+    });
+
+    it('should fail with its error for a stream that errors', async () => {
+      const proxy = routerProxy.create(
+        async () => throwError(() => new RpcException('test')),
+        handler,
+      );
+
+      await expect(lastValueFrom(await proxy(null))).rejects.toBe(error);
+    });
+  });
+
+  describe('when an async filter returns a stream of values', () => {
+    beforeEach(() => {
+      handler.setCustomFilters([
+        {
+          exceptionMetatypes: [RpcException],
+          func: (async () => of('from filter')) as any,
+        },
+      ]);
+    });
+
+    it('should emit its values for a handler that rejects', async () => {
+      const proxy = routerProxy.create(async () => {
+        throw new RpcException('test');
+      }, handler);
+
+      expect(await lastValueFrom(await proxy(null))).toBe('from filter');
+    });
+
+    it('should emit its values for a stream that errors', async () => {
+      const proxy = routerProxy.create(
+        async () => throwError(() => new RpcException('test')),
+        handler,
+      );
+
+      expect(await lastValueFrom(await proxy(null))).toBe('from filter');
+    });
+  });
+
   describe('when unhandled errors must be reported', () => {
     let logSpy: MockInstance;
 
