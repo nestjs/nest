@@ -127,6 +127,14 @@ export class ExpressAdapter extends AbstractHttpAdapter<
           stream.destroy();
         }
       });
+      // Node discards the body of a HEAD response without ever applying
+      // backpressure, so piping would read the whole source. The response
+      // ends once the source is readable instead, which still leaves an
+      // error opening it (e.g. a missing file) to the error handler.
+      if (response.req?.method === 'HEAD') {
+        stream.once('readable', () => response.end());
+        return response.on('error', (err: Error) => body.errorLogger(err));
+      }
       return stream
         .pipe<Writable>(response)
         .on('error', (err: Error) => body.errorLogger(err));

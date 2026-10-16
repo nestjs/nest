@@ -3,7 +3,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { expect } from 'chai';
 import * as express from 'express';
 import * as sinon from 'sinon';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable, Writable } from 'stream';
 
 describe('ExpressAdapter', () => {
   afterEach(() => sinon.restore());
@@ -147,6 +147,64 @@ describe('ExpressAdapter', () => {
 
         expect(errorHandler.calledWith(error, response)).to.be.true;
         expect(response.setHeader.called).to.be.false;
+      });
+
+      describe('for a HEAD request', () => {
+        // Node discards what is written to a HEAD response, so its write()
+        // never applies backpressure
+        const createHeadResponse = () =>
+          Object.assign(
+            new Writable({
+              write(_chunk, _encoding, callback) {
+                callback();
+              },
+            }),
+            {
+              req: { method: 'HEAD' },
+              getHeader: sinon.stub(),
+              setHeader: sinon.stub(),
+            },
+          );
+
+        it('should end the response without reading the whole source', async () => {
+          const chunkCount = 1000;
+          const chunk = Buffer.alloc(1024);
+          let reads = 0;
+          const source = new Readable({
+            read() {
+              this.push(++reads > chunkCount ? null : chunk);
+            },
+          });
+          const response = createHeadResponse();
+
+          expressAdapter.reply(response, new StreamableFile(source));
+          await new Promise(resolve => response.once('finish', resolve));
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(source.destroyed).to.be.true;
+          expect(reads).to.be.lessThan(chunkCount);
+        });
+
+        it('should leave an error opening the source to the error handler', async () => {
+          const errorHandler = sinon.stub();
+          const source = new Readable({
+            read() {
+              this.destroy(new Error('ENOENT'));
+            },
+          });
+          const response = createHeadResponse();
+
+          expressAdapter.reply(
+            response,
+            new StreamableFile(source).setErrorHandler(errorHandler),
+          );
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(errorHandler.calledOnce).to.be.true;
+          expect(errorHandler.firstCall.args[0].message).to.equal('ENOENT');
+          expect(errorHandler.firstCall.args[1]).to.equal(response);
+          expect(response.writableEnded).to.be.false;
+        });
       });
     });
   });
