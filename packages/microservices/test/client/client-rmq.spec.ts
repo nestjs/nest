@@ -253,6 +253,25 @@ describe('ClientRMQ', function () {
       expect(logError).toHaveBeenCalledWith(setupError);
     });
 
+    it('should still close the connection it discards when the channel close rejects', async () => {
+      channel.close.mockRejectedValue(new Error('Channel closing error'));
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      channel.emit('error', setupError);
+
+      await expect(connection).rejects.toBe(setupError);
+      expect(manager.close).toHaveBeenCalled();
+    });
+
+    it('should reject with the setup error when the connection close rejects', async () => {
+      manager.close.mockRejectedValue(new Error('Connection closing error'));
+      const connection = rmqClient.connect();
+      manager.emit('connect');
+      channel.emit('error', setupError);
+
+      await expect(connection).rejects.toBe(setupError);
+    });
+
     describe('when the channel close waits for the broker', () => {
       beforeEach(() => {
         closeChannelOnlyWhileConnected(channel.close, manager.close);
