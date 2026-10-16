@@ -151,6 +151,22 @@ export class ValidationPipe implements PipeTransform<any> {
     if (errors.length > 0) {
       throw await this.exceptionFactory(errors);
     }
+    if (
+      isCtorNotEqual &&
+      (isPrimitive || Array.isArray(value)) &&
+      (await this.hasValidationRules(metatype))
+    ) {
+      // An array or a primitive is never an instance of the class: the
+      // validation above has only seen a stand-in without any property set,
+      // which passes when none of them is required.
+      throw await this.exceptionFactory([
+        {
+          property: metadata.data || metadata.type,
+          constraints: { isObject: 'Validation failed (object is expected)' },
+          children: [],
+        },
+      ]);
+    }
 
     if (originalValue === undefined && originalEntity === '') {
       // Since SWC requires empty string for validation (to avoid an error),
@@ -302,6 +318,17 @@ export class ValidationPipe implements PipeTransform<any> {
     validatorOptions?: ValidatorOptions,
   ): Promise<ValidationError[]> | ValidationError[] {
     return classValidator.validate(object, validatorOptions);
+  }
+
+  protected async hasValidationRules(
+    metatype: Type<unknown>,
+  ): Promise<boolean> {
+    // "forbidUnknownValues" rejects a class without any rule that applies
+    const errors = await this.validate(
+      { constructor: metatype },
+      { ...this.validatorOptions, forbidUnknownValues: true },
+    );
+    return !errors.some(error => error.constraints?.unknownValue);
   }
 
   protected flattenValidationErrors(

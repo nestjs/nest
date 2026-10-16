@@ -537,6 +537,125 @@ describe('ValidationPipe', () => {
           expect(target.transform(3, metadata)).to.eventually.be.rejected;
         });
       });
+      describe('when no validation rule is required', () => {
+        class TestModelAllOptional {
+          @IsOptional()
+          @IsString()
+          public prop1: string;
+        }
+        const optionalMetadata: ArgumentMetadata = {
+          type: 'body',
+          metatype: TestModelAllOptional,
+          data: '',
+        };
+        const rejection = ['Validation failed (object is expected)'];
+        const rejectionOf = (promise: Promise<unknown>) =>
+          promise.then(
+            () => {
+              throw new Error('Expected a rejection');
+            },
+            err => err,
+          );
+
+        it('should throw an error for an array or a primitive', async () => {
+          for (const options of [
+            {},
+            { transform: true },
+            { whitelist: true },
+            { forbidUnknownValues: true },
+          ]) {
+            target = new ValidationPipe(options);
+            for (const value of [[], [{ prop1: 1 }], 'string', 3, true]) {
+              const err = await rejectionOf(
+                target.transform(value, optionalMetadata),
+              );
+              expect(err.getResponse().message).to.deep.equal(rejection);
+            }
+          }
+        });
+        it('should throw an error for an empty array when non-whitelisted properties are forbidden', async () => {
+          target = new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+          });
+          const err = await rejectionOf(target.transform([], optionalMetadata));
+          expect(err.getResponse().message).to.deep.equal(rejection);
+        });
+        it('should pass the error to the exception factory', async () => {
+          target = new ValidationPipe({ exceptionFactory: errors => errors });
+          await expect(
+            target.transform([], { ...optionalMetadata, data: 'items' }),
+          ).to.be.rejected.and.eventually.deep.equal([
+            {
+              property: 'items',
+              constraints: {
+                isObject: 'Validation failed (object is expected)',
+              },
+              children: [],
+            },
+          ]);
+        });
+        it('should not throw an error for an object', async () => {
+          target = new ValidationPipe({ transform: true });
+          expect(
+            await target.transform({ prop1: 'value1' }, optionalMetadata),
+          ).to.be.instanceOf(TestModelAllOptional);
+          expect(
+            await target.transform(undefined, optionalMetadata),
+          ).to.be.instanceOf(TestModelAllOptional);
+        });
+      });
+      describe('when missing properties are skipped', () => {
+        it('should throw an error for an array or a primitive', async () => {
+          target = new ValidationPipe({ skipMissingProperties: true });
+          for (const value of [
+            [],
+            [{ prop1: 'value1', prop2: 'value2' }],
+            'string',
+          ]) {
+            const err = await target.transform(value, metadata).then(
+              () => {
+                throw new Error('Expected a rejection');
+              },
+              err => err,
+            );
+            expect(err.getResponse().message).to.deep.equal([
+              'Validation failed (object is expected)',
+            ]);
+          }
+        });
+      });
+      describe('when the transformer returns plain objects', () => {
+        it('should not throw an error for an object', async () => {
+          target = new ValidationPipe({
+            transformerPackage: {
+              plainToInstance: (_metatype, plain) =>
+                ({ ...(plain as object) }) as any,
+              classToPlain: object => object as object,
+            },
+          });
+          const testObj = { prop1: 'value1', prop2: 'value2' };
+          expect(await target.transform(testObj, metadata)).to.equal(testObj);
+        });
+      });
+      describe('when the metatype is not a class', () => {
+        it('should not throw an error', async () => {
+          // SWC passes an enum object as the metatype of an enum parameter
+          const Role = { Admin: 'admin' };
+          target = new ValidationPipe();
+          const enumMetadata = {
+            type: 'query',
+            metatype: Role,
+            data: 'role',
+          } as unknown as ArgumentMetadata;
+
+          expect(await target.transform('admin', enumMetadata)).to.equal(
+            'admin',
+          );
+          expect(await target.transform(undefined, enumMetadata)).to.be
+            .undefined;
+        });
+      });
       describe('otherwise', () => {
         it('should not reject', async () => {
           target = new ValidationPipe();
