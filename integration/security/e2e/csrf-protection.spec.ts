@@ -306,6 +306,32 @@ describe.each(adapters)('CSRF protection (%s)', (_name, createAdapter) => {
     });
   });
 
+  describe('with an exclusion ending in an optional wildcard', () => {
+    beforeEach(() =>
+      init(app => {
+        app.setGlobalPrefix('api');
+        app.enableCsrfProtection({ exclude: ['hooks/github/*'] });
+      }),
+    );
+
+    it('does not exclude the parent route through a trailing slash', async () => {
+      const post = (path: string) =>
+        request(app.getHttpServer())
+          .post(path)
+          .set('Host', HOST)
+          .set('Sec-Fetch-Site', 'cross-site')
+          .set('Origin', 'https://github.example');
+
+      await post('/api/hooks/github/push').expect(201, {
+        handler: 'github/:event',
+      });
+      await post('/api/hooks/github').expect(403);
+      // Express serves it with the "github" route, which is not excluded;
+      // Fastify does not serve it (strict routing, no empty "event")
+      await post('/api/hooks/github/').expect(_name === 'Express' ? 403 : 404);
+    });
+  });
+
   describe('with a global exception filter', () => {
     beforeEach(() =>
       init(app => {

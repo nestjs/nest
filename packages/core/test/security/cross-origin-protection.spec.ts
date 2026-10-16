@@ -423,6 +423,27 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(protection, '/items')).toBe(false);
     });
 
+    it('does not exclude "/x/" for a wildcard of "x" when the router serves it with "/x"', () => {
+      class LenientRouterAdapter extends TestAdapter {
+        getRouteMatchingOptions() {
+          return { caseSensitive: false, ignoreTrailingSlash: true };
+        }
+      }
+      const exclude = ['webhooks/*', 'hooks', 'hooks/{*path}'];
+      const lenient = new CrossOriginProtection(new LenientRouterAdapter({}), {
+        exclude,
+      });
+      lenient.resolveExclusions(
+        new RouteInfoPathExtractor(new ApplicationConfig()),
+      );
+      expect(isExcluded(lenient, '/webhooks/')).toBe(false);
+      expect(isExcluded(lenient, '/webhooks/stripe/')).toBe(true);
+      expect(isExcluded(lenient, '/hooks/')).toBe(true);
+
+      const strict = createProtection(exclude);
+      expect(isExcluded(strict, '/webhooks/')).toBe(true);
+    });
+
     it('excludes nothing until the exclusions are resolved (app.init())', () => {
       const protection = new CrossOriginProtection(adapter, {
         exclude: ['webhooks'],

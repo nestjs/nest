@@ -95,14 +95,20 @@ export const filterMiddleware = <T extends Function | Type<any> = any>(
   // the adapter does not tell how its router matches paths, they match
   // exactly, so that a more lenient router runs the middleware for the
   // variants of an excluded path rather than skipping it
-  const excludedRoutes = mapToExcludeRoute(
-    routes,
-    httpAdapter.getRouteMatchingOptions?.() ?? EXACT_ROUTE_MATCHING,
-  );
+  const matchingOptions =
+    httpAdapter.getRouteMatchingOptions?.() ?? EXACT_ROUTE_MATCHING;
+  const excludedRoutes = mapToExcludeRoute(routes, matchingOptions);
   return iterate([])
     .concat(middleware)
     .filter(isFunction)
-    .map((item: T) => mapToClass(item, excludedRoutes, httpAdapter))
+    .map((item: T) =>
+      mapToClass(
+        item,
+        excludedRoutes,
+        httpAdapter,
+        matchingOptions.ignoreTrailingSlash,
+      ),
+    )
     .toArray();
 };
 
@@ -110,6 +116,7 @@ export const mapToClass = <T extends Function | Type<any>>(
   middleware: T,
   excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
+  ignoreTrailingSlash = false,
 ) => {
   if (isMiddlewareClass(middleware)) {
     if (excludedRoutes.length <= 0) {
@@ -122,6 +129,7 @@ export const mapToClass = <T extends Function | Type<any>>(
           req,
           excludedRoutes,
           httpAdapter,
+          ignoreTrailingSlash,
         );
         if (isExcluded) {
           return next();
@@ -139,6 +147,7 @@ export const mapToClass = <T extends Function | Type<any>>(
           req,
           excludedRoutes,
           httpAdapter,
+          ignoreTrailingSlash,
         );
         if (isExcluded) {
           return next();
@@ -171,6 +180,7 @@ export function isMiddlewareRouteExcluded(
   req: Record<string, any>,
   excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
+  ignoreTrailingSlash = false,
 ): boolean {
   if (excludedRoutes.length <= 0) {
     return false;
@@ -192,9 +202,16 @@ export function isMiddlewareRouteExcluded(
       : originalUrl;
 
   // HEAD requests are served by GET handlers, so a GET exclusion covers them too
-  return (
-    isRouteExcluded(excludedRoutes, pathname, RequestMethod[reqMethod]) ||
+  const isExcluded = (path: string) =>
+    isRouteExcluded(excludedRoutes, path, RequestMethod[reqMethod]) ||
     (reqMethod === RequestMethod[RequestMethod.HEAD] &&
-      isRouteExcluded(excludedRoutes, pathname, RequestMethod.GET))
-  );
+      isRouteExcluded(excludedRoutes, path, RequestMethod.GET));
+
+  // A router that ignores a trailing slash serves "/x/" with the "/x" route,
+  // which an exclusion that matches "/x/" may not cover (e.g. "x/{*path}"),
+  // so the request is excluded only if its path without the slash is too
+  if (ignoreTrailingSlash && pathname.length > 1 && pathname.endsWith('/')) {
+    return isExcluded(pathname) && isExcluded(pathname.replace(/\/+$/, ''));
+  }
+  return isExcluded(pathname);
 }

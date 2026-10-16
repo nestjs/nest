@@ -266,6 +266,47 @@ describe('middleware utils', () => {
         );
       });
     });
+    describe('when the router ignores a trailing slash', () => {
+      const isExcluded = (exclusions: string[], url: string) => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        return isMiddlewareRouteExcluded(
+          {},
+          mapToExcludeRoute(exclusions, {
+            caseSensitive: false,
+            ignoreTrailingSlash: true,
+          }),
+          adapter,
+          true,
+        );
+      };
+
+      it('should not exclude "/x/", served by the "/x" route, when only its wildcard is excluded', () => {
+        expect(isExcluded(['invoices/*'], '/invoices/')).toBe(false);
+        expect(isExcluded(['invoices/{*path}'], '/invoices//')).toBe(false);
+        expect(isExcluded(['invoices/*'], '/invoices/abc')).toBe(true);
+        expect(isExcluded(['invoices/*'], '/invoices/abc/')).toBe(true);
+      });
+
+      it('should exclude "/x/" when "/x" is excluded too', () => {
+        expect(isExcluded(['invoices', 'invoices/*'], '/invoices/')).toBe(true);
+        expect(isExcluded(['invoices{/*path}'], '/invoices/')).toBe(true);
+      });
+    });
+    describe('when the router matches a trailing slash exactly', () => {
+      it('should exclude "/x/" when it matches an excluded route', () => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue('/invoices/');
+        expect(
+          isMiddlewareRouteExcluded(
+            {},
+            mapToExcludeRoute(['invoices/*'], {
+              caseSensitive: true,
+              ignoreTrailingSlash: false,
+            }),
+            adapter,
+          ),
+        ).toBe(true);
+      });
+    });
     describe('when a HEAD request targets a route excluded for GET', () => {
       const excludedRoutes = mapToExcludeRoute([
         {

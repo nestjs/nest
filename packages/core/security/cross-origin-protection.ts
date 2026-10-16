@@ -221,6 +221,7 @@ export class CrossOriginProtection<TRequest = any> {
   private readonly excludedRoutes: RouteInfo[] = [];
   private readonly excludePredicate?: (request: TRequest) => boolean;
   private resolvedExclusions: ExcludeRouteMetadata[] = [];
+  private ignoreTrailingSlash = false;
 
   /**
    * Validates the options, so that a bad configuration fails as soon as
@@ -280,6 +281,8 @@ export class CrossOriginProtection<TRequest = any> {
         .extractPathFrom(route)
         .map(path => compileExclusion(path, route.method, true)),
     );
+    this.ignoreTrailingSlash =
+      !!this.httpAdapter.getRouteMatchingOptions?.()?.ignoreTrailingSlash;
   }
 
   /**
@@ -322,11 +325,25 @@ export class CrossOriginProtection<TRequest = any> {
       return false;
     }
     const method = this.httpAdapter.getRequestMethod!(request);
-    return isRouteExcluded(
-      this.resolvedExclusions,
-      pathname,
-      RequestMethod[method as keyof typeof RequestMethod],
-    );
+    const isPathExcluded = (path: string) =>
+      isRouteExcluded(
+        this.resolvedExclusions,
+        path,
+        RequestMethod[method as keyof typeof RequestMethod],
+      );
+    // A router that ignores a trailing slash serves "/x/" with the "/x" route,
+    // which an exclusion that matches "/x/" may not cover (e.g. "x/{*path}"),
+    // so the request is excluded only if its path without the slash is too
+    if (
+      this.ignoreTrailingSlash &&
+      pathname.length > 1 &&
+      pathname.endsWith('/')
+    ) {
+      return (
+        isPathExcluded(pathname) && isPathExcluded(pathname.replace(/\/+$/, ''))
+      );
+    }
+    return isPathExcluded(pathname);
   }
 }
 
