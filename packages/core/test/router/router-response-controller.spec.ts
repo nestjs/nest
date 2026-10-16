@@ -6,7 +6,9 @@ import * as sinon from 'sinon';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
+  BadRequestException,
   HttpStatus,
+  IntrinsicException,
   Logger,
   type MessageEvent,
   RequestMethod,
@@ -1073,51 +1075,101 @@ data: test
     });
 
     describe('when there is an error after headers are committed', () => {
-      it('should write the error message to the stream', async () => {
-        class Sink extends Writable {
-          private readonly chunks: string[] = [];
+      let loggerErrorStub: sinon.SinonStub;
 
-          _write(
-            chunk: any,
-            encoding: string,
-            callback: (error?: Error | null) => void,
-          ): void {
-            this.chunks.push(chunk);
-            callback();
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(Logger.prototype, 'error');
+      });
+
+      afterEach(() => {
+        loggerErrorStub.restore();
+      });
+
+      // The headers are out, so no exception filter can answer anymore
+      (
+        [
+          ['an HttpException', new BadRequestException('Some error'), true],
+          [
+            'an "http-errors" error',
+            Object.assign(new Error('Some error'), {
+              status: 404,
+              statusCode: 404,
+              expose: true,
+            }),
+            true,
+          ],
+          [
+            'an http error-shaped value',
+            { statusCode: 404, message: 'Some error' },
+            true,
+          ],
+          ['an Error', new Error('Some error'), false],
+          ['a string', 'Some error', false],
+          [
+            'an IntrinsicException',
+            new IntrinsicException('Some error'),
+            false,
+          ],
+        ] as const
+      ).forEach(([name, error, isMessageSent]) => {
+        it(`should write the message BaseExceptionFilter would send for ${name}`, async () => {
+          class Sink extends Writable {
+            private readonly chunks: string[] = [];
+
+            _write(
+              chunk: any,
+              encoding: string,
+              callback: (error?: Error | null) => void,
+            ): void {
+              this.chunks.push(chunk);
+              callback();
+            }
+
+            get content() {
+              return this.chunks.join('');
+            }
           }
 
-          get content() {
-            return this.chunks.join('');
-          }
-        }
+          const written = (stream: Writable) =>
+            new Promise((resolve, reject) =>
+              stream.on('error', reject).on('finish', resolve),
+            );
 
-        const written = (stream: Writable) =>
-          new Promise((resolve, reject) =>
-            stream.on('error', reject).on('finish', resolve),
+          const result = new Subject();
+          const response = new Sink();
+          const request = new PassThrough();
+          void routerResponseController.sse(
+            result,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
           );
 
-        const result = new Subject();
-        const response = new Sink();
-        const request = new PassThrough();
-        void routerResponseController.sse(
-          result,
-          response as unknown as ServerResponse,
-          request as unknown as IncomingMessage,
-        );
+          // Yield so the internal `await Promise.resolve(result)` completes
+          // and the subscription is active before we emit.
+          await Promise.resolve();
 
-        // Yield so the internal `await Promise.resolve(result)` completes
-        // and the subscription is active before we emit.
-        await Promise.resolve();
+          result.next('first');
+          // Let the concatMap inner Promise resolve
+          await new Promise(resolve => setTimeout(resolve, 10));
+          result.error(error);
+          request.destroy();
 
-        result.next('first');
-        // Let the concatMap inner Promise resolve
-        await new Promise(resolve => setTimeout(resolve, 10));
-        result.error(new Error('Some error'));
-        request.destroy();
-
-        await written(response);
-        expect(response.content).to.contain('event: error');
-        expect(response.content).to.contain('data: Some error');
+          await written(response);
+          expect(response.content).to.contain('event: error');
+          if (isMessageSent) {
+            expect(response.content).to.contain('data: Some error\n');
+          } else {
+            expect(response.content).to.contain(
+              'data: Internal server error\n',
+            );
+            expect(response.content).not.to.contain('Some error');
+          }
+          if (error instanceof IntrinsicException) {
+            expect(loggerErrorStub.called).to.be.false;
+          } else {
+            expect(loggerErrorStub.calledWith(error)).to.be.true;
+          }
+        });
       });
     });
   });
