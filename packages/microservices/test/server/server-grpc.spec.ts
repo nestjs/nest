@@ -12,6 +12,8 @@ import { GrpcMethodStreamingType } from '../../index';
 import { ServerGrpc } from '../../server';
 
 const CANCELLED_EVENT = 'cancelled';
+const GRPC_STATUS_UNKNOWN = 2;
+const GRPC_STATUS_INVALID_ARGUMENT = 3;
 const GRPC_STATUS_INTERNAL = 13;
 
 class NoopLogger extends Logger {
@@ -980,6 +982,114 @@ describe('ServerGrpc', () => {
         expect(callback.called).to.be.false;
         expect(endHook.calledOnce).to.be.true;
       });
+    });
+  });
+
+  describe('when an error cannot be sent as it is', () => {
+    // grpc-js throws on an error that is not an object ("'message' in
+    // error") and on a status message with a lone surrogate ("encodeURI")
+    const stringError = 'Forbidden resource';
+    const sendableStringError = {
+      code: GRPC_STATUS_UNKNOWN,
+      message: 'Forbidden resource',
+    };
+    const loneSurrogateError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: `Unexpected token '\ud83d', "😀" is not valid JSON`,
+    };
+    const sendableLoneSurrogateError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: `Unexpected token '\ufffd', "😀" is not valid JSON`,
+      details: undefined,
+      metadata: undefined,
+    };
+
+    const createCall = () => ({
+      request: {},
+      metadata: {},
+      write: sinon.spy(() => true),
+      end: sinon.spy(),
+      on: sinon.spy(),
+      off: sinon.spy(),
+      emit: sinon.spy(),
+    });
+
+    const cases: Array<[string, unknown, unknown]> = [
+      ['a string', stringError, sendableStringError],
+      ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+    ];
+
+    cases.forEach(([name, error, sendableError]) => {
+      it(`should send a unary call an error with ${name} that grpc-js can send`, async () => {
+        const callback = sinon.spy();
+
+        await server.createUnaryServiceMethod(() => throwError(() => error))(
+          createCall(),
+          callback,
+        );
+
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args).to.eql([sendableError]);
+      });
+
+      it(`should emit a response stream an error with ${name} that grpc-js can send`, async () => {
+        const call = createCall();
+
+        await server.createStreamServiceMethod(() => throwError(() => error))(
+          call,
+          sinon.spy(),
+        );
+
+        expect(call.emit.calledOnce).to.be.true;
+        expect(call.emit.firstCall.args).to.eql(['error', sendableError]);
+      });
+    });
+
+    it('should send a client stream call an error that grpc-js can send', async () => {
+      const callback = sinon.spy();
+
+      await server.createRequestStreamMethod(
+        () => throwError(() => stringError),
+        false,
+      )(createCall() as any, callback);
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args).to.eql([sendableStringError, null]);
+    });
+
+    it('should send a stream call an error that grpc-js can send', async () => {
+      const callback = sinon.spy();
+      const call = createCall();
+      const handler = async () => throwError(() => loneSurrogateError);
+
+      await server.createStreamCallMethod(handler, false)(
+        call as any,
+        callback,
+      );
+      await server.createStreamCallMethod(handler, true)(call as any, callback);
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args).to.eql([
+        sendableLoneSurrogateError,
+        null,
+      ]);
+      expect(call.emit.calledOnce).to.be.true;
+      expect(call.emit.firstCall.args).to.eql([
+        'error',
+        sendableLoneSurrogateError,
+      ]);
+    });
+
+    it('should send an error that grpc-js can send as it is', async () => {
+      const callback = sinon.spy();
+      const error = new Error('well-formed 😀');
+
+      await server.createUnaryServiceMethod(() => throwError(() => error))(
+        createCall(),
+        callback,
+      );
+
+      expect(callback.firstCall.args[0]).to.equal(error);
     });
   });
 

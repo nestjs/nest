@@ -1,4 +1,5 @@
 import {
+  isFunction,
   isObject,
   isString,
   isUndefined,
@@ -30,7 +31,11 @@ import { Server } from './server';
 
 const CANCELLED_EVENT = 'cancelled';
 // gRPC status codes, as in "@grpc/grpc-js"
+const GRPC_STATUS_UNKNOWN = 2;
 const GRPC_STATUS_INTERNAL = 13;
+// Half of a surrogate pair without the other half
+const LONE_SURROGATE =
+  /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g;
 
 // To enable type safety for gRPC. This cant be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
@@ -53,6 +58,30 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   on: Function;
   off: Function;
   emit: Function;
+}
+
+function toWellFormed(text: unknown) {
+  return isString(text) ? text.replace(LONE_SURROGATE, '\ufffd') : text;
+}
+
+// grpc-js throws on an error that is not an object, and on a status message
+// with a lone surrogate, which it cannot encode into the "grpc-message"
+// trailer. It does so from the subscriber that hands it the error, where
+// nothing catches the throw and the process exits.
+function toSendableError(err: unknown) {
+  if (!isObject(err) && !isFunction(err)) {
+    return { code: GRPC_STATUS_UNKNOWN, message: toWellFormed(String(err)) };
+  }
+  const { code, message, details, metadata } = err as Record<string, unknown>;
+  if (toWellFormed(message) === message && toWellFormed(details) === details) {
+    return err;
+  }
+  return {
+    code,
+    message: toWellFormed(message),
+    details: toWellFormed(details),
+    metadata,
+  };
 }
 
 /**
@@ -309,7 +338,7 @@ export class ServerGrpc extends Server<never, never> {
               next: async data => callback(null, await data),
               error: (err: any) => {
                 this.onProcessingEndHook?.(this.transportId, call.request);
-                callback(err);
+                callback(toSendableError(err));
               },
               complete: () => {
                 this.onProcessingEndHook?.(this.transportId, call.request);
@@ -405,7 +434,7 @@ export class ServerGrpc extends Server<never, never> {
           subscription.unsubscribe();
           resolve();
         } else if (shouldErrorAfterDraining) {
-          call.emit('error', error);
+          call.emit('error', toSendableError(error));
           subscription.unsubscribe();
           resolve();
         }
@@ -430,7 +459,7 @@ export class ServerGrpc extends Server<never, never> {
             if (valuesWaitingToBeDrained.length === 0) {
               // We're not waiting for a drain event, so we can just
               // reject and teardown.
-              call.emit('error', err);
+              call.emit('error', toSendableError(err));
               subscription.unsubscribe();
               resolve();
             } else {
@@ -509,7 +538,7 @@ export class ServerGrpc extends Server<never, never> {
                 throwIfEmpty(() => this.createNoResponseError()),
                 takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
                 catchError(err => {
-                  callback(err, null);
+                  callback(toSendableError(err), null);
                   return EMPTY;
                 }),
                 defaultIfEmpty(undefined),
@@ -553,9 +582,9 @@ export class ServerGrpc extends Server<never, never> {
             // grpc-js ignores the promise returned here, so a rejection would
             // go unhandled and the client would never learn about the error.
             if (isResponseStream) {
-              call.emit('error', err);
+              call.emit('error', toSendableError(err));
             } else {
-              callback(err, null);
+              callback(toSendableError(err), null);
             }
           } finally {
             this.onProcessingEndHook?.(this.transportId, call.request);
