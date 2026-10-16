@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isNil,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
@@ -50,6 +54,8 @@ type Channel = any;
 let rmqPackage = {} as any; // as typeof import('amqp-connection-manager');
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
+// In bytes, for an AMQP short string such as "replyTo" or "correlationId"
+const MAX_SHORT_STRING_LENGTH = 255;
 
 /**
  * @publicApi
@@ -360,6 +366,17 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     correlationId: string,
     context: RmqContext,
   ): void {
+    // Both come from the request. amqplib decodes invalid UTF-8 in them to
+    // longer strings than it can encode again, and once it throws on one, the
+    // channel wrapper never settles the publish nor releases the reply.
+    const isTooLong = (value: unknown) =>
+      isString(value) && Buffer.byteLength(value) > MAX_SHORT_STRING_LENGTH;
+    if (isTooLong(replyTo) || isTooLong(correlationId)) {
+      this.logger.error(
+        `Dropped a reply whose "replyTo" or "correlationId" is longer than ${MAX_SHORT_STRING_LENGTH} bytes.`,
+      );
+      return;
+    }
     const outgoingResponse = this.serializer.serialize(
       message as unknown as OutgoingResponse,
     );

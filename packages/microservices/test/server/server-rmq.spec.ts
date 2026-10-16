@@ -341,6 +341,50 @@ describe('ServerRMQ', () => {
         ),
       ).to.be.true;
     });
+    describe('when "replyTo" or "correlationId" is too long for AMQP', () => {
+      // amqplib decodes 86 bytes of invalid UTF-8 as 86 replacement
+      // characters, which take 258 bytes to encode again
+      const tooLong = '\ufffd'.repeat(86);
+      let loggerErrorStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+      });
+
+      it('should drop the reply and log an error', () => {
+        server.sendMessage({ test: true }, tooLong, '0', context);
+        server.sendMessage({ test: true }, 'test', tooLong, context);
+
+        expect(channel.sendToQueue.called).to.be.false;
+        expect(loggerErrorStub.calledTwice).to.be.true;
+      });
+      it('should publish values of up to 255 bytes', () => {
+        const longest = 'a'.repeat(255);
+
+        server.sendMessage({ test: true }, longest, longest, context);
+
+        expect(
+          channel.sendToQueue.calledWith(
+            longest,
+            sinon.match.instanceOf(Buffer),
+            {
+              correlationId: longest,
+            },
+          ),
+        ).to.be.true;
+      });
+      it('should publish a reply without "replyTo" as before', () => {
+        server.sendMessage({ test: true }, undefined, '0', context);
+
+        expect(
+          channel.sendToQueue.calledWith(
+            undefined,
+            sinon.match.instanceOf(Buffer),
+            { correlationId: '0' },
+          ),
+        ).to.be.true;
+      });
+    });
   });
 
   describe('handleEvent', () => {
