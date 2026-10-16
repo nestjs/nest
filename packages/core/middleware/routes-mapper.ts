@@ -8,13 +8,13 @@ import {
   addLeadingSlash,
   isString,
   isUndefined,
+  stripEndSlash,
 } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { MetadataScanner } from '../metadata-scanner';
 import { PathsExplorer, RouteDefinition } from '../router/paths-explorer';
-import { targetModulesByContainer } from '../router/router-module';
 
 export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;
@@ -75,16 +75,19 @@ export class RoutesMapper {
     );
     const controllerVersion = this.getVersionMetadata(controller);
     const versioningConfig = this.applicationConfig.getVersioning();
-    const moduleRef = this.getHostModuleOfController(controller);
-    const modulePath = this.getModulePath(moduleRef?.metatype);
+    const modulePaths = this.getModulePathsOfController(controller);
 
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
 
-    const toRouteInfo = (item: RouteDefinition, prefix: string) =>
+    const toRouteInfo = (
+      item: RouteDefinition,
+      prefix: string,
+      modulePath: string,
+    ) =>
       item.path?.flatMap(p => {
-        let endpointPath = modulePath ?? '';
-        endpointPath += this.normalizeGlobalPath(prefix) + addLeadingSlash(p);
+        const endpointPath =
+          modulePath + this.normalizeGlobalPath(prefix) + addLeadingSlash(p);
 
         const routeInfo: RouteInfo = {
           path: endpointPath,
@@ -110,10 +113,12 @@ export class RoutesMapper {
 
     return ([] as string[])
       .concat(routePath)
-      .map(routePath =>
-        controllerPaths
-          .map(item => toRouteInfo(item, routePath))
-          .reduce(concatPaths, []),
+      .flatMap(routePath =>
+        modulePaths.map(modulePath =>
+          controllerPaths
+            .map(item => toRouteInfo(item, routePath, modulePath))
+            .reduce(concatPaths, []),
+        ),
       )
       .reduce(concatPaths, []);
   }
@@ -134,22 +139,25 @@ export class RoutesMapper {
     return Reflect.getMetadata(PATH_METADATA, route);
   }
 
-  private getHostModuleOfController(
-    metatype: Type<unknown>,
-  ): Module | undefined {
+  /**
+   * Returns the paths the controller is served under: the router registers it
+   * once for each module that declares it, under the path of that module.
+   */
+  private getModulePathsOfController(metatype: Type<unknown>): string[] {
+    const modulePaths = this.getHostModulesOfController(metatype).map(
+      moduleRef => stripEndSlash(this.getModulePath(moduleRef.metatype) ?? ''),
+    );
+    return modulePaths.length > 0 ? [...new Set(modulePaths)] : [''];
+  }
+
+  private getHostModulesOfController(metatype: Type<unknown>): Module[] {
     if (!metatype) {
-      return;
+      return [];
     }
     const modulesContainer = this.container.getModules();
-    const moduleRefsSet = targetModulesByContainer.get(modulesContainer);
-    if (!moduleRefsSet) {
-      return;
-    }
-
-    const modules = Array.from(modulesContainer.values()).filter(moduleRef =>
-      moduleRefsSet.has(moduleRef),
+    return Array.from(modulesContainer.values()).filter(({ controllers }) =>
+      controllers.has(metatype),
     );
-    return modules.find(({ controllers }) => controllers.has(metatype));
   }
 
   private getModulePath(

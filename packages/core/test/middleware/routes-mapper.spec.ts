@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { Version, VersioningType } from '../../../common';
+import { MODULE_PATH } from '../../../common/constants';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import {
   Get,
@@ -9,6 +10,7 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { MiddlewareConfiguration } from '../../../common/interfaces';
 import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
+import { Module } from '../../injector/module';
 import { RoutesMapper } from '../../middleware/routes-mapper';
 
 describe('RoutesMapper', () => {
@@ -55,6 +57,56 @@ describe('RoutesMapper', () => {
       { path: '/test/another', method: RequestMethod.DELETE },
       { path: '/test/versioned', method: RequestMethod.GET, version: '1' },
     ]);
+  });
+
+  describe('when the controller is declared by more than one module', () => {
+    let container: NestContainer;
+
+    const declareIn = (modulePath?: string) => {
+      class HostModule {}
+      if (modulePath) {
+        Reflect.defineMetadata(MODULE_PATH, modulePath, HostModule);
+      }
+      const moduleRef = new Module(HostModule, container);
+      moduleRef.addController(TestRoute);
+      container.getModules().set(`${modulePath}`, moduleRef);
+    };
+
+    beforeEach(() => {
+      container = new NestContainer();
+      const appConfig = new ApplicationConfig();
+      appConfig.enableVersioning({ type: VersioningType.URI });
+      mapper = new RoutesMapper(container, appConfig);
+    });
+
+    it('should map its routes under the path of each module', () => {
+      declareIn('/first');
+      declareIn('/second');
+      declareIn();
+
+      expect(
+        mapper
+          .mapRouteToRouteInfo(TestRoute)
+          .filter(({ method }) => method === RequestMethod.DELETE),
+      ).to.deep.equal([
+        { path: '/first/test/another', method: RequestMethod.DELETE },
+        { path: '/second/test/another', method: RequestMethod.DELETE },
+        { path: '/test/another', method: RequestMethod.DELETE },
+      ]);
+    });
+
+    it('should map its routes once for modules sharing a path', () => {
+      declareIn('/');
+      declareIn();
+
+      expect(
+        mapper
+          .mapRouteToRouteInfo(TestRoute)
+          .filter(({ method }) => method === RequestMethod.DELETE),
+      ).to.deep.equal([
+        { path: '/test/another', method: RequestMethod.DELETE },
+      ]);
+    });
   });
   @Controller(['test', 'test2'])
   class TestRouteWithMultiplePaths {
