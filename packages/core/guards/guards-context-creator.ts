@@ -107,19 +107,18 @@ export class GuardsContextCreator extends ContextCreator {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalGuards;
     }
-    const scopedGuardWrappers =
-      this.config.getGlobalRequestGuards() as InstanceWrapper[];
-    const scopedGuards = iterate(scopedGuardWrappers)
-      .map(wrapper =>
-        wrapper.getInstanceByContextId(
-          this.getContextId(contextId, wrapper),
-          inquirerId,
-        ),
+    // Resolve request/transient scoped guards where they were bound, so that
+    // global guards run in the order they were bound, whatever their scope
+    return iterate(this.config.getGlobalGuardsInBindingOrder())
+      .map(guard =>
+        guard instanceof InstanceWrapper
+          ? guard.getInstanceByContextId(
+              this.getContextId(contextId, guard),
+              inquirerId,
+            )?.instance
+          : guard,
       )
-      .filter(host => !!host)
-      .map(host => host.instance)
-      .toArray();
-
-    return globalGuards.concat(scopedGuards) as T;
+      .filter(guard => !!guard)
+      .toArray() as T;
   }
 }
