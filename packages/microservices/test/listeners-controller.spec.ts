@@ -20,6 +20,7 @@ import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { ClientProxyFactory } from '../client/index.js';
 import { ClientsContainer } from '../container.js';
 import { ExceptionFiltersContext } from '../context/exception-filters-context.js';
+import { RequestContextHost } from '../context/request-context-host.js';
 import { RpcContextCreator } from '../context/rpc-context-creator.js';
 import { Transport } from '../enums/transport.enum.js';
 import {
@@ -347,6 +348,49 @@ describe('ListenersController', () => {
         await handler('data', 'context');
 
         expect(handler.next).toHaveBeenCalledExactlyOnceWith('data', 'context');
+      });
+
+      it('should pass the request context host on to the next event handler', async () => {
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+          undefined,
+          true,
+        );
+        handler.next = vi.fn();
+        const contextHost = RequestContextHost.create(
+          {} as any,
+          'data',
+          'context' as any,
+        );
+        await handler(contextHost, 'data', 'context');
+
+        expect(handler.next).toHaveBeenCalledExactlyOnceWith(
+          contextHost,
+          'data',
+          'context',
+        );
+      });
+
+      it('should ask the exception filters to report an unhandled error', async () => {
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+          undefined,
+          true,
+          true,
+        );
+        await handler('data', 'context');
+
+        expect(handleSpy.mock.calls[0][2]).toBe(true);
       });
     });
   });

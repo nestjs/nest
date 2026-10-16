@@ -310,7 +310,11 @@ export class ListenersController {
         }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        const returnValue = exceptionFilter.handle(err, host);
+        const returnValue = exceptionFilter.handle(
+          err,
+          host,
+          reportUnhandledErrors,
+        );
         if (isEventHandler) {
           return this.forkJoinHandlersIfAttached(
             returnValue,
