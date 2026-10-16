@@ -1102,10 +1102,17 @@ export class FastifyAdapter<
           ? new RegExp(re.source + '$', re.flags)
           : re;
 
+        // A case-insensitive router lower-cases the decoded path, where some
+        // characters only fold to ASCII ("%E2%84%AA", KELVIN SIGN, is routed
+        // as "k"). The RegExp of @fastify/middie does not fold them, so on
+        // such a router the middleware is registered for every path and the
+        // path is only matched below.
+        const { caseSensitive } = this.getRouteMatchingOptions();
+
         // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
         // ref https://github.com/fastify/middie/pull/55
         this.instance.use(
-          normalizedPath,
+          caseSensitive ? normalizedPath : '/',
           (req: any, res: any, next: (err?: Error) => void) => {
             const queryParamsIndex = req.originalUrl.indexOf('?');
             let pathname =
@@ -1121,6 +1128,15 @@ export class FastifyAdapter<
                 : `${pathname}/`;
               if (!re.exec(pathToCheck)) {
                 return next();
+              }
+              if (!caseSensitive) {
+                // Strips the path from "req.url", as @fastify/middie does
+                // when it matches the path itself
+                const suffixIndex = req.originalUrl.search(/[?#]/);
+                req.url =
+                  suffixIndex >= 0
+                    ? `/${req.originalUrl.slice(suffixIndex)}`
+                    : '/';
               }
             }
             this.runMiddleware(callback, req, res, next);
@@ -1478,14 +1494,14 @@ export class FastifyAdapter<
       url = this.trimLastSlash(url);
     }
 
-    if (!caseSensitive) {
-      url = url.toLowerCase();
-    }
-    return safeDecodeURI(
+    const { path } = safeDecodeURI(
       url,
       routerOptions.useSemicolonDelimiter ||
         initialConfig.useSemicolonDelimiter,
-    ).path;
+    );
+    // Lower-cased once decoded, as the router does: "%E2%84%AA" (KELVIN
+    // SIGN) only lower-cases to "k" then
+    return caseSensitive ? path : path.toLowerCase();
   }
 
   private removeDuplicateSlashes(path: string) {

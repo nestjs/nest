@@ -367,6 +367,79 @@ describe('FastifyAdapter', () => {
       await adapter.close();
     });
 
+    describe('on a case-insensitive router', () => {
+      let adapter: FastifyAdapter;
+      let urls: { url: string; originalUrl: string };
+      const middleware = vi.fn((req, _res, next: Function) => {
+        // middie restores "req.url" once the middleware calls "next"
+        urls = { url: req.url, originalUrl: req.originalUrl };
+        next();
+      });
+
+      const setUp = async (createAdapter: () => FastifyAdapter) => {
+        adapter = createAdapter();
+        const register = await adapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/tasks', middleware);
+        adapter.get('/tasks', () => 'tasks');
+      };
+
+      afterEach(async () => {
+        middleware.mockClear();
+        await adapter.close();
+      });
+
+      // "%E2%84%AA" (KELVIN SIGN) lower-cases to "k" once decoded, so the
+      // router serves "/tas%E2%84%AAs" with the "/tasks" route
+      it.each(['/tasks', '/TASKS', '/tas%E2%84%AAs', '/TAS%E2%84%AAS'])(
+        'should run the middleware of the route for "%s"',
+        async url => {
+          await setUp(
+            () =>
+              new FastifyAdapter({ routerOptions: { caseSensitive: false } }),
+          );
+
+          const res = await adapter.inject({ method: 'GET', url });
+
+          expect(res.body).toBe('tasks');
+          expect(middleware).toHaveBeenCalledOnce();
+        },
+      );
+
+      it('should run the middleware of the route with the top-level "caseSensitive" option', async () => {
+        await setUp(() => new FastifyAdapter({ caseSensitive: false }));
+
+        const res = await adapter.inject({
+          method: 'GET',
+          url: '/tas%E2%84%AAs',
+        });
+
+        expect(res.body).toBe('tasks');
+        expect(middleware).toHaveBeenCalledOnce();
+      });
+
+      it.each([
+        ['case-sensitive', true],
+        ['case-insensitive', false],
+      ])(
+        'should strip the middleware path from "req.url" on a %s router',
+        async (_, caseSensitive) => {
+          await setUp(
+            () => new FastifyAdapter({ routerOptions: { caseSensitive } }),
+          );
+
+          await adapter.inject({ method: 'GET', url: '/tasks?done=true' });
+
+          expect(middleware).toHaveBeenCalledOnce();
+          expect(urls).toEqual({
+            url: '/?done=true',
+            originalUrl: '/tasks?done=true',
+          });
+        },
+      );
+    });
+
     // The proxies of `RouterProxy` reject when the exception layer throws
     // while it answers an error thrown by the middleware
     describe('when the middleware rejects', () => {
