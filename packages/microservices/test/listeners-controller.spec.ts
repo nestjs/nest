@@ -491,6 +491,22 @@ describe('ListenersController', () => {
           ]),
         ),
       ).rejects.toBe(failure);
+      expect(sideEffects).toEqual(['current']);
+    });
+
+    it('should run the next handlers when the current one errors', async () => {
+      const failure = new Error('handler failed');
+
+      await expect(
+        emissionsOf(
+          createHandlerChain([
+            throwError(() => failure),
+            slowHandlerResult('second'),
+            slowHandlerResult('third'),
+          ]),
+        ),
+      ).rejects.toBe(failure);
+      expect([...sideEffects].sort()).toEqual(['second', 'third']);
     });
 
     it('should run the next static handler when the current one completes empty', async () => {
