@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exceptio
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import {
+  concatMap,
   lastValueFrom,
   Observable,
   of,
@@ -11,7 +12,12 @@ import {
 } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough } from 'stream';
-import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
+import {
+  HttpException,
+  HttpStatus,
+  RouteParamMetadata,
+  StreamableFile,
+} from '../../../common';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -694,6 +700,92 @@ describe('RouterExecutionContext', () => {
 
         expect(producer.tornDown).to.be.true;
         expect(adapterReplySpy.called).to.be.false;
+      });
+
+      it('should destroy the stream of a StreamableFile it does not send', async () => {
+        const stream = new PassThrough();
+        const files = new Subject<StreamableFile>();
+
+        const pending = handler(files, response, request);
+        files.next(new StreamableFile(stream));
+        request.socket.emit('close');
+        await pending;
+
+        expect(adapterReplySpy.called).to.be.false;
+        expect(stream.destroyed).to.be.true;
+      });
+
+      it('should destroy the stream of a StreamableFile an interceptor holds', async () => {
+        const stream = new PassThrough();
+        let holding!: () => void;
+        const held = new Promise<void>(resolve => (holding = resolve));
+        sinon.stub(contextCreator, 'getMetadata').returns({
+          argsLength: 0,
+          fnHandleResponse: handler,
+          isSseHandler: false,
+          paramtypes: [],
+          getParamsMetadata: sinon.stub().returns([]),
+          httpStatusCode: 200,
+          hasCustomHeaders: false,
+          responseHeaders: [],
+        } as any);
+        sinon.stub(contextCreator, 'createGuardsFn').returns(null as any);
+        sinon.stub(contextCreator, 'createPipesFn').returns(null as any);
+        sinon
+          .stub((contextCreator as any).interceptorsContextCreator, 'create')
+          .returns([
+            {
+              // e.g. writing an audit log entry before passing the file on
+              intercept: (_, next) =>
+                next.handle().pipe(
+                  concatMap(async file => {
+                    holding();
+                    await new Promise(() => {});
+                    return file;
+                  }),
+                ),
+            },
+          ]);
+        const proxy = contextCreator.create(
+          {} as any,
+          { apply: () => of(new StreamableFile(stream)) } as any,
+          '',
+          '',
+          0,
+        );
+
+        const pending = proxy(request, response, sinon.stub());
+        await held;
+        request.socket.emit('close');
+        await pending;
+
+        expect(adapterReplySpy.called).to.be.false;
+        expect(stream.destroyed).to.be.true;
+      });
+    });
+
+    describe('when the adapter fails to send a StreamableFile', () => {
+      it('should destroy its stream', async () => {
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          false,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        // e.g. a header value Node.js rejects
+        const error = new TypeError('Invalid character in header content');
+        sinon.stub(adapter, 'reply').throws(error);
+        const stream = new PassThrough();
+
+        try {
+          await handler(new StreamableFile(stream), {});
+          expect.fail('should have thrown');
+        } catch (err) {
+          expect(err).to.equal(error);
+        }
+        expect(stream.destroyed).to.be.true;
       });
     });
 

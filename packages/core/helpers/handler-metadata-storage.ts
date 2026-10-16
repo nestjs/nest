@@ -1,3 +1,4 @@
+import type { StreamableFile } from '@nestjs/common';
 import { Controller, Type } from '@nestjs/common/interfaces';
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
@@ -15,6 +16,7 @@ export type HandlerResponseBasicFn = <TResult, TResponse>(
   res: TResponse,
   req?: any,
   handlerObservable$?: Observable<unknown>,
+  handlerFiles?: StreamableFile[],
 ) => any;
 
 export type HandleSseResponseFn = <

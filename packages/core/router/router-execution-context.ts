@@ -5,6 +5,7 @@ import {
   ParamData,
   PipeTransform,
   RequestMethod,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   CUSTOM_ROUTE_ARGS_METADATA,
@@ -36,6 +37,7 @@ import {
   GuardsContextCreator,
 } from '../guards';
 import { ContextUtils } from '../helpers/context-utils';
+import { destroyStreamableFile } from '../helpers/destroy-streamable-file';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 import {
   HandleResponseFn,
@@ -155,13 +157,23 @@ export class RouterExecutionContext {
         res: TResponse,
         next: Function,
         handlerObservable$?: Subject<void>,
+        handlerFiles: StreamableFile[] = [],
       ) =>
       async () => {
         fnApplyPipes && (await fnApplyPipes(args, req, res, next));
         const result = callback.apply(instance, args);
-        handlerObservable$ &&
-          this.notifyIfObservable(result, handlerObservable$);
-        return result;
+        if (!handlerObservable$) {
+          return result;
+        }
+        this.notifyIfObservable(result, handlerObservable$);
+        return isObservable(result)
+          ? result.pipe(
+              tap(
+                value =>
+                  value instanceof StreamableFile && handlerFiles.push(value),
+              ),
+            )
+          : result;
       };
 
     return async <TRequest, TResponse>(
@@ -190,12 +202,15 @@ export class RouterExecutionContext {
         isSseHandler || isEmpty(interceptors)
           ? undefined
           : new ReplaySubject<void>(1);
+      // The files the handler's own Observable emits: an interceptor may
+      // still hold one when the client goes away.
+      const handlerFiles: StreamableFile[] = [];
       const resultOrDeferred = this.interceptorsConsumer.intercept(
         interceptors,
         [req, res, next],
         instance,
         callback,
-        handler(args, req, res, next, handlerObservable$),
+        handler(args, req, res, next, handlerObservable$, handlerFiles),
         contextType,
       );
       const result = isSseHandler ? resultOrDeferred : await resultOrDeferred;
@@ -204,6 +219,7 @@ export class RouterExecutionContext {
         res,
         req,
         handlerObservable$,
+        handlerFiles,
       );
     };
   }
@@ -498,6 +514,7 @@ export class RouterExecutionContext {
       res: TResponse,
       req?: unknown,
       handlerObservable$?: Observable<unknown>,
+      handlerFiles: StreamableFile[] = [],
     ) => {
       let disconnected = false;
       if (isObservable(result)) {
@@ -520,9 +537,23 @@ export class RouterExecutionContext {
           throw err;
         }
       }
-      !isResponseHandled &&
-        !disconnected &&
-        (await this.responseController.apply(result, res, httpStatusCode));
+      if (disconnected) {
+        // Nothing is sent to a client that is gone. The stream of a
+        // StreamableFile would otherwise hold what it reads from (e.g. an
+        // open file) for good, also one the handler emitted that an
+        // interceptor held when the chain was torn down.
+        [result, ...handlerFiles].forEach(destroyStreamableFile);
+        return res;
+      }
+      if (!isResponseHandled) {
+        try {
+          await this.responseController.apply(result, res, httpStatusCode);
+        } catch (err) {
+          // Not sent either, e.g. for a header value Node.js rejects
+          destroyStreamableFile(result);
+          throw err;
+        }
+      }
       return res;
     };
   }
