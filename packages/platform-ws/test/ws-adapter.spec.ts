@@ -116,5 +116,35 @@ describe('WsAdapter', () => {
       expect(logError.firstCall.args[0]).to.be.instanceOf(RangeError);
       expect(replies).to.deep.equal([{ event: 'echo', data: 'ok' }]);
     });
+
+    it('should not handle messages from a client the server has started closing', () => {
+      const adapter = new WsAdapter();
+      const client = new EventEmitter() as any;
+      client.readyState = 1; // OPEN_STATE
+      client.send = sinon.spy();
+      const callback = sinon.stub().returns('reply');
+
+      adapter.bindMessageHandlers(
+        client,
+        [
+          {
+            message: 'push',
+            methodName: 'push',
+            callback,
+            isAckHandledManually: false,
+          },
+        ],
+        (data: any) => of(data),
+      );
+
+      client.emit('message', frame({ event: 'push', data: 1 }));
+      // e.g. handleConnection() called client.close(): ws still emits what
+      // the client sent before it received the close frame
+      client.readyState = 2; // CLOSING_STATE
+      client.emit('message', frame({ event: 'push', data: 2 }));
+
+      expect(callback.calledOnceWithExactly(1, 'push')).to.be.true;
+      expect(client.send.calledOnce).to.be.true;
+    });
   });
 });

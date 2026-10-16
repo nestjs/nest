@@ -142,6 +142,10 @@ export class WsAdapter extends AbstractWsAdapter {
 
     const close$ = fromEvent(client, CLOSE_EVENT).pipe(share(), first());
     const source$ = fromEvent(client, 'message').pipe(
+      // ws still emits what a client sent before it got the close frame, e.g.
+      // after handleConnection() called client.close(). Like socket.io does
+      // for a disconnected socket, drop those instead of handling them.
+      filter(() => client.readyState === READY_STATE.OPEN_STATE),
       mergeMap(data =>
         this.bindMessageHandler(data, handlersMap, transform).pipe(
           filter(result => !isNil(result)),
