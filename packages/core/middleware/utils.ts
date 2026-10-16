@@ -1,4 +1,9 @@
-import { RequestMethod } from '@nestjs/common';
+import {
+  RequestMethod,
+  VERSION_NEUTRAL,
+  type VersioningOptions,
+  VersioningType,
+} from '@nestjs/common';
 import { iterate } from 'iterare';
 import { pathToRegexp } from 'path-to-regexp';
 import { uid } from 'uid';
@@ -12,6 +17,7 @@ import {
   addLeadingSlash,
   isFunction,
   isString,
+  isUndefined,
 } from '@nestjs/common/internal';
 
 /**
@@ -37,11 +43,15 @@ export const mapToExcludeRoute = (
           pathRegex,
         };
       }
-      return {
+      const excludedRoute: ExcludeRouteMetadata = {
         path,
         requestMethod: route.method,
         pathRegex,
       };
+      if (route.version) {
+        excludedRoute.version = route.version;
+      }
+      return excludedRoute;
     } catch (e) {
       if (e instanceof TypeError) {
         LegacyRouteConverter.printError(originalPath);
@@ -89,6 +99,7 @@ export const filterMiddleware = <T extends Function | Type<any> = any>(
   middleware: T[],
   routes: RouteInfo[],
   httpAdapter: HttpServer,
+  versioningOptions?: VersioningOptions,
 ) => {
   // Excluded routes must match exactly the requests the router serves with
   // them, as the middleware is skipped for every request they match. When
@@ -107,6 +118,7 @@ export const filterMiddleware = <T extends Function | Type<any> = any>(
         excludedRoutes,
         httpAdapter,
         matchingOptions.ignoreTrailingSlash,
+        versioningOptions,
       ),
     )
     .toArray();
@@ -117,6 +129,7 @@ export const mapToClass = <T extends Function | Type<any>>(
   excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
   ignoreTrailingSlash = false,
+  versioningOptions?: VersioningOptions,
 ) => {
   if (isMiddlewareClass(middleware)) {
     if (excludedRoutes.length <= 0) {
@@ -130,6 +143,7 @@ export const mapToClass = <T extends Function | Type<any>>(
           excludedRoutes,
           httpAdapter,
           ignoreTrailingSlash,
+          versioningOptions,
         );
         if (isExcluded) {
           return next();
@@ -148,6 +162,7 @@ export const mapToClass = <T extends Function | Type<any>>(
           excludedRoutes,
           httpAdapter,
           ignoreTrailingSlash,
+          versioningOptions,
         );
         if (isExcluded) {
           return next();
@@ -181,6 +196,7 @@ export function isMiddlewareRouteExcluded(
   excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
   ignoreTrailingSlash = false,
+  versioningOptions?: VersioningOptions,
 ): boolean {
   if (excludedRoutes.length <= 0) {
     return false;
@@ -202,10 +218,18 @@ export function isMiddlewareRouteExcluded(
       : originalUrl;
 
   // HEAD requests are served by GET handlers, so a GET exclusion covers them too
-  const isExcluded = (path: string) =>
-    isRouteExcluded(excludedRoutes, path, RequestMethod[reqMethod]) ||
+  const isRequestForRoute = (route: ExcludeRouteMetadata, path: string) =>
+    isRouteExcluded([route], path, RequestMethod[reqMethod]) ||
     (reqMethod === RequestMethod[RequestMethod.HEAD] &&
-      isRouteExcluded(excludedRoutes, path, RequestMethod.GET));
+      isRouteExcluded([route], path, RequestMethod.GET));
+  const isVersionRequested = createRequestedVersionMatcher(
+    req,
+    versioningOptions,
+  );
+  const isExcluded = (path: string) =>
+    excludedRoutes.some(
+      route => isRequestForRoute(route, path) && isVersionRequested(route),
+    );
 
   // A router that ignores a trailing slash serves "/x/" with the "/x" route,
   // which an exclusion that matches "/x/" may not cover (e.g. "x/{*path}"),
@@ -214,4 +238,104 @@ export function isMiddlewareRouteExcluded(
     return isExcluded(pathname) && isExcluded(pathname.replace(/\/+$/, ''));
   }
   return isExcluded(pathname);
+}
+
+/**
+ * Returns a function that tells whether the request asks for the version of
+ * an excluded route. With header, media type and custom versioning, the
+ * version is not part of the path, so an excluded route of a version covers
+ * the requests for that version only. The versions of the request are read
+ * as the version filters of the HTTP adapters read them, once, and only for
+ * a route that has a version.
+ *
+ * A request that asks for several versions (custom versioning) may be served
+ * by a route of any of them, so all of them must be versions of the excluded
+ * route. A request whose versions cannot be read is not excluded, and an
+ * excluded route that is only version-neutral covers every request, as the
+ * router serves it for the versions no other route takes.
+ */
+export function createRequestedVersionMatcher(
+  request: Record<string, any>,
+  versioningOptions?: VersioningOptions,
+): (route: ExcludeRouteMetadata) => boolean {
+  let requestedVersions: string[] | null | undefined;
+  return ({ version }) => {
+    if (
+      !version ||
+      version === VERSION_NEUTRAL ||
+      !versioningOptions ||
+      versioningOptions.type === VersioningType.URI
+    ) {
+      return true;
+    }
+    if (requestedVersions === undefined) {
+      requestedVersions = getRequestedVersions(request, versioningOptions);
+    }
+    if (!requestedVersions) {
+      return false;
+    }
+    const versions: unknown[] = Array.isArray(version) ? version : [version];
+    return requestedVersions.length > 0
+      ? requestedVersions.every(requested => versions.includes(requested))
+      : versions.includes(VERSION_NEUTRAL);
+  };
+}
+
+/**
+ * Returns the versions the request asks for (none when it asks for none), or
+ * `null` when the custom extractor fails on it.
+ */
+function getRequestedVersions(
+  request: Record<string, any>,
+  versioningOptions: VersioningOptions,
+): string[] | null {
+  const headers = request.headers ?? {};
+  let version: string | string[] | undefined;
+  switch (versioningOptions.type) {
+    case VersioningType.HEADER:
+      version =
+        headers[versioningOptions.header] ||
+        headers[versioningOptions.header.toLowerCase()];
+      break;
+    case VersioningType.MEDIA_TYPE:
+      version = getMediaTypeVersion(
+        headers['Accept'] || headers['accept'],
+        versioningOptions.key,
+      );
+      break;
+    case VersioningType.CUSTOM:
+      try {
+        version = versioningOptions.extractor(request);
+      } catch {
+        // The router gets the same error
+        return null;
+      }
+      break;
+  }
+  return isUndefined(version) ? [] : ([] as string[]).concat(version);
+}
+
+/**
+ * Returns the version carried by an `Accept` header for media type versioning,
+ * e.g. `2` for `application/json;v=2` with the `v=` key. A copy of the
+ * function the platform packages read it with.
+ */
+function getMediaTypeVersion(
+  acceptHeader: string | string[] | undefined,
+  key: string,
+): string | undefined {
+  const mediaRanges = ([] as string[])
+    .concat(acceptHeader ?? [])
+    .flatMap(value => value.split(','));
+
+  for (const mediaRange of mediaRanges) {
+    const [, ...parameters] = mediaRange.split(';');
+    for (const parameter of parameters) {
+      const trimmedParameter = parameter.trim();
+      if (trimmedParameter.startsWith(key)) {
+        return trimmedParameter.slice(key.length);
+      }
+    }
+  }
+  return undefined;
 }

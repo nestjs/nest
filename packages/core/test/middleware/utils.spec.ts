@@ -1,4 +1,9 @@
-import { RequestMethod } from '@nestjs/common';
+import {
+  RequestMethod,
+  VERSION_NEUTRAL,
+  VersioningOptions,
+  VersioningType,
+} from '@nestjs/common';
 import { addLeadingSlash } from '@nestjs/common/utils/shared.utils.js';
 import { pathToRegexp } from 'path-to-regexp';
 import {
@@ -290,6 +295,122 @@ describe('middleware utils', () => {
       it('should exclude "/x/" when "/x" is excluded too', () => {
         expect(isExcluded(['invoices', 'invoices/*'], '/invoices/')).toBe(true);
         expect(isExcluded(['invoices{/*path}'], '/invoices/')).toBe(true);
+      });
+    });
+    describe('when an excluded route has a version that is not in the path', () => {
+      const excludedRoutes = mapToExcludeRoute([
+        { path: 'cats/3', method: RequestMethod.GET, version: '1' },
+        { path: 'dogs/3', method: RequestMethod.GET, version: ['1', '2'] },
+        {
+          path: 'birds/3',
+          method: RequestMethod.GET,
+          version: ['1', VERSION_NEUTRAL],
+        },
+        { path: 'fish/3', method: RequestMethod.GET, version: VERSION_NEUTRAL },
+        { path: 'mice/3', method: RequestMethod.GET },
+      ]);
+      const isExcluded = (
+        url: string,
+        headers: Record<string, string>,
+        versioningOptions: VersioningOptions,
+      ) => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        return isMiddlewareRouteExcluded(
+          { headers },
+          excludedRoutes,
+          adapter,
+          false,
+          versioningOptions,
+        );
+      };
+
+      describe('with header versioning', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.HEADER,
+          header: 'X-Version',
+        };
+
+        it('should exclude the route only for a request for its version', () => {
+          expect(isExcluded('/cats/3', { 'x-version': '1' }, versioning)).toBe(
+            true,
+          );
+          expect(isExcluded('/cats/3', { 'x-version': '2' }, versioning)).toBe(
+            false,
+          );
+          expect(isExcluded('/cats/3', {}, versioning)).toBe(false);
+          expect(isExcluded('/dogs/3', { 'x-version': '2' }, versioning)).toBe(
+            true,
+          );
+          expect(isExcluded('/dogs/3', { 'x-version': '3' }, versioning)).toBe(
+            false,
+          );
+        });
+
+        it('should exclude a version-neutral route as before', () => {
+          expect(isExcluded('/birds/3', {}, versioning)).toBe(true);
+          expect(isExcluded('/birds/3', { 'x-version': '2' }, versioning)).toBe(
+            false,
+          );
+          expect(isExcluded('/fish/3', { 'x-version': '2' }, versioning)).toBe(
+            true,
+          );
+          expect(isExcluded('/mice/3', { 'x-version': '2' }, versioning)).toBe(
+            true,
+          );
+        });
+      });
+
+      it('should read the version of the Accept header with media type versioning', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.MEDIA_TYPE,
+          key: 'v=',
+        };
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json;v=1' }, versioning),
+        ).toBe(true);
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json;v=2' }, versioning),
+        ).toBe(false);
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json' }, versioning),
+        ).toBe(false);
+      });
+
+      it('should read the version with the extractor of custom versioning', () => {
+        const extractor = vi.fn((request: any) =>
+          request.headers.versions?.split(','),
+        );
+        const versioning: VersioningOptions = {
+          type: VersioningType.CUSTOM,
+          extractor,
+        };
+        expect(isExcluded('/cats/3', { versions: '1' }, versioning)).toBe(true);
+        // The route that serves it may be one of another version
+        expect(isExcluded('/cats/3', { versions: '2,1' }, versioning)).toBe(
+          false,
+        );
+        expect(isExcluded('/dogs/3', { versions: '2,1' }, versioning)).toBe(
+          true,
+        );
+        // Not called for a request that matches no versioned route
+        extractor.mockClear();
+        expect(isExcluded('/mice/3', {}, versioning)).toBe(true);
+        expect(extractor).not.toHaveBeenCalled();
+      });
+
+      it('should not exclude the route when the extractor throws', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.CUSTOM,
+          extractor: () => {
+            throw new Error('no version');
+          },
+        };
+        expect(isExcluded('/cats/3', {}, versioning)).toBe(false);
+      });
+
+      it('should leave the version to the path with URI versioning', () => {
+        const versioning: VersioningOptions = { type: VersioningType.URI };
+        expect(isExcluded('/cats/3', {}, versioning)).toBe(true);
       });
     });
     describe('when the router matches a trailing slash exactly', () => {

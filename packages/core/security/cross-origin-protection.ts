@@ -1,6 +1,7 @@
 import {
   type CsrfProtectionOptions,
   type HttpServer,
+  type VersioningOptions,
   ForbiddenException,
   RequestMethod,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import {
 import type { IncomingHttpHeaders } from 'http';
 import { pathToRegexp } from 'path-to-regexp';
 import type { RouteInfoPathExtractor } from '../middleware/route-info-path-extractor.js';
+import { createRequestedVersionMatcher } from '../middleware/utils.js';
 import type { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
 import { isRouteExcluded } from '../router/utils/index.js';
@@ -222,6 +224,7 @@ export class CrossOriginProtection<TRequest = any> {
   private readonly excludePredicate?: (request: TRequest) => boolean;
   private resolvedExclusions: ExcludeRouteMetadata[] = [];
   private ignoreTrailingSlash = false;
+  private versioningOptions?: VersioningOptions;
 
   /**
    * Validates the options, so that a bad configuration fails as soon as
@@ -272,17 +275,23 @@ export class CrossOriginProtection<TRequest = any> {
    * Resolves the excluded routes to the paths they are served at, like
    * `MiddlewareConsumer.exclude()` does: with the global prefix (unless the
    * route is excluded from it) and, with URI versioning, the version segment
-   * of `RouteInfo.version`. Called by `app.init()`, once the global prefix
-   * and versioning are final; until then nothing is excluded.
+   * of `RouteInfo.version` (with another versioning type, only the requests
+   * for that version are excluded). Called by `app.init()`, once the global
+   * prefix and versioning are final; until then nothing is excluded.
    */
   public resolveExclusions(pathExtractor: RouteInfoPathExtractor): void {
     this.resolvedExclusions = this.excludedRoutes.flatMap(route =>
-      pathExtractor
-        .extractPathFrom(route)
-        .map(path => compileExclusion(path, route.method, true)),
+      pathExtractor.extractPathFrom(route).map(path => {
+        const exclusion = compileExclusion(path, route.method, true);
+        if (route.version) {
+          exclusion.version = route.version;
+        }
+        return exclusion;
+      }),
     );
     this.ignoreTrailingSlash =
       !!this.httpAdapter.getRouteMatchingOptions?.()?.ignoreTrailingSlash;
+    this.versioningOptions = pathExtractor.getVersioningOptions();
   }
 
   /**
@@ -325,11 +334,18 @@ export class CrossOriginProtection<TRequest = any> {
       return false;
     }
     const method = this.httpAdapter.getRequestMethod!(request);
+    const isVersionRequested = createRequestedVersionMatcher(
+      request as Record<string, any>,
+      this.versioningOptions,
+    );
     const isPathExcluded = (path: string) =>
-      isRouteExcluded(
-        this.resolvedExclusions,
-        path,
-        RequestMethod[method as keyof typeof RequestMethod],
+      this.resolvedExclusions.some(
+        exclusion =>
+          isRouteExcluded(
+            [exclusion],
+            path,
+            RequestMethod[method as keyof typeof RequestMethod],
+          ) && isVersionRequested(exclusion),
       );
     // A router that ignores a trailing slash serves "/x/" with the "/x" route,
     // which an exclusion that matches "/x/" may not cover (e.g. "x/{*path}"),

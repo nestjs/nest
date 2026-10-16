@@ -486,6 +486,27 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(protection, '/api/v2/webhooks')).toBe(false);
     });
 
+    it('only excludes the requests for the version of RouteInfo.version (header versioning)', () => {
+      const protection = createProtection(
+        [{ path: 'webhooks', method: RequestMethod.POST, version: '1' }],
+        config =>
+          config.enableVersioning({
+            type: VersioningType.HEADER,
+            header: 'X-Version',
+          }),
+      );
+      const isExcludedForVersion = (version?: string) => {
+        const request = crossSitePost('/webhooks');
+        if (version) {
+          request.headers['x-version'] = version;
+        }
+        return protection.check(request) === undefined;
+      };
+      expect(isExcludedForVersion('1')).toBe(true);
+      expect(isExcludedForVersion('2')).toBe(false);
+      expect(isExcludedForVersion()).toBe(false);
+    });
+
     it('keeps wildcard-only exclusions unprefixed, like MiddlewareConsumer', () => {
       const protection = createProtection(
         [{ path: '*path', method: RequestMethod.PATCH }],
