@@ -404,6 +404,51 @@ describe('ServerRedis', () => {
 
         expect(monitor).toHaveBeenCalled();
       });
+      describe('and an event pattern matches the channel of a message handler', () => {
+        let eventHandler: ReturnType<typeof vi.fn>;
+        let messageHandler: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+          eventHandler = Object.assign(
+            vi.fn(async () => 'event'),
+            { isEventHandler: true },
+          );
+          messageHandler = vi.fn(async () => 'message');
+          untypedServer.messageHandlers = objectToMap({
+            'users.*': eventHandler,
+            'users.get': messageHandler,
+          });
+          vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+        });
+        it('should answer a request with the message handler only', async () => {
+          const request = JSON.stringify({ id, pattern: 'users.get', data });
+
+          // Redis delivers the request once for each pattern that matches it
+          await server.handleMessage('users.*', request, null, 'users.get');
+          await server.handleMessage('users.get', request, null, 'users.get');
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(eventHandler).toHaveBeenCalledWith(
+            data,
+            expect.any(RedisContext),
+          );
+          expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+            response: 'message',
+            isDisposed: true,
+          });
+        });
+        it('should still answer a request on a channel without a message handler with the event handler', async () => {
+          const request = JSON.stringify({ id, pattern: 'users.list', data });
+
+          await server.handleMessage('users.*', request, null, 'users.list');
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+            response: 'event',
+            isDisposed: true,
+          });
+        });
+      });
     });
   });
 

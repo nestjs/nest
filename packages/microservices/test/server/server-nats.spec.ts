@@ -294,6 +294,123 @@ describe('ServerNats', () => {
         /^DEPRECATED! .* Pattern: test$/,
       );
     });
+    describe('when an event subject matches the subject of a request', () => {
+      let eventHandler: ReturnType<typeof vi.fn>;
+      let messageHandler: ReturnType<typeof vi.fn>;
+
+      const createRequest = (subject: string): NatsMsg => {
+        const data = JSON.stringify({ pattern: subject, data: 'test', id });
+        return {
+          data,
+          subject,
+          sid: +id,
+          reply: 'inbox',
+          respond: vi.fn(),
+          json: () => JSON.parse(data),
+        };
+      };
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+
+      beforeEach(() => {
+        eventHandler = Object.assign(
+          vi.fn(async () => 'event'),
+          { isEventHandler: true },
+        );
+        messageHandler = vi.fn(async () => 'message');
+        vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+      });
+      it.each([
+        ['orders.*', 'orders.get'],
+        ['orders.>', 'orders.*'],
+        ['orders.get', '*.get'],
+      ])(
+        'should answer it with the message handler only (event: "%s", message: "%s")',
+        async (eventSubject, messageSubject) => {
+          untypedServer.messageHandlers = objectToMap({
+            [eventSubject]: eventHandler,
+            [messageSubject]: messageHandler,
+          });
+
+          // NATS delivers the request to each subscription that matches it
+          await server.handleMessage(eventSubject, createRequest('orders.get'));
+          await server.handleMessage(
+            messageSubject,
+            createRequest('orders.get'),
+          );
+          await flush();
+
+          expect(eventHandler).toHaveBeenCalledWith(
+            'test',
+            expect.any(NatsContext),
+          );
+          expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+            response: 'message',
+            isDisposed: true,
+          });
+        },
+      );
+      it('should still answer it with the event handler when no message handler subject matches it', async () => {
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'users.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+          response: 'event',
+          isDisposed: true,
+        });
+      });
+      it('should still answer it with the event handler when both share a queue group', async () => {
+        // NATS delivers the request to a single member of the group, so the
+        // message handler does not receive it
+        untypedServer.options.queue = 'orders';
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+          response: 'event',
+          isDisposed: true,
+        });
+      });
+      it('should answer it with the message handler only when the event handler has a queue group of its own', async () => {
+        untypedServer.options.queue = 'orders';
+        eventHandler.extras = { queue: 'audit' };
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(eventHandler).toHaveBeenCalled();
+        expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('matchNatsSubject', () => {
+    it.each([
+      ['orders.get', 'orders.get', true],
+      ['orders.get', 'orders.list', false],
+      ['orders.*', 'orders.get', true],
+      ['*.get', 'orders.get', true],
+      ['orders.*', 'orders', false],
+      ['orders.*', 'orders.get.one', false],
+      ['orders.>', 'orders.get.one', true],
+      ['orders.>', 'orders', false],
+      ['>', 'orders', true],
+    ])('should match "%s" against "%s" as %s', (pattern, subject, expected) => {
+      expect(untypedServer.matchNatsSubject(pattern, subject)).toBe(expected);
+    });
   });
 
   describe('processing end hook', () => {
