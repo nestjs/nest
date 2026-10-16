@@ -327,6 +327,35 @@ describe('ExpressAdapter', () => {
       );
     });
 
+    it('should force a JSON content type for error bodies without a "statusCode"', () => {
+      const response = createResponse();
+      response.getHeader.mockReturnValue('text/html');
+      const warnSpy = vi
+        .spyOn((expressAdapter as any).logger, 'warn')
+        .mockImplementation(() => {});
+      // A custom HttpException body, e.g. new HttpException({ ... }, 404)
+      const body = { status: 404, error: '<img src=x onerror=alert(1)>' };
+
+      expressAdapter.reply(response, body, 404);
+
+      expect(response.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/json',
+      );
+      expect(warnSpy).toHaveBeenCalled();
+      expect(response.json).toHaveBeenCalledWith(body);
+    });
+
+    it('should keep the content type of a text body sent with an error status', () => {
+      const response = createResponse();
+      response.getHeader.mockReturnValue('text/html');
+
+      expressAdapter.reply(response, '<h1>Not found</h1>', 404);
+
+      expect(response.setHeader).not.toHaveBeenCalled();
+      expect(response.send).toHaveBeenCalledWith('<h1>Not found</h1>');
+    });
+
     describe('when the body is a StreamableFile', () => {
       const createStreamResponse = () =>
         Object.assign(new PassThrough(), {

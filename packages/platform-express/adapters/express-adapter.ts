@@ -190,7 +190,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     if (
       typeof responseContentType === 'string' &&
       !isJsonContentType(responseContentType) &&
-      body?.statusCode >= HttpStatus.BAD_REQUEST
+      (body?.statusCode >= HttpStatus.BAD_REQUEST ||
+        // A custom error body (e.g. "new HttpException({ ... }, 404)") need
+        // not have a "statusCode" of its own
+        (isObject(body) &&
+          !isNil(statusCode) &&
+          statusCode >= HttpStatus.BAD_REQUEST))
     ) {
       this.logger.warn(
         "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
