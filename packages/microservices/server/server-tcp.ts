@@ -130,6 +130,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, tcpContext);
     }
+    this.assertValidPacketId((packet as IncomingRequest).id);
 
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {

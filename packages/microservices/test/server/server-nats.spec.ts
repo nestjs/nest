@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { NatsContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { ServerNats } from '../../server/server-nats';
 import { objectToMap } from './utils/object-to-map';
 
@@ -228,6 +229,31 @@ describe('ServerNats', () => {
       };
       await server.handleMessage(channel, natsMsg);
       expect(handler.calledWith('test', natsContext)).to.be.true;
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries a copy of the id
+      const handler = sinon.spy();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+      const natsMsg: NatsMsg = {
+        data: JSONCodec().encode({
+          pattern: channel,
+          data: 'test',
+          id: 'a'.repeat(257),
+        }),
+        subject: channel,
+        sid: +id,
+        respond: sinon.spy(),
+      };
+
+      const error = await server
+        .handleMessage(channel, natsMsg)
+        .catch(err => err);
+
+      expect(handler.called).to.be.false;
+      expect(getPublisherSpy.called).to.be.false;
+      expect(error).to.be.instanceOf(InvalidPacketIdException);
     });
     describe('when an event subject matches the subject of a request', () => {
       let eventHandler: sinon.SinonSpy & {

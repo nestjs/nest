@@ -143,6 +143,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, mqttContext);
     }
+    this.assertValidPacketId((packet as IncomingRequest).id);
     const publish = this.getPublisher(
       pub,
       mqttContext,

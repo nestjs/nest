@@ -1,6 +1,6 @@
 import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isString } from '@nestjs/common/utils/shared.utils';
+import { isNumber, isString } from '@nestjs/common/utils/shared.utils';
 import {
   connectable,
   EMPTY,
@@ -23,6 +23,7 @@ import { NO_EVENT_HANDLER, UNSERIALIZABLE_PATTERN } from '../constants';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import { Transport } from '../enums';
+import { InvalidPacketIdException } from '../errors/invalid-packet-id.exception';
 import {
   ClientOptions,
   KafkaOptions,
@@ -41,6 +42,8 @@ import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
 import { ConsumerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
+
+const MAX_PACKET_ID_LENGTH = 256;
 
 /**
  * @publicApi
@@ -367,5 +370,21 @@ export abstract class Server<
     } catch {
       return UNSERIALIZABLE_PATTERN;
     }
+  }
+
+  /**
+   * Throws unless the id of an incoming request is a number or a short string.
+   *
+   * Ids are client-controlled and every reply to the request carries a copy,
+   * so a long string or a nested value would be copied and serialized once
+   * per reply, which a handler that streams its response multiplies.
+   *
+   * @param  {unknown} id - request id
+   */
+  protected assertValidPacketId(id: unknown) {
+    if (isNumber(id) || (isString(id) && id.length <= MAX_PACKET_ID_LENGTH)) {
+      return;
+    }
+    throw new InvalidPacketIdException(MAX_PACKET_ID_LENGTH);
   }
 }

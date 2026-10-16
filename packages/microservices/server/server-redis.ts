@@ -148,6 +148,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, redisCtx);
     }
+    this.assertValidPacketId((packet as IncomingRequest).id);
     const publish = this.getPublisher(
       pub,
       channel,

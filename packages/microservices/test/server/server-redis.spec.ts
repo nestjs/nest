@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { RedisContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { ServerRedis } from '../../server/server-redis';
 import { objectToMap } from './utils/object-to-map';
 
@@ -203,6 +204,26 @@ describe('ServerRedis', () => {
 
       await server.handleMessage(channel, '', null, channel);
       expect(handler.calledWith(data)).to.be.true;
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries the id, so it would be serialized for each of them
+      const handler = sinon.spy();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      const error = await server
+        .handleMessage(
+          channel,
+          JSON.stringify({ id: [[['nested']]], pattern: channel, data }),
+          null,
+          channel,
+        )
+        .catch(err => err);
+
+      expect(handler.called).to.be.false;
+      expect(getPublisherSpy.called).to.be.false;
+      expect(error).to.be.instanceOf(InvalidPacketIdException);
     });
     describe('when wildcards are enabled and an event pattern matches the channel of a message handler', () => {
       let eventHandler: sinon.SinonSpy;

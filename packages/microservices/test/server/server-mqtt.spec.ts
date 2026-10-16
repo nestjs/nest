@@ -3,6 +3,7 @@ import * as sinon from 'sinon';
 import { MQTT_MAX_TOPIC_LENGTH, NO_MESSAGE_HANDLER } from '../../constants';
 import { MqttContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception';
 import { ServerMqtt } from '../../server/server-mqtt';
 import { objectToMap } from './utils/object-to-map';
@@ -285,6 +286,25 @@ describe('ServerMqtt', () => {
         null,
       );
       expect(handler.calledWith(data)).to.be.true;
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries the id, so it would be serialized for each of them
+      const handler = sinon.spy();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      const error = await server
+        .handleMessage(
+          channel,
+          Buffer.from(JSON.stringify({ pattern: '', data, id: [[['a']]] })),
+          null,
+        )
+        .catch(err => err);
+
+      expect(handler.called).to.be.false;
+      expect(getPublisherSpy.called).to.be.false;
+      expect(error).to.be.instanceOf(InvalidPacketIdException);
     });
   });
   describe('getPublisher', () => {

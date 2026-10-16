@@ -22,6 +22,7 @@ import { ExceptionFiltersContext } from '../../context/exception-filters-context
 import { RpcContextCreator } from '../../context/rpc-context-creator';
 import { RpcProxy } from '../../context/rpc-proxy';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { TcpSocket } from '../../helpers/tcp-socket';
 import { ServerTCP } from '../../server/server-tcp';
 import { objectToMap } from './utils/object-to-map';
@@ -220,6 +221,23 @@ describe('ServerTCP', () => {
       };
       await server.handleMessage(socket, deeplyNestedEvent);
       expect(handleEventStub.calledOnce).to.be.true;
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries the id, so it would be serialized for each of them
+      const handler = sinon.spy();
+      untypedServer.messageHandlers = objectToMap({
+        [msg.pattern]: handler as any,
+      });
+
+      for (const id of [[[['nested']]], 'a'.repeat(257)]) {
+        const error = await server
+          .handleMessage(socket, { ...msg, id })
+          .catch(err => err);
+
+        expect(handler.called).to.be.false;
+        expect(socket.sendMessage.called).to.be.false;
+        expect(error).to.be.instanceOf(InvalidPacketIdException);
+      }
     });
   });
   describe('when the peer disconnects', () => {

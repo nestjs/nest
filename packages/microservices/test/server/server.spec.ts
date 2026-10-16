@@ -7,6 +7,7 @@ import {
   Subject,
 } from 'rxjs';
 import * as sinon from 'sinon';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { Server } from '../../server/server';
 
 class TestServer extends Server {
@@ -118,6 +119,20 @@ describe('Server', () => {
     });
   });
 
+  describe('assertValidPacketId', () => {
+    it('should accept a number or a string of up to 256 characters', () => {
+      for (const id of [1, 'a'.repeat(256)]) {
+        expect(() => untypedServer.assertValidPacketId(id)).to.not.throw();
+      }
+    });
+    it('should reject any other id', () => {
+      for (const id of ['a'.repeat(257), [['a']], { id: 'a' }, null, true]) {
+        expect(() => untypedServer.assertValidPacketId(id)).to.throw(
+          InvalidPacketIdException,
+        );
+      }
+    });
+  });
   describe('send', () => {
     let stream$: Observable<string>;
     let sendSpy: sinon.SinonSpy;
