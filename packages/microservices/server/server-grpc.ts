@@ -23,9 +23,17 @@ import {
   TransportId,
 } from '../interfaces/microservice-configuration.interface.js';
 import { Server } from './server.js';
-import { isObject, isString, isUndefined } from '@nestjs/common/internal';
+import {
+  isFunction,
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/internal';
 
 const CANCELLED_EVENT = 'cancelled';
+// Half of a surrogate pair without the other half
+const LONE_SURROGATE =
+  /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g;
 
 // To enable type safety for gRPC. This cant be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
@@ -59,10 +67,34 @@ const callsEmittingResponseError = new WeakSet<GrpcCall>();
 function emitResponseError(call: GrpcCall, err: unknown) {
   callsEmittingResponseError.add(call);
   try {
-    call.emit('error', err);
+    call.emit('error', toSendableError(err));
   } finally {
     callsEmittingResponseError.delete(call);
   }
+}
+
+function toWellFormed(text: unknown) {
+  return isString(text) ? text.replace(LONE_SURROGATE, '\ufffd') : text;
+}
+
+// grpc-js throws on an error that is not an object, and on a status message
+// with a lone surrogate, which it cannot encode into the "grpc-message"
+// trailer. It does so from the subscriber that hands it the error, where
+// nothing catches the throw and the process exits.
+function toSendableError(err: unknown) {
+  if (!isObject(err) && !isFunction(err)) {
+    return { code: GrpcStatus.UNKNOWN, message: toWellFormed(String(err)) };
+  }
+  const { code, message, details, metadata } = err as Record<string, unknown>;
+  if (toWellFormed(message) === message && toWellFormed(details) === details) {
+    return err;
+  }
+  return {
+    code,
+    message: toWellFormed(message),
+    details: toWellFormed(details),
+    metadata,
+  };
 }
 
 /**
@@ -318,7 +350,7 @@ export class ServerGrpc extends Server<never, never> {
             )
             .subscribe({
               next: async data => callback(null, await data),
-              error: (err: any) => callback(err),
+              error: (err: any) => callback(toSendableError(err)),
             });
         },
         call.request,
@@ -527,7 +559,7 @@ export class ServerGrpc extends Server<never, never> {
                   takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
                   catchError(err => {
                     errored = true;
-                    callback(err, null);
+                    callback(toSendableError(err), null);
                     return EMPTY;
                   }),
                   defaultIfEmpty(undefined),
@@ -579,9 +611,9 @@ export class ServerGrpc extends Server<never, never> {
             // go unhandled and the client would never learn about the error.
             runEndHook();
             if (isResponseStream) {
-              call.emit('error', err);
+              call.emit('error', toSendableError(err));
             } else {
-              callback(err, null);
+              callback(toSendableError(err), null);
             }
           }
         },

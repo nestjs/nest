@@ -1396,6 +1396,118 @@ describe('ServerGrpc', () => {
     });
   });
 
+  describe('when an error cannot be sent as it is', () => {
+    // grpc-js throws on an error that is not an object ("'message' in
+    // error") and on a status message with a lone surrogate ("encodeURI")
+    const stringError = 'Forbidden resource';
+    const sendableStringError = {
+      code: GrpcStatus.UNKNOWN,
+      message: 'Forbidden resource',
+    };
+    const loneSurrogateError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: `Unexpected token '\ud83d', "😀" is not valid JSON`,
+    };
+    const sendableLoneSurrogateError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: `Unexpected token '\ufffd', "😀" is not valid JSON`,
+    };
+
+    const createCall = () => ({
+      request: {},
+      metadata: {},
+      write: vi.fn(() => true),
+      end: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+    });
+
+    it.each([
+      ['a string', stringError, sendableStringError],
+      ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+    ])(
+      'should send a unary call an error with %s that grpc-js can send',
+      async (_, error, sendableError) => {
+        const callback = vi.fn();
+
+        await server.createUnaryServiceMethod(() => throwError(() => error))(
+          createCall(),
+          callback,
+        );
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(sendableError);
+      },
+    );
+
+    it.each([
+      ['a string', stringError, sendableStringError],
+      ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+    ])(
+      'should emit a response stream an error with %s that grpc-js can send',
+      async (_, error, sendableError) => {
+        const call = createCall();
+
+        await server.createStreamServiceMethod(() => throwError(() => error))(
+          call,
+          vi.fn(),
+        );
+
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+          'error',
+          sendableError,
+        );
+      },
+    );
+
+    it('should send a client stream call an error that grpc-js can send', async () => {
+      const callback = vi.fn();
+
+      await server.createRequestStreamMethod(
+        () => throwError(() => stringError),
+        false,
+      )(createCall() as any, callback);
+
+      expect(callback).toHaveBeenCalledExactlyOnceWith(
+        sendableStringError,
+        null,
+      );
+    });
+
+    it('should send a stream call an error that grpc-js can send', async () => {
+      const callback = vi.fn();
+      const call = createCall();
+      const handler = async () => throwError(() => loneSurrogateError);
+
+      await server.createStreamCallMethod(handler, false)(
+        call as any,
+        callback,
+      );
+      await server.createStreamCallMethod(handler, true)(call as any, callback);
+
+      expect(callback).toHaveBeenCalledExactlyOnceWith(
+        sendableLoneSurrogateError,
+        null,
+      );
+      expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+        'error',
+        sendableLoneSurrogateError,
+      );
+    });
+
+    it('should send an error that grpc-js can send as it is', async () => {
+      const callback = vi.fn();
+      const error = new Error('well-formed 😀');
+
+      await server.createUnaryServiceMethod(() => throwError(() => error))(
+        createCall(),
+        callback,
+      );
+
+      expect(callback.mock.calls[0][0]).toBe(error);
+    });
+  });
+
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
