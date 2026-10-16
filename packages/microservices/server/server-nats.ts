@@ -9,6 +9,7 @@ import { NatsContext } from '../ctx-host/nats.context';
 import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
 import { Transport } from '../enums';
 import { NatsEvents, NatsEventsMap, NatsStatus } from '../events/nats.events';
+import { MessageHandler } from '../interfaces/message-handler.interface';
 import {
   NatsOptions,
   TransportId,
@@ -168,12 +169,58 @@ export class ServerNats<
       };
       return publish(noHandlerPacket);
     }
+    if (
+      handler.isEventHandler &&
+      this.isAnsweredByMessageHandler(callerSubject, handler)
+    ) {
+      // NATS delivers the request to every subscription whose subject matches
+      // it, so a message handler subscribed to such a subject answers it.
+      return this.handleEvent(channel, message, natsCtx);
+    }
     return this.onProcessingStartHook(this.transportId, natsCtx, async () => {
       const response$ = this.transformToObservable(
         await handler(message.data, natsCtx),
       );
       response$ && this.send(response$, publish);
     });
+  }
+
+  /**
+   * Whether a message handler receives a request published to the subject as
+   * well. NATS delivers a message to every subscription whose subject matches
+   * it, but to a single member of a queue group.
+   */
+  private isAnsweredByMessageHandler(
+    subject: string,
+    eventHandler: MessageHandler,
+  ) {
+    const defaultQueue = this.getOptionsProp(this.options, 'queue');
+    const eventQueue = eventHandler.extras?.queue ?? defaultQueue;
+    return [...this.messageHandlers].some(
+      ([pattern, handler]) =>
+        !handler.isEventHandler &&
+        (isUndefined(eventQueue) ||
+          (handler.extras?.queue ?? defaultQueue) !== eventQueue) &&
+        this.matchNatsSubject(pattern, subject),
+    );
+  }
+
+  /**
+   * Whether a subject matches a subscription subject, in which "*" stands for
+   * any single token and a final ">" for one or more tokens.
+   */
+  private matchNatsSubject(pattern: string, subject: string) {
+    const patternTokens = pattern.split('.');
+    const subjectTokens = subject.split('.');
+    for (let i = 0; i < patternTokens.length; i++) {
+      if (patternTokens[i] === '>') {
+        return subjectTokens.length > i;
+      }
+      if (patternTokens[i] !== '*' && patternTokens[i] !== subjectTokens[i]) {
+        return false;
+      }
+    }
+    return patternTokens.length === subjectTokens.length;
   }
 
   public getPublisher(natsMsg: NatsMsg, id: string, ctx: NatsContext) {

@@ -188,6 +188,52 @@ describe('ServerRedis', () => {
       await server.handleMessage(channel, '', null, channel);
       expect(handler.calledWith(data)).to.be.true;
     });
+    describe('when wildcards are enabled and an event pattern matches the channel of a message handler', () => {
+      let eventHandler: sinon.SinonSpy;
+      let messageHandler: sinon.SinonSpy;
+
+      beforeEach(() => {
+        untypedServer.options.wildcards = true;
+        eventHandler = Object.assign(
+          sinon.spy(async () => 'event'),
+          { isEventHandler: true },
+        );
+        messageHandler = sinon.spy(async () => 'message');
+        untypedServer.messageHandlers = objectToMap({
+          'users.*': eventHandler,
+          'users.get': messageHandler,
+        });
+      });
+      it('should answer a request with the message handler only', async () => {
+        const request = JSON.stringify({ id, pattern: 'users.get', data });
+
+        // Redis delivers the request once for each pattern that matches it
+        await server.handleMessage('users.*', request, null, 'users.get');
+        await server.handleMessage('users.get', request, null, 'users.get');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(eventHandler.calledOnce).to.be.true;
+        expect(eventHandler.firstCall.args[0]).to.equal(data);
+        expect(eventHandler.firstCall.args[1]).to.be.instanceOf(RedisContext);
+        expect(getPublisherSpy.callCount).to.equal(1);
+        expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+          response: 'message',
+          isDisposed: true,
+        });
+      });
+      it('should still answer a request on a channel without a message handler with the event handler', async () => {
+        const request = JSON.stringify({ id, pattern: 'users.list', data });
+
+        await server.handleMessage('users.*', request, null, 'users.list');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(getPublisherSpy.callCount).to.equal(1);
+        expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+          response: 'event',
+          isDisposed: true,
+        });
+      });
+    });
   });
   describe('getPublisher', () => {
     let publisherSpy: sinon.SinonSpy;

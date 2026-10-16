@@ -220,6 +220,128 @@ describe('ServerNats', () => {
       await server.handleMessage(channel, natsMsg);
       expect(handler.calledWith('test', natsContext)).to.be.true;
     });
+    describe('when an event subject matches the subject of a request', () => {
+      let eventHandler: sinon.SinonSpy & {
+        isEventHandler?: boolean;
+        extras?: any;
+      };
+      let messageHandler: sinon.SinonSpy;
+
+      const createRequest = (subject: string): NatsMsg => ({
+        data: JSONCodec().encode({ pattern: subject, data: 'test', id }),
+        subject,
+        sid: +id,
+        reply: 'inbox',
+        respond: sinon.spy(),
+      });
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+
+      beforeEach(() => {
+        eventHandler = Object.assign(
+          sinon.spy(async () => 'event'),
+          { isEventHandler: true },
+        );
+        messageHandler = sinon.spy(async () => 'message');
+      });
+      [
+        ['orders.*', 'orders.get'],
+        ['orders.>', 'orders.*'],
+        ['orders.get', '*.get'],
+      ].forEach(([eventSubject, messageSubject]) => {
+        it(`should answer it with the message handler only (event: "${eventSubject}", message: "${messageSubject}")`, async () => {
+          untypedServer.messageHandlers = objectToMap({
+            [eventSubject]: eventHandler,
+            [messageSubject]: messageHandler,
+          });
+
+          // NATS delivers the request to each subscription that matches it
+          await server.handleMessage(eventSubject, createRequest('orders.get'));
+          await server.handleMessage(
+            messageSubject,
+            createRequest('orders.get'),
+          );
+          await flush();
+
+          expect(eventHandler.calledOnce).to.be.true;
+          expect(eventHandler.firstCall.args[0]).to.equal('test');
+          expect(eventHandler.firstCall.args[1]).to.be.instanceOf(NatsContext);
+          expect(getPublisherSpy.callCount).to.equal(1);
+          expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+            response: 'message',
+            isDisposed: true,
+          });
+        });
+      });
+      it('should still answer it with the event handler when no message handler subject matches it', async () => {
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'users.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy.callCount).to.equal(1);
+        expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+          response: 'event',
+          isDisposed: true,
+        });
+      });
+      it('should still answer it with the event handler when both share a queue group', async () => {
+        // NATS delivers the request to a single member of the group, so the
+        // message handler does not receive it
+        untypedServer.options.queue = 'orders';
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy.callCount).to.equal(1);
+        expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+          response: 'event',
+          isDisposed: true,
+        });
+      });
+      it('should answer it with the message handler only when the event handler has a queue group of its own', async () => {
+        untypedServer.options.queue = 'orders';
+        eventHandler.extras = { queue: 'audit' };
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(eventHandler.called).to.be.true;
+        expect(getPublisherSpy.called).to.be.false;
+      });
+    });
+  });
+
+  describe('matchNatsSubject', () => {
+    (
+      [
+        ['orders.get', 'orders.get', true],
+        ['orders.get', 'orders.list', false],
+        ['orders.*', 'orders.get', true],
+        ['*.get', 'orders.get', true],
+        ['orders.*', 'orders', false],
+        ['orders.*', 'orders.get.one', false],
+        ['orders.>', 'orders.get.one', true],
+        ['orders.>', 'orders', false],
+        ['>', 'orders', true],
+      ] as const
+    ).forEach(([pattern, subject, expected]) => {
+      it(`should match "${pattern}" against "${subject}" as ${expected}`, () => {
+        expect(untypedServer.matchNatsSubject(pattern, subject)).to.equal(
+          expected,
+        );
+      });
+    });
   });
   describe('getPublisher', () => {
     const context = new NatsContext([] as any);

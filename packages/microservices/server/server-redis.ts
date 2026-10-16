@@ -161,6 +161,11 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       };
       return publish(noHandlerPacket);
     }
+    if (handler.isEventHandler && this.isAnsweredByMessageHandler(pattern)) {
+      // Redis delivers the request to every subscribed pattern that matches
+      // its channel, so the message handler subscribed to it answers it.
+      return this.handleEvent(channel, packet, redisCtx);
+    }
     return this.onProcessingStartHook?.(
       this.transportId,
       redisCtx,
@@ -170,6 +175,21 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
         );
         response$ && this.send(response$, publish);
       },
+    );
+  }
+
+  /**
+   * With wildcards, whether a message handler is subscribed to the channel a
+   * request was published to as well. Only a subscription to that very
+   * channel is found: Redis' glob-style matching is not reproduced here.
+   */
+  private isAnsweredByMessageHandler(channel: string) {
+    if (!this.options?.wildcards) {
+      return false;
+    }
+    return [...this.messageHandlers].some(
+      ([pattern, handler]) =>
+        !handler.isEventHandler && this.getRequestPattern(pattern) === channel,
     );
   }
 
