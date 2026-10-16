@@ -118,6 +118,35 @@ describe('mergeMapBounded', () => {
     expect(project).toHaveBeenCalledTimes(1);
   });
 
+  it('should report when values start and stop waiting for their turn', () => {
+    const source$ = new Subject<number>();
+    const inners: Subject<never>[] = [];
+    const onBacklog = vi.fn();
+
+    source$
+      .pipe(
+        mergeMapBounded(
+          value => (inners[value] = new Subject<never>()),
+          1,
+          onBacklog,
+        ),
+      )
+      .subscribe();
+
+    source$.next(0);
+    expect(onBacklog).not.toHaveBeenCalled();
+
+    source$.next(1);
+    source$.next(2);
+    expect(onBacklog.mock.calls).toEqual([[true]]);
+
+    inners[0].complete();
+    expect(onBacklog.mock.calls).toEqual([[true]]);
+
+    inners[1].complete();
+    expect(onBacklog.mock.calls).toEqual([[true], [false]]);
+  });
+
   it('should not hold values back without a limit', () => {
     const source$ = new Subject<number>();
     const project = vi.fn(() => new Subject<never>());

@@ -17,11 +17,13 @@ interface WaitingValue<T> {
  * `shift()`s each waiting value off an array of all the waiting ones, so a
  * burst costs time quadratic in its size. Here at most `concurrent` inner
  * subscriptions are active, and the values that wait for their turn are kept
- * in a linked list.
+ * in a linked list. `onBacklog` is told when values start and stop waiting,
+ * e.g. to stop reading from the client in the meantime.
  */
 export function mergeMapBounded<T, R>(
   project: (value: T) => ObservableInput<R>,
   concurrent: number,
+  onBacklog?: (isBacklogged: boolean) => void,
 ): OperatorFunction<T, R> {
   return source =>
     new Observable<R>(subscriber => {
@@ -30,6 +32,7 @@ export function mergeMapBounded<T, R>(
       let active = 0;
       let isDraining = false;
       let isSourceComplete = false;
+      let isBacklogged = false;
 
       // A loop, not recursion: an inner observable may complete synchronously,
       // and how many values wait is up to the client.
@@ -55,6 +58,10 @@ export function mergeMapBounded<T, R>(
         }
         isDraining = false;
 
+        if (onBacklog && isBacklogged !== !!head) {
+          isBacklogged = !!head;
+          onBacklog(isBacklogged);
+        }
         if (isSourceComplete && !head && active === 0) {
           subscriber.complete();
         }

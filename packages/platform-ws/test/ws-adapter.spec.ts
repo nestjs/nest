@@ -5,12 +5,15 @@ import type { Duplex } from 'stream';
 import {
   config,
   from,
+  isObservable,
   lastValueFrom,
   mergeAll,
   of,
+  Subject,
   toArray,
   type Observable,
 } from 'rxjs';
+import { WebSocket } from 'ws';
 import { WsAdapter } from '../adapters/ws-adapter.js';
 import { WsProxy } from '../../websockets/context/ws-proxy.js';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler.js';
@@ -206,6 +209,165 @@ describe('WsAdapter', () => {
       }
 
       expect(counts.running).toBe(1000);
+    });
+
+    describe('flow control', () => {
+      const pausableClient = () => {
+        const client = openClient();
+        client.bufferedAmount = 0;
+        client.pause = vi.fn();
+        client.resume = vi.fn();
+        client.terminate = vi.fn(() => (client.readyState = 2)); // CLOSING_STATE
+        client.sendCallbacks = [] as Array<() => void>;
+        client.send = vi.fn((_: string, callback: () => void) =>
+          client.sendCallbacks.push(callback),
+        );
+        return client;
+      };
+      const bindHandler = (
+        adapter: WsAdapter,
+        client: any,
+        callback: (...args: any[]) => any,
+      ) =>
+        adapter.bindMessageHandlers(
+          client,
+          [
+            {
+              message: 'event',
+              methodName: 'event',
+              callback,
+              isAckHandledManually: false,
+            },
+          ],
+          (data: any) => (isObservable(data) ? data : of(data)),
+        );
+
+      it('should stop reading from a client while replies it has not read pile up', () => {
+        const client = pausableClient();
+        bindHandler(new WsAdapter(), client, () => 'reply');
+
+        // the client reads nothing, so what is sent to it stays queued
+        client.bufferedAmount = 2 * 1024 * 1024;
+        client.emit('message', frame({ event: 'event' }));
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.send).toHaveBeenCalledTimes(2);
+        expect(client.pause).toHaveBeenCalledTimes(1);
+
+        client.sendCallbacks[0]();
+        expect(client.resume).not.toHaveBeenCalled();
+
+        // the replies are out, whatever else may still be queued
+        client.sendCallbacks[1]();
+        expect(client.resume).toHaveBeenCalledTimes(1);
+      });
+
+      it('should stop reading from a client while its messages wait for their turn', () => {
+        const client = pausableClient();
+        const replies: Subject<string>[] = [];
+        bindHandler(
+          new WsAdapter(undefined, { maxConcurrentMessages: 1 }),
+          client,
+          () => {
+            const reply$ = new Subject<string>();
+            replies.push(reply$);
+            return reply$;
+          },
+        );
+
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.pause).not.toHaveBeenCalled();
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.pause).toHaveBeenCalledTimes(1);
+
+        replies[0].complete();
+        expect(replies).toHaveLength(2);
+        expect(client.resume).toHaveBeenCalledTimes(1);
+      });
+
+      it('should close a client once more than "maxSendBufferSize" bytes are queued for it', () => {
+        const client = pausableClient();
+        const adapter = new WsAdapter(undefined, { maxSendBufferSize: 1024 });
+        const logWarn = vi
+          .spyOn(adapter['logger'], 'warn')
+          .mockImplementation(() => undefined);
+        client.send = vi.fn(
+          (payload: string) => (client.bufferedAmount += payload.length),
+        );
+        bindHandler(adapter, client, () => 'x'.repeat(1024));
+
+        client.emit('message', frame({ event: 'event' }));
+
+        expect(client.terminate).toHaveBeenCalledTimes(1);
+        expect(logWarn).toHaveBeenCalledTimes(1);
+      });
+
+      it('should not handle the messages of a client with more than "maxSendBufferSize" bytes queued', () => {
+        const client = pausableClient();
+        const callback = vi.fn();
+        const adapter = new WsAdapter(undefined, { maxSendBufferSize: 1024 });
+        vi.spyOn(adapter['logger'], 'warn').mockImplementation(() => undefined);
+        bindHandler(adapter, client, callback);
+
+        // e.g. what exception filters sent to a client that reads nothing
+        client.bufferedAmount = 1025;
+        client.emit('message', frame({ event: 'event' }));
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(client.terminate).toHaveBeenCalledTimes(1);
+      });
+
+      it('should let 128 MB be queued for a client by default', () => {
+        const client = pausableClient();
+        const callback = vi.fn();
+        const adapter = new WsAdapter();
+        vi.spyOn(adapter['logger'], 'warn').mockImplementation(() => undefined);
+        bindHandler(adapter, client, callback);
+
+        client.bufferedAmount = 128 * 1024 * 1024;
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.terminate).not.toHaveBeenCalled();
+
+        client.bufferedAmount++;
+        client.emit('message', frame({ event: 'event' }));
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(client.terminate).toHaveBeenCalledTimes(1);
+      });
+
+      it('should pace a real client that reads its replies slowly', async () => {
+        const adapter = new WsAdapter();
+        const server = adapter.create(0);
+        const reply = 'x'.repeat(64 * 1024);
+        server.on('connection', (client: any) =>
+          bindHandler(adapter, client, () => reply),
+        );
+        await once(server, 'listening');
+        const connected = once(server, 'connection');
+        const client = new WebSocket(`ws://127.0.0.1:${server.address().port}`);
+        try {
+          await once(client, 'open');
+          const [serverClient] = await connected;
+          const pause = vi.spyOn(serverClient, 'pause');
+          const resume = vi.spyOn(serverClient, 'resume');
+
+          // 6.4 MB of replies, more than the socket buffers hold
+          const count = 100;
+          client.pause();
+          for (let i = 0; i < count; i++) {
+            client.send(JSON.stringify({ event: 'event' }));
+          }
+          await vi.waitFor(() => expect(pause).toHaveBeenCalled());
+
+          let received = 0;
+          client.on('message', () => received++);
+          client.resume();
+          await vi.waitFor(() => expect(received).toBe(count));
+          expect(resume).toHaveBeenCalled();
+        } finally {
+          client.terminate();
+          await adapter.close(server);
+          await adapter.dispose();
+        }
+      });
     });
 
     it('should not let a rejecting handler tear down the message stream', async () => {
