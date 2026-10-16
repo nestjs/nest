@@ -47,6 +47,13 @@ export class StreamableFile {
       this.options.length ??= bufferOrReadStream.length;
     } else if (bufferOrReadStream.pipe && isFunction(bufferOrReadStream.pipe)) {
       this.stream = bufferOrReadStream;
+      // Without a listener, an 'error' emitted before the adapter attaches
+      // its own (e.g. ENOENT from `fs.createReadStream()` while an
+      // interceptor awaits), or by a file that is never sent, would bring
+      // the process down.
+      if (isFunction(this.stream.on)) {
+        this.stream.on('error', () => {});
+      }
     }
   }
 
