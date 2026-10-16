@@ -7,6 +7,7 @@ import { MsPattern } from '../interfaces';
 
 const DEFAULT_MAX_DEPTH = 5;
 const DEFAULT_MAX_KEYS = 20;
+const DEFAULT_MAX_KEY_LENGTH = 256;
 const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
 /**
@@ -16,6 +17,7 @@ const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
  * @param depth - current recursion depth
  * @param maxDepth - maximum allowed recursion depth
  * @param maxKeys - maximum allowed keys per object
+ * @param maxKeyLength - maximum allowed length of a key
  * @returns string
  */
 export function transformPatternToRoute(
@@ -23,6 +25,7 @@ export function transformPatternToRoute(
   depth = 0,
   maxDepth = DEFAULT_MAX_DEPTH,
   maxKeys = DEFAULT_MAX_KEYS,
+  maxKeyLength = DEFAULT_MAX_KEY_LENGTH,
 ): string {
   if (isString(pattern) || isNumber(pattern)) {
     return `${pattern}`;
@@ -43,6 +46,11 @@ export function transformPatternToRoute(
     return '[TOO_MANY_KEYS]';
   }
 
+  // localeCompare can take time quadratic in the length of the keys
+  if (keys.some(key => key.length > maxKeyLength)) {
+    return '[KEY_TOO_LONG]';
+  }
+
   const sortedKeys = keys.sort((a, b) => ('' + a).localeCompare(b));
 
   const parts = sortedKeys.map(key => {
@@ -51,13 +59,14 @@ export function transformPatternToRoute(
 
     // Only quote strings, numbers and objects are handled recursively
     if (isString(value)) {
-      partialRoute += `"${escape(transformPatternToRoute(value, depth + 1, maxDepth, maxKeys))}"`;
+      partialRoute += `"${escape(transformPatternToRoute(value, depth + 1, maxDepth, maxKeys, maxKeyLength))}"`;
     } else {
       partialRoute += transformPatternToRoute(
         value,
         depth + 1,
         maxDepth,
         maxKeys,
+        maxKeyLength,
       );
     }
 

@@ -138,4 +138,24 @@ describe('transformPatternToRoute', () => {
       );
     });
   });
+
+  describe('when gets a key exceeding max key length', () => {
+    // Keys are sorted with localeCompare, which can take time quadratic in
+    // their length (e.g., for keys made of many combining marks)
+    const longestKey = 'k'.repeat(256);
+
+    it('should return special string indicating the limit was reached', () => {
+      expect(transformPatternToRoute({ [`${longestKey}k`]: 'value' })).to.equal(
+        '[KEY_TOO_LONG]',
+      );
+      expect(
+        transformPatternToRoute({ cmd: { [`${longestKey}k`]: 'value' } }),
+      ).to.equal('{"cmd":[KEY_TOO_LONG]}');
+    });
+    it('should return correct route for a key of max key length', () => {
+      expect(transformPatternToRoute({ [longestKey]: 'value' })).to.equal(
+        `{"${longestKey}":"value"}`,
+      );
+    });
+  });
 });
