@@ -21,6 +21,13 @@ const DEFAULT_DEPTH = 5;
  * serialized in JSON mode.
  */
 const MAX_ERROR_DEPTH = 5;
+/**
+ * The approximate number of characters up to which a record is serialized in
+ * JSON mode. An object is written out once per reference to it, so a small
+ * value can expand to a huge record; past this length, objects and strings
+ * are replaced with "[Truncated]".
+ */
+const MAX_JSON_LENGTH = 1_000_000;
 
 /**
  * @publicApi
@@ -45,6 +52,9 @@ export interface ConsoleLoggerOptions {
   prefix?: string;
   /**
    * If enabled, will print the log message in JSON format.
+   * Unless `colors` are enabled or `compact` is not true, a record is cut short
+   * at about 1,000,000 characters: what comes past that point is replaced with
+   * "[Truncated]".
    */
   json?: boolean;
   /**
@@ -769,19 +779,35 @@ export class ConsoleLogger implements LoggerService {
 
   /**
    * Serializes a JSON log object without ever throwing: circular references
-   * are replaced with "[Circular]", and a value that cannot be serialized
+   * are replaced with "[Circular]", whatever comes past `MAX_JSON_LENGTH`
+   * characters with "[Truncated]", and a value that cannot be serialized
    * (e.g. a throwing `toJSON()`) makes the whole record fall back to `inspect`.
    */
   protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
     const replacer = this.stringifyReplacer.bind(this);
     // Objects on the path from the root to the value being serialized.
     const ancestors: unknown[] = [];
+    // Approximate length of the output so far (array indices aren't written).
+    let length = 0;
 
     try {
       return JSON.stringify(
         logObject,
         function (this: unknown, key: string, value: unknown) {
           value = replacer(key, value);
+          length +=
+            (Array.isArray(this) ? 0 : key.length) +
+            (isString(value) || typeof value === 'number'
+              ? String(value).length
+              : 1);
+          if (length > MAX_JSON_LENGTH) {
+            // A primitive in place of an object is not descended into, so the
+            // walk stops here on every branch past the limit.
+            return isString(value) ||
+              (typeof value === 'object' && value !== null)
+              ? '[Truncated]'
+              : value;
+          }
           if (typeof value !== 'object' || value === null) {
             return value;
           }

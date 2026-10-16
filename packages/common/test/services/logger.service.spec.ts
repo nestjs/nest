@@ -1297,6 +1297,39 @@ describe('Logger', () => {
       });
     });
 
+    describe('record length', () => {
+      it('should cut a record short instead of repeating a shared object without bounds', () => {
+        const logger = new ConsoleLogger({ json: true });
+        // The shape of class-validator errors: every child error has the
+        // validated array as its "target".
+        const target = new Array(1_000).fill(0.1234567890123456);
+        const errors = target.map(() => ({ target }));
+
+        logger.log('message', { errors });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        const output: string = processStdoutWriteSpy.mock.calls[0][0];
+        // In full, "errors" would be about 19 million characters long.
+        expect(output.length).toBeLessThan(1_100_000);
+        const json = JSON.parse(output);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe('message');
+        expect(json.params.errors).toHaveLength(1_000);
+        expect(json.params.errors[0]).toEqual({ target });
+        expect(json.params.errors[999]).toBe('[Truncated]');
+      });
+
+      it('should write a long record in full when nothing is repeated', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const items = Array.from({ length: 50_000 }, (_, id) => ({ id }));
+
+        logger.log('message', { items });
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params.items).toEqual(items);
+      });
+    });
+
     describe('stringifyReplacer', () => {
       it('should inspect a Map with the logger inspect options', () => {
         const logger = new ConsoleLogger({ json: true });
