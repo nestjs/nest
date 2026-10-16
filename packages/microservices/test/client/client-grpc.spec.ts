@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import { join } from 'path';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientGrpcProxy } from '../../client';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
@@ -245,6 +246,32 @@ describe('ClientGrpcProxy', () => {
         expect(dataSpy.args).to.eql([['a'], ['b']]);
         expect(errorSpy.called, 'should not error if client canceled').to.be
           .false;
+      });
+
+      it('forwards an upstream error raised while subscribing and cancels the call', () => {
+        const upstreamError = new Error('upstream error');
+        // Like a grpc-js call, throws on an "error" event nobody listens to
+        const duplexCall = Object.assign(new EventEmitter(), {
+          write: sinon.spy(),
+          end: sinon.spy(),
+          cancel: sinon.spy(),
+          finished: false,
+        });
+        const duplexObj = {
+          [methodName]: Object.assign(() => duplexCall, {
+            requestStream: true,
+          }),
+        };
+
+        client
+          .createStreamServiceMethod(
+            duplexObj,
+            methodName,
+          )(throwError(() => upstreamError))
+          .subscribe({ error: errorSpy });
+
+        expect(errorSpy.calledOnceWithExactly(upstreamError)).to.be.true;
+        expect(duplexCall.cancel.called).to.be.true;
       });
     });
   });

@@ -185,7 +185,7 @@ export class ClientGrpcProxy
         if (isRequestStream && isUpstreamSubject) {
           upstreamSubscription = upstreamSubjectOrData.subscribe(
             (val: unknown) => call.write(val),
-            (err: unknown) => call.emit('error', err),
+            (err: unknown) => observer.error(this.serializeError(err)),
             () => call.end(),
           );
         }
