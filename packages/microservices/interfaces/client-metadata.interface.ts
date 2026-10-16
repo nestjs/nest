@@ -59,8 +59,8 @@ export interface TcpClientOptions {
     incompleteMessageTimeout?: number;
     /**
      * Maximum number of bytes that may sit queued for a peer that is not
-     * reading them, in bytes (default: 128MB). Reading from the peer is
-     * suspended while the outgoing buffer is backed up, and the connection is
+     * reading them, in bytes (default: 128MB). The client keeps reading
+     * replies while the outgoing buffer is backed up, and the connection is
      * dropped once this limit is passed. Set to 0 to disable.
      */
     maxSendBufferSize?: number;

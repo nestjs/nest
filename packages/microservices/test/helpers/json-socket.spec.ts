@@ -283,6 +283,24 @@ describe('JsonSocket', () => {
 
       expect(messages).to.have.lengthOf(3);
     });
+
+    it('keeps reading when "pauseOnBackpressure" is false', () => {
+      const socket = makeSocketStub();
+      const received: unknown[] = [];
+      const jsonSocket = new JsonSocket(socket, { pauseOnBackpressure: false });
+      socket.write.returns(false);
+      socket.on('message', (msg: unknown) => {
+        received.push(msg);
+        jsonSocket.sendMessage({ re: msg });
+      });
+
+      (jsonSocket as any).handleData(
+        frame({ n: 1 }) + frame({ n: 2 }) + frame({ n: 3 }),
+      );
+
+      expect(received).to.have.lengthOf(3);
+      expect(socket.pause.called).to.be.false;
+    });
   });
 
   describe('max send buffer size', () => {
