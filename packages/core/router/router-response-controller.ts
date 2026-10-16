@@ -155,6 +155,19 @@ export class RouterResponseController {
         }
       };
 
+      // Hands the error to the exception filters, which can still answer as
+      // long as no header has been sent. The stream is unpiped first, as the
+      // pipe would otherwise end the response with it, before a filter that
+      // awaits anything gets to write.
+      const fail = (err: unknown) => {
+        settled = true;
+        finalize();
+        subscription?.unsubscribe();
+        stream.unpipe(response);
+        endStream();
+        reject(err);
+      };
+
       const onClose = () => {
         if (settled) {
           return;
@@ -240,10 +253,7 @@ export class RouterResponseController {
                 if (settled) {
                   return;
                 }
-                settled = true;
-                finalize();
-                endStream();
-                reject(err);
+                fail(err);
               },
               complete: () => {
                 if (settled) {
@@ -292,10 +302,7 @@ export class RouterResponseController {
             return;
           }
 
-          settled = true;
-          finalize();
-          endStream();
-          reject(err);
+          fail(err);
         });
     });
   }

@@ -1246,6 +1246,39 @@ data: test
         await expect(promise).rejects.toThrow('Some error');
       });
 
+      it.each([
+        ['the stream errors', () => throwError(() => new Error('Some error'))],
+        [
+          'the result throws once piped',
+          () => Promise.resolve({ subscribe() {}, lift() {} }),
+        ],
+      ])(
+        'should leave the response to the exception filters when %s before headers are committed',
+        async (_, createResult) => {
+          const response = new Writable({
+            write(_chunk, _encoding, callback) {
+              callback();
+            },
+          });
+          const request = new PassThrough();
+
+          await expect(
+            routerResponseController.sse(
+              createResult() as any,
+              response as unknown as ServerResponse,
+              request as unknown as IncomingMessage,
+            ),
+          ).rejects.toThrow();
+          // A filter that awaits I/O answers on a later turn of the event
+          // loop, and can only do so while the response is still open.
+          await new Promise(resolve => setImmediate(resolve));
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(response.writableEnded).toBe(false);
+          request.destroy();
+        },
+      );
+
       it('should write the error message to the stream', async () => {
         let resolveFirstChunk: (() => void) | undefined;
         const firstChunkWritten = new Promise<void>(resolve => {

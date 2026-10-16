@@ -87,6 +87,22 @@ describe('Sse (Fastify Application)', () => {
         'application/json',
       );
     });
+
+    it('returns the status that an asynchronous exception filter sets before opening the SSE stream', async () => {
+      const response = await fetch(
+        `${await app.getUrl()}/sse/validated/deferred-filter?limit=invalid`,
+        {
+          headers: {
+            accept: 'text/event-stream',
+          },
+        },
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.headers.get('content-type')).toContain(
+        'application/json',
+      );
+    });
   });
 
   describe('with forceCloseConnections', () => {

@@ -1,6 +1,8 @@
 import {
+  ArgumentsHost,
   Body,
   CallHandler,
+  Catch,
   Controller,
   ExecutionContext,
   Get,
@@ -13,8 +15,10 @@ import {
   RequestMethod,
   Sse,
   SseSignal,
+  UseFilters,
   UseInterceptors,
 } from '@nestjs/common';
+import { BaseExceptionFilter } from '@nestjs/core';
 import { Type } from 'class-transformer';
 import { IsInt } from 'class-validator';
 import { IncomingMessage } from 'node:http';
@@ -30,6 +34,15 @@ class SseQueryDto {
 class PassthroughInterceptor implements NestInterceptor {
   intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle();
+  }
+}
+
+@Catch()
+class DeferredExceptionFilter extends BaseExceptionFilter {
+  async catch(exception: unknown, host: ArgumentsHost) {
+    // As a filter that awaits I/O (e.g. a logger or an error tracker) does
+    await new Promise(resolve => setImmediate(resolve));
+    super.catch(exception, host);
   }
 }
 
@@ -71,6 +84,14 @@ export class AppController {
 
   @Sse('sse/validated')
   sseWithValidatedQuery(@Query() query: SseQueryDto): Observable<MessageEvent> {
+    return of({ data: { limit: query.limit } });
+  }
+
+  // With an interceptor, the pipes run once the stream is subscribed to
+  @Sse('sse/validated/deferred-filter')
+  @UseInterceptors(PassthroughInterceptor)
+  @UseFilters(DeferredExceptionFilter)
+  sseWithDeferredFilter(@Query() query: SseQueryDto): Observable<MessageEvent> {
     return of({ data: { limit: query.limit } });
   }
 
