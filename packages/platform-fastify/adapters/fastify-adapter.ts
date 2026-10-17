@@ -946,7 +946,8 @@ export class FastifyAdapter<
       reply.removeHeader(name);
       reply.header(name, values);
       if (!reply.raw.headersSent) {
-        reply.raw.setHeader(name, values);
+        // A copy, so a later reply.header() call does not change the raw header
+        reply.raw.setHeader(name, [...values]);
       }
       return reply;
     }

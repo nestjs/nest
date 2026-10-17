@@ -347,6 +347,23 @@ describe('FastifyAdapter', () => {
       await fastifyAdapter.close();
     });
 
+    it('should not let a later reply.header() call change the raw set-cookie header', async () => {
+      fastifyAdapter.initHttpServer();
+      let rawSetCookie: unknown;
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'a=1');
+        reply.header('set-cookie', 'b=2');
+        rawSetCookie = reply.raw.getHeader('set-cookie');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(rawSetCookie).toEqual(['a=1']);
+      await fastifyAdapter.close();
+    });
+
     it('should return the reply when appending set-cookie', async () => {
       fastifyAdapter.initHttpServer();
       fastifyAdapter.get('/p', (_req, reply) => {
