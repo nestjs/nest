@@ -190,11 +190,38 @@ export class KafkaReplyPartitionAssigner {
     const memberMetadata = kafkaPackage.AssignerProtocol.MemberMetadata.decode(
       member.memberMetadata,
     ) as MemberMetadata;
-    const memberUserData = JSON.parse(memberMetadata.userData.toString());
 
     return {
       memberId: member.memberId,
-      previousAssignment: memberUserData.previousAssignment,
+      previousAssignment: this.decodePreviousAssignment(memberMetadata.userData),
     };
+  }
+
+  /**
+   * The metadata carried by a group member is chosen by that member, so it is
+   * parsed defensively: malformed or missing data must not make the rebalance
+   * fail, as a group that never stabilizes leaves the client unable to consume
+   * replies. Anything that is not a `previousAssignment` record degrades to an
+   * empty assignment (the member is then treated as new).
+   */
+  private decodePreviousAssignment(
+    userData: Buffer | undefined,
+  ): Record<string, unknown> {
+    const rawUserData = userData?.toString();
+    if (!rawUserData) {
+      return {};
+    }
+    try {
+      const previousAssignment =
+        (JSON.parse(rawUserData) as { previousAssignment?: unknown })
+          ?.previousAssignment;
+      return previousAssignment &&
+        typeof previousAssignment === 'object' &&
+        !Array.isArray(previousAssignment)
+        ? (previousAssignment as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
   }
 }
