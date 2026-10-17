@@ -1,0 +1,55 @@
+import { NodeAdapter } from '@nestjs/platform-node';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppModule } from '../src/app.module.js';
+import { randomPort } from './utils.js';
+
+describe('Get URL (Node Application)', () => {
+  let testModule: TestingModule;
+  let port: number;
+
+  beforeEach(async () => {
+    testModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+  });
+
+  beforeEach(async () => {
+    port = await randomPort();
+  });
+
+  it('should be able to get a loopback address', async () => {
+    const app = testModule.createNestApplication(new NodeAdapter());
+    await app.listen(port);
+    expect(await app.getUrl()).toMatch(
+      new RegExp(`http://(\\[::1\\]|127\\.0\\.0\\.1):${port}`),
+    );
+    await app.close();
+  });
+  it('should be able to get the IPv4 address', async () => {
+    const app = testModule.createNestApplication(new NodeAdapter());
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`http://127.0.0.1:${port}`);
+    await app.close();
+  });
+  it('should return 127.0.0.1 for 0.0.0.0', async () => {
+    const app = testModule.createNestApplication(new NodeAdapter());
+    await app.listen(port, '0.0.0.0');
+    expect(await app.getUrl()).toEqual(`http://127.0.0.1:${port}`);
+    await app.close();
+  });
+  it('should return a loopback address in a callback (default bind)', () => {
+    const app = testModule.createNestApplication(new NodeAdapter());
+    return app.listen(port, async () => {
+      expect(await app.getUrl()).toMatch(
+        new RegExp(`http://(\\[::1\\]|127\\.0\\.0\\.1):${port}`),
+      );
+      await app.close();
+    });
+  });
+  it('should throw an error for calling getUrl before listen', async () => {
+    const app = testModule.createNestApplication(new NodeAdapter());
+    await expect(app.getUrl()).rejects.toEqual(
+      'app.listen() needs to be called before calling app.getUrl()',
+    );
+  });
+});
