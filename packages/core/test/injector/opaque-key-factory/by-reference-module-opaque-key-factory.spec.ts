@@ -21,6 +21,20 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
         const token2 = factory.createForStatic(type);
         expect(token1).toEqual(token2);
       });
+
+      it('should not reuse the token of the module class it extends', () => {
+        class ParentModule {}
+        class ChildModule extends ParentModule {}
+        vi.spyOn(factory as any, 'generateRandomString')
+          .mockReturnValueOnce('parentId')
+          .mockReturnValueOnce('childId');
+
+        const parentToken = factory.createForStatic(ParentModule);
+        const childToken = factory.createForStatic(ChildModule);
+
+        expect(childToken).not.toEqual(parentToken);
+        expect(factory.createForStatic(ParentModule)).toEqual(parentToken);
+      });
     });
 
     describe('createForDynamic', () => {
@@ -74,6 +88,17 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
         const token2 = factory.createForStatic(type);
 
         expect(token1).toEqual(token2);
+      });
+
+      it('should not reuse the token of the module class it extends', () => {
+        class ParentModule {}
+        class ChildModule extends ParentModule {}
+
+        const parentToken = factory.createForStatic(ParentModule);
+        const childToken = factory.createForStatic(ChildModule);
+
+        expect(childToken).not.toEqual(parentToken);
+        expect(factory.createForStatic(ParentModule)).toEqual(parentToken);
       });
     });
 

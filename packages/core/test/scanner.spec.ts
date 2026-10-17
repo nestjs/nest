@@ -114,6 +114,27 @@ describe('DependenciesScanner', () => {
     expect(addExportedSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('should register a module that extends an imported module', async () => {
+    @Injectable()
+    class ChildComponent {}
+
+    @Module({ providers: [TestComponent] })
+    class ParentModule {}
+
+    @Module({ providers: [ChildComponent] })
+    class ChildModule extends ParentModule {}
+
+    @Module({ imports: [ParentModule, ChildModule] })
+    class AppModule {}
+
+    await scanner.scan(AppModule);
+
+    const childModuleRef = [...container.getModules().values()].find(
+      moduleRef => moduleRef.metatype === ChildModule,
+    );
+    expect(childModuleRef?.providers.has(ChildComponent)).toBe(true);
+  });
+
   describe('when there is modules overrides', () => {
     @Injectable()
     class OverwrittenTestComponent {}
