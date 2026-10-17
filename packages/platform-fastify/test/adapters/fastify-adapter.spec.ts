@@ -307,6 +307,193 @@ describe('FastifyAdapter', () => {
       expect(JSON.parse(res.body).got).toEqual(['a=1', 'b=2', 'c=3']);
       await fastifyAdapter.close();
     });
+
+    it('should keep a set-cookie value when it is already on the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('set-cookie', 'session=abc');
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'theme=dark');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual(['session=abc', 'theme=dark']);
+      await fastifyAdapter.close();
+    });
+
+    it('should not duplicate a raw set-cookie value when appending twice', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('set-cookie', 'session=abc');
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'a=1');
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'b=2');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual(['session=abc', 'a=1', 'b=2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should keep a raw set-cookie value when a later reply.header() call adds a cookie', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('set-cookie', 'session=abc');
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'theme=dark');
+        reply.header('set-cookie', 'late=1');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual([
+        'session=abc',
+        'theme=dark',
+        'late=1',
+      ]);
+      await fastifyAdapter.close();
+    });
+
+    it('should not let a later reply.header() call change the raw set-cookie header', async () => {
+      fastifyAdapter.initHttpServer();
+      let rawSetCookie: unknown;
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'a=1');
+        reply.header('set-cookie', 'b=2');
+        rawSetCookie = reply.raw.getHeader('set-cookie');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(rawSetCookie).toEqual(['a=1']);
+      await fastifyAdapter.close();
+    });
+
+    it('should return the reply when appending set-cookie', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        const returned = fastifyAdapter.appendHeader(
+          reply,
+          'set-cookie',
+          'theme=dark',
+        );
+        fastifyAdapter.reply(reply, { isReply: returned === reply });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).isReply).toBe(true);
+      await fastifyAdapter.close();
+    });
+
+    it('should keep both set-cookie values when the reply is hijacked and written through the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('set-cookie', 'session=abc');
+        fastifyAdapter.appendHeader(reply, 'Set-Cookie', 'theme=dark');
+        reply.hijack();
+        reply.raw.end();
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual(['session=abc', 'theme=dark']);
+      await fastifyAdapter.close();
+    });
+
+    it('should not throw when appending set-cookie after the raw headers were sent', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('set-cookie', 'session=abc');
+        reply.hijack();
+        reply.raw.writeHead(200);
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'theme=dark');
+        reply.raw.end('done');
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.body).toBe('done');
+      expect(res.headers['set-cookie']).toBe('session=abc');
+      await fastifyAdapter.close();
+    });
+  });
+
+  describe('header helpers on the raw response', () => {
+    it('should set and append a header when given the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.setHeader(reply.raw, 'x-a', '1');
+        fastifyAdapter.appendHeader(reply.raw, 'x-a', '2');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply.raw, 'x-a'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['1', '2']);
+      expect(res.headers['x-a']).toEqual(['1', '2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append set-cookie values when given the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply.raw, 'set-cookie', 'a=1');
+        fastifyAdapter.appendHeader(reply.raw, 'set-cookie', 'b=2');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual(['a=1', 'b=2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append to a header that is already an array on the raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('set-cookie', ['a=1', 'b=2']);
+        fastifyAdapter.appendHeader(reply.raw, 'set-cookie', 'c=3');
+        fastifyAdapter.reply(reply, {});
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(res.headers['set-cookie']).toEqual(['a=1', 'b=2', 'c=3']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append to a number header on the raw response as strings', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        reply.raw.setHeader('x-n', 5);
+        fastifyAdapter.appendHeader(reply.raw, 'x-n', '6');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply.raw, 'x-n'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['5', '6']);
+      await fastifyAdapter.close();
+    });
   });
 
   describe('getRouteMatchingOptions', () => {

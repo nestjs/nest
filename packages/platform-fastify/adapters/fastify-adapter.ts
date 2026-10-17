@@ -949,26 +949,58 @@ export class FastifyAdapter<
     return reply.sent || reply.raw.headersSent;
   }
 
-  public getHeader(response: any, name: string) {
+  public getHeader(response: TRawResponse | TReply, name: string) {
     return response.getHeader(name);
   }
 
-  public setHeader(response: TReply, name: string, value: string) {
-    return response.header(name, value);
+  public setHeader(
+    response: TRawResponse | TReply,
+    name: string,
+    value: string,
+  ) {
+    if (this.isNativeResponse(response)) {
+      return response.setHeader(name, value);
+    }
+    const reply: TReply = response;
+    return reply.header(name, value);
   }
 
-  public appendHeader(response: any, name: string, value: string) {
-    const current = response.getHeader(name);
-    if (current === undefined) {
-      return response.header(name, value);
+  public appendHeader(
+    response: TRawResponse | TReply,
+    name: string,
+    value: string,
+  ) {
+    if (this.isNativeResponse(response)) {
+      const current = response.getHeader(name);
+      return response.setHeader(
+        name,
+        current === undefined ? value : [current, value].flat().map(String),
+      );
     }
-    // Fastify Reply.header() already concatenates set-cookie.
-    // Re-passing the accumulated list would duplicate previous cookies.
+    const reply: TReply = response;
+    // A set-cookie value can live on the reply or only on the raw response
+    // (e.g., set by a middleware). Reply.getHeader() reads both, and the
+    // merged list is written to both: reply.send() sends the reply headers,
+    // while a hijacked reply or a handler that ends reply.raw sends the raw
+    // ones.
     if (String(name).toLowerCase() === 'set-cookie') {
-      return response.header(name, value);
+      const current = reply.getHeader(name);
+      const values =
+        current === undefined ? [value] : [current, value].flat().map(String);
+      reply.removeHeader(name);
+      reply.header(name, values);
+      if (!reply.raw.headersSent) {
+        // A copy, so a later reply.header() call does not change the raw header
+        reply.raw.setHeader(name, [...values]);
+      }
+      return reply;
+    }
+    const current = reply.getHeader(name);
+    if (current === undefined) {
+      return reply.header(name, value);
     }
     const values = Array.isArray(current) ? current : [current];
-    return response.header(name, values.concat(value));
+    return reply.header(name, values.concat(value));
   }
 
   public getRequestHostname(request: TRequest): string {

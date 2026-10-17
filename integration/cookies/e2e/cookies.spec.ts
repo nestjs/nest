@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import { createRequire } from 'module';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { MIDDLEWARE_COOKIE_HEADER } from '../src/session-cookie.middleware.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const require = createRequire(import.meta.url);
@@ -13,6 +14,7 @@ const require = createRequire(import.meta.url);
 const cookieSignature = require('cookie-signature');
 
 const SIMULATE_PARSER_HEADER = 'x-simulate-cookie-parser';
+const RAW_COOKIE_HEADER = 'x-raw-cookie';
 
 /**
  * Emulates a cookie middleware (cookie-parser / @fastify/cookie) that ran
@@ -67,6 +69,13 @@ async function createApp(
       next();
     });
   }
+  // A session-style middleware that writes its cookie on the raw response.
+  app.use((req: any, res: any, next: () => void) => {
+    if (req.headers[RAW_COOKIE_HEADER]) {
+      res.setHeader('Set-Cookie', 'session=abc');
+    }
+    next();
+  });
   await listenOnLoopback(app);
   if (adapter instanceof FastifyAdapter) {
     await adapter.getInstance().ready();
@@ -225,6 +234,39 @@ describe.each(adapters)('Cookies (%s)', (_name, createAdapter) => {
           'b=two%20words%3B%20x%3Dy; Path=/; Max-Age=60; HttpOnly; SameSite=Lax',
         );
         expect(cookies[2]).toMatch(/^uid=s%3A42\.[^;]+; Path=\/$/);
+      });
+
+      it('should keep a cookie when a middleware set it on the raw response', async () => {
+        const res = await request(app.getHttpServer())
+          .get('/set')
+          .set(RAW_COOKIE_HEADER, '1')
+          .expect(200);
+        const cookies = setCookieHeaders(res);
+
+        expect(cookies).toHaveLength(4);
+        expect(cookies[0]).toBe('session=abc');
+        expect(cookies[1]).toBe('a=1; Path=/');
+      });
+
+      it('should keep a raw cookie when an SSE handler sets a cookie', async () => {
+        const res = await request(app.getHttpServer())
+          .get('/set-sse')
+          .set(RAW_COOKIE_HEADER, '1')
+          .expect(200);
+
+        expect(setCookieHeaders(res)).toEqual(['session=abc', 'a=1; Path=/']);
+      });
+
+      it('should keep a cookie that a Nest middleware set with setCookie()', async () => {
+        const res = await request(app.getHttpServer())
+          .get('/set')
+          .set(MIDDLEWARE_COOKIE_HEADER, '1')
+          .expect(200);
+        const cookies = setCookieHeaders(res);
+
+        expect(cookies).toHaveLength(4);
+        expect(cookies[0]).toBe('session=abc; Path=/');
+        expect(cookies[1]).toBe('a=1; Path=/');
       });
 
       it('should round-trip the cookies it sets', async () => {
