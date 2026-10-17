@@ -572,6 +572,65 @@ describe('TestingModuleBuilder', () => {
       });
     });
 
+    it('should share one mock between providers that depend on the same token', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable()
+      class FirstConsumer {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      @Injectable()
+      class SecondConsumer {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      const mocker = vi.fn(() => ({ mockValue: 'mocked-dep' }));
+      const module = await Test.createTestingModule({
+        providers: [FirstConsumer, SecondConsumer],
+      })
+        .useMocker(mocker)
+        .compile();
+
+      const mock = module.get(MissingDepClass);
+      expect(module.get(FirstConsumer).dep).toBe(mock);
+      expect(module.get(SecondConsumer).dep).toBe(mock);
+      expect(mocker).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not share mocks between tokens provided by the same class', async () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        constructor(@Inject('UNKNOWN') public readonly dep: unknown) {}
+      }
+
+      @Injectable()
+      class NeedsBoth {
+        constructor(
+          @Inject('FIRST') public readonly first: unknown,
+          @Inject('SECOND') public readonly second: unknown,
+        ) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [
+          { provide: 'FIRST', useClass: TransientService },
+          { provide: 'SECOND', useClass: TransientService },
+          NeedsBoth,
+        ],
+      })
+        .useMocker(token =>
+          token === TransientService.name ? { mockValue: 'mocked' } : null,
+        )
+        .compile();
+
+      const instance = module.get(NeedsBoth);
+      expect(instance.first).toEqual({ mockValue: 'mocked' });
+      expect(instance.second).toEqual({ mockValue: 'mocked' });
+      expect(instance.first).not.toBe(instance.second);
+    });
+
     it('should support compiling with snapshot option', async () => {
       @ModuleDecorator({})
       class TestModule {}

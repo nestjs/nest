@@ -89,6 +89,35 @@ describe('TestingInjector', () => {
       expect(result.instance).toBe(mockInstance);
     });
 
+    it('should not reuse mocks created by a replaced mocker', async () => {
+      vi.spyOn(
+        Object.getPrototypeOf(TestingInjector.prototype),
+        'resolveComponentWrapper',
+      ).mockRejectedValue(new Error('Not found'));
+
+      injector.setContainer({
+        getInternalCoreModuleRef: vi.fn().mockReturnValue({
+          addCustomProvider: vi.fn(),
+          addExportedProviderOrModule: vi.fn(),
+          providers: new Map(),
+        }),
+      } as any);
+      const resolve = () =>
+        injector.resolveComponentWrapper(
+          {} as any,
+          'TestToken',
+          {} as any,
+          { metatype: class {} as any, scope: 0 } as any,
+        );
+
+      injector.setMocker(() => ({ from: 'first' }));
+      await resolve();
+      injector.setMocker(() => ({ from: 'second' }));
+      const result = await resolve();
+
+      expect(result.instance).toEqual({ from: 'second' });
+    });
+
     it('should throw when mocker returns falsy value', async () => {
       vi.spyOn(
         Object.getPrototypeOf(TestingInjector.prototype),

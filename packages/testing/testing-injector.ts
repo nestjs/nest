@@ -1,3 +1,4 @@
+import type { InjectionToken } from '@nestjs/common';
 import type { NestContainer } from '@nestjs/core';
 import type { ContextId } from '@nestjs/core/injector/instance-wrapper.js';
 import { MockFactory } from './interfaces/index.js';
@@ -21,9 +22,11 @@ interface ResolutionContext {
 export class TestingInjector extends Injector {
   protected mocker?: MockFactory;
   protected container: NestContainer;
+  private readonly mockedInstances = new Map<InjectionToken, any>();
 
   public setMocker(mocker: MockFactory) {
     this.mocker = mocker;
+    this.mockedInstances.clear();
   }
 
   public setContainer(container: NestContainer) {
@@ -63,7 +66,7 @@ export class TestingInjector extends Injector {
       );
       return existingProviderWrapper;
     } catch (err) {
-      return this.mockWrapper(err, moduleRef, name, wrapper);
+      return this.mockWrapper(err, moduleRef, name, name, wrapper);
     }
   }
 
@@ -84,6 +87,7 @@ export class TestingInjector extends Injector {
         err,
         moduleRef,
         instanceWrapper.name,
+        instanceWrapper.token,
         instanceWrapper,
       );
     }
@@ -93,15 +97,22 @@ export class TestingInjector extends Injector {
     err: Error,
     moduleRef: Module,
     name: any,
+    token: InjectionToken,
     wrapper: InstanceWrapper<T>,
   ): Promise<InstanceWrapper> {
     if (!this.mocker) {
       throw err;
     }
 
-    const mockedInstance = this.mocker(name);
+    // Every provider that depends on the token must get the same mock,
+    // the one `get()` returns.
+    let mockedInstance = this.mockedInstances.get(token);
     if (!mockedInstance) {
-      throw err;
+      mockedInstance = this.mocker(name);
+      if (!mockedInstance) {
+        throw err;
+      }
+      this.mockedInstances.set(token, mockedInstance);
     }
     // The mock is a single value, so it stays static whatever the scope of
     // the provider it replaces or the provider that depends on it.
