@@ -219,6 +219,10 @@ export class DependenciesScanner {
     return this.container.addModule(moduleToAdd, scope);
   }
 
+  public removeModules(modules: Iterable<Module>) {
+    this.container.removeModules(modules);
+  }
+
   public async scanModulesForDependencies(
     modules: Map<string, Module> = this.container.getModules(),
   ) {

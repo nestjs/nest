@@ -318,6 +318,18 @@ export class NestContainer {
     this.modules.clear();
   }
 
+  public removeModules(modules: Iterable<Module>) {
+    for (const moduleRef of modules) {
+      this.modules.delete(moduleRef.token);
+      this.globalModules.delete(moduleRef);
+      this.dynamicModulesMetadata.delete(moduleRef.token);
+      DiscoverableMetaHostCollection.removeInstanceWrappers(this.modules, [
+        ...moduleRef.providers.values(),
+        ...moduleRef.controllers.values(),
+      ]);
+    }
+  }
+
   public replace(toReplace: any, options: { scope: any[] | null }) {
     this.modules.forEach(moduleRef => moduleRef.replace(toReplace, options));
   }
