@@ -65,6 +65,7 @@ export class MiddlewareModule<
       container,
       config,
       appRef,
+      injector,
     );
     this.routesMapper = new RoutesMapper(container, config);
     this.resolver = new MiddlewareResolver(middlewareContainer, injector);
@@ -292,7 +293,7 @@ export class MiddlewareModule<
             undefined,
           );
           const host = new ExecutionContextHost([req, res, next]);
-          exceptionsHandler.next(err, host);
+          await exceptionsHandler.next(err, host);
         }
       },
     );
