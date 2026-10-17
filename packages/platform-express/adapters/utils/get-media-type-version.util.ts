@@ -19,9 +19,6 @@ const splitOutsideQuotes = (value: string, separator: ',' | ';'): string[] => {
       start = index + 1;
     }
   }
-  if (isQuoted) {
-    return [];
-  }
   parts.push(value.slice(start));
   return parts;
 };
@@ -35,7 +32,8 @@ const splitOutsideQuotes = (value: string, separator: ',' | ';'): string[] => {
  * wins. Returns `undefined` when no parameter starts with the key.
  *
  * Quoted parameter values are unescaped, and separators inside them are ignored.
- * A header value with an unterminated quoted string is ignored.
+ * An unterminated quoted string runs to the end of the header value, so a
+ * version that follows its opening quote is not read.
  *
  * Duplicated in each platform package so that a platform package never
  * depends on a newer `@nestjs/core` than the one installed.
@@ -56,9 +54,8 @@ export function getMediaTypeVersion(
         const version = trimmedParameter.slice(key.length);
         if (version.startsWith('"') && version.endsWith('"')) {
           return version.slice(1, -1).replace(/\\([\s\S])/g, '$1');
-        } else {
-          return version;
         }
+        return version;
       }
     }
   }

@@ -50,15 +50,26 @@ describe('getMediaTypeVersion', () => {
   });
 
   it.each([
-    'application/json;v="2',
     'application/json;note="a;v=2',
     'text/html;note="a,application/json;v=2',
     'application/json;note="a\\";v=2',
     'application/json;note="a\\',
+  ])(
+    'should not read a version after an unterminated quote: %s',
+    acceptHeader => {
+      expect(getMediaTypeVersion(acceptHeader, 'v=')).toBeUndefined();
+    },
+  );
+
+  it.each([
     'application/json;v=2;note="unterminated',
     'application/json;v=2, text/html;note="unterminated',
-  ])('should ignore an unterminated quoted header value: %s', acceptHeader => {
-    expect(getMediaTypeVersion(acceptHeader, 'v=')).toBeUndefined();
+  ])('should read a version before an unterminated quote: %s', acceptHeader => {
+    expect(getMediaTypeVersion(acceptHeader, 'v=')).toBe('2');
+  });
+
+  it('should keep an unterminated quoted version as is', () => {
+    expect(getMediaTypeVersion('application/json;v="2', 'v=')).toBe('"2');
   });
 
   it('should ignore a long unterminated quoted value with escaped quotes', () => {

@@ -56,6 +56,7 @@ describe('Media Type Versioning (fastify)', () => {
         'text/html;note="a,application/json;v=1", application/json;v=2',
         'application/json;note="a\\";v=1";v=2',
         'application/json;v="\\2"',
+        'application/json;v=2;note="unterminated',
       ])('V2 with quoted parameters: %s', async acceptHeader => {
         await request(app.getHttpServer())
           .get('/')
@@ -65,12 +66,10 @@ describe('Media Type Versioning (fastify)', () => {
       });
 
       it.each([
-        'application/json;v="2',
         'application/json;note="a;v=2',
         'text/html;note="a,application/json;v=2',
-        'application/json;v=2;note="unterminated',
       ])(
-        'ignores an unterminated quoted header value: %s',
+        'ignores a version after an unterminated quote: %s',
         async acceptHeader => {
           await request(app.getHttpServer())
             .get('/')
@@ -430,12 +429,10 @@ describe('Media Type Versioning (fastify)', () => {
       });
 
       it.each([
-        'application/json;v="2',
         'application/json;note="a;v=2',
         'text/html;note="a,application/json;v=2',
-        'application/json;v=2;note="unterminated',
       ])(
-        'treats an unterminated quoted header as unversioned: %s',
+        'treats a version after an unterminated quote as unversioned: %s',
         async acceptHeader => {
           await request(app.getHttpServer())
             .get('/multiple-neutral')
