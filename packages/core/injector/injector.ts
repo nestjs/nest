@@ -723,6 +723,10 @@ export class Injector {
          * Load it now; if a circular dependency is truly in-flight, the nested
          * lookup will find this host pending and defer through its `donePromise`.
          */
+        resolutionContext.inquirer?.settlementSignal?.insertRef(
+          instanceWrapper,
+        );
+
         await this.loadProvider(
           instanceWrapper,
           instanceWrapper.host ?? moduleRef,
