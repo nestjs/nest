@@ -181,6 +181,51 @@ describe('Request-scoped providers with a forward reference', () => {
     });
   });
 
+  describe('when only one of two request-scoped providers that depend on each other uses "forwardRef()"', () => {
+    @Injectable({ scope: Scope.REQUEST })
+    class UpdateUsecase {
+      constructor(
+        @Inject(forwardRef(() => CreateUsecase))
+        public readonly create: object,
+      ) {}
+    }
+
+    @Injectable({ scope: Scope.REQUEST })
+    class CreateUsecase {
+      constructor(public readonly update: UpdateUsecase) {}
+    }
+
+    let moduleRef: TestingModule;
+
+    beforeEach(async () => {
+      moduleRef = await Test.createTestingModule({
+        providers: [UpdateUsecase, CreateUsecase],
+      }).compile();
+    });
+
+    afterEach(async () => {
+      await moduleRef.close();
+    });
+
+    it('should reject resolving the provider without "forwardRef()"', async () => {
+      await expect(
+        moduleRef.resolve(CreateUsecase, ContextIdFactory.create()),
+      ).rejects.toThrow(
+        'A circular dependency has been detected inside "CreateUsecase"',
+      );
+    });
+
+    it('should reject resolving it after the other provider was resolved for another context', async () => {
+      await moduleRef.resolve(UpdateUsecase, ContextIdFactory.create());
+
+      await expect(
+        moduleRef.resolve(CreateUsecase, ContextIdFactory.create()),
+      ).rejects.toThrow(
+        'A circular dependency has been detected inside "CreateUsecase"',
+      );
+    });
+  });
+
   describe.each([
     ['class', false],
     ['async factory', true],

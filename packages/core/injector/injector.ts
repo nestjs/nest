@@ -722,7 +722,12 @@ export class Injector {
          * durable/request sub-tree host has no inherited `donePromise`).
          * Load it now; if a circular dependency is truly in-flight, the nested
          * lookup will find this host pending and defer through its `donePromise`.
+         * The edge is recorded first so that a cycle closed back to the inquirer
+         * without `forwardRef()` is reported instead of awaiting itself.
          */
+        resolutionContext.inquirer?.settlementSignal?.insertRef(
+          instanceWrapper,
+        );
         await this.loadProvider(
           instanceWrapper,
           instanceWrapper.host ?? moduleRef,

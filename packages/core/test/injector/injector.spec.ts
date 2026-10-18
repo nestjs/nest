@@ -931,6 +931,27 @@ describe('Injector', () => {
         expect(loadStub).not.toHaveBeenCalled();
       });
 
+      it('should record it as a dependency of the inquirer when no load was scheduled for that context', async () => {
+        const inquirer = new InstanceWrapper({ isResolved: false });
+        inquirer.settlementSignal = new SettlementSignal();
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
+
+        const loadStub = vi
+          .spyOn(injector, 'loadProvider')
+          .mockImplementation(() => null!);
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId: { id: 2 },
+          inquirer,
+        });
+
+        expect(loadStub).toHaveBeenCalled();
+        expect(inquirer.settlementSignal.isCycle(wrapper.id)).toBe(true);
+      });
+
       describe('and it is durable', () => {
         let tenant: ContextId;
         let wrapper: InstanceWrapper;
