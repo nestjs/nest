@@ -720,8 +720,9 @@ export class Injector {
          * No load has ever been scheduled for this context (e.g., request-scoped
          * providers are no longer instantiated during static bootstrap, so a fresh
          * durable/request sub-tree host has no inherited `donePromise`).
-         * Load it now; if a circular dependency is truly in-flight, the nested
-         * lookup will find this host pending and defer through its `donePromise`.
+         * Record the edge before loading it, so that if this load reaches the
+         * inquirer while it is still pending, `isCycle()` sees the cycle and throws
+         * instead of awaiting a `donePromise` that depends on itself.
          */
         resolutionContext.inquirer?.settlementSignal?.insertRef(
           instanceWrapper,
