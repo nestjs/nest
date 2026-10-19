@@ -6,6 +6,7 @@ import {
   Module,
   NestModule,
 } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -132,4 +133,65 @@ describe('Middleware before init (FastifyAdapter)', () => {
       await app.close();
     });
   });
+
+  // `NestFactory.create()` registers middie before `main.ts` runs, and middie
+  // gives the context of a plugin registered then a copy of the middleware
+  // of the root, without the module middleware `app.init()` registers later
+  for (const [name, createApp] of [
+    [
+      'NestFactory.create()',
+      () =>
+        NestFactory.create<NestFastifyApplication>(
+          TestModule,
+          new FastifyAdapter(),
+          { logger: false },
+        ),
+    ],
+    [
+      'Test.createNestApplication()',
+      async () =>
+        (
+          await Test.createTestingModule({ imports: [TestModule] }).compile()
+        ).createNestApplication<NestFastifyApplication>(new FastifyAdapter()),
+    ],
+  ] as const) {
+    describe(`should apply module middleware to a plugin registered before init (${name})`, () => {
+      beforeEach(async () => {
+        app = await createApp();
+        await app.register(
+          async instance => {
+            instance.get('/jobs', async () => 'plugin_data');
+            await instance.register(
+              async nested => {
+                nested.get('/nested', async () => 'nested_data');
+              },
+              { prefix: '/nested' },
+            );
+          },
+          { prefix: '/queues' },
+        );
+        await app.init();
+      });
+
+      for (const [url, data] of [
+        ['/queues/jobs', 'plugin_data'],
+        ['/queues/nested/nested', 'nested_data'],
+      ]) {
+        it(`should apply it to ${url}`, async () => {
+          const { statusCode, payload, headers } = await app.inject({
+            method: 'GET',
+            url,
+          });
+
+          expect(statusCode).to.equal(200);
+          expect(payload).to.equal(data);
+          expect(headers['x-middleware']).to.equal('applied');
+        });
+      }
+
+      afterEach(async () => {
+        await app.close();
+      });
+    });
+  }
 });

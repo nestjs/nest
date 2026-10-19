@@ -156,6 +156,9 @@ export class FastifyAdapter<
   ) => void | Promise<void>;
   private isMiddieRegistered: boolean;
   private pendingMiddlewares: Array<{ args: any[] }> = [];
+  // The encapsulated contexts created since middie was registered (see
+  // `registerMiddie()`)
+  private readonly middieContexts: TInstance[] = [];
   private versioningOptions?: VersioningOptions;
   // Exceptions thrown by the extractor of custom versioning, by raw request
   private readonly versionExtractorErrors = new WeakMap<object, unknown>();
@@ -760,10 +763,8 @@ export class FastifyAdapter<
         // path is only matched below.
         const { caseSensitive } = this.getRouteMatchingOptions();
 
-        // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
-        // ref https://github.com/fastify/middie/pull/55
-        this.instance.use(
-          caseSensitive ? normalizedPath : '/',
+        const createMiddleware =
+          (stripsPath: boolean) =>
           (req: any, res: any, next: (err?: Error) => void) => {
             const queryParamsIndex = req.originalUrl.indexOf('?');
             let pathname =
@@ -780,7 +781,7 @@ export class FastifyAdapter<
               if (!re.exec(pathToCheck)) {
                 return next();
               }
-              if (!caseSensitive) {
+              if (stripsPath) {
                 // Strips the path from "req.url", as @fastify/middie does
                 // when it matches the path itself
                 const suffixIndex = req.originalUrl.search(/[?#]/);
@@ -791,8 +792,21 @@ export class FastifyAdapter<
               }
             }
             this.runMiddleware(callback, req, res, next);
-          },
+          };
+
+        // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
+        // ref https://github.com/fastify/middie/pull/55
+        this.instance.use(
+          caseSensitive ? normalizedPath : '/',
+          createMiddleware(!caseSensitive),
         );
+        // The contexts created since middie was registered have a copy of the
+        // middleware of their parent without this one (see `registerMiddie()`).
+        // It is registered there without its path, which middie would prefix
+        // with the one of the context.
+        for (const context of this.middieContexts) {
+          context.use(createMiddleware(true));
+        }
       } catch (e) {
         if (e instanceof TypeError) {
           LegacyRouteConverter.printError(path);
@@ -927,6 +941,15 @@ export class FastifyAdapter<
     await this.register(
       import('@fastify/middie') as Parameters<TInstance['register']>[0],
     );
+    // middie gives each encapsulated context created from now on a copy of
+    // the middleware of its parent, as it is at that time. As
+    // `NestFactory.create()` registers middie before `main.ts` runs, a
+    // plugin registered there with an awaited `register()` gets a context
+    // without the Nest middleware `app.init()` registers later, so
+    // `createMiddlewareFactory()` adds it to the contexts tracked here.
+    this.instance.addHook('onRegister', instance => {
+      this.middieContexts.push(instance as TInstance);
+    });
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
