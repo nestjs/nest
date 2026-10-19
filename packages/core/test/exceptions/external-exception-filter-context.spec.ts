@@ -77,6 +77,30 @@ describe('ExternalExceptionFilterContext', () => {
       expect(resolved[0].exceptionMetatypes).toEqual([CustomException]);
       expect(resolved[0].func).toBeTypeOf('function');
     });
+
+    it('should keep classes without a name', () => {
+      const AnonymousFilter = (() => class {})();
+      const wrapper = {
+        instance: new ClassWithNoMetadata(),
+        getInstanceByContextId: () => wrapper,
+      };
+      const container = new NestContainer();
+      vi.spyOn(container.getModules(), 'get').mockReturnValue({
+        injectables: new Map([[AnonymousFilter, wrapper]]),
+      } as any);
+      const filterContext = new ExternalExceptionFilterContext(
+        container,
+        applicationConfig,
+      );
+      filterContext['moduleContext'] = 'test';
+
+      expect(AnonymousFilter.name).toBe('');
+      const resolved = filterContext.createConcreteContext([
+        AnonymousFilter,
+      ] as any);
+      expect(resolved).toHaveLength(1);
+      expect(resolved[0].func).toBeTypeOf('function');
+    });
   });
 
   describe('getGlobalMetadata', () => {

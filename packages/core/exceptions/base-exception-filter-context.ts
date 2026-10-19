@@ -27,7 +27,8 @@ export class BaseExceptionFilterContext extends ContextCreator {
     }
     return iterate(metadata)
       .filter(
-        instance => instance && (isFunction(instance.catch) || instance.name),
+        instance =>
+          instance && (isFunction(instance.catch) || isFunction(instance)),
       )
       .map(filter => this.getFilterInstance(filter, contextId, inquirerId))
       .filter(item => !!item)
