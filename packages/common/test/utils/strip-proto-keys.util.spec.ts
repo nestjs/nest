@@ -83,6 +83,33 @@ describe('stripProtoKeys', () => {
       expect(value.level1).not.toHaveProperty('constructor');
       expect(value.level1.level2).not.toHaveProperty('constructor');
     });
+
+    it('should not overflow the stack on deeply nested objects', () => {
+      const value: Record<string, any> = {};
+      let current = value;
+      for (let i = 0; i < 20_000; i++) {
+        current.next = {};
+        current = current.next;
+      }
+      current.constructor = 'malicious';
+
+      expect(() => stripProtoKeys(value)).not.toThrow();
+      expect(current).not.toHaveProperty('constructor');
+    });
+
+    it('should not overflow the stack on deeply nested arrays', () => {
+      const value: any[] = [];
+      let current = value;
+      for (let i = 0; i < 20_000; i++) {
+        const next: any[] = [];
+        current.push(next);
+        current = next;
+      }
+      current.push({ constructor: 'malicious' });
+
+      expect(() => stripProtoKeys(value)).not.toThrow();
+      expect(current[0]).not.toHaveProperty('constructor');
+    });
   });
 
   describe('with arrays', () => {
