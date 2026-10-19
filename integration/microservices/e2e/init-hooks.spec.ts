@@ -1,4 +1,5 @@
 import {
+  INestApplication,
   INestMicroservice,
   Injectable,
   OnApplicationBootstrap,
@@ -65,6 +66,46 @@ describe('Init hooks', () => {
       await microservice.listen();
 
       expect(microservice.get(HooksTracker)).toMatchObject({
+        moduleInit: 1,
+        applicationBootstrap: 1,
+      });
+    });
+  });
+
+  describe('of a hybrid application with a deferred microservice', () => {
+    let app: INestApplication;
+
+    beforeEach(async () => {
+      app = (await createTestingModule()).createNestApplication();
+      app.connectMicroservice(
+        { strategy: new NoopTransport() },
+        { deferInitialization: true },
+      );
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should be called once, by the application, when the microservice starts first', async () => {
+      await app.startAllMicroservices();
+      expect(app.get(HooksTracker)).toMatchObject({
+        moduleInit: 0,
+        applicationBootstrap: 0,
+      });
+
+      await app.init();
+      expect(app.get(HooksTracker)).toMatchObject({
+        moduleInit: 1,
+        applicationBootstrap: 1,
+      });
+    });
+
+    it('should be called once when the application starts first', async () => {
+      await app.init();
+      await app.startAllMicroservices();
+
+      expect(app.get(HooksTracker)).toMatchObject({
         moduleInit: 1,
         applicationBootstrap: 1,
       });

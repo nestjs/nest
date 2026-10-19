@@ -117,18 +117,23 @@ export class NestMicroservice
   }
 
   public async registerModules(): Promise<any> {
-    // A hybrid application binds the gateways itself, to its HTTP server and
-    // with its own global enhancers
-    if (!this.isConnectedToApplication) {
-      await this.loadSocketModule();
-      this.socketModule &&
-        (await this.socketModule.register(
-          this.container,
-          this.applicationConfig,
-          this.graphInspector,
-          this.appOptions,
-        ));
+    if (this.isConnectedToApplication) {
+      // The hybrid application sets up the container it shares with the
+      // microservice itself: it binds the gateways, to its HTTP server and
+      // with its own global enhancers, assigns the clients and calls the
+      // lifecycle hooks
+      !this.appOptions.preview && this.registerListeners();
+      this.setIsInitialized(true);
+      return;
     }
+    await this.loadSocketModule();
+    this.socketModule &&
+      (await this.socketModule.register(
+        this.container,
+        this.applicationConfig,
+        this.graphInspector,
+        this.appOptions,
+      ));
 
     if (!this.appOptions.preview) {
       this.microservicesModule.setupClients(this.container);
@@ -368,7 +373,8 @@ export class NestMicroservice
 
   /**
    * Sets the flag indicating that the microservice is connected to a hybrid
-   * application, which binds the gateways of the container they share.
+   * application, which sets up the container they share (gateways, clients
+   * and lifecycle hooks).
    * @param isConnectedToApplication Value to set
    */
   public setIsConnectedToApplication(isConnectedToApplication: boolean) {

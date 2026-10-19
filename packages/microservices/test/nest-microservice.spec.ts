@@ -169,6 +169,43 @@ describe('NestMicroservice', () => {
       await instance.registerModules();
       expect(socketModule.register).not.toHaveBeenCalled();
     });
+
+    it('should assign the clients, register the listeners and call the lifecycle hooks', async () => {
+      const { instance } = createInstance();
+      const microservicesModule = (instance as any).microservicesModule;
+      const setupClientsSpy = vi.spyOn(microservicesModule, 'setupClients');
+      const setupListenersSpy = vi.spyOn(microservicesModule, 'setupListeners');
+      const callInitHookSpy = vi.spyOn(instance as any, 'callInitHook');
+      const callBootstrapHookSpy = vi.spyOn(
+        instance as any,
+        'callBootstrapHook',
+      );
+
+      await instance.registerModules();
+      expect(setupClientsSpy).toHaveBeenCalledOnce();
+      expect(setupListenersSpy).toHaveBeenCalledOnce();
+      expect(callInitHookSpy).toHaveBeenCalledOnce();
+      expect(callBootstrapHookSpy).toHaveBeenCalledOnce();
+    });
+
+    it('should leave the clients and the lifecycle hooks to the application it is connected to', async () => {
+      const { instance } = createInstance();
+      const microservicesModule = (instance as any).microservicesModule;
+      const setupClientsSpy = vi.spyOn(microservicesModule, 'setupClients');
+      const setupListenersSpy = vi.spyOn(microservicesModule, 'setupListeners');
+      const callInitHookSpy = vi.spyOn(instance as any, 'callInitHook');
+      const callBootstrapHookSpy = vi.spyOn(
+        instance as any,
+        'callBootstrapHook',
+      );
+      instance.setIsConnectedToApplication(true);
+
+      await instance.registerModules();
+      expect(setupClientsSpy).not.toHaveBeenCalled();
+      expect(setupListenersSpy).toHaveBeenCalledOnce();
+      expect(callInitHookSpy).not.toHaveBeenCalled();
+      expect(callBootstrapHookSpy).not.toHaveBeenCalled();
+    });
   });
 
   it('should delegate unwrap() to server', () => {
