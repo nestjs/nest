@@ -294,6 +294,15 @@ describe('kafka reply partition assigner', () => {
         });
       },
     );
+
+    it('degrades metadata that cannot be decoded to an empty assignment', () => {
+      const member = { memberId: 'member-1', memberMetadata: Buffer.alloc(0) };
+
+      expect(assigner.decodeMember(member)).toEqual({
+        memberId: 'member-1',
+        previousAssignment: {},
+      });
+    });
   });
 
   describe('assign with malformed member metadata', () => {
@@ -343,6 +352,66 @@ describe('kafka reply partition assigner', () => {
         },
       ]);
     });
+  });
+
+  describe('assign with conflicting previous assignments', () => {
+    const encodeMember = (memberId: string, previousAssignment: object) => ({
+      memberId,
+      memberMetadata: Kafka.AssignerProtocol.MemberMetadata.encode({
+        version: assigner.version,
+        topics: ['topic-A'],
+        userData: Buffer.from(JSON.stringify({ previousAssignment })),
+      }),
+    });
+    const encodeAssignment = (partitions: number[]) =>
+      Kafka.AssignerProtocol.MemberAssignment.encode({
+        version: assigner.version,
+        assignment: { 'topic-A': partitions },
+      });
+
+    beforeEach(() => {
+      metadata['topic-A'] = Array(2)
+        .fill(1)
+        .map((_, i) => ({ partitionId: i }));
+      topics = ['topic-A'];
+    });
+
+    it('assigns a partition claimed by two members only once', async () => {
+      const assignment = await assigner.assign({
+        members: [
+          encodeMember('member-1', { 'topic-A': 0 }),
+          encodeMember('member-2', { 'topic-A': 0 }),
+        ],
+        topics,
+      });
+
+      expect(assignment).toEqual([
+        { memberId: 'member-1', memberAssignment: encodeAssignment([0]) },
+        { memberId: 'member-2', memberAssignment: encodeAssignment([1]) },
+      ]);
+    });
+
+    it.each([
+      ['a partition that does not exist', 99],
+      ['a value that is not a partition', 'x'],
+      ['null', null],
+    ])(
+      'gives a free partition to a member that claims %s',
+      async (_label, claimed) => {
+        const assignment = await assigner.assign({
+          members: [
+            encodeMember('member-1', { 'topic-A': claimed }),
+            encodeMember('member-2', { 'topic-A': 1 }),
+          ],
+          topics,
+        });
+
+        expect(assignment).toEqual([
+          { memberId: 'member-1', memberAssignment: encodeAssignment([0]) },
+          { memberId: 'member-2', memberAssignment: encodeAssignment([1]) },
+        ]);
+      },
+    );
   });
 
   describe('protocol', () => {

@@ -91,9 +91,6 @@ export class KafkaReplyPartitionAssigner {
           // take the minimum partition since replies will be sent to the minimum partition
           const firstPartition = previousAssignment[assignee][topic];
 
-          // create the assignment with the first partition
-          assignment[assignee][topic].push(firstPartition);
-
           // find and remove this topic and partition from the topicPartitions to be assigned later
           const topicsPartitionsIndex = topicsPartitions.findIndex(
             topicPartition => {
@@ -104,8 +101,11 @@ export class KafkaReplyPartitionAssigner {
             },
           );
 
-          // only continue if we found a partition matching this topic
+          // only keep a partition that exists and is not taken yet, otherwise
+          // the member gets a free partition below
           if (topicsPartitionsIndex !== -1) {
+            // create the assignment with the first partition
+            assignment[assignee][topic].push(firstPartition);
             // remove inline
             topicsPartitions.splice(topicsPartitionsIndex, 1);
           }
@@ -187,13 +187,20 @@ export class KafkaReplyPartitionAssigner {
   public decodeMember(member: GroupMember) {
     // kafkaPackage must be resolved before calling this method
     // (it is resolved in assign() which calls decodeMember)
-    const memberMetadata = kafkaPackage.AssignerProtocol.MemberMetadata.decode(
-      member.memberMetadata,
-    ) as MemberMetadata;
+    let memberMetadata: MemberMetadata;
+    try {
+      memberMetadata = kafkaPackage.AssignerProtocol.MemberMetadata.decode(
+        member.memberMetadata,
+      ) as MemberMetadata;
+    } catch {
+      return { memberId: member.memberId, previousAssignment: {} };
+    }
 
     return {
       memberId: member.memberId,
-      previousAssignment: this.decodePreviousAssignment(memberMetadata.userData),
+      previousAssignment: this.decodePreviousAssignment(
+        memberMetadata.userData,
+      ),
     };
   }
 
@@ -212,9 +219,9 @@ export class KafkaReplyPartitionAssigner {
       return {};
     }
     try {
-      const previousAssignment =
-        (JSON.parse(rawUserData) as { previousAssignment?: unknown })
-          ?.previousAssignment;
+      const previousAssignment = (
+        JSON.parse(rawUserData) as { previousAssignment?: unknown }
+      )?.previousAssignment;
       return previousAssignment &&
         typeof previousAssignment === 'object' &&
         !Array.isArray(previousAssignment)
