@@ -33,6 +33,10 @@ let natsPackage = {} as any;
 
 type Client = Record<string, any>;
 type NatsMsg = Record<string, any>;
+type MsgHdrs = { keys(): string[]; values(key: string): string[] };
+
+const isMsgHdrs = (headers: unknown): headers is MsgHdrs =>
+  isObject(headers) && typeof (headers as MsgHdrs).keys === 'function';
 
 /**
  * @publicApi
@@ -388,7 +392,27 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       return undefined;
     }
 
-    const headers = requestHeaders ?? natsPackage.headers();
+    // nats.js encodes the headers of a publish with "MsgHdrs.encode()", so
+    // anything that is not a "MsgHdrs" cannot be sent. "NatsRecordBuilder"
+    // takes the headers of a record as they are given to it, and the packet
+    // headers of "send()" are a plain object, so both are copied into a
+    // "MsgHdrs" here rather than passed on.
+    const headers = natsPackage.headers();
+
+    // The packet headers win over the static ones, as they always did.
+    if (isMsgHdrs(requestHeaders)) {
+      // A "MsgHdrs" keeps its headers in a map that "Object.entries()" does
+      // not expose.
+      for (const key of requestHeaders.keys()) {
+        for (const value of requestHeaders.values(key)) {
+          headers.set(key, value);
+        }
+      }
+    } else if (isObject(requestHeaders)) {
+      for (const [key, value] of Object.entries(requestHeaders)) {
+        headers.set(key, value as string);
+      }
+    }
 
     for (const [key, value] of Object.entries(this.options?.headers || {})) {
       if (!headers.has(key)) {
