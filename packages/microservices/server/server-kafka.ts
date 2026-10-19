@@ -271,6 +271,16 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       );
   }
 
+  /**
+   * Handles a message received by the consumer.
+   *
+   * A message with the `kafka_correlationId` and `kafka_replyTopic` headers,
+   * which `ClientKafka#send()` adds, is a request: what its handler responds
+   * with, an error included, is published to the reply topic. Any other
+   * message is handled as an event (see `handleEvent`), also when its
+   * handler is a `@MessagePattern()` one, so that such handlers can consume
+   * topics written by producers that do not add these headers.
+   */
   public async handleMessage(payload: EachMessagePayload) {
     const channel = payload.topic;
     let rawMessage: KafkaMessage;
@@ -460,6 +470,21 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     outgoingMessage.partition = parseFloat(replyPartition);
   }
 
+  /**
+   * Handles a message as an event: one for an `@EventPattern()` handler, or
+   * one without the reply headers (see `handleMessage`).
+   *
+   * The returned promise settles once the stream the handler returns
+   * completes, and kafkajs only then moves on to the next message of the
+   * partition, so a handler whose stream does not complete holds the
+   * partition. A handler that fails (as when a guard or a pipe rejects the
+   * message) rejects into kafkajs, which does not commit the message and
+   * delivers it again: it retries it, and once its retries are exhausted it
+   * restarts the consumer from the last committed offset. Handlers of topics
+   * that other producers write to should complete their streams, and should
+   * not fail on messages they cannot process unless these are to be
+   * delivered again.
+   */
   public async handleEvent(
     pattern: string,
     packet: ReadPacket,
