@@ -13,6 +13,10 @@ export type FileTypeValidatorOptions = {
    * Expected file type(s) for validation. Can be a string (MIME type)
    * or a regular expression to match multiple types.
    *
+   * A string matches a MIME type that contains it, up to the end of a name:
+   * 'image/png' or 'png' matches 'image/png', and 'audio/wav' does not match
+   * 'audio/wavpack'.
+   *
    * @example
    * // Match a single MIME type
    * fileType: 'image/png'
@@ -195,10 +199,16 @@ export class FileTypeValidator extends FileValidator<
     if (typeof fileType === 'string' && mimetype === fileType) {
       return true;
     }
+    if (typeof fileType === 'string') {
+      // A string that ends in a letter or a digit must match up to the end
+      // of a name, or "audio/wav" would accept "audio/wavpack" and
+      // "font/woff" would accept "font/woff2".
+      return !!mimetype.match(
+        /[a-z\d]$/i.test(fileType) ? `(?:${fileType})(?![\\w-])` : fileType,
+      );
+    }
     // Stateful expressions must start at zero for each file, without changing
     // the caller's lastIndex (the validator can be reused across uploads).
-    const pattern =
-      typeof fileType === 'string' ? fileType : new RegExp(fileType);
-    return !!mimetype.match(pattern);
+    return !!mimetype.match(new RegExp(fileType));
   }
 }
