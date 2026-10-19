@@ -1133,6 +1133,9 @@ describe('Middleware (FastifyAdapter)', () => {
         if (req.headers['x-throw'] === 'error-body') {
           throw new UnauthorizedException(new Error('invalid signature'));
         }
+        if (req.headers['x-throw'] === 'unserializable-body') {
+          throw new BadRequestException({ n: 10n });
+        }
         next();
       }
     }
@@ -1186,12 +1189,22 @@ describe('Middleware (FastifyAdapter)', () => {
         });
     });
 
-    // The exception layer fails to send an "Error" body on the raw response
+    it('should send the status of an HttpException whose body is an Error', () => {
+      return request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'error-body')
+        .expect(401, {
+          statusCode: 401,
+          message: 'Unauthorized',
+        });
+    });
+
+    // The exception layer fails to serialize the body on the raw response
     // middleware receives
     it('should send the internal server error response when the exception layer fails', async () => {
       await request(app.getHttpServer())
         .get('/protected')
-        .set('x-throw', 'error-body')
+        .set('x-throw', 'unserializable-body')
         .expect(500, {
           statusCode: 500,
           message: 'Internal server error',

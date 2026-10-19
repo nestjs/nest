@@ -119,6 +119,35 @@ describe('FastifyAdapter', () => {
       );
     });
 
+    // e.g. `new UnauthorizedException(err)`, whose response is `err`. On the
+    // raw response middleware gets, Fastify's reply has no error handler.
+    it.each([
+      ['a raw response', true],
+      ['a reply', false],
+    ])(
+      'should send the standard body of the status for an Error body on %s',
+      async (_, raw) => {
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          const error = Object.assign(new Error('invalid signature'), {
+            config: { headers: { authorization: 'Bearer secret' } },
+          });
+          if (raw) {
+            reply.hijack();
+          }
+          fastifyAdapter.reply(raw ? reply.raw : reply, error, 401);
+        });
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(res.statusCode).toBe(401);
+        expect(res.json()).toEqual({
+          statusCode: 401,
+          message: 'Unauthorized',
+        });
+        await fastifyAdapter.close();
+      },
+    );
+
     it('should destroy the stream of a StreamableFile once the reply was sent', () => {
       // e.g. by Fastify's `handlerTimeout`: send() then drops the stream
       const reply = { ...createReply(), sent: true };

@@ -750,6 +750,20 @@ export class FastifyAdapter<
         body = Readable.from([]);
       }
     }
+    // Fastify passes an Error payload to the error handler instead of
+    // sending it, and the reply around a raw response (e.g. the one
+    // middleware gets) has none. An Error body sent with an error status,
+    // as for `new UnauthorizedException(err)`, gets the standard body of the
+    // status instead, without the properties of the Error.
+    if (
+      body instanceof Error &&
+      fastifyReply.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      body = {
+        statusCode: fastifyReply.statusCode,
+        message: http.STATUS_CODES[fastifyReply.statusCode] ?? 'Error',
+      };
+    }
     const responseContentType = fastifyReply.getHeader('Content-Type');
     if (
       typeof responseContentType === 'string' &&

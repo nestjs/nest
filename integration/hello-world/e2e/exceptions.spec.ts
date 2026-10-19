@@ -1,4 +1,11 @@
-import { Controller, HttpStatus, INestApplication, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  INestApplication,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -9,6 +16,14 @@ import { RawServerDefault } from 'fastify';
 import request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
+
+@Controller()
+class ErrorBodyController {
+  @Get('error-body')
+  findAll() {
+    throw new UnauthorizedException(new Error('invalid signature'));
+  }
+}
 
 @Controller()
 class SchemaController {
@@ -83,7 +98,7 @@ describe('Error messages', () => {
     let app: NestFastifyApplication;
     beforeEach(async () => {
       const module = await Test.createTestingModule({
-        controllers: [ErrorsController, SchemaController],
+        controllers: [ErrorsController, SchemaController, ErrorBodyController],
       }).compile();
 
       app = module.createNestApplication<NestFastifyApplication>(
@@ -151,6 +166,21 @@ describe('Error messages', () => {
           expect(JSON.parse(payload)).toEqual({
             statusCode: 500,
             message: 'Internal server error',
+          });
+        });
+    });
+
+    it(`/GET (Unauthorized when the body of the HttpException is an Error)`, async () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/error-body',
+        })
+        .then(({ payload, statusCode }) => {
+          expect(statusCode).toBe(HttpStatus.UNAUTHORIZED);
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 401,
+            message: 'Unauthorized',
           });
         });
     });
