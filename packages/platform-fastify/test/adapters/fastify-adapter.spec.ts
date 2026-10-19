@@ -15,7 +15,12 @@ import {
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { FastifyReply, FastifyRequest, fastify } from 'fastify';
+import {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  fastify,
+} from 'fastify';
 import { inject } from 'light-my-request';
 import { PassThrough } from 'stream';
 
@@ -686,6 +691,101 @@ describe('FastifyAdapter', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body).toBe('cats');
         expect(error).toHaveBeenCalledOnce();
+      });
+    });
+
+    // `NestFactory.create()` calls `init()`, which registers middie, and
+    // `app.init()` registers Nest middleware once `main.ts` ran. middie gives
+    // the context of a plugin registered in between a copy of the middleware
+    // of the root, as it was then.
+    describe('with a plugin registered with an awaited register() before', () => {
+      let adapter: FastifyAdapter;
+      let urls: { url: string; originalUrl: string };
+      const middleware = vi.fn((req, _res, next: Function) => {
+        // middie restores "req.url" once the middleware calls "next"
+        urls = { url: req.url, originalUrl: req.originalUrl };
+        next();
+      });
+      const plugin = async (instance: FastifyInstance) => {
+        instance.get('/jobs', async () => 'jobs');
+        await instance.register(
+          async nested => {
+            nested.get('/nested', async () => 'nested');
+          },
+          { prefix: '/nested' },
+        );
+      };
+
+      beforeEach(() => {
+        middleware.mockClear();
+        adapter = new FastifyAdapter();
+      });
+
+      afterEach(async () => {
+        await adapter.close();
+      });
+
+      it.each(['/queues/jobs', '/queues/nested/nested'])(
+        'should run the middleware on "%s"',
+        async url => {
+          await adapter.init();
+          await adapter.register(plugin, { prefix: '/queues' });
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.ALL,
+          );
+          register('/queues/{*path}', middleware);
+
+          const res = await adapter.inject({ method: 'GET', url });
+
+          expect(res.statusCode).toBe(200);
+          expect(middleware).toHaveBeenCalledOnce();
+        },
+      );
+
+      it('should only run the middleware for its path, and strip it from "req.url"', async () => {
+        await adapter.init();
+        await adapter.register(plugin, { prefix: '/queues' });
+        const register = await adapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/queues/jobs', middleware);
+
+        await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+        expect(middleware).not.toHaveBeenCalled();
+
+        await adapter.inject({ method: 'GET', url: '/queues/jobs?done=true' });
+        expect(middleware).toHaveBeenCalledOnce();
+        expect(urls).toEqual({
+          url: '/?done=true',
+          originalUrl: '/queues/jobs?done=true',
+        });
+      });
+
+      it('should run the middleware once on a plugin registered without await', async () => {
+        await adapter.init();
+        adapter.register(plugin, { prefix: '/queues' });
+        const register = await adapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/queues/{*path}', middleware);
+
+        await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+
+        expect(middleware).toHaveBeenCalledOnce();
+      });
+
+      // `Test.createNestApplication()` registers middie in `app.init()`
+      it('should run the middleware once on a plugin registered before middie', async () => {
+        await adapter.register(plugin, { prefix: '/queues' });
+        await adapter.init();
+        const register = await adapter.createMiddlewareFactory(
+          RequestMethod.ALL,
+        );
+        register('/queues/{*path}', middleware);
+
+        await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+
+        expect(middleware).toHaveBeenCalledOnce();
       });
     });
   });
