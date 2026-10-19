@@ -283,7 +283,8 @@ export class NestMicroservice
     try {
       // Lazy-load optional socket module (ESM-compatible)
       await this.loadSocketModule();
-      await super.init();
+      // Calls the init hooks as well, as on "listen()", once the gateways,
+      // clients and listeners are set up
       await this.registerModules();
     } finally {
       this.flushLogsIfAutoFlushEnabled();

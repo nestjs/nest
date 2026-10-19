@@ -114,6 +114,28 @@ describe('NestMicroservice', () => {
     expect(listenSpy).toHaveBeenCalledOnce();
   });
 
+  it('should call the lifecycle hooks once when init() is called', async () => {
+    const strategy = new (class extends Server {
+      listen = vi.fn();
+      close = vi.fn();
+      on = vi.fn();
+      unwrap = vi.fn();
+    })();
+
+    const instance = new NestMicroservice(
+      mockContainer,
+      { strategy },
+      mockGraphInspector,
+      mockAppConfig,
+    );
+    const callInitHookSpy = vi.spyOn(instance as any, 'callInitHook');
+    const callBootstrapHookSpy = vi.spyOn(instance as any, 'callBootstrapHook');
+
+    await instance.init();
+    expect(callInitHookSpy).toHaveBeenCalledOnce();
+    expect(callBootstrapHookSpy).toHaveBeenCalledOnce();
+  });
+
   describe('registerModules', () => {
     const createInstance = () => {
       const strategy = new (class extends Server {
