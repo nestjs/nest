@@ -31,6 +31,24 @@ describe('PipesContextCreator', () => {
         expect(transforms).to.have.length(1);
       });
     });
+    describe('when metadata contains a class without a name', () => {
+      it('should pick its instance from the container', () => {
+        const AnonymousPipe = (() => class {})();
+        const wrapper = {
+          instance: { transform: () => ({}) },
+          getInstanceByContextId: () => wrapper,
+        };
+        (creator as any).moduleContext = 'test';
+        sinon.stub(container.getModules(), 'get').returns({
+          injectables: new Map([[AnonymousPipe, wrapper]]),
+        } as any);
+
+        expect(AnonymousPipe.name).to.equal('');
+        expect(
+          creator.createConcreteContext([AnonymousPipe] as any),
+        ).to.deep.equal([wrapper.instance]);
+      });
+    });
   });
   describe('getPipeInstance', () => {
     describe('when param is an object', () => {

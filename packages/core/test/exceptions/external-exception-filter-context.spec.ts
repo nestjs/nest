@@ -80,6 +80,30 @@ describe('ExternalExceptionFilterContext', () => {
       ]);
       expect(resolved[0].func).to.be.a('function');
     });
+
+    it('should keep classes without a name', () => {
+      const AnonymousFilter = (() => class {})();
+      const wrapper = {
+        instance: new ClassWithNoMetadata(),
+        getInstanceByContextId: () => wrapper,
+      };
+      const container = new NestContainer();
+      sinon.stub(container.getModules(), 'get').returns({
+        injectables: new Map([[AnonymousFilter, wrapper]]),
+      } as any);
+      const filterContext = new ExternalExceptionFilterContext(
+        container,
+        applicationConfig,
+      );
+      filterContext['moduleContext'] = 'test';
+
+      expect(AnonymousFilter.name).to.equal('');
+      const resolved = filterContext.createConcreteContext([
+        AnonymousFilter,
+      ] as any);
+      expect(resolved).to.have.length(1);
+      expect(resolved[0].func).to.be.a('function');
+    });
   });
 
   describe('getGlobalMetadata', () => {

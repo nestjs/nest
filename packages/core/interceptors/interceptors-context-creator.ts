@@ -46,7 +46,8 @@ export class InterceptorsContextCreator extends ContextCreator {
     return iterate(metadata)
       .filter(
         interceptor =>
-          interceptor && (interceptor.name || interceptor.intercept),
+          interceptor &&
+          (isFunction(interceptor) || isFunction(interceptor.intercept)),
       )
       .map(
         interceptor =>

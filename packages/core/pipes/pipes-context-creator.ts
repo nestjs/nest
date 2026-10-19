@@ -44,7 +44,9 @@ export class PipesContextCreator extends ContextCreator {
       return [] as any[] as R;
     }
     return iterate(metadata)
-      .filter((pipe: any) => pipe && (pipe.name || pipe.transform))
+      .filter(
+        (pipe: any) => pipe && (isFunction(pipe) || isFunction(pipe.transform)),
+      )
       .map(pipe => this.getPipeInstance(pipe, contextId, inquirerId))
       .filter(pipe => !!pipe && pipe.transform && isFunction(pipe.transform))
       .toArray() as R;

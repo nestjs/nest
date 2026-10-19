@@ -78,6 +78,23 @@ describe('InterceptorsContextCreator', () => {
           interceptorsContextCreator.createConcreteContext(interceptorTypeRefs),
         ).to.have.length(2);
       });
+      it('should keep classes without a name', () => {
+        const AnonymousInterceptor = (() => class {})();
+        const wrapper = {
+          instance: { intercept: () => of(true) },
+          getInstanceByContextId: () => wrapper,
+        };
+        (getSpy as sinon.SinonStub).returns({
+          injectables: new Map([[AnonymousInterceptor, wrapper]]),
+        });
+
+        expect(AnonymousInterceptor.name).to.equal('');
+        expect(
+          interceptorsContextCreator.createConcreteContext([
+            AnonymousInterceptor,
+          ]),
+        ).to.deep.equal([wrapper.instance]);
+      });
     });
   });
 
