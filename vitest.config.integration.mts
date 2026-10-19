@@ -73,5 +73,22 @@ export default defineConfig({
     reporters: ['default'],
     fileParallelism: false,
   },
+  resolve: {
+    // The @nestjs/* packages that live in node_modules import the packages of
+    // this repository from where they are installed. When node_modules is
+    // linked to another checkout (e.g. in a git worktree), that is a second
+    // copy of every class (HttpAdapterHost), so they are resolved from here.
+    dedupe: [
+      '@nestjs/common',
+      '@nestjs/core',
+      '@nestjs/microservices',
+      '@nestjs/platform-express',
+      '@nestjs/platform-fastify',
+      '@nestjs/platform-socket.io',
+      '@nestjs/platform-ws',
+      '@nestjs/testing',
+      '@nestjs/websockets',
+    ],
+  },
   plugins: [resolveTypescriptSource()],
 });
