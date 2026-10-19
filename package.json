@@ -139,7 +139,7 @@
     "lint-staged": "17.6.0",
     "markdown-table": "2.0.0",
     "mongoose": "9.11.2",
-    "mqtt": "5.16.0",
+    "mqtt": "5.16.1",
     "multer": "2.4.0",
     "mysql2": "3.24.6",
     "nats": "2.29.3",
