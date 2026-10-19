@@ -1030,6 +1030,100 @@ describe('ValidationPipe', () => {
     });
   });
 
+  describe('option: "validationError"', () => {
+    class Item {
+      @IsString()
+      name: string;
+    }
+    class Order {
+      @ValidateNested({ each: true })
+      @Type(() => Item)
+      items: Item[];
+    }
+    const orderMetadata: ArgumentMetadata = { type: 'body', metatype: Order };
+    const orderOf = (length: number) => ({
+      items: Array.from({ length }, () => ({ name: 1 })),
+    });
+    const exceptionFactory = (errors: ValidationError[]) => errors;
+
+    it('should not expose the target of the errors by default', async () => {
+      target = new ValidationPipe({ exceptionFactory });
+
+      await expect(target.transform(orderOf(1), orderMetadata)).rejects.toEqual(
+        [
+          {
+            property: 'items',
+            value: [{ name: 1 }],
+            children: [
+              {
+                property: '0',
+                value: { name: 1 },
+                children: [
+                  {
+                    property: 'name',
+                    value: 1,
+                    children: [],
+                    constraints: { isString: 'name must be a string' },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      );
+    });
+    it('should not expose the target of non-whitelisted properties by default', async () => {
+      target = new ValidationPipe({
+        exceptionFactory,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      });
+
+      const errors: ValidationError[] = await target
+        .transform({ items: [], a: 1, b: 2 }, orderMetadata)
+        .catch(err => err);
+      expect(errors.map(error => error.property)).toEqual(['a', 'b']);
+      errors.forEach(error => expect(error).not.toHaveProperty('target'));
+    });
+    it('should not repeat the validated array in each of its errors', async () => {
+      target = new ValidationPipe({ exceptionFactory });
+      const sizeOfErrors = async (length: number) =>
+        JSON.stringify(
+          await target
+            .transform(orderOf(length), orderMetadata)
+            .catch(err => err),
+        ).length;
+
+      expect(await sizeOfErrors(200)).toBeLessThan(
+        3 * (await sizeOfErrors(100)),
+      );
+    });
+    it('should expose the target when asked to', async () => {
+      target = new ValidationPipe({
+        exceptionFactory,
+        validationError: { target: true },
+      });
+
+      const [error]: ValidationError[] = await target
+        .transform(orderOf(1), orderMetadata)
+        .catch(err => err);
+      expect(error.target).toEqual(orderOf(1));
+      expect(error.children![0].target).toEqual(orderOf(1).items);
+    });
+    it('should keep the other "validationError" options', async () => {
+      target = new ValidationPipe({
+        exceptionFactory,
+        validationError: { value: false },
+      });
+
+      const [error]: ValidationError[] = await target
+        .transform(orderOf(1), orderMetadata)
+        .catch(err => err);
+      expect(error).not.toHaveProperty('value');
+      expect(error).not.toHaveProperty('target');
+    });
+  });
+
   describe('option: "expectedType"', () => {
     class TestModel2 {
       @IsString()

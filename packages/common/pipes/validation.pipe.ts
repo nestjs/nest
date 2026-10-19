@@ -187,7 +187,16 @@ export class ValidationPipe implements PipeTransform {
       entity = { constructor: metatype };
     }
 
-    const errors = await this.validate(entity, this.validatorOptions);
+    const errors = await this.validate(entity, {
+      ...this.validatorOptions,
+      // The target of an error is the whole object it was found in, so an
+      // exception factory that sends the errors would repeat that object
+      // once per error.
+      validationError: {
+        target: false,
+        ...this.validatorOptions.validationError,
+      },
+    });
     if (errors.length > 0) {
       throw await this.exceptionFactory(errors);
     }
