@@ -204,6 +204,73 @@ describe('FileTypeValidator', () => {
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
+    for (const [fileType, mimetype] of [
+      ['audio/wav', 'audio/wavpack'],
+      ['wav', 'audio/wavpack'],
+      ['font/woff', 'font/woff2'],
+      ['video/3gpp', 'video/3gpp2'],
+      ['image/heic', 'image/heic-sequence'],
+      [
+        'application/vnd.oasis.opendocument.text',
+        'application/vnd.oasis.opendocument.text-template',
+      ],
+    ]) {
+      it(`should return false when ${fileType} is only the start of a name in ${mimetype}`, async () => {
+        const fileTypeValidator = new FileTypeValidator({
+          fileType,
+          skipMagicNumbersValidation: true,
+        });
+
+        expect(await fileTypeValidator.isValid({ mimetype } as IFile)).to.equal(
+          false,
+        );
+      });
+    }
+
+    for (const [fileType, mimetype] of [
+      ['audio/wav', 'audio/wav'],
+      ['jpeg', 'image/jpeg'],
+      ['image', 'image/png'],
+      ['image/', 'image/png'],
+      ['svg', 'image/svg+xml'],
+      ['text/plain', 'text/plain; charset=utf-8'],
+      ['audio/ogg', 'audio/ogg; codecs=opus'],
+      [
+        'application/vnd.openxmlformats-officedocument',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ],
+      ['.(png|jpeg|jpg)', 'image/png'],
+      ['image/(png|jpe?g)', 'image/jpeg'],
+    ]) {
+      it(`should return true when ${fileType} matches ${mimetype}`, async () => {
+        const fileTypeValidator = new FileTypeValidator({
+          fileType,
+          skipMagicNumbersValidation: true,
+        });
+
+        expect(await fileTypeValidator.isValid({ mimetype } as IFile)).to.equal(
+          true,
+        );
+      });
+    }
+
+    it('should return false when a WavPack file is uploaded for "audio/wav"', async () => {
+      const buffer = Buffer.alloc(32);
+      buffer.write('wvpk', 0, 'latin1');
+      buffer.writeUInt32LE(24, 4);
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'audio/wav',
+      });
+
+      const requestFile = {
+        mimetype: 'audio/wav',
+        size: buffer.length,
+        buffer,
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
+
     it('should return true when fallbackToMimetype is enabled and the mimetype contains regex metacharacters', async () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'application/ld+json',
