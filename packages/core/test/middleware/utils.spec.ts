@@ -376,6 +376,71 @@ describe('middleware utils', () => {
         ).toBe(false);
       });
 
+      it('should read a quoted media type version, like the router does', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.MEDIA_TYPE,
+          key: 'v=',
+        };
+        expect(
+          isExcluded(
+            '/cats/3',
+            { accept: 'application/json;v="1"' },
+            versioning,
+          ),
+        ).toBe(true);
+        expect(
+          isExcluded(
+            '/cats/3',
+            { accept: 'application/json;v="2"' },
+            versioning,
+          ),
+        ).toBe(false);
+      });
+
+      it('should read a quoted media type version after other parameters', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.MEDIA_TYPE,
+          key: 'v=',
+        };
+        expect(
+          isExcluded(
+            '/cats/3',
+            { accept: 'application/json; charset=utf-8; v="1" ;q=0.8' },
+            versioning,
+          ),
+        ).toBe(true);
+        expect(
+          isExcluded(
+            '/cats/3',
+            { accept: 'text/html, application/json;v="1"' },
+            versioning,
+          ),
+        ).toBe(true);
+      });
+
+      it('should ignore a version parameter inside a quoted value', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.MEDIA_TYPE,
+          key: 'v=',
+        };
+        // The only version parameter is inside the quoted value, so the
+        // request asks for the version the route is not excluded for.
+        expect(
+          isExcluded(
+            '/cats/3',
+            { accept: 'application/json;note="a;v=2";v="1"' },
+            versioning,
+          ),
+        ).toBe(true);
+        expect(
+          isExcluded(
+            '/cats/3',
+            { accept: 'application/json;note="a;v=2"' },
+            versioning,
+          ),
+        ).toBe(false);
+      });
+
       it('should read the version with the extractor of custom versioning', () => {
         const extractor = vi.fn((request: any) =>
           request.headers.versions?.split(','),
