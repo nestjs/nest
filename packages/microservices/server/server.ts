@@ -50,6 +50,7 @@ import {
   loadPackage,
   loadPackageSync,
 } from '@nestjs/common/internal';
+import { MESSAGES } from '@nestjs/core/internal';
 
 const MAX_PACKET_ID_LENGTH = 256;
 
@@ -218,7 +219,17 @@ export abstract class Server<
             } catch (err) {
               // A reply that cannot be published must neither surface as an
               // unhandled rejection nor stop the replies queued behind it.
+              // When it was the last one, the requester still gets an error.
               this.logger.error(err);
+              if (packet.isDisposed && !packet.err) {
+                dataQueue.push({
+                  err: {
+                    status: 'error',
+                    message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+                  },
+                  isDisposed: true,
+                });
+              }
             }
           }
           dataQueue.length = 0;
