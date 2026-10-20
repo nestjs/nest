@@ -15,6 +15,7 @@ describe('ClassSerializerInterceptor', () => {
     sandbox = /* sandbox not needed with vitest */ { stub: vi.fn };
     mockReflector = {
       getAllAndOverride: vi.fn(),
+      getAll: vi.fn().mockReturnValue([undefined, undefined]),
     };
     mockTransformerPackage = {
       classToPlain: vi.fn(),
@@ -254,6 +255,31 @@ describe('ClassSerializerInterceptor', () => {
           );
         },
       );
+    });
+
+    it('should keep the class type when the handler only sets groups', async () => {
+      class UserDto {
+        id: number;
+        @Expose({ groups: ['admin'] })
+        email: string;
+        @Exclude()
+        password: string;
+      }
+      interceptor = new ClassSerializerInterceptor(mockReflector, {
+        transformerPackage: classTransformer,
+      });
+      mockReflector.getAll.mockReturnValue([
+        { groups: ['admin'] },
+        { type: UserDto },
+      ]);
+      mockReflector.getAllAndOverride.mockReturnValue({ groups: ['admin'] });
+      const next: CallHandler = {
+        handle: () => of({ id: 1, email: 'a@b.c', password: 'secret' }),
+      };
+
+      const result$ = await interceptor.intercept(mockExecutionContext, next);
+
+      expect(await firstValueFrom(result$)).toEqual({ id: 1, email: 'a@b.c' });
     });
   });
 
