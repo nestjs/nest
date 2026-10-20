@@ -10,6 +10,7 @@ import {
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import express from 'express';
+import { AddressInfo, connect } from 'net';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
@@ -113,6 +114,139 @@ class RouteMatchingModule {
       .forRoutes(UsersController);
   }
 }
+
+@Controller('profiles')
+class ProfilesController {
+  @Get(':id')
+  findOne() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':id/avatar')
+  avatar() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [ProfilesController],
+})
+class RequestTargetModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(MIDDLEWARE_VALUE))
+      .exclude('profiles/:id/avatar')
+      .forRoutes(ProfilesController);
+  }
+}
+
+describe('Exclude middleware - request targets', () => {
+  let app: INestApplication;
+  let port: number;
+
+  /**
+   * "supertest" never sends a "#" in the request target, so the request has
+   * to be written to the socket manually.
+   */
+  const sendRawRequest = (requestTarget: string) =>
+    new Promise<{ statusCode: number; body: string }>((resolve, reject) => {
+      let response = '';
+      const socket = connect(port, '127.0.0.1', () => {
+        socket.write(
+          `GET ${requestTarget} HTTP/1.1\r\n` +
+            `Host: 127.0.0.1:${port}\r\n` +
+            `Connection: close\r\n\r\n`,
+        );
+      });
+      socket.setEncoding('utf8');
+      socket.on('data', chunk => (response += chunk));
+      socket.on('error', reject);
+      socket.on('end', () => {
+        const [head, body = ''] = response.split('\r\n\r\n');
+        resolve({ statusCode: Number(head.split(' ')[1]), body });
+      });
+    });
+
+  beforeEach(async () => {
+    app = (
+      await Test.createTestingModule({
+        imports: [RequestTargetModule],
+      }).compile()
+    ).createNestApplication();
+
+    await listenOnLoopback(app);
+    port = (app.getHttpServer().address() as AddressInfo).port;
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it(`should exclude "/profiles/1/avatar" endpoint`, async () => {
+    const response = await sendRawRequest('/profiles/1/avatar');
+    expect(response.body).toBe(RETURN_VALUE);
+  });
+
+  it(`should not exclude "/profiles/1#/avatar", which the router serves with "/profiles/:id"`, async () => {
+    const response = await sendRawRequest('/profiles/1#/avatar');
+    expect(response.body).toBe(MIDDLEWARE_VALUE);
+  });
+});
+
+@Controller('invoices')
+class InvoicesController {
+  @Get()
+  findAll() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':token')
+  findShared() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [InvoicesController],
+})
+class TrailingSlashModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(MIDDLEWARE_VALUE))
+      .exclude('invoices/*')
+      .forRoutes(InvoicesController);
+  }
+}
+
+describe('Exclude middleware - trailing slash', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    app = (
+      await Test.createTestingModule({
+        imports: [TrailingSlashModule],
+      }).compile()
+    ).createNestApplication();
+
+    await listenOnLoopback(app);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it(`should exclude "/invoices/abc" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/invoices/abc')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude "/invoices/", which the router serves with "/invoices"`, () => {
+    return request(app.getHttpServer())
+      .get('/invoices/')
+      .expect(200, MIDDLEWARE_VALUE);
+  });
+});
 
 describe('Exclude middleware - route matching', () => {
   let app: INestApplication;

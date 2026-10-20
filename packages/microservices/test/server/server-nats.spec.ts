@@ -2,6 +2,7 @@ import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { NatsContext } from '../../ctx-host/index.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { NatsRecordBuilder } from '../../record-builders/index.js';
 import { ServerNats } from '../../server/server-nats.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -262,6 +263,181 @@ describe('ServerNats', () => {
       };
       await server.handleMessage(channel, natsMsg);
       expect(handler).toHaveBeenCalledWith('test', natsContext);
+    });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+      const data = JSON.stringify({ pattern: channel, data: 'test', id });
+      const natsMsg: NatsMsg = {
+        data,
+        subject: channel,
+        sid: +id,
+        respond: vi.fn(),
+        json: () => JSON.parse(data),
+      };
+
+      await server.handleMessage(channel, natsMsg);
+      await server.handleMessage(channel, natsMsg);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(getPublisherSpy).toHaveBeenCalledTimes(2);
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        response: 'stored',
+        isDisposed: true,
+      });
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries a copy of the id
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+      const data = JSON.stringify({
+        pattern: channel,
+        data: 'test',
+        id: 'a'.repeat(257),
+      });
+      const natsMsg: NatsMsg = {
+        data,
+        subject: channel,
+        sid: +id,
+        respond: vi.fn(),
+        json: () => JSON.parse(data),
+      };
+
+      const error = await server
+        .handleMessage(channel, natsMsg)
+        .catch(err => err);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(getPublisherSpy).not.toHaveBeenCalled();
+      expect(error).toBeInstanceOf(InvalidPacketIdException);
+    });
+    describe('when an event subject matches the subject of a request', () => {
+      let eventHandler: ReturnType<typeof vi.fn>;
+      let messageHandler: ReturnType<typeof vi.fn>;
+
+      const createRequest = (subject: string): NatsMsg => {
+        const data = JSON.stringify({ pattern: subject, data: 'test', id });
+        return {
+          data,
+          subject,
+          sid: +id,
+          reply: 'inbox',
+          respond: vi.fn(),
+          json: () => JSON.parse(data),
+        };
+      };
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+
+      beforeEach(() => {
+        eventHandler = Object.assign(
+          vi.fn(async () => 'event'),
+          { isEventHandler: true },
+        );
+        messageHandler = vi.fn(async () => 'message');
+        vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+      });
+      it.each([
+        ['orders.*', 'orders.get'],
+        ['orders.>', 'orders.*'],
+        ['orders.get', '*.get'],
+      ])(
+        'should answer it with the message handler only (event: "%s", message: "%s")',
+        async (eventSubject, messageSubject) => {
+          untypedServer.messageHandlers = objectToMap({
+            [eventSubject]: eventHandler,
+            [messageSubject]: messageHandler,
+          });
+
+          // NATS delivers the request to each subscription that matches it
+          await server.handleMessage(eventSubject, createRequest('orders.get'));
+          await server.handleMessage(
+            messageSubject,
+            createRequest('orders.get'),
+          );
+          await flush();
+
+          expect(eventHandler).toHaveBeenCalledWith(
+            'test',
+            expect.any(NatsContext),
+          );
+          expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+            response: 'message',
+            isDisposed: true,
+          });
+        },
+      );
+      it('should still answer it with the event handler when no message handler subject matches it', async () => {
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'users.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+          response: 'event',
+          isDisposed: true,
+        });
+      });
+      it('should still answer it with the event handler when both share a queue group', async () => {
+        // NATS delivers the request to a single member of the group, so the
+        // message handler does not receive it
+        untypedServer.options.queue = 'orders';
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+          response: 'event',
+          isDisposed: true,
+        });
+      });
+      it('should answer it with the message handler only when the event handler has a queue group of its own', async () => {
+        untypedServer.options.queue = 'orders';
+        eventHandler.extras = { queue: 'audit' };
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': eventHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(eventHandler).toHaveBeenCalled();
+        expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('matchNatsSubject', () => {
+    it.each([
+      ['orders.get', 'orders.get', true],
+      ['orders.get', 'orders.list', false],
+      ['orders.*', 'orders.get', true],
+      ['*.get', 'orders.get', true],
+      ['orders.*', 'orders', false],
+      ['orders.*', 'orders.get.one', false],
+      ['orders.>', 'orders.get.one', true],
+      ['orders.>', 'orders', false],
+      ['>', 'orders', true],
+    ])('should match "%s" against "%s" as %s', (pattern, subject, expected) => {
+      expect(untypedServer.matchNatsSubject(pattern, subject)).toBe(expected);
     });
   });
 

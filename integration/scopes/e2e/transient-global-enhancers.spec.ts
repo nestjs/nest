@@ -10,16 +10,25 @@ import {
   Get,
   INestApplication,
   INestMicroservice,
+  Inject,
   Injectable,
   Module,
   NestInterceptor,
   PipeTransform,
   Provider,
   Scope,
+  SetMetadata,
   Type,
   UseGuards,
 } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ENTRY_PROVIDER_WATERMARK } from '@nestjs/common/internal';
+import {
+  APP_FILTER,
+  APP_GUARD,
+  APP_INTERCEPTOR,
+  APP_PIPE,
+  ExternalContextCreator,
+} from '@nestjs/core';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -28,10 +37,13 @@ import {
   Payload,
   Transport,
 } from '@nestjs/microservices';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
+import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { firstValueFrom, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import request from 'supertest';
+import WebSocket from 'ws';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 const TCP_PORT = 3792;
@@ -191,6 +203,59 @@ class MessageController {
   @MessagePattern('fail')
   fail() {
     throw new Error('boom');
+  }
+}
+
+// Marked the way `@Resolver()` of @nestjs/graphql marks a resolver.
+@Injectable()
+@SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+class EntryProvider {
+  constructor(@Inject('SLOW') _slow: unknown) {}
+
+  read() {
+    return 'ok';
+  }
+
+  @UseGuards(TrackingDenyGuard)
+  guarded() {
+    return 'ok';
+  }
+}
+
+@Injectable()
+class EntryProviderConsumer {
+  constructor(readonly entryProvider: EntryProvider) {}
+}
+
+@Injectable({ scope: Scope.TRANSIENT })
+class EntryProviderConsumerGuard implements CanActivate {
+  constructor(private readonly consumer: EntryProviderConsumer) {}
+
+  canActivate() {
+    return !this.consumer.entryProvider;
+  }
+}
+
+@Injectable({ scope: Scope.TRANSIENT })
+class TransientArrowDenyGuard implements CanActivate {
+  constructor(private readonly gate: Gate) {}
+
+  // An instance property, so a guard whose constructor never ran has none.
+  canActivate = () => this.gate.isOpen();
+}
+
+@WebSocketGateway({ path: '/transient' })
+class TransientGuardedGateway {
+  @UseGuards(TransientArrowDenyGuard)
+  @SubscribeMessage('arrow')
+  arrow() {
+    return { event: 'arrow', data: 'granted' };
+  }
+
+  @UseGuards(TrackingDenyGuard)
+  @SubscribeMessage('method')
+  method() {
+    return { event: 'method', data: 'granted' };
   }
 }
 
@@ -409,5 +474,111 @@ describe('Transient global enhancers', () => {
         'recovered',
       );
     });
+  });
+
+  // Handlers built the way @nestjs/graphql builds those of a static resolver
+  describe('entry provider', () => {
+    let app: INestApplication;
+
+    const createHandler = async (
+      providers: Provider[],
+      methodName: 'read' | 'guarded' = 'read',
+    ) => {
+      app = await createApp(
+        createModule(
+          [
+            ...providers,
+            EntryProvider,
+            {
+              provide: 'SLOW',
+              useFactory: () => new Promise(resolve => setTimeout(resolve, 10)),
+            },
+          ],
+          [],
+        ),
+      );
+      const instance = app.get(EntryProvider);
+      return app
+        .get(ExternalContextCreator)
+        .create(instance, instance[methodName], methodName);
+    };
+
+    afterEach(async () => {
+      await app?.close();
+    });
+
+    it('should deny the call when the global guard is transient', async () => {
+      const handler = await createHandler([
+        { provide: APP_GUARD, useClass: TransientDenyGuard },
+      ]);
+
+      await expect(handler()).rejects.toThrow('Forbidden resource');
+    });
+
+    it('should wrap the result when the global interceptor is transient', async () => {
+      const handler = await createHandler([
+        { provide: APP_INTERCEPTOR, useClass: PrefixInterceptor },
+      ]);
+
+      await expect(handler()).resolves.toBe('intercepted:ok');
+    });
+
+    it('should give the provider a constructed instance of a method level transient guard', async () => {
+      const handler = await createHandler([], 'guarded');
+
+      await expect(handler()).rejects.toThrow('Forbidden resource');
+    });
+
+    it('should bootstrap when the guard depends on a provider that waits for the entry provider', async () => {
+      const handler = await createHandler([
+        EntryProviderConsumer,
+        { provide: APP_GUARD, useClass: EntryProviderConsumerGuard },
+      ]);
+
+      await expect(handler()).rejects.toThrow('Forbidden resource');
+    });
+  });
+
+  // A default-scoped gateway with no scoped global enhancers builds its
+  // handlers once, in the static context.
+  describe('gateway', () => {
+    let app: INestApplication;
+
+    afterEach(async () => {
+      await app?.close();
+    });
+
+    const send = async (event: 'arrow' | 'method') => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [createModule([TransientGuardedGateway], [])],
+      }).compile();
+      app = moduleRef.createNestApplication({ logger: false });
+      app.useWebSocketAdapter(new WsAdapter(app));
+      await app.listen(0, '127.0.0.1');
+
+      const client = new WebSocket(
+        `${(await app.getUrl()).replace('http', 'ws')}/transient`,
+      );
+      await new Promise(resolve => client.once('open', resolve));
+      const reply = new Promise<string>(resolve =>
+        client.once('message', data => resolve(data.toString())),
+      );
+      client.send(JSON.stringify({ event, data: {} }));
+      try {
+        return JSON.parse(await reply);
+      } finally {
+        client.close();
+      }
+    };
+
+    it.each(['arrow', 'method'] as const)(
+      'should deny the message with a transient guard bound by class (%s)',
+      async event => {
+        const reply = await send(event);
+
+        expect(reply.event).toBe('exception');
+        expect(reply.data.message).toBe('Forbidden resource');
+      },
+    );
   });
 });

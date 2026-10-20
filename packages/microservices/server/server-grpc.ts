@@ -9,7 +9,13 @@ import {
   fromEvent,
   lastValueFrom,
 } from 'rxjs';
-import { catchError, finalize, takeUntil, throwIfEmpty } from 'rxjs/operators';
+import {
+  catchError,
+  finalize,
+  takeUntil,
+  tap,
+  throwIfEmpty,
+} from 'rxjs/operators';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
 import { GrpcMethodStreamingType } from '../decorators/index.js';
 import { GrpcStatus, Transport } from '../enums/index.js';
@@ -23,9 +29,18 @@ import {
   TransportId,
 } from '../interfaces/microservice-configuration.interface.js';
 import { Server } from './server.js';
-import { isObject, isString, isUndefined } from '@nestjs/common/internal';
+import {
+  isFunction,
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/internal';
+import { MESSAGES } from '@nestjs/core/internal';
 
 const CANCELLED_EVENT = 'cancelled';
+// Half of a surrogate pair without the other half
+const LONE_SURROGATE =
+  /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g;
 
 // To enable type safety for gRPC. This cant be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
@@ -48,6 +63,9 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   on: Function;
   off: Function;
   emit: Function;
+  // Of the request stream, which only a call that streams requests has
+  pause?: Function;
+  resume?: Function;
   cancelled?: boolean;
 }
 
@@ -59,10 +77,34 @@ const callsEmittingResponseError = new WeakSet<GrpcCall>();
 function emitResponseError(call: GrpcCall, err: unknown) {
   callsEmittingResponseError.add(call);
   try {
-    call.emit('error', err);
+    call.emit('error', toSendableError(err));
   } finally {
     callsEmittingResponseError.delete(call);
   }
+}
+
+function toWellFormed(text: unknown) {
+  return isString(text) ? text.replace(LONE_SURROGATE, '\ufffd') : text;
+}
+
+// grpc-js throws on an error that is not an object, and on a status message
+// with a lone surrogate, which it cannot encode into the "grpc-message"
+// trailer. It does so from the subscriber that hands it the error, where
+// nothing catches the throw and the process exits.
+function toSendableError(err: unknown) {
+  if (!isObject(err) && !isFunction(err)) {
+    return { code: GrpcStatus.UNKNOWN, message: toWellFormed(String(err)) };
+  }
+  const { code, message, details, metadata } = err as Record<string, unknown>;
+  if (toWellFormed(message) === message && toWellFormed(details) === details) {
+    return err;
+  }
+  return {
+    code,
+    message: toWellFormed(message),
+    details: toWellFormed(details),
+    metadata,
+  };
 }
 
 /**
@@ -310,15 +352,39 @@ export class ServerGrpc extends Server<never, never> {
       return this.runWithProcessingHooks(
         { ...call, operationId: methodHandler.name } as any,
         async runEndHook => {
-          const handler = methodHandler(call.request, call.metadata, call);
-          this.transformToObservable(await handler)
+          let result$: Observable<any>;
+          try {
+            const handler = methodHandler(call.request, call.metadata, call);
+            result$ = this.transformToObservable(await handler);
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection (an
+            // exception filter that throws) would go unhandled
+            runEndHook();
+            return callback(this.toInternalError(err));
+          }
+          if (call.cancelled) {
+            // The client is already gone, and the "cancelled" event that
+            // would end the subscription has fired before it could be
+            // listened for.
+            return runEndHook();
+          }
+          result$
             .pipe(
+              // Ahead of "takeUntil", which completes the stream when the
+              // call is cancelled (and once it has been answered).
               throwIfEmpty(() => this.createNoResponseError()),
+              takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
               finalize(runEndHook),
             )
             .subscribe({
-              next: async data => callback(null, await data),
-              error: (err: any) => callback(err),
+              // A response promise that rejects (an interceptor mapping to an
+              // async function) bypasses the exception filters
+              next: data =>
+                Promise.resolve(data).then(
+                  response => callback(null, response),
+                  err => callback(this.toInternalError(err)),
+                ),
+              error: (err: any) => callback(toSendableError(err)),
             });
         },
         call.request,
@@ -331,8 +397,16 @@ export class ServerGrpc extends Server<never, never> {
       return this.runWithProcessingHooks(
         { ...call, operationId: methodHandler.name } as any,
         async runEndHook => {
-          const handler = methodHandler(call.request, call.metadata, call);
-          const result$ = this.transformToObservable(await handler);
+          let result$: Observable<any>;
+          try {
+            const handler = methodHandler(call.request, call.metadata, call);
+            result$ = this.transformToObservable(await handler);
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection (an
+            // exception filter that throws) would go unhandled
+            runEndHook();
+            return emitResponseError(call, this.toInternalError(err));
+          }
           await this.writeObservableToGrpc(result$, call);
 
           runEndHook();
@@ -357,7 +431,8 @@ export class ServerGrpc extends Server<never, never> {
    * Writes an observable to a GRPC call.
    *
    * This function will ensure that backpressure is managed while writing values
-   * that come from an observable to a GRPC call.
+   * that come from an observable to a GRPC call. On a bidirectional call, the
+   * requests stop being read while the client is not reading the responses.
    *
    * @param source The observable we want to write out to the GRPC call.
    * @param call The GRPC call we want to write to.
@@ -380,6 +455,7 @@ export class ServerGrpc extends Server<never, never> {
       let error: any;
       let shouldResolveAfterDraining = false;
       let writing = true;
+      let requestsPaused = false;
 
       // Used to manage finalization
       const subscription = new Subscription();
@@ -399,17 +475,22 @@ export class ServerGrpc extends Server<never, never> {
 
       const drain = () => {
         writing = true;
-        while (valuesWaitingToBeDrained.length > 0) {
-          const value = valuesWaitingToBeDrained.shift();
-          if (writing) {
-            // The first time `call.write` returns false, we need to stop.
-            // It wrote the value, but it won't write anything else.
-            writing = call.write(value);
-            if (!writing) {
-              // We can't write anymore so we need to wait for the drain event
-              return;
-            }
-          }
+        let written = 0;
+        while (writing && written < valuesWaitingToBeDrained.length) {
+          // The first time `call.write` returns false, we need to stop.
+          // It wrote the value, but it won't write anything else.
+          writing = call.write(valuesWaitingToBeDrained[written++]);
+        }
+        // Removed at once, as shifting them one by one is quadratic
+        valuesWaitingToBeDrained.splice(0, written);
+        if (!writing) {
+          // We can't write anymore so we need to wait for the drain event
+          return;
+        }
+        if (requestsPaused) {
+          // The client has read the responses, so read its requests again
+          requestsPaused = false;
+          call.resume?.();
         }
 
         if (shouldResolveAfterDraining) {
@@ -425,11 +506,27 @@ export class ServerGrpc extends Server<never, never> {
       call.on('drain', drain);
       subscription.add(() => call.off('drain', drain));
 
+      // The call is an object mode stream, whose "write" throws on null where
+      // nothing catches it, so null takes the error path instead
+      const values$ = source.pipe(
+        tap(value => {
+          if (value === null) {
+            throw this.createNullResponseError();
+          }
+        }),
+      );
+
       subscription.add(
-        source.subscribe({
+        values$.subscribe({
           next(value) {
             if (writing) {
               writing = call.write(value);
+              if (!writing && call.pause) {
+                // The responses to the requests read meanwhile would all be
+                // buffered here, as the client is not reading them.
+                call.pause();
+                requestsPaused = true;
+              }
             } else {
               // If we can't write, that's because we need to
               // wait for the drain event before we can write again
@@ -527,7 +624,7 @@ export class ServerGrpc extends Server<never, never> {
                   takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
                   catchError(err => {
                     errored = true;
-                    callback(err, null);
+                    callback(toSendableError(err), null);
                     return EMPTY;
                   }),
                   defaultIfEmpty(undefined),
@@ -537,6 +634,16 @@ export class ServerGrpc extends Server<never, never> {
               if (!errored && !call.cancelled) {
                 callback(null, response);
               }
+            }
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection (an
+            // exception filter that throws, or a response promise that
+            // rejects) would go unhandled
+            const internalError = this.toInternalError(err);
+            if (isResponseStream) {
+              emitResponseError(call, internalError);
+            } else {
+              callback(internalError, null);
             }
           } finally {
             // The span closes when the handler is done, not when the client
@@ -579,9 +686,9 @@ export class ServerGrpc extends Server<never, never> {
             // go unhandled and the client would never learn about the error.
             runEndHook();
             if (isResponseStream) {
-              call.emit('error', err);
+              call.emit('error', toSendableError(err));
             } else {
-              callback(err, null);
+              callback(toSendableError(err), null);
             }
           }
         },
@@ -594,6 +701,23 @@ export class ServerGrpc extends Server<never, never> {
     return {
       code: GrpcStatus.INTERNAL,
       details: 'The handler completed without emitting a response',
+    };
+  }
+
+  private createNullResponseError() {
+    return {
+      code: GrpcStatus.INTERNAL,
+      details: 'The handler emitted a null response',
+    };
+  }
+
+  // An error that bypassed the exception filters is logged rather than sent
+  // to the client, as the built-in filters do with an unknown exception
+  private toInternalError(err: unknown) {
+    this.logger.error(err);
+    return {
+      code: GrpcStatus.INTERNAL,
+      details: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
     };
   }
 
@@ -837,10 +961,12 @@ export class ServerGrpc extends Server<never, never> {
         },
       }),
       next: (value: T) => {
-        if (!hasDrained) {
-          replayBuffer!.next(value);
+        if (replayBuffer) {
+          replayBuffer.next(value);
         }
-        subject.next(value);
+        if (!hasDrained || !replayBuffer) {
+          subject.next(value);
+        }
       },
       error: (err: any) => {
         replayBuffer?.error(err);

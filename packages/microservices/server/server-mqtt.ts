@@ -1,6 +1,7 @@
 import {
   CONNECTION_FAILED_MESSAGE,
   MQTT_DEFAULT_URL,
+  MQTT_MAX_TOPIC_LENGTH,
   MQTT_SEPARATOR,
   MQTT_WILDCARD_ALL,
   MQTT_WILDCARD_SINGLE,
@@ -8,6 +9,7 @@ import {
 } from '../constants.js';
 import { MqttContext } from '../ctx-host/mqtt.context.js';
 import { Transport } from '../enums/index.js';
+import { MaxMqttTopicLengthExceededException } from '../errors/max-mqtt-topic-length-exceeded.exception.js';
 import {
   MqttEvents,
   MqttEventsMap,
@@ -139,7 +141,13 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       ServerMqtt.name,
       () => import('mqtt'),
     );
-    return mqttPackage.connect(this.url, this.options as any);
+    // mqtt stops reconnecting for good once the broker refuses a connection
+    // (CONNACK error), which would leave the server disconnected. Retry as
+    // after any other failed attempt, unless told otherwise.
+    return mqttPackage.connect(this.url, {
+      reconnectOnConnackError: true,
+      ...this.options,
+    } as any);
   }
 
   public getMessageHandler(pub: MqttClient) {
@@ -165,6 +173,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, mqttContext);
     }
+    this.assertValidPacketId((packet as IncomingRequest).id);
     const publish = this.getPublisher(
       pub,
       mqttContext,
@@ -181,6 +190,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       };
       return publish(noHandlerPacket);
     }
+    this.warnIfEventHandlerReplies(handler, channel);
     return this.handleRequest(
       mqttContext,
       async () =>
@@ -194,6 +204,9 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     context: MqttContext,
     id: string,
   ): any {
+    // Checked before the handler runs, as none of its replies could be sent
+    this.assertTopicLength(this.getReplyPattern(context.getTopic()));
+
     return (response: any) => {
       Object.assign(response, { id });
 
@@ -251,7 +264,13 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
-    const route = this.getRouteFromPattern(pattern);
+    // The topic is matched as the broker delivered it, which is what its ACLs
+    // checked: decoded as JSON, '"admin/reset"' would reach the handler of
+    // "admin/reset". Only the topic of an object pattern is decoded, so that
+    // its keys are sorted as the handler's are.
+    const route = pattern.startsWith('{')
+      ? this.getRouteFromPattern(pattern)
+      : pattern;
     if (this.messageHandlers.has(route)) {
       return this.messageHandlers.get(route) || null;
     }
@@ -277,6 +296,22 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
   public getReplyPattern(pattern: string): string {
     return `${pattern}/reply`;
+  }
+
+  /**
+   * A topic's length is encoded in two bytes, and "/reply" can take a topic
+   * the broker delivered past it. mqtt.js only fails on a longer topic once it
+   * has written the start of the packet, so the broker would read the packets
+   * sent after it as the rest of that packet.
+   */
+  protected assertTopicLength(topic: string) {
+    const length = Buffer.byteLength(topic);
+    if (length > MQTT_MAX_TOPIC_LENGTH) {
+      throw new MaxMqttTopicLengthExceededException(
+        length,
+        MQTT_MAX_TOPIC_LENGTH,
+      );
+    }
   }
 
   public registerErrorListener(

@@ -16,7 +16,9 @@ import {
   MulterOptions,
 } from '../interfaces/multer-options.interface.js';
 import {
+  applyDefaultLimits,
   mergeMulterOptions,
+  removeFilesOnPipeRejection,
   transformException,
 } from '../multer/multer.utils.js';
 
@@ -39,7 +41,9 @@ export function FileFieldsInterceptor(
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.multer = (multer as any)(mergeMulterOptions(options, localOptions));
+      this.multer = (multer as any)(
+        applyDefaultLimits(mergeMulterOptions(options, localOptions)),
+      );
     }
 
     async intercept(
@@ -61,7 +65,15 @@ export function FileFieldsInterceptor(
           },
         ),
       );
-      return next.handle();
+      return next
+        .handle()
+        .pipe(
+          removeFilesOnPipeRejection(
+            this.multer.storage,
+            ctx.getRequest(),
+            ctx.getResponse(),
+          ),
+        );
     }
   }
   const Interceptor = mixin(MixinInterceptor);

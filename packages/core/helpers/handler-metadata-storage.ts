@@ -1,11 +1,9 @@
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
-import { CONTROLLER_ID_KEY } from '../injector/constants.js';
 import { ContextId } from '../injector/instance-wrapper.js';
 import { HeaderStream } from '../router/sse-stream.js';
 import { ParamProperties } from './context-utils.js';
-import type { Type } from '@nestjs/common';
-import type { Controller } from '@nestjs/common/internal';
+import type { StreamableFile, Type } from '@nestjs/common';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 
@@ -16,6 +14,7 @@ export type HandlerResponseBasicFn = <TResult, TResponse>(
   res: TResponse,
   req?: any,
   handlerObservable$?: Observable<unknown>,
+  handlerFiles?: StreamableFile[],
 ) => any;
 
 export type HandleSseResponseFn = <
@@ -47,21 +46,27 @@ export class HandlerMetadataStorage<
   TValue = HandlerMetadata,
   TKey extends Type<unknown> = any,
 > {
-  private readonly [HANDLER_METADATA_SYMBOL] = new Map<string, TValue>();
+  // Keyed by class: same-named classes must not share an entry.
+  private readonly [HANDLER_METADATA_SYMBOL] = new WeakMap<
+    Function,
+    Map<string, TValue>
+  >();
 
   set(controller: TKey, methodName: string, metadata: TValue) {
-    const metadataKey = this.getMetadataKey(controller, methodName);
-    this[HANDLER_METADATA_SYMBOL].set(metadataKey, metadata);
+    const ctor = controller.constructor;
+    if (!ctor) {
+      return;
+    }
+    let handlers = this[HANDLER_METADATA_SYMBOL].get(ctor);
+    if (!handlers) {
+      handlers = new Map<string, TValue>();
+      this[HANDLER_METADATA_SYMBOL].set(ctor, handlers);
+    }
+    handlers.set(methodName, metadata);
   }
 
   get(controller: TKey, methodName: string): TValue | undefined {
-    const metadataKey = this.getMetadataKey(controller, methodName);
-    return this[HANDLER_METADATA_SYMBOL].get(metadataKey);
-  }
-
-  private getMetadataKey(controller: Controller, methodName: string): string {
-    const ctor = controller.constructor;
-    const controllerKey = ctor && (ctor[CONTROLLER_ID_KEY] || ctor.name);
-    return controllerKey + methodName;
+    const handlers = this[HANDLER_METADATA_SYMBOL].get(controller.constructor);
+    return handlers?.get(methodName);
   }
 }

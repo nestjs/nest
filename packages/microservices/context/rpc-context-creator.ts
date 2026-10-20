@@ -8,6 +8,7 @@ import {
   type Controller,
   CUSTOM_ROUTE_ARGS_METADATA,
   isEmptyArray,
+  isObject,
   PARAMTYPES_METADATA,
 } from '@nestjs/common/internal';
 import type { ApplicationConfig } from '@nestjs/core';
@@ -26,13 +27,35 @@ import {
   type PipesContextCreator,
   STATIC_CONTEXT,
 } from '@nestjs/core/internal';
-import { defer, Observable } from 'rxjs';
+import { defer, isObservable, Observable, ReplaySubject, Subject } from 'rxjs';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { RpcException } from '../exceptions/index.js';
 import { RpcParamsFactory } from '../factories/rpc-params-factory.js';
 import { ExceptionFiltersContext } from './exception-filters-context.js';
 import { DEFAULT_CALLBACK_METADATA } from './rpc-metadata-constants.js';
 import { RpcProxy } from './rpc-proxy.js';
+
+/**
+ * Notifiers that emit once the handler itself has returned (or resolved to)
+ * an Observable, keyed by the context (the second argument) it was called
+ * with. Only kept when interceptors or pre-request hooks hand back an
+ * Observable in place of its result.
+ */
+const handlerObservableNotifiers = new WeakMap<object, Subject<void>>();
+
+/**
+ * Returns a notifier that emits once the handler called with `context` has
+ * returned (or resolved to) an Observable. Returns `undefined` when the
+ * result of the handler is not wrapped by interceptors or pre-request hooks,
+ * which leaves the caller to look at it directly.
+ */
+export function getHandlerObservableNotifier(
+  context: unknown,
+): Observable<void> | undefined {
+  return isObject(context)
+    ? handlerObservableNotifiers.get(context)
+    : undefined;
+}
 
 type RpcParamProperties = ParamProperties & { metatype?: any };
 export interface RpcHandlerMetadata {
@@ -119,19 +142,36 @@ export class RpcContextCreator {
       contextType,
     );
 
-    const handler = (initialArgs: unknown[], args: unknown[]) => async () => {
-      if (fnApplyPipes) {
-        await fnApplyPipes(initialArgs, ...args);
-        return callback.apply(instance, initialArgs);
-      }
-      return callback.apply(instance, args);
-    };
+    const handler =
+      (
+        initialArgs: unknown[],
+        args: unknown[],
+        handlerObservable$?: Subject<void>,
+      ) =>
+      async () => {
+        fnApplyPipes && (await fnApplyPipes(initialArgs, ...args));
+        const result = callback.apply(
+          instance,
+          fnApplyPipes ? initialArgs : args,
+        );
+        handlerObservable$ &&
+          this.notifyIfObservable(result, handlerObservable$);
+        return result;
+      };
 
     const preRequestHooks =
       this.applicationConfig?.getGlobalPreRequestHooks() ?? [];
+    // Interceptors and pre-request hooks always hand back an Observable, so
+    // whether the handler itself returned one can only be observed where it
+    // runs. Transports read it with "getHandlerObservableNotifier".
+    const isResultWrapped =
+      !isEmptyArray(interceptors) || preRequestHooks.length > 0;
 
     const targetCallback = async (...args: unknown[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
+      const handlerObservable$ = isResultWrapped
+        ? this.attachHandlerObservableNotifier(args[1])
+        : undefined;
 
       const executePipeline = async () => {
         fnCanActivate && (await fnCanActivate(args));
@@ -140,7 +180,7 @@ export class RpcContextCreator {
           args,
           instance,
           callback,
-          handler(initialArgs, args),
+          handler(initialArgs, args, handlerObservable$),
           contextType,
         ) as Promise<Observable<unknown>>;
       };
@@ -330,5 +370,40 @@ export class RpcContextCreator {
     return isEmptyArray(pipes)
       ? value
       : this.pipesConsumer.apply(value, metadata, pipes);
+  }
+
+  /**
+   * Returns the notifier of the context, which all the handlers called with
+   * it share (e.g. the event handlers of one pattern).
+   */
+  private attachHandlerObservableNotifier(
+    context: unknown,
+  ): Subject<void> | undefined {
+    if (!isObject(context)) {
+      return undefined;
+    }
+    let handlerObservable$ = handlerObservableNotifiers.get(context);
+    if (!handlerObservable$) {
+      handlerObservable$ = new ReplaySubject<void>(1);
+      handlerObservableNotifiers.set(context, handlerObservable$);
+    }
+    return handlerObservable$;
+  }
+
+  private notifyIfObservable(
+    result: unknown,
+    handlerObservable$: Subject<void>,
+  ) {
+    if (isObservable(result)) {
+      handlerObservable$.next();
+    } else if (result instanceof Promise) {
+      // Only native promises are observed: calling `then()` on an arbitrary
+      // thenable (e.g. a lazy query builder) could repeat its side effects.
+      // This extra reaction leaves the handler's own promise chain untouched.
+      result.then(
+        value => isObservable(value) && handlerObservable$.next(),
+        () => undefined,
+      );
+    }
   }
 }

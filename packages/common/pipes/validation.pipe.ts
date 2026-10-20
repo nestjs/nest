@@ -51,7 +51,20 @@ export interface ValidationPipeOptions extends ValidatorOptions {
    * If you have exception filters or interceptors that assume `message` is always an array, they will need to be updated.
    */
   errorFormat?: ValidationErrorFormat;
+  /**
+   * Maximum total length, in characters, of the messages in an error response
+   * of the built-in exception factory, counting the property path that comes
+   * with each message. The errors past it are left out, and a last message
+   * (in the 'grouped' format, a '...' entry) says so. Set it to `Infinity` to
+   * lift the limit.
+   *
+   * @default 1_000_000
+   */
+  maxErrorMessagesLength?: number;
 }
+
+const DEFAULT_MAX_ERROR_MESSAGES_LENGTH = 1_000_000;
+const OMITTED_ERRORS_MESSAGE = 'Further validation errors were omitted';
 
 let classValidator: any = {} as any;
 let classTransformer: any = {} as any;
@@ -72,6 +85,7 @@ export class ValidationPipe implements PipeTransform {
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
   protected errorFormat: ValidationErrorFormat;
+  protected maxErrorMessagesLength: number;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -86,6 +100,7 @@ export class ValidationPipe implements PipeTransform {
       transformerPackage,
       validateCustomDecorators,
       errorFormat,
+      maxErrorMessagesLength,
       ...validatorOptions
     } = options;
 
@@ -99,6 +114,8 @@ export class ValidationPipe implements PipeTransform {
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
     this.errorFormat = errorFormat || 'list';
+    this.maxErrorMessagesLength =
+      maxErrorMessagesLength ?? DEFAULT_MAX_ERROR_MESSAGES_LENGTH;
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
     classValidator = this.loadValidator(validatorPackage);
@@ -170,9 +187,34 @@ export class ValidationPipe implements PipeTransform {
       entity = { constructor: metatype };
     }
 
-    const errors = await this.validate(entity, this.validatorOptions);
+    const errors = await this.validate(entity, {
+      ...this.validatorOptions,
+      // The target of an error is the whole object it was found in, so an
+      // exception factory that sends the errors would repeat that object
+      // once per error.
+      validationError: {
+        target: false,
+        ...this.validatorOptions.validationError,
+      },
+    });
     if (errors.length > 0) {
       throw await this.exceptionFactory(errors);
+    }
+    if (
+      isCtorNotEqual &&
+      (isPrimitive || Array.isArray(value)) &&
+      (await this.hasValidationRules(metatype))
+    ) {
+      // An array or a primitive is never an instance of the class: the
+      // validation above has only seen a stand-in without any property set,
+      // which passes when none of them is required.
+      throw await this.exceptionFactory([
+        {
+          property: metadata.data || metadata.type,
+          constraints: { isObject: 'Validation failed (object is expected)' },
+          children: [],
+        },
+      ]);
     }
 
     if (originalValue === undefined && originalEntity === '') {
@@ -208,8 +250,16 @@ export class ValidationPipe implements PipeTransform {
       if (this.isDetailedOutputDisabled) {
         return new HttpErrorByCode[this.errorHttpStatusCode]();
       }
+      const budget = {
+        remaining: this.maxErrorMessagesLength,
+        isExceeded: false,
+      };
+      validationErrors = this.limitValidationErrors(validationErrors, budget);
       if (this.errorFormat === 'grouped') {
-        const errors = this.groupValidationErrors(validationErrors);
+        let errors = this.groupValidationErrors(validationErrors);
+        if (budget.isExceeded) {
+          errors = { ...errors, '...': [OMITTED_ERRORS_MESSAGE] };
+        }
         // Custom (object) bodies are returned verbatim by
         // `HttpException.createBody`, so add the standard envelope fields
         // explicitly to match the shape of the "list" format.
@@ -222,9 +272,47 @@ export class ValidationPipe implements PipeTransform {
           statusCode,
         });
       }
-      const errors = this.flattenValidationErrors(validationErrors);
+      let errors = this.flattenValidationErrors(validationErrors);
+      if (budget.isExceeded) {
+        errors = [...errors, OMITTED_ERRORS_MESSAGE];
+      }
       return new HttpErrorByCode[this.errorHttpStatusCode](errors);
     };
+  }
+
+  /**
+   * Leaves out the errors that come after the first "maxErrorMessagesLength"
+   * characters of messages. Each message counts with the path of its
+   * property, which is what makes the response to a deeply nested payload
+   * grow faster than the payload. The errors past the limit are not visited.
+   */
+  protected limitValidationErrors(
+    validationErrors: ValidationError[],
+    budget: { remaining: number; isExceeded: boolean },
+    parentPathLength = 0,
+  ): ValidationError[] {
+    const limited: ValidationError[] = [];
+    let isChanged = false;
+    for (const error of validationErrors) {
+      if (budget.remaining <= 0) {
+        budget.isExceeded = true;
+        return limited;
+      }
+      const pathLength = parentPathLength + String(error.property).length + 1;
+      for (const key in error.constraints) {
+        budget.remaining -= pathLength + String(error.constraints[key]).length;
+      }
+      const children =
+        error.children &&
+        this.limitValidationErrors(error.children, budget, pathLength);
+      if (children === error.children) {
+        limited.push(error);
+      } else {
+        limited.push({ ...error, children });
+        isChanged = true;
+      }
+    }
+    return isChanged ? limited : validationErrors;
   }
 
   protected toValidate(metadata: ArgumentMetadata): boolean {
@@ -305,6 +393,17 @@ export class ValidationPipe implements PipeTransform {
     return classValidator.validate(object, validatorOptions);
   }
 
+  protected async hasValidationRules(
+    metatype: Type<unknown>,
+  ): Promise<boolean> {
+    // "forbidUnknownValues" rejects a class without any rule that applies
+    const errors = await this.validate(
+      { constructor: metatype },
+      { ...this.validatorOptions, forbidUnknownValues: true },
+    );
+    return !errors.some(error => error.constraints?.unknownValue);
+  }
+
   protected flattenValidationErrors(
     validationErrors: ValidationError[],
   ): string[] {
@@ -320,8 +419,8 @@ export class ValidationPipe implements PipeTransform {
   protected groupValidationErrors(
     validationErrors: ValidationError[],
     parentPath?: string,
+    result: Record<string, string[]> = {},
   ): Record<string, string[]> {
-    const result: Record<string, string[]> = {};
     for (const error of validationErrors) {
       const path = parentPath
         ? `${parentPath}.${error.property}`
@@ -330,7 +429,13 @@ export class ValidationPipe implements PipeTransform {
         result[path] = Object.values(error.constraints);
       }
       if (error.children && error.children.length) {
-        Object.assign(result, this.groupValidationErrors(error.children, path));
+        // Nested errors go into the same result: copying each level's result
+        // into its parent took as many insertions as depth times leaves.
+        const nested = this.groupValidationErrors(error.children, path, result);
+        if (nested !== result) {
+          // an override returned a result of its own
+          Object.assign(result, nested);
+        }
       }
     }
     return result;
@@ -339,23 +444,36 @@ export class ValidationPipe implements PipeTransform {
   protected mapChildrenToValidationErrors(
     error: ValidationError,
     parentPath?: string,
+    validationErrors: ValidationError[] = [],
   ): ValidationError[] {
     const currentError = parentPath
       ? this.prependConstraintsWithParentProp(parentPath, error)
       : error;
     if (!(error.children && error.children.length)) {
-      return [currentError];
+      validationErrors.push(currentError);
+      return validationErrors;
     }
-    const validationErrors: ValidationError[] = error.constraints
-      ? [currentError]
-      : [];
+    if (error.constraints) {
+      validationErrors.push(currentError);
+    }
     parentPath = parentPath
       ? `${parentPath}.${error.property}`
       : error.property;
     for (const item of error.children) {
-      validationErrors.push(
-        ...this.mapChildrenToValidationErrors(item, parentPath),
+      // Nested errors go into the same list: copying each level's list into
+      // its parent took as many copies as depth times leaves, and spreading
+      // a long one into push() threw a RangeError.
+      const nested = this.mapChildrenToValidationErrors(
+        item,
+        parentPath,
+        validationErrors,
       );
+      if (nested !== validationErrors) {
+        // an override returned a list of its own
+        for (const nestedError of nested) {
+          validationErrors.push(nestedError);
+        }
+      }
     }
     return validationErrors;
   }

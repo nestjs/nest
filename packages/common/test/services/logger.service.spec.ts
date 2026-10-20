@@ -91,6 +91,17 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
       });
 
+      it('should print one error to the console with stacktrace of a multi-line error message', () => {
+        const message = 'random error';
+        const stacktrace = 'Error: line 1\nline 2\n    at <anonymous>:1:2';
+
+        Logger.error(message, stacktrace);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
+        expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
+      });
+
       it('should print one error without context to the console', () => {
         const message = 'random error without context';
 
@@ -1286,6 +1297,71 @@ describe('Logger', () => {
       });
     });
 
+    describe('record length', () => {
+      it('should cut a record short instead of repeating a shared object without bounds', () => {
+        const logger = new ConsoleLogger({ json: true });
+        // The shape of class-validator errors: every child error has the
+        // validated array as its "target".
+        const target = new Array(1_000).fill(0.1234567890123456);
+        const errors = target.map(() => ({ target }));
+
+        logger.log('message', { errors });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        const output: string = processStdoutWriteSpy.mock.calls[0][0];
+        // In full, "errors" would be about 19 million characters long.
+        expect(output.length).toBeLessThan(1_100_000);
+        const json = JSON.parse(output);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe('message');
+        expect(json.params.errors).toHaveLength(1_000);
+        expect(json.params.errors[0]).toEqual({ target });
+        expect(json.params.errors[999]).toBe('[Truncated]');
+      });
+
+      it('should write a long record in full when nothing is repeated', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const items = Array.from({ length: 50_000 }, (_, id) => ({ id }));
+
+        logger.log('message', { items });
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params.items).toEqual(items);
+      });
+    });
+
+    describe('stringifyReplacer', () => {
+      it('should inspect a Map with the logger inspect options', () => {
+        const logger = new ConsoleLogger({ json: true });
+
+        // Deeper than the default depth of util.inspect (2).
+        logger.log('message', {
+          map: new Map([['k', { a: { b: { c: 1 } } }]]),
+        });
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params.map).toBe(
+          `Map(1) { 'k' => { a: { b: { c: 1 } } } }`,
+        );
+      });
+
+      it('should call an overridden replacer with the logger as "this"', () => {
+        class CustomConsoleLogger extends ConsoleLogger {
+          protected stringifyReplacer(key: string, value: unknown) {
+            return key === 'context'
+              ? `${this.options.prefix}:${value}`
+              : super.stringifyReplacer(key, value);
+          }
+        }
+        const logger = new CustomConsoleLogger('Ctx', { json: true });
+
+        logger.log('message');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.context).toBe('Nest:Ctx');
+      });
+    });
+
     describe('function and class messages', () => {
       it('should evaluate a lazy message', () => {
         const logger = new ConsoleLogger({ json: true });
@@ -1519,6 +1595,30 @@ describe('Logger', () => {
         expect(json.stack).toBe(error.stack);
         expect(json.context).toBe('Ctx');
         expect(json.error).toBeUndefined();
+      });
+
+      it('should print a stack passed as the only argument as the message', () => {
+        const error = new Error('boom');
+
+        new ConsoleLogger('Ctx', { json: true }).error(error.stack);
+        new ConsoleLogger('Ctx', { colors: false }).error(error.stack);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(parseStderr().message).toBe(error.stack);
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
+          `ERROR [Ctx] ${error.stack}`,
+        );
+      });
+
+      it('should print one record when the stack is undefined', () => {
+        new ConsoleLogger('Ctx', { json: true }).error('Failed', undefined);
+        new ConsoleLogger('Ctx', { colors: false }).error('Failed', undefined);
+
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(parseStderr().message).toBe('Failed');
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
+          'ERROR [Ctx] Failed',
+        );
       });
 
       it('should structure the error when using compact: false', () => {

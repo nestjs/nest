@@ -299,12 +299,31 @@ export class ClientKafka
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return async (payload: EachMessagePayload) => {
-      const rawMessage = this.parser!.parse<KafkaMessage>(
-        Object.assign(payload.message, {
-          topic: payload.topic,
-          partition: payload.partition,
-        }),
-      );
+      let rawMessage: KafkaMessage;
+      try {
+        rawMessage = this.parser!.parse<KafkaMessage>(
+          Object.assign(payload.message, {
+            topic: payload.topic,
+            partition: payload.partition,
+          }),
+        );
+      } catch (err) {
+        // A rejection would make kafkajs redeliver the message forever
+        this.logger.error(
+          `Message skipped (topic "${payload.topic}", partition ${payload.partition}, offset ${payload.message.offset}): ${err.message}`,
+        );
+        // The pending request can still be failed through the raw header,
+        // instead of waiting for a response that is not coming
+        let callback: Function | undefined;
+        try {
+          callback = this.routingMap.get(
+            String(payload.message.headers?.[KafkaHeaders.CORRELATION_ID]),
+          );
+        } catch {
+          // A header too large to decode is not the id of a pending request
+        }
+        return callback?.({ err, isDisposed: true });
+      }
       const correlationId = rawMessage.headers![KafkaHeaders.CORRELATION_ID];
       // kafkajs decodes an empty header value as null
       if (isNil(correlationId)) {

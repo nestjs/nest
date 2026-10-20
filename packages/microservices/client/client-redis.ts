@@ -370,7 +370,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       const undoBookkeeping = () => {
         isTornDown = true;
         isPublished = false;
-        this.subscriptionsCount.set(
+        this.setSubscriptionsCount(
           responseChannel,
           (this.subscriptionsCount.get(responseChannel) || 1) - 1,
         );
@@ -446,11 +446,24 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
   protected unsubscribeFromChannel(channel: string) {
     const subscriptionCount = this.subscriptionsCount.get(channel)!;
-    this.subscriptionsCount.set(channel, subscriptionCount - 1);
+    this.setSubscriptionsCount(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
       // ioredis rejects when the connection is gone (e.g. in "handleClose")
       this.subClient.unsubscribe(channel, () => {});
+    }
+  }
+
+  /**
+   * Keeps only the channels that requests wait on. Patterns can be built from
+   * request data (e.g., one per device), so a channel nobody waits on any
+   * longer must not leave an entry behind.
+   */
+  private setSubscriptionsCount(channel: string, count: number) {
+    if (count > 0) {
+      this.subscriptionsCount.set(channel, count);
+    } else {
+      this.subscriptionsCount.delete(channel);
     }
   }
 }

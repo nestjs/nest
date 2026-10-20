@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
+import { EventEmitter } from 'events';
 import { join } from 'path';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, throwError } from 'rxjs';
 import { ClientGrpcProxy } from '../../client/index.js';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception.js';
@@ -234,6 +235,32 @@ describe('ClientGrpcProxy', () => {
         expect(callMock.destroy).toHaveBeenCalled();
         expect(dataSpy.mock.calls).toEqual([['a'], ['b']]);
         expect(errorSpy).not.toHaveBeenCalled();
+      });
+
+      it('forwards an upstream error raised while subscribing and cancels the call', () => {
+        const upstreamError = new Error('upstream error');
+        // Like a grpc-js call, throws on an "error" event nobody listens to
+        const duplexCall = Object.assign(new EventEmitter(), {
+          write: vi.fn(),
+          end: vi.fn(),
+          cancel: vi.fn(),
+          finished: false,
+        });
+        const duplexObj = {
+          [methodName]: Object.assign(() => duplexCall, {
+            requestStream: true,
+          }),
+        };
+
+        client
+          .createStreamServiceMethod(
+            duplexObj,
+            methodName,
+          )(throwError(() => upstreamError))
+          .subscribe({ error: errorSpy });
+
+        expect(errorSpy).toHaveBeenCalledExactlyOnceWith(upstreamError);
+        expect(duplexCall.cancel).toHaveBeenCalled();
       });
     });
   });

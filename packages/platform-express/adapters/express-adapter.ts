@@ -170,6 +170,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       return response.send();
     }
     if (body instanceof StreamableFile) {
+      // A stream that failed before the reply (e.g. while an interceptor
+      // awaited) has already emitted its 'error' event.
+      const { errored } = body.getStream();
+      if (errored) {
+        return body.errorHandler(errored, response);
+      }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {
@@ -182,15 +188,39 @@ export class ExpressAdapter extends AbstractHttpAdapter<
           stream.destroy();
         }
       });
+      // Node discards the body of a HEAD response without ever applying
+      // backpressure, so piping would read the whole source. The response
+      // ends once the source is readable instead, which still leaves an
+      // error opening it (e.g. a missing file) to the error handler.
+      if (response.req?.method === 'HEAD') {
+        stream.once('readable', () => response.end());
+        return response.on('error', (err: Error) => body.errorLogger(err));
+      }
       return stream
         .pipe<Writable>(response)
         .on('error', (err: Error) => body.errorLogger(err));
+    }
+    // response.json() serializes the enumerable properties of an Error, e.g.
+    // the request config of an HTTP client error.
+    if (
+      body instanceof Error &&
+      response.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      body = {
+        statusCode: response.statusCode,
+        message: http.STATUS_CODES[response.statusCode] ?? 'Error',
+      };
     }
     const responseContentType = response.getHeader('Content-Type');
     if (
       typeof responseContentType === 'string' &&
       !isJsonContentType(responseContentType) &&
-      body?.statusCode >= HttpStatus.BAD_REQUEST
+      (body?.statusCode >= HttpStatus.BAD_REQUEST ||
+        // A custom error body (e.g. "new HttpException({ ... }, 404)") need
+        // not have a "statusCode" of its own
+        (isObject(body) &&
+          !isNil(statusCode) &&
+          statusCode >= HttpStatus.BAD_REQUEST))
     ) {
       this.logger.warn(
         "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
@@ -394,14 +424,11 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         if (isExactPath && router === this.instance.use) {
           router = this.instance.all;
         }
-        // Express routes are not strict, so "/api" also matches "/api/". That
-        // path is left to the wildcard entry registered next to it (an optional
-        // "{*path}" matches it), so the middleware doesn't run twice.
-        const handler = isExactPath
-          ? (req: any, res: any, next: Function) =>
-              req.path.endsWith('/') ? next() : callback(req, res, next)
-          : callback;
-        return router.call(this.instance, convertedPath, handler);
+        // Express routes are not strict, so "/api" also matches "/api/", which
+        // the wildcard path registered next to it may match too ("/api/{*path}"
+        // does, "/api/*path" does not). The core runs the middleware for the
+        // first of its paths that matches a request only.
+        return router.call(this.instance, convertedPath, callback);
       } catch (e) {
         if (e instanceof TypeError) {
           LegacyRouteConverter.printError(path);

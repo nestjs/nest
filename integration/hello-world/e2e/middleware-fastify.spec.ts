@@ -12,6 +12,7 @@ import {
   Query,
   Req,
   RequestMethod,
+  UnauthorizedException,
   VersioningType,
 } from '@nestjs/common';
 import {
@@ -821,6 +822,60 @@ describe('Middleware (FastifyAdapter)', () => {
     });
   });
 
+  describe('should run middleware once on routes excluded from the global prefix with the root path', () => {
+    @Controller()
+    class CountingController {
+      @Get('metrics')
+      metrics(@Req() req: FastifyRequest) {
+        return { runs: req.raw['runs'] ?? 0 };
+      }
+
+      @Get('data')
+      data(@Req() req: FastifyRequest) {
+        return { runs: req.raw['runs'] ?? 0 };
+      }
+    }
+
+    @Module({
+      controllers: [CountingController],
+    })
+    class CountingModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.runs = (req.runs ?? 0) + 1;
+            next();
+          })
+          .forRoutes('{*path}');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [CountingModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    });
+
+    it(`GET forRoutes('{*path}') with the root path and another route excluded from the global prefix`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/', 'metrics'] });
+      await listenOnLoopback(app);
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/metrics')
+        .expect(200, { runs: 1 });
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, { runs: 1 });
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
   describe('should respect fastify routing options', () => {
     const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
 
@@ -943,6 +998,65 @@ describe('Middleware (FastifyAdapter)', () => {
       });
     });
 
+    describe('[caseSensitive] attribute set to false', () => {
+      @Controller('tasks')
+      class TasksController {
+        @Get()
+        findAll() {
+          return 'tasks';
+        }
+      }
+
+      @Module({
+        controllers: [TasksController],
+      })
+      class TasksModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply((req, res, next) => res.end(MIDDLEWARE_RETURN_VALUE))
+            .forRoutes(TasksController);
+        }
+      }
+
+      const createApp = async (adapter: FastifyAdapter) => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TasksModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(adapter);
+
+        await listenOnLoopback(app);
+      };
+
+      // "%E2%84%AA" (KELVIN SIGN) lower-cases to "k" once decoded, so the
+      // router serves "/tas%E2%84%AAs" with the "/tasks" route
+      it.each(['/TASKS', '/tas%E2%84%AAs'])(
+        'GET forRoutes(TasksController) (%s)',
+        async url => {
+          await createApp(
+            new FastifyAdapter({ routerOptions: { caseSensitive: false } }),
+          );
+
+          const { payload } = await app.inject({ method: 'GET', url });
+          expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE);
+        },
+      );
+
+      it('GET forRoutes(TasksController) (/tas%E2%84%AAs, top-level option)', async () => {
+        await createApp(new FastifyAdapter({ caseSensitive: false }));
+
+        const { payload } = await app.inject({
+          method: 'GET',
+          url: '/tas%E2%84%AAs',
+        });
+        expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE);
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+    });
+
     describe('[useSemicolonDelimiter] attribute', () => {
       beforeEach(async () => {
         app = (
@@ -1016,6 +1130,12 @@ describe('Middleware (FastifyAdapter)', () => {
         if (req.headers['x-throw'] === 'unknown-error') {
           throw new Error('middleware failure');
         }
+        if (req.headers['x-throw'] === 'error-body') {
+          throw new UnauthorizedException(new Error('invalid signature'));
+        }
+        if (req.headers['x-throw'] === 'unserializable-body') {
+          throw new BadRequestException({ n: 10n });
+        }
         next();
       }
     }
@@ -1069,12 +1189,35 @@ describe('Middleware (FastifyAdapter)', () => {
         });
     });
 
+    it('should send the status of an HttpException whose body is an Error', () => {
+      return request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'error-body')
+        .expect(401, {
+          statusCode: 401,
+          message: 'Unauthorized',
+        });
+    });
+
+    // The exception layer fails to serialize the body on the raw response
+    // middleware receives
+    it('should send the internal server error response when the exception layer fails', async () => {
+      await request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'unserializable-body')
+        .expect(500, {
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+      await request(app.getHttpServer()).get('/protected').expect(200);
+    });
+
     afterEach(async () => {
       await app.close();
     });
   });
 
-  describe('absolute-form request target', () => {
+  describe('request target forms', () => {
     const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
     const HANDLER_RETURN_VALUE = 'handler_return';
 
@@ -1103,12 +1246,12 @@ describe('Middleware (FastifyAdapter)', () => {
      * "supertest" and "light-my-request" always send origin-form request
      * targets, so the request has to be written to the socket manually.
      */
-    const sendRawRequest = (requestTarget: string) =>
+    const sendRawRequest = (requestTarget: string, method = 'GET') =>
       new Promise<{ statusCode: number; body: string }>((resolve, reject) => {
         let response = '';
         const socket = connect(port, '127.0.0.1', () => {
           socket.write(
-            `GET ${requestTarget} HTTP/1.1\r\n` +
+            `${method} ${requestTarget} HTTP/1.1\r\n` +
               `Host: 127.0.0.1:${port}\r\n` +
               `Connection: close\r\n\r\n`,
           );
@@ -1165,6 +1308,30 @@ describe('Middleware (FastifyAdapter)', () => {
       const response = await sendRawRequest(`HTTP://127.0.0.1:${port}//USERS/`);
       expect(response.statusCode).toBe(200);
       expect(response.body).toBe(MIDDLEWARE_RETURN_VALUE);
+    });
+
+    it('does not run the route without its middleware for a request target starting with "*"', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest('*users');
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body)).toEqual({
+        message: 'Cannot GET *users',
+        error: 'Not Found',
+        statusCode: 404,
+      });
+    });
+
+    it('answers "OPTIONS *" with the not-found handler', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest('*', 'OPTIONS');
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body)).toEqual({
+        message: 'Cannot OPTIONS *',
+        error: 'Not Found',
+        statusCode: 404,
+      });
     });
   });
 

@@ -40,6 +40,11 @@ export interface MqttClientOptions extends ISecureClientOptions {
    */
   reconnectPeriod?: number;
   /**
+   * false, set to true to reconnect after the broker refuses a connection
+   * (CONNACK error). The MQTT server (`Transport.MQTT`) defaults it to true
+   */
+  reconnectOnConnackError?: boolean;
+  /**
    * 30 * 1000 milliseconds, time to wait before a CONNACK is received
    */
   connectTimeout?: number;

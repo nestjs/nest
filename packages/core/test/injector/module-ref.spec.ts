@@ -1,5 +1,7 @@
-import { Injectable, Scope, Type } from '@nestjs/common';
+import { Inject, Injectable, Scope, Type } from '@nestjs/common';
 import { RuntimeException } from '../../errors/exceptions';
+import { RequestScopedCreateException } from '../../errors/exceptions/request-scoped-create.exception.js';
+import { createContextId } from '../../helpers/context-id-factory.js';
 import { NestContainer } from '../../injector/container';
 import { ModuleRef } from '../../injector/module-ref';
 import { Module } from '../../injector/module';
@@ -133,6 +135,125 @@ describe('ModuleRef', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(RuntimeException);
       }
+    });
+
+    describe('when the created class has dependencies', () => {
+      @Injectable()
+      class SingletonDep {}
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NestedTransientDep {}
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientDep {
+        constructor(public nested: NestedTransientDep) {}
+      }
+
+      let singletonWrapper: InstanceWrapper;
+      let transientWrapper: InstanceWrapper;
+      let nestedTransientWrapper: InstanceWrapper;
+
+      beforeEach(() => {
+        container.addProvider(SingletonDep, module.token);
+        container.addProvider(TransientDep, module.token);
+        container.addProvider(NestedTransientDep, module.token);
+        singletonWrapper = module.providers.get(SingletonDep)!;
+        transientWrapper = module.providers.get(TransientDep)!;
+        nestedTransientWrapper = module.providers.get(NestedTransientDep)!;
+      });
+
+      afterEach(() => vi.restoreAllMocks());
+
+      it('should not keep the transient instances it created', async () => {
+        @Injectable()
+        class Created {
+          constructor(public dep: TransientDep) {}
+        }
+
+        await moduleRef.create(Created);
+        await moduleRef.create(Created);
+
+        expect(transientWrapper.getStaticTransientInstances()).toEqual([]);
+        expect(nestedTransientWrapper.getStaticTransientInstances()).toEqual(
+          [],
+        );
+      });
+
+      it('should not keep the transient instances of injected properties', async () => {
+        @Injectable()
+        class Created {
+          @Inject(TransientDep)
+          public dep: TransientDep;
+        }
+
+        await moduleRef.create(Created);
+
+        expect(transientWrapper.getStaticTransientInstances()).toEqual([]);
+        expect(nestedTransientWrapper.getStaticTransientInstances()).toEqual(
+          [],
+        );
+      });
+
+      it('should not stay a dependency tree parent of its dependencies', async () => {
+        @Injectable()
+        class Created {
+          constructor(public dep: SingletonDep) {}
+        }
+        await moduleRef.create(Created);
+
+        const resetDependencyTreeState = vi.spyOn(
+          InstanceWrapper.prototype as any,
+          'resetDependencyTreeState',
+        );
+        singletonWrapper.addEnhancerMetadata(new InstanceWrapper());
+
+        expect(resetDependencyTreeState).toHaveBeenCalledOnce();
+      });
+
+      it('should not stay a dependency tree parent of its dependencies when it rejects', async () => {
+        class UnregisteredDep {}
+        @Injectable()
+        class Created {
+          constructor(
+            public dep: SingletonDep,
+            _missing: UnregisteredDep,
+          ) {}
+        }
+        await expect(moduleRef.create(Created)).rejects.toBeInstanceOf(
+          RuntimeException,
+        );
+
+        const resetDependencyTreeState = vi.spyOn(
+          InstanceWrapper.prototype as any,
+          'resetDependencyTreeState',
+        );
+        singletonWrapper.addEnhancerMetadata(new InstanceWrapper());
+
+        expect(resetDependencyTreeState).toHaveBeenCalledOnce();
+      });
+    });
+
+    describe('when a dependency is request-scoped', () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class RequestDep {}
+      @Injectable()
+      class Created {
+        constructor(public dep: RequestDep) {}
+      }
+
+      beforeEach(() => {
+        container.addProvider(RequestDep, module.token);
+      });
+
+      it('should reject without a context id', async () => {
+        await expect(moduleRef.create(Created)).rejects.toBeInstanceOf(
+          RequestScopedCreateException,
+        );
+      });
+
+      it('should resolve with a context id', async () => {
+        const instance = await moduleRef.create(Created, createContextId());
+
+        expect(instance.dep).toBeInstanceOf(RequestDep);
+      });
     });
   });
 

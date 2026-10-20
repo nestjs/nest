@@ -40,7 +40,10 @@ import {
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
 import { Server } from './server.js';
 import { Logger } from '@nestjs/common';
-import { isNil } from '@nestjs/common/internal';
+import { isNil, isString } from '@nestjs/common/internal';
+
+// Topic names the broker accepts
+const KAFKA_TOPIC_NAME_REGEX = /^[a-zA-Z0-9._-]{1,249}$/;
 
 /**
  * @publicApi
@@ -268,14 +271,32 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       );
   }
 
+  /**
+   * Handles a message received by the consumer.
+   *
+   * A message with the `kafka_correlationId` and `kafka_replyTopic` headers,
+   * which `ClientKafka#send()` adds, is a request: what its handler responds
+   * with, an error included, is published to the reply topic. Any other
+   * message is handled as an event (see `handleEvent`), also when its
+   * handler is a `@MessagePattern()` one, so that such handlers can consume
+   * topics written by producers that do not add these headers.
+   */
   public async handleMessage(payload: EachMessagePayload) {
     const channel = payload.topic;
-    const rawMessage = this.parser!.parse<KafkaMessage>(
-      Object.assign(payload.message, {
-        topic: payload.topic,
-        partition: payload.partition,
-      }),
-    );
+    let rawMessage: KafkaMessage;
+    try {
+      rawMessage = this.parser!.parse<KafkaMessage>(
+        Object.assign(payload.message, {
+          topic: payload.topic,
+          partition: payload.partition,
+        }),
+      );
+    } catch (err) {
+      // A rejection would make kafkajs redeliver the message forever
+      return this.logger.error(
+        `Message skipped (topic "${channel}", partition ${payload.partition}, offset ${payload.message.offset}): ${err.message}`,
+      );
+    }
     const headers = rawMessage.headers as unknown as Record<string, any>;
     const correlationId = headers[KafkaHeaders.CORRELATION_ID];
     const replyTopic = headers[KafkaHeaders.REPLY_TOPIC];
@@ -295,6 +316,14 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     // then this is an event (events could still have correlation id)
     if (handler?.isEventHandler || !correlationId || !replyTopic) {
       return this.handleEvent(packet.pattern, packet, kafkaContext);
+    }
+    // The sender picks the reply topic. kafkajs keeps every topic a producer
+    // is asked to send to, so one it cannot encode (such as a name longer
+    // than a Kafka string) would fail every later reply of the producer too.
+    if (!isString(replyTopic) || !KAFKA_TOPIC_NAME_REGEX.test(replyTopic)) {
+      return this.logger.error(
+        `The reply topic of the message is not a valid topic name, so it cannot be answered and has been dropped. Message pattern: ${packet.pattern}`,
+      );
     }
 
     const publish = this.getPublisher(
@@ -441,6 +470,21 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     outgoingMessage.partition = parseFloat(replyPartition);
   }
 
+  /**
+   * Handles a message as an event: one for an `@EventPattern()` handler, or
+   * one without the reply headers (see `handleMessage`).
+   *
+   * The returned promise settles once the stream the handler returns
+   * completes, and kafkajs only then moves on to the next message of the
+   * partition, so a handler whose stream does not complete holds the
+   * partition. A handler that fails (as when a guard or a pipe rejects the
+   * message) rejects into kafkajs, which does not commit the message and
+   * delivers it again: it retries it, and once its retries are exhausted it
+   * restarts the consumer from the last committed offset. Handlers of topics
+   * that other producers write to should complete their streams, and should
+   * not fail on messages they cannot process unless these are to be
+   * delivered again.
+   */
   public async handleEvent(
     pattern: string,
     packet: ReadPacket,

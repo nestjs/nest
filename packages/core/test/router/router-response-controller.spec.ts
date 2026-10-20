@@ -1,10 +1,13 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
-import { EMPTY, Observable, of, Subject, throwError } from 'rxjs';
+import { EMPTY, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
+  BadRequestException,
   HttpStatus,
+  IntrinsicException,
+  Logger,
   type MessageEvent,
   RequestMethod,
   SSE_ABORT_CONTROLLER,
@@ -216,6 +219,28 @@ describe('RouterResponseController', () => {
       const response = {};
       await routerResponseController.redirect(null, response, null!);
       expect(redirectSpy.mock.calls[0][0]).toBe(response);
+    });
+    it('should wait for the reply that HttpServer.redirect returns', async () => {
+      // Fastify returns its reply, a thenable that settles once the response
+      // is sent. Resolving earlier lets Fastify send the reply a second time.
+      let sendReply!: () => void;
+      const reply = {
+        then: (resolve: () => void) => {
+          sendReply = resolve;
+        },
+      };
+      vi.spyOn(adapter, 'redirect').mockReturnValue(reply);
+      const redirected = vi.fn();
+
+      const redirect = routerResponseController
+        .redirect(null, {}, { url: 'redirect url' })
+        .then(redirected);
+      await new Promise(resolve => setImmediate(resolve));
+      expect(redirected).not.toHaveBeenCalled();
+
+      sendReply();
+      await redirect;
+      expect(redirected).toHaveBeenCalled();
     });
     describe('status code', () => {
       it('should come from the transformed result if present', async () => {
@@ -1059,6 +1084,123 @@ data: test
       });
     });
 
+    describe('when the client stops reading', () => {
+      // A destination that never accepts a chunk, like the socket of a client
+      // that reads nothing
+      class StalledSink extends Writable {
+        constructor() {
+          super({ highWaterMark: 1 });
+        }
+
+        _write() {}
+      }
+
+      const data = 'x'.repeat(64 * 1024);
+
+      const emitOnSeparateTurns = async (
+        producer: Subject<MessageEvent>,
+        count: number,
+      ) => {
+        for (let i = 0; i < count; i++) {
+          producer.next({ data });
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      };
+
+      beforeEach(() => {
+        vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it('should drop the connection once too much event data waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        // 8M characters, about 2M of which the streams buffer themselves
+        await emitOnSeparateTurns(producer, 128);
+
+        expect(response.destroyed).toBe(true);
+        await lifecycle;
+        expect(producer.observed).toBe(false);
+        request.destroy();
+      });
+
+      it('should keep the connection while less event data waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await emitOnSeparateTurns(producer, 48);
+
+        expect(response.destroyed).toBe(false);
+        expect(producer.observed).toBe(true);
+        response.destroy();
+        await lifecycle;
+        request.destroy();
+      });
+
+      it('should drop the connection once more event data than the route allows waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          { maxPendingDataLength: 1024 },
+        );
+        // Kept under the default limit
+        await emitOnSeparateTurns(producer, 48);
+
+        expect(response.destroyed).toBe(true);
+        await lifecycle;
+        expect(producer.observed).toBe(false);
+        expect(Logger.prototype.warn).toHaveBeenCalledWith(
+          expect.stringContaining('exceeds the maximum allowed 1024'),
+        );
+        request.destroy();
+      });
+
+      it.each([0, Infinity])(
+        'should keep the connection when the route lifts the limit with %s',
+        async maxPendingDataLength => {
+          const producer = new Subject<MessageEvent>();
+          const response = new StalledSink();
+          const request = new PassThrough();
+
+          const lifecycle = routerResponseController.sse(
+            producer,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+            { maxPendingDataLength },
+          );
+          // Dropped under the default limit
+          await emitOnSeparateTurns(producer, 128);
+
+          expect(response.destroyed).toBe(false);
+          expect(producer.observed).toBe(true);
+          response.destroy();
+          await lifecycle;
+          request.destroy();
+        },
+      );
+    });
+
     it('should commit headers on next tick without waiting for first emission', async () => {
       class SinkWithWriteHead extends Writable {
         writeHead = vi.fn();
@@ -1091,6 +1233,40 @@ data: test
 
       result.complete();
       request.destroy();
+    });
+
+    it('should end the response to a HEAD request once the headers are committed', async () => {
+      const writeHead = vi.fn();
+      const response = new Writable({
+        write(_chunk, _encoding, cb) {
+          cb();
+        },
+      });
+      Object.assign(response, { writeHead, flushHeaders: vi.fn() });
+      const request = Object.assign(attachSocket(new PassThrough()), {
+        method: 'HEAD',
+      });
+      const teardown = vi.fn();
+      // A producer that never completes, like an interval
+      const result = new Observable<string>(() => teardown);
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      await vi.waitFor(() => expect(response.writableEnded).toBe(true));
+      await ssePromise;
+
+      expect(writeHead).toHaveBeenCalledOnce();
+      expect(writeHead).toHaveBeenCalledWith(
+        200,
+        expect.objectContaining({ 'Content-Type': 'text/event-stream' }),
+      );
+      expect(teardown).toHaveBeenCalledOnce();
+      expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).toBe(true);
+      expect(request.socket.listenerCount('close')).toBe(0);
     });
 
     it('should write number and boolean data as JSON', async () => {
@@ -1171,6 +1347,18 @@ data: test
     });
 
     describe('when there is an error', () => {
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+      });
+
+      afterEach(() => {
+        loggerErrorSpy.mockRestore();
+      });
+
       it('should reject when the stream errors before headers are committed', async () => {
         const result = new Subject();
         const response = new Writable();
@@ -1190,55 +1378,176 @@ data: test
         await expect(promise).rejects.toThrow('Some error');
       });
 
-      it('should write the error message to the stream', async () => {
-        let resolveFirstChunk: (() => void) | undefined;
-        const firstChunkWritten = new Promise<void>(resolve => {
-          resolveFirstChunk = resolve;
-        });
+      it.each([
+        ['the stream errors', () => throwError(() => new Error('Some error'))],
+        [
+          'the result throws once piped',
+          () => Promise.resolve({ subscribe() {}, lift() {} }),
+        ],
+      ])(
+        'should leave the response to the exception filters when %s before headers are committed',
+        async (_, createResult) => {
+          const response = new Writable({
+            write(_chunk, _encoding, callback) {
+              callback();
+            },
+          });
+          const request = new PassThrough();
 
-        class Sink extends Writable {
-          private readonly chunks: string[] = [];
+          await expect(
+            routerResponseController.sse(
+              createResult() as any,
+              response as unknown as ServerResponse,
+              request as unknown as IncomingMessage,
+            ),
+          ).rejects.toThrow();
+          // A filter that awaits I/O answers on a later turn of the event
+          // loop, and can only do so while the response is still open.
+          await new Promise(resolve => setImmediate(resolve));
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(response.writableEnded).toBe(false);
+          request.destroy();
+        },
+      );
+
+      describe('when the headers cannot be written', () => {
+        // Node validates header values in writeHead(), which Fastify calls
+        // with the headers set on the reply, e.g. one taken from a query param
+        class SinkWithInvalidHeader extends Writable {
+          readonly error = Object.assign(
+            new TypeError('Invalid character in header content ["x-query"]'),
+            { code: 'ERR_INVALID_CHAR' },
+          );
+          writeHead = vi.fn(() => {
+            throw this.error;
+          });
 
           _write(
             chunk: any,
             encoding: string,
             callback: (error?: Error | null) => void,
           ): void {
-            this.chunks.push(chunk);
-            resolveFirstChunk?.();
-            resolveFirstChunk = undefined;
             callback();
-          }
-
-          get content() {
-            return this.chunks.join('');
           }
         }
 
-        const written = (stream: Writable) =>
-          new Promise((resolve, reject) =>
-            stream.on('error', reject).on('finish', resolve),
+        it.each([
+          ['when they are committed after subscribing', () => NEVER],
+          ['when the producer completes without emitting', () => EMPTY],
+          ['with the first event', () => of({ data: 'hello' })],
+        ])('should reject %s', async (_, createProducer) => {
+          const teardown = vi.fn();
+          const producer = new Observable(subscriber => {
+            const subscription = createProducer().subscribe(subscriber);
+            return () => {
+              subscription.unsubscribe();
+              teardown();
+            };
+          });
+          const response = new SinkWithInvalidHeader();
+          const request = new PassThrough();
+
+          await expect(
+            routerResponseController.sse(
+              producer,
+              response as unknown as ServerResponse,
+              request as unknown as IncomingMessage,
+            ),
+          ).rejects.toBe(response.error);
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(teardown).toHaveBeenCalledTimes(1);
+          expect(response.writableEnded).toBe(false);
+          expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).toBe(
+            true,
+          );
+          request.destroy();
+        });
+      });
+
+      // The headers are out, so no exception filter can answer anymore
+      it.each([
+        ['an HttpException', new BadRequestException('Some error'), true],
+        [
+          'an "http-errors" error',
+          Object.assign(new Error('Some error'), {
+            status: 404,
+            statusCode: 404,
+            expose: true,
+          }),
+          true,
+        ],
+        [
+          'an http error-shaped value',
+          { statusCode: 404, message: 'Some error' },
+          true,
+        ],
+        ['an Error', new Error('Some error'), false],
+        ['a string', 'Some error', false],
+        ['an IntrinsicException', new IntrinsicException('Some error'), false],
+      ])(
+        'should write the message BaseExceptionFilter would send for %s',
+        async (_, error, isMessageSent) => {
+          let resolveFirstChunk: (() => void) | undefined;
+          const firstChunkWritten = new Promise<void>(resolve => {
+            resolveFirstChunk = resolve;
+          });
+
+          class Sink extends Writable {
+            private readonly chunks: string[] = [];
+
+            _write(
+              chunk: any,
+              encoding: string,
+              callback: (error?: Error | null) => void,
+            ): void {
+              this.chunks.push(chunk);
+              resolveFirstChunk?.();
+              resolveFirstChunk = undefined;
+              callback();
+            }
+
+            get content() {
+              return this.chunks.join('');
+            }
+          }
+
+          const written = (stream: Writable) =>
+            new Promise((resolve, reject) =>
+              stream.on('error', reject).on('finish', resolve),
+            );
+
+          const result = new Subject();
+          const response = new Sink();
+          const request = new PassThrough();
+          const promise = routerResponseController.sse(
+            result,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
           );
 
-        const result = new Subject();
-        const response = new Sink();
-        const request = new PassThrough();
-        const promise = routerResponseController.sse(
-          result,
-          response as unknown as ServerResponse,
-          request as unknown as IncomingMessage,
-        );
+          result.next('hello');
+          await firstChunkWritten;
+          result.error(error);
+          request.destroy();
 
-        result.next('hello');
-        await firstChunkWritten;
-        result.error(new Error('Some error'));
-        request.destroy();
-
-        await promise;
-        await written(response);
-        expect(response.content).toContain('event: error');
-        expect(response.content).toContain('data: Some error');
-      });
+          await promise;
+          await written(response);
+          expect(response.content).toContain('event: error');
+          if (isMessageSent) {
+            expect(response.content).toContain('data: Some error\n');
+          } else {
+            expect(response.content).toContain('data: Internal server error\n');
+            expect(response.content).not.toContain('Some error');
+          }
+          if (error instanceof IntrinsicException) {
+            expect(loggerErrorSpy).not.toHaveBeenCalled();
+          } else {
+            expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+          }
+        },
+      );
 
       it('should write an error event and end the stream when a message cannot be serialized', async () => {
         class Sink extends Writable {
@@ -1274,9 +1583,7 @@ data: test
         await new Promise(resolve => setTimeout(resolve, 10));
 
         expect(response.content).toContain('event: error');
-        expect(response.content).toContain(
-          'data: Do not know how to serialize a BigInt',
-        );
+        expect(response.content).toContain('data: Internal server error');
         expect(response.content).not.toContain('data: after');
         expect(response.writableFinished).toBe(true);
         request.destroy();

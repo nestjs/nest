@@ -2,10 +2,11 @@ import {
   BadRequestException,
   RequestMethod,
   StreamableFile,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable, Writable } from 'stream';
 
 describe('ExpressAdapter', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -198,24 +199,17 @@ describe('ExpressAdapter', () => {
       },
     );
 
-    it('should leave "/api/" of the exact-match path to the wildcard entry', () => {
+    it('should register the middleware itself on the exact-match path', () => {
       const allSpy = vi.spyOn(expressAdapter.getInstance(), 'all');
       const middleware = vi.fn();
-      const next = vi.fn();
 
       expressAdapter.createMiddlewareFactory(NO_REQUEST_METHOD)(
         '/api$',
         middleware,
       );
-      const [, handler] = allSpy.mock.calls[0] as unknown as [string, Function];
 
-      handler({ path: '/api/' }, {}, next);
-      expect(middleware).not.toHaveBeenCalled();
-      expect(next).toHaveBeenCalledOnce();
-
-      const req = { path: '/api' };
-      handler(req, {}, next);
-      expect(middleware).toHaveBeenCalledExactlyOnceWith(req, {}, next);
+      // "/api" also matches "/api/", which "/api/*path" would not
+      expect(allSpy).toHaveBeenCalledExactlyOnceWith('/api', middleware);
     });
   });
 
@@ -327,6 +321,52 @@ describe('ExpressAdapter', () => {
       );
     });
 
+    it('should force a JSON content type for error bodies without a "statusCode"', () => {
+      const response = createResponse();
+      response.getHeader.mockReturnValue('text/html');
+      const warnSpy = vi
+        .spyOn((expressAdapter as any).logger, 'warn')
+        .mockImplementation(() => {});
+      // A custom HttpException body, e.g. new HttpException({ ... }, 404)
+      const body = { status: 404, error: '<img src=x onerror=alert(1)>' };
+
+      expressAdapter.reply(response, body, 404);
+
+      expect(response.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/json',
+      );
+      expect(warnSpy).toHaveBeenCalled();
+      expect(response.json).toHaveBeenCalledWith(body);
+    });
+
+    it('should send the standard body of the status for an Error body', () => {
+      const response = Object.assign(createResponse(), { statusCode: 200 });
+      response.status.mockImplementation(code => (response.statusCode = code));
+      const error = Object.assign(new Error('invalid signature'), {
+        config: { headers: { authorization: 'Bearer secret' } },
+      });
+      const exception = new UnauthorizedException(error);
+
+      expressAdapter.reply(response, exception.getResponse(), 401);
+
+      expect(response.json).toHaveBeenCalledExactlyOnceWith({
+        statusCode: 401,
+        message: 'Unauthorized',
+      });
+      expect(response.send).not.toHaveBeenCalled();
+    });
+
+    it('should keep the content type of a text body sent with an error status', () => {
+      const response = createResponse();
+      response.getHeader.mockReturnValue('text/html');
+
+      expressAdapter.reply(response, '<h1>Not found</h1>', 404);
+
+      expect(response.setHeader).not.toHaveBeenCalled();
+      expect(response.send).toHaveBeenCalledWith('<h1>Not found</h1>');
+    });
+
     describe('when the body is a StreamableFile', () => {
       const createStreamResponse = () =>
         Object.assign(new PassThrough(), {
@@ -363,6 +403,22 @@ describe('ExpressAdapter', () => {
         await vi.waitFor(() => expect(source.destroyed).toBe(true));
       });
 
+      it('should report a source that failed before the reply to the error handler', async () => {
+        // e.g. ENOENT from `fs.createReadStream()` while an interceptor awaits
+        const source = new PassThrough();
+        const errorHandler = vi.fn();
+        const file = new StreamableFile(source).setErrorHandler(errorHandler);
+        const response = createStreamResponse();
+        const error = new Error('ENOENT');
+        source.destroy(error);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, file);
+
+        expect(errorHandler).toHaveBeenCalledWith(error, response);
+        expect(response.setHeader).not.toHaveBeenCalled();
+      });
+
       it('should not destroy a source that has ended', async () => {
         const source = new PassThrough({ autoDestroy: false });
         const response = createStreamResponse();
@@ -391,6 +447,65 @@ describe('ExpressAdapter', () => {
         source.end('second');
         await new Promise(resolve => response.once('end', resolve));
         expect(Buffer.concat(chunks).toString()).toBe('firstsecond');
+      });
+
+      describe('for a HEAD request', () => {
+        // Node discards what is written to a HEAD response, so its write()
+        // never applies backpressure
+        const createHeadResponse = () =>
+          Object.assign(
+            new Writable({
+              write(_chunk, _encoding, callback) {
+                callback();
+              },
+            }),
+            {
+              req: { method: 'HEAD' },
+              getHeader: vi.fn(),
+              setHeader: vi.fn(),
+            },
+          );
+
+        it('should end the response without reading the whole source', async () => {
+          const chunkCount = 1000;
+          const chunk = Buffer.alloc(1024);
+          let reads = 0;
+          const source = new Readable({
+            read() {
+              this.push(++reads > chunkCount ? null : chunk);
+            },
+          });
+          const response = createHeadResponse();
+
+          expressAdapter.reply(response, new StreamableFile(source));
+          await new Promise(resolve => response.once('finish', resolve));
+          await vi.waitFor(() => expect(source.destroyed).toBe(true));
+
+          expect(reads).toBeLessThan(chunkCount);
+        });
+
+        it('should leave an error opening the source to the error handler', async () => {
+          const errorHandler = vi.fn();
+          const source = new Readable({
+            read() {
+              this.destroy(new Error('ENOENT'));
+            },
+          });
+          const response = createHeadResponse();
+
+          expressAdapter.reply(
+            response,
+            new StreamableFile(source).setErrorHandler(errorHandler),
+          );
+          await vi.waitFor(() =>
+            expect(errorHandler).toHaveBeenCalledWith(
+              expect.objectContaining({ message: 'ENOENT' }),
+              response,
+            ),
+          );
+
+          expect(response.writableEnded).toBe(false);
+        });
       });
     });
   });

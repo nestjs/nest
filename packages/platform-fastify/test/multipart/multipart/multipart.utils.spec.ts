@@ -9,12 +9,25 @@ import {
   mergeMultipartOptions,
   transformException,
 } from '../../../multipart/multipart/multipart.utils.js';
+import { memoryStorage } from '../../../multipart/storage/index.js';
 
 describe('mergeMultipartOptions', () => {
   it('should let local options override global options', () => {
     expect(
       mergeMultipartOptions({ dest: '/global' }, { dest: '/local' }),
     ).toEqual({ dest: '/local' });
+  });
+
+  it('should let a local "dest" override a global "storage"', () => {
+    expect(
+      mergeMultipartOptions({ storage: memoryStorage() }, { dest: '/local' }),
+    ).toEqual({ dest: '/local' });
+  });
+
+  it('should keep a global "storage" when the route sets no "dest"', () => {
+    const storage = memoryStorage();
+    const merged = mergeMultipartOptions({ storage }, { preservePath: true });
+    expect(merged.storage).toBe(storage);
   });
 
   it('should merge limits key-by-key', () => {

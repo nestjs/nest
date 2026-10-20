@@ -114,6 +114,21 @@ describe('FileStreamInterceptor', () => {
     );
   });
 
+  it('should apply the default field name limits to the fields before the file', async () => {
+    const target = new (FileStreamInterceptor('upload'))();
+    await expect(
+      target.intercept(
+        createContext(
+          createFakeRequest([field('a[1001]', 'x'), file('upload')]),
+          createReply(),
+        ),
+        handler,
+      ),
+    ).rejects.toEqual(
+      new BadRequestException('Field name array index too large - a[1001]'),
+    );
+  });
+
   it('should reject a file in another field', async () => {
     const target = new (FileStreamInterceptor('upload'))();
     const req = createFakeRequest([file('other')]);

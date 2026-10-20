@@ -145,23 +145,50 @@ describe('NoFilesInterceptor', () => {
     }
   });
 
-  it('should leave nesting and array indexes unlimited by default', async () => {
-    const name = 'a[b][c][d][7]';
-    const expected = { a: { b: { c: { d: new Array(7).concat('x') } } } };
-    expect(await intercept(new (NoFilesInterceptor())(), name)).toEqual(
-      expected,
+  /** `{ a: { b: { b: ... value } } }`, for the name `a[b][b]...`. */
+  const nest = (depth: number, value: unknown) => {
+    for (let i = 0; i < depth; i++) {
+      value = { b: value };
+    }
+    return { a: value };
+  };
+
+  it('should limit nesting to 32 levels by default', async () => {
+    const target = new (NoFilesInterceptor())();
+    expect(await intercept(target, 'a' + '[b]'.repeat(32))).toEqual(
+      nest(32, 'x'),
     );
-    expect(
-      await intercept(
-        new (NoFilesInterceptor({
-          limits: {
-            fieldNestingDepth: Infinity,
-            fieldArrayIndexLimit: Infinity,
-          },
-        }))(),
-        name,
-      ),
-    ).toEqual(expected);
+    const name = 'a' + '[b]'.repeat(33);
+    await expect(intercept(target, name)).rejects.toEqual(
+      new BadRequestException(`Field name nesting too deep - ${name}`),
+    );
+  });
+
+  it('should limit array indexes to 1000 by default', async () => {
+    const target = new (NoFilesInterceptor())();
+    expect((await intercept(target, 'a[1000]')).a).toHaveLength(1001);
+    await expect(intercept(target, 'a[1001]')).rejects.toEqual(
+      new BadRequestException('Field name array index too large - a[1001]'),
+    );
+  });
+
+  it('should apply the default field name limits to limits resolved per request', async () => {
+    const target = new (NoFilesInterceptor({ limits: () => ({}) }))();
+    await expect(intercept(target, 'a[1001]')).rejects.toEqual(
+      new BadRequestException('Field name array index too large - a[1001]'),
+    );
+  });
+
+  it('should lift the default field name limits when set to Infinity', async () => {
+    const name = 'a' + '[b]'.repeat(33) + '[1001]';
+    const expected = nest(33, new Array(1001).concat('x'));
+    for (const limits of [
+      { fieldNestingDepth: Infinity, fieldArrayIndexLimit: Infinity },
+      () => ({ fieldNestingDepth: Infinity, fieldArrayIndexLimit: Infinity }),
+    ]) {
+      const target = new (NoFilesInterceptor({ limits }))();
+      expect(await intercept(target, name)).toEqual(expected);
+    }
   });
 
   it("should check the field name limits in multer's order", async () => {

@@ -1,6 +1,7 @@
 import { HttpException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import createHttpError from 'http-errors';
+import { of, throwError } from 'rxjs';
 import { AbstractHttpAdapter } from '../../adapters/index.js';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception.js';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler.js';
@@ -67,6 +68,19 @@ describe('ExceptionsHandler', () => {
         statusCode: 400,
         message:
           "Body cannot be empty when content-type is set to 'application/json'",
+      });
+    });
+    it('should treat fastify validation errors as http errors', () => {
+      const validationError = Object.assign(
+        new Error("body must have required property 'name'"),
+        { statusCode: 400, code: 'FST_ERR_VALIDATION', validation: [] },
+      );
+      handler.next(validationError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(400);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 400,
+        message: "body must have required property 'name'",
       });
     });
     it('should not treat errors from external API calls with statusCode as http errors', () => {
@@ -147,6 +161,31 @@ describe('ExceptionsHandler', () => {
           message: 'User does not exist',
         });
       });
+      it('should not send the message of an error that must not be exposed', () => {
+        // What "send" (res.sendFile(), express.static()) passes to next()
+        const error = createHttpError(
+          404,
+          new Error("ENOENT: no such file or directory, stat '/srv/files/a'"),
+          { expose: false },
+        );
+        handler.next(error, new ExecutionContextHost([0, response]));
+
+        expect(statusStub).toHaveBeenCalledWith(404);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 404,
+          message: 'Not Found',
+        });
+      });
+      it('should not send the message of a 5xx error by default', () => {
+        const error = new createHttpError.BadGateway('connect 10.0.0.1:5432');
+        handler.next(error, new ExecutionContextHost([0, response]));
+
+        expect(statusStub).toHaveBeenCalledWith(502);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 502,
+          message: 'Bad Gateway',
+        });
+      });
     });
     describe('when exception is an instance of HttpException', () => {
       it('should send expected response status code and json object', () => {
@@ -218,6 +257,42 @@ describe('ExceptionsHandler', () => {
             ),
           ),
         } as any);
+
+        expect(statusStub).not.toHaveBeenCalled();
+        expect(jsonStub).not.toHaveBeenCalled();
+      });
+    });
+    // What an RPC exception filter (such as GrpcExceptionFilter) does when a
+    // hybrid application binds it to its HTTP routes as a global filter
+    describe('when a custom filter returns a stream', () => {
+      it('should answer as if no filter had matched', () => {
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: () => throwError(() => ({ code: 2 })),
+          },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(404);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 404,
+          message: 'Not Found',
+        });
+      });
+
+      it('should not answer again if the filter has answered', () => {
+        vi.spyOn(adapter, 'isHeadersSent').mockReturnValue(true);
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => of(null) },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
 
         expect(statusStub).not.toHaveBeenCalled();
         expect(jsonStub).not.toHaveBeenCalled();

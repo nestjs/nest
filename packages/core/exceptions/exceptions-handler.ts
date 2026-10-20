@@ -1,4 +1,5 @@
 import type { HttpException } from '@nestjs/common';
+import { isObservable } from 'rxjs';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception.js';
 import { BaseExceptionFilter } from './base-exception-filter.js';
 import {
@@ -34,7 +35,16 @@ export class ExceptionsHandler extends BaseExceptionFilter {
     }
 
     const filter = selectExceptionFilterMetadata(this.filters, exception);
-    filter && filter.func(exception, ctx);
-    return !!filter;
+    if (!filter) {
+      return false;
+    }
+    const result = filter.func(exception, ctx);
+    if (isObservable(result)) {
+      // An RPC exception filter (such as a global GrpcExceptionFilter that a
+      // hybrid application also binds to its HTTP routes) returns a stream
+      // for a transport to send, and leaves the request unanswered.
+      return !!this.applicationRef?.isHeadersSent(ctx.getArgByIndex(1));
+    }
+    return true;
   }
 }

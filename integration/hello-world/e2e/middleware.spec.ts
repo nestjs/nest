@@ -4,6 +4,7 @@ import {
   INestApplication,
   MiddlewareConsumer,
   Module,
+  Req,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -103,6 +104,55 @@ describe('Middleware', () => {
   afterEach(async () => {
     await app.close();
   });
+});
+
+@Controller()
+class RootController {
+  @Get()
+  root(@Req() req: { runs?: number }) {
+    return `${req.runs ?? 0}`;
+  }
+}
+
+describe('Middleware - wildcard at the global prefix root', () => {
+  let app: INestApplication;
+
+  const createAppWithWildcard = async (wildcard: string) => {
+    @Module({
+      controllers: [RootController],
+    })
+    class RootModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.runs = (req.runs ?? 0) + 1;
+            next();
+          })
+          .forRoutes(wildcard);
+      }
+    }
+
+    app = (
+      await Test.createTestingModule({
+        imports: [RootModule],
+      }).compile()
+    ).createNestApplication();
+    app.setGlobalPrefix('api');
+    await listenOnLoopback(app);
+  };
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it.each(['*', '{*path}', '*path', '/*splat'])(
+    'should run the middleware once for "/api" and "/api/" (%s)',
+    async wildcard => {
+      await createAppWithWildcard(wildcard);
+      await request(app.getHttpServer()).get('/api').expect(200, '1');
+      await request(app.getHttpServer()).get('/api/').expect(200, '1');
+    },
+  );
 });
 
 async function createApp(

@@ -74,6 +74,55 @@ describe('diskStorage', () => {
     expect(existsSync(join(dir, 'partial.txt'))).toBe(false);
   });
 
+  describe('when the stream is destroyed without an error', () => {
+    // As @fastify/multipart does when the form is cut off, possibly after
+    // the file's last chunk was pushed: pipeline() then waits for an 'end'
+    // that never comes.
+    const cutOff = () => {
+      const stream = new Readable({ read() {} });
+      stream.push('complete');
+      stream.push(null);
+      return stream;
+    };
+
+    it('should close and remove the file being written', async () => {
+      const stream = cutOff();
+      const pipe = stream.pipe.bind(stream);
+      vi.spyOn(stream, 'pipe').mockImplementation((destination, options) => {
+        const result = pipe(destination, options);
+        stream.destroy();
+        return result;
+      });
+      const storage = diskStorage({
+        destination: dir,
+        filename: (_req, _file, cb) => cb(null, 'cut.txt'),
+      });
+
+      await expect(handle(storage, incoming(stream))).rejects.toThrow(
+        'File stream was destroyed',
+      );
+      expect(existsSync(join(dir, 'cut.txt'))).toBe(false);
+    });
+
+    it('should not create a file for a stream destroyed before it is written', async () => {
+      const stream = cutOff();
+      const storage = diskStorage({
+        destination: dir,
+        filename: (_req, _file, cb) => {
+          stream.destroy();
+          stream.once('close', () => cb(null, 'late.txt'));
+        },
+      });
+      const file = incoming(stream);
+
+      await expect(handle(storage, file)).rejects.toThrow(
+        'File stream was destroyed',
+      );
+      expect(existsSync(join(dir, 'late.txt'))).toBe(false);
+      expect(file.path).toBeUndefined();
+    });
+  });
+
   it('should delete the file and its disk fields on removal', async () => {
     const storage = diskStorage({ destination: dir });
     const file = incoming(Readable.from([Buffer.from('x')]));

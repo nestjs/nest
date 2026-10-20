@@ -6,6 +6,7 @@ import {
   INestApplication,
   RequestMethod,
 } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { NodeAdapter } from '@nestjs/platform-node';
@@ -161,6 +162,50 @@ describe.each(adapters)('CSRF protection (%s)', (_name, createAdapter) => {
         .set('Sec-Fetch-Site', 'cross-site')
         .expect(403);
     });
+
+    it('runs before Nest middleware', () => {
+      return request(app.getHttpServer())
+        .post('/middleware')
+        .set('Host', HOST)
+        .set('Sec-Fetch-Site', 'cross-site')
+        .expect(403);
+    });
+  });
+
+  // Unlike `Test.createNestApplication()`, `NestFactory.create()` initializes
+  // the adapter before the application can be configured. On Fastify, that
+  // registers middie, which runs Nest middleware.
+  describe('with an application created by NestFactory.create()', () => {
+    beforeEach(async () => {
+      app = await NestFactory.create(AppModule, createAdapter(), {
+        logger: false,
+      });
+      app.enableCsrfProtection();
+      app.use('/use', (_req: unknown, res: { end(body: string): void }) =>
+        res.end('answered by app.use()'),
+      );
+      await listenOnLoopback(app);
+    });
+
+    it('runs before Nest middleware and middleware added afterwards', async () => {
+      const post = (path: string) =>
+        request(app.getHttpServer())
+          .post(path)
+          .set('Host', HOST)
+          .set('Sec-Fetch-Site', 'cross-site');
+
+      await post('/middleware').expect(403);
+      await post('/use').expect(403);
+      await post('/items').expect(403);
+    });
+
+    it('allows a same-origin POST to reach middleware', () => {
+      return request(app.getHttpServer())
+        .post('/middleware')
+        .set('Host', HOST)
+        .set('Sec-Fetch-Site', 'same-origin')
+        .expect(200, 'answered by middleware');
+    });
   });
 
   describe('with trusted origins and exclusions', () => {
@@ -260,6 +305,32 @@ describe.each(adapters)('CSRF protection (%s)', (_name, createAdapter) => {
       expect(await post('/api/webhooks/%2e%2e/%2e%2e/items')).toBe(403);
       expect(await post('/api//hooks/github')).toBe(403);
       expect(await post('/api/hooks/github;x')).toBe(403);
+    });
+  });
+
+  describe('with an exclusion ending in an optional wildcard', () => {
+    beforeEach(() =>
+      init(app => {
+        app.setGlobalPrefix('api');
+        app.enableCsrfProtection({ exclude: ['hooks/github/*'] });
+      }),
+    );
+
+    it('does not exclude the parent route through a trailing slash', async () => {
+      const post = (path: string) =>
+        request(app.getHttpServer())
+          .post(path)
+          .set('Host', HOST)
+          .set('Sec-Fetch-Site', 'cross-site')
+          .set('Origin', 'https://github.example');
+
+      await post('/api/hooks/github/push').expect(201, {
+        handler: 'github/:event',
+      });
+      await post('/api/hooks/github').expect(403);
+      // Express serves it with the "github" route, which is not excluded;
+      // Fastify does not serve it (strict routing, no empty "event")
+      await post('/api/hooks/github/').expect(_name === 'Express' ? 403 : 404);
     });
   });
 

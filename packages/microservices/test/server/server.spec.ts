@@ -6,6 +6,7 @@ import {
   Subject,
 } from 'rxjs';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { Server } from '../../server/server.js';
 
 class TestServer extends Server {
@@ -193,6 +194,59 @@ describe('Server', () => {
         expect(sendSpy).toHaveBeenLastCalledWith({ response: 'second' });
       });
     });
+    describe('when the stream emits many values', () => {
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+
+      it('should not shift each reply off the queue', async () => {
+        // Each shift() moves the replies queued behind the one it removes, so
+        // draining a stream of n replies that way takes time quadratic in n
+        // Patched by hand, as vi.spyOn() calls shift() itself
+        const shift = Array.prototype.shift;
+        const shifted: unknown[] = [];
+        Array.prototype.shift = function (this: unknown[]) {
+          const item = shift.call(this);
+          shifted.push(item);
+          return item;
+        };
+        sendSpy = vi.fn();
+        try {
+          server.send(of('first', 'second', 'third'), sendSpy);
+          await flush();
+        } finally {
+          Array.prototype.shift = shift;
+        }
+
+        expect(sendSpy.mock.calls).toEqual([
+          [{ response: 'first' }],
+          [{ response: 'second' }],
+          [{ response: 'third', isDisposed: true }],
+        ]);
+        expect(shifted).not.toContainEqual({ response: 'first' });
+      });
+
+      it('should send the completion on its own once the last reply is out', async () => {
+        let sent: () => void = () => {};
+        sendSpy = vi
+          .fn()
+          .mockImplementationOnce(
+            () => new Promise<void>(resolve => (sent = resolve)),
+          )
+          .mockResolvedValue(undefined);
+        const subject = new Subject<string>();
+
+        server.send(subject, sendSpy);
+        subject.next('first');
+        await flush();
+        subject.complete();
+        sent();
+        await flush();
+
+        expect(sendSpy.mock.calls).toEqual([
+          [{ response: 'first' }],
+          [{ isDisposed: true }],
+        ]);
+      });
+    });
   });
   describe('transformToObservable', () => {
     describe('when resultOrDeferred', () => {
@@ -240,6 +294,21 @@ describe('Server', () => {
       untypedServer.messageHandlers = messageHandlers;
       expect(server.getHandlers()).toBe(messageHandlers);
       untypedServer.messageHandlers = original;
+    });
+  });
+
+  describe('assertValidPacketId', () => {
+    it('should accept a number or a string of up to 256 characters', () => {
+      for (const id of [1, 'a'.repeat(256)]) {
+        expect(() => untypedServer.assertValidPacketId(id)).not.toThrow();
+      }
+    });
+    it('should reject any other id', () => {
+      for (const id of ['a'.repeat(257), [['a']], { id: 'a' }, null, true]) {
+        expect(() => untypedServer.assertValidPacketId(id)).toThrow(
+          InvalidPacketIdException,
+        );
+      }
     });
   });
 
@@ -490,6 +559,37 @@ describe('Server', () => {
 
       expect(respond).not.toHaveBeenCalled();
       expect(endHook).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('warnIfEventHandlerReplies', () => {
+    let warnSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+    });
+
+    it('should warn once per event handler that replying to requests is deprecated', () => {
+      const created = Object.assign(async () => null, { isEventHandler: true });
+      const deleted = Object.assign(async () => null, { isEventHandler: true });
+
+      untypedServer.warnIfEventHandlerReplies(created, 'user.created');
+      untypedServer.warnIfEventHandlerReplies(created, 'user.created');
+      untypedServer.warnIfEventHandlerReplies(deleted, 'user.deleted');
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .*@EventPattern handlers will not reply to "send\(\)".* Pattern: user\.created$/,
+      );
+      expect(warnSpy.mock.calls[1][0]).toMatch(/Pattern: user\.deleted$/);
+    });
+
+    it('should not warn for a message handler', () => {
+      untypedServer.warnIfEventHandlerReplies(async () => null, 'user.get');
+
+      expect(warnSpy).not.toHaveBeenCalled();
     });
   });
 

@@ -20,6 +20,7 @@ import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { ClientProxyFactory } from '../client/index.js';
 import { ClientsContainer } from '../container.js';
 import { ExceptionFiltersContext } from '../context/exception-filters-context.js';
+import { RequestContextHost } from '../context/request-context-host.js';
 import { RpcContextCreator } from '../context/rpc-context-creator.js';
 import { Transport } from '../enums/transport.enum.js';
 import {
@@ -331,6 +332,117 @@ describe('ListenersController', () => {
         expect(handleSpy.mock.calls[0][0]).toBeInstanceOf(Error);
         expect(handleSpy.mock.calls[0][1]).toBeInstanceOf(ExecutionContextHost);
       });
+
+      it('should run the next event handler', async () => {
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+          undefined,
+          true,
+        );
+        handler.next = vi.fn();
+        await handler('data', 'context');
+
+        expect(handler.next).toHaveBeenCalledExactlyOnceWith('data', 'context');
+      });
+
+      it('should pass the request context host on to the next event handler', async () => {
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+          undefined,
+          true,
+        );
+        handler.next = vi.fn();
+        const contextHost = RequestContextHost.create(
+          {} as any,
+          'data',
+          'context' as any,
+        );
+        await handler(contextHost, 'data', 'context');
+
+        expect(handler.next).toHaveBeenCalledExactlyOnceWith(
+          contextHost,
+          'data',
+          'context',
+        );
+      });
+
+      it('should ask the exception filters to report an unhandled error', async () => {
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(new Error());
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+          undefined,
+          true,
+          true,
+        );
+        await handler('data', 'context');
+
+        expect(handleSpy.mock.calls[0][2]).toBe(true);
+      });
+
+      it('should delegate errors to the filters of the controller that inherits the handler', async () => {
+        class BaseController {
+          handle() {}
+        }
+        class FirstController extends BaseController {}
+        class SecondController extends BaseController {}
+
+        const firstWrapper = new InstanceWrapper({
+          instance: new FirstController(),
+        });
+        const secondWrapper = new InstanceWrapper({
+          instance: new SecondController(),
+        });
+        const firstExceptionsHandler = { handle: vi.fn() };
+        const secondExceptionsHandler = { handle: vi.fn() };
+        vi.spyOn(exceptionFiltersContext, 'create').mockImplementation(
+          instance =>
+            (instance === firstWrapper.instance
+              ? firstExceptionsHandler
+              : secondExceptionsHandler) as any,
+        );
+        vi.spyOn(injector, 'loadPerContext').mockImplementation(() => {
+          throw new Error();
+        });
+
+        // Event handlers, as only those of both controllers stay registered
+        const firstHandler = instance.createRequestScopedHandler(
+          firstWrapper,
+          patterns,
+          module,
+          moduleKey,
+          'handle',
+          undefined,
+          true,
+        );
+        const secondHandler = instance.createRequestScopedHandler(
+          secondWrapper,
+          patterns,
+          module,
+          moduleKey,
+          'handle',
+          undefined,
+          true,
+        );
+        await firstHandler('data');
+        await secondHandler('data');
+
+        expect(firstExceptionsHandler.handle).toHaveBeenCalledOnce();
+        expect(secondExceptionsHandler.handle).toHaveBeenCalledOnce();
+      });
     });
   });
 
@@ -430,6 +542,22 @@ describe('ListenersController', () => {
           ]),
         ),
       ).rejects.toBe(failure);
+      expect(sideEffects).toEqual(['current']);
+    });
+
+    it('should run the next handlers when the current one errors', async () => {
+      const failure = new Error('handler failed');
+
+      await expect(
+        emissionsOf(
+          createHandlerChain([
+            throwError(() => failure),
+            slowHandlerResult('second'),
+            slowHandlerResult('third'),
+          ]),
+        ),
+      ).rejects.toBe(failure);
+      expect([...sideEffects].sort()).toEqual(['second', 'third']);
     });
 
     it('should run the next static handler when the current one completes empty', async () => {

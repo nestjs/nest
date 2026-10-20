@@ -2,6 +2,7 @@ import type {
   ArgumentMetadata,
   ContextType,
   RouteParamMetadata,
+  SseOptions,
 } from '@nestjs/common';
 import {
   type CanActivate,
@@ -11,6 +12,7 @@ import {
   type PipeTransform,
   type RequestMethod,
   SSE_ABORT_CONTROLLER,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   type Controller,
@@ -24,6 +26,7 @@ import {
   ROUTE_ARGS_METADATA,
   RouteParamtypes,
   SSE_METADATA,
+  SSE_OPTIONS_METADATA,
 } from '@nestjs/common/internal';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { IncomingMessage } from 'http';
@@ -42,6 +45,7 @@ import {
   GuardsContextCreator,
 } from '../guards/index.js';
 import { ContextUtils } from '../helpers/context-utils.js';
+import { destroyStreamableFile } from '../helpers/destroy-streamable-file.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import {
   HandleResponseFn,
@@ -55,6 +59,7 @@ import { InterceptorsContextCreator } from '../interceptors/interceptors-context
 import { PipesConsumer } from '../pipes/pipes-consumer.js';
 import { PipesContextCreator } from '../pipes/pipes-context-creator.js';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface.js';
+import { markRejectedByPipes } from './rejected-by-pipes.js';
 import {
   CustomHeader,
   RedirectResponse,
@@ -74,6 +79,11 @@ export interface ParamProperties {
   ) => any;
   schema?: StandardSchemaV1;
 }
+
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  value !== null &&
+  (typeof value === 'object' || typeof value === 'function') &&
+  typeof (value as PromiseLike<unknown>).then === 'function';
 
 export class RouterExecutionContext {
   private readonly handlerMetadataStorage = new HandlerMetadataStorage();
@@ -162,13 +172,31 @@ export class RouterExecutionContext {
         res: TResponse,
         next: Function,
         handlerObservable$?: Subject<void>,
+        handlerFiles: StreamableFile[] = [],
       ) =>
       async () => {
-        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+        try {
+          const pendingPipes =
+            fnApplyPipes && fnApplyPipes(args, req, res, next);
+          pendingPipes && (await pendingPipes);
+        } catch (err) {
+          // e.g. for upload interceptors to remove the files they stored
+          markRejectedByPipes(req);
+          throw err;
+        }
         const result = callback.apply(instance, args);
-        handlerObservable$ &&
-          this.notifyIfObservable(result, handlerObservable$);
-        return result;
+        if (!handlerObservable$) {
+          return result;
+        }
+        this.notifyIfObservable(result, handlerObservable$);
+        return isObservable(result)
+          ? result.pipe(
+              tap(
+                value =>
+                  value instanceof StreamableFile && handlerFiles.push(value),
+              ),
+            )
+          : result;
       };
 
     return async <TRequest, TResponse>(
@@ -197,12 +225,15 @@ export class RouterExecutionContext {
         isSseHandler || isEmptyArray(interceptors)
           ? undefined
           : new ReplaySubject<void>(1);
+      // The files the handler's own Observable emits: an interceptor may
+      // still hold one when the client goes away.
+      const handlerFiles: StreamableFile[] = [];
       const resultOrDeferred = this.interceptorsConsumer.intercept(
         interceptors,
         [req, res, next],
         instance,
         callback,
-        handler(args, req, res, next, handlerObservable$),
+        handler(args, req, res, next, handlerObservable$, handlerFiles),
         contextType,
       );
       const result = isSseHandler ? resultOrDeferred : await resultOrDeferred;
@@ -211,6 +242,7 @@ export class RouterExecutionContext {
         res,
         req,
         handlerObservable$,
+        handlerFiles,
       );
     };
   }
@@ -322,6 +354,12 @@ export class RouterExecutionContext {
     return Reflect.getMetadata(SSE_METADATA, callback);
   }
 
+  public reflectSseOptions(
+    callback: (...args: unknown[]) => unknown,
+  ): SseOptions | undefined {
+    return Reflect.getMetadata(SSE_OPTIONS_METADATA, callback);
+  }
+
   public exchangeKeysForValues(
     keys: string[],
     metadata: Record<number, RouteParamMetadata>,
@@ -421,38 +459,82 @@ export class RouterExecutionContext {
   public createPipesFn(
     pipes: PipeTransform[],
     paramsOptions: (ParamProperties & { metatype?: any })[],
-  ) {
-    const pipesFn = async <TRequest, TResponse>(
+  ):
+    | (<TRequest, TResponse>(
+        args: any[],
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ) => Promise<unknown> | undefined)
+    | null {
+    if (!paramsOptions.length) {
+      return null;
+    }
+    // Which pipes a param runs through is fixed for the route, so it is
+    // worked out once here rather than on every request.
+    const params = paramsOptions.map(
+      ({
+        index,
+        extractValue,
+        type,
+        data,
+        metatype,
+        pipes: paramPipes,
+        schema,
+      }) => {
+        const isPipeable = this.isPipeable(type);
+        return {
+          index,
+          extractValue,
+          isPipeable,
+          metadata: { metatype, type, data, schema } as ArgumentMetadata,
+          pipes: isPipeable ? pipes.concat(paramPipes) : [],
+        };
+      },
+    );
+
+    const applyPipes = async (
+      args: any[],
+      param: (typeof params)[number],
+      value: unknown,
+    ) => {
+      args[param.index] = await this.getParamValue(
+        value,
+        param.metadata,
+        param.pipes,
+      );
+    };
+
+    return <TRequest, TResponse>(
       args: any[],
       req: TRequest,
       res: TResponse,
       next: Function,
     ) => {
-      const resolveParamValue = async (
-        param: ParamProperties & { metatype?: any },
-      ) => {
-        const {
-          index,
-          extractValue,
-          type,
-          data,
-          metatype,
-          pipes: paramPipes,
-          schema,
-        } = param;
-        const value = extractValue(req, res, next);
-
-        args[index] = this.isPipeable(type)
-          ? await this.getParamValue(
-              value,
-              { metatype, type, data, schema } as ArgumentMetadata,
-              pipes.concat(paramPipes),
-            )
-          : value;
-      };
-      await Promise.all(paramsOptions.map(resolveParamValue));
+      // A value no pipe runs on is final once extracted and needs no promise,
+      // unless it is a thenable on a pipeable param, which getParamValue() has
+      // always settled. The rest, and any extractor that throws, go through
+      // one Promise.all() in param order, as before: pipes start in the same
+      // order and the first error is the same one.
+      let pending: Promise<void>[] | undefined;
+      for (let i = 0; i < params.length; i++) {
+        const param = params[i];
+        try {
+          const value = param.extractValue(req, res, next);
+          if (
+            param.isPipeable &&
+            (param.pipes.length > 0 || isThenable(value))
+          ) {
+            (pending ??= []).push(applyPipes(args, param, value));
+          } else {
+            args[param.index] = value;
+          }
+        } catch (err) {
+          (pending ??= []).push(Promise.reject(err));
+        }
+      }
+      return pending && Promise.all(pending);
     };
-    return paramsOptions.length ? pipesFn : null;
   }
 
   public createHandleResponseFn(
@@ -478,6 +560,8 @@ export class RouterExecutionContext {
     }
     const isSseHandler = !!this.reflectSse(callback);
     if (isSseHandler) {
+      const maxPendingDataLength =
+        this.reflectSseOptions(callback)?.maxPendingDataLength;
       return async <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
@@ -495,6 +579,7 @@ export class RouterExecutionContext {
           {
             additionalHeaders: () => res.getHeaders?.(),
             statusCode: () => res.statusCode ?? rawResponse.statusCode,
+            maxPendingDataLength,
           },
         );
       };
@@ -504,6 +589,7 @@ export class RouterExecutionContext {
       res: TResponse,
       req?: unknown,
       handlerObservable$?: Observable<unknown>,
+      handlerFiles: StreamableFile[] = [],
     ) => {
       let disconnected = false;
       if (isObservable(result)) {
@@ -526,9 +612,23 @@ export class RouterExecutionContext {
           throw err;
         }
       }
-      !isResponseHandled &&
-        !disconnected &&
-        (await this.responseController.apply(result, res, httpStatusCode));
+      if (disconnected) {
+        // Nothing is sent to a client that is gone. The stream of a
+        // StreamableFile would otherwise hold what it reads from (e.g. an
+        // open file) for good, also one the handler emitted that an
+        // interceptor held when the chain was torn down.
+        [result, ...handlerFiles].forEach(destroyStreamableFile);
+        return res;
+      }
+      if (!isResponseHandled) {
+        try {
+          await this.responseController.apply(result, res, httpStatusCode);
+        } catch (err) {
+          // Not sent either, e.g. for a header value Node.js rejects
+          destroyStreamableFile(result);
+          throw err;
+        }
+      }
       return res;
     };
   }

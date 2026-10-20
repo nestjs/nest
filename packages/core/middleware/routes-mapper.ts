@@ -3,7 +3,6 @@ import { NestContainer } from '../injector/container.js';
 import { Module } from '../injector/module.js';
 import { MetadataScanner } from '../metadata-scanner.js';
 import { PathsExplorer, RouteDefinition } from '../router/paths-explorer.js';
-import { targetModulesByContainer } from '../router/router-module.js';
 import {
   MODULE_PATH,
   PATH_METADATA,
@@ -15,7 +14,7 @@ import {
   isUndefined,
   stripEndSlash,
 } from '@nestjs/common/internal';
-import { type Type, VERSION_NEUTRAL } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 
 export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;
@@ -76,19 +75,19 @@ export class RoutesMapper {
     );
     const controllerVersion = this.getVersionMetadata(controller);
     const versioningConfig = this.applicationConfig.getVersioning();
-    const moduleRef = this.getHostModuleOfController(controller);
-    const modulePath = this.getModulePath(moduleRef?.metatype);
+    const modulePaths = this.getModulePathsOfController(controller);
 
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
 
-    const toUndefinedIfNeural = (version: VersionValue) =>
-      version === VERSION_NEUTRAL ? undefined : version;
-
-    const toRouteInfo = (item: RouteDefinition, prefix: string) =>
+    const toRouteInfo = (
+      item: RouteDefinition,
+      prefix: string,
+      modulePath: string,
+    ) =>
       item.path?.flatMap(p => {
         const endpointPath =
-          stripEndSlash(modulePath ?? '') +
+          modulePath +
           stripEndSlash(this.normalizeGlobalPath(prefix)) +
           addLeadingSlash(p);
 
@@ -96,15 +95,17 @@ export class RoutesMapper {
           path: endpointPath,
           method: item.requestMethod,
         };
+        // A VERSION_NEUTRAL route is kept apart from a route without a
+        // version, which is also served under the default version
         const version = item.version ?? controllerVersion;
         if (version && versioningConfig) {
           if (typeof version !== 'string' && Array.isArray(version)) {
-            return version.map(v => ({
+            return version.map((v): RouteInfo => ({
               ...routeInfo,
-              version: toUndefinedIfNeural(v),
+              version: v,
             }));
           }
-          routeInfo.version = toUndefinedIfNeural(version);
+          routeInfo.version = version;
         }
 
         return routeInfo;
@@ -112,10 +113,12 @@ export class RoutesMapper {
 
     return ([] as string[])
       .concat(routePath)
-      .map(routePath =>
-        controllerPaths
-          .map(item => toRouteInfo(item, routePath))
-          .reduce(concatPaths, []),
+      .flatMap(routePath =>
+        modulePaths.map(modulePath =>
+          controllerPaths
+            .map(item => toRouteInfo(item, routePath, modulePath))
+            .reduce(concatPaths, []),
+        ),
       )
       .reduce(concatPaths, []);
   }
@@ -136,22 +139,25 @@ export class RoutesMapper {
     return Reflect.getMetadata(PATH_METADATA, route);
   }
 
-  private getHostModuleOfController(
-    metatype: Type<unknown>,
-  ): Module | undefined {
+  /**
+   * Returns the paths the controller is served under: the router registers it
+   * once for each module that declares it, under the path of that module.
+   */
+  private getModulePathsOfController(metatype: Type<unknown>): string[] {
+    const modulePaths = this.getHostModulesOfController(metatype).map(
+      moduleRef => stripEndSlash(this.getModulePath(moduleRef.metatype) ?? ''),
+    );
+    return modulePaths.length > 0 ? [...new Set(modulePaths)] : [''];
+  }
+
+  private getHostModulesOfController(metatype: Type<unknown>): Module[] {
     if (!metatype) {
-      return;
+      return [];
     }
     const modulesContainer = this.container.getModules();
-    const moduleRefsSet = targetModulesByContainer.get(modulesContainer);
-    if (!moduleRefsSet) {
-      return;
-    }
-
-    const modules = Array.from(modulesContainer.values()).filter(moduleRef =>
-      moduleRefsSet.has(moduleRef),
+    return Array.from(modulesContainer.values()).filter(({ controllers }) =>
+      controllers.has(metatype),
     );
-    return modules.find(({ controllers }) => controllers.has(metatype));
   }
 
   private getModulePath(

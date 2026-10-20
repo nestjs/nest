@@ -1,4 +1,5 @@
 import { KafkaHeaders } from '../../enums/kafka-headers.enum.js';
+import { MaxKafkaHeadersExceededException } from '../../errors/max-kafka-headers-exceeded.exception.js';
 import { KafkaRequestSerializer } from '../../serializers/kafka-request.serializer.js';
 
 describe('KafkaRequestSerializer', () => {
@@ -143,6 +144,61 @@ describe('KafkaRequestSerializer', () => {
         key: '1',
         value: 'string',
       });
+    });
+  });
+
+  describe('serialize a kafka message whose headers are not an object', () => {
+    // An echo handler returns them as the sender of the request chose them
+    it.each([
+      ['a string', 'AAAA'],
+      ['an array', ['A', 'A']],
+      ['a number', 1234],
+      ['null', null],
+    ])('should send no headers if they are %s', async (_, headers) => {
+      expect(await instance.serialize({ value: 'x', headers })).toEqual({
+        value: 'x',
+        headers: {},
+      });
+    });
+
+    it('should send the headers of a class instance', async () => {
+      class Headers {
+        tenant = 'custom';
+      }
+
+      expect(
+        await instance.serialize({ value: 'x', headers: new Headers() }),
+      ).toEqual({ value: 'x', headers: { tenant: 'custom' } });
+    });
+  });
+
+  describe('serialize a kafka message with many header values', () => {
+    // kafkajs encodes each of them as a header, at about 1 kB apiece
+    it('should send 10000 header values', () => {
+      const headers = { repeated: new Array(9_999).fill(''), single: '' };
+
+      expect(instance.serialize({ value: 'x', headers }).headers).toEqual(
+        headers,
+      );
+    });
+
+    it('should throw on more header values', () => {
+      expect(() =>
+        instance.serialize({
+          value: 'x',
+          headers: { repeated: new Array(10_000).fill(''), single: '' },
+        }),
+      ).toThrow(MaxKafkaHeadersExceededException);
+    });
+
+    it('should throw on more headers', () => {
+      const headers = Object.fromEntries(
+        Array.from({ length: 10_001 }, (_, index) => [`header${index}`, '']),
+      );
+
+      expect(() => instance.serialize({ value: 'x', headers })).toThrow(
+        MaxKafkaHeadersExceededException,
+      );
     });
   });
 

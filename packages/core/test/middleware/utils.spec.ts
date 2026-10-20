@@ -1,4 +1,9 @@
-import { RequestMethod } from '@nestjs/common';
+import {
+  RequestMethod,
+  VERSION_NEUTRAL,
+  VersioningOptions,
+  VersioningType,
+} from '@nestjs/common';
 import { addLeadingSlash } from '@nestjs/common/utils/shared.utils.js';
 import { pathToRegexp } from 'path-to-regexp';
 import {
@@ -94,6 +99,31 @@ describe('middleware utils', () => {
     it('should return filtered middleware', () => {
       expect(filterMiddleware(middleware, [], noopAdapter)).toHaveLength(2);
     });
+    const expectSkippedOnlyForExactMatches = (adapter: NoopHttpAdapter) => {
+      vi.spyOn(adapter, 'getRequestMethod').mockReturnValue('GET');
+      const getRequestUrl = vi.spyOn(adapter, 'getRequestUrl');
+      const fn = vi.fn();
+      const next = vi.fn();
+      const [Middleware] = filterMiddleware(
+        [fn],
+        [{ path: 'users/login', method: RequestMethod.GET }],
+        adapter,
+      );
+      const instance = new Middleware();
+
+      getRequestUrl.mockReturnValue('/users/login?redirect=1');
+      instance.use({}, {}, next);
+      expect(next).toHaveBeenCalledOnce();
+      expect(fn).not.toHaveBeenCalled();
+
+      for (const url of ['/users/LOGIN', '/users/Login', '/users/login/']) {
+        getRequestUrl.mockReturnValue(url);
+        instance.use({}, {}, next);
+      }
+      expect(fn).toHaveBeenCalledTimes(3);
+      expect(next).toHaveBeenCalledOnce();
+    };
+
     describe('when the adapter tells how its router matches paths', () => {
       class StrictRouterAdapter extends NoopHttpAdapter {
         getRouteMatchingOptions() {
@@ -102,29 +132,12 @@ describe('middleware utils', () => {
       }
 
       it('should skip the middleware only for requests the router serves with an excluded route', () => {
-        const adapter = new StrictRouterAdapter({});
-        vi.spyOn(adapter, 'getRequestMethod').mockReturnValue('GET');
-        const getRequestUrl = vi.spyOn(adapter, 'getRequestUrl');
-        const fn = vi.fn();
-        const next = vi.fn();
-        const [Middleware] = filterMiddleware(
-          [fn],
-          [{ path: 'users/login', method: RequestMethod.GET }],
-          adapter,
-        );
-        const instance = new Middleware();
-
-        getRequestUrl.mockReturnValue('/users/login?redirect=1');
-        instance.use({}, {}, next);
-        expect(next).toHaveBeenCalledOnce();
-        expect(fn).not.toHaveBeenCalled();
-
-        for (const url of ['/users/LOGIN', '/users/Login', '/users/login/']) {
-          getRequestUrl.mockReturnValue(url);
-          instance.use({}, {}, next);
-        }
-        expect(fn).toHaveBeenCalledTimes(3);
-        expect(next).toHaveBeenCalledOnce();
+        expectSkippedOnlyForExactMatches(new StrictRouterAdapter({}));
+      });
+    });
+    describe('when the adapter does not tell how its router matches paths', () => {
+      it('should skip the middleware only for requests matching an excluded route exactly', () => {
+        expectSkippedOnlyForExactMatches(new NoopHttpAdapter({}));
       });
     });
   });
@@ -231,6 +244,188 @@ describe('middleware utils', () => {
     describe('when route is not excluded', () => {
       it('should return false', () => {
         expect(isMiddlewareRouteExcluded({}, [], adapter)).toBe(false);
+      });
+    });
+    describe('when the request target is not a plain path', () => {
+      const excludedRoutes = mapToExcludeRoute([
+        'cats/:id/avatar',
+        '*prefix/admin',
+      ]);
+      it('should return true for a path with a query string', () => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(
+          '/cats/3/avatar?size=1',
+        );
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(
+          true,
+        );
+      });
+      it.each([
+        '/cats/3#/avatar',
+        '/cats/3/avatar#',
+        '/cats/3/avatar?size=1#',
+        'http://localhost/admin',
+      ])('should return false for %j', url => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(
+          false,
+        );
+      });
+    });
+    describe('when the router ignores a trailing slash', () => {
+      const isExcluded = (exclusions: string[], url: string) => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        return isMiddlewareRouteExcluded(
+          {},
+          mapToExcludeRoute(exclusions, {
+            caseSensitive: false,
+            ignoreTrailingSlash: true,
+          }),
+          adapter,
+          true,
+        );
+      };
+
+      it('should not exclude "/x/", served by the "/x" route, when only its wildcard is excluded', () => {
+        expect(isExcluded(['invoices/*'], '/invoices/')).toBe(false);
+        expect(isExcluded(['invoices/{*path}'], '/invoices//')).toBe(false);
+        expect(isExcluded(['invoices/*'], '/invoices/abc')).toBe(true);
+        expect(isExcluded(['invoices/*'], '/invoices/abc/')).toBe(true);
+      });
+
+      it('should exclude "/x/" when "/x" is excluded too', () => {
+        expect(isExcluded(['invoices', 'invoices/*'], '/invoices/')).toBe(true);
+        expect(isExcluded(['invoices{/*path}'], '/invoices/')).toBe(true);
+      });
+    });
+    describe('when an excluded route has a version that is not in the path', () => {
+      const excludedRoutes = mapToExcludeRoute([
+        { path: 'cats/3', method: RequestMethod.GET, version: '1' },
+        { path: 'dogs/3', method: RequestMethod.GET, version: ['1', '2'] },
+        {
+          path: 'birds/3',
+          method: RequestMethod.GET,
+          version: ['1', VERSION_NEUTRAL],
+        },
+        { path: 'fish/3', method: RequestMethod.GET, version: VERSION_NEUTRAL },
+        { path: 'mice/3', method: RequestMethod.GET },
+      ]);
+      const isExcluded = (
+        url: string,
+        headers: Record<string, string>,
+        versioningOptions: VersioningOptions,
+      ) => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        return isMiddlewareRouteExcluded(
+          { headers },
+          excludedRoutes,
+          adapter,
+          false,
+          versioningOptions,
+        );
+      };
+
+      describe('with header versioning', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.HEADER,
+          header: 'X-Version',
+        };
+
+        it('should exclude the route only for a request for its version', () => {
+          expect(isExcluded('/cats/3', { 'x-version': '1' }, versioning)).toBe(
+            true,
+          );
+          expect(isExcluded('/cats/3', { 'x-version': '2' }, versioning)).toBe(
+            false,
+          );
+          expect(isExcluded('/cats/3', {}, versioning)).toBe(false);
+          expect(isExcluded('/dogs/3', { 'x-version': '2' }, versioning)).toBe(
+            true,
+          );
+          expect(isExcluded('/dogs/3', { 'x-version': '3' }, versioning)).toBe(
+            false,
+          );
+        });
+
+        it('should exclude a version-neutral route as before', () => {
+          expect(isExcluded('/birds/3', {}, versioning)).toBe(true);
+          expect(isExcluded('/birds/3', { 'x-version': '2' }, versioning)).toBe(
+            false,
+          );
+          expect(isExcluded('/fish/3', { 'x-version': '2' }, versioning)).toBe(
+            true,
+          );
+          expect(isExcluded('/mice/3', { 'x-version': '2' }, versioning)).toBe(
+            true,
+          );
+        });
+      });
+
+      it('should read the version of the Accept header with media type versioning', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.MEDIA_TYPE,
+          key: 'v=',
+        };
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json;v=1' }, versioning),
+        ).toBe(true);
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json;v=2' }, versioning),
+        ).toBe(false);
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json' }, versioning),
+        ).toBe(false);
+      });
+
+      it('should read the version with the extractor of custom versioning', () => {
+        const extractor = vi.fn((request: any) =>
+          request.headers.versions?.split(','),
+        );
+        const versioning: VersioningOptions = {
+          type: VersioningType.CUSTOM,
+          extractor,
+        };
+        expect(isExcluded('/cats/3', { versions: '1' }, versioning)).toBe(true);
+        // The route that serves it may be one of another version
+        expect(isExcluded('/cats/3', { versions: '2,1' }, versioning)).toBe(
+          false,
+        );
+        expect(isExcluded('/dogs/3', { versions: '2,1' }, versioning)).toBe(
+          true,
+        );
+        // Not called for a request that matches no versioned route
+        extractor.mockClear();
+        expect(isExcluded('/mice/3', {}, versioning)).toBe(true);
+        expect(extractor).not.toHaveBeenCalled();
+      });
+
+      it('should not exclude the route when the extractor throws', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.CUSTOM,
+          extractor: () => {
+            throw new Error('no version');
+          },
+        };
+        expect(isExcluded('/cats/3', {}, versioning)).toBe(false);
+      });
+
+      it('should leave the version to the path with URI versioning', () => {
+        const versioning: VersioningOptions = { type: VersioningType.URI };
+        expect(isExcluded('/cats/3', {}, versioning)).toBe(true);
+      });
+    });
+    describe('when the router matches a trailing slash exactly', () => {
+      it('should exclude "/x/" when it matches an excluded route', () => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue('/invoices/');
+        expect(
+          isMiddlewareRouteExcluded(
+            {},
+            mapToExcludeRoute(['invoices/*'], {
+              caseSensitive: true,
+              ignoreTrailingSlash: false,
+            }),
+            adapter,
+          ),
+        ).toBe(true);
       });
     });
     describe('when a HEAD request targets a route excluded for GET', () => {

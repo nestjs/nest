@@ -1,6 +1,12 @@
-import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
-import { AsyncLocalStorage } from 'async_hooks';
+import {
+  CallHandler,
+  ExecutionContext,
+  NestInterceptor,
+  StreamableFile,
+} from '@nestjs/common';
+import { AsyncLocalStorage, createHook } from 'async_hooks';
 import { Observable, defer, lastValueFrom, merge, of, retry } from 'rxjs';
+import { PassThrough } from 'stream';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
 
 describe('InterceptorsConsumer', () => {
@@ -109,6 +115,26 @@ describe('InterceptorsConsumer', () => {
         const result = await transformToResult(intercepted);
         expect(result).toBe('hello');
       });
+
+      it('should run each step in an async resource created when it is reached', async () => {
+        const types: string[] = [];
+        const hook = createHook({
+          init: (_id, type) => type !== 'PROMISE' && types.push(type),
+        }).enable();
+        try {
+          const intercepted = await consumer.intercept(
+            [{ intercept: (_context, next) => next.handle() }],
+            null!,
+            { constructor: null },
+            null!,
+            () => Promise.resolve('value'),
+          );
+          expect(await transformToResult(intercepted)).toBe('value');
+        } finally {
+          hook.disable();
+        }
+        expect(types).toEqual(['bound-anonymous-fn', 'bound-anonymous-fn']);
+      });
     });
 
     describe('when retrying is enabled', () => {
@@ -208,6 +234,23 @@ describe('InterceptorsConsumer', () => {
 
         expect(subscribed).not.toHaveBeenCalled();
         expect(teardown).not.toHaveBeenCalled();
+      });
+
+      it('should destroy the stream of a StreamableFile it drops', async () => {
+        // e.g. one returned after a timeout() interceptor gave up
+        const stream = new PassThrough();
+        let resolveNext!: (file: StreamableFile) => void;
+        const next = () =>
+          new Promise<StreamableFile>(resolve => (resolveNext = resolve));
+
+        const sub = consumer
+          .transformDeferred(next)
+          .subscribe({ error: () => {} });
+        sub.unsubscribe();
+        resolveNext(new StreamableFile(stream));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(stream.destroyed).toBe(true);
       });
     });
   });

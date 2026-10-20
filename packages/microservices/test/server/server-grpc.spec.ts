@@ -1,9 +1,12 @@
 import { Logger } from '@nestjs/common';
 import { join } from 'path';
 import { EventEmitter } from 'events';
+import { Duplex, Writable } from 'stream';
 import {
+  BehaviorSubject,
   concat,
   EMPTY,
+  firstValueFrom,
   lastValueFrom,
   NEVER,
   of,
@@ -12,7 +15,7 @@ import {
   toArray,
   throwError,
 } from 'rxjs';
-import { ignoreElements } from 'rxjs/operators';
+import { ignoreElements, map, tap } from 'rxjs/operators';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
 import { GrpcMethodStreamingType, GrpcStatus } from '../../index.js';
@@ -20,6 +23,11 @@ import { ServerGrpc } from '../../server/index.js';
 import { objectToMap } from './utils/object-to-map.js';
 
 const CANCELLED_EVENT = 'cancelled';
+
+const internalError = {
+  code: GrpcStatus.INTERNAL,
+  details: 'Internal server error',
+};
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -541,7 +549,12 @@ describe('ServerGrpc', () => {
     });
     describe('on call', () => {
       it('should call native & callback methods', async () => {
-        const call = { write: vi.fn(), end: vi.fn() };
+        const call = {
+          write: vi.fn(),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
+        };
         const callback = vi.fn();
         const native = vi.fn();
 
@@ -555,6 +568,8 @@ describe('ServerGrpc', () => {
           request: { data: [1, 2, 3] },
           write: vi.fn(),
           end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
         };
         const callback = vi.fn();
         const error = new Error('handler threw');
@@ -574,7 +589,12 @@ describe('ServerGrpc', () => {
       });
 
       it('should fail the call when the handler completes without a response', async () => {
-        const call = { write: vi.fn(), end: vi.fn() };
+        const call = {
+          write: vi.fn(),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
+        };
         const callback = vi.fn();
 
         await server.createUnaryServiceMethod(() => EMPTY)(call, callback);
@@ -586,7 +606,12 @@ describe('ServerGrpc', () => {
       });
 
       it('should await when a promise is return by the native', async () => {
-        const call = { write: vi.fn(), end: vi.fn() };
+        const call = {
+          write: vi.fn(),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
+        };
         const callback = vi.fn();
 
         const native = vi.fn().mockReturnValue(
@@ -893,6 +918,114 @@ describe('ServerGrpc', () => {
     });
   });
 
+  describe('when the client of a bidirectional call does not read the responses', () => {
+    // Like a grpc-js call: a response is written once the client reads it,
+    // and the requests are read for as long as the call is flowing
+    function createCall() {
+      const pendingWrites: Array<() => void> = [];
+      const call = Object.assign(
+        new Duplex({
+          objectMode: true,
+          readableHighWaterMark: 1,
+          writableHighWaterMark: 1,
+          read() {},
+          write(_chunk, _encoding, callback) {
+            pendingWrites.push(callback);
+          },
+        }),
+        { request: {}, metadata: {}, cancelled: false },
+      );
+      const readResponses = () =>
+        pendingWrites.splice(0).forEach(write => write());
+      return { call, readResponses };
+    }
+
+    const tick = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should stop reading requests until the client reads the responses', async () => {
+      const { call, readResponses } = createCall();
+      const handled: number[] = [];
+      const echo = (requests: any) => {
+        requests.drainBuffer?.();
+        return requests.pipe(tap((request: number) => handled.push(request)));
+      };
+
+      const result = server.createRequestStreamMethod(echo, true)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      for (let request = 0; request < 5; request++) {
+        call.push(request);
+      }
+      await tick();
+
+      expect(handled).toEqual([0]);
+      expect(call.isPaused()).toBe(true);
+
+      readResponses();
+      await tick();
+      expect(handled).toEqual([0, 1]);
+
+      while (handled.length < 5) {
+        readResponses();
+        await tick();
+      }
+      call.push(null);
+      await tick();
+      readResponses();
+      await result;
+
+      expect(handled).toEqual([0, 1, 2, 3, 4]);
+    });
+  });
+
+  describe('bufferUntilDrained', () => {
+    const tick = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should preserve message order while replay is pending', async () => {
+      const buffer = untypedServer.bufferUntilDrained();
+      buffer.next('first');
+      const stream = buffer.subject.asObservable();
+      stream.drainBuffer();
+      const result = lastValueFrom(stream.pipe(toArray()));
+
+      buffer.next('second');
+      await tick();
+      buffer.next('third');
+      buffer.complete();
+
+      expect(await result).toEqual(['first', 'second', 'third']);
+    });
+
+    it('should retain messages received before subscribing to the pending replay', async () => {
+      const buffer = untypedServer.bufferUntilDrained();
+      buffer.next('first');
+      const stream = buffer.subject.asObservable();
+      stream.drainBuffer();
+      buffer.next('second');
+      buffer.complete();
+
+      expect(await lastValueFrom(stream.pipe(toArray()))).toEqual([
+        'first',
+        'second',
+      ]);
+    });
+
+    it('should deliver messages to consumers before replay is requested', async () => {
+      const buffer = untypedServer.bufferUntilDrained();
+      const stream = buffer.subject.asObservable();
+      const result = firstValueFrom(stream);
+
+      buffer.next('first');
+
+      expect(await result).toBe('first');
+      stream.drainBuffer();
+      buffer.complete();
+      await tick();
+    });
+  });
+
   describe('createRequestStreamMethod processing end hook', () => {
     function createCall() {
       return Object.assign(new EventEmitter(), {
@@ -1162,18 +1295,21 @@ describe('ServerGrpc', () => {
       );
     });
 
-    it('should run the end hook once and pass the error on when the call errors under a consuming handler', async () => {
+    it('should run the end hook once and fail the call when the call errors under a consuming handler', async () => {
       const endHook = bindEndHook();
       const call = createCall();
+      const callback = vi.fn();
+      untypedServer.logger = new NoopLogger();
 
       const result = server.createRequestStreamMethod(consumingHandler, false)(
         call as any,
-        vi.fn(),
+        callback,
       );
       await tick();
       call.emit('error', new Error('boom'));
 
-      await expect(result).rejects.toThrow('boom');
+      await expect(result).resolves.toBeUndefined();
+      expect(callback).toHaveBeenCalledExactlyOnceWith(internalError, null);
       expect(endHook).toHaveBeenCalledExactlyOnceWith(
         server.transportId,
         call.request,
@@ -1259,6 +1395,9 @@ describe('ServerGrpc', () => {
       emit: vi.fn(),
     });
 
+    const spyOnLoggerError = () =>
+      vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+
     describe('createUnaryServiceMethod', () => {
       it('should run the end hook once, with the request, when the handler completes', async () => {
         const endHook = bindHooks();
@@ -1277,34 +1416,63 @@ describe('ServerGrpc', () => {
         );
       });
 
-      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+      // A rejection that bypassed the exception filters (a filter that
+      // throws) would otherwise go unhandled: grpc-js drops the promise
+      it('should run the end hook once and fail the call when the handler rejects', async () => {
         const endHook = bindHooks();
         const call = createCall();
+        const callback = vi.fn();
+        const loggerErrorSpy = spyOnLoggerError();
 
         await expect(
           server.createUnaryServiceMethod(async () => {
             throw error;
-          })(call as any, vi.fn()),
-        ).rejects.toThrow(error);
+          })(call as any, callback),
+        ).resolves.toBeUndefined();
 
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError);
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
         );
       });
+
+      it('should fail the call when a response promise rejects', async () => {
+        bindHooks();
+        const callback = vi.fn();
+        const loggerErrorSpy = spyOnLoggerError();
+
+        await server.createUnaryServiceMethod(() =>
+          of('hero').pipe(
+            map(async () => {
+              throw error;
+            }),
+          ),
+        )(createCall() as any, callback);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError);
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+      });
     });
 
     describe('createStreamServiceMethod', () => {
-      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+      it('should run the end hook once and fail the call when the handler rejects', async () => {
         const endHook = bindHooks();
         const call = createCall();
+        spyOnLoggerError();
 
         await expect(
           server.createStreamServiceMethod(async () => {
             throw error;
           })(call as any, vi.fn()),
-        ).rejects.toThrow(error);
+        ).resolves.toBeUndefined();
 
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+          'error',
+          internalError,
+        );
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
@@ -1313,8 +1481,9 @@ describe('ServerGrpc', () => {
     });
 
     describe('createRequestStreamMethod', () => {
-      it('should run the end hook once when the call ends and the handler then rejects', async () => {
+      it('should run the end hook once and fail the call when the call ends and the handler then rejects', async () => {
         const endHook = bindHooks();
+        const callback = vi.fn();
         const call = {
           ...createCall(),
           // Fires every listener as soon as it is registered, so the call has
@@ -1325,16 +1494,56 @@ describe('ServerGrpc', () => {
             }
           },
         };
+        spyOnLoggerError();
 
         await expect(
           server.createRequestStreamMethod(async () => {
             throw error;
-          }, false)(call as any, vi.fn()),
-        ).rejects.toThrow(error);
+          }, false)(call as any, callback),
+        ).resolves.toBeUndefined();
 
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError, null);
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
+        );
+      });
+
+      it('should fail the call when the response promise rejects', async () => {
+        bindHooks();
+        const callback = vi.fn();
+        const loggerErrorSpy = spyOnLoggerError();
+
+        await expect(
+          server.createRequestStreamMethod(
+            () =>
+              of('hero').pipe(
+                map(async () => {
+                  throw error;
+                }),
+              ),
+            false,
+          )(createCall() as any, callback),
+        ).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError, null);
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+      });
+
+      it('should fail a stream response call when the handler rejects', async () => {
+        bindHooks();
+        const call = createCall();
+        spyOnLoggerError();
+
+        await expect(
+          server.createRequestStreamMethod(async () => {
+            throw error;
+          }, true)(call as any, vi.fn()),
+        ).resolves.toBeUndefined();
+
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+          'error',
+          internalError,
         );
       });
     });
@@ -1393,6 +1602,253 @@ describe('ServerGrpc', () => {
           call.request,
         );
       });
+    });
+  });
+
+  describe('when a unary call is cancelled', () => {
+    // grpc-js emits "cancelled" when the client cancels, when the deadline
+    // expires, when the connection drops and once the call has been answered
+    function createCall({ cancelled = false } = {}) {
+      return Object.assign(new EventEmitter(), {
+        request: { id: 1 },
+        metadata: {},
+        cancelled,
+      });
+    }
+
+    function cancelCall(call: ReturnType<typeof createCall>) {
+      call.cancelled = true;
+      call.emit(CANCELLED_EVENT, 'cancelled');
+    }
+
+    function bindEndHook() {
+      const endHook = vi.fn();
+      untypedServer.onProcessingEndHook = endHook;
+      return endHook;
+    }
+
+    it('should unsubscribe from a response stream that has not emitted', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+      const response$ = new Subject<string>();
+
+      await server.createUnaryServiceMethod(() => response$)(call, callback);
+      expect(response$.observed).toBe(true);
+      cancelCall(call);
+
+      expect(response$.observed).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+
+    it('should unsubscribe from a response stream that stays open once the call is answered', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+      const response$ = new BehaviorSubject('hero');
+
+      await server.createUnaryServiceMethod(() => response$)(call, callback);
+      await new Promise(resolve => setImmediate(resolve));
+      expect(callback).toHaveBeenCalledExactlyOnceWith(null, 'hero');
+      cancelCall(call);
+
+      expect(response$.observed).toBe(false);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should not subscribe to the response stream if the call was cancelled while the handler ran', async () => {
+      const endHook = bindEndHook();
+      const call = createCall({ cancelled: true });
+      const callback = vi.fn();
+      const response$ = new Subject<string>();
+
+      await server.createUnaryServiceMethod(() => response$)(call, callback);
+
+      expect(response$.observed).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+  });
+
+  describe('when an error cannot be sent as it is', () => {
+    // grpc-js throws on an error that is not an object ("'message' in
+    // error") and on a status message with a lone surrogate ("encodeURI")
+    const stringError = 'Forbidden resource';
+    const sendableStringError = {
+      code: GrpcStatus.UNKNOWN,
+      message: 'Forbidden resource',
+    };
+    const loneSurrogateError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: `Unexpected token '\ud83d', "😀" is not valid JSON`,
+    };
+    const sendableLoneSurrogateError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: `Unexpected token '\ufffd', "😀" is not valid JSON`,
+    };
+
+    const createCall = () => ({
+      request: {},
+      metadata: {},
+      write: vi.fn(() => true),
+      end: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+    });
+
+    it.each([
+      ['a string', stringError, sendableStringError],
+      ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+    ])(
+      'should send a unary call an error with %s that grpc-js can send',
+      async (_, error, sendableError) => {
+        const callback = vi.fn();
+
+        await server.createUnaryServiceMethod(() => throwError(() => error))(
+          createCall(),
+          callback,
+        );
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(sendableError);
+      },
+    );
+
+    it.each([
+      ['a string', stringError, sendableStringError],
+      ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+    ])(
+      'should emit a response stream an error with %s that grpc-js can send',
+      async (_, error, sendableError) => {
+        const call = createCall();
+
+        await server.createStreamServiceMethod(() => throwError(() => error))(
+          call,
+          vi.fn(),
+        );
+
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+          'error',
+          sendableError,
+        );
+      },
+    );
+
+    it('should send a client stream call an error that grpc-js can send', async () => {
+      const callback = vi.fn();
+
+      await server.createRequestStreamMethod(
+        () => throwError(() => stringError),
+        false,
+      )(createCall() as any, callback);
+
+      expect(callback).toHaveBeenCalledExactlyOnceWith(
+        sendableStringError,
+        null,
+      );
+    });
+
+    it('should send a stream call an error that grpc-js can send', async () => {
+      const callback = vi.fn();
+      const call = createCall();
+      const handler = async () => throwError(() => loneSurrogateError);
+
+      await server.createStreamCallMethod(handler, false)(
+        call as any,
+        callback,
+      );
+      await server.createStreamCallMethod(handler, true)(call as any, callback);
+
+      expect(callback).toHaveBeenCalledExactlyOnceWith(
+        sendableLoneSurrogateError,
+        null,
+      );
+      expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+        'error',
+        sendableLoneSurrogateError,
+      );
+    });
+
+    it('should send an error that grpc-js can send as it is', async () => {
+      const callback = vi.fn();
+      const error = new Error('well-formed 😀');
+
+      await server.createUnaryServiceMethod(() => throwError(() => error))(
+        createCall(),
+        callback,
+      );
+
+      expect(callback.mock.calls[0][0]).toBe(error);
+    });
+  });
+
+  describe('when a response stream emits null', () => {
+    const nullResponseError = {
+      code: GrpcStatus.INTERNAL,
+      details: 'The handler emitted a null response',
+    };
+
+    // An object mode stream, like a grpc-js call: "write(null)" throws
+    function createCall({ highWaterMark = 16 } = {}) {
+      const written: unknown[] = [];
+      const errors: unknown[] = [];
+      const pendingWrites: Array<() => void> = [];
+      const call = Object.assign(
+        new Writable({
+          objectMode: true,
+          highWaterMark,
+          write(chunk, _encoding, callback) {
+            written.push(chunk);
+            pendingWrites.push(callback);
+          },
+        }),
+        { request: {}, metadata: {} },
+      );
+      call.on('error', err => errors.push(err));
+      const flush = () => pendingWrites.splice(0).forEach(write => write());
+      return { call, written, errors, flush };
+    }
+
+    it('should fail the call instead of writing null', async () => {
+      const { call, written, errors } = createCall();
+
+      await server.createStreamServiceMethod(() => of('a', null, 'b'))(
+        call,
+        vi.fn(),
+      );
+
+      expect(written).toEqual(['a']);
+      expect(errors).toEqual([nullResponseError]);
+    });
+
+    it('should fail the call once the responses before null are written', async () => {
+      const { call, written, errors, flush } = createCall({
+        highWaterMark: 1,
+      });
+      const subject = new Subject<string | null>();
+
+      const result = server.createStreamServiceMethod(() => subject)(
+        call,
+        vi.fn(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      subject.next('a');
+      subject.next('b');
+      subject.next(null);
+      flush();
+      expect(errors).toEqual([]);
+      flush();
+      await result;
+
+      expect(written).toEqual(['a', 'b']);
+      expect(errors).toEqual([nullResponseError]);
     });
   });
 

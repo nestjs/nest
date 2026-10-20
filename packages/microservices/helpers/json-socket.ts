@@ -1,6 +1,7 @@
 import { Buffer } from 'buffer';
 import { StringDecoder } from 'string_decoder';
 import { CorruptedPacketLengthException } from '../errors/corrupted-packet-length.exception.js';
+import { DrainTimeoutException } from '../errors/drain-timeout.exception.js';
 import { IncompleteMessageTimeoutException } from '../errors/incomplete-message-timeout.exception.js';
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
 import { MaxSendBufferSizeExceededException } from '../errors/max-send-buffer-size-exceeded.exception.js';
@@ -10,11 +11,15 @@ import { TcpSocket } from './tcp-socket.js';
 const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
 const DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT = 30_000;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024; // 128 MBs in bytes
+const DEFAULT_DRAIN_TIMEOUT = 30_000;
+const MAX_CONTENT_LENGTH_SIZE = 32; // in characters, a string length never has more than 16 digits
 
 export interface JsonSocketOptions {
   maxBufferSize?: number;
   incompleteMessageTimeout?: number;
   maxSendBufferSize?: number;
+  drainTimeout?: number;
+  pauseOnBackpressure?: boolean;
 }
 
 export class JsonSocket extends TcpSocket {
@@ -26,8 +31,12 @@ export class JsonSocket extends TcpSocket {
   private readonly maxBufferSize: number;
   private readonly incompleteMessageTimeout: number;
   private readonly maxSendBufferSize: number;
+  private readonly drainTimeout: number;
+  private readonly pauseOnBackpressure: boolean;
   private incompleteMessageTimer: NodeJS.Timeout | null = null;
+  private drainTimer: NodeJS.Timeout | null = null;
   private isBackpressured = false;
+  private writtenLength = 0;
 
   constructor(socket: any, options?: JsonSocketOptions) {
     super(socket);
@@ -36,25 +45,26 @@ export class JsonSocket extends TcpSocket {
       options?.incompleteMessageTimeout ?? DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT;
     this.maxSendBufferSize =
       options?.maxSendBufferSize ?? DEFAULT_MAX_SEND_BUFFER_SIZE;
+    this.drainTimeout = options?.drainTimeout ?? DEFAULT_DRAIN_TIMEOUT;
+    this.pauseOnBackpressure = options?.pauseOnBackpressure ?? true;
 
-    this.socket.on(TcpEventsMap.CLOSE, () =>
-      this.clearIncompleteMessageTimer(),
-    );
+    this.socket.on(TcpEventsMap.CLOSE, () => {
+      this.clearIncompleteMessageTimer();
+      this.clearDrainTimer();
+    });
   }
 
   protected handleSend(message: any, callback?: (err?: any) => void) {
-    const flushed = this.socket.write(
-      this.formatMessageData(message),
-      'utf-8',
-      callback,
-    );
+    const data = this.formatMessageData(message);
+    const flushed = this.socket.write(data, 'utf-8', callback);
+    this.writtenLength += data.length;
 
     // "write" returns false once the outgoing buffer is above the socket's
     // high-water mark. Without honouring it, a peer that issues requests but
     // never reads the responses makes the process buffer every response in
     // memory. Reading is suspended until the peer catches up, which also stops
     // further requests from that peer being turned into more queued responses.
-    if (flushed === false) {
+    if (flushed === false && this.pauseOnBackpressure) {
       this.applyBackpressure();
     }
     this.assertSendBufferWithinLimit();
@@ -117,6 +127,16 @@ export class JsonSocket extends TcpSocket {
          * if not, the end of the buffer string might be in the middle of a content length string
          */
         if (i === -1) {
+          // Data that cannot be a content length would otherwise be kept and
+          // scanned again on every read until a delimiter arrives
+          if (this.buffer.length > MAX_CONTENT_LENGTH_SIZE) {
+            const rawContentLength = this.buffer.substring(
+              0,
+              MAX_CONTENT_LENGTH_SIZE,
+            );
+            this.buffer = '';
+            throw new CorruptedPacketLengthException(rawContentLength);
+          }
           break;
         }
         const rawContentLength = this.buffer.substring(0, i);
@@ -161,10 +181,12 @@ export class JsonSocket extends TcpSocket {
     this.clearIncompleteMessageTimer();
     this.socket.pause();
     this.socket.once(TcpEventsMap.DRAIN, () => this.releaseBackpressure());
+    this.armDrainTimer();
   }
 
   private releaseBackpressure() {
     this.isBackpressured = false;
+    this.clearDrainTimer();
     this.socket.resume();
 
     // Frames that arrived before the socket was paused may still be buffered.
@@ -175,6 +197,58 @@ export class JsonSocket extends TcpSocket {
     } finally {
       this.refreshIncompleteMessageTimer();
     }
+  }
+
+  /**
+   * Arms a timer while reads are suspended, as only the peer, by reading,
+   * can bring about the "drain" that resumes them. Whenever it fires, it is
+   * armed again if some of the queued data has been written out since, so
+   * it only drops a peer once nothing at all has been written out for a
+   * full period - a slow but reading peer is given more time.
+   */
+  private armDrainTimer() {
+    if (!this.drainTimeout) {
+      return;
+    }
+    const drainedLength = this.getDrainedLength();
+    this.drainTimer = setTimeout(
+      () => this.handleDrainTimeout(drainedLength),
+      this.drainTimeout,
+    );
+    this.drainTimer.unref?.();
+  }
+
+  private clearDrainTimer() {
+    if (!this.drainTimer) {
+      return;
+    }
+    clearTimeout(this.drainTimer);
+    this.drainTimer = null;
+  }
+
+  private handleDrainTimeout(drainedLength: number) {
+    this.drainTimer = null;
+    if (this.getDrainedLength() > drainedLength) {
+      this.armDrainTimer();
+      return;
+    }
+
+    // A FIN would only queue up behind the responses the peer is not reading.
+    this.handleDataError(
+      new DrainTimeoutException(this.socket.writableLength, this.drainTimeout),
+      { destroy: true },
+    );
+  }
+
+  /**
+   * How much of the data written so far has left the outgoing buffer. Unlike
+   * "writableLength", it does not move when more responses are queued, only
+   * when a pending write completes, which is as fine-grained as Node reports
+   * progress. Sockets do not decode strings, so "writableLength" counts them
+   * by length, as "writtenLength" does.
+   */
+  private getDrainedLength() {
+    return this.writtenLength - this.socket.writableLength;
   }
 
   /**

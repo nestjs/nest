@@ -2,6 +2,7 @@ import type { HttpServer } from '@nestjs/common';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config.js';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception.js';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler.js';
 import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
 import { ContextIdFactory } from '../helpers/context-id-factory.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
@@ -46,7 +47,7 @@ import {
 import {
   RequestMethod,
   VersioningType,
-  InternalServerErrorException,
+  NotFoundException,
   type Type,
   Logger,
 } from '@nestjs/common';
@@ -66,7 +67,6 @@ export class RouterExplorer {
   private readonly logger = new Logger(RouterExplorer.name, {
     timestamp: true,
   });
-  private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
     metadataScanner: MetadataScanner,
@@ -368,11 +368,12 @@ export class RouterExplorer {
       return { regexp: host, keys: [] };
     });
 
-    const unsupportedFilteringErrorMessage = Array.isArray(host)
+    const unsupportedFilteringMessage = Array.isArray(host)
       ? `HTTP adapter does not support filtering on hosts: ["${host.join(
           '", "',
         )}"]`
       : `HTTP adapter does not support filtering on host: "${host}"`;
+    let hasWarnedOfUnsupportedFiltering = false;
 
     return <TRequest extends Record<string, any> = any, TResponse = any>(
       req: TRequest,
@@ -396,9 +397,18 @@ export class RouterExplorer {
         }
       }
       if (!next) {
-        throw new InternalServerErrorException(
-          unsupportedFilteringErrorMessage,
-        );
+        // The adapter cannot pass the request on to another route. Tell the
+        // developer once, and answer as if no route matched, without the
+        // hosts this route is bound to.
+        if (!hasWarnedOfUnsupportedFiltering) {
+          hasWarnedOfUnsupportedFiltering = true;
+          this.logger.warn(
+            `${unsupportedFilteringMessage}. Requests for other hosts are answered with 404 instead of being passed on to other routes.`,
+          );
+        }
+        const method = httpAdapterRef.getRequestMethod(req);
+        const url = httpAdapterRef.getRequestUrl(req);
+        throw new NotFoundException(`Cannot ${method} ${url}`);
       }
       return next();
     };
@@ -456,6 +466,9 @@ export class RouterExplorer {
     const collection = moduleRef.controllers;
 
     const isTreeDurable = instanceWrapper.isDependencyTreeDurable();
+    // Kept per route, not per handler function: controllers that inherit
+    // the handler from a base class can declare different filters
+    let exceptionFilter: ExceptionsHandler | undefined;
 
     return async <TRequest extends Record<any, any>, TResponse>(
       req: TRequest,
@@ -480,17 +493,11 @@ export class RouterExplorer {
           instanceWrapper.id,
         )(req, res, next);
       } catch (err) {
-        let exceptionFilter = this.exceptionFiltersCache.get(
+        exceptionFilter ??= this.exceptionsFilter.create(
+          instance,
           instance[methodName],
+          moduleKey,
         );
-        if (!exceptionFilter) {
-          exceptionFilter = this.exceptionsFilter.create(
-            instance,
-            instance[methodName],
-            moduleKey,
-          );
-          this.exceptionFiltersCache.set(instance[methodName], exceptionFilter);
-        }
         const host = new ExecutionContextHost([req, res, next]);
         exceptionFilter.next(err, host);
       }

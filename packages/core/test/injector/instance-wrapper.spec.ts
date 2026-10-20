@@ -1,4 +1,5 @@
 import { Injectable, Scope } from '@nestjs/common';
+import { getClassRef } from '../../helpers/class-ref-registry.js';
 import { createContextId } from '../../helpers/index.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
@@ -26,6 +27,14 @@ describe('InstanceWrapper', () => {
       expect(instance.getInstanceByContextId(STATIC_CONTEXT).instance).toEqual(
         partial.instance,
       );
+    });
+    it('should register the metatype as the class of its instances', () => {
+      class Mixin {}
+      class Host {}
+      Host.prototype.constructor = Mixin;
+
+      new InstanceWrapper({ metatype: Host });
+      expect(getClassRef(new Host())).toBe(Host);
     });
   });
 
@@ -58,6 +67,20 @@ describe('InstanceWrapper', () => {
           durable: true,
         });
         wrapper.addCtorMetadata(0, otherWrapper);
+        otherWrapper.addCtorMetadata(0, wrapper);
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
+        expect(otherWrapper.isDependencyTreeStatic()).toBe(false);
+      });
+    });
+    describe('when circular reference and non static dependency is visited last', () => {
+      it('should return false', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper();
+        wrapper.addCtorMetadata(0, otherWrapper);
+        wrapper.addCtorMetadata(
+          1,
+          new InstanceWrapper({ scope: Scope.REQUEST }),
+        );
         otherWrapper.addCtorMetadata(0, wrapper);
         expect(wrapper.isDependencyTreeStatic()).toBe(false);
         expect(otherWrapper.isDependencyTreeStatic()).toBe(false);
@@ -259,6 +282,24 @@ describe('InstanceWrapper', () => {
         otherWrapper.addCtorMetadata(0, wrapper);
         expect(wrapper.isDependencyTreeDurable()).toBe(true);
         expect(otherWrapper.isDependencyTreeDurable()).toBe(true);
+      });
+    });
+    describe('when circular reference and non durable dependency is visited last', () => {
+      it('should return false', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper();
+        wrapper.addCtorMetadata(0, otherWrapper);
+        wrapper.addCtorMetadata(
+          1,
+          new InstanceWrapper({ scope: Scope.REQUEST }),
+        );
+        otherWrapper.addCtorMetadata(
+          0,
+          new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+        );
+        otherWrapper.addCtorMetadata(1, wrapper);
+        expect(wrapper.isDependencyTreeDurable()).toBe(false);
+        expect(otherWrapper.isDependencyTreeDurable()).toBe(false);
       });
     });
     describe('when request scoped and durable', () => {
@@ -686,6 +727,25 @@ describe('InstanceWrapper', () => {
     });
   });
 
+  describe('addPropertiesMetadata', () => {
+    it('should replace the metadata of a key that is already registered', () => {
+      const instance = new InstanceWrapper();
+      const [first, second, other] = [
+        new InstanceWrapper(),
+        new InstanceWrapper(),
+        new InstanceWrapper(),
+      ];
+      instance.addPropertiesMetadata('key1', first);
+      instance.addPropertiesMetadata('key2', other);
+      instance.addPropertiesMetadata('key1', second);
+
+      expect(instance.getPropertiesMetadata()).toEqual([
+        { key: 'key1', wrapper: second },
+        { key: 'key2', wrapper: other },
+      ]);
+    });
+  });
+
   describe('addEnhancerMetadata', () => {
     it('should add enhancers metadata', () => {
       const instance = new InstanceWrapper();
@@ -911,6 +971,43 @@ describe('InstanceWrapper', () => {
         ).toBe(false);
       });
     });
+    describe('when both wrapper and inquirer are transient', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.TRANSIENT });
+      const inquirer = new InstanceWrapper({ scope: Scope.TRANSIENT });
+
+      it('should return true if root inquirer is not transient', () => {
+        const rootInquirer = new InstanceWrapper();
+        expect(wrapper.isStatic(STATIC_CONTEXT, inquirer, rootInquirer)).toBe(
+          true,
+        );
+      });
+
+      it('should return false if root inquirer is transient', () => {
+        const rootInquirer = new InstanceWrapper({ scope: Scope.TRANSIENT });
+        expect(wrapper.isStatic(STATIC_CONTEXT, inquirer, rootInquirer)).toBe(
+          false,
+        );
+      });
+
+      it('should return true if there is no root inquirer', () => {
+        expect(wrapper.isStatic(STATIC_CONTEXT, inquirer)).toBe(true);
+      });
+
+      it('should not read the root inquirer attached to the inquirer', () => {
+        const otherInquirer = new InstanceWrapper({ scope: Scope.TRANSIENT });
+        otherInquirer.attachRootInquirer(
+          new InstanceWrapper({ scope: Scope.TRANSIENT }),
+        );
+        expect(
+          wrapper.isStatic(
+            STATIC_CONTEXT,
+            otherInquirer,
+            new InstanceWrapper(),
+          ),
+        ).toBe(true);
+        expect(wrapper.isStatic(STATIC_CONTEXT, otherInquirer)).toBe(true);
+      });
+    });
   });
 
   describe('getStaticTransientInstances', () => {
@@ -1009,6 +1106,16 @@ describe('InstanceWrapper', () => {
         });
 
         expect(wrapper.metatype).toEqual(TestClass);
+      });
+
+      it('should register the given class as the class of its instances', () => {
+        class Mixin {}
+        class Host {}
+        Host.prototype.constructor = Mixin;
+
+        const wrapper = new InstanceWrapper();
+        wrapper.mergeWith({ useClass: Host, provide: 'token' });
+        expect(getClassRef(new Host())).toBe(Host);
       });
 
       it('should reset a previously resolved instance in the STATIC_CONTEXT', () => {

@@ -431,6 +431,104 @@ describe('createParamDecorator', () => {
           });
         });
       });
+
+      describe('with options followed by a positional pipe', () => {
+        const pipe = new ParseIntPipe();
+
+        it('should merge options placed between data and the pipe', () => {
+          class Test {
+            public test(
+              @Decorator(
+                'x',
+                { schema: mockSchema, pipes: [ParseIntPipe] },
+                pipe,
+              )
+              param,
+            ) {}
+          }
+
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: 'x',
+            factory: factoryFn,
+            index: 0,
+            pipes: [ParseIntPipe, pipe],
+            schema: mockSchema,
+          });
+        });
+
+        it('should merge options placed after undefined data', () => {
+          class Test {
+            public test(
+              @Decorator(undefined, { schema: mockSchema }, pipe) param,
+            ) {}
+          }
+
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: undefined,
+            factory: factoryFn,
+            index: 0,
+            pipes: [pipe],
+            schema: mockSchema,
+          });
+        });
+
+        it('should merge options placed between two pipes', () => {
+          class Test {
+            public test(
+              @Decorator(ParseIntPipe, { schema: mockSchema }, pipe) param,
+            ) {}
+          }
+
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: undefined,
+            factory: factoryFn,
+            index: 0,
+            pipes: [ParseIntPipe, pipe],
+            schema: mockSchema,
+          });
+        });
+
+        it('should merge consecutive options objects', () => {
+          class Test {
+            public test(
+              @Decorator('x', { schema: mockSchema }, { pipes: [ParseIntPipe] })
+              param,
+            ) {}
+          }
+
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: 'x',
+            factory: factoryFn,
+            index: 0,
+            pipes: [ParseIntPipe],
+            schema: mockSchema,
+          });
+        });
+      });
     });
   });
 

@@ -1,4 +1,10 @@
-import { Module as ModuleDecorator, Injectable, Scope } from '@nestjs/common';
+import {
+  Module as ModuleDecorator,
+  Inject,
+  Injectable,
+  Scope,
+} from '@nestjs/common';
+import { UndefinedDependencyException } from '@nestjs/core/errors/exceptions/undefined-dependency.exception.js';
 import {
   UuidFactory,
   UuidFactoryMode,
@@ -303,6 +309,326 @@ describe('TestingModuleBuilder', () => {
 
       const instance = module.get(NeedsMissing);
       expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved dependencies of request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class NeedsMissing {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(NeedsMissing);
+      expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved dependencies of transient providers used by request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NeedsMissing {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class Consumer {
+        constructor(public readonly transient: NeedsMissing) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [Consumer, NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(Consumer);
+      expect(instance.transient.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved properties of request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class NeedsMissing {
+        @Inject(MissingDepClass)
+        public readonly dep: MissingDepClass;
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(NeedsMissing);
+      expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved properties of transient providers used by request-scoped providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NeedsMissing {
+        @Inject(MissingDepClass)
+        public readonly dep: MissingDepClass;
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class Consumer {
+        constructor(public readonly transient: NeedsMissing) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [Consumer, NeedsMissing],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve(Consumer);
+      expect(instance.transient.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should not create extra transient instances when a mocker is set', async () => {
+      let created = 0;
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NestedTransient {
+        constructor() {
+          created++;
+        }
+      }
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        constructor(public readonly nested: NestedTransient) {}
+      }
+
+      @Injectable()
+      class ConsumerA {
+        constructor(public readonly transient: TransientService) {}
+      }
+
+      @Injectable()
+      class ConsumerB {
+        constructor(public readonly transient: TransientService) {}
+      }
+
+      await Test.createTestingModule({
+        providers: [ConsumerA, ConsumerB, TransientService, NestedTransient],
+      })
+        .useMocker(() => undefined)
+        .compile();
+
+      expect(created).toBe(2);
+    });
+
+    it('should use mocker for unresolved dependencies of request-scoped factory providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      const module = await Test.createTestingModule({
+        providers: [
+          {
+            provide: 'NEEDS_MISSING',
+            useFactory: (dep: MissingDepClass) => ({ dep }),
+            inject: [MissingDepClass],
+            scope: Scope.REQUEST,
+          },
+        ],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      const instance = await module.resolve('NEEDS_MISSING');
+      expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should fail on resolve, not on compile, when the mocker skips a dependency of a request-scoped provider', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class NeedsMissing {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [NeedsMissing],
+      })
+        .useMocker(() => undefined)
+        .compile();
+
+      await expect(module.resolve(NeedsMissing)).rejects.toThrow(
+        "Nest can't resolve dependencies of the NeedsMissing",
+      );
+    });
+
+    it('should fail on resolve, not on compile, when a request-scoped factory provider has an undefined dependency', async () => {
+      const module = await Test.createTestingModule({
+        providers: [
+          {
+            provide: 'NEEDS_UNDEFINED',
+            useFactory: (dep: unknown) => ({ dep }),
+            inject: [undefined as any],
+            scope: Scope.REQUEST,
+          },
+        ],
+      })
+        .useMocker(() => ({ mockValue: 'mocked-dep' }))
+        .compile();
+
+      await expect(module.resolve('NEEDS_UNDEFINED')).rejects.toThrow(
+        UndefinedDependencyException,
+      );
+    });
+
+    it('should use mocker for unresolved dependencies of transient providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      @Injectable()
+      class NeedsTransient {
+        constructor(public readonly transient: TransientService) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [TransientService, NeedsTransient],
+      })
+        .useMocker(token =>
+          token === MissingDepClass ? { mockValue: 'mocked-dep' } : null,
+        )
+        .compile();
+
+      const instance = module.get(NeedsTransient);
+      expect(instance.transient).toBeInstanceOf(TransientService);
+      expect(instance.transient.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should use mocker for unresolved properties of transient providers', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        @Inject(MissingDepClass)
+        public readonly dep: MissingDepClass;
+      }
+
+      @Injectable()
+      class NeedsTransient {
+        constructor(public readonly transient: TransientService) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [TransientService, NeedsTransient],
+      })
+        .useMocker(token =>
+          token === MissingDepClass ? { mockValue: 'mocked-dep' } : null,
+        )
+        .compile();
+
+      const instance = module.get(NeedsTransient);
+      expect(instance.transient).toBeInstanceOf(TransientService);
+      expect(instance.transient.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should mock a transient provider that cannot be instantiated', async () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        constructor(@Inject('UNKNOWN') public readonly dep: unknown) {}
+      }
+
+      @Injectable()
+      class NeedsTransient {
+        constructor(public readonly transient: TransientService) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [TransientService, NeedsTransient],
+      })
+        .useMocker(token =>
+          token === TransientService.name ? { mockValue: 'mocked' } : null,
+        )
+        .compile();
+
+      expect(module.get(NeedsTransient).transient).toEqual({
+        mockValue: 'mocked',
+      });
+    });
+
+    it('should share one mock between providers that depend on the same token', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable()
+      class FirstConsumer {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      @Injectable()
+      class SecondConsumer {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      const mocker = vi.fn(() => ({ mockValue: 'mocked-dep' }));
+      const module = await Test.createTestingModule({
+        providers: [FirstConsumer, SecondConsumer],
+      })
+        .useMocker(mocker)
+        .compile();
+
+      const mock = module.get(MissingDepClass);
+      expect(module.get(FirstConsumer).dep).toBe(mock);
+      expect(module.get(SecondConsumer).dep).toBe(mock);
+      expect(mocker).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not share mocks between tokens provided by the same class', async () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientService {
+        constructor(@Inject('UNKNOWN') public readonly dep: unknown) {}
+      }
+
+      @Injectable()
+      class NeedsBoth {
+        constructor(
+          @Inject('FIRST') public readonly first: unknown,
+          @Inject('SECOND') public readonly second: unknown,
+        ) {}
+      }
+
+      const module = await Test.createTestingModule({
+        providers: [
+          { provide: 'FIRST', useClass: TransientService },
+          { provide: 'SECOND', useClass: TransientService },
+          NeedsBoth,
+        ],
+      })
+        .useMocker(token =>
+          token === TransientService.name ? { mockValue: 'mocked' } : null,
+        )
+        .compile();
+
+      const instance = module.get(NeedsBoth);
+      expect(instance.first).toEqual({ mockValue: 'mocked' });
+      expect(instance.second).toEqual({ mockValue: 'mocked' });
+      expect(instance.first).not.toBe(instance.second);
     });
 
     it('should support compiling with snapshot option', async () => {

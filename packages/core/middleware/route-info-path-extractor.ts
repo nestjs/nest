@@ -1,8 +1,11 @@
 import { VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
+import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
-import { isRouteExcluded } from '../router/utils/index.js';
+import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
+import { isRequestMethodAll, isRouteExcluded } from '../router/utils/index.js';
 import { RoutePathFactory } from './../router/route-path-factory.js';
+import { isStaticPath } from './utils.js';
 import type { VersioningOptions } from '@nestjs/common';
 import {
   type RouteInfo,
@@ -27,7 +30,11 @@ export class RouteInfoPathExtractor {
     this.versioningConfig = this.applicationConfig.getVersioning();
   }
 
-  public extractPathsFrom({ path, method, version }: RouteInfo): string[] {
+  public extractPathsFrom({
+    path,
+    method,
+    version = this.getVersionOfUnversionedRoutes(),
+  }: RouteInfo): string[] {
     const versionPaths = this.extractVersionPathFrom(version);
 
     if (this.isAWildcard(path)) {
@@ -52,17 +59,116 @@ export class RouteInfoPathExtractor {
         ? [
             ...entries,
             ...this.excludedGlobalPrefixRoutes
-              .map(route =>
-                Array.isArray(versionPaths) && versionPaths.length > 0
-                  ? versionPaths.map(v => v + addLeadingSlash(route.path))
-                  : addLeadingSlash(route.path),
-              )
-              .flat(),
+              .flatMap(route => this.getPathsOfExcludedRoute(route))
+              .flatMap(excludedPath =>
+                versionPaths.length > 0
+                  ? versionPaths.map(v => v + excludedPath)
+                  : [excludedPath],
+              ),
           ]
         : entries;
     }
 
     return this.extractNonWildcardPathsFrom({ path, method, version });
+  }
+
+  /**
+   * Returns the routes excluded from the global prefix that the route covers
+   * without being excluded itself: the router serves them without the
+   * prefix, out of the reach of the paths the route is mounted on. These are
+   * the excluded routes without parameters or wildcards that the route
+   * matches, such as "users/me" for "users/:id" (or a `GET` exclusion for a
+   * route of every method), and the root route of a controller at the
+   * route's own path, which an exclusion ending in an optional segment such
+   * as "reports/{*path}" takes out of the prefix (see
+   * `isExcludedWithTrailingSlash()`).
+   */
+  public extractExcludedRoutesCoveredBy({
+    path,
+    method,
+    version,
+  }: RouteInfo): RouteInfo[] {
+    if (
+      !Array.isArray(this.excludedGlobalPrefixRoutes) ||
+      this.isAWildcard(path) ||
+      isRouteExcluded(this.excludedGlobalPrefixRoutes, path, method)
+    ) {
+      return [];
+    }
+    let routeRegex: RegExp;
+    try {
+      routeRegex = pathToRegexp(
+        LegacyRouteConverter.tryConvert(addLeadingSlash(path), { logs: false }),
+      ).regexp;
+    } catch {
+      // The adapter reports a path it cannot mount
+      return [];
+    }
+    return this.excludedGlobalPrefixRoutes.flatMap(excludedRoute => {
+      const excludedPath = addLeadingSlash(excludedRoute.path);
+      const excludedMethod = isRequestMethodAll(excludedRoute.requestMethod)
+        ? method
+        : excludedRoute.requestMethod;
+      if (!(isRequestMethodAll(method) || method === excludedMethod)) {
+        return [];
+      }
+      // Mounted with the trailing slash, like the root route of a controller
+      // passed to forRoutes(), so that it is not under the prefix either
+      const coveredPath =
+        isStaticPath(excludedPath) && routeRegex.test(excludedPath)
+          ? excludedPath
+          : this.isExcludedWithTrailingSlash(excludedRoute, path)
+            ? stripEndSlash(addLeadingSlash(path)) + '/'
+            : undefined;
+      if (!coveredPath) {
+        return [];
+      }
+      const routeInfo: RouteInfo = {
+        path: coveredPath,
+        method: excludedMethod,
+      };
+      if (version) {
+        routeInfo.version = version;
+      }
+      return [routeInfo];
+    });
+  }
+
+  /**
+   * Returns the paths the router serves a route excluded from the global
+   * prefix at: those of its pattern and, for a pattern ending in an optional
+   * segment such as "reports/{*path}", the parent path ("/reports") (see
+   * `isExcludedWithTrailingSlash()`).
+   */
+  private getPathsOfExcludedRoute(route: ExcludeRouteMetadata): string[] {
+    const excludedPath = addLeadingSlash(route.path);
+    const parentPath = excludedPath.slice(0, excludedPath.lastIndexOf('/'));
+    return this.isExcludedWithTrailingSlash(route, parentPath)
+      ? [excludedPath, parentPath]
+      : [excludedPath];
+  }
+
+  /**
+   * Tells whether the exclusion takes a route at the path out of the global
+   * prefix only through a trailing slash: the router tests the root route of
+   * a controller with one ("/reports/"), which an exclusion ending in an
+   * optional segment matches ("reports/{*path}"), and serves it at
+   * "/reports", which the exclusion does not match.
+   */
+  private isExcludedWithTrailingSlash(
+    { pathRegex }: ExcludeRouteMetadata,
+    path: string,
+  ): boolean {
+    const pathWithoutSlash = stripEndSlash(addLeadingSlash(path));
+    return (
+      pathWithoutSlash !== '' &&
+      pathRegex.test(pathWithoutSlash + '/') &&
+      !pathRegex.test(pathWithoutSlash)
+    );
+  }
+
+  public getVersioningOptions(): VersioningOptions | undefined {
+    return this.versioningConfig;
   }
 
   public extractPathFrom(route: RouteInfo): string[] {
@@ -109,6 +215,31 @@ export class RouteInfoPathExtractor {
     return versionPaths.map(
       versionPath => this.prefixPath + versionPath + addLeadingSlash(path),
     );
+  }
+
+  /**
+   * Returns the versions a route given without a version (e.g.
+   * `forRoutes('cats')`) may be served under: no version, as for a
+   * version-neutral controller, and the default version, under which
+   * controllers without a version are served.
+   */
+  private getVersionOfUnversionedRoutes(): VersionValue | undefined {
+    if (this.versioningConfig?.type !== VersioningType.URI) {
+      return;
+    }
+    const { defaultVersion } = this.versioningConfig;
+    if (!defaultVersion) {
+      return;
+    }
+    const versions = new Set<string | typeof VERSION_NEUTRAL>([
+      VERSION_NEUTRAL,
+    ]);
+    if (Array.isArray(defaultVersion)) {
+      defaultVersion.forEach(version => versions.add(version));
+    } else {
+      versions.add(defaultVersion);
+    }
+    return [...versions];
   }
 
   private extractVersionPathFrom(versionValue?: VersionValue): string[] {

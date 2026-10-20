@@ -96,6 +96,14 @@ describe('GRPC transport', () => {
     );
   });
 
+  it('GRPC exception filter leaves HTTP exceptions to the HTTP layer', async () => {
+    await request(server).get('/missing').expect(404, {
+      statusCode: 404,
+      message: 'Cannot GET /missing',
+      error: 'Not Found',
+    });
+  });
+
   it(`GRPC Sending and Receiving HTTP POST (multiple proto)`, async () => {
     await request(server)
       .post('/multi/sum')

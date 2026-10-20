@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
+  CONSUMER_CANCELLED_RMQ_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
   RMQ_SEPARATOR,
@@ -35,7 +36,7 @@ import {
 } from '../interfaces/packet.interface.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { Server } from './server.js';
-import { isNil, isUndefined } from '@nestjs/common/internal';
+import { isNil, isString, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -53,6 +54,8 @@ type Message = any;
 type Channel = any;
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
+// In bytes, for an AMQP short string such as "replyTo" or "correlationId"
+const MAX_SHORT_STRING_LENGTH = 255;
 
 /**
  * @publicApi
@@ -102,14 +105,33 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public async close(): Promise<void> {
-    this.channel && (await this.channel.close());
-    this.server && (await this.server.close());
-    this.pendingEventListeners = [];
+    try {
+      // The channel goes first, as amqplib settles its close on the broker's
+      // reply, which never arrives once the connection is closed. The
+      // connection is still closed when the channel close fails, otherwise
+      // the connection manager keeps reconnecting after close() rejected.
+      const results = [
+        ...(await Promise.allSettled([this.channel?.close()])),
+        ...(await Promise.allSettled([this.server?.close()])),
+      ];
+      const [failure, ...otherFailures] = results.filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      );
+      otherFailures.forEach(({ reason }) => this.logger.error(reason));
+      if (failure) {
+        throw failure.reason;
+      }
+    } finally {
+      this.pendingEventListeners = [];
+    }
   }
 
   public async start(
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    // Each start counts its own attempts towards "maxConnectionAttempts"
+    this.connectionAttempts = 0;
     this.server = await this.createClient();
     let listenCallback = callback;
     const settleListenCallback = (...args: unknown[]) => {
@@ -160,8 +182,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
     this.pendingEventListeners = [];
 
+    // "connectFailed" fires on every failed attempt, so count each one.
     const connectFailedEvent = 'connectFailed';
-    this.server!.once(
+    this.server!.on(
       connectFailedEvent,
       async (error: Record<string, unknown>) => {
         this._status$.next(RmqStatus.DISCONNECTED);
@@ -178,7 +201,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
           return;
         }
         if (++this.connectionAttempts === maxConnectionAttempts) {
-          await this.close();
+          await this.close().catch(err => this.logger.error(err));
           settleListenCallback(
             error.err ?? new Error(CONNECTION_FAILED_MESSAGE),
           );
@@ -319,7 +342,11 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     channel: any,
   ): Promise<void> {
     if (isNil(message)) {
-      return;
+      // amqplib calls the consumer with "null" once the broker has cancelled
+      // it (e.g., its queue was deleted). The connection stays up, so nothing
+      // else would set the channel up (and consume) again.
+      this.logger.error(CONSUMER_CANCELLED_RMQ_MESSAGE);
+      return this.setupChannel(channel, () => {});
     }
     const { content, properties } = message;
     const rawMessage = this.parseMessageContent(content);
@@ -359,6 +386,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         rmqContext,
       );
 
+    this.warnIfEventHandlerReplies(handler, pattern);
     return this.handleRequest(
       rmqContext,
       async () =>
@@ -386,6 +414,17 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     correlationId: string,
     context: RmqContext,
   ): Promise<unknown> {
+    // Both come from the request. amqplib decodes invalid UTF-8 in them to
+    // longer strings than it can encode again, and once it throws on one, the
+    // channel wrapper never settles the publish nor releases the reply.
+    const isTooLong = (value: unknown) =>
+      isString(value) && Buffer.byteLength(value) > MAX_SHORT_STRING_LENGTH;
+    if (isTooLong(replyTo) || isTooLong(correlationId)) {
+      this.logger.error(
+        `Dropped a reply whose "replyTo" or "correlationId" is longer than ${MAX_SHORT_STRING_LENGTH} bytes.`,
+      );
+      return Promise.resolve();
+    }
     const outgoingResponse = this.serializer.serialize(
       message as unknown as OutgoingResponse,
     );

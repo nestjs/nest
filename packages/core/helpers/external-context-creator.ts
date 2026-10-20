@@ -22,6 +22,7 @@ import {
   InterceptorsContextCreator,
 } from '../interceptors/index.js';
 import { PipesConsumer, PipesContextCreator } from '../pipes/index.js';
+import { getClassRef } from './class-ref-registry.js';
 import { ContextUtils, ParamProperties } from './context-utils.js';
 import { ExternalErrorProxy } from './external-proxy.js';
 import { HandlerMetadataStorage } from './handler-metadata-storage.js';
@@ -109,7 +110,17 @@ export class ExternalContextCreator {
     },
     contextType: TContext = 'http' as TContext,
   ) {
-    const moduleKey = this.getContextModuleKey(instance.constructor);
+    const classRef = getClassRef(instance);
+    const moduleKey =
+      this.getContextModuleKey(classRef) ||
+      this.getHostModuleKey(instance, inquirerId);
+    // Transient enhancers are created per host, so those of a static entry
+    // provider can only be found with that provider as the inquirer.
+    inquirerId ??= this.modulesContainer
+      .get(moduleKey)
+      ?.entryProviders.find(
+        item => item.token === classRef || item.instance === instance,
+      )?.id;
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
       TParamsMetadata,
       TContext
@@ -253,6 +264,26 @@ export class ExternalContextCreator {
       }
     }
     return emptyModuleKey;
+  }
+
+  /**
+   * Returns the key of the module of a host registered under a token other
+   * than its class (e.g., `{ provide: 'TOKEN', useClass: Resolver }`): the
+   * module whose providers include the given inquirer or, without one, the
+   * given instance.
+   */
+  private getHostModuleKey(instance: object, inquirerId?: string): string {
+    for (const [key, moduleRef] of this.modulesContainer.entries()) {
+      const host = inquirerId
+        ? moduleRef.getProviderById(inquirerId)
+        : [...moduleRef.providers.values()].find(
+            wrapper => !wrapper.isAlias && wrapper.instance === instance,
+          );
+      if (host) {
+        return key;
+      }
+    }
+    return '';
   }
 
   public exchangeKeysForValues<TMetadata = any>(

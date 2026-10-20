@@ -478,6 +478,29 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       }
     });
 
+    it('should limit field name nesting and array indexes by default', async () => {
+      const ok = await expectParity(http =>
+        http
+          .post('/none')
+          .field('a' + '[b]'.repeat(32), 'x')
+          .field('c[1000]', 'y'),
+      );
+      expect(ok.status).toBe(201);
+      for (const [name, message] of [
+        ['a' + '[b]'.repeat(33), 'Field name nesting too deep'],
+        ['c[1001]', 'Field name array index too large'],
+      ]) {
+        const res = await expectParity(http =>
+          http.post('/none').field(name, 'x'),
+        );
+        expect(res.body).toEqual({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: `${message} - ${name}`,
+        });
+      }
+    });
+
     it('should not apply fieldArrayIndexLimit to a name kept as a literal key', async () => {
       const res = await expectParity(http =>
         http.post('/name-limits').field('a[3]x', '1').field('[3]', '2'),
@@ -620,6 +643,29 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       expect(res.status).toBe(413);
       expect(readdirSync(dirs.express)).toEqual([]);
       expect(readdirSync(dirs.fastify)).toEqual([]);
+    });
+
+    it('should remove the stored files when a pipe rejects the request', async () => {
+      const res = await expectParity(http =>
+        http
+          .post('/disk-validated')
+          .field('count', 'not a number')
+          .attach('docs', text('fine'), txt('1.txt'))
+          .attach('docs', text('fine too'), txt('2.txt')),
+      );
+      expect(res).toEqual({
+        status: 400,
+        body: {
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Validation failed (numeric string is expected)',
+        },
+      });
+      // Removed once the response has been sent.
+      await vi.waitFor(() => {
+        expect(readdirSync(dirs.express)).toEqual([]);
+        expect(readdirSync(dirs.fastify)).toEqual([]);
+      });
     });
 
     it('should report a storage engine error', async () => {

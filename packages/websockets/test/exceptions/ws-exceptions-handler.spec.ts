@@ -180,6 +180,83 @@ describe('WsExceptionsHandler', () => {
       });
     });
 
+    describe('when the error payload cannot be sent with its cause', () => {
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+      let sendStub: ReturnType<typeof vi.fn>;
+      let wsExecutionContextHost: ExecutionContextHost;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn((WsExceptionsHandler as any).logger, 'error')
+          .mockImplementation(() => undefined);
+        sendStub = vi.fn();
+        // JSON.stringify throws on it, as it does on a message nested deeper
+        // than its native recursion allows
+        const unserializableData: Record<string, unknown> = {};
+        unserializableData.self = unserializableData;
+        wsExecutionContextHost = new ExecutionContextHost([
+          { send: sendStub, readyState: 1 },
+          unserializableData,
+          pattern,
+        ]);
+      });
+
+      afterEach(() => {
+        loggerErrorSpy.mockRestore();
+      });
+
+      it('should log an unknown exception and send the error without the cause', () => {
+        const error = new Error('test');
+        handler.handle(error, wsExecutionContextHost);
+
+        expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(sendStub.mock.calls[0][0])).toEqual({
+          event: 'exception',
+          data: { status: 'error', message: 'Internal server error' },
+        });
+      });
+
+      it('should send a WsException without the cause', () => {
+        handler.handle(new WsException('Unauthorized'), wsExecutionContextHost);
+
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(sendStub.mock.calls[0][0])).toEqual({
+          event: 'exception',
+          data: { status: 'error', message: 'Unauthorized' },
+        });
+      });
+
+      it('should emit the error again without the cause when "emit" throws', () => {
+        emitStub.mockImplementationOnce(() => {
+          throw new RangeError('Maximum call stack size exceeded');
+        });
+        handler.handle(new WsException('Unauthorized'), executionContextHost);
+
+        expect(emitStub).toHaveBeenCalledTimes(2);
+        expect(emitStub).toHaveBeenLastCalledWith('exception', {
+          status: 'error',
+          message: 'Unauthorized',
+        });
+      });
+
+      it('should log an unknown exception and rethrow when there is no cause to drop', () => {
+        handler = new WsExceptionsHandler({ includeCause: false });
+        const error = new Error('test');
+        const emitError = new Error('emit');
+        emitStub.mockImplementation(() => {
+          throw emitError;
+        });
+
+        expect(() => handler.handle(error, executionContextHost)).toThrow(
+          emitError,
+        );
+        expect(emitStub).toHaveBeenCalledTimes(1);
+        expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+      });
+    });
+
     describe('when "invokeCustomFilters" returns true', () => {
       beforeEach(() => {
         vi.spyOn(handler, 'invokeCustomFilters').mockReturnValue(true);

@@ -1,4 +1,5 @@
-import { Controller, Scope } from '@nestjs/common';
+import { Controller, Scope, SetMetadata } from '@nestjs/common';
+import { ENTRY_PROVIDER_WATERMARK } from '@nestjs/common/constants.js';
 import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator.js';
 import { Injectable } from '../../../common/index.js';
 import { InvalidProviderException } from '../../errors/exceptions/invalid-provider.exception.js';
@@ -109,6 +110,16 @@ describe('Module', () => {
     expect(
       wrapper.getInstanceByContextId(STATIC_CONTEXT).isResolved,
     ).toBeFalsy();
+  });
+
+  it('should add a class provider to the entry providers when its class is an entry provider', () => {
+    @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+    class EntryProvider {}
+
+    moduleRef.addProvider({ provide: 'ENTRY', useClass: EntryProvider });
+    expect(moduleRef.entryProviders).toEqual([
+      moduleRef.providers.get('ENTRY'),
+    ]);
   });
 
   it('should call "addCustomProvider" when "provide" property exists', () => {

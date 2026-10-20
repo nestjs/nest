@@ -6,9 +6,12 @@ import {
   Query,
   Res,
   SignedCookies,
+  Sse,
   type CookieSerializeOptions,
+  type MessageEvent,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { of, type Observable } from 'rxjs';
 
 @Controller()
 export class AppController {
@@ -53,6 +56,12 @@ export class AppController {
     });
     this.httpAdapter.setCookie(res, 'uid', '42', { signed: true });
     return { ok: true };
+  }
+
+  @Sse('set-sse')
+  setSse(@Res({ passthrough: true }) res: unknown): Observable<MessageEvent> {
+    this.httpAdapter.setCookie(res, 'a', '1');
+    return of({ data: 'ok' });
   }
 
   @Get('clear')

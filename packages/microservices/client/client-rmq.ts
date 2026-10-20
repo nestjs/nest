@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+import { randomUUID } from 'crypto';
 import { createRequire } from 'module';
 import { EventEmitter } from 'events';
 import {
@@ -34,12 +35,7 @@ import { RmqRecord } from '../record-builders/index.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
-import {
-  loadPackageSync,
-  randomStringGenerator,
-  isFunction,
-  isString,
-} from '@nestjs/common/internal';
+import { loadPackageSync, isFunction, isString } from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -114,12 +110,14 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   public async close(): Promise<void> {
     this.handleClose();
     try {
-      // The connection has to be closed even when the channel close fails,
-      // otherwise it stays open after close() reported the error.
-      const results = await Promise.allSettled([
-        this.channel?.close(),
-        this.client?.close(),
-      ]);
+      // The channel goes first, as amqplib settles its close on the broker's
+      // reply, which never arrives once the connection is closed. The
+      // connection is still closed when the channel close fails, otherwise it
+      // stays open after close() reported the error.
+      const results = [
+        ...(await Promise.allSettled([this.channel?.close()])),
+        ...(await Promise.allSettled([this.client?.close()])),
+      ];
       const [failure, ...otherFailures] = results.filter(
         (result): result is PromiseRejectedResult =>
           result.status === 'rejected',
@@ -224,7 +222,9 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.connectionPromise = null;
       this.isInitialConnect = true;
     }
-    await Promise.allSettled([client.close(), channel?.close()]);
+    // The channel is closed first, for the same reason as in close().
+    await channel?.close().catch(() => {});
+    await client.close().catch(() => {});
   }
 
   public createChannel(): Promise<void> {
@@ -337,8 +337,16 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const noAck = this.getOptionsProp(this.options, 'noAck', RMQ_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
-      (msg: ConsumeMessage | null) =>
-        this.responseEmitter.emit(msg!.properties.correlationId, msg),
+      (msg: ConsumeMessage | null) => {
+        // Whoever publishes to the reply queue chooses the correlation id, so
+        // only the ids of pending requests become event names: an "error"
+        // event nobody listens to throws inside amqplib's dispatch, which
+        // closes the channel and the connection.
+        const correlationId = msg!.properties.correlationId;
+        if (this.responseEmitter.listenerCount(correlationId) > 0) {
+          this.responseEmitter.emit(correlationId, msg);
+        }
+      },
       {
         noAck,
       },
@@ -467,7 +475,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   ): () => void {
     let cleanup = () => {};
     try {
-      const correlationId = randomStringGenerator();
+      // Replies are matched by the correlation id alone, as in assignPacketId()
+      const correlationId = randomUUID();
       const listener = ({
         content,
         options,

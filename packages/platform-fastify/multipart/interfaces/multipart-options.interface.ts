@@ -25,11 +25,11 @@ export interface MultipartStorageEngine {
 /**
  * Same keys as platform-express's `MulterLimits`.
  *
- * Limits that are not set fall back to the options `@fastify/multipart` was
- * registered with, and then to its own defaults. Unlike multer (which
- * defaults `fileSize` and `parts` to `Infinity`), `@fastify/multipart` caps
- * `fileSize` at the Fastify instance's `bodyLimit` (1 MiB unless configured)
- * and `parts` at 1000.
+ * Limits that are not set, or set to `null` or `undefined`, fall back to the
+ * options `@fastify/multipart` was registered with, and then to its own
+ * defaults. Unlike multer (which defaults `fileSize` and `parts` to
+ * `Infinity`), `@fastify/multipart` caps `fileSize` at the Fastify
+ * instance's `bodyLimit` (1 MiB unless configured) and `parts` at 1000.
  *
  * @publicApi
  */
@@ -53,15 +53,17 @@ export interface MultipartLimits {
   /** For multipart forms, the max number of header key => value pairs to parse (Default: 2000) */
   headerPairs?: number;
   /**
-   * Max nesting depth of field names; `a[b][c]` has 2 levels (Default:
-   * Infinity). Like `fieldNameSize`, it does not fall back to the options
+   * Max nesting depth of field names; `a[b][c]` has 2 levels (Default: 32,
+   * where multer's own default is Infinity). Set it to `Infinity` to lift
+   * the limit. Like `fieldNameSize`, it does not fall back to the options
    * `@fastify/multipart` was registered with.
    */
   fieldNestingDepth?: number;
   /**
    * Max numeric array index accepted in field names; `a[3]` uses index 3
-   * (Default: Infinity). Like `fieldNameSize`, it does not fall back to the
-   * options `@fastify/multipart` was registered with.
+   * (Default: 1000, where multer's own default is Infinity). Set it to
+   * `Infinity` to lift the limit. Like `fieldNameSize`, it does not fall back
+   * to the options `@fastify/multipart` was registered with.
    */
   fieldArrayIndexLimit?: number;
 }

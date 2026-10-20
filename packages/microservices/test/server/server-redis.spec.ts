@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { RedisContext } from '../../ctx-host/index.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { ServerRedis } from '../../server/server-redis.js';
 import { objectToMap } from './utils/object-to-map.js';
 
@@ -275,6 +276,50 @@ describe('ServerRedis', () => {
       await server.handleMessage(channel, '', null, channel);
       expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
     });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+      const request = JSON.stringify({ id, pattern: channel, data });
+
+      await server.handleMessage(channel, request, null, channel);
+      await server.handleMessage(channel, request, null, channel);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(getPublisherSpy).toHaveBeenCalledTimes(2);
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        response: 'stored',
+        isDisposed: true,
+      });
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries the id, so it would be serialized for each of them
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      const error = await server
+        .handleMessage(
+          channel,
+          JSON.stringify({ id: [[['nested']]], pattern: channel, data }),
+          null,
+          channel,
+        )
+        .catch(err => err);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(getPublisherSpy).not.toHaveBeenCalled();
+      expect(error).toBeInstanceOf(InvalidPacketIdException);
+    });
     it('should expose the packet metadata on the context', async () => {
       const handler = vi.fn();
       const metadata = { traceId: 'trace-1' };
@@ -379,6 +424,51 @@ describe('ServerRedis', () => {
         await server.handleMessage('*.reply', reply, null, 'users.x.reply');
 
         expect(monitor).toHaveBeenCalled();
+      });
+      describe('and an event pattern matches the channel of a message handler', () => {
+        let eventHandler: ReturnType<typeof vi.fn>;
+        let messageHandler: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+          eventHandler = Object.assign(
+            vi.fn(async () => 'event'),
+            { isEventHandler: true },
+          );
+          messageHandler = vi.fn(async () => 'message');
+          untypedServer.messageHandlers = objectToMap({
+            'users.*': eventHandler,
+            'users.get': messageHandler,
+          });
+          vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+        });
+        it('should answer a request with the message handler only', async () => {
+          const request = JSON.stringify({ id, pattern: 'users.get', data });
+
+          // Redis delivers the request once for each pattern that matches it
+          await server.handleMessage('users.*', request, null, 'users.get');
+          await server.handleMessage('users.get', request, null, 'users.get');
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(eventHandler).toHaveBeenCalledWith(
+            data,
+            expect.any(RedisContext),
+          );
+          expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+            response: 'message',
+            isDisposed: true,
+          });
+        });
+        it('should still answer a request on a channel without a message handler with the event handler', async () => {
+          const request = JSON.stringify({ id, pattern: 'users.list', data });
+
+          await server.handleMessage('users.*', request, null, 'users.list');
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+            response: 'event',
+            isDisposed: true,
+          });
+        });
       });
     });
   });

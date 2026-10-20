@@ -1,8 +1,10 @@
 import {
+  catchError,
   defaultIfEmpty,
   forkJoin,
   from as fromPromise,
   isObservable,
+  map,
   mergeMap,
   Observable,
   ObservedValueOf,
@@ -19,6 +21,7 @@ import {
 } from './context/rpc-metadata-constants.js';
 import { BaseRpcContext } from './ctx-host/base-rpc.context.js';
 import { Transport } from './enums/index.js';
+import { RpcExceptionsHandler } from './exceptions/rpc-exceptions-handler.js';
 import {
   MessageHandler,
   PatternMetadata,
@@ -48,11 +51,13 @@ import {
   REQUEST_CONTEXT_ID,
 } from '@nestjs/core/internal';
 
+type SettledHandlerResult =
+  { hasFailed: false; value: unknown } | { hasFailed: true; error: unknown };
+
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
     new MetadataScanner(),
   );
-  private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
     private readonly clientsContainer: ClientsContainer,
@@ -201,18 +206,36 @@ export class ListenersController {
       const returnedValueWrapper = handlerRef.next(
         ...(originalArgs as Parameters<MessageHandler>),
       );
-      // `forkJoin` completes silently and unsubscribes the other sources as
-      // soon as one completes empty, which would cancel the sibling handlers.
+      // `forkJoin` unsubscribes the other sources as soon as one completes
+      // empty or errors, which would cancel the sibling handlers. Each handler
+      // settles on its own instead, and an error fails the join only once
+      // every handler has finished.
       return forkJoin({
-        current: this.transformToObservable(currentReturnValue).pipe(
-          defaultIfEmpty(undefined),
-        ),
-        next: this.transformToObservable(returnedValueWrapper).pipe(
-          defaultIfEmpty(undefined),
-        ),
-      });
+        current: this.settleHandlerResult(currentReturnValue),
+        next: this.settleHandlerResult(returnedValueWrapper),
+      }).pipe(
+        map(({ current, next }) => {
+          if (current.hasFailed) {
+            throw current.error;
+          }
+          if (next.hasFailed) {
+            throw next.error;
+          }
+          return { current: current.value, next: next.value };
+        }),
+      );
     }
     return currentReturnValue;
+  }
+
+  private settleHandlerResult(
+    resultOrDeferred: Promise<unknown> | Observable<unknown>,
+  ): Observable<SettledHandlerResult> {
+    return this.transformToObservable(resultOrDeferred).pipe(
+      defaultIfEmpty(undefined),
+      map((value): SettledHandlerResult => ({ hasFailed: false, value })),
+      catchError(error => of<SettledHandlerResult>({ hasFailed: true, error })),
+    );
   }
 
   public assignClientsToProperties(instance: Controller) {
@@ -249,8 +272,12 @@ export class ListenersController {
     const { instance } = wrapper;
 
     const isTreeDurable = wrapper.isDependencyTreeDurable();
+    // Kept per controller and pattern, not per handler function: controllers
+    // that inherit the handler from a base class can declare different filters
+    let exceptionFilter: RpcExceptionsHandler | undefined;
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
+      const originalArgs = [...args];
       try {
         let contextId: ContextId;
 
@@ -296,20 +323,26 @@ export class ListenersController {
         }
         return returnValue;
       } catch (err) {
-        let exceptionFilter = this.exceptionFiltersCache.get(
+        exceptionFilter ??= this.exceptionFiltersContext.create(
+          instance,
           instance[methodKey],
+          moduleKey,
         );
-        if (!exceptionFilter) {
-          exceptionFilter = this.exceptionFiltersContext.create(
-            instance,
-            instance[methodKey],
-            moduleKey,
-          );
-          this.exceptionFiltersCache.set(instance[methodKey], exceptionFilter);
-        }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        return exceptionFilter.handle(err, host);
+        const returnValue = exceptionFilter.handle(
+          err,
+          host,
+          reportUnhandledErrors,
+        );
+        if (isEventHandler) {
+          return this.forkJoinHandlersIfAttached(
+            returnValue,
+            originalArgs,
+            requestScopedHandler,
+          );
+        }
+        return returnValue;
       }
     };
     return requestScopedHandler;

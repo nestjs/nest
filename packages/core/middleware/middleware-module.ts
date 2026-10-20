@@ -2,6 +2,7 @@ import { type HttpServer, type InjectionToken, Logger } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler.js';
 import { ContextIdFactory } from '../helpers/context-id-factory.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
@@ -36,7 +37,6 @@ export class MiddlewareModule<
     NestApplicationContextOptions,
 > {
   private readonly routerProxy = new RouterProxy();
-  private readonly exceptionFiltersCache = new WeakMap();
   private readonly logger = new Logger(MiddlewareModule.name);
 
   private injector: Injector;
@@ -203,9 +203,6 @@ export class MiddlewareModule<
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
-      if (instanceWrapper.isTransient) {
-        continue;
-      }
 
       this.graphInspector.insertClassNode(
         moduleRef,
@@ -253,13 +250,19 @@ export class MiddlewareModule<
     if (isUndefined(instance?.use)) {
       throw new InvalidMiddlewareException(metatype!.name);
     }
-    const isStatic = wrapper.isDependencyTreeStatic();
+    // A transient middleware is its own inquirer, and the injector creates
+    // such an instance only for a context: it is resolved per request, like a
+    // request-scoped one (its static instance is never constructed)
+    const isStatic = wrapper.isDependencyTreeStatic() && !wrapper.isTransient;
     if (isStatic) {
       const proxy = await this.createProxy(instance);
       return this.registerHandler(applicationRef, routeInfo, proxy);
     }
 
     const isTreeDurable = wrapper.isDependencyTreeDurable();
+    // Kept per route, not per "use" function: middleware that inherits it
+    // from a base class can declare different filters
+    let exceptionsHandler: ExceptionsHandler | undefined;
 
     await this.registerHandler(
       applicationRef,
@@ -283,15 +286,11 @@ export class MiddlewareModule<
           );
           return proxy(req, res, next);
         } catch (err) {
-          let exceptionsHandler = this.exceptionFiltersCache.get(instance.use);
-          if (!exceptionsHandler) {
-            exceptionsHandler = this.routerExceptionFilter.create(
-              instance,
-              instance.use,
-              undefined,
-            );
-            this.exceptionFiltersCache.set(instance.use, exceptionsHandler);
-          }
+          exceptionsHandler ??= this.routerExceptionFilter.create(
+            instance,
+            instance.use,
+            undefined,
+          );
           const host = new ExecutionContextHost([req, res, next]);
           exceptionsHandler.next(err, host);
         }
@@ -344,11 +343,27 @@ export class MiddlewareModule<
           }
           return next();
         };
-    const pathsToApplyMiddleware = [] as string[];
-    paths.some(path => path.match(/^\/?$/))
-      ? pathsToApplyMiddleware.push('/')
-      : pathsToApplyMiddleware.push(...paths);
-    pathsToApplyMiddleware.forEach(path => router(path, middlewareFunction));
+    // The paths may overlap (e.g. "/" and "/api/*" when the root path is
+    // excluded from the global prefix): the middleware runs for the first of
+    // them that matches a request, and the others skip that request
+    const handledRequests = new WeakSet<object>();
+    const handler = <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      if (handledRequests.has(req as object)) {
+        return next();
+      }
+      handledRequests.add(req as object);
+      return middlewareFunction(req, res, next);
+    };
+    // The root path goes first: mounted with Express "use()", it then runs
+    // the middleware for every request, with "req.url" left as it is
+    const pathsToApplyMiddleware = paths
+      .map(path => path || '/')
+      .sort((a, b) => Number(b === '/') - Number(a === '/'));
+    pathsToApplyMiddleware.forEach(path => router(path, handler));
   }
 
   private getContextId(request: unknown, isTreeDurable: boolean): ContextId {

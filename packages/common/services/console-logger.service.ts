@@ -21,6 +21,13 @@ const DEFAULT_DEPTH = 5;
  * serialized in JSON mode.
  */
 const MAX_ERROR_DEPTH = 5;
+/**
+ * The approximate number of characters up to which a record is serialized in
+ * JSON mode. An object is written out once per reference to it, so a small
+ * value can expand to a huge record; past this length, objects and strings
+ * are replaced with "[Truncated]".
+ */
+const MAX_JSON_LENGTH = 1_000_000;
 
 /**
  * @publicApi
@@ -45,6 +52,9 @@ export interface ConsoleLoggerOptions {
   prefix?: string;
   /**
    * If enabled, will print the log message in JSON format.
+   * Unless `colors` are enabled or `compact` is not true, a record is cut short
+   * at about 1,000,000 characters: what comes past that point is replaced with
+   * "[Truncated]".
    */
   json?: boolean;
   /**
@@ -71,28 +81,28 @@ export interface ConsoleLoggerOptions {
   /**
    * Specifies the maximum number of Array, TypedArray, Map, Set, WeakMap, and WeakSet elements to include when formatting.
    * Set to null or Infinity to show all elements. Set to 0 or negative to show no elements.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default 100
    */
   maxArrayLength?: number;
   /**
    * Specifies the maximum number of characters to include when formatting.
    * Set to null or Infinity to show all elements. Set to 0 or negative to show no characters.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default 10000.
    */
   maxStringLength?: number;
   /**
    * If enabled, will sort keys while formatting objects.
    * Can also be a custom sorting function.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default false
    */
   sorted?: boolean | ((a: string, b: string) => number);
   /**
    * Specifies the number of times to recurse while formatting object.
    * This is useful for inspecting large objects. To recurse up to the maximum call stack size pass Infinity or null.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default 5
    */
   depth?: number;
@@ -105,7 +115,7 @@ export interface ConsoleLoggerOptions {
   /**
    * The length at which input values are split across multiple lines. Set to Infinity to format the input as a single line (in combination with "compact" set to true).
    * Default Infinity when "compact" is true, 80 otherwise.
-   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
+   * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    */
   breakLength?: number;
   /**
@@ -769,19 +779,35 @@ export class ConsoleLogger implements LoggerService {
 
   /**
    * Serializes a JSON log object without ever throwing: circular references
-   * are replaced with "[Circular]", and a value that cannot be serialized
+   * are replaced with "[Circular]", whatever comes past `MAX_JSON_LENGTH`
+   * characters with "[Truncated]", and a value that cannot be serialized
    * (e.g. a throwing `toJSON()`) makes the whole record fall back to `inspect`.
    */
   protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
-    const replacer = this.stringifyReplacer;
+    const replacer = this.stringifyReplacer.bind(this);
     // Objects on the path from the root to the value being serialized.
     const ancestors: unknown[] = [];
+    // Approximate length of the output so far (array indices aren't written).
+    let length = 0;
 
     try {
       return JSON.stringify(
         logObject,
         function (this: unknown, key: string, value: unknown) {
-          value = replacer.call(this, key, value);
+          value = replacer(key, value);
+          length +=
+            (Array.isArray(this) ? 0 : key.length) +
+            (isString(value) || typeof value === 'number'
+              ? String(value).length
+              : 1);
+          if (length > MAX_JSON_LENGTH) {
+            // A primitive in place of an object is not descended into, so the
+            // walk stops here on every branch past the limit.
+            return isString(value) ||
+              (typeof value === 'object' && value !== null)
+              ? '[Truncated]'
+              : value;
+          }
           if (typeof value !== 'object' || value === null) {
             return value;
           }
@@ -870,8 +896,11 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected getContextAndStackAndMessagesToPrint(args: unknown[]) {
+    if (args.length === 1) {
+      return { ...this.getContextAndMessagesToPrint(args) };
+    }
     if (args.length === 2) {
-      if (this.isStackFormat(args[1])) {
+      if (this.isStackFormat(args[1]) || isUndefined(args[1])) {
         return {
           messages: [args[0]],
           stack: args[1] as string,
@@ -918,7 +947,9 @@ export class ConsoleLogger implements LoggerService {
       return false;
     }
 
-    return /^(.)+\n\s+at .+:\d+:\d+/.test(stack!);
+    // `[ \t]+` rather than `\s+`, which also matches "\n" and would make this
+    // unanchored search backtrack quadratically on long runs of newlines.
+    return /\n[ \t]+at .+:\d+:\d+/.test(stack!);
   }
 
   protected getColorByLogLevel(level: LogLevel) {

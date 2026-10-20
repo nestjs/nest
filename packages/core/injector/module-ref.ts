@@ -1,4 +1,5 @@
 import { type IntrospectionResult, Scope, type Type } from '@nestjs/common';
+import { RequestScopedCreateException } from '../errors/exceptions/request-scoped-create.exception.js';
 import { getClassScope } from '../helpers/get-class-scope.js';
 import { isDurable } from '../helpers/is-durable.js';
 import { AbstractInstanceResolver } from './abstract-instance-resolver.js';
@@ -183,6 +184,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
     }
 
     return new Promise<T>((resolve, reject) => {
+      let isCreated = false;
       const loadInstance = async () => {
         const callback = async (instances: any[]) => {
           const properties = await this.injector.resolveProperties(
@@ -194,8 +196,10 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
               inquirer: wrapper,
             },
           );
+          await this.injector.waitForDeferredLoads(contextId ?? STATIC_CONTEXT);
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
+          isCreated = true;
           resolve(instance);
         };
 
@@ -209,9 +213,13 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
             inquirer: wrapper,
           },
         );
+        // The callback is skipped when a dependency is request-scoped
+        if (!isCreated) {
+          reject(new RequestScopedCreateException(type.name));
+        }
       };
 
       void loadInstance().catch(reject);
-    });
+    }).finally(() => wrapper.detachFromDependencies());
   }
 }

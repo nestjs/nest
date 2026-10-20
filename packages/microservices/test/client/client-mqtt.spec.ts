@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import { EMPTY } from 'rxjs';
 import { ClientMqtt } from '../../client/client-mqtt.js';
+import { MQTT_MAX_TOPIC_LENGTH } from '../../constants.js';
+import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception.js';
 import { ReadPacket } from '../../interfaces/index.js';
 import { MqttRecord } from '../../record-builders/index.js';
 
@@ -77,6 +79,18 @@ describe('ClientMqtt', () => {
       client['publish'](msg, () => {});
       expect(client['routingMap'].has(id)).toBe(true);
     });
+    it('should not keep a count for the reply topics no request waits on', () => {
+      // Patterns may be built from request data, e.g. one per device
+      for (const device of ['a', 'b', 'c']) {
+        const dispose = client['publish'](
+          { pattern: `devices/${device}`, data: 'data' },
+          () => {},
+        );
+        dispose();
+      }
+
+      expect(client['subscriptionsCount'].size).toBe(0);
+    });
     describe('on error', () => {
       beforeEach(() => {
         assignStub.mockImplementation(() => {
@@ -103,10 +117,59 @@ describe('ClientMqtt', () => {
         expect(callback).toHaveBeenCalledWith({ err: error });
         expect(publishSpy).not.toHaveBeenCalled();
         expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].has(`${pattern}/reply`)).toBe(
+          false,
+        );
+      });
+    });
+    describe('when a topic would exceed the maximum topic length', () => {
+      // A pattern that leaves just enough room for "/reply"
+      const longestPattern = 'a'.repeat(
+        MQTT_MAX_TOPIC_LENGTH - '/reply'.length,
+      );
+
+      it('should fail the request without subscribing or publishing', () => {
+        const callback = vi.fn();
+
+        client['publish'](
+          { pattern: `${longestPattern}a`, data: 'data' },
+          callback,
+        );
+
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.any(MaxMqttTopicLengthExceededException),
+        });
+        expect(subscribeSpy).not.toHaveBeenCalled();
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].size).toBe(0);
+      });
+      it('should count the length in bytes', () => {
+        const callback = vi.fn();
+
+        // "é" takes two bytes
+        client['publish'](
+          { pattern: `${longestPattern.slice(1)}é`, data: 'data' },
+          callback,
+        );
+
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.any(MaxMqttTopicLengthExceededException),
+        });
+        expect(subscribeSpy).not.toHaveBeenCalled();
+      });
+      it('should send a request whose topics fit', () => {
+        const callback = vi.fn();
+
+        client['publish']({ pattern: longestPattern, data: 'data' }, callback);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(subscribeSpy.mock.calls[0][0]).toBe(`${longestPattern}/reply`);
+        expect(publishSpy.mock.calls[0][0]).toBe(longestPattern);
       });
     });
     describe('when disposed before the subscription is confirmed', () => {
-      it('should not publish, count the subscription, nor unsubscribe', () => {
+      it('should not publish and give the subscription up again', () => {
         let confirmSubscription: () => void = () => {};
         subscribeSpy.mockImplementation((name, fn) => {
           confirmSubscription = () => fn();
@@ -122,9 +185,35 @@ describe('ClientMqtt', () => {
         expect(client['subscriptionsCount'].has(`${pattern}/reply`)).toBe(
           false,
         );
+        expect(unsubscribeSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}/reply`,
+        );
+        expect(callback).not.toHaveBeenCalled();
+      });
+    });
+    describe('when a request finishes while another waits for the subscription', () => {
+      it('should keep the response pattern subscribed for the waiting one', () => {
+        // Like mqtt.js, confirm a topic that is already being subscribed to
+        // right away, and the first subscription once the broker answers
+        const topics = new Set<string>();
+        let confirmSubscription: () => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          if (topics.has(name)) {
+            return fn();
+          }
+          topics.add(name);
+          confirmSubscription = () => fn();
+        });
+        unsubscribeSpy.mockImplementation(name => topics.delete(name));
+
+        client['publish'](msg, vi.fn());
+        const disposeOther = client['publish'](msg, vi.fn());
+        disposeOther();
+        confirmSubscription();
+
         expect(unsubscribeSpy).not.toHaveBeenCalled();
-        expect(callback).not.toHaveBeenCalled();
-        expect(callback).not.toHaveBeenCalled();
+        expect(publishSpy).toHaveBeenCalledTimes(2);
+        expect(client['subscriptionsCount'].get(`${pattern}/reply`)).toBe(1);
       });
     });
     describe('dispose callback', () => {
@@ -215,7 +304,7 @@ describe('ClientMqtt', () => {
         client['publish'](msg, vi.fn());
 
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
       });
 
       it('should undo it as well when the subscription is acknowledged later', () => {
@@ -229,7 +318,7 @@ describe('ClientMqtt', () => {
         acknowledge();
 
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
         expect(callback).toHaveBeenCalledWith({
           err: expect.objectContaining({ message: 'Send error' }),
         });
@@ -249,7 +338,7 @@ describe('ClientMqtt', () => {
         teardown();
 
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
         expect(unsubscribeSpy).not.toHaveBeenCalled();
       });
 
@@ -287,7 +376,7 @@ describe('ClientMqtt', () => {
 
         expect(callback).toHaveBeenCalledWith({ err: publishError });
         expect(client['routingMap'].size).toBe(0);
-        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(client['subscriptionsCount'].has(responseChannel)).toBe(false);
       });
 
       it('should not fail a request again once it is torn down', async () => {
@@ -721,6 +810,45 @@ describe('ClientMqtt', () => {
       expect(untyped.connectionPromise).toBeNull();
     });
 
+    it('should drop a closed client whose reconnect the broker refused', () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const mqttClient = fakeClient(1000);
+      // What mqtt leaves behind once a CONNACK error suppressed reconnecting
+      mqttClient.reconnecting = true;
+      mqttClient.reconnectTimer = null;
+      untyped.mqttClient = mqttClient;
+      untyped.connectionPromise = Promise.reject(new Error('Connection lost'));
+      untyped.connectionPromise.catch(() => {});
+      const callback = vi.fn();
+      untyped.routingMap.set('pending id', callback);
+
+      mqtt.registerCloseListener(mqttClient);
+      mqttClient.emit('close');
+
+      expect(untyped.mqttClient).toBeNull();
+      expect(untyped.connectionPromise).toBeNull();
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+    });
+
+    it('should keep a closed client that has a reconnect scheduled', () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const mqttClient = fakeClient(1000);
+      mqttClient.reconnecting = true;
+      mqttClient.reconnectTimer = {};
+      untyped.mqttClient = mqttClient;
+      untyped.connectionPromise = Promise.resolve();
+
+      mqtt.registerCloseListener(mqttClient);
+      mqttClient.emit('close');
+
+      expect(untyped.mqttClient).toBe(mqttClient);
+      expect(untyped.connectionPromise).not.toBeNull();
+    });
+
     it('should let the next client handle responses after a connected client gave up', async () => {
       const mqtt = new ClientMqtt({});
       const untyped: any = mqtt;
@@ -849,6 +977,14 @@ describe('ClientMqtt', () => {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).toBeInstanceOf(Error),
       );
+    });
+    it('should not publish an event whose topic exceeds the maximum topic length', () => {
+      const pattern = 'a'.repeat(MQTT_MAX_TOPIC_LENGTH + 1);
+
+      expect(() => client['dispatchEvent']({ pattern, data: 'data' })).toThrow(
+        MaxMqttTopicLengthExceededException,
+      );
+      expect(publishStub).not.toHaveBeenCalled();
     });
     describe('headers', () => {
       it('should not generate headers if none are configured', async () => {

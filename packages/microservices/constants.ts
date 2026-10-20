@@ -14,6 +14,7 @@ export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
 export const MQTT_SEPARATOR = '/';
 export const MQTT_WILDCARD_SINGLE = '+';
 export const MQTT_WILDCARD_ALL = '#';
+export const MQTT_MAX_TOPIC_LENGTH = 65535;
 export const RMQ_DEFAULT_QUEUE = '';
 export const RMQ_DEFAULT_PREFETCH_COUNT = 0;
 export const RMQ_DEFAULT_IS_GLOBAL_PREFETCH_COUNT = false;
@@ -54,6 +55,11 @@ export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 
 export const NO_EVENT_HANDLER = (text: TemplateStringsArray, pattern: string) =>
   `There is no matching event handler defined in the remote service. Event pattern: ${pattern}`;
+export const EVENT_HANDLER_REPLY_DEPRECATED = (
+  text: TemplateStringsArray,
+  pattern: string,
+) =>
+  `DEPRECATED! An @EventPattern handler replied to a request sent with "send()". In the next major version, @EventPattern handlers will not reply to "send()": use @MessagePattern for handlers that reply, or send events with "emit()" instead. Pattern: ${pattern}`;
 export const NO_MESSAGE_HANDLER = `There is no matching message handler defined in the remote service.`;
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
 export const CONNECTION_FAILED_MESSAGE =
@@ -61,6 +67,8 @@ export const CONNECTION_FAILED_MESSAGE =
 export const BLOCKED_RMQ_MESSAGE = (reason: string) =>
   `RMQ broker has blocked the connection (flow control). Reason: ${reason}`;
 export const UNBLOCKED_RMQ_MESSAGE = 'RMQ broker has unblocked the connection.';
+export const CONSUMER_CANCELLED_RMQ_MESSAGE =
+  'RMQ broker has cancelled the consumer. Trying to consume again.';
 
 export const NATS_DEFAULT_GRACE_PERIOD = 10000;
 export const UNSERIALIZABLE_PATTERN = '[UNSERIALIZABLE_PATTERN]';

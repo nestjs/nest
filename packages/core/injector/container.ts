@@ -21,11 +21,10 @@ import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-o
 import {
   type EnhancerSubtype,
   GLOBAL_MODULE_METADATA,
-  type Injectable,
   isNil,
   type NestApplicationContextOptions,
 } from '@nestjs/common/internal';
-import type { Type } from '@nestjs/common';
+import type { InjectionToken, Type } from '@nestjs/common';
 
 type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
 type ModuleScope = Type<any>[];
@@ -275,7 +274,7 @@ export class NestContainer {
     injectable: Provider,
     token: string,
     enhancerSubtype: EnhancerSubtype,
-    host?: Type<Injectable>,
+    host?: InjectionToken,
   ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();

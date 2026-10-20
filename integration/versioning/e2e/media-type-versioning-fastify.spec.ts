@@ -50,6 +50,34 @@ describe('Media Type Versioning (fastify)', () => {
           .expect('Hello World V2!');
       });
 
+      it.each([
+        'application/json;v="2"',
+        'application/json;note="a;v=1";v=2',
+        'text/html;note="a,application/json;v=1", application/json;v=2',
+        'application/json;note="a\\";v=1";v=2',
+        'application/json;v="\\2"',
+        'application/json;v=2;note="unterminated',
+      ])('V2 with quoted parameters: %s', async acceptHeader => {
+        await request(app.getHttpServer())
+          .get('/')
+          .set({ Accept: acceptHeader })
+          .expect(200)
+          .expect('Hello World V2!');
+      });
+
+      it.each([
+        'application/json;note="a;v=2',
+        'text/html;note="a,application/json;v=2',
+      ])(
+        'ignores a version after an unterminated quote: %s',
+        async acceptHeader => {
+          await request(app.getHttpServer())
+            .get('/')
+            .set({ Accept: acceptHeader })
+            .expect(404);
+        },
+      );
+
       it('V2 after other parameters', () => {
         return request(app.getHttpServer())
           .get('/')
@@ -388,6 +416,31 @@ describe('Media Type Versioning (fastify)', () => {
           .expect(200)
           .expect('Multiple Versions Neutral or 2');
       });
+
+      it.each([
+        'application/json;note="a;v=1"',
+        'text/html;note="a,application/json;v=1"',
+      ])('No Version with a quoted parameter: %s', async acceptHeader => {
+        await request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({ Accept: acceptHeader })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it.each([
+        'application/json;note="a;v=2',
+        'text/html;note="a,application/json;v=2',
+      ])(
+        'treats a version after an unterminated quote as unversioned: %s',
+        async acceptHeader => {
+          await request(app.getHttpServer())
+            .get('/multiple-neutral')
+            .set({ Accept: acceptHeader })
+            .expect(200)
+            .expect('Multiple Versions Neutral or 2');
+        },
+      );
 
       it('No Version with other parameters', () => {
         return request(app.getHttpServer())

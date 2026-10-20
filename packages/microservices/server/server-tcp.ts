@@ -1,6 +1,8 @@
 import type { Type } from '@nestjs/common';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
+import { isObservable, Observable, of, ReplaySubject } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
   ECONNREFUSED,
@@ -8,6 +10,7 @@ import {
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants.js';
+import { getHandlerObservableNotifier } from '../context/rpc-context-creator.js';
 import { TcpContext } from '../ctx-host/tcp.context.js';
 import { Transport } from '../enums/index.js';
 import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events.js';
@@ -39,6 +42,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly maxBufferSize?: number;
   protected readonly incompleteMessageTimeout?: number;
   protected readonly maxSendBufferSize?: number;
+  protected readonly drainTimeout?: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
   protected retryTimer?: ReturnType<typeof setTimeout>;
@@ -54,6 +58,15 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
    * shutdown and handlers keep running on already established connections.
    */
   protected readonly openSockets = new Set<Socket>();
+  /**
+   * Notifiers that emit once a socket bound by "bindHandler" can no longer be
+   * written to. They replay, so that a response stream that only starts after
+   * the peer has gone ends right away as well.
+   */
+  protected readonly disconnectNotifiers = new WeakMap<
+    TcpSocket,
+    Observable<void>
+  >();
 
   constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
@@ -67,6 +80,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       'incompleteMessageTimeout',
     );
     this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
+    this.drainTimeout = this.getOptionsProp(options, 'drainTimeout');
 
     this.init();
     this.initializeSerializer(options);
@@ -113,6 +127,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.trackOpenSocket(socket);
 
     const readSocket = this.getSocketInstance(socket);
+    this.trackDisconnect(readSocket);
     readSocket.on('message', (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg).catch(err => this.handleError(err)),
     );
@@ -130,6 +145,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, tcpContext);
     }
+    this.assertValidPacketId((packet as IncomingRequest).id);
 
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
@@ -141,10 +157,15 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       });
       return socket.sendMessage(noHandlerPacket);
     }
+    this.warnIfEventHandlerReplies(handler, pattern);
     return this.handleRequest(
       tcpContext,
       async () =>
-        this.transformToObservable(await handler(packet.data, tcpContext)),
+        this.endOnDisconnect(
+          await handler(packet.data, tcpContext),
+          tcpContext,
+          socket,
+        ),
       data => {
         Object.assign(data, { id: (packet as IncomingRequest).id });
         const outgoingResponse = this.serializer.serialize(
@@ -208,6 +229,10 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
         this.tlsOptions,
         this.bindHandler.bind(this),
       );
+      // "bindHandler" only runs once the TLS handshake is over. The raw socket
+      // is tracked from the moment it is accepted, so that "close" also tears
+      // down connections that are still in the middle of their handshake.
+      this.server.on('connection', socket => this.trackOpenSocket(socket));
     } else {
       // TLS disabled, use net server
       this.server = net.createServer(this.bindHandler.bind(this));
@@ -266,19 +291,56 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.openSockets.clear();
   }
 
+  /**
+   * Notes when the socket can no longer be written to: "TcpSocket" drops every
+   * message once the socket has closed or errored.
+   */
+  protected trackDisconnect(socket: TcpSocket) {
+    const disconnect$ = new ReplaySubject<void>(1);
+    socket.on(TcpEventsMap.CLOSE, () => disconnect$.next());
+    socket.on(TcpEventsMap.ERROR, () => disconnect$.next());
+    this.disconnectNotifiers.set(socket, disconnect$);
+  }
+
+  /**
+   * Turns a handler result into the response stream. As for HTTP, the stream
+   * ends once the peer disconnects only if the handler itself returned (or
+   * resolved to) an Observable: any other handler, and the interceptors
+   * around it, run to completion.
+   */
+  protected endOnDisconnect(
+    result: unknown,
+    context: TcpContext,
+    socket: TcpSocket,
+  ): Observable<unknown> {
+    const response$ = this.transformToObservable(result);
+    const disconnect$ = this.disconnectNotifiers.get(socket);
+    if (!isObservable(result) || !disconnect$) {
+      return response$;
+    }
+    // Without interceptors, "result" is what the handler returned
+    const handlerObservable$: Observable<unknown> =
+      getHandlerObservableNotifier(context) ?? of(null);
+    return response$.pipe(
+      takeUntil(handlerObservable$.pipe(switchMap(() => disconnect$))),
+    );
+  }
+
   protected getSocketInstance(socket: Socket): TcpSocket {
     // Pass the framing options only if socketClass is JsonSocket
     // For custom socket classes, users should handle them in their own implementation
     const hasJsonSocketOptions =
       this.maxBufferSize !== undefined ||
       this.incompleteMessageTimeout !== undefined ||
-      this.maxSendBufferSize !== undefined;
+      this.maxSendBufferSize !== undefined ||
+      this.drainTimeout !== undefined;
 
     if (hasJsonSocketOptions && this.socketClass === JsonSocket) {
       return new this.socketClass(socket, {
         maxBufferSize: this.maxBufferSize,
         incompleteMessageTimeout: this.incompleteMessageTimeout,
         maxSendBufferSize: this.maxSendBufferSize,
+        drainTimeout: this.drainTimeout,
       });
     }
     return new this.socketClass(socket);

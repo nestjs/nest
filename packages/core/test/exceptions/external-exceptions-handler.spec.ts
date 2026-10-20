@@ -30,6 +30,36 @@ describe('ExternalExceptionsHandler', () => {
         expect(result).toEqual(observable$);
       });
     });
+    describe('when a filter catches the exception', () => {
+      class TestException extends Error {}
+
+      it.each([null, false, 0, ''])(
+        'should return %j when the filter returns it',
+        value => {
+          handler.setCustomFilters([
+            { exceptionMetatypes: [TestException], func: () => value },
+          ]);
+          expect(handler.next(new TestException(), null!)).toBe(value);
+        },
+      );
+      it('should rethrow the exception when the filter returns nothing', () => {
+        const exception = new TestException('unhandled');
+        handler.setCustomFilters([
+          { exceptionMetatypes: [TestException], func: () => undefined },
+        ]);
+        expect(() => handler.next(exception, null!)).toThrow(exception);
+      });
+    });
+    describe('when no filter catches the exception', () => {
+      it('should rethrow the exception', () => {
+        class AnotherTestException {}
+        const exception = new Error('uncaught');
+        handler.setCustomFilters([
+          { exceptionMetatypes: [AnotherTestException], func: () => null },
+        ]);
+        expect(() => handler.next(exception, null!)).toThrow(exception);
+      });
+    });
   });
   describe('setCustomFilters', () => {
     const filters = ['test', 'test2'];
@@ -43,8 +73,8 @@ describe('ExternalExceptionsHandler', () => {
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
-      it('should return identity', () => {
-        expect(handler.invokeCustomFilters(null, null!)).toBeNull();
+      it('should return undefined', () => {
+        expect(handler.invokeCustomFilters(null, null!)).toBeUndefined();
       });
     });
     describe('when filters array is not empty', () => {
@@ -70,9 +100,11 @@ describe('ExternalExceptionsHandler', () => {
           expect(funcSpy).toHaveBeenCalledWith(exception, null);
         });
         it('should return stream', () => {
+          const stream$ = of(true);
+          funcSpy.mockReturnValue(stream$);
           expect(
             handler.invokeCustomFilters(new TestException(), null!),
-          ).not.toBeNull();
+          ).toBe(stream$);
         });
       });
       describe('when filter does not exists in filters array', () => {
@@ -86,10 +118,10 @@ describe('ExternalExceptionsHandler', () => {
           await handler.invokeCustomFilters(new TestException(), null!);
           expect(funcSpy).not.toHaveBeenCalled();
         });
-        it('should return null', () => {
+        it('should return undefined', () => {
           expect(
             handler.invokeCustomFilters(new TestException(), null!),
-          ).toBeNull();
+          ).toBeUndefined();
         });
       });
     });

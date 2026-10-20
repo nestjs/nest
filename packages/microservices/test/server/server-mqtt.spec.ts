@@ -1,8 +1,10 @@
 import { EventEmitter } from 'events';
 import { of } from 'rxjs';
-import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { MQTT_MAX_TOPIC_LENGTH, NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { MqttContext } from '../../ctx-host/index.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
+import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception.js';
 import { MqttRecordBuilder } from '../../record-builders/index.js';
 import { ServerMqtt } from '../../server/server-mqtt.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -200,6 +202,40 @@ describe('ServerMqtt', () => {
       expect(mqttClient.end).toHaveBeenCalled();
     });
   });
+  describe('createMqttClient', () => {
+    let connect: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      connect = vi.fn();
+    });
+
+    // Otherwise mqtt makes no further attempt after a CONNACK error, which
+    // leaves the server disconnected for good
+    it('should have mqtt reconnect after the broker refuses a connection', async () => {
+      vi.spyOn(untypedServer, 'loadPackage').mockResolvedValue({ connect });
+      await server.createMqttClient();
+
+      expect(connect).toHaveBeenCalledWith(
+        'mqtt://localhost:1883',
+        expect.objectContaining({ reconnectOnConnackError: true }),
+      );
+    });
+
+    it('should keep "reconnectOnConnackError" when it is set', async () => {
+      const serverWithOption = new ServerMqtt({
+        reconnectOnConnackError: false,
+      });
+      vi.spyOn(serverWithOption as any, 'loadPackage').mockResolvedValue({
+        connect,
+      });
+      await serverWithOption.createMqttClient();
+
+      expect(connect).toHaveBeenCalledWith(
+        'mqtt://localhost:1883',
+        expect.objectContaining({ reconnectOnConnackError: false }),
+      );
+    });
+  });
   describe('bindEvents', () => {
     let onSpy: ReturnType<typeof vi.fn>,
       subscribeSpy: ReturnType<typeof vi.fn>,
@@ -333,6 +369,27 @@ describe('ServerMqtt', () => {
         );
         expect(handleMessageStub).toHaveBeenCalled();
       });
+      it('should neither run the handler nor reply when the reply topic would be too long', async () => {
+        const handler = vi.fn();
+        const publish = vi.fn();
+        const loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+        untypedServer.messageHandlers = objectToMap({ '#': handler });
+
+        // The broker delivers topics up to the limit, "/reply" is added to it
+        await server.getMessageHandler({ publish })(
+          'a'.repeat(MQTT_MAX_TOPIC_LENGTH),
+          Buffer.from(JSON.stringify({ id: '1', data: 'test' })),
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(publish).not.toHaveBeenCalled();
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
+          expect.any(MaxMqttTopicLengthExceededException),
+        );
+      });
     });
   });
   describe('handleMessage', () => {
@@ -402,6 +459,49 @@ describe('ServerMqtt', () => {
       );
       expect(handler).toHaveBeenCalledWith(data, expect.any(MqttContext));
     });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+      const request = Buffer.from(JSON.stringify({ pattern: '', data, id }));
+
+      await server.handleMessage(channel, request, null);
+      await server.handleMessage(channel, request, null);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(getPublisherSpy).toHaveBeenCalledTimes(2);
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        response: 'stored',
+        isDisposed: true,
+      });
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
+    });
+    it('should drop a request whose id is neither a number nor a short string', async () => {
+      // Every reply carries the id, so it would be serialized for each of them
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      const error = await server
+        .handleMessage(
+          channel,
+          Buffer.from(JSON.stringify({ pattern: '', data, id: [[['a']]] })),
+          null,
+        )
+        .catch(err => err);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(getPublisherSpy).not.toHaveBeenCalled();
+      expect(error).toBeInstanceOf(InvalidPacketIdException);
+    });
   });
 
   describe('processing end hook', () => {
@@ -468,6 +568,16 @@ describe('ServerMqtt', () => {
     });
     it(`should return function`, () => {
       expect(typeof server.getPublisher(null, context, id)).toEqual('function');
+    });
+    it(`should throw if the reply topic would exceed the maximum topic length`, () => {
+      const longestTopic = 'a'.repeat(MQTT_MAX_TOPIC_LENGTH - '/reply'.length);
+
+      expect(() =>
+        server.getPublisher(pub, new MqttContext([`${longestTopic}a`, {}]), id),
+      ).toThrow(MaxMqttTopicLengthExceededException);
+      expect(() =>
+        server.getPublisher(pub, new MqttContext([longestTopic, {}]), id),
+      ).not.toThrow();
     });
     it(`should call "publish" with expected arguments`, () => {
       const response = 'test';
@@ -659,6 +769,36 @@ describe('ServerMqtt', () => {
           'root/invalid/child/grandchild',
         ),
       ).toBe(false);
+    });
+  });
+  describe('getHandlerByPattern', () => {
+    // A broker takes '"admin/reset"' for a topic of its own, which an ACL
+    // that denies "admin/#" lets through
+    it('should not route a quoted topic to the handler of the unquoted one', () => {
+      server.addHandler('admin/reset', vi.fn());
+
+      expect(server.getHandlerByPattern('"admin/reset"')).toBeNull();
+    });
+    it('should not match a quoted topic against wildcard patterns as unquoted', () => {
+      server.addHandler('admin/+', vi.fn());
+
+      expect(server.getHandlerByPattern('"admin/reset"')).toBeNull();
+    });
+    it('should not route a number written differently to its handler', () => {
+      server.addHandler(1000, vi.fn());
+
+      expect(server.getHandlerByPattern('1e3')).toBeNull();
+    });
+    it('should route the topic of an object pattern to its handler', () => {
+      const handler = vi.fn();
+      server.addHandler({ cmd: 'sum', role: 'math' }, handler);
+
+      expect(server.getHandlerByPattern('{"cmd":"sum","role":"math"}')).toBe(
+        handler,
+      );
+      expect(
+        server.getHandlerByPattern('{ "role": "math", "cmd": "sum" }'),
+      ).toBe(handler);
     });
   });
 });

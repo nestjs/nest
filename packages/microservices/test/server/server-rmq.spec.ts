@@ -1,6 +1,10 @@
 import { EventEmitter } from 'events';
 import { of } from 'rxjs';
-import { NO_MESSAGE_HANDLER, RMQ_DEFAULT_QUEUE } from '../../constants.js';
+import {
+  CONSUMER_CANCELLED_RMQ_MESSAGE,
+  NO_MESSAGE_HANDLER,
+  RMQ_DEFAULT_QUEUE,
+} from '../../constants.js';
 import { RmqContext } from '../../ctx-host/index.js';
 import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
@@ -138,20 +142,75 @@ describe('ServerRMQ', () => {
       });
     });
     describe('when the connection attempts run out', () => {
-      it('should call the callback once with the connection error', async () => {
-        const connectionError = new Error('ECONNREFUSED');
-        const handlers = new Map<string, (error: object) => Promise<void>>();
-        client.once = vi.fn((event, handler) => handlers.set(event, handler));
-        untypedServer.options = { maxConnectionAttempts: 1 };
+      const connectionError = new Error('ECONNREFUSED');
+      let listenCallback: ReturnType<typeof vi.fn<(err?: unknown) => void>>;
+
+      beforeEach(() => {
+        client = Object.assign(new EventEmitter(), {
+          createChannel: createChannelStub,
+        });
         vi.spyOn(server, 'close').mockResolvedValue();
         vi.spyOn(server['logger'], 'error').mockImplementation(() => {});
-        const listenCallback = vi.fn<(err?: unknown) => void>();
+        listenCallback = vi.fn<(err?: unknown) => void>();
+      });
+      it('should call the callback once with the connection error', async () => {
+        untypedServer.options = { maxConnectionAttempts: 1 };
 
         await server.listen(listenCallback);
-        await handlers.get('connectFailed')?.({ err: connectionError });
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
 
         expect(listenCallback).toHaveBeenCalledOnce();
         expect(listenCallback).toHaveBeenCalledWith(connectionError);
+      });
+      it('should still call the callback when closing fails', async () => {
+        const closeError = new Error('close failed');
+        untypedServer.options = { maxConnectionAttempts: 1 };
+        vi.spyOn(server, 'close').mockRejectedValue(closeError);
+        const logError = vi.spyOn(server['logger'], 'error');
+
+        await server.listen(listenCallback);
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(logError).toHaveBeenCalledWith(closeError);
+        expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
+      });
+      it('should call the callback once the last of several attempts fails', async () => {
+        untypedServer.options = { maxConnectionAttempts: 3 };
+
+        await server.listen(listenCallback);
+        client.emit('connectFailed', { err: new Error('first attempt') });
+        client.emit('connectFailed', { err: new Error('second attempt') });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(listenCallback).not.toHaveBeenCalled();
+
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
+      });
+      it('should count the attempts of a later listen() from zero', async () => {
+        untypedServer.options = { maxConnectionAttempts: 2 };
+        await server.listen(listenCallback);
+        client.emit('connectFailed', { err: new Error('first attempt') });
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
+
+        client = Object.assign(new EventEmitter(), {
+          createChannel: createChannelStub,
+        });
+        const secondListenCallback = vi.fn<(err?: unknown) => void>();
+        await server.listen(secondListenCallback);
+        client.emit('connectFailed', { err: new Error('first attempt') });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(secondListenCallback).not.toHaveBeenCalled();
+
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(secondListenCallback).toHaveBeenCalledExactlyOnceWith(
+          connectionError,
+        );
       });
     });
     describe('when "start" throws an exception', () => {
@@ -181,6 +240,51 @@ describe('ServerRMQ', () => {
     it('should close channel', async () => {
       await server.close();
       expect(rmqChannel.close).toHaveBeenCalled();
+    });
+    it('should close the channel before the connection', async () => {
+      let closeChannel!: () => void;
+      untypedServer.channel = {
+        close: vi.fn(
+          () => new Promise<void>(resolve => (closeChannel = resolve)),
+        ),
+      };
+      const connection = { close: vi.fn() };
+      untypedServer.server = connection;
+
+      const closing = server.close();
+      await new Promise(resolve => setImmediate(resolve));
+      expect(connection.close).not.toHaveBeenCalled();
+
+      closeChannel();
+      await closing;
+      expect(connection.close).toHaveBeenCalledOnce();
+    });
+    it('should close the connection when closing the channel fails', async () => {
+      const channelError = new Error('channel close failed');
+      untypedServer.channel = {
+        close: vi.fn().mockRejectedValue(channelError),
+      };
+      const connection = { close: vi.fn() };
+      untypedServer.server = connection;
+
+      await expect(server.close()).rejects.toBe(channelError);
+      expect(connection.close).toHaveBeenCalledOnce();
+    });
+    it('should log the connection close error when both closes fail', async () => {
+      const channelError = new Error('channel close failed');
+      const connectionError = new Error('connection close failed');
+      untypedServer.channel = {
+        close: vi.fn().mockRejectedValue(channelError),
+      };
+      untypedServer.server = {
+        close: vi.fn().mockRejectedValue(connectionError),
+      };
+      const logError = vi
+        .spyOn(server['logger'], 'error')
+        .mockImplementation(() => {});
+
+      await expect(server.close()).rejects.toBe(channelError);
+      expect(logError).toHaveBeenCalledWith(connectionError);
     });
   });
 
@@ -262,6 +366,31 @@ describe('ServerRMQ', () => {
       });
       await server.handleMessage(msg, '');
       expect(handler).toHaveBeenCalledOnce();
+    });
+    it('should still reply with an event handler, but warn once that this is deprecated', async () => {
+      const handler = Object.assign(async () => 'stored', {
+        isEventHandler: true,
+      });
+      untypedServer.messageHandlers = objectToMap({ [pattern]: handler });
+      const warnSpy = vi
+        .spyOn(untypedServer.logger, 'warn')
+        .mockImplementation(() => {});
+
+      await server.handleMessage(msg, '');
+      await server.handleMessage(msg, '');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(sendMessageStub).toHaveBeenCalledTimes(2);
+      expect(sendMessageStub).toHaveBeenCalledWith(
+        { response: 'stored', isDisposed: true },
+        undefined,
+        1,
+        expect.any(RmqContext),
+      );
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(
+        /^DEPRECATED! .* Pattern: test$/,
+      );
     });
     it('should not throw if the message is an invalid json', async () => {
       const invalidMsg = {
@@ -455,6 +584,26 @@ describe('ServerRMQ', () => {
 
       expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
+    it('should set the channel up and consume again when the broker cancels the consumer', async () => {
+      const loggerErrorSpy = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      const callback = vi.fn();
+      await server.setupChannel(channel, callback);
+      const [, onMessage] = channel.consume.mock.calls[0];
+
+      // amqplib calls the consumer with "null" once the broker has cancelled
+      // it, e.g. because its queue was deleted
+      await onMessage(null);
+
+      expect(channel.assertQueue).toHaveBeenCalledTimes(2);
+      expect(channel.consume).toHaveBeenCalledTimes(2);
+      expect(channel.consume.mock.calls[1][0]).toBe(queue);
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        CONSUMER_CANCELLED_RMQ_MESSAGE,
+      );
+      expect(callback).toHaveBeenCalledOnce();
+    });
     it('should call "resolve" function', async () => {
       const resolve = vi.fn();
       await server.setupChannel(channel, resolve);
@@ -492,6 +641,46 @@ describe('ServerRMQ', () => {
       await expect(
         server.sendMessage({ test: true }, 'test', '0', context),
       ).rejects.toBe(error);
+    });
+    describe('when "replyTo" or "correlationId" is too long for AMQP', () => {
+      // amqplib decodes 86 bytes of invalid UTF-8 as 86 replacement
+      // characters, which take 258 bytes to encode again
+      const tooLong = '�'.repeat(86);
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+      });
+
+      it('should drop the reply and log an error', async () => {
+        await server.sendMessage({ test: true }, tooLong, '0', context);
+        await server.sendMessage({ test: true }, 'test', tooLong, context);
+
+        expect(channel.sendToQueue).not.toHaveBeenCalled();
+        expect(loggerErrorSpy).toHaveBeenCalledTimes(2);
+      });
+      it('should publish values of up to 255 bytes', () => {
+        const longest = 'a'.repeat(255);
+
+        server.sendMessage({ test: true }, longest, longest, context);
+
+        expect(channel.sendToQueue).toHaveBeenCalledWith(
+          longest,
+          expect.any(Buffer),
+          { correlationId: longest },
+        );
+      });
+      it('should publish a reply without "replyTo" as before', () => {
+        server.sendMessage({ test: true }, undefined, '0', context);
+
+        expect(channel.sendToQueue).toHaveBeenCalledWith(
+          undefined,
+          expect.any(Buffer),
+          { correlationId: '0' },
+        );
+      });
     });
     describe('when the response is a record', () => {
       const replyTo = 'test';

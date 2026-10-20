@@ -82,6 +82,22 @@ describe('Sse (Express Application)', () => {
         'application/json',
       );
     });
+
+    it('returns the status that an asynchronous exception filter sets before opening the SSE stream', async () => {
+      const response = await fetch(
+        `${await app.getUrl()}/sse/validated/deferred-filter?limit=invalid`,
+        {
+          headers: {
+            accept: 'text/event-stream',
+          },
+        },
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.headers.get('content-type')).toContain(
+        'application/json',
+      );
+    });
   });
 
   describe('with forceCloseConnections', () => {
@@ -241,7 +257,7 @@ describe('Sse (Express Application)', () => {
       expect(response.status).toBe(200);
       expect(body).toContain('data: {"n":1}');
       expect(body).toContain(
-        'event: error\nid: 2\ndata: Do not know how to serialize a BigInt',
+        'event: error\nid: 2\ndata: Internal server error',
       );
       expect(body).not.toContain('data: {"n":3}');
     });

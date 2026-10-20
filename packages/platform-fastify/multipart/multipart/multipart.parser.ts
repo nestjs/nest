@@ -16,6 +16,7 @@ import { memoryStorage } from '../storage/memory.storage.js';
 import { appendField } from './append-field.util.js';
 import {
   busboyExceptions,
+  DEFAULT_FIELD_NAME_LIMITS,
   MISSING_PLUGIN_MESSAGE,
   multerExceptions,
 } from './multipart.constants.js';
@@ -80,8 +81,11 @@ function assertPluginRegistered(
 
 /**
  * Per-route options handed to `req.parts()`; `@fastify/multipart` deep-merges
- * them over the options the plugin was registered with. `@fastify/busboy`
- * treats `fileSize` and `parts` as "max allowed" (it fires once a limit is
+ * them over the options the plugin was registered with. Limits set to `null`
+ * or `undefined` are left out, as the merge would copy them over the
+ * plugin's limits (and its `fileSize` and `parts` defaults), which
+ * `@fastify/busboy` then reads as no limit. `@fastify/busboy` treats
+ * `fileSize` and `parts` as "max allowed" (it fires once a limit is
  * exceeded), so unlike multer there is no `+1` adjustment. Truncation is
  * detected here (`file.truncated`), so the plugin's own throw is disabled.
  */
@@ -91,7 +95,9 @@ function toBusboyConfig(
 ) {
   const config: Record<string, unknown> = { throwFileSizeLimit: false };
   if (limits) {
-    config.limits = { ...limits };
+    config.limits = Object.fromEntries(
+      Object.entries(limits).filter(([, value]) => value != null),
+    );
   }
   if (options.preservePath !== undefined) {
     config.preservePath = options.preservePath;
@@ -165,9 +171,12 @@ const ABORTED = Symbol('aborted');
  * the engine (e.g. by a `pipeline()` to a file that cannot be written), which
  * reports that error itself.
  *
- * Whatever the engine stores after an abort is removed once it calls back,
- * as multer does: what it stored when it succeeds, and the file at `path`
- * (which engines set before writing, by multer's convention) when it fails.
+ * Whatever the engine stores after an abort is removed, as multer does. The
+ * file at `path` (which engines set before writing, by multer's convention)
+ * is removed right away, as an engine waiting on `pipeline()` never calls
+ * back for a stream destroyed after its last chunk; removing it clears
+ * `path`. What the engine stored is removed once it calls back: what it
+ * returned when it succeeds, and the file at `path` when it fails.
  */
 function storeFile(
   storage: MultipartStorageEngine,
@@ -185,6 +194,10 @@ function storeFile(
         if (!stream.readableEnded && !stream.errored) {
           aborted = true;
           resolve(ABORTED);
+          const partial = file as unknown as UploadedMultipartFile;
+          if (partial.path) {
+            removeFiles(storage, req, [partial]).catch(() => undefined);
+          }
         }
       };
       stream.once('close', onClose);
@@ -205,7 +218,7 @@ function storeFile(
   );
 }
 
-function removeFiles(
+export function removeFiles(
   storage: MultipartStorageEngine,
   req: FastifyRequest,
   files: UploadedMultipartFile[],
@@ -333,20 +346,23 @@ function exceedsArrayIndexLimit(name: string, limit: number) {
 /**
  * `fieldNestingDepth` and `fieldArrayIndexLimit` are multer's own limits
  * (busboy knows neither), so they are checked here, against the decoded name.
+ * Unlike multer, they default to `DEFAULT_FIELD_NAME_LIMITS`.
  */
 function checkFieldNameShape(
   name: string,
   limits: MultipartLimits | undefined,
 ) {
-  if (
-    typeof limits?.fieldNestingDepth === 'number' &&
-    name.split('[').length - 1 > limits.fieldNestingDepth
-  ) {
+  const nestingDepth =
+    limits?.fieldNestingDepth ?? DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth;
+  if (name.split('[').length - 1 > nestingDepth) {
     throw new MultipartError('LIMIT_FIELD_NESTING', name);
   }
+  const arrayIndexLimit =
+    limits?.fieldArrayIndexLimit ??
+    DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit;
   if (
-    typeof limits?.fieldArrayIndexLimit === 'number' &&
-    exceedsArrayIndexLimit(name, limits.fieldArrayIndexLimit)
+    arrayIndexLimit !== Infinity &&
+    exceedsArrayIndexLimit(name, arrayIndexLimit)
   ) {
     throw new MultipartError('LIMIT_FIELD_ARRAY_INDEX', name);
   }
@@ -394,20 +410,21 @@ function readFilePart(
 
 /**
  * Parses the multipart body with multer's semantics and populates
- * `req.body` and `req.file` / `req.files`. Requests that are not multipart
- * are passed through untouched, as multer does.
+ * `req.body` and `req.file` / `req.files`, and returns the stored files.
+ * Requests that are not multipart are passed through untouched, as multer
+ * does.
  */
 export async function processMultipart(
   request: FastifyRequest,
   spec: UploadSpec,
   options: MultipartOptions,
   storage: MultipartStorageEngine,
-): Promise<void> {
+): Promise<UploadedMultipartFile[]> {
   const req = request as MultipartRequest;
   assertPluginRegistered(req);
   resetFiles(req);
   if (!req.isMultipart()) {
-    return;
+    return [];
   }
 
   const filesLeft = new Map<string, number>();
@@ -490,6 +507,7 @@ export async function processMultipart(
       break;
     }
   }
+  return stored;
 }
 
 /**

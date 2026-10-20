@@ -1,12 +1,17 @@
-import { ForbiddenException } from '@nestjs/common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants.js';
+import { ForbiddenException, SetMetadata } from '@nestjs/common';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  ENTRY_PROVIDER_WATERMARK,
+} from '@nestjs/common/constants.js';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
 import { of } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context.js';
 import { GuardsConsumer } from '../../guards/guards-consumer.js';
 import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
 import { ExternalContextCreator } from '../../helpers/external-context-creator.js';
+import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { ModulesContainer } from '../../injector/modules-container.js';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
@@ -58,6 +63,114 @@ describe('ExternalContextCreator', () => {
         expect(getContextModuleKeySpy).toHaveBeenCalled();
         done();
       }));
+    describe('when the "constructor" of the host prototype was overwritten', () => {
+      it('should look the module up by the registered class', () => {
+        class Mixin {}
+        class Host {}
+        Host.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: Host });
+
+        const getContextModuleKeySpy = vi.spyOn(
+          contextCreator,
+          'getContextModuleKey',
+        );
+        contextCreator.create(new Host(), callback, '', '', null!);
+        expect(getContextModuleKeySpy).toHaveBeenCalledWith(Host);
+      });
+    });
+    describe('when no inquirer id is given', () => {
+      @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+      class EntryProvider {}
+
+      class PlainProvider {}
+
+      let moduleRef: Module;
+
+      beforeEach(() => {
+        const modules = new ModulesContainer();
+        moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider(EntryProvider);
+        moduleRef.addProvider(PlainProvider);
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should look up the enhancers of an entry provider with that provider as the inquirer', () => {
+        const instance = new EntryProvider();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          moduleRef.providers.get(EntryProvider)!.id,
+        );
+      });
+
+      it('should not use any other provider as the inquirer', () => {
+        const instance = new PlainProvider();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          undefined,
+        );
+      });
+    });
+    describe('when the host is registered under a token other than its class', () => {
+      @SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+      class Resolver {}
+
+      let wrapper: InstanceWrapper;
+
+      beforeEach(() => {
+        const modules = new ModulesContainer();
+        const moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider({ provide: 'RESOLVER', useClass: Resolver });
+        wrapper = moduleRef.providers.get('RESOLVER')!;
+        wrapper.instance = new Resolver();
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should find its module and inquirer by its instance', () => {
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          wrapper.instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          wrapper.id,
+        );
+      });
+
+      it('should find its module by the inquirer id', () => {
+        const instance = new Resolver();
+        const contextId = { id: 2 };
+        contextCreator.create(
+          instance,
+          callback,
+          '',
+          '',
+          null!,
+          contextId,
+          wrapper.id,
+        );
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'key',
+          contextId,
+          wrapper.id,
+        );
+      });
+    });
     describe('returns proxy function', () => {
       let proxyContext;
       let instance;

@@ -423,6 +423,27 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(protection, '/items')).toBe(false);
     });
 
+    it('does not exclude "/x/" for a wildcard of "x" when the router serves it with "/x"', () => {
+      class LenientRouterAdapter extends TestAdapter {
+        getRouteMatchingOptions() {
+          return { caseSensitive: false, ignoreTrailingSlash: true };
+        }
+      }
+      const exclude = ['webhooks/*', 'hooks', 'hooks/{*path}'];
+      const lenient = new CrossOriginProtection(new LenientRouterAdapter({}), {
+        exclude,
+      });
+      lenient.resolveExclusions(
+        new RouteInfoPathExtractor(new ApplicationConfig()),
+      );
+      expect(isExcluded(lenient, '/webhooks/')).toBe(false);
+      expect(isExcluded(lenient, '/webhooks/stripe/')).toBe(true);
+      expect(isExcluded(lenient, '/hooks/')).toBe(true);
+
+      const strict = createProtection(exclude);
+      expect(isExcluded(strict, '/webhooks/')).toBe(true);
+    });
+
     it('excludes nothing until the exclusions are resolved (app.init())', () => {
       const protection = new CrossOriginProtection(adapter, {
         exclude: ['webhooks'],
@@ -463,6 +484,27 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(protection, '/api/v1/webhooks')).toBe(true);
       expect(isExcluded(protection, '/api/webhooks')).toBe(false);
       expect(isExcluded(protection, '/api/v2/webhooks')).toBe(false);
+    });
+
+    it('only excludes the requests for the version of RouteInfo.version (header versioning)', () => {
+      const protection = createProtection(
+        [{ path: 'webhooks', method: RequestMethod.POST, version: '1' }],
+        config =>
+          config.enableVersioning({
+            type: VersioningType.HEADER,
+            header: 'X-Version',
+          }),
+      );
+      const isExcludedForVersion = (version?: string) => {
+        const request = crossSitePost('/webhooks');
+        if (version) {
+          request.headers['x-version'] = version;
+        }
+        return protection.check(request) === undefined;
+      };
+      expect(isExcludedForVersion('1')).toBe(true);
+      expect(isExcludedForVersion('2')).toBe(false);
+      expect(isExcludedForVersion()).toBe(false);
     });
 
     it('keeps wildcard-only exclusions unprefixed, like MiddlewareConsumer', () => {

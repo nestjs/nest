@@ -3,7 +3,9 @@ import {
   type CallHandler,
   PayloadTooLargeException,
 } from '@nestjs/common';
-import { of } from 'rxjs';
+import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
+import { lastValueFrom, of, throwError } from 'rxjs';
+import { Writable } from 'stream';
 import { FileInterceptor } from '../../../multipart/interceptors/file.interceptor.js';
 import { MISSING_PLUGIN_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
 import {
@@ -116,6 +118,21 @@ describe('FileInterceptor', () => {
       expect(req.parts).toHaveBeenCalledWith({
         throwFileSizeLimit: false,
         limits: { files: 2, fileSize: 10 },
+      });
+    });
+
+    it('should leave limits set to null or undefined to the plugin', async () => {
+      // @fastify/multipart deep-merges these limits over its own, where an
+      // undefined `fileSize` would replace its default with no limit at all.
+      const target = new (FileInterceptor('avatar', {
+        limits: { fileSize: undefined, parts: null!, files: 2 },
+      }))();
+      const req = createFakeRequest([]);
+      await target.intercept(createContext(req), handler);
+
+      expect(req.parts.mock.calls[0][0]).toStrictEqual({
+        throwFileSizeLimit: false,
+        limits: { files: 2 },
       });
     });
 
@@ -251,6 +268,29 @@ describe('FileInterceptor', () => {
         );
       });
 
+      it('should remove the partial file right away, as the storage engine may never call back', async () => {
+        // e.g. an engine waiting on pipeline(), which never settles for a
+        // stream destroyed after its last chunk was pushed
+        const storage = {
+          _handleFile: vi.fn((_req, incoming) => {
+            incoming.path = '/uploads/partial';
+            incoming.stream.resume();
+          }),
+          _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+        };
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const req = createFakeRequest([aborted]);
+
+        await expect(
+          target.intercept(createContext(req), handler),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          expect.objectContaining({ path: '/uploads/partial' }),
+          expect.any(Function),
+        );
+      });
+
       it('should not wait for a storage engine that never calls back', async () => {
         const storage = {
           _handleFile: vi.fn((_req, incoming) => incoming.stream.resume()),
@@ -280,6 +320,63 @@ describe('FileInterceptor', () => {
 
       expect(storage._handleFile).toHaveBeenCalled();
       expect(req.file.size).toBe(42);
+    });
+  });
+
+  describe('when the route handler does not run', () => {
+    const error = new BadRequestException('Validation failed');
+    const failing: CallHandler = { handle: () => throwError(() => error) };
+    const createStorage = () => ({
+      _handleFile: vi.fn((_req, incoming, cb) => {
+        incoming.stream.resume();
+        incoming.stream.once('end', () => cb(null, { path: '/uploads/a' }));
+      }),
+      _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+    });
+    const createReply = () => ({
+      raw: new Writable({ write: (_chunk, _encoding, cb) => cb() }),
+    });
+
+    it('should remove the stored file once the response is sent when the pipes rejected the request', async () => {
+      const storage = createStorage();
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([file('avatar')]);
+      const reply = createReply();
+      markRejectedByPipes(req);
+
+      const result$ = await target.intercept(
+        createContext(req, reply),
+        failing,
+      );
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      // An exception filter may still use the file until the response is out.
+      expect(storage._removeFile).not.toHaveBeenCalled();
+      reply.raw.end();
+
+      await vi.waitFor(() =>
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          expect.objectContaining({ path: '/uploads/a' }),
+          expect.any(Function),
+        ),
+      );
+    });
+
+    it('should keep the stored file when the route handler fails', async () => {
+      const storage = createStorage();
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([file('avatar')]);
+      const reply = createReply();
+
+      const result$ = await target.intercept(
+        createContext(req, reply),
+        failing,
+      );
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      reply.raw.end();
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(storage._removeFile).not.toHaveBeenCalled();
     });
   });
 });

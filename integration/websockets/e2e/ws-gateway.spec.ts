@@ -105,6 +105,10 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
     ws = new WebSocket('ws://localhost:3000/example');
     ws2 = new WebSocket('ws://localhost:3000/ws-path');
+    const ws2Open = new Promise((resolve, reject) => {
+      ws2.on('open', resolve);
+      ws2.on('error', reject);
+    });
 
     await new Promise<void>(resolve =>
       ws.on('open', () => {
@@ -124,6 +128,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       }),
     );
 
+    await ws2Open;
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
         expect(JSON.parse(data.toString()).data.test).toEqual('test');
@@ -150,6 +155,10 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
     ws = new WebSocket('ws://localhost:8080');
     ws2 = new WebSocket('ws://localhost:8090');
+    const ws2Open = new Promise((resolve, reject) => {
+      ws2.on('open', resolve);
+      ws2.on('error', reject);
+    });
 
     await new Promise<void>(resolve =>
       ws.on('open', () => {
@@ -169,6 +178,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       }),
     );
 
+    await ws2Open;
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
         expect(JSON.parse(data.toString()).data.test).toEqual('test');

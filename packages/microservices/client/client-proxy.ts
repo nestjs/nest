@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
   throwError as _throw,
   connectable,
@@ -29,7 +30,7 @@ import { ProducerDeserializer } from '../interfaces/deserializer.interface.js';
 import { ProducerSerializer } from '../interfaces/serializer.interface.js';
 import { IdentitySerializer } from '../serializers/identity.serializer.js';
 import { transformPatternToRoute } from '../utils/index.js';
-import { randomStringGenerator, isNil } from '@nestjs/common/internal';
+import { isNil } from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -178,7 +179,9 @@ export abstract class ClientProxy<
   }
 
   protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId {
-    const id = randomStringGenerator();
+    // Most transports match a reply to its request by the id alone, so it must
+    // not be guessable from the ids of other requests
+    const id = randomUUID();
     return Object.assign(packet, { id });
   }
 

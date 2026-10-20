@@ -16,6 +16,18 @@ export const multerExceptions = {
   // stays a 500.
 };
 
+/**
+ * Defaults of the field name limits that multer leaves at `Infinity`, which
+ * let a single small request build an arbitrarily deep `req.body`
+ * (`fieldNestingDepth`) or arrays of arbitrary length (`fieldArrayIndexLimit`).
+ * `32` is the nesting depth `body-parser` allows in the urlencoded bodies the
+ * ExpressAdapter parses; `1000` is the number of parameters it parses.
+ */
+export const DEFAULT_FIELD_NAME_LIMITS = {
+  fieldNestingDepth: 32,
+  fieldArrayIndexLimit: 1000,
+} as const;
+
 export const busboyExceptions = {
   // from https://github.com/mscdex/busboy/blob/master/lib/types/multipart.js
   MULTIPART_BOUNDARY_NOT_FOUND: 'Multipart: Boundary not found',

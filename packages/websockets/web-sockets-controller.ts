@@ -13,6 +13,7 @@ import {
 } from './constants.js';
 import { WsContextCreator } from './context/ws-context-creator.js';
 import { InvalidSocketPortException } from './errors/invalid-socket-port.exception.js';
+import { WsExceptionsHandler } from './exceptions/ws-exceptions-handler.js';
 import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
@@ -51,7 +52,6 @@ export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
     new MetadataScanner(),
   );
-  private readonly exceptionFiltersCache = new WeakMap();
   private readonly pendingDisconnects = new WeakMap<ContextId, number>();
 
   constructor(
@@ -171,6 +171,7 @@ export class WebSocketsController {
                 moduleKey,
                 methodName,
                 STATIC_CONTEXT,
+                instanceWrapper.id,
               )
             : this.createRequestScopedHandler(
                 instanceWrapper,
@@ -393,6 +394,9 @@ export class WebSocketsController {
     ];
     const pattern =
       Reflect.getMetadata(MESSAGE_METADATA, instance[methodName]) ?? 'unknown';
+    // Kept per gateway, not per handler function: gateways that inherit the
+    // handler from a base class can declare different filters
+    let exceptionFilter: WsExceptionsHandler | undefined;
 
     return async (...args: unknown[]) => {
       const [client] = args;
@@ -418,6 +422,7 @@ export class WebSocketsController {
           instanceWrapper,
           scopedEnhancers,
         );
+        await this.injector.waitForDeferredLoads(contextId);
         return this.contextCreator.create(
           contextInstance,
           contextInstance[methodName],
@@ -427,17 +432,11 @@ export class WebSocketsController {
           instanceWrapper.id,
         )(...args);
       } catch (err) {
-        let exceptionFilter = this.exceptionFiltersCache.get(
+        exceptionFilter ??= this.exceptionFiltersContext.create(
+          instance,
           instance[methodName],
+          moduleKey,
         );
-        if (!exceptionFilter) {
-          exceptionFilter = this.exceptionFiltersContext.create(
-            instance,
-            instance[methodName],
-            moduleKey,
-          );
-          this.exceptionFiltersCache.set(instance[methodName], exceptionFilter);
-        }
         // The context failed to resolve before `WsProxy` could append the
         // pattern, so add it here the same way.
         const host = new ExecutionContextHost([...args, pattern]);
@@ -465,6 +464,7 @@ export class WebSocketsController {
     return async (...args: unknown[]) => {
       const [client] = args;
       let contextId: ContextId | undefined;
+      let isResolved = false;
 
       try {
         contextId = this.getContextId(
@@ -485,6 +485,7 @@ export class WebSocketsController {
               collection,
               contextId,
             );
+        isResolved = true;
         if (!isStatic) {
           this.assignServerToProperties(contextInstance, server);
         }
@@ -496,19 +497,35 @@ export class WebSocketsController {
           // The gateway failed to resolve and has no hook whose exception
           // filters could handle the error. Nothing awaits this handler, so
           // rethrowing would end as an unhandled rejection.
-          this.logger.error(
-            `Failed to resolve ${instance.constructor.name} on client ${methodName === 'handleConnection' ? 'connection' : 'disconnection'}`,
-            (err as Error)?.stack,
-          );
+          this.logResolutionError(instance, methodName, err);
           return;
         }
-        this.handleLifecycleHookError(
+        if (!isResolved && contextId) {
+          // The gateway's enhancers are created in the context of the
+          // connection along with it, so when it failed to resolve, its
+          // filters have to be created here.
+          try {
+            await this.injector.loadEnhancersPerContext(
+              instanceWrapper,
+              contextId,
+              instanceWrapper,
+            );
+          } catch {
+            this.logResolutionError(instance, methodName, err);
+            return;
+          }
+        }
+        // Built for each connection: a request-scoped filter is only
+        // constructed in the context of the connection, and the static one
+        // holds an empty placeholder
+        const exceptionFilter = this.exceptionFiltersContext.create(
           instance,
+          targetCallback,
           moduleKey,
-          methodName,
-          args,
-          err,
+          contextId,
+          instanceWrapper.id,
         );
+        this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
       } finally {
         if (methodName === 'handleDisconnect' && contextId) {
           this.cleanupRequestScopedContext(
@@ -519,6 +536,17 @@ export class WebSocketsController {
         }
       }
     };
+  }
+
+  private logResolutionError(
+    instance: NestGateway,
+    methodName: 'handleConnection' | 'handleDisconnect',
+    err: unknown,
+  ) {
+    this.logger.error(
+      `Failed to resolve ${instance.constructor.name} on client ${methodName === 'handleConnection' ? 'connection' : 'disconnection'}`,
+      (err as Error)?.stack,
+    );
   }
 
   // A default-scoped gateway is resolved per connection only for its global
@@ -549,15 +577,18 @@ export class WebSocketsController {
     if (!hook) {
       return undefined;
     }
+    // Kept per gateway, not per hook function: gateways that inherit the
+    // hook from a base class can declare different filters
+    let exceptionFilter: WsExceptionsHandler | undefined;
     return (...args: unknown[]) => {
-      const handleError = (err: unknown) =>
-        this.handleLifecycleHookError(
+      const handleError = (err: unknown) => {
+        exceptionFilter ??= this.exceptionFiltersContext.create(
           instance,
+          hook,
           moduleKey,
-          methodName,
-          args,
-          err,
         );
+        this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
+      };
       try {
         const result = hook.apply(instance, args);
         return isFunction((result as Promise<unknown>)?.then)
@@ -570,23 +601,11 @@ export class WebSocketsController {
   }
 
   private handleLifecycleHookError(
-    instance: NestGateway,
-    moduleKey: string,
+    exceptionFilter: WsExceptionsHandler,
     methodName: 'handleConnection' | 'handleDisconnect',
     args: unknown[],
     err: unknown,
   ) {
-    // Only called for gateways that implement the hook
-    const targetCallback = instance[methodName]!;
-    let exceptionFilter = this.exceptionFiltersCache.get(targetCallback);
-    if (!exceptionFilter) {
-      exceptionFilter = this.exceptionFiltersContext.create(
-        instance,
-        targetCallback as <TClient>(client: TClient, data: any) => any,
-        moduleKey,
-      );
-      this.exceptionFiltersCache.set(targetCallback, exceptionFilter);
-    }
     const [client, disconnectReason] = args;
     // Client first, data second and the pattern last, as for message handlers.
     // With the raw hook arguments, the filter would send the last one (the

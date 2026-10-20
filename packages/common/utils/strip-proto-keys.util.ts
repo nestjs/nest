@@ -21,7 +21,11 @@ export function stripProtoKeys(value: any): void {
   }
 
   if (Array.isArray(value)) {
-    for (const v of value) {
+    // Only the items that are present: the length of a sparse array (e.g.
+    // one built from a multipart field named `tags[4294967294]`) can be far
+    // beyond its number of items, and a loop over every index would block
+    // the event loop for as long. `Object.values()` skips the holes.
+    for (const v of Object.values(value)) {
       stripProtoKeys(v);
     }
     return;
@@ -31,9 +35,9 @@ export function stripProtoKeys(value: any): void {
   delete value.__proto__;
   delete value.prototype;
 
-  // Only delete constructor if it's NOT a built-in type
-  const constructorType = value?.constructor;
-  if (constructorType && !BUILT_IN_TYPES.includes(constructorType)) {
+  // Only delete constructor if it's NOT a built-in type, whatever its value:
+  // a falsy one (null, 0, false, "") shadows the prototype's all the same
+  if (!BUILT_IN_TYPES.includes(value.constructor)) {
     delete value.constructor;
   }
 

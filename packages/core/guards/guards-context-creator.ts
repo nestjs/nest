@@ -49,7 +49,10 @@ export class GuardsContextCreator extends ContextCreator {
       return [] as unknown[] as R;
     }
     return iterate(metadata)
-      .filter((guard: any) => guard && (guard.name || guard.canActivate))
+      .filter(
+        (guard: any) =>
+          guard && (isFunction(guard) || isFunction(guard.canActivate)),
+      )
       .map(guard =>
         this.getGuardInstance(guard as Function, contextId, inquirerId),
       )

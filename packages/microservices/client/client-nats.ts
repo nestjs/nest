@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { isObject, loadPackageSync } from '@nestjs/common/internal';
+import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
 import { createRequire } from 'module';
 import { NATS_DEFAULT_URL } from '../constants.js';
@@ -32,6 +33,10 @@ let natsPackage = {} as any;
 
 type Client = Record<string, any>;
 type NatsMsg = Record<string, any>;
+type MsgHdrs = { keys(): string[]; values(key: string): string[] };
+
+const isMsgHdrs = (headers: unknown): headers is MsgHdrs =>
+  isObject(headers) && typeof (headers as MsgHdrs).keys === 'function';
 
 /**
  * @publicApi
@@ -316,7 +321,13 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       const serializedPacket: NatsRecord = this.serializer.serialize(
         packet,
       ) as NatsRecord;
-      const inbox = natsPackage.createInbox(this.options.inboxPrefix);
+      // A reply is accepted on its inbox even without an id, and createInbox()
+      // names the inbox after a counter that grows by a constant step, so the
+      // name gets random bits too. They stay in the same token, so that
+      // "<prefix>.*" permissions keep matching.
+      const inbox =
+        natsPackage.createInbox(this.options.inboxPrefix) +
+        randomBytes(16).toString('hex');
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,
@@ -381,7 +392,28 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       return undefined;
     }
 
-    const headers = requestHeaders ?? natsPackage.headers();
+    // nats.js encodes the headers of a publish with "MsgHdrs.encode()", so
+    // anything that is not a "MsgHdrs" cannot be sent. "NatsRecordBuilder"
+    // takes the headers of a record as they are given to it, and the packet
+    // headers of "send()" are a plain object, so both are copied into a
+    // "MsgHdrs" here rather than passed on.
+    const headers = natsPackage.headers();
+
+    // The packet headers win over the static ones, as they always did.
+    if (isMsgHdrs(requestHeaders)) {
+      // A "MsgHdrs" keeps its headers in a map that "Object.entries()" does
+      // not expose.
+      for (const key of requestHeaders.keys()) {
+        for (const value of requestHeaders.values(key)) {
+          // "set()" would keep only the last value of a multi-valued header
+          headers.append(key, value);
+        }
+      }
+    } else if (isObject(requestHeaders)) {
+      for (const [key, value] of Object.entries(requestHeaders)) {
+        headers.set(key, value as string);
+      }
+    }
 
     for (const [key, value] of Object.entries(this.options?.headers || {})) {
       if (!headers.has(key)) {

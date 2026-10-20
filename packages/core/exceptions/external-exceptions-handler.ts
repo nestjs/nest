@@ -4,6 +4,7 @@ import {
   type ExceptionFilterMetadata,
   selectExceptionFilterMetadata,
   isEmptyArray,
+  isUndefined,
 } from '@nestjs/common/internal';
 import type { ArgumentsHost } from '@nestjs/common';
 
@@ -12,7 +13,9 @@ export class ExternalExceptionsHandler extends ExternalExceptionFilter {
 
   public next(exception: Error, host: ArgumentsHost): Promise<any> {
     const result = this.invokeCustomFilters(exception, host);
-    if (result) {
+    // `undefined` stands for "not handled": no filter caught the exception,
+    // or the one that did returned nothing
+    if (!isUndefined(result)) {
       return result;
     }
     return super.catch(exception, host);
@@ -28,12 +31,12 @@ export class ExternalExceptionsHandler extends ExternalExceptionFilter {
   public invokeCustomFilters<T = any>(
     exception: T,
     host: ArgumentsHost,
-  ): Promise<any> | null {
+  ): Promise<any> | undefined {
     if (isEmptyArray(this.filters)) {
-      return null;
+      return;
     }
 
     const filter = selectExceptionFilterMetadata(this.filters, exception);
-    return filter ? filter.func(exception, host) : null;
+    return filter ? filter.func(exception, host) : undefined;
   }
 }

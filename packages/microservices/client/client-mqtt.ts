@@ -1,7 +1,13 @@
 import { createRequire } from 'module';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
-import { ECONNREFUSED, ENOTFOUND, MQTT_DEFAULT_URL } from '../constants.js';
+import {
+  ECONNREFUSED,
+  ENOTFOUND,
+  MQTT_DEFAULT_URL,
+  MQTT_MAX_TOPIC_LENGTH,
+} from '../constants.js';
+import { MaxMqttTopicLengthExceededException } from '../errors/max-mqtt-topic-length-exceeded.exception.js';
 import {
   MqttEvents,
   MqttEventsMap,
@@ -220,7 +226,13 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       // mqtt reconnects on the same client only while reconnectPeriod is set.
       // Once it gives up, drop the client so the next connect() call starts
       // over instead of returning the promise of a connection that is gone.
-      if (client === this.mqttClient && !client.reconnecting) {
+      // A reconnect the broker refused (CONNACK error) leaves "reconnecting"
+      // set although mqtt gives up then too, so also check that its own
+      // "close" listener, which runs first, scheduled another attempt. Its
+      // timer is null when there is none.
+      const willReconnect =
+        client.reconnecting && client.reconnectTimer !== null;
+      if (client === this.mqttClient && !willReconnect) {
         this.discardClient(client);
       }
     });
@@ -309,20 +321,28 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    let undoBookkeeping = () => {};
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResponsePattern(pattern);
+      this.assertTopicLength(this.getRequestPattern(pattern));
+      this.assertTopicLength(responseChannel);
 
-      let subscriptionsCount =
+      // Counted right away rather than once published: a request that waits
+      // for the broker to acknowledge the subscription depends on it as well,
+      // so a concurrent request that finishes first must not unsubscribe.
+      const subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
-      let isPublished = false;
-      let isTornDown = false;
+      this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
+      let isCounted = true;
 
-      const undoBookkeeping = () => {
-        isTornDown = true;
-        isPublished = false;
-        this.subscriptionsCount.set(
+      undoBookkeeping = () => {
+        if (!isCounted) {
+          return;
+        }
+        isCounted = false;
+        this.setSubscriptionsCount(
           responseChannel,
           (this.subscriptionsCount.get(responseChannel) || 1) - 1,
         );
@@ -330,13 +350,10 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       };
 
       const publishPacket = () => {
-        if (isTornDown) {
+        if (!isCounted) {
           return;
         }
-        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
-        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
-        isPublished = true;
 
         try {
           const options =
@@ -351,7 +368,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
             serializedPacket,
             this.mergePacketOptions(options),
             (err?: Error) => {
-              if (err && !isTornDown) {
+              if (err && isCounted) {
                 undoBookkeeping();
                 callback({ err });
               }
@@ -360,34 +377,37 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         } catch (err) {
           // The broker can acknowledge the subscription later, so this runs
           // outside the outer catch and has to undo its own work. Only the
-          // bookkeeping though: a concurrent request on this pattern may still
-          // be waiting for its own subscribe reply, so the broker subscription
-          // is left to self-heal, as in #17671.
+          // bookkeeping though, as in #17822: the next request on this
+          // pattern reuses the subscription.
           undoBookkeeping();
           callback({ err });
         }
       };
 
       const cleanup = () => {
-        isTornDown = true;
-        if (!isPublished) {
+        if (!isCounted) {
           return;
         }
-        isPublished = false;
+        isCounted = false;
         this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
 
       if (subscriptionsCount <= 0) {
-        this.mqttClient!.subscribe(responseChannel, (err: any) =>
-          err ? callback({ err }) : publishPacket(),
-        );
+        this.mqttClient!.subscribe(responseChannel, (err: any) => {
+          if (err) {
+            undoBookkeeping();
+            return callback({ err });
+          }
+          publishPacket();
+        });
       } else {
         publishPacket();
       }
 
       return cleanup;
     } catch (err) {
+      undoBookkeeping();
       callback({ err });
       return () => {};
     }
@@ -395,6 +415,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    this.assertTopicLength(pattern);
     const options =
       isObject(packet?.data) && packet.data instanceof MqttRecord
         ? packet.data.options
@@ -413,10 +434,38 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   protected unsubscribeFromChannel(channel: string) {
     const subscriptionCount = this.subscriptionsCount.get(channel)!;
-    this.subscriptionsCount.set(channel, subscriptionCount - 1);
+    this.setSubscriptionsCount(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
       this.mqttClient!.unsubscribe(channel);
+    }
+  }
+
+  /**
+   * Keeps only the channels that requests wait on. Patterns can be built from
+   * request data (e.g., one per device), so a channel nobody waits on any
+   * longer must not leave an entry behind.
+   */
+  private setSubscriptionsCount(channel: string, count: number) {
+    if (count > 0) {
+      this.subscriptionsCount.set(channel, count);
+    } else {
+      this.subscriptionsCount.delete(channel);
+    }
+  }
+
+  /**
+   * A topic's length is encoded in two bytes. mqtt.js only fails on a longer
+   * topic once it has written the start of the packet, so the broker would
+   * read the packets sent after it as the rest of that packet.
+   */
+  protected assertTopicLength(topic: string) {
+    const length = Buffer.byteLength(topic);
+    if (length > MQTT_MAX_TOPIC_LENGTH) {
+      throw new MaxMqttTopicLengthExceededException(
+        length,
+        MQTT_MAX_TOPIC_LENGTH,
+      );
     }
   }
 

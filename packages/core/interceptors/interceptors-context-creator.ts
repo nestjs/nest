@@ -50,11 +50,11 @@ export class InterceptorsContextCreator extends ContextCreator {
     return iterate(metadata)
       .filter(
         interceptor =>
-          interceptor && (interceptor.name || interceptor.intercept),
+          interceptor &&
+          (isFunction(interceptor) || isFunction(interceptor.intercept)),
       )
-      .map(
-        interceptor =>
-          this.getInterceptorInstance(interceptor, contextId, inquirerId)!,
+      .map(interceptor =>
+        this.getInterceptorInstance(interceptor, contextId, inquirerId)!,
       )
       .filter((interceptor: NestInterceptor) =>
         interceptor ? isFunction(interceptor.intercept) : false,

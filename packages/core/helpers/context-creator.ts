@@ -1,5 +1,6 @@
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper.js';
+import { getClassRef } from './class-ref-registry.js';
 import type { Controller } from '@nestjs/common/internal';
 
 export abstract class ContextCreator {
@@ -41,8 +42,7 @@ export abstract class ContextCreator {
   }
 
   public reflectClassMetadata<T>(instance: Controller, metadataKey: string): T {
-    const prototype = Object.getPrototypeOf(instance);
-    return Reflect.getMetadata(metadataKey, prototype.constructor);
+    return Reflect.getMetadata(metadataKey, getClassRef(instance));
   }
 
   public reflectMethodMetadata<T>(

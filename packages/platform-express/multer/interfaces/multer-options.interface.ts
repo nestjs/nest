@@ -16,9 +16,17 @@ export interface MulterLimits {
   parts?: number;
   /** For multipart forms, the max number of header key=> value pairs to parse Default: 2000(same as node's http). */
   headerPairs?: number;
-  /** Max nesting depth of field names; `a[b][c]` has 2 levels (Default: Infinity) */
+  /**
+   * Max nesting depth of field names; `a[b][c]` has 2 levels (Default: 32,
+   * where multer's own default is Infinity). Set it to `Infinity` to lift
+   * the limit.
+   */
   fieldNestingDepth?: number;
-  /** Max numeric array index accepted in field names; `a[3]` uses index 3 (Default: Infinity) */
+  /**
+   * Max numeric array index accepted in field names; `a[3]` uses index 3
+   * (Default: 1000, where multer's own default is Infinity). Set it to
+   * `Infinity` to lift the limit.
+   */
   fieldArrayIndexLimit?: number;
 }
 
@@ -32,8 +40,9 @@ export interface MulterOptions {
   /** The storage engine to use for uploaded files. */
   storage?: any;
   /**
-   * An object specifying the size limits of the following optional properties. This object is passed to busboy
-   * directly, and the details of properties can be found on https://github.com/mscdex/busboy#busboy-methods
+   * An object specifying the size limits of the following optional properties. This object is passed to multer
+   * and on to busboy, with `fieldNestingDepth` and `fieldArrayIndexLimit` set to their defaults when absent.
+   * The details of the busboy properties can be found on https://github.com/mscdex/busboy#busboy-methods
    *
    * Since multer 2.4.0, this can also be a function of the request that returns such an object.
    */

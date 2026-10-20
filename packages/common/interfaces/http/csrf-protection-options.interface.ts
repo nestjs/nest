@@ -37,12 +37,13 @@ export interface CsrfProtectionOptions<TRequest = any> {
    * object. Only consulted for requests that would otherwise be rejected.
    *
    * Routes are declared like `MiddlewareConsumer.exclude()`: a path, or
-   * `{ path, method, version? }` to narrow by method (and URI version),
-   * without the global prefix, which is added unless the route is excluded
-   * from it. Unlike `exclude()`, the match is exact: case-sensitive, without
-   * an optional trailing slash, and never for non-canonical request paths
-   * (`//`, dot segments, `;`, encoded `/` or `.`), which a router could
-   * resolve to a route that is not excluded.
+   * `{ path, method, version? }` to narrow by method and version (the
+   * version segment of the path with URI versioning, the version the request
+   * asks for otherwise), without the global prefix, which is added unless
+   * the route is excluded from it. Unlike `exclude()`, the match is exact:
+   * case-sensitive, without an optional trailing slash, and never for
+   * non-canonical request paths (`//`, dot segments, `;`, encoded `/` or
+   * `.`), which a router could resolve to a route that is not excluded.
    */
   exclude?: (string | RouteInfo)[] | ((request: TRequest) => boolean);
 }

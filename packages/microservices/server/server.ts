@@ -16,10 +16,15 @@ import {
   finalize,
   mergeMap,
 } from 'rxjs/operators';
-import { NO_EVENT_HANDLER, UNSERIALIZABLE_PATTERN } from '../constants.js';
+import {
+  EVENT_HANDLER_REPLY_DEPRECATED,
+  NO_EVENT_HANDLER,
+  UNSERIALIZABLE_PATTERN,
+} from '../constants.js';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context.js';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer.js';
 import { Transport } from '../enums/index.js';
+import { InvalidPacketIdException } from '../errors/invalid-packet-id.exception.js';
 import { ConsumerDeserializer } from '../interfaces/deserializer.interface.js';
 import {
   ClientOptions,
@@ -40,10 +45,13 @@ import { IdentitySerializer } from '../serializers/identity.serializer.js';
 import { transformPatternToRoute } from '../utils/index.js';
 import { ITransportServer, Logger, type LoggerService } from '@nestjs/common';
 import {
+  isNumber,
   isString,
   loadPackage,
   loadPackageSync,
 } from '@nestjs/common/internal';
+
+const MAX_PACKET_ID_LENGTH = 256;
 
 /**
  * @publicApi
@@ -59,6 +67,11 @@ export abstract class Server<
 
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger: LoggerService = new Logger(Server.name);
+  /**
+   * Event handlers that have replied to a request, so that the deprecation
+   * is logged once per pattern.
+   */
+  private readonly eventHandlersThatReplied = new WeakSet<MessageHandler>();
   /**
    * Whether this transport hands an event handler failure to its client
    * library, which then reports it. The base `handleEvent` connects the
@@ -185,9 +198,12 @@ export abstract class Server<
     respond: (data: WritePacket) => Promise<unknown> | void,
   ): Subscription {
     const dataQueue: WritePacket[] = [];
+    // The queue is read through an index and emptied once drained, as each
+    // shift() would move all the packets queued behind the one it removes
+    let nextIndex = 0;
     let isProcessing = false;
     const scheduleOnNextTick = (data: WritePacket) => {
-      if (data.isDisposed && dataQueue.length > 0) {
+      if (data.isDisposed && dataQueue.length > nextIndex) {
         dataQueue[dataQueue.length - 1].isDisposed = true;
       } else {
         dataQueue.push(data);
@@ -195,11 +211,8 @@ export abstract class Server<
       if (!isProcessing) {
         isProcessing = true;
         process.nextTick(async () => {
-          while (dataQueue.length > 0) {
-            const packet = dataQueue.shift();
-            if (!packet) {
-              continue;
-            }
+          while (nextIndex < dataQueue.length) {
+            const packet = dataQueue[nextIndex++];
             try {
               await respond(packet);
             } catch (err) {
@@ -208,6 +221,8 @@ export abstract class Server<
               this.logger.error(err);
             }
           }
+          dataQueue.length = 0;
+          nextIndex = 0;
           isProcessing = false;
         });
       }
@@ -263,6 +278,23 @@ export abstract class Server<
       const response$ = await produce();
       this.send(response$.pipe(finalize(runEndHook)), respond);
     });
+  }
+
+  /**
+   * Logs a deprecation warning the first time an event handler is about to
+   * reply to a request (a packet with an id, sent with `ClientProxy#send`).
+   * Event handlers still reply to requests, except on Kafka, but will not in
+   * the next major version.
+   */
+  protected warnIfEventHandlerReplies(
+    handler: MessageHandler,
+    pattern: string,
+  ) {
+    if (!handler.isEventHandler || this.eventHandlersThatReplied.has(handler)) {
+      return;
+    }
+    this.eventHandlersThatReplied.add(handler);
+    this.logger.warn(EVENT_HANDLER_REPLY_DEPRECATED`${pattern}`);
   }
 
   /**
@@ -445,5 +477,21 @@ export abstract class Server<
     } catch {
       return UNSERIALIZABLE_PATTERN;
     }
+  }
+
+  /**
+   * Throws unless the id of an incoming request is a number or a short string.
+   *
+   * Ids are client-controlled and every reply to the request carries a copy,
+   * so a long string or a nested value would be copied and serialized once
+   * per reply, which a handler that streams its response multiplies.
+   *
+   * @param  {unknown} id - request id
+   */
+  protected assertValidPacketId(id: unknown) {
+    if (isNumber(id) || (isString(id) && id.length <= MAX_PACKET_ID_LENGTH)) {
+      return;
+    }
+    throw new InvalidPacketIdException(MAX_PACKET_ID_LENGTH);
   }
 }

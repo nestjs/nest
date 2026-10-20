@@ -1,6 +1,8 @@
 import {
+  HttpException,
   type HttpServer,
   HttpStatus,
+  IntrinsicException,
   Logger,
   RequestMethod,
   type MessageEvent,
@@ -8,7 +10,9 @@ import {
 } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
-import { catchError, concatMap, map } from 'rxjs/operators';
+import { catchError, concatMap, map, tap } from 'rxjs/operators';
+import { MESSAGES } from '../constants.js';
+import { BaseExceptionFilter } from '../exceptions/base-exception-filter.js';
 import {
   AdditionalHeadersSource,
   StatusCodeSource,
@@ -16,6 +20,21 @@ import {
   SseStream,
 } from './sse-stream.js';
 import { isNil, isObject, isString } from '@nestjs/common/internal';
+
+/**
+ * Characters of event data that may wait for an SSE client that is not
+ * reading them before its connection is dropped, unless the route sets its
+ * own `maxPendingDataLength` (see `@Sse()`). Events wait once the stream and
+ * socket buffers are full, as a producer cannot be paused.
+ */
+const DEFAULT_MAX_PENDING_DATA_LENGTH = 4 * 1024 * 1024;
+
+function getDataLength(message: MessageEvent): number {
+  return (
+    (isString(message.data) ? message.data.length : 0) +
+    (isString(message.comment) ? message.comment.length : 0)
+  );
+}
 
 export interface CustomHeader {
   name: string;
@@ -29,6 +48,7 @@ export interface RedirectResponse {
 
 export class RouterResponseController {
   private readonly logger = new Logger(RouterResponseController.name);
+  private readonly exceptionFilter = new BaseExceptionFilter();
 
   constructor(private readonly applicationRef: HttpServer) {}
 
@@ -53,7 +73,7 @@ export class RouterResponseController {
           ? redirectResponse.statusCode
           : HttpStatus.FOUND;
     const url = result && result.url ? result.url : redirectResponse.url;
-    this.applicationRef.redirect(response, statusCode, url);
+    return this.applicationRef.redirect(response, statusCode, url);
   }
 
   public async render<TInput = unknown, TResponse = unknown>(
@@ -112,6 +132,7 @@ export class RouterResponseController {
     options?: {
       additionalHeaders?: AdditionalHeadersSource;
       statusCode?: StatusCodeSource;
+      maxPendingDataLength?: number;
     },
   ) {
     // It's possible that we sent headers already so don't use a stream
@@ -155,6 +176,32 @@ export class RouterResponseController {
         }
       };
 
+      // Hands the error to the exception filters, which can still answer as
+      // long as no header has been sent. The stream is unpiped first, as the
+      // pipe would otherwise end the response with it, before a filter that
+      // awaits anything gets to write.
+      const fail = (err: unknown) => {
+        settled = true;
+        finalize();
+        subscription?.unsubscribe();
+        stream.unpipe(response);
+        endStream();
+        reject(err);
+      };
+
+      // Node validates the header values only once they are written, and they
+      // are also written outside the handler's promise chain (from a timer,
+      // or once the producer completes), where a throw would go uncaught.
+      const commitHeaders = (): boolean => {
+        try {
+          stream.commitHeaders();
+          return true;
+        } catch (err) {
+          fail(err);
+          return false;
+        }
+      };
+
       const onClose = () => {
         if (settled) {
           return;
@@ -190,6 +237,9 @@ export class RouterResponseController {
             statusCode: options?.statusCode ?? (() => response.statusCode),
           });
 
+          let pendingDataLength = 0;
+          const maxPendingDataLength =
+            options?.maxPendingDataLength ?? DEFAULT_MAX_PENDING_DATA_LENGTH;
           subscription = observableResult
             .pipe(
               map((message): MessageEvent => {
@@ -212,12 +262,33 @@ export class RouterResponseController {
                       data: JSON.stringify(event.data),
                     };
               }),
+              // Events wait in concatMap() while the client is not reading.
+              // Past a limit, the connection is dropped as if the client had
+              // disconnected, rather than holding events for a client that may
+              // never read them. An EventSource then reconnects, and sends the
+              // id of the last event it received. A limit of 0, like Infinity,
+              // keeps every event.
+              tap(message => {
+                pendingDataLength += getDataLength(message);
+                if (
+                  maxPendingDataLength &&
+                  pendingDataLength > maxPendingDataLength &&
+                  stream.writableNeedDrain
+                ) {
+                  this.logger.warn(
+                    `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
+                  );
+                  (response as { destroy?(): void }).destroy?.();
+                  onClose();
+                }
+              }),
               concatMap(
                 message =>
                   new Promise<void>((resolve, reject) =>
-                    stream.writeMessage(message, err =>
-                      err ? reject(err) : resolve(),
-                    ),
+                    stream.writeMessage(message, err => {
+                      pendingDataLength -= getDataLength(message);
+                      return err ? reject(err) : resolve();
+                    }),
                   ),
               ),
               catchError(err => {
@@ -225,7 +296,18 @@ export class RouterResponseController {
                   throw err;
                 }
 
-                const data = err instanceof Error ? err.message : err;
+                // No exception filter can answer once the headers are out, so
+                // BaseExceptionFilter's rules apply here: the client is only
+                // sent the message of an HTTP error, and any error but an
+                // IntrinsicException is logged.
+                const data =
+                  err instanceof HttpException ||
+                  this.exceptionFilter.isHttpError(err)
+                    ? err.message
+                    : MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
+                if (!(err instanceof IntrinsicException)) {
+                  this.logger.error(err);
+                }
                 stream.writeMessage({ type: 'error', data }, writeError => {
                   if (writeError) {
                     this.logger.error(writeError);
@@ -240,19 +322,18 @@ export class RouterResponseController {
                 if (settled) {
                   return;
                 }
-                settled = true;
-                finalize();
-                endStream();
-                reject(err);
+                fail(err);
               },
               complete: () => {
                 if (settled) {
                   return;
                 }
-                settled = true;
                 // An empty producer is still a successful SSE response. Commit
                 // before ending, since the deferred header task will be skipped.
-                stream.commitHeaders();
+                if (!commitHeaders()) {
+                  return;
+                }
+                settled = true;
                 finalize();
                 endStream();
                 resolve();
@@ -271,8 +352,18 @@ export class RouterResponseController {
           // skip the write. Otherwise headers are sent immediately rather
           // than waiting for the first Observable emission.
           setTimeout(() => {
-            if (!settled) {
-              stream.commitHeaders();
+            if (settled || !commitHeaders()) {
+              return;
+            }
+            // A HEAD response has no body, so it is complete once the headers
+            // are sent. Left open, it would hold back the next request on the
+            // same keep-alive connection until the producer completes.
+            if (request.method === 'HEAD') {
+              settled = true;
+              finalize();
+              subscription?.unsubscribe();
+              endStream();
+              resolve();
             }
           }, 0);
         })
@@ -281,10 +372,7 @@ export class RouterResponseController {
             return;
           }
 
-          settled = true;
-          finalize();
-          endStream();
-          reject(err);
+          fail(err);
         });
     });
   }

@@ -260,6 +260,9 @@ export const INVALID_CLASS_SCOPE_MESSAGE = (
     name || 'This class'
   } is marked as a scoped provider. Request and transient-scoped providers can't be used in combination with "get()" method. Please, use "resolve()" instead.`;
 
+export const REQUEST_SCOPED_CREATE_MESSAGE = (name: string) =>
+  `${name} depends on a request-scoped provider, so it can't be created without a context id. Please, use "create(type, contextId)" instead.`;
+
 export const REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE = (
   enhancerToken: string,
   provider: string,
@@ -272,6 +275,12 @@ export const REQUEST_SCOPED_GLOBAL_ENHANCER_MESSAGE = (
       useFactory: `so it would never run. Set "scope: Scope.REQUEST" on the factory provider.`,
     }[kind]
   }`;
+
+export const UNINSTANTIATED_GLOBAL_ENHANCER_MESSAGE = (
+  enhancerToken: string,
+  provider: string,
+) =>
+  `The ${enhancerToken} provider (${provider}) was not instantiated, as one of its dependencies was not, so it can't be applied.`;
 
 export const UNKNOWN_REQUEST_MAPPING = (metatype: Type) => {
   const className = metatype.name;

@@ -43,6 +43,21 @@ describe('stripProtoKeys', () => {
       expect(value.nested).not.toHaveProperty('constructor');
     });
 
+    it('should strip constructor whatever its value', () => {
+      for (const constructor of [null, 0, false, '']) {
+        const value = { constructor, nested: { constructor } };
+        stripProtoKeys(value);
+        expect(Object.keys(value)).toEqual(['nested']);
+        expect(Object.keys(value.nested)).toEqual([]);
+      }
+    });
+
+    it('should leave objects without a prototype as they are', () => {
+      const value = Object.assign(Object.create(null), { id: 1 });
+      stripProtoKeys(value);
+      expect(value).toEqual({ id: 1 });
+    });
+
     it('should strip __proto__ from objects', () => {
       const value = { __proto__: { malicious: 'code' } };
       stripProtoKeys(value);
@@ -83,6 +98,31 @@ describe('stripProtoKeys', () => {
     it('should not throw error when array contains Date objects', () => {
       const value = { dates: [new Date(), new Date()] };
       expect(() => stripProtoKeys(value)).not.toThrow();
+    });
+
+    it('should only read the items of a sparse array, not every index', () => {
+      const items: any[] = [];
+      items[999] = { constructor: 'malicious' };
+      const reads: PropertyKey[] = [];
+      const value = {
+        items: new Proxy(items, {
+          get(target, key, receiver) {
+            reads.push(key);
+            return Reflect.get(target, key, receiver);
+          },
+        }),
+      };
+      stripProtoKeys(value);
+      expect(reads).toEqual(['999']);
+      expect(items[999]).not.toHaveProperty('constructor');
+    });
+
+    it('should strip the items of a sparse array with the largest index', () => {
+      const items: any[] = [];
+      items[2 ** 32 - 2] = { constructor: 'malicious' };
+      stripProtoKeys({ items });
+      expect(items).toHaveLength(2 ** 32 - 1);
+      expect(items[2 ** 32 - 2]).not.toHaveProperty('constructor');
     });
   });
 

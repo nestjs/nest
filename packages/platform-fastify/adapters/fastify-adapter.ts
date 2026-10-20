@@ -48,13 +48,14 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
-import { Duplex } from 'stream';
+import { Duplex, Readable } from 'stream';
 import middie from '@fastify/middie';
 import {
   type SecurityRequestHook,
   type VersionValue,
   loadPackage,
   tryLoadPackage,
+  isFunction,
   isNil,
   isString,
   isUndefined,
@@ -213,12 +214,18 @@ export class FastifyAdapter<
     reply: TReply,
     done: (err?: Error) => void,
   ) => void | Promise<void>;
+  private securityHook?: SecurityRequestHook<TRequest>;
   private isMiddieRegistered: boolean;
   private multipartMode: 'auto' | 'eager' | 'off' = 'auto';
   private multipartOptions: FastifyMultipartOptions = {};
   private isMultipartRequested = false;
   private pendingMiddlewares: Array<{ args: any[] }> = [];
+  // The encapsulated contexts created since middie was registered (see
+  // `registerMiddie()`)
+  private readonly middieContexts: TInstance[] = [];
   private versioningOptions?: VersioningOptions;
+  // Exceptions thrown by the extractor of custom versioning, by raw request
+  private readonly versionExtractorErrors = new WeakMap<object, unknown>();
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
@@ -285,7 +292,15 @@ export class FastifyAdapter<
       }
       // Custom Versioning Handler
       else if (this.versioningOptions?.type === VersioningType.CUSTOM) {
-        return this.versioningOptions.extractor(req);
+        try {
+          return this.versioningOptions.extractor(req);
+        } catch (err) {
+          // Fastify routes the request, and so calls the extractor, before
+          // anything could catch the exception. It is passed to the error
+          // handler from an `onRequest` hook instead (see the constructor).
+          this.versionExtractorErrors.set(req, err);
+          return undefined;
+        }
       }
       return undefined;
     },
@@ -311,6 +326,23 @@ export class FastifyAdapter<
       instanceOrOptions && (instanceOrOptions as TInstance).server
         ? instanceOrOptions
         : fastify({
+            // The router answers a malformed URL (400) or an over-long route
+            // parameter (414) before any hook runs, so the security hook (see
+            // `registerSecurityHook()`) runs here, for its headers.
+            frameworkErrors: (
+              error: FastifyError,
+              request: FastifyRequest,
+              reply: FastifyReply,
+            ) => {
+              try {
+                this.securityHook?.(request as unknown as TRequest, reply.raw);
+              } catch {
+                // The request is rejected either way, and a throw here would
+                // escape the router. `request.params` and `request.query`
+                // are null, so a CSRF `exclude` predicate may throw.
+              }
+              reply.send(error);
+            },
             ...(instanceOrOptions as FastifyServerOptions),
             routerOptions: {
               ...this.getTopLevelRouterOptions(
@@ -372,6 +404,52 @@ export class FastifyAdapter<
       } else {
         done();
       }
+    });
+
+    // The request hook of `app.enableCsrfProtection()` and
+    // `app.useSecurityHeaders()` (see `registerSecurityHook()`). Added here
+    // for the same reason as the hook above: it must run before Nest
+    // middleware, and `NestFactory.create()` registers middie before either
+    // method can be called. After the `503` hook, as on Express.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (this.securityHook) {
+        done(
+          this.securityHook(request as TRequest, reply.raw) as
+            FastifyError | undefined,
+        );
+      } else {
+        done();
+      }
+    });
+
+    // Passes requests whose target middleware cannot be matched against to
+    // the not-found handler (see `isRoutableRequestTarget()`). Added here,
+    // like the hooks above, so that it runs before Nest middleware, and
+    // after the security hook, so that the `404` carries its headers, as on
+    // Express. A request the router did not match is already on its way to
+    // the not-found handler.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (request.is404 || this.isRoutableRequestTarget(request.raw.url)) {
+        done();
+      } else {
+        reply.callNotFound();
+      }
+    });
+
+    // Passes an exception thrown by the extractor of custom versioning while
+    // Fastify routed the request (see `versionConstraint`) to the error
+    // handler, for matched and unmatched routes alike. Added here, like the
+    // hooks above, so that it runs before Nest middleware.
+    this.instance.addHook('onRequest', (request, _reply, done) => {
+      if (!this.versionExtractorErrors.has(request.raw)) {
+        done();
+        return;
+      }
+      const err = this.versionExtractorErrors.get(request.raw);
+      this.versionExtractorErrors.delete(request.raw);
+      done(
+        (err as Error) || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR(),
+      );
     });
 
     this.instance.addHook('onResponse', (request, reply, done) => {
@@ -585,6 +663,11 @@ export class FastifyAdapter<
   }
 
   public all(...args: any[]) {
+    // Routes registered by Nest ("path, handler") get the route options
+    // (e.g. the version), with the same methods as "fastify.all()".
+    if (args.length === 2 && isFunction(args[1])) {
+      return this.injectRouteOptions(this.instance.supportedMethods, ...args);
+    }
     const handlerRef = args[args.length - 1];
     args[args.length - 1] = this.requireNonEmptyParams(args[0], handlerRef);
     return (this.instance.all as any)(...args);
@@ -628,6 +711,12 @@ export class FastifyAdapter<
       fastifyReply.status(statusCode);
     }
     if (body instanceof StreamableFile) {
+      const stream = body.getStream();
+      // Once the reply was sent (e.g. by `handlerTimeout`), send() drops the
+      // stream without consuming or destroying it.
+      if (fastifyReply.sent && isFunction(stream?.destroy)) {
+        stream.destroy();
+      }
       const streamHeaders = body.getHeaders();
       if (
         fastifyReply.getHeader('Content-Type') === undefined &&
@@ -647,7 +736,33 @@ export class FastifyAdapter<
       ) {
         fastifyReply.header('Content-Length', streamHeaders.length);
       }
-      body = body.getStream();
+      body = stream;
+      // Fastify's HEAD route handler resumes a stream payload, and a route
+      // declared for HEAD (or a raw response) pipes it into a response that
+      // discards it, so the whole source would be read for nothing. Fastify
+      // gets an empty stream instead, as an empty body would reset
+      // Content-Length to 0.
+      if (
+        fastifyReply.raw?.req?.method === 'HEAD' &&
+        isFunction(stream?.destroy)
+      ) {
+        stream.destroy();
+        body = Readable.from([]);
+      }
+    }
+    // Fastify passes an Error payload to the error handler instead of
+    // sending it, and the reply around a raw response (e.g. the one
+    // middleware gets) has none. An Error body sent with an error status,
+    // as for `new UnauthorizedException(err)`, gets the standard body of the
+    // status instead, without the properties of the Error.
+    if (
+      body instanceof Error &&
+      fastifyReply.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      body = {
+        statusCode: fastifyReply.statusCode,
+        message: http.STATUS_CODES[fastifyReply.statusCode] ?? 'Error',
+      };
     }
     const responseContentType = fastifyReply.getHeader('Content-Type');
     if (
@@ -851,26 +966,58 @@ export class FastifyAdapter<
     return reply.sent || reply.raw.headersSent;
   }
 
-  public getHeader(response: any, name: string) {
+  public getHeader(response: TRawResponse | TReply, name: string) {
     return response.getHeader(name);
   }
 
-  public setHeader(response: TReply, name: string, value: string) {
-    return response.header(name, value);
+  public setHeader(
+    response: TRawResponse | TReply,
+    name: string,
+    value: string,
+  ) {
+    if (this.isNativeResponse(response)) {
+      return response.setHeader(name, value);
+    }
+    const reply: TReply = response;
+    return reply.header(name, value);
   }
 
-  public appendHeader(response: any, name: string, value: string) {
-    const current = response.getHeader(name);
-    if (current === undefined) {
-      return response.header(name, value);
+  public appendHeader(
+    response: TRawResponse | TReply,
+    name: string,
+    value: string,
+  ) {
+    if (this.isNativeResponse(response)) {
+      const current = response.getHeader(name);
+      return response.setHeader(
+        name,
+        current === undefined ? value : [current, value].flat().map(String),
+      );
     }
-    // Fastify Reply.header() already concatenates set-cookie.
-    // Re-passing the accumulated list would duplicate previous cookies.
+    const reply: TReply = response;
+    // A set-cookie value can live on the reply or only on the raw response
+    // (e.g., set by a middleware). Reply.getHeader() reads both, and the
+    // merged list is written to both: reply.send() sends the reply headers,
+    // while a hijacked reply or a handler that ends reply.raw sends the raw
+    // ones.
     if (String(name).toLowerCase() === 'set-cookie') {
-      return response.header(name, value);
+      const current = reply.getHeader(name);
+      const values =
+        current === undefined ? [value] : [current, value].flat().map(String);
+      reply.removeHeader(name);
+      reply.header(name, values);
+      if (!reply.raw.headersSent) {
+        // A copy, so a later reply.header() call does not change the raw header
+        reply.raw.setHeader(name, [...values]);
+      }
+      return reply;
+    }
+    const current = reply.getHeader(name);
+    if (current === undefined) {
+      return reply.header(name, value);
     }
     const values = Array.isArray(current) ? current : [current];
-    return response.header(name, values.concat(value));
+    return reply.header(name, values.concat(value));
   }
 
   public getRequestHostname(request: TRequest): string {
@@ -898,19 +1045,18 @@ export class FastifyAdapter<
 
   /**
    * Runs the request hook of the built-in HTTP security features in an
-   * `onRequest` hook: before middie (Nest middleware), content-type parsing,
-   * guards and handlers, and also for unmatched routes. Headers set by the
-   * hook go to the Node.js response (`reply.raw`): Fastify merges them into
-   * every response it sends, errors and `404`s included, while
+   * `onRequest` hook added by the constructor: before middie (Nest middleware
+   * and `app.use()` middleware, whenever they are registered), content-type
+   * parsing, guards and handlers, and also for unmatched routes. Headers set
+   * by the hook go to the Node.js response (`reply.raw`): Fastify merges them
+   * into every response it sends, errors and `404`s included, while
    * `reply.header()` / `@Header()` values take precedence, and responses
-   * written to `reply.raw` directly (e.g. `@Sse()`) carry them too. A
-   * rejection goes to `done(error)`, i.e. to the Nest exception layer
+   * written to `reply.raw` directly (e.g. `@Sse()`, or middleware) carry them
+   * too. A rejection goes to `done(error)`, i.e. to the Nest exception layer
    * installed with `setErrorHandler()`.
    */
   public registerSecurityHook(hook: SecurityRequestHook<TRequest>) {
-    this.instance.addHook('onRequest', (request, reply, done) => {
-      done(hook(request as TRequest, reply.raw) as FastifyError | undefined);
-    });
+    this.securityHook = hook;
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
@@ -1005,11 +1151,16 @@ export class FastifyAdapter<
           ? new RegExp(re.source + '$', re.flags)
           : re;
 
-        // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
-        // ref https://github.com/fastify/middie/pull/55
-        this.instance.use(
-          normalizedPath,
-          (req: any, res: any, next: Function) => {
+        // A case-insensitive router lower-cases the decoded path, where some
+        // characters only fold to ASCII ("%E2%84%AA", KELVIN SIGN, is routed
+        // as "k"). The RegExp of @fastify/middie does not fold them, so on
+        // such a router the middleware is registered for every path and the
+        // path is only matched below.
+        const { caseSensitive } = this.getRouteMatchingOptions();
+
+        const createMiddleware =
+          (stripsPath: boolean) =>
+          (req: any, res: any, next: (err?: Error) => void) => {
             const queryParamsIndex = req.originalUrl.indexOf('?');
             let pathname =
               queryParamsIndex >= 0
@@ -1025,10 +1176,32 @@ export class FastifyAdapter<
               if (!re.exec(pathToCheck)) {
                 return next();
               }
+              if (stripsPath) {
+                // Strips the path from "req.url", as @fastify/middie does
+                // when it matches the path itself
+                const suffixIndex = req.originalUrl.search(/[?#]/);
+                req.url =
+                  suffixIndex >= 0
+                    ? `/${req.originalUrl.slice(suffixIndex)}`
+                    : '/';
+              }
             }
-            return callback(req, res, next);
-          },
+            this.runMiddleware(callback, req, res, next);
+          };
+
+        // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
+        // ref https://github.com/fastify/middie/pull/55
+        this.instance.use(
+          caseSensitive ? normalizedPath : '/',
+          createMiddleware(!caseSensitive),
         );
+        // The contexts created since middie was registered have a copy of the
+        // middleware of their parent without this one (see `registerMiddie()`).
+        // It is registered there without its path, which middie would prefix
+        // with the one of the context.
+        for (const context of this.middieContexts) {
+          context.use(createMiddleware(true));
+        }
       } catch (e) {
         if (e instanceof TypeError) {
           LegacyRouteConverter.printError(path);
@@ -1036,6 +1209,38 @@ export class FastifyAdapter<
         throw e;
       }
     };
+  }
+
+  private runMiddleware(
+    middleware: Function,
+    req: unknown,
+    res: unknown,
+    next: (err?: Error) => void,
+  ): void {
+    let completed = false;
+    const nextOnce = (err?: Error) => {
+      if (completed) return;
+      completed = true;
+      next(err);
+    };
+    try {
+      // middie discards the return value, so the promise is observed here:
+      // the proxies of `RouterProxy` reject when the exception layer throws.
+      // Its resolution is not passed to `next`, as a middleware that answers
+      // the request does not call it.
+      const result = middleware(req, res, nextOnce);
+      if (result && typeof result.then === 'function') {
+        result.then(undefined, (err: Error) => {
+          if (completed) {
+            this.logger.error(err);
+            return;
+          }
+          nextOnce(err || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR());
+        });
+      }
+    } catch (err) {
+      nextOnce(err);
+    }
   }
 
   public getType(): string {
@@ -1184,6 +1389,15 @@ export class FastifyAdapter<
     await this.register(
       middie as unknown as Parameters<TInstance['register']>[0],
     );
+    // middie gives each encapsulated context created from now on a copy of
+    // the middleware of its parent, as it is at that time. As
+    // `NestFactory.create()` registers middie before `main.ts` runs, a
+    // plugin registered there with an awaited `register()` gets a context
+    // without the Nest middleware `app.init()` registers later, so
+    // `createMiddlewareFactory()` adds it to the contexts tracked here.
+    this.instance.addHook('onRegister', instance => {
+      this.middieContexts.push(instance as TInstance);
+    });
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
@@ -1191,7 +1405,7 @@ export class FastifyAdapter<
   }
 
   private injectRouteOptions(
-    routerMethodKey: Uppercase<HTTPMethods>,
+    routerMethodKey: Uppercase<HTTPMethods> | string[],
     ...args: any[]
   ) {
     const handlerRef = args[args.length - 1];
@@ -1223,7 +1437,10 @@ export class FastifyAdapter<
       handler: this.requireNonEmptyParams(args[0], handlerRef),
     };
 
-    if (!this.instance.supportedMethods.includes(routerMethodKey)) {
+    if (
+      isString(routerMethodKey) &&
+      !this.instance.supportedMethods.includes(routerMethodKey)
+    ) {
       this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
     }
 
@@ -1346,14 +1563,14 @@ export class FastifyAdapter<
       url = this.trimLastSlash(url);
     }
 
-    if (!caseSensitive) {
-      url = url.toLowerCase();
-    }
-    return safeDecodeURI(
+    const { path } = safeDecodeURI(
       url,
       routerOptions.useSemicolonDelimiter ||
         initialConfig.useSemicolonDelimiter,
-    ).path;
+    );
+    // Lower-cased once decoded, as the router does: "%E2%84%AA" (KELVIN
+    // SIGN) only lower-cases to "k" then
+    return caseSensitive ? path : path.toLowerCase();
   }
 
   private removeDuplicateSlashes(path: string) {
@@ -1394,6 +1611,27 @@ export class FastifyAdapter<
       return url;
     }
     return pathStart === -1 ? '/' : url.slice(pathStart);
+  }
+
+  /**
+   * Whether the request target is in origin-form ("/users") or in the
+   * absolute-form of an "http(s)" URL ("http://host/users"), the only forms
+   * middleware paths can match.
+   *
+   * Node.js accepts other targets too (e.g. "GET *users HTTP/1.1").
+   * "find-my-way" routes those as if their first character were the leading
+   * "/" ("*users" is served by the "/users" route), while no middleware path
+   * matches them, so the route would run without its middleware. They are
+   * answered by the not-found handler instead, as with the ExpressAdapter,
+   * whose router never matches a path that does not start with "/".
+   *
+   * That includes the asterisk-form "OPTIONS *" (RFC 9112, section 3.2.4),
+   * which asks about the server as a whole rather than about a resource:
+   * Nest has no handler for it, and "find-my-way" would serve it with the
+   * "OPTIONS /" route.
+   */
+  private isRoutableRequestTarget(url: string | undefined): boolean {
+    return !!url && this.getPathFromRequestTarget(url).charCodeAt(0) === 47;
   }
 
   private trackOpenConnections() {

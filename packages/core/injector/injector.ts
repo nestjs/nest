@@ -85,6 +85,27 @@ interface ResolutionContext {
   contextId: ContextId;
   inquirer?: InstanceWrapper;
   effectiveInquirerId?: string;
+  /**
+   * The root inquirer of a transient `inquirer` that has a parent inquirer.
+   * It belongs to the resolution, not to the wrapper, as a transient provider
+   * is resolved for all of its consumers concurrently.
+   */
+  rootInquirer?: InstanceWrapper;
+}
+
+/**
+ * An edge to a dependency, which follows the signal of its load for one
+ * context. The signal is read lazily, as the load creates it after the edge.
+ */
+class HostSettlementRef {
+  constructor(
+    public readonly id: string,
+    private readonly host: InstancePerContext<unknown>,
+  ) {}
+
+  get settlementSignal() {
+    return this.host.settlementSignal;
+  }
 }
 
 export class Injector {
@@ -92,6 +113,31 @@ export class Injector {
   private readonly instanceDecorator: (target: unknown) => unknown = (
     target: unknown,
   ) => target;
+  /**
+   * Per-context loads that the provider which started them could not wait
+   * for (see `resolveComponentHost`), awaited by `waitForDeferredLoads`.
+   */
+  private readonly deferredLoads = new WeakMap<
+    ContextId,
+    Set<Promise<unknown>>
+  >();
+  /**
+   * Deferred loads that are still running, per durable dependent of the
+   * provider being loaded and per context of that dependent (see
+   * `trackDurableDeferredLoad`).
+   */
+  private readonly durableDeferredLoads = new WeakMap<
+    InstanceWrapper,
+    WeakMap<ContextId, Set<Promise<unknown>>>
+  >();
+  /**
+   * Durable instances that may reference the placeholder of a provider whose
+   * deferred load failed, with the error (see `trackDurableDeferredLoad`).
+   */
+  private readonly failedInstances = new WeakMap<
+    InstancePerContext<unknown>,
+    unknown
+  >();
 
   constructor(
     private readonly options?: {
@@ -127,11 +173,10 @@ export class Injector {
     const target = collection.get(token)!;
     const instance = target.createPrototype(contextId);
     if (instance) {
-      const wrapper = new InstanceWrapper({
-        ...target,
-        instance,
-      });
-      collection.set(token, wrapper);
+      // Update the wrapper in place instead of replacing it with a copy, as
+      // hosts (e.g., the classes its enhancers are bound to) keep a reference
+      // to it and must be notified of the dependencies it gets later.
+      target.setInstanceByContextId(contextId, { instance });
     }
   }
 
@@ -142,13 +187,18 @@ export class Injector {
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ) {
     const inquirerId = this.getContextInquirerId(resolutionContext);
-    const instanceHost = wrapper.getInstanceByContextId(
-      this.getContextId(resolutionContext.contextId, wrapper),
+    const hostContextId = this.getContextId(
+      resolutionContext.contextId,
+      wrapper,
+    );
+    const instanceHost = this.getInstanceHost(
+      wrapper,
+      hostContextId,
       inquirerId,
     );
 
     if (instanceHost.isPending) {
-      const settlementSignal = wrapper.settlementSignal;
+      const settlementSignal = instanceHost.settlementSignal;
       if (
         resolutionContext.inquirer &&
         settlementSignal?.isCycle(resolutionContext.inquirer.id)
@@ -160,6 +210,14 @@ export class Injector {
         if (err) {
           throw err;
         }
+        if (this.failedInstances.has(instanceHost)) {
+          throw this.failedInstances.get(instanceHost);
+        }
+        this.linkDurableDeferredLoads(
+          wrapper,
+          resolutionContext.contextId,
+          hostContextId,
+        );
       });
     }
 
@@ -289,6 +347,9 @@ export class Injector {
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ) {
     if (this.shouldSkipProviderLoading(wrapper, resolutionContext)) {
+      if (!resolutionContext.inquirer) {
+        await this.lookupSkippedProviderDependencies(wrapper, moduleRef);
+      }
       return;
     }
     const providers = moduleRef.providers;
@@ -298,6 +359,24 @@ export class Injector {
       moduleRef,
       resolutionContext,
     );
+    if (
+      resolutionContext.contextId === STATIC_CONTEXT &&
+      !resolutionContext.inquirer &&
+      wrapper.isDependencyTreeStatic()
+    ) {
+      // A static provider that hosts handlers (e.g., an entry provider or a
+      // gateway) never gets a per-request load either, so its transient
+      // enhancers must exist for the provider before the first call.
+      // Only its bootstrap load (no inquirer) waits for them, as they may depend
+      // on a provider that is itself waiting for this one. The non-transient
+      // ones are shared, and get loaded with the injectables of the module.
+      const enhancers = wrapper.getEnhancersMetadata() || [];
+      return this.loadEnhancers(
+        STATIC_CONTEXT,
+        wrapper,
+        enhancers.filter(item => item.isTransient),
+      );
+    }
     await this.loadEnhancersPerContext(
       wrapper,
       resolutionContext.contextId,
@@ -312,6 +391,7 @@ export class Injector {
     const settlementSignal = new SettlementSignal();
     instancePerContext.donePromise = settlementSignal.asPromise();
     instancePerContext.isPending = true;
+    instancePerContext.settlementSignal = settlementSignal;
     host.settlementSignal = settlementSignal;
 
     return settlementSignal;
@@ -362,7 +442,7 @@ export class Injector {
           // When `inquirer` is transient too, inherit the parent inquirer
           // This is required to ensure that transient providers are only resolved
           // when requested
-          resolutionContext.inquirer.attachRootInquirer(parentInquirer);
+          resolutionContext.rootInquirer = parentInquirer;
         }
         const nestedResolutionContext =
           this.getStaticTransientResolutionContext(
@@ -605,12 +685,17 @@ export class Injector {
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ): Promise<InstanceWrapper> {
     const inquirerId = this.getContextInquirerId(resolutionContext);
-    const instanceHost = instanceWrapper.getInstanceByContextId(
+    const instanceHost = this.getInstanceHost(
+      instanceWrapper,
       this.getContextId(resolutionContext.contextId, instanceWrapper),
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
-      resolutionContext.inquirer?.settlementSignal?.insertRef(instanceWrapper);
+      this.insertSettlementRef(
+        resolutionContext,
+        instanceWrapper,
+        instanceHost,
+      );
 
       await this.loadProvider(
         instanceWrapper,
@@ -630,25 +715,41 @@ export class Injector {
        * instantiated beforehand.
        */
       if (instanceHost.donePromise) {
-        void instanceHost.donePromise
-          .then(() =>
-            this.loadProvider(
-              instanceWrapper,
-              instanceWrapper.host ?? moduleRef,
-              resolutionContext,
-            ),
-          )
-          .catch(err => {
-            instanceWrapper.settlementSignal?.error(err);
-          });
+        const deferredLoad = instanceHost.donePromise.then((err?: unknown) => {
+          // The placeholder handed out belongs to the load that failed
+          if (err) {
+            throw err;
+          }
+          return this.loadProvider(
+            instanceWrapper,
+            instanceWrapper.host ?? moduleRef,
+            resolutionContext,
+          );
+        });
+        void deferredLoad.catch(err => {
+          instanceHost.settlementSignal?.error(err);
+        });
+        this.addDeferredLoad(resolutionContext.contextId, deferredLoad);
+        this.trackDurableDeferredLoad(
+          instanceWrapper,
+          resolutionContext.contextId,
+          deferredLoad,
+        );
       } else {
         /**
          * No load has ever been scheduled for this context (e.g., request-scoped
          * providers are no longer instantiated during static bootstrap, so a fresh
          * durable/request sub-tree host has no inherited `donePromise`).
-         * Load it now; if a circular dependency is truly in-flight, the nested
-         * lookup will find this host pending and defer through its `donePromise`.
+         * Record the edge before loading it, so that if this load reaches the
+         * inquirer while it is still pending, `isCycle()` sees the cycle and throws
+         * instead of awaiting a `donePromise` that depends on itself.
          */
+        this.insertSettlementRef(
+          resolutionContext,
+          instanceWrapper,
+          instanceHost,
+        );
+
         await this.loadProvider(
           instanceWrapper,
           instanceWrapper.host ?? moduleRef,
@@ -668,6 +769,11 @@ export class Injector {
         inquirerId,
       );
     }
+    this.linkDurableDeferredLoads(
+      instanceWrapper,
+      resolutionContext.contextId,
+      this.getContextId(resolutionContext.contextId, instanceWrapper),
+    );
     return instanceWrapper;
   }
 
@@ -799,7 +905,10 @@ export class Injector {
       return [];
     }
     const metadata = wrapper.getPropertiesMetadata();
-    if (metadata && resolutionContext.contextId !== STATIC_CONTEXT) {
+    if (
+      resolutionContext.contextId !== STATIC_CONTEXT &&
+      this.hasCompletePropertiesMetadata(wrapper, metadata)
+    ) {
       return this.loadPropertiesMetadata(
         metadata,
         resolutionContext.contextId,
@@ -962,7 +1071,12 @@ export class Injector {
   ): Promise<T> {
     if (!wrapper) {
       const injectionToken = (instance as any).constructor!;
-      wrapper = collection.get(injectionToken);
+      wrapper =
+        collection.get(injectionToken) ??
+        // A class provider registered under a token other than its class
+        iterate(collection.values()).find(
+          item => !item.isAlias && item.instance === instance,
+        );
     } else {
       wrapper = collection.get(wrapper.token) ?? wrapper;
     }
@@ -973,12 +1087,31 @@ export class Injector {
       this.createResolutionContext(ctx, wrapper),
     );
     await this.loadEnhancersPerContext(wrapper!, ctx, wrapper);
+    await this.waitForDeferredLoads(ctx);
 
     const host = wrapper!.getInstanceByContextId(
       this.getContextId(ctx, wrapper!),
       wrapper!.id,
     );
     return host && (host.instance as T);
+  }
+
+  /**
+   * Waits for the loads deferred while resolving the given context (see
+   * `resolveComponentHost`), including those that the durable instances it
+   * uses were built with (see `trackDurableDeferredLoad`), and throws if one
+   * of them failed. A failed load is kept, as instances of the context already
+   * reference the provider that it failed to instantiate.
+   */
+  public async waitForDeferredLoads(contextId: ContextId) {
+    const deferredLoads = this.deferredLoads.get(contextId);
+    if (!deferredLoads) {
+      return;
+    }
+    for (const deferredLoad of deferredLoads) {
+      await deferredLoad;
+      deferredLoads.delete(deferredLoad);
+    }
   }
 
   public async loadEnhancersPerContext(
@@ -1076,6 +1209,134 @@ export class Injector {
     });
   }
 
+  private addDeferredLoad(
+    contextId: ContextId,
+    deferredLoad: Promise<unknown>,
+  ) {
+    if (contextId === STATIC_CONTEXT) {
+      return;
+    }
+    let deferredLoads = this.deferredLoads.get(contextId);
+    if (!deferredLoads) {
+      deferredLoads = new Set();
+      this.deferredLoads.set(contextId, deferredLoads);
+    }
+    deferredLoads.add(deferredLoad);
+  }
+
+  /**
+   * In a durable context (see `ContextIdStrategy`), the dependents built with
+   * the placeholder of a provider whose load is deferred are shared with the
+   * next contexts mapped to it, which do not wait for that load. Until it
+   * settles, the contexts that use them wait for it as well (see
+   * `linkDurableDeferredLoads`); if it fails, the contexts still waiting for
+   * one of them fail, and the next one that uses them builds them again (see
+   * `getInstanceHost`).
+   */
+  private trackDurableDeferredLoad(
+    wrapper: InstanceWrapper,
+    contextId: ContextId,
+    deferredLoad: Promise<unknown>,
+  ) {
+    if (this.getContextId(contextId, wrapper) === contextId) {
+      return;
+    }
+    const untrackers: Array<() => void> = [];
+    this.forEachDurableDependent(wrapper, contextId, (dependent, hostId) => {
+      const loadsPerContext =
+        this.durableDeferredLoads.get(dependent) ?? new WeakMap();
+      const loads = loadsPerContext.get(hostId) ?? new Set();
+      loads.add(deferredLoad);
+      loadsPerContext.set(hostId, loads);
+      this.durableDeferredLoads.set(dependent, loadsPerContext);
+
+      untrackers.push(() => {
+        loads.delete(deferredLoad);
+        if (loads.size === 0) {
+          loadsPerContext.delete(hostId);
+        }
+      });
+    });
+    const untrack = () => untrackers.forEach(untrackLoad => untrackLoad());
+
+    deferredLoad.then(untrack, (err: unknown) => {
+      // Looked up again, as a context may have built another dependent with
+      // the placeholder in the meantime
+      this.forEachDurableDependent(wrapper, contextId, (dependent, hostId) =>
+        dependent
+          .getExistingInstancesByContextId(hostId)
+          .filter(host => host.isResolved || host.isPending)
+          .forEach(host => this.failedInstances.set(host, err)),
+      );
+      untrack();
+    });
+  }
+
+  /**
+   * Adds the running loads that the instance of the wrapper in a durable
+   * context was built with (see `trackDurableDeferredLoad`) to the loads of
+   * the given context.
+   */
+  private linkDurableDeferredLoads(
+    wrapper: InstanceWrapper,
+    contextId: ContextId,
+    hostContextId: ContextId,
+  ) {
+    if (hostContextId === contextId) {
+      return;
+    }
+    this.durableDeferredLoads
+      .get(wrapper)
+      ?.get(hostContextId)
+      ?.forEach(deferredLoad => this.addDeferredLoad(contextId, deferredLoad));
+  }
+
+  private forEachDurableDependent(
+    wrapper: InstanceWrapper,
+    contextId: ContextId,
+    callback: (dependent: InstanceWrapper, hostContextId: ContextId) => void,
+  ) {
+    for (const dependent of wrapper.getDependents()) {
+      const hostContextId = this.getContextId(contextId, dependent);
+      if (hostContextId !== contextId) {
+        callback(dependent, hostContextId);
+      }
+    }
+  }
+
+  /**
+   * Returns the instance of the wrapper for the given context, or a new one
+   * when it was built with a provider whose deferred load failed (see
+   * `trackDurableDeferredLoad`), so that it is built again.
+   */
+  private getInstanceHost<T>(
+    wrapper: InstanceWrapper<T>,
+    contextId: ContextId,
+    inquirerId: string | undefined,
+  ): InstancePerContext<T> {
+    const instanceHost = wrapper.getInstanceByContextId(contextId, inquirerId);
+    if (!instanceHost.isResolved || !this.failedInstances.has(instanceHost)) {
+      return instanceHost;
+    }
+    wrapper.removeInstanceByContextId(contextId, inquirerId);
+    return wrapper.getInstanceByContextId(contextId, inquirerId);
+  }
+
+  /**
+   * Records that the load of the inquirer waits on the given host.
+   */
+  private insertSettlementRef(
+    { contextId, inquirer }: ResolutionContext,
+    wrapper: InstanceWrapper,
+    instanceHost: InstancePerContext<unknown>,
+  ) {
+    const inquirerSignal = inquirer?.isTransient
+      ? inquirer.settlementSignal
+      : inquirer?.getInstanceByContextId(this.getContextId(contextId, inquirer))
+          .settlementSignal;
+    inquirerSignal?.insertRef(new HostSettlementRef(wrapper.id, instanceHost));
+  }
+
   private getInquirerId(
     inquirer: InstanceWrapper | undefined,
   ): string | undefined {
@@ -1086,11 +1347,13 @@ export class Injector {
     contextId: ContextId,
     inquirer?: InstanceWrapper,
     effectiveInquirerId?: string,
+    rootInquirer?: InstanceWrapper,
   ): ResolutionContext {
     return {
       contextId,
       inquirer,
       effectiveInquirerId,
+      rootInquirer,
     };
   }
 
@@ -1109,6 +1372,7 @@ export class Injector {
       wrapper.isStatic(
         resolutionContext.contextId,
         resolutionContext.inquirer,
+        resolutionContext.rootInquirer,
       ) ||
       wrapper.isInRequestScope(
         resolutionContext.contextId,
@@ -1123,6 +1387,74 @@ export class Injector {
         resolutionContext.inquirer,
       )
     );
+  }
+
+  /**
+   * Request-scoped and transient providers are not created at bootstrap, so
+   * their dependencies are only looked up here, without creating anything.
+   * A missing dependency then fails at bootstrap rather than on first use.
+   * Every lookup is awaited before the first failure is thrown.
+   */
+  protected async lookupSkippedProviderDependencies(
+    wrapper: InstanceWrapper<Injectable>,
+    moduleRef: Module,
+  ) {
+    const isFactoryProvider = !isNil(wrapper.inject);
+    if (!isFactoryProvider && !isFunction(wrapper.metatype)) {
+      return;
+    }
+    const [dependencies, optionalDependenciesIds] = isFactoryProvider
+      ? this.getFactoryProviderDependencies(wrapper)
+      : this.getClassDependencies(wrapper);
+    const properties = isFactoryProvider
+      ? []
+      : this.reflectProperties(wrapper.metatype as Type<any>);
+
+    const lookup = async (
+      param: unknown,
+      dependencyContext: InjectorDependencyContext,
+      keyOrIndex: string | symbol | number,
+      isOptional: boolean,
+    ) => {
+      try {
+        await this.resolveSingleParam(
+          wrapper,
+          param as Type | string | symbol,
+          dependencyContext,
+          moduleRef,
+          { contextId: STATIC_CONTEXT },
+          keyOrIndex,
+        );
+      } catch (err) {
+        if (!isOptional) {
+          throw err;
+        }
+      }
+    };
+    const results = await Promise.allSettled([
+      ...dependencies.map((param, index) =>
+        lookup(
+          param,
+          { index, dependencies },
+          index,
+          optionalDependenciesIds.includes(index),
+        ),
+      ),
+      ...properties.map(({ key, name, isOptional }) =>
+        lookup(
+          name,
+          { key, name: name as Function | string | symbol },
+          key,
+          !!isOptional,
+        ),
+      ),
+    ]);
+    const failure = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (failure) {
+      throw failure.reason;
+    }
   }
 
   private shouldSkipProviderLoading(
@@ -1140,6 +1472,8 @@ export class Injector {
         this.createResolutionContext(
           resolutionContext.contextId,
           resolutionContext.inquirer,
+          undefined,
+          resolutionContext.rootInquirer,
         ),
       );
     const shouldSkipForStaticBootstrap =
@@ -1162,10 +1496,10 @@ export class Injector {
     resolutionContext: ResolutionContext,
     parentInquirer: InstanceWrapper | undefined,
   ): InstanceWrapper | undefined {
-    const { inquirer, contextId } = resolutionContext;
+    const { inquirer, contextId, rootInquirer } = resolutionContext;
     if (dependency?.isTransient && inquirer?.isTransient && parentInquirer) {
       if (contextId === STATIC_CONTEXT) {
-        return inquirer.getRootInquirer() ?? parentInquirer;
+        return rootInquirer ?? parentInquirer;
       }
       return parentInquirer;
     }
@@ -1223,14 +1557,23 @@ export class Injector {
     resolutionContext: ResolutionContext,
     parentInquirer: InstanceWrapper | undefined,
   ): ResolutionContext {
+    const effectiveInquirer = this.getEffectiveInquirer(
+      dependency,
+      resolutionContext,
+      parentInquirer,
+    );
     return this.createResolutionContext(
       resolutionContext.contextId,
-      this.getEffectiveInquirer(dependency, resolutionContext, parentInquirer),
+      effectiveInquirer,
       this.getEffectiveInquirerId(
         dependency,
         resolutionContext,
         parentInquirer,
       ),
+      // The root inquirer is the one of `inquirer`
+      effectiveInquirer === resolutionContext.inquirer
+        ? resolutionContext.rootInquirer
+        : undefined,
     );
   }
 
@@ -1263,6 +1606,26 @@ export class Injector {
     }
 
     return true;
+  }
+
+  private hasCompletePropertiesMetadata<T>(
+    wrapper: InstanceWrapper<T>,
+    metadata: PropertyMetadata[] | undefined,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    // The fast path requires every injected property to be registered.
+    // While another request is still registering dependency metadata,
+    // the missing properties would be left `undefined`.
+    const properties = wrapper.metatype
+      ? this.reflectProperties(wrapper.metatype as Type<any>)
+      : [];
+
+    return properties.every(({ key }) =>
+      metadata.some(item => item.key === key),
+    );
   }
 
   private resolveScopedComponentHost(

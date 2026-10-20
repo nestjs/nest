@@ -12,7 +12,7 @@ import {
   Sse,
   UseInterceptors,
 } from '@nestjs/common';
-import { Observable, of } from 'rxjs';
+import { NEVER, Observable, of } from 'rxjs';
 
 interface ReplyLike {
   header(name: string, value: string): unknown;
@@ -39,6 +39,16 @@ class ReplyContentTypeInterceptor implements NestInterceptor {
       .switchToHttp()
       .getResponse<ReplyLike>()
       .header('content-type', 'application/json');
+    return next.handle();
+  }
+}
+
+@Injectable()
+class ReplyQueryHeaderInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler) {
+    const http = context.switchToHttp();
+    const { value } = http.getRequest<{ query: { value: string } }>().query;
+    http.getResponse<ReplyLike>().header('x-query', value);
     return next.handle();
   }
 }
@@ -95,6 +105,12 @@ class LateHeadersController {
   @UseInterceptors(ReplyStatusInterceptor)
   status(): Observable<MessageEvent> {
     return hello$;
+  }
+
+  @Sse('query-header')
+  @UseInterceptors(ReplyQueryHeaderInterceptor)
+  queryHeader(): Observable<MessageEvent> {
+    return NEVER;
   }
 }
 

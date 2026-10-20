@@ -10,8 +10,10 @@ import {
   type Type,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { isRejectedByPipes } from '@nestjs/core/internal';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { catchError, concatMap, from, type Observable, throwError } from 'rxjs';
+import { finished } from 'stream';
 import { MULTIPART_MODULE_OPTIONS } from '../files.constants.js';
 import type {
   MultipartModuleOptions,
@@ -27,6 +29,7 @@ import {
   drainRequest,
   processMultipart,
   processStream,
+  removeFiles,
   resolveStorage,
   type UploadSpec,
   validateLimits,
@@ -134,9 +137,29 @@ export function createMultipartInterceptor(
       context: ExecutionContext,
       next: CallHandler,
     ): Promise<Observable<any>> {
-      const req = context.switchToHttp().getRequest<FastifyRequest>();
-      await processMultipart(req, spec, this.options, this.storage);
-      return next.handle();
+      const ctx = context.switchToHttp();
+      const req = ctx.getRequest<FastifyRequest>();
+      const stored = await processMultipart(
+        req,
+        spec,
+        this.options,
+        this.storage,
+      );
+      return next.handle().pipe(
+        // When the route's pipes reject the request (e.g. `ParseFilePipe`),
+        // the route handler never sees the files, and nothing else would
+        // remove them. They are removed once the response has been sent, as
+        // an exception filter may still use (or remove) them.
+        catchError(err => {
+          if (isRejectedByPipes(req)) {
+            const reply = ctx.getResponse<FastifyReply>();
+            finished(reply.raw, () => {
+              removeFiles(this.storage, req, stored).catch(() => undefined);
+            });
+          }
+          return throwError(() => err);
+        }),
+      );
     }
   }
   return mixin(MixinInterceptor);

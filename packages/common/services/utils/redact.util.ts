@@ -22,9 +22,11 @@ export type Redactor = (value: unknown) => unknown;
  * `AggregateError#errors`), `Map`s (string keys) and `Set`s are traversed.
  * Only the objects on the way to a redacted property are copied; the rest is
  * returned as is, and the input is never mutated. A circular reference is
- * replaced with `"[Circular]"` (so the objects on the cycle are copied too). If
- * the value can't be traversed (for example, a getter throws), the whole value
- * is replaced with the censor.
+ * replaced with `"[Circular]"` (so the objects on the cycle are copied too). An
+ * object that is referenced several times is traversed (and copied) once for
+ * all the references a dotted path can't tell apart. If the value can't be
+ * traversed (for example, a getter throws), the whole value is replaced with
+ * the censor.
  *
  * @returns `undefined` when there is nothing to redact.
  */
@@ -48,12 +50,22 @@ export function createRedactor(
   if (keys.size === 0 && dottedPaths.length === 0) {
     return undefined;
   }
+  // How many of the keys leading to an object the dotted paths can look at.
+  const contextLength = Math.max(
+    0,
+    ...dottedPaths.map(segments => segments.length - 1),
+  );
 
   return (value: unknown) => {
     // Lower-cased keys from the root to the value being visited.
     const path: string[] = [];
     // Objects on that path, to detect circular references.
     const ancestors: object[] = [];
+    // What each visited object was replaced with, by the last keys leading to
+    // it (a dotted path can match under some keys and not under others).
+    // Otherwise, an object referenced many times would be traversed, and
+    // copied, once per reference.
+    const visited = new Map<string, Map<object, unknown>>();
 
     const isRedacted = (key: string): boolean => {
       if (keys.has(key)) {
@@ -96,6 +108,16 @@ export function createRedactor(
       if (ancestors.includes(current)) {
         return CIRCULAR;
       }
+      const context =
+        contextLength > 0 ? JSON.stringify(path.slice(-contextLength)) : '';
+      let results = visited.get(context);
+      if (!results) {
+        results = new Map();
+        visited.set(context, results);
+      }
+      if (results.has(current)) {
+        return results.get(current);
+      }
       let redacted: unknown;
       ancestors.push(current);
       if (Array.isArray(current)) {
@@ -112,6 +134,7 @@ export function createRedactor(
         redacted = redactObject(current);
       }
       ancestors.pop();
+      results.set(current, redacted);
       return redacted;
     };
 

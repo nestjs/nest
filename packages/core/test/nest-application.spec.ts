@@ -161,6 +161,28 @@ describe('NestApplication', () => {
       expect((microservice as any).isInitialized).toBe(false);
       expect((microservice as any).wasInitHookCalled).toBe(false);
     });
+
+    it('should not let a deferred microservice bind the gateways', async () => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const instance = new NestApplication(
+        container,
+        new NoopHttpAdapter({}),
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+
+      const microservice = instance.connectMicroservice<MicroserviceOptions>(
+        {},
+        { deferInitialization: true },
+      );
+      const socketModule = { register: vi.fn() };
+      (microservice as any).socketModule = socketModule;
+
+      await (microservice as any).registerModules();
+      expect(socketModule.register).not.toHaveBeenCalled();
+    });
   });
   describe('Global Prefix', () => {
     it('should get correct global prefix options', () => {
