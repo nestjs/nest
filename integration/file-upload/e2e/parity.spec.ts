@@ -643,6 +643,7 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       expect(res.status).toBe(413);
       expect(readdirSync(dirs.express)).toEqual([]);
       expect(readdirSync(dirs.fastify)).toEqual([]);
+      expect(readdirSync(dirs.node)).toEqual([]);
     });
 
     it('should remove the stored files when a pipe rejects the request', async () => {
@@ -665,6 +666,7 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       await vi.waitFor(() => {
         expect(readdirSync(dirs.express)).toEqual([]);
         expect(readdirSync(dirs.fastify)).toEqual([]);
+        expect(readdirSync(dirs.node)).toEqual([]);
       });
     });
 
