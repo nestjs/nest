@@ -861,7 +861,8 @@ describe('NodeResponse', () => {
 
       expect(response.headers['content-type']).toBe('text/html; charset=utf-8');
       expect(response.body.toString()).toBe(
-        '<p>Found. Redirecting to /a%20b?x=%C3%BC&amp;y=%3C1%3E</p>',
+        '<!DOCTYPE html><head><title>Found</title></head>' +
+          '<body><p>Found. Redirecting to /a%20b?x=%C3%BC&amp;y=%3C1%3E</p></body>',
       );
     });
 

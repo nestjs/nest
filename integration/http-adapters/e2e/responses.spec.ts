@@ -40,7 +40,11 @@ describe.each(adapters('express', 'node'))(
         .set('accept', 'text/html');
 
       expect(res.headers['content-type']).toMatch(/^text\/html/);
-      expect(res.text).toBe('<p>Found. Redirecting to /target?from=a%20b</p>');
+      // The markup of Express 5.3
+      expect(res.text).toBe(
+        '<!DOCTYPE html><head><title>Found</title></head>' +
+          '<body><p>Found. Redirecting to /target?from=a%20b</p></body>',
+      );
     });
 
     it('should take the URL and status a @Redirect() handler returns', async () => {

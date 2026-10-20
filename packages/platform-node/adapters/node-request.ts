@@ -520,7 +520,10 @@ export class NodeResponse<
         break;
       case 'html':
         this.setHeader('Content-Type', 'text/html; charset=utf-8');
-        body = `<p>${message}. Redirecting to ${escapeHtml(location)}</p>`;
+        // As Express 5.3 writes it
+        body =
+          `<!DOCTYPE html><head><title>${message}</title></head>` +
+          `<body><p>${message}. Redirecting to ${escapeHtml(location)}</p></body>`;
         break;
     }
     this.statusCode = statusCode;
