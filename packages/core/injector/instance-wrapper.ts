@@ -54,6 +54,11 @@ export interface InstancePerContext<T> {
   isResolved?: boolean;
   isPending?: boolean;
   donePromise?: Promise<unknown>;
+  /**
+   * The signal of the load for this context. The wrapper's `settlementSignal`
+   * is the one of its latest load, which may belong to a concurrent request.
+   */
+  settlementSignal?: SettlementSignal;
   isConstructorCalled?: boolean;
 }
 

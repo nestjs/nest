@@ -5,11 +5,16 @@ import {
 } from '@nestjs/common/constants.js';
 import { Inject } from '../../../common/decorators/core/inject.decorator.js';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
+import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception.js';
 import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
 import { Injector, PropertyDependency } from '../../injector/injector.js';
-import { ContextId, InstanceWrapper } from '../../injector/instance-wrapper.js';
+import {
+  ContextId,
+  InstancePerContext,
+  InstanceWrapper,
+} from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { SettlementSignal } from '../../injector/settlement-signal.js';
 
@@ -142,6 +147,49 @@ describe('Injector', () => {
         moduleDeps,
       );
       expect(result).toBeUndefined();
+    });
+
+    describe('when "isPending" and the wrapper is also loaded for another context', () => {
+      let wrapper: InstanceWrapper;
+      let host: InstancePerContext<unknown>;
+      const inquirer = new InstanceWrapper({ name: 'Inquirer' });
+
+      beforeEach(() => {
+        wrapper = new InstanceWrapper({
+          name: 'MainTest',
+          metatype: MainTest,
+          instance: Object.create(MainTest.prototype),
+          isResolved: false,
+        });
+        host = wrapper.getInstanceByContextId(STATIC_CONTEXT);
+        host.donePromise = Promise.resolve();
+        host.isPending = true;
+        host.settlementSignal = new SettlementSignal();
+        // the signal of its latest load, for another context
+        wrapper.settlementSignal = new SettlementSignal();
+      });
+
+      it('should not throw when only the load for the other context waits on the inquirer', async () => {
+        wrapper.settlementSignal!.insertRef(inquirer);
+
+        await expect(
+          injector.loadInstance(wrapper, moduleDeps.providers, moduleDeps, {
+            contextId: STATIC_CONTEXT,
+            inquirer,
+          }),
+        ).resolves.toBeUndefined();
+      });
+
+      it('should throw when the pending load waits on the inquirer', async () => {
+        host.settlementSignal!.insertRef(inquirer);
+
+        await expect(
+          injector.loadInstance(wrapper, moduleDeps.providers, moduleDeps, {
+            contextId: STATIC_CONTEXT,
+            inquirer,
+          }),
+        ).rejects.toBeInstanceOf(CircularDependencyException);
+      });
     });
   });
 
@@ -847,6 +895,93 @@ describe('Injector', () => {
       });
     });
 
+    describe('when the inquirer is also loaded for another context', () => {
+      const contextId = { id: 3 };
+      let inquirer: InstanceWrapper;
+      let inquirerSignal: SettlementSignal;
+
+      beforeEach(() => {
+        vi.spyOn(injector, 'loadProvider').mockImplementation(() =>
+          Promise.resolve(),
+        );
+        inquirer = new InstanceWrapper({
+          isResolved: false,
+          scope: Scope.REQUEST,
+        });
+        inquirerSignal = new SettlementSignal();
+        inquirer.getInstanceByContextId(contextId).settlementSignal =
+          inquirerSignal;
+        inquirer.settlementSignal = new SettlementSignal();
+      });
+
+      it.each([
+        ['without', false],
+        ['with', true],
+      ])(
+        'should record a dependency %s forward ref in the signal of this context',
+        async (_, forwardRef) => {
+          const wrapper = new InstanceWrapper({
+            isResolved: false,
+            forwardRef,
+            scope: Scope.REQUEST,
+          });
+
+          await injector.resolveComponentHost(module, wrapper, {
+            contextId,
+            inquirer,
+          });
+
+          expect(inquirerSignal.isCycle(wrapper.id)).toBe(true);
+          expect(inquirer.settlementSignal!.isCycle(wrapper.id)).toBe(false);
+        },
+      );
+
+      it('should follow the signal of the dependency for this context', async () => {
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          scope: Scope.REQUEST,
+        });
+        const dependencyOfWrapper = new InstanceWrapper();
+        wrapper.settlementSignal = new SettlementSignal();
+        wrapper.settlementSignal.insertRef(dependencyOfWrapper);
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+          inquirer,
+        });
+        const dependencySignal = new SettlementSignal();
+        dependencySignal.insertRef(inquirer);
+        wrapper.getInstanceByContextId(contextId).settlementSignal =
+          dependencySignal;
+
+        expect(inquirerSignal.isCycle(inquirer.id)).toBe(true);
+        expect(inquirerSignal.isCycle(dependencyOfWrapper.id)).toBe(false);
+      });
+
+      it('should record a dependency of a transient inquirer in the signal of its latest load', async () => {
+        // a transient inquirer has an instance per inquirer of its own, which
+        // the resolution context does not name
+        const transientInquirer = new InstanceWrapper({
+          isResolved: false,
+          scope: Scope.TRANSIENT,
+        });
+        transientInquirer.settlementSignal = new SettlementSignal();
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          scope: Scope.REQUEST,
+        });
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+          inquirer: transientInquirer,
+        });
+
+        expect(transientInquirer.settlementSignal.isCycle(wrapper.id)).toBe(
+          true,
+        );
+      });
+    });
+
     describe('when instanceWrapper has forward ref and is in non-static context', () => {
       it('should call settlementSignal.error when loadProvider throws', async () => {
         const error = new Error('Test error');
@@ -857,11 +992,11 @@ describe('Injector', () => {
           isResolved: false,
           forwardRef: true,
         });
-        wrapper.settlementSignal = settlementSignal;
 
         const contextId = { id: 2 };
         const instanceHost = wrapper.getInstanceByContextId(contextId);
         instanceHost.donePromise = Promise.resolve();
+        instanceHost.settlementSignal = settlementSignal;
 
         vi.spyOn(injector, 'loadProvider').mockImplementation(() =>
           Promise.reject(error),

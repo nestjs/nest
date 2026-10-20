@@ -6,6 +6,7 @@ import {
   Inject,
   INestApplication,
   Injectable,
+  Optional,
   Provider,
   Scope,
   Type,
@@ -201,12 +202,15 @@ describe('Request-scoped providers with a forward reference', () => {
       );
     }
 
-    async function createFixture(bothSides: boolean) {
+    const CONNECTION = 'CONNECTION';
+
+    async function createFixture(bothSides: boolean, connection?: Provider) {
       @Injectable({ scope: Scope.REQUEST })
       class UpdateUsecase {
         constructor(
           @Inject(forwardRef(() => CreateUsecase))
           public readonly create: { update: UpdateUsecase },
+          @Optional() @Inject(CONNECTION) public readonly connection?: string,
         ) {}
       }
 
@@ -215,11 +219,16 @@ describe('Request-scoped providers with a forward reference', () => {
         constructor(
           @Inject(bothSides ? forwardRef(() => UpdateUsecase) : UpdateUsecase)
           public readonly update: UpdateUsecase,
+          @Optional() @Inject(CONNECTION) public readonly connection?: string,
         ) {}
       }
 
       const moduleRef = await Test.createTestingModule({
-        providers: [UpdateUsecase, CreateUsecase],
+        providers: [
+          UpdateUsecase,
+          CreateUsecase,
+          ...(connection ? [connection] : []),
+        ],
       }).compile();
 
       return { moduleRef, CreateUsecase, UpdateUsecase };
@@ -289,6 +298,114 @@ describe('Request-scoped providers with a forward reference', () => {
         });
       },
     );
+
+    describe('when several requests resolve them at once', () => {
+      // Keeps the load of each request running while the others come in
+      const connection: Provider = {
+        provide: CONNECTION,
+        scope: Scope.REQUEST,
+        inject: [REQUEST],
+        useFactory: async (request: Request) => {
+          await new Promise(resolve => setTimeout(resolve, 5));
+          assertAuthorized(request);
+          return 'connected';
+        },
+      };
+
+      const resolveEach = (
+        moduleRef: TestingModule,
+        types: Type<object>[],
+        requests: Request[],
+      ) =>
+        requests.map((request, index) => {
+          const contextId = ContextIdFactory.create();
+          moduleRef.registerRequestByContextId(request, contextId);
+          return moduleRef.resolve(types[index % types.length], contextId);
+        });
+
+      it('constructs both providers with two-sided forward references for every request', async () => {
+        const { moduleRef, CreateUsecase, UpdateUsecase } = await createFixture(
+          true,
+          connection,
+        );
+
+        try {
+          const instances = await withTimeout(
+            Promise.all(
+              resolveEach(
+                moduleRef,
+                [CreateUsecase, UpdateUsecase],
+                Array.from({ length: 20 }, () => authorized),
+              ),
+            ),
+          );
+
+          for (const instance of instances) {
+            const create =
+              instance instanceof CreateUsecase
+                ? instance
+                : (instance as InstanceType<typeof UpdateUsecase>).create;
+            expect(create.update.create).toBe(create);
+          }
+        } finally {
+          await moduleRef.close();
+        }
+      });
+
+      it('rejects only the requests whose dependency fails', async () => {
+        const { moduleRef, CreateUsecase, UpdateUsecase } = await createFixture(
+          true,
+          connection,
+        );
+        const requests = Array.from({ length: 20 }, (_, index) =>
+          index % 5 ? authorized : anonymous,
+        );
+
+        try {
+          const results = await withTimeout(
+            Promise.allSettled(
+              resolveEach(moduleRef, [CreateUsecase, UpdateUsecase], requests),
+            ),
+          );
+
+          expect(results.map(result => result.status)).toEqual(
+            requests.map(request =>
+              request === authorized ? 'fulfilled' : 'rejected',
+            ),
+          );
+        } finally {
+          await moduleRef.close();
+        }
+      });
+
+      it('rejects the unsupported one-sided cycle for every request without hanging', async () => {
+        const { moduleRef, CreateUsecase } = await createFixture(
+          false,
+          connection,
+        );
+
+        try {
+          const results = await withTimeout(
+            Promise.allSettled(
+              resolveEach(
+                moduleRef,
+                [CreateUsecase],
+                Array.from({ length: 10 }, () => authorized),
+              ),
+            ),
+          );
+
+          for (const result of results) {
+            expect(result).toEqual({
+              status: 'rejected',
+              reason: expect.any(CircularDependencyException),
+            });
+          }
+        } finally {
+          await moduleRef.close();
+        }
+      });
+    });
   });
 
   describe.each([
