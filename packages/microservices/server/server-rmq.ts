@@ -130,6 +130,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   public async start(
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    // Each start counts its own attempts towards "maxConnectionAttempts"
+    this.connectionAttempts = 0;
     this.server = await this.createClient();
     let listenCallback = callback;
     const settleListenCallback = (...args: unknown[]) => {
@@ -180,8 +182,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
     this.pendingEventListeners = [];
 
+    // "connectFailed" fires on every failed attempt, so count each one.
     const connectFailedEvent = 'connectFailed';
-    this.server!.once(
+    this.server!.on(
       connectFailedEvent,
       async (error: Record<string, unknown>) => {
         this._status$.next(RmqStatus.DISCONNECTED);
