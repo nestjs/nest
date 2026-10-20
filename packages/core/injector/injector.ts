@@ -93,6 +93,21 @@ interface ResolutionContext {
   rootInquirer?: InstanceWrapper;
 }
 
+/**
+ * An edge to a dependency, which follows the signal of its load for one
+ * context. The signal is read lazily, as the load creates it after the edge.
+ */
+class HostSettlementRef {
+  constructor(
+    public readonly id: string,
+    private readonly host: InstancePerContext<unknown>,
+  ) {}
+
+  get settlementSignal() {
+    return this.host.settlementSignal;
+  }
+}
+
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
   private readonly instanceDecorator: (target: unknown) => unknown = (
@@ -183,7 +198,7 @@ export class Injector {
     );
 
     if (instanceHost.isPending) {
-      const settlementSignal = wrapper.settlementSignal;
+      const settlementSignal = instanceHost.settlementSignal;
       if (
         resolutionContext.inquirer &&
         settlementSignal?.isCycle(resolutionContext.inquirer.id)
@@ -376,6 +391,7 @@ export class Injector {
     const settlementSignal = new SettlementSignal();
     instancePerContext.donePromise = settlementSignal.asPromise();
     instancePerContext.isPending = true;
+    instancePerContext.settlementSignal = settlementSignal;
     host.settlementSignal = settlementSignal;
 
     return settlementSignal;
@@ -675,7 +691,11 @@ export class Injector {
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
-      resolutionContext.inquirer?.settlementSignal?.insertRef(instanceWrapper);
+      this.insertSettlementRef(
+        resolutionContext,
+        instanceWrapper,
+        instanceHost,
+      );
 
       await this.loadProvider(
         instanceWrapper,
@@ -707,7 +727,7 @@ export class Injector {
           );
         });
         void deferredLoad.catch(err => {
-          instanceWrapper.settlementSignal?.error(err);
+          instanceHost.settlementSignal?.error(err);
         });
         this.addDeferredLoad(resolutionContext.contextId, deferredLoad);
         this.trackDurableDeferredLoad(
@@ -724,8 +744,10 @@ export class Injector {
          * inquirer while it is still pending, `isCycle()` sees the cycle and throws
          * instead of awaiting a `donePromise` that depends on itself.
          */
-        resolutionContext.inquirer?.settlementSignal?.insertRef(
+        this.insertSettlementRef(
+          resolutionContext,
           instanceWrapper,
+          instanceHost,
         );
 
         await this.loadProvider(
@@ -1298,6 +1320,21 @@ export class Injector {
     }
     wrapper.removeInstanceByContextId(contextId, inquirerId);
     return wrapper.getInstanceByContextId(contextId, inquirerId);
+  }
+
+  /**
+   * Records that the load of the inquirer waits on the given host.
+   */
+  private insertSettlementRef(
+    { contextId, inquirer }: ResolutionContext,
+    wrapper: InstanceWrapper,
+    instanceHost: InstancePerContext<unknown>,
+  ) {
+    const inquirerSignal = inquirer?.isTransient
+      ? inquirer.settlementSignal
+      : inquirer?.getInstanceByContextId(this.getContextId(contextId, inquirer))
+          .settlementSignal;
+    inquirerSignal?.insertRef(new HostSettlementRef(wrapper.id, instanceHost));
   }
 
   private getInquirerId(
