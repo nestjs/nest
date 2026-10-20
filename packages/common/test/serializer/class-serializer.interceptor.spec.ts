@@ -14,7 +14,6 @@ describe('ClassSerializerInterceptor', () => {
   beforeEach(() => {
     sandbox = /* sandbox not needed with vitest */ { stub: vi.fn };
     mockReflector = {
-      getAllAndOverride: vi.fn(),
       getAll: vi.fn().mockReturnValue([undefined, undefined]),
     };
     mockTransformerPackage = {
@@ -79,7 +78,6 @@ describe('ClassSerializerInterceptor', () => {
       const response = { id: 1, name: 'Test' };
       const transformedResponse = { id: 1, name: 'Test' };
 
-      mockReflector.getAllAndOverride.mockReturnValue(undefined);
       mockTransformerPackage.classToPlain.mockReturnValue(transformedResponse);
       (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
         of(response),
@@ -105,7 +103,6 @@ describe('ClassSerializerInterceptor', () => {
       const transformedItem1 = { id: 1, name: 'Test1' };
       const transformedItem2 = { id: 2, name: 'Test2' };
 
-      mockReflector.getAllAndOverride.mockReturnValue(undefined);
       mockTransformerPackage.classToPlain
         .mockReturnValueOnce(transformedItem1)
         .mockReturnValueOnce(transformedItem2);
@@ -138,7 +135,7 @@ describe('ClassSerializerInterceptor', () => {
         ...defaultOptions,
       });
 
-      mockReflector.getAllAndOverride.mockReturnValue(contextOptions);
+      mockReflector.getAll.mockReturnValue([contextOptions, undefined]);
       mockTransformerPackage.classToPlain.mockReturnValue(transformedResponse);
       (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
         of(response),
@@ -169,7 +166,6 @@ describe('ClassSerializerInterceptor', () => {
       (
         mockExecutionContext.getClass as ReturnType<typeof vi.fn>
       ).mockReturnValue(mockClass);
-      mockReflector.getAllAndOverride.mockReturnValue(undefined);
       mockTransformerPackage.classToPlain.mockReturnValue(response);
       (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
         of(response),
@@ -181,8 +177,8 @@ describe('ClassSerializerInterceptor', () => {
       );
       await new Promise<void>(resolve => {
         result$.subscribe(() => {
-          expect(mockReflector.getAllAndOverride).toHaveBeenCalledOnce();
-          const args = mockReflector.getAllAndOverride.mock.calls[0];
+          expect(mockReflector.getAll).toHaveBeenCalledOnce();
+          const args = mockReflector.getAll.mock.calls[0];
           expect(args[1]).toEqual([mockHandler, mockClass]);
           resolve();
         });
@@ -233,7 +229,7 @@ describe('ClassSerializerInterceptor', () => {
             type: UserDto,
             groups: ['admin'],
           });
-          mockReflector.getAllAndOverride.mockReturnValue({ groups });
+          mockReflector.getAll.mockReturnValue([{ groups }, undefined]);
 
           const user = {
             id: 1,
@@ -272,7 +268,6 @@ describe('ClassSerializerInterceptor', () => {
         { groups: ['admin'] },
         { type: UserDto },
       ]);
-      mockReflector.getAllAndOverride.mockReturnValue({ groups: ['admin'] });
       const next: CallHandler = {
         handle: () => of({ id: 1, email: 'a@b.c', password: 'secret' }),
       };
@@ -458,7 +453,7 @@ describe('ClassSerializerInterceptor', () => {
       });
     });
 
-    it('should call reflector getAllAndOverride with correct arguments', () => {
+    it('should call reflector getAll with correct arguments', () => {
       const mockHandler = {};
       const mockClass = {};
       const mockContext = {
@@ -467,12 +462,12 @@ describe('ClassSerializerInterceptor', () => {
       } as any;
 
       const expectedOptions = { groups: ['admin'] };
-      mockReflector.getAllAndOverride.mockReturnValue(expectedOptions);
+      mockReflector.getAll.mockReturnValue([expectedOptions, undefined]);
 
       const result = (interceptor as any).getContextOptions(mockContext);
 
-      expect(mockReflector.getAllAndOverride).toHaveBeenCalledOnce();
-      const callArgs = mockReflector.getAllAndOverride.mock.calls[0];
+      expect(mockReflector.getAll).toHaveBeenCalledOnce();
+      const callArgs = mockReflector.getAll.mock.calls[0];
       expect(callArgs[1]).toEqual([mockHandler, mockClass]);
       expect(result).toBe(expectedOptions);
     });
@@ -483,35 +478,44 @@ describe('ClassSerializerInterceptor', () => {
         getClass: vi.fn().mockReturnValue({}),
       } as any;
 
-      mockReflector.getAllAndOverride.mockReturnValue(undefined);
-
       const result = (interceptor as any).getContextOptions(mockContext);
 
       expect(result).toBeUndefined();
     });
 
-    it('should respect handler metadata over class metadata', () => {
-      const mockHandler = {};
-      const mockClass = {};
+    it('should return the class metadata when the handler has none', () => {
       const mockContext = {
-        getHandler: vi.fn().mockReturnValue(mockHandler),
-        getClass: vi.fn().mockReturnValue(mockClass),
+        getHandler: vi.fn().mockReturnValue({}),
+        getClass: vi.fn().mockReturnValue({}),
       } as any;
 
-      // getAllAndOverride should merge with handler taking precedence
-      const handlerOptions = {
-        groups: ['user'],
-        excludeExtraneousValues: true,
-      };
-      mockReflector.getAllAndOverride.mockReturnValue(handlerOptions);
+      const classOptions = { groups: ['admin'] };
+      mockReflector.getAll.mockReturnValue([undefined, classOptions]);
 
       const result = (interceptor as any).getContextOptions(mockContext);
 
-      expect(result).toEqual(handlerOptions);
-      // Verify it's checking handler first, then class
-      const callArgs = mockReflector.getAllAndOverride.mock.calls[0];
-      expect(callArgs[1][0]).toBe(mockHandler);
-      expect(callArgs[1][1]).toBe(mockClass);
+      expect(result).toBe(classOptions);
+    });
+
+    it('should merge handler metadata over class metadata', () => {
+      class UserDto {}
+      const mockContext = {
+        getHandler: vi.fn().mockReturnValue({}),
+        getClass: vi.fn().mockReturnValue({}),
+      } as any;
+
+      mockReflector.getAll.mockReturnValue([
+        { groups: ['user'], excludeExtraneousValues: true },
+        { type: UserDto, groups: ['admin'] },
+      ]);
+
+      const result = (interceptor as any).getContextOptions(mockContext);
+
+      expect(result).toEqual({
+        type: UserDto,
+        groups: ['user'],
+        excludeExtraneousValues: true,
+      });
     });
   });
 
