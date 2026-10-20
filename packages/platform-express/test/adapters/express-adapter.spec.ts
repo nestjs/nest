@@ -2,6 +2,7 @@ import {
   BadRequestException,
   RequestMethod,
   StreamableFile,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
@@ -337,6 +338,23 @@ describe('ExpressAdapter', () => {
       );
       expect(warnSpy).toHaveBeenCalled();
       expect(response.json).toHaveBeenCalledWith(body);
+    });
+
+    it('should send the standard body of the status for an Error body', () => {
+      const response = Object.assign(createResponse(), { statusCode: 200 });
+      response.status.mockImplementation(code => (response.statusCode = code));
+      const error = Object.assign(new Error('invalid signature'), {
+        config: { headers: { authorization: 'Bearer secret' } },
+      });
+      const exception = new UnauthorizedException(error);
+
+      expressAdapter.reply(response, exception.getResponse(), 401);
+
+      expect(response.json).toHaveBeenCalledExactlyOnceWith({
+        statusCode: 401,
+        message: 'Unauthorized',
+      });
+      expect(response.send).not.toHaveBeenCalled();
     });
 
     it('should keep the content type of a text body sent with an error status', () => {

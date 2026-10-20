@@ -200,6 +200,17 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         .pipe<Writable>(response)
         .on('error', (err: Error) => body.errorLogger(err));
     }
+    // response.json() serializes the enumerable properties of an Error, e.g.
+    // the request config of an HTTP client error.
+    if (
+      body instanceof Error &&
+      response.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      body = {
+        statusCode: response.statusCode,
+        message: http.STATUS_CODES[response.statusCode] ?? 'Error',
+      };
+    }
     const responseContentType = response.getHeader('Content-Type');
     if (
       typeof responseContentType === 'string' &&
