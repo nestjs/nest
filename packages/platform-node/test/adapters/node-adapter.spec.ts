@@ -717,12 +717,11 @@ describe('NodeAdapter', () => {
             response.send('gone');
           },
         );
+        const file = new StreamableFile(source).setErrorHandler(errorHandler);
         source.destroy(error);
         await new Promise(resolve => setImmediate(resolve));
 
-        const res = await replyWith(
-          new StreamableFile(source).setErrorHandler(errorHandler),
-        );
+        const res = await replyWith(file);
 
         expect(errorHandler).toHaveBeenCalledExactlyOnceWith(
           error,
