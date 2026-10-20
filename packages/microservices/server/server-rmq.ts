@@ -130,6 +130,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   public async start(
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    // Each start counts its own attempts towards "maxConnectionAttempts"
+    this.connectionAttempts = 0;
     this.server = await this.createClient();
     let listenCallback = callback;
     const settleListenCallback = (...args: unknown[]) => {

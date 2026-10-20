@@ -189,6 +189,29 @@ describe('ServerRMQ', () => {
         await new Promise(resolve => setImmediate(resolve));
         expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
       });
+      it('should count the attempts of a later listen() from zero', async () => {
+        untypedServer.options = { maxConnectionAttempts: 2 };
+        await server.listen(listenCallback);
+        client.emit('connectFailed', { err: new Error('first attempt') });
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
+
+        client = Object.assign(new EventEmitter(), {
+          createChannel: createChannelStub,
+        });
+        const secondListenCallback = vi.fn<(err?: unknown) => void>();
+        await server.listen(secondListenCallback);
+        client.emit('connectFailed', { err: new Error('first attempt') });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(secondListenCallback).not.toHaveBeenCalled();
+
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(secondListenCallback).toHaveBeenCalledExactlyOnceWith(
+          connectionError,
+        );
+      });
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
