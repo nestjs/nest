@@ -109,7 +109,7 @@
     "@types/ws": "8.18.2",
     "@vitest/coverage-istanbul": "5.0.5",
     "@vitest/coverage-v8": "5.0.5",
-    "amqp-connection-manager": "5.0.0",
+    "amqp-connection-manager": "5.0.1",
     "amqplib": "2.2.0",
     "body-parser": "2.3.0",
     "cache-manager": "7.2.9",
