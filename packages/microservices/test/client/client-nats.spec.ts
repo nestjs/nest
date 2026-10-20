@@ -202,6 +202,45 @@ describe('ClientNats', () => {
           'override-client-id',
         );
       });
+
+      // "NatsRecordBuilder" takes plain headers, which are not a "MsgHdrs"
+      it('should send the plain headers of a record from publish()', () => {
+        untypedClient.options.headers = { 'client-id': 'some-client-id' };
+        msg.data = new NatsRecord('data', { 'x-version': '1.0.0' });
+
+        client['publish'](msg, () => {});
+
+        const headers = publishSpy.mock.calls[0][2].headers;
+        expect(headers.get('x-version')).toEqual('1.0.0');
+        expect(headers.get('client-id')).toEqual('some-client-id');
+        expect(() => headers.encode()).not.toThrow();
+      });
+
+      it('should keep every value of a multi-valued record header', () => {
+        const recordHeaders = createHeaders();
+        recordHeaders.append('x-tag', 'a');
+        recordHeaders.append('x-tag', 'b');
+        msg.data = new NatsRecord('data', recordHeaders);
+
+        client['publish'](msg, () => {});
+
+        const headers = publishSpy.mock.calls[0][2].headers;
+        expect(headers.values('x-tag')).toEqual(['a', 'b']);
+      });
+
+      it('should send the plain headers of a record from dispatchEvent()', async () => {
+        untypedClient.options.headers = { 'client-id': 'some-client-id' };
+
+        await client['dispatchEvent']({
+          pattern,
+          data: new NatsRecord('data', { 'x-version': '1.0.0' }),
+        });
+
+        const headers = publishSpy.mock.calls[0][2].headers;
+        expect(headers.get('x-version')).toEqual('1.0.0');
+        expect(headers.get('client-id')).toEqual('some-client-id');
+        expect(() => headers.encode()).not.toThrow();
+      });
     });
 
     it('should release the inbox when a reply cannot be deserialized', async () => {
