@@ -405,6 +405,42 @@ describe('Request-scoped providers with a forward reference', () => {
           await moduleRef.close();
         }
       });
+
+      it.each([
+        ['without', undefined],
+        ['with', connection],
+      ])(
+        'rejects only the plain side of the one-sided cycle when both sides are resolved at once (%s an async dependency)',
+        async (_, dependency) => {
+          const { moduleRef, CreateUsecase, UpdateUsecase } =
+            await createFixture(false, dependency);
+
+          try {
+            const results = await withTimeout(
+              Promise.allSettled(
+                resolveEach(
+                  moduleRef,
+                  [CreateUsecase, UpdateUsecase],
+                  Array.from({ length: 10 }, () => authorized),
+                ),
+              ),
+            );
+
+            results.forEach((result, index) => {
+              if (index % 2) {
+                expect(result.status).toBe('fulfilled');
+              } else {
+                expect(result).toEqual({
+                  status: 'rejected',
+                  reason: expect.any(CircularDependencyException),
+                });
+              }
+            });
+          } finally {
+            await moduleRef.close();
+          }
+        },
+      );
     });
   });
 

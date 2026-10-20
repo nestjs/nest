@@ -93,6 +93,21 @@ interface ResolutionContext {
   rootInquirer?: InstanceWrapper;
 }
 
+/**
+ * An edge to a dependency, which follows the signal of its load for one
+ * context. The signal is read lazily, as the load creates it after the edge.
+ */
+class HostSettlementRef {
+  constructor(
+    public readonly id: string,
+    private readonly host: InstancePerContext<unknown>,
+  ) {}
+
+  get settlementSignal() {
+    return this.host.settlementSignal;
+  }
+}
+
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
   private readonly instanceDecorator: (target: unknown) => unknown = (
@@ -1319,13 +1334,7 @@ export class Injector {
       ? inquirer.settlementSignal
       : inquirer?.getInstanceByContextId(this.getContextId(contextId, inquirer))
           .settlementSignal;
-    inquirerSignal?.insertRef({
-      id: wrapper.id,
-      // Read lazily, as the load of the host creates its signal after this edge
-      get settlementSignal() {
-        return instanceHost.settlementSignal;
-      },
-    });
+    inquirerSignal?.insertRef(new HostSettlementRef(wrapper.id, instanceHost));
   }
 
   private getInquirerId(
