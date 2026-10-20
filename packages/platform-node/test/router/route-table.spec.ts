@@ -30,6 +30,21 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/user')).toBeNull();
     });
 
+    it('should not match a path that does not start with "/"', () => {
+      table.add('GET', '/admin/users', handler());
+      table.add('GET', '/admin/:id', handler());
+      table.add('GET', '/files{.:ext}', handler());
+      table.add(null, '/', handler());
+
+      expect(table.lookup('GET', '/admin/users')).not.toBeNull();
+      // find-my-way would read the "*" as the leading "/"
+      expect(table.lookup('GET', '*admin/users')).toBeNull();
+      expect(table.lookup('GET', 'xadmin/1')).toBeNull();
+      expect(table.lookup('GET', '*files.json')).toBeNull();
+      expect(table.lookup('OPTIONS', '*')).toBeNull();
+      expect(table.lookup('GET', '')).toBeNull();
+    });
+
     it('should only match the registered method', () => {
       table.add('POST', '/users', handler());
 

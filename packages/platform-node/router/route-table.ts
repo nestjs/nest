@@ -363,6 +363,12 @@ export class RouteTable {
   }
 
   public lookup(method: string, path: string): RouteMatch | null {
+    // find-my-way reads the first character as the leading "/" ("*admin"
+    // gets the "/admin" route), while no middleware path matches such a
+    // target. Express never routes a path that does not start with "/".
+    if (path.charCodeAt(0) !== 47 /* / */) {
+      return null;
+    }
     let exceeded = false;
     let found = this.find(this.router, method, path);
     if (found === TOO_LONG) {
