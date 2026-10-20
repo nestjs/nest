@@ -1,4 +1,8 @@
-import { RequestMethod, StreamableFile } from '@nestjs/common';
+import {
+  RequestMethod,
+  StreamableFile,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
@@ -49,6 +53,26 @@ describe('ExpressAdapter', () => {
         .to.be.true;
       expect(warnStub.called).to.be.true;
       expect(response.json.calledWith(body)).to.be.true;
+    });
+
+    it('should send the standard body of the status for an Error body', () => {
+      const response = Object.assign(createResponse(), { statusCode: 200 });
+      response.status.callsFake(code => (response.statusCode = code));
+      const error = Object.assign(new Error('invalid signature'), {
+        config: { headers: { authorization: 'Bearer secret' } },
+      });
+      const exception = new UnauthorizedException(error);
+
+      expressAdapter.reply(response, exception.getResponse(), 401);
+
+      expect(response.json.calledOnce).to.be.true;
+      expect(response.json.firstCall.args).to.deep.equal([
+        {
+          statusCode: 401,
+          message: 'Unauthorized',
+        },
+      ]);
+      expect(response.send.called).to.be.false;
     });
 
     it('should keep the content type of a text body sent with an error status', () => {

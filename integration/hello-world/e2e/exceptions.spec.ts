@@ -1,4 +1,10 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  INestApplication,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -9,6 +15,14 @@ import { RawServerDefault } from 'fastify';
 import * as request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller';
 
+@Controller()
+class ErrorBodyController {
+  @Get('error-body')
+  findAll() {
+    throw new UnauthorizedException(new Error('invalid signature'));
+  }
+}
+
 describe('Error messages', () => {
   let server: RawServerDefault;
 
@@ -16,7 +30,7 @@ describe('Error messages', () => {
     let app: INestApplication;
     beforeEach(async () => {
       const module = await Test.createTestingModule({
-        controllers: [ErrorsController],
+        controllers: [ErrorsController, ErrorBodyController],
       }).compile();
 
       app = module.createNestApplication();
@@ -53,6 +67,16 @@ describe('Error messages', () => {
         .expect({
           statusCode: 500,
           message: 'Internal server error',
+        });
+    });
+
+    it(`/GET (Unauthorized when the body of the HttpException is an Error)`, async () => {
+      return request(server)
+        .get('/error-body')
+        .expect(HttpStatus.UNAUTHORIZED)
+        .expect({
+          statusCode: 401,
+          message: 'Unauthorized',
         });
     });
 
