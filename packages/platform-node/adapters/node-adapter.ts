@@ -453,17 +453,13 @@ export class NodeAdapter extends AbstractHttpAdapter<
         const convertedPath = LegacyRouteConverter.tryConvert(
           isExactPath ? path.slice(0, -1) : path,
         );
-        // "/api" also matches "/api/"; that path is left to the wildcard entry
-        // registered next to it, so the middleware doesn't run twice.
-        const handler = isExactPath
-          ? (req: NodeRequest, res: NodeResponse, next: Function) =>
-              getRoutingPath(req.url!).endsWith('/')
-                ? next()
-                : callback(req, res, next)
-          : callback;
+        // "/api" also matches "/api/", which the wildcard path registered next
+        // to it may match too ("/api/{*path}" does, "/api/*path" does not).
+        // The core runs the middleware for the first of its paths that
+        // matches a request only.
         return isMount && !isExactPath
-          ? this.instance.use(convertedPath, handler)
-          : this.instance.useExact(method, convertedPath, handler);
+          ? this.instance.use(convertedPath, callback)
+          : this.instance.useExact(method, convertedPath, callback);
       } catch (e) {
         if (e instanceof TypeError) {
           LegacyRouteConverter.printError(path);

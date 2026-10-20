@@ -1714,7 +1714,7 @@ describe('NodeAdapter', () => {
       expect(res.headers['x-user-id']).toBe('42');
     });
 
-    it('should run a middleware for an exact-match path ("$") on that path only, for every method', async () => {
+    it('should run a middleware for an exact-match path ("$") on that path only, with or without a trailing slash, for every method', async () => {
       register(NO_REQUEST_METHOD, '/api$');
       answerEverything();
 
@@ -1726,7 +1726,8 @@ describe('NodeAdapter', () => {
         ['GET', '/apix'],
       );
 
-      expect(calls).toEqual(['GET /api', 'POST /api?x=1']);
+      // "/api" also matches "/api/", as routes do (and as on Express)
+      expect(calls).toEqual(['GET /api', 'POST /api?x=1', 'GET /api/']);
     });
 
     it('should filter an exact-match path ("$") by method', async () => {
@@ -1738,26 +1739,19 @@ describe('NodeAdapter', () => {
       expect(calls).toEqual(['GET /api']);
     });
 
-    it('should run once per request when the exact-match path is registered next to its wildcard entry', async () => {
-      // How the core applies a wildcard middleware under a global prefix
-      register(NO_REQUEST_METHOD, '/api$');
-      register(NO_REQUEST_METHOD, '/api/{*path}');
-      answerEverything();
+    it('should register the middleware itself on the exact-match path', () => {
+      // The core runs a middleware once per request when more than one of
+      // its paths match ("/api" and "/api/{*path}" both match "/api/")
+      const useExact = vi.spyOn(adapter.getInstance(), 'useExact');
+      const middleware = () => {};
 
-      await send(
-        ['GET', '/api'],
-        ['GET', '/api/'],
-        ['GET', '/api/users'],
-        ['POST', '/api/users/1'],
-        ['GET', '/other'],
+      adapter.createMiddlewareFactory(NO_REQUEST_METHOD)('/api$', middleware);
+
+      expect(useExact).toHaveBeenCalledExactlyOnceWith(
+        undefined,
+        '/api',
+        middleware,
       );
-
-      expect(calls).toEqual([
-        'GET /api',
-        'GET /api/',
-        'GET /api/users',
-        'POST /api/users/1',
-      ]);
     });
 
     it('should throw a TypeError for an invalid path', () => {
