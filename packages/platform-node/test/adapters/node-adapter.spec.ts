@@ -669,21 +669,27 @@ describe('NodeAdapter', () => {
         expect(res.text).toBe('custom: read failed');
       });
 
-      it('should answer a stream error with a 400 by default', async () => {
+      it('should answer a stream error with a 400 by default, and log the error', async () => {
+        const error = new Error('read failed');
+        const errorLogger = vi.fn();
         const source = new Readable({
           read() {
-            this.destroy(new Error('read failed'));
+            this.destroy(error);
           },
         });
 
-        const res = await replyWith(new StreamableFile(source));
+        const res = await replyWith(
+          new StreamableFile(source).setErrorLogger(errorLogger),
+        );
 
         expect(res.status).toBe(400);
         expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
-        expect(res.text).toBe('read failed');
+        // The message may name the path the stream reads from
+        expect(res.text).toBe('Bad Request');
+        expect(errorLogger).toHaveBeenCalledWith(error);
       });
 
-      it('should send the length of the error message, not of the file', async () => {
+      it('should send the length of the error response, not of the file', async () => {
         const source = new Readable({
           read() {
             this.destroy(new Error('read failed'));
@@ -691,14 +697,78 @@ describe('NodeAdapter', () => {
         });
 
         const res = await replyWith(
-          new StreamableFile(source, { length: 100 }),
+          new StreamableFile(source, { length: 100 }).setErrorLogger(() => {}),
         );
 
         expect(res.status).toBe(400);
         expect(res.headers['content-length']).toBe(
-          String('read failed'.length),
+          String('Bad Request'.length),
         );
-        expect(res.text).toBe('read failed');
+        expect(res.text).toBe('Bad Request');
+      });
+
+      it('should hand a source that failed before the reply to the error handler', async () => {
+        // e.g. ENOENT from fs.createReadStream() while an interceptor awaits
+        const source = new PassThrough();
+        const error = new Error('ENOENT');
+        const errorHandler = vi.fn(
+          (err: Error, response: StreamableHandlerResponse) => {
+            response.statusCode = 410;
+            response.send('gone');
+          },
+        );
+        source.destroy(error);
+        await new Promise(resolve => setImmediate(resolve));
+
+        const res = await replyWith(
+          new StreamableFile(source).setErrorHandler(errorHandler),
+        );
+
+        expect(errorHandler).toHaveBeenCalledExactlyOnceWith(
+          error,
+          expect.anything(),
+        );
+        expect(res.status).toBe(410);
+        expect(res.text).toBe('gone');
+      });
+
+      it('should end a HEAD response without reading the whole source', async () => {
+        const chunkCount = 1000;
+        const chunk = Buffer.alloc(1024);
+        let reads = 0;
+        const source = new Readable({
+          read() {
+            this.push(++reads > chunkCount ? null : chunk);
+          },
+        });
+
+        const res = await replyWith(
+          new StreamableFile(source),
+          undefined,
+          undefined,
+          { method: 'HEAD' },
+        );
+
+        expect(res.status).toBe(200);
+        await vi.waitFor(() => expect(source.destroyed).toBe(true));
+        expect(reads).toBeLessThan(chunkCount);
+      });
+
+      it('should leave an error opening the source of a HEAD response to the error handler', async () => {
+        const source = new Readable({
+          read() {
+            this.destroy(new Error('ENOENT'));
+          },
+        });
+
+        const res = await replyWith(
+          new StreamableFile(source).setErrorLogger(() => {}),
+          undefined,
+          undefined,
+          { method: 'HEAD' },
+        );
+
+        expect(res.status).toBe(400);
       });
 
       it('should destroy the source stream when the client disconnects early', async () => {

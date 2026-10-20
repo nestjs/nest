@@ -67,6 +67,17 @@ describe('Node FileSend', () => {
         expect(res.text).toBe(readmeString);
       });
   });
+  it('should answer a HEAD request with the headers of a file', async () => {
+    return request(app.getHttpServer())
+      .head('/file/with/headers')
+      .expect(200)
+      .expect('Content-Type', 'text/markdown')
+      .expect('Content-Disposition', 'attachment; filename="Readme.md"')
+      .expect('Content-Length', readme.byteLength.toString());
+  });
+  it('should answer a HEAD request with an error if the file does not exist', async () => {
+    return request(app.getHttpServer()).head('/file/not/exist').expect(400);
+  });
   it('should return an error if the file does not exist', async () => {
     return request(app.getHttpServer()).get('/file/not/exist').expect(400);
   });

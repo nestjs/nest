@@ -192,6 +192,15 @@ export class NodeAdapter extends AbstractHttpAdapter<
       return response.end();
     }
     if (body instanceof StreamableFile) {
+      // A stream that failed before the reply (e.g. while an interceptor
+      // awaited) has already emitted its 'error' event
+      const { errored } = body.getStream();
+      if (errored) {
+        return body.errorHandler(
+          errored,
+          this.toStreamableHandlerResponse(response),
+        );
+      }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {
@@ -203,6 +212,14 @@ export class NodeAdapter extends AbstractHttpAdapter<
           stream.destroy();
         }
       });
+      // Node discards the body of a HEAD response without ever applying
+      // backpressure, so piping would read the whole source. The response
+      // ends once the source is readable instead, which still leaves an
+      // error opening it (e.g. a missing file) to the error handler.
+      if (response.req?.method === 'HEAD') {
+        stream.once('readable', () => response.end());
+        return response.on('error', (err: Error) => body.errorLogger(err));
+      }
       return stream
         .pipe<Writable>(response)
         .on('error', (err: Error) => body.errorLogger(err));
