@@ -328,9 +328,9 @@ describe.each(adapters)('CSRF protection (%s)', (_name, createAdapter) => {
         handler: 'github/:event',
       });
       await post('/api/hooks/github').expect(403);
-      // Express serves it with the "github" route, which is not excluded;
-      // Fastify does not serve it (strict routing, no empty "event")
-      await post('/api/hooks/github/').expect(_name === 'Express' ? 403 : 404);
+      // Express and Node serve it with the "github" route, which is not
+      // excluded; Fastify does not serve it (strict routing, no empty "event")
+      await post('/api/hooks/github/').expect(_name === 'Fastify' ? 404 : 403);
     });
   });
 
