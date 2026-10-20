@@ -405,7 +405,8 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       // not expose.
       for (const key of requestHeaders.keys()) {
         for (const value of requestHeaders.values(key)) {
-          headers.set(key, value);
+          // "set()" would keep only the last value of a multi-valued header
+          headers.append(key, value);
         }
       }
     } else if (isObject(requestHeaders)) {

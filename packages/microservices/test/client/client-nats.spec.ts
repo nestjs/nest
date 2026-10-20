@@ -216,6 +216,18 @@ describe('ClientNats', () => {
         expect(() => headers.encode()).not.toThrow();
       });
 
+      it('should keep every value of a multi-valued record header', () => {
+        const recordHeaders = createHeaders();
+        recordHeaders.append('x-tag', 'a');
+        recordHeaders.append('x-tag', 'b');
+        msg.data = new NatsRecord('data', recordHeaders);
+
+        client['publish'](msg, () => {});
+
+        const headers = publishSpy.mock.calls[0][2].headers;
+        expect(headers.values('x-tag')).toEqual(['a', 'b']);
+      });
+
       it('should send the plain headers of a record from dispatchEvent()', async () => {
         untypedClient.options.headers = { 'client-id': 'some-client-id' };
 
