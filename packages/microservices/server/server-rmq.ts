@@ -180,8 +180,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
     this.pendingEventListeners = [];
 
+    // "connectFailed" fires on every failed attempt, so count each one.
     const connectFailedEvent = 'connectFailed';
-    this.server!.once(
+    this.server!.on(
       connectFailedEvent,
       async (error: Record<string, unknown>) => {
         this._status$.next(RmqStatus.DISCONNECTED);

@@ -142,37 +142,51 @@ describe('ServerRMQ', () => {
       });
     });
     describe('when the connection attempts run out', () => {
-      it('should call the callback once with the connection error', async () => {
-        const connectionError = new Error('ECONNREFUSED');
-        const handlers = new Map<string, (error: object) => Promise<void>>();
-        client.once = vi.fn((event, handler) => handlers.set(event, handler));
-        untypedServer.options = { maxConnectionAttempts: 1 };
+      const connectionError = new Error('ECONNREFUSED');
+      let listenCallback: ReturnType<typeof vi.fn<(err?: unknown) => void>>;
+
+      beforeEach(() => {
+        client = Object.assign(new EventEmitter(), {
+          createChannel: createChannelStub,
+        });
         vi.spyOn(server, 'close').mockResolvedValue();
         vi.spyOn(server['logger'], 'error').mockImplementation(() => {});
-        const listenCallback = vi.fn<(err?: unknown) => void>();
+        listenCallback = vi.fn<(err?: unknown) => void>();
+      });
+      it('should call the callback once with the connection error', async () => {
+        untypedServer.options = { maxConnectionAttempts: 1 };
 
         await server.listen(listenCallback);
-        await handlers.get('connectFailed')?.({ err: connectionError });
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
 
         expect(listenCallback).toHaveBeenCalledOnce();
         expect(listenCallback).toHaveBeenCalledWith(connectionError);
       });
       it('should still call the callback when closing fails', async () => {
-        const connectionError = new Error('ECONNREFUSED');
         const closeError = new Error('close failed');
-        const handlers = new Map<string, (error: object) => Promise<void>>();
-        client.once = vi.fn((event, handler) => handlers.set(event, handler));
         untypedServer.options = { maxConnectionAttempts: 1 };
         vi.spyOn(server, 'close').mockRejectedValue(closeError);
-        const logError = vi
-          .spyOn(server['logger'], 'error')
-          .mockImplementation(() => {});
-        const listenCallback = vi.fn<(err?: unknown) => void>();
+        const logError = vi.spyOn(server['logger'], 'error');
 
         await server.listen(listenCallback);
-        await handlers.get('connectFailed')?.({ err: connectionError });
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
 
         expect(logError).toHaveBeenCalledWith(closeError);
+        expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
+      });
+      it('should call the callback once the last of several attempts fails', async () => {
+        untypedServer.options = { maxConnectionAttempts: 3 };
+
+        await server.listen(listenCallback);
+        client.emit('connectFailed', { err: new Error('first attempt') });
+        client.emit('connectFailed', { err: new Error('second attempt') });
+        await new Promise(resolve => setImmediate(resolve));
+        expect(listenCallback).not.toHaveBeenCalled();
+
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
         expect(listenCallback).toHaveBeenCalledExactlyOnceWith(connectionError);
       });
     });
