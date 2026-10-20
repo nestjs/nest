@@ -90,6 +90,11 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   public listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    // Each listen() counts its own attempts towards "retryAttempts". Without
+    // this, a listen() after one that exhausted its attempts starts above the
+    // limit and never retries again.
+    this.retryAttemptsCount = 0;
+
     // The once('error') listener outlives a successful listen, so a later
     // error must find the callback already settled.
     let listenCallback:

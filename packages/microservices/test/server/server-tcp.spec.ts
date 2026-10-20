@@ -558,6 +558,27 @@ describe('ServerTCP', () => {
         expect(listen).toHaveBeenCalledOnce();
         expect(untypedServer.retryAttemptsCount).toBe(1);
       });
+
+      it('should count the attempts of each listen separately', () => {
+        // Burn the whole retry budget of the first listen()
+        server.handleClose();
+        vi.advanceTimersByTime(50);
+        server.handleClose();
+        vi.advanceTimersByTime(50);
+        expect(server.handleClose()).toBeUndefined();
+        expect(untypedServer.retryAttemptsCount).toBe(2);
+
+        // A new listen() starts a fresh window, so the connection can retry
+        // again instead of staying down because the counter kept its value.
+        const listeningServer: any = new EventEmitter();
+        listeningServer.listen = listen;
+        listeningServer.close = vi.fn();
+        untypedServer.server = listeningServer;
+        server.listen(() => {});
+
+        expect(server.handleClose()).toBeDefined();
+        expect(untypedServer.retryAttemptsCount).toBe(1);
+      });
     });
 
     describe('when is terminated', () => {
