@@ -499,6 +499,22 @@ describe('NodeRouter', () => {
       expect(finalHandler.mock.calls[0][0]).toBeInstanceOf(URIError);
       expect(finalHandler.mock.calls[1][0]).toBeInstanceOf(URIError);
     });
+
+    it('should report a request target it cannot route to onRejectedTarget, before the error handlers', () => {
+      const calls: string[] = [];
+      router.onRejectedTarget = req => calls.push(`rejected ${req.url}`);
+      router.use((err: unknown, req: any, res: any, next: Next) => {
+        calls.push(`error handler ${req.url}`);
+        next(err);
+      });
+      router.get('/:id', () => {});
+
+      dispatch('GET', '/%E0%A4%A');
+      dispatch('GET', '/ok');
+
+      expect(calls).toEqual(['rejected /%E0%A4%A', 'error handler /%E0%A4%A']);
+      expect(finalHandler.mock.calls[0][0]).toBeInstanceOf(URIError);
+    });
   });
 
   describe('hasMiddleware()', () => {

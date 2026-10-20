@@ -16,6 +16,7 @@ import {
   type CorsOptions,
   type CorsOptionsDelegate,
   type RouteInfo,
+  type SecurityRequestHook,
   type VersionValue,
   addLeadingSlash,
   isNil,
@@ -179,6 +180,25 @@ export class NodeAdapter extends AbstractHttpAdapter<
     ) => Promise<void> | void,
   ) {
     this.onResponseHook = onResponseHook;
+  }
+
+  /**
+   * Runs the hook as the first middleware (see
+   * `AbstractHttpAdapter.registerSecurityHook()`), and for the requests the
+   * router rejects before any middleware runs (a malformed URL, answered
+   * with a 400), for its headers, as the FastifyAdapter does for the errors
+   * its router answers itself.
+   */
+  public registerSecurityHook(hook: SecurityRequestHook<NodeRequest>) {
+    this.instance.onRejectedTarget = (req: NodeRequest, res: NodeResponse) => {
+      try {
+        hook(req, res);
+      } catch {
+        // The request is rejected either way, and a throw here would escape
+        // the router
+      }
+    };
+    return super.registerSecurityHook(hook);
   }
 
   public reply(response: NodeResponse, body: any, statusCode?: number) {

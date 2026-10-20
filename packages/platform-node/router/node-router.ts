@@ -123,6 +123,13 @@ export class NodeRouter {
   declare private stack: Layer[];
   declare private finalHandler: FinalHandler;
   declare private routeTableOptions: RouteTableOptions;
+  /**
+   * Called for a request whose target cannot be routed (a malformed URL,
+   * answered with a 400), before the error-handling middleware: no other
+   * middleware runs for such a request.
+   */
+  declare public onRejectedTarget:
+    ((req: NodeRequest, res: NodeResponse) => void) | undefined;
 
   constructor(finalHandler: FinalHandler, options: NodeRouterOptions = {}) {
     const { maxParamLength } = options;
@@ -407,6 +414,9 @@ export class NodeRouter {
           } catch (error) {
             // A malformed URL goes to the error handlers (400)
             cachedPath = '';
+            if (err === undefined) {
+              this.onRejectedTarget?.(req, res);
+            }
             err ??= error;
           }
         }

@@ -1608,6 +1608,59 @@ describe('NodeAdapter', () => {
     );
   });
 
+  describe('registerSecurityHook', () => {
+    // As Nest's exception layer does (see mapException), which answers the
+    // router's URIError with a 400
+    const answerRejectedWith400 = () =>
+      adapter.setErrorHandler(
+        (err: unknown, req: NodeRequest, res: NodeResponse, next: Next) => {
+          if (!(err instanceof URIError)) {
+            return next(err);
+          }
+          res.statusCode = 400;
+          res.end();
+        },
+      );
+
+    it('should run the hook as a middleware, and for the headers of a request the router rejects', async () => {
+      const port = await startServer();
+      const seen: string[] = [];
+      adapter.registerSecurityHook((req, res) => {
+        seen.push(req.url!);
+        res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+        return undefined;
+      });
+      adapter.get('/:id', (req: NodeRequest, res: NodeResponse) =>
+        res.end('ok'),
+      );
+      answerRejectedWith400();
+
+      const ok = await request(port, { path: '/1' });
+      const malformed = await request(port, { path: '/%E0%A4%A' });
+
+      expect(ok.status).toBe(200);
+      expect(ok.headers['x-frame-options']).toBe('SAMEORIGIN');
+      expect(malformed.status).toBe(400);
+      expect(malformed.headers['x-frame-options']).toBe('SAMEORIGIN');
+      expect(seen).toEqual(['/1', '/%E0%A4%A']);
+    });
+
+    it('should still answer a rejected request when the hook throws', async () => {
+      const port = await startServer();
+      adapter.registerSecurityHook(req => {
+        if (req.url!.includes('%')) {
+          throw new TypeError('cannot read the params of a rejected request');
+        }
+        return undefined;
+      });
+      answerRejectedWith400();
+
+      const res = await request(port, { path: '/%E0%A4%A' });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('createMiddlewareFactory', () => {
     // Routes passed to "forRoutes()" as plain strings carry no request method
     // (see RoutesMapper.getRouteInfoFromPath)
