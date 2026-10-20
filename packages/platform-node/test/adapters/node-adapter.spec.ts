@@ -6,6 +6,7 @@ import {
   NotFoundException,
   RequestMethod,
   StreamableFile,
+  UnauthorizedException,
   VERSION_NEUTRAL,
   type VersioningOptions,
   VersioningType,
@@ -496,6 +497,51 @@ describe('NodeAdapter', () => {
         expect(warn).not.toHaveBeenCalled();
       },
     );
+
+    it('should send a JSON Content-Type for error bodies without a "statusCode"', async () => {
+      const warn = vi
+        .spyOn((adapter as any).logger, 'warn')
+        .mockImplementation(() => {});
+      // A custom HttpException body, e.g. new HttpException({ ... }, 404)
+      const body = { status: 404, error: '<img src=x onerror=alert(1)>' };
+
+      const res = await replyWith(body, 404, response =>
+        response.setHeader('Content-Type', 'text/html'),
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.headers['content-type']).toBe(
+        'application/json; charset=utf-8',
+      );
+      expect(JSON.parse(res.text)).toEqual(body);
+      expect(warn).toHaveBeenCalledOnce();
+    });
+
+    it('should keep the Content-Type of a text body sent with an error status', async () => {
+      const res = await replyWith('<h1>Not found</h1>', 404, response =>
+        response.setHeader('Content-Type', 'text/html'),
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.headers['content-type']).toBe('text/html');
+      expect(res.text).toBe('<h1>Not found</h1>');
+    });
+
+    it('should send the standard body of the status for an Error body', async () => {
+      const error = Object.assign(new Error('invalid signature'), {
+        config: { headers: { authorization: 'Bearer secret' } },
+      });
+      const exception = new UnauthorizedException(error);
+
+      const res = await replyWith(exception.getResponse(), 401);
+
+      expect(res.status).toBe(401);
+      expect(JSON.parse(res.text)).toEqual({
+        statusCode: 401,
+        message: 'Unauthorized',
+      });
+      expect(res.text).not.toContain('secret');
+    });
 
     it('should send the Content-Length but no body in answer to HEAD requests', async () => {
       const body = { hello: 'świat' };

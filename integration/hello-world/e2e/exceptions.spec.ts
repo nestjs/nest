@@ -221,7 +221,7 @@ describe('Error messages', () => {
     let app: INestApplication;
     beforeEach(async () => {
       const module = await Test.createTestingModule({
-        controllers: [ErrorsController],
+        controllers: [ErrorsController, ErrorBodyController],
       }).compile();
 
       app = module.createNestApplication(new NodeAdapter());
@@ -269,6 +269,16 @@ describe('Error messages', () => {
         .expect({
           statusCode: 500,
           message: 'Internal server error',
+        });
+    });
+
+    it(`/GET (Unauthorized when the body of the HttpException is an Error)`, async () => {
+      return request(server)
+        .get('/error-body')
+        .expect(HttpStatus.UNAUTHORIZED)
+        .expect({
+          statusCode: 401,
+          message: 'Unauthorized',
         });
     });
 

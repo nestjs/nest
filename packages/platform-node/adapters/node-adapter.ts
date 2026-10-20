@@ -207,11 +207,27 @@ export class NodeAdapter extends AbstractHttpAdapter<
         .pipe<Writable>(response)
         .on('error', (err: Error) => body.errorLogger(err));
     }
+    // JSON.stringify() sends the enumerable properties of an Error, e.g. the
+    // request config of an HTTP client error
+    if (
+      body instanceof Error &&
+      response.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      body = {
+        statusCode: response.statusCode,
+        message: http.STATUS_CODES[response.statusCode] ?? 'Error',
+      };
+    }
     const responseContentType = response.getHeader('Content-Type');
     if (
       typeof responseContentType === 'string' &&
       !isJsonContentType(responseContentType) &&
-      body?.statusCode >= HttpStatus.BAD_REQUEST
+      (body?.statusCode >= HttpStatus.BAD_REQUEST ||
+        // A custom error body (e.g. "new HttpException({ ... }, 404)") need
+        // not have a "statusCode" of its own
+        (isObject(body) &&
+          !isNil(statusCode) &&
+          statusCode >= HttpStatus.BAD_REQUEST))
     ) {
       this.logger.warn(
         "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
