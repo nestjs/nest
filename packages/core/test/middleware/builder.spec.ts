@@ -273,5 +273,25 @@ describe('MiddlewareBuilder', () => {
         },
       ]);
     });
+
+    it('should also exclude the routes excluded from the global prefix that a route covers', () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['health', 'health/ready']),
+      });
+      builder = new MiddlewareBuilder(
+        new RoutesMapper(new NestContainer(), appConfig),
+        new NoopHttpAdapter({}),
+        new RouteInfoPathExtractor(appConfig),
+      );
+      const proxy: any = builder.apply().exclude('health/{*path}', 'health');
+
+      expect(proxy.getExcludedRoutes()).toEqual([
+        { path: '/api/health/{*path}', method: -1 },
+        { path: '/health/ready', method: -1 },
+        { path: '/health', method: -1 },
+      ]);
+    });
   });
 });

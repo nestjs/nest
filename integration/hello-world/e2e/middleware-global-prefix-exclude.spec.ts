@@ -152,3 +152,76 @@ describe.each([
     );
   },
 );
+
+@Controller('health')
+class ProbesController {
+  @Get()
+  live() {
+    return RETURN_VALUE;
+  }
+
+  @Get('ready')
+  ready() {
+    return RETURN_VALUE;
+  }
+}
+
+describe.each([
+  ['Express', () => undefined],
+  ['Fastify', () => new FastifyAdapter()],
+])(
+  'Middleware - exclusion covering routes excluded from the global prefix (%s)',
+  (_, createAdapter) => {
+    let app: INestApplication;
+
+    const createApp = async (exclusion: string, prefixExclusions: string[]) => {
+      @Module({
+        controllers: [ProbesController, ReportsController, UsersController],
+      })
+      class ProbesModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
+            .exclude(exclusion)
+            .forRoutes('{*path}');
+        }
+      }
+
+      app = (
+        await Test.createTestingModule({ imports: [ProbesModule] }).compile()
+      ).createNestApplication(createAdapter());
+      app.setGlobalPrefix('api', { exclude: prefixExclusions });
+      await listenOnLoopback(app);
+    };
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it.each(['health/{*path}', 'health/:check', 'health/(.*)'])(
+      `exclude('%s') should skip "/health/ready" excluded from the prefix`,
+      async exclusion => {
+        await createApp(exclusion, ['health', 'health/ready']);
+        await request(app.getHttpServer())
+          .get('/health/ready')
+          .expect(200, RETURN_VALUE);
+        await request(app.getHttpServer())
+          .get('/health')
+          .expect(200, MIDDLEWARE_VALUE);
+        await request(app.getHttpServer())
+          .get('/api/users/1')
+          .expect(200, MIDDLEWARE_VALUE);
+      },
+    );
+
+    it(`exclude('reports') should skip "/reports" excluded by a wildcard`, async () => {
+      await createApp('reports', ['reports/{*path}']);
+      await request(app.getHttpServer())
+        .get('/reports')
+        .expect(200, RETURN_VALUE);
+      await request(app.getHttpServer())
+        .get('/reports/1')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+  },
+);

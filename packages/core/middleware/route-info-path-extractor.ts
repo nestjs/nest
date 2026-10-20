@@ -135,6 +135,23 @@ export class RouteInfoPathExtractor {
   }
 
   /**
+   * Returns the routes that an exclusion (`MiddlewareConsumer.exclude()`, or
+   * the `exclude` option of the CSRF protection) skips, with the paths they
+   * are served at: the route itself and the routes excluded from the global
+   * prefix that it covers, which the router serves without the prefix (see
+   * `extractExcludedRoutesCoveredBy()`).
+   */
+  public extractExclusionsFrom(route: RouteInfo): RouteInfo[] {
+    return [route, ...this.extractExcludedRoutesCoveredBy(route)].flatMap(
+      excludedRoute =>
+        this.extractPathFrom(excludedRoute).map(path => ({
+          ...excludedRoute,
+          path,
+        })),
+    );
+  }
+
+  /**
    * Returns the paths the router serves a route excluded from the global
    * prefix at: those of its pattern and, for a pattern ending in an optional
    * segment such as "reports/{*path}", the parent path ("/reports") (see

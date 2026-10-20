@@ -278,11 +278,13 @@ export class CrossOriginProtection<TRequest = any> {
    * of `RouteInfo.version` (with another versioning type, only the requests
    * for that version are excluded). Called by `app.init()`, once the global
    * prefix and versioning are final; until then nothing is excluded.
+   * The routes excluded from the global prefix that a route covers are
+   * excluded too, at the paths the router serves them at.
    */
   public resolveExclusions(pathExtractor: RouteInfoPathExtractor): void {
     this.resolvedExclusions = this.excludedRoutes.flatMap(route =>
-      pathExtractor.extractPathFrom(route).map(path => {
-        const exclusion = compileExclusion(path, route.method, true);
+      pathExtractor.extractExclusionsFrom(route).map(({ path, method }) => {
+        const exclusion = compileExclusion(path, method, true);
         if (route.version) {
           exclusion.version = route.version;
         }

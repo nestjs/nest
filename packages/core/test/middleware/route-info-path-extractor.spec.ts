@@ -431,6 +431,95 @@ describe('RouteInfoPathExtractor', () => {
     });
   });
 
+  describe('extractExclusionsFrom', () => {
+    let routeInfoPathExtractor: RouteInfoPathExtractor;
+
+    beforeEach(() => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute([
+          'health',
+          'health/ready',
+          { path: 'webhooks/stripe', method: RequestMethod.POST },
+          'reports/{*path}',
+        ]),
+      });
+      routeInfoPathExtractor = new RouteInfoPathExtractor(appConfig);
+    });
+
+    it(`should also return the routes excluded from the global prefix that the route covers`, () => {
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom({
+          path: '/health/{*path}',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([
+        { path: '/api/health/{*path}', method: -1 },
+        { path: '/health/ready', method: -1 },
+      ]);
+
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom({
+          path: '/health/(.*)',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([
+        { path: '/api/health/(.*)', method: -1 },
+        { path: '/health/ready', method: -1 },
+      ]);
+
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom({
+          path: '/webhooks/:provider',
+          method: RequestMethod.ALL,
+        }),
+      ).toEqual([
+        { path: '/api/webhooks/:provider', method: RequestMethod.ALL },
+        { path: '/webhooks/stripe', method: RequestMethod.POST },
+      ]);
+    });
+
+    it(`should not return the excluded routes of another request method`, () => {
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom({
+          path: '/webhooks/:provider',
+          method: RequestMethod.GET,
+        }),
+      ).toEqual([
+        { path: '/api/webhooks/:provider', method: RequestMethod.GET },
+      ]);
+    });
+
+    it(`should return the root route of a controller excluded by an optional wildcard`, () => {
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom({
+          path: '/reports',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([
+        { path: '/api/reports', method: -1 },
+        { path: '/reports/', method: -1 },
+      ]);
+    });
+
+    it(`should only return the route itself when it is excluded or a wildcard`, () => {
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom({
+          path: '/health/ready',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([{ path: '/health/ready', method: -1 }]);
+
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom({
+          path: '/{*path}',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([{ path: '/{*path}', method: -1 }]);
+    });
+  });
+
   describe('extractPathsFrom with a route excluded by an optional wildcard', () => {
     it(`should also return the parent path of the excluded route`, () => {
       const appConfig = new ApplicationConfig();
