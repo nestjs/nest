@@ -215,6 +215,13 @@ export class FastifyAdapter<
     done: (err?: Error) => void,
   ) => void | Promise<void>;
   private securityHook?: SecurityRequestHook<TRequest>;
+  // The request hook `@fastify/cors` adds for `app.enableCors()`, which the
+  // constructor's hook runs (see `enableCors()`)
+  private corsHook?: (
+    request: TRequest,
+    reply: TReply,
+    done: (err?: Error) => void,
+  ) => void;
   private isMiddieRegistered: boolean;
   private multipartMode: 'auto' | 'eager' | 'off' = 'auto';
   private multipartOptions: FastifyMultipartOptions = {};
@@ -404,6 +411,21 @@ export class FastifyAdapter<
       } else {
         done();
       }
+    });
+
+    // The request hook of `app.enableCors()` (see `enableCors()`). Added here
+    // for the same reason as the hook above: it must run before Nest
+    // middleware, so that a preflight is answered before them and the
+    // responses they end carry the CORS headers, as on Express. Before the
+    // security hook, so that its responses carry them too.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (!this.corsHook) {
+        return done();
+      }
+      this.corsHook(request as TRequest, reply as TReply, (err?: Error) => {
+        this.copyCorsHeadersToRaw(reply as TReply);
+        done(err);
+      });
     });
 
     // The request hook of `app.enableCsrfProtection()` and
@@ -1035,12 +1057,84 @@ export class FastifyAdapter<
   }
 
   public enableCors(options?: FastifyCorsOptions) {
-    this.register(
-      import('@fastify/cors') as unknown as Parameters<
-        TInstance['register']
-      >[0],
-      options,
-    );
+    const hook = options?.hook;
+    if (hook && hook !== 'onRequest') {
+      // A later hook runs after Nest middleware wherever it is added
+      this.register(
+        import('@fastify/cors') as unknown as Parameters<
+          TInstance['register']
+        >[0],
+        options,
+      );
+      return;
+    }
+    const registerCors = async (instance: TInstance) => {
+      const { default: fastifyCors } = await import('@fastify/cors');
+      // `@fastify/cors` adds its request hook to the instance it is given,
+      // which would run after middie: the hook is kept so that the hook added
+      // in the constructor runs it instead
+      const corsInstance = new Proxy(instance, {
+        get: (target, prop) => {
+          if (prop === 'addHook') {
+            return (
+              name: string,
+              hookFn: NonNullable<typeof this.corsHook>,
+            ) => {
+              if (name === 'onRequest' && !this.corsHook) {
+                this.corsHook = hookFn;
+                return corsInstance;
+              }
+              return (target.addHook as Function).call(target, name, hookFn);
+            };
+          }
+          const value = Reflect.get(target, prop, target);
+          return isFunction(value) ? value.bind(target) : value;
+        },
+      });
+      // As `register()` would, call a function that takes the instance for
+      // the options; one that takes `(request, callback)` is the options
+      // delegate of `@fastify/cors` (and the `cors` option)
+      const corsOptions =
+        isFunction(options) && (options as Function).length < 2
+          ? (options as Function)(instance)
+          : options;
+      await new Promise<void>((resolve, reject) =>
+        (fastifyCors as unknown as FastifyPluginCallback<FastifyCorsOptions>)(
+          corsInstance as unknown as FastifyInstance,
+          corsOptions ?? {},
+          err => (err ? reject(err) : resolve()),
+        ),
+      );
+    };
+    // Like `fastify-plugin`: register on the root context, not a child one.
+    Object.assign(registerCors, {
+      [Symbol.for('skip-override')]: true,
+      [Symbol.for('fastify.display-name')]: 'nestjs-cors',
+    });
+    this.instance.register(registerCors as any);
+  }
+
+  /**
+   * Copies the headers `@fastify/cors` set on the reply to the Node.js
+   * response, so that a response a middleware ends itself, or the error
+   * response of a middleware that throws (sent through a new reply), carries
+   * them too. Fastify merges them into the response it sends, in which the
+   * reply's own values win.
+   */
+  private copyCorsHeadersToRaw(reply: TReply) {
+    if (reply.raw.headersSent) {
+      return;
+    }
+    const headers = reply.getHeaders();
+    for (const name of Object.keys(headers)) {
+      const value = headers[name];
+      if (
+        !isUndefined(value) &&
+        (name === 'vary' || name.startsWith('access-control-'))
+      ) {
+        reply.raw.setHeader(name, value);
+      }
+    }
   }
 
   /**
