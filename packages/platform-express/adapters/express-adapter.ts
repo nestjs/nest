@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   HttpStatus,
   InternalServerErrorException,
   Logger,
@@ -675,6 +676,20 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       // encoding, e.g. '%FF' (#8915)
       case error instanceof SyntaxError || error instanceof URIError:
         return new BadRequestException(error.message);
+      // http-errors (used by body-parser, Express itself, etc.) carry a numeric statusCode
+      // and an expose flag. Without this case, errors like PayloadTooLargeError reach custom
+      // exception filters as a raw http-errors instance rather than an HttpException, so a
+      // @Catch(HttpException) filter never runs and a catch-all filter reports 500 (#18213).
+      case isHttpError(error):
+        return new HttpException(
+          // An error that must not reach the client only gets a status text,
+          // like the built-in exception filter answers it
+          error.expose === false
+            ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
+            : error.message,
+          error.statusCode,
+          { cause: error },
+        );
       default:
         return error;
     }
@@ -733,4 +748,20 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     );
     this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
   }
+}
+
+/**
+ * Returns true when `err` is an "http-errors"-shaped error (body-parser, Express, etc.).
+ * Mirrors the same check in BaseExceptionFilter.isHttpError().
+ */
+function isHttpError(
+  err: unknown,
+): err is { statusCode: number; message: string; expose: boolean } {
+  return (
+    isObject(err) &&
+    err instanceof Error &&
+    typeof (err as any).expose === 'boolean' &&
+    typeof (err as any).statusCode === 'number' &&
+    (err as any).status === (err as any).statusCode
+  );
 }

@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  HttpException,
   RequestMethod,
   StreamableFile,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
+import createHttpError from 'http-errors';
 import { PassThrough, Readable, Writable } from 'stream';
 
 describe('ExpressAdapter', () => {
@@ -528,5 +530,27 @@ describe('ExpressAdapter', () => {
       const result = expressAdapter.mapException(error);
       expect(result).toBe(error);
     });
+
+    it('should map an http-errors error to an HttpException with its status', () => {
+      const error = createHttpError(413, 'request entity too large');
+      const result = expressAdapter.mapException(error) as HttpException;
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.getStatus()).toBe(413);
+      expect(result.getResponse()).toBe('request entity too large');
+      expect(result.cause).toBe(error);
+    });
+
+    it.each([
+      [500, 'Internal Server Error'],
+      [599, 'Internal server error'],
+    ])(
+      'should not expose the message of an http-errors error with status %i',
+      (status, message) => {
+        const error = createHttpError(status, 'internal detail');
+        const result = expressAdapter.mapException(error) as HttpException;
+        expect(result.getStatus()).toBe(status);
+        expect(result.getResponse()).toBe(message);
+      },
+    );
   });
 });
