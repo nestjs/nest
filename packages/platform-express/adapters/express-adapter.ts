@@ -425,10 +425,20 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         if (isExactPath && router === this.instance.use) {
           router = this.instance.all;
         }
-        // Express routes are not strict, so "/api" also matches "/api/", which
-        // the wildcard path registered next to it may match too ("/api/{*path}"
-        // does, "/api/*path" does not). The core runs the middleware for the
-        // first of its paths that matches a request only.
+        // Express routes are not strict by default, so "/api" also matches
+        // "/api/", which the wildcard path registered next to it may match too
+        // ("/api/{*path}" does, "/api/*path" does not). The core runs the
+        // middleware for the first of its paths that matches a request only.
+        // With "strict routing", the router serves a route the core passes
+        // with a trailing slash (the root route of a controller, "/users/")
+        // without it ("/users"), so the path is registered without it too.
+        if (
+          this.instance.router?.strict &&
+          convertedPath.length > 1 &&
+          convertedPath.endsWith('/')
+        ) {
+          router.call(this.instance, stripEndSlash(convertedPath), callback);
+        }
         return router.call(this.instance, convertedPath, callback);
       } catch (e) {
         if (e instanceof TypeError) {
