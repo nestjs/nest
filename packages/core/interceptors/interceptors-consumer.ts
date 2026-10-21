@@ -1,6 +1,6 @@
 import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
-import { Observable, defer, from } from 'rxjs';
+import { Observable, defer, from, isObservable } from 'rxjs';
 import { mergeAll } from 'rxjs/operators';
 import { destroyStreamableFile } from '../helpers/destroy-streamable-file.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
@@ -68,8 +68,9 @@ export class InterceptorsConsumer {
             destroyStreamableFile(res);
             return;
           }
-          const isDeferred =
-            res instanceof Promise || res instanceof Observable;
+          // "isObservable()" also recognises Observables created by another copy
+          // of rxjs, which are not instances of the "Observable" class imported here
+          const isDeferred = res instanceof Promise || isObservable(res);
           innerSub = from(isDeferred ? res : Promise.resolve(res)).subscribe(
             subscriber,
           );
