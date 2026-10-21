@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, Logger } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import createHttpError from 'http-errors';
 import { of, throwError } from 'rxjs';
@@ -185,6 +185,56 @@ describe('ExceptionsHandler', () => {
           statusCode: 502,
           message: 'Bad Gateway',
         });
+      });
+    });
+    describe('when exception is an HttpException mapped from an "http-errors" error', () => {
+      let errorSpy: ReturnType<typeof vi.spyOn>;
+      beforeEach(() => {
+        errorSpy = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+      });
+      afterEach(() => errorSpy.mockRestore());
+
+      it('should log the cause of a 5xx one', () => {
+        // What the Express adapter's mapException() returns for an error that
+        // "send" passes to next() (e.g. EACCES)
+        const cause = createHttpError(
+          500,
+          new Error("EACCES: permission denied, open '/srv/files/a'"),
+          { expose: false },
+        );
+        handler.next(
+          new HttpException('Internal Server Error', 500, { cause }),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(500);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 500,
+          message: 'Internal Server Error',
+        });
+        expect(errorSpy).toHaveBeenCalledWith(cause);
+      });
+      it('should not log a 4xx one', () => {
+        const cause = new createHttpError.PayloadTooLarge(
+          'request entity too large',
+        );
+        handler.next(
+          new HttpException(cause.message, 413, { cause }),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(413);
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+      it('should not log a 5xx HttpException without such a cause', () => {
+        handler.next(
+          new HttpException('Bad Gateway', 502, { cause: new Error('x') }),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(errorSpy).not.toHaveBeenCalled();
       });
     });
     describe('when exception is an instance of HttpException', () => {

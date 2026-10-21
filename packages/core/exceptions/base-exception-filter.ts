@@ -49,6 +49,12 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     } else {
       applicationRef.end(response);
     }
+
+    // A 5xx "http-errors" error mapped by the adapter (e.g. EACCES from "send")
+    // is a server fault, so it is logged as it was before the mapping
+    if (exception.getStatus() >= 500 && this.isHttpError(exception.cause)) {
+      BaseExceptionFilter.logger.error(exception.cause);
+    }
   }
 
   public handleUnknownError(
