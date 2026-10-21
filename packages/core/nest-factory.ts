@@ -26,9 +26,11 @@ import { DependenciesScanner } from './scanner.js';
 import {
   type NestMicroserviceOptions,
   type NestApplicationContextOptions,
+  type SelectOptions,
   loadPackage,
   isFunction,
   isNil,
+  isObject,
 } from '@nestjs/common/internal';
 import {
   type NestApplicationOptions,
@@ -266,21 +268,21 @@ export class NestFactoryStatic {
     rethrow(err);
   }
 
-  private createProxy(target: any) {
-    const proxy = this.createExceptionProxy();
+  private createProxy(target: any, abortOnError?: boolean) {
+    const proxy = this.createExceptionProxy(abortOnError);
     return new Proxy(target, {
       get: proxy,
       set: proxy,
     });
   }
 
-  private createExceptionProxy() {
+  private createExceptionProxy(abortOnError?: boolean) {
     return (receiver: Record<string, any>, prop: string) => {
       if (!(prop in receiver)) {
         return;
       }
       if (isFunction(receiver[prop])) {
-        return this.createExceptionZone(receiver, prop);
+        return this.createExceptionZone(receiver, prop, abortOnError);
       }
       return receiver[prop];
     };
@@ -289,10 +291,17 @@ export class NestFactoryStatic {
   private createExceptionZone(
     receiver: Record<string, any>,
     prop: string,
+    abortOnError?: boolean,
   ): Function {
-    const teardown = this.abortOnError === false ? rethrow : undefined;
-
     return (...args: unknown[]) => {
+      const selectOptions =
+        prop === 'select' ? (args[1] as SelectOptions | undefined) : undefined;
+      const contextAbortOnError = selectOptions?.abortOnError ?? abortOnError;
+      const teardown =
+        (contextAbortOnError ?? this.abortOnError) === false
+          ? rethrow
+          : undefined;
+
       let result: unknown;
       ExceptionsZone.run(
         () => {
@@ -302,6 +311,13 @@ export class NestFactoryStatic {
         this.autoFlushLogs,
       );
 
+      if (
+        prop === 'select' &&
+        contextAbortOnError !== undefined &&
+        isObject(result)
+      ) {
+        return this.createProxy(result, contextAbortOnError);
+      }
       return result;
     };
   }
