@@ -101,9 +101,35 @@ describe('StreamableFile', () => {
         expect(res.send).not.toHaveBeenCalled();
       });
 
-      it('should call res.end() when headers are already sent', () => {
+      it('should log the error and destroy the response when headers are already sent', () => {
         const stream = new Readable();
-        const streamableFile = new StreamableFile(stream);
+        const errorLogger = vi.fn();
+        const streamableFile = new StreamableFile(stream).setErrorLogger(
+          errorLogger,
+        );
+        const res = {
+          destroyed: false,
+          headersSent: true,
+          statusCode: 200,
+          end: vi.fn(),
+          send: vi.fn(),
+          destroy: vi.fn(),
+        };
+        const error = new Error('EIO: i/o error, read');
+
+        streamableFile.errorHandler(error, res as any);
+
+        expect(errorLogger).toHaveBeenCalledWith(error);
+        expect(res.destroy).toHaveBeenCalledOnce();
+        expect(res.end).not.toHaveBeenCalled();
+        expect(res.send).not.toHaveBeenCalled();
+      });
+
+      it('should call res.end() when headers are already sent and the response has no destroy()', () => {
+        const stream = new Readable();
+        const streamableFile = new StreamableFile(stream).setErrorLogger(
+          vi.fn(),
+        );
         const res = {
           destroyed: false,
           headersSent: true,

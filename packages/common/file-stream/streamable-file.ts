@@ -25,7 +25,13 @@ export class StreamableFile {
       return;
     }
     if (res.headersSent) {
-      res.end();
+      // Ending the response would make the truncated file look complete.
+      this.logError(err);
+      if (isFunction(res.destroy)) {
+        res.destroy();
+      } else {
+        res.end();
+      }
       return;
     }
 
