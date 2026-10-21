@@ -44,10 +44,7 @@ import {
  * @publicApi
  */
 export type IEntryNestModule =
-  | Type<any>
-  | DynamicModule
-  | ForwardReference
-  | Promise<IEntryNestModule>;
+  Type<any> | DynamicModule | ForwardReference | Promise<IEntryNestModule>;
 
 /**
  * @publicApi
@@ -297,8 +294,10 @@ export class NestFactoryStatic {
       const selectOptions =
         prop === 'select' ? (args[1] as SelectOptions | undefined) : undefined;
       const contextAbortOnError = selectOptions?.abortOnError ?? abortOnError;
+      // The option the app was created with: "this.abortOnError" belongs to
+      // the last app NestFactory created
       const teardown =
-        (contextAbortOnError ?? this.abortOnError) === false
+        (contextAbortOnError ?? receiver.appOptions?.abortOnError) === false
           ? rethrow
           : undefined;
 
@@ -384,7 +383,12 @@ export class NestFactoryStatic {
 
         if (!(prop in receiver) && prop in adapter) {
           return (...args: unknown[]) => {
-            const result = this.createExceptionZone(adapter, prop)(...args);
+            const result = this.createExceptionZone(
+              adapter,
+              prop,
+              // The adapter has no options of its own
+              receiver.appOptions?.abortOnError,
+            )(...args);
             return mapToProxy(result);
           };
         }
