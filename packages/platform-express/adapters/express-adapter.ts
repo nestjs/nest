@@ -682,8 +682,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       // @Catch(HttpException) filter never runs and a catch-all filter reports 500 (#18213).
       case isHttpError(error):
         return new HttpException(
+          // An error that must not reach the client only gets a status text,
+          // like the built-in exception filter answers it
           error.expose === false
-            ? (http.STATUS_CODES[error.statusCode] ?? error.message)
+            ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
             : error.message,
           error.statusCode,
           { cause: error },
