@@ -503,6 +503,22 @@ describe('RouteInfoPathExtractor', () => {
       ]);
     });
 
+    it(`should match the excluded routes case-sensitively unless told otherwise`, () => {
+      const route = { path: '/HEALTH/:check', method: -1 as RequestMethod };
+
+      expect(routeInfoPathExtractor.extractExclusionsFrom(route)).toEqual([
+        { path: '/api/HEALTH/:check', method: -1 },
+      ]);
+      expect(
+        routeInfoPathExtractor.extractExclusionsFrom(route, {
+          caseSensitive: false,
+        }),
+      ).toEqual([
+        { path: '/api/HEALTH/:check', method: -1 },
+        { path: '/health/ready', method: -1 },
+      ]);
+    });
+
     it(`should only return the route itself when it is excluded or a wildcard`, () => {
       expect(
         routeInfoPathExtractor.extractExclusionsFrom({

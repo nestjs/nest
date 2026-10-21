@@ -143,15 +143,16 @@ export class RouteInfoPathExtractor {
    * the `exclude` option of the CSRF protection) skips, with the paths they
    * are served at: the route itself and the routes excluded from the global
    * prefix that it covers, which the router serves without the prefix (see
-   * `extractExcludedRoutesCoveredBy()`).
+   * `extractExcludedRoutesCoveredBy()`). Exclusions match case-sensitively
+   * unless told otherwise, as matching too much skips the middleware.
    */
   public extractExclusionsFrom(
     route: RouteInfo,
-    options: { caseSensitive?: boolean } = {},
+    { caseSensitive = true }: { caseSensitive?: boolean } = {},
   ): RouteInfo[] {
     return [
       route,
-      ...this.extractExcludedRoutesCoveredBy(route, options),
+      ...this.extractExcludedRoutesCoveredBy(route, { caseSensitive }),
     ].flatMap(excludedRoute =>
       this.extractPathFrom(excludedRoute).map(path => ({
         ...excludedRoute,
