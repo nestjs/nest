@@ -473,6 +473,36 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(protection, '/api/health')).toBe(false);
     });
 
+    it('also excludes the routes excluded from the global prefix that a route covers', () => {
+      const protection = createProtection(['webhooks/*path'], config => {
+        config.setGlobalPrefix('api');
+        config.setGlobalPrefixOptions({
+          exclude: mapToExcludeRoute([
+            { path: 'webhooks/stripe', method: RequestMethod.POST },
+          ]),
+        });
+      });
+      expect(isExcluded(protection, '/webhooks/stripe')).toBe(true);
+      expect(isExcluded(protection, '/webhooks/stripe', 'PUT')).toBe(false);
+      expect(isExcluded(protection, '/webhooks/github')).toBe(false);
+      expect(isExcluded(protection, '/api/webhooks/github')).toBe(true);
+    });
+
+    it('matches the routes excluded from the global prefix case-sensitively', () => {
+      const protection = createProtection(
+        [{ path: 'WEBHOOKS/*path', method: RequestMethod.POST }],
+        config => {
+          config.setGlobalPrefix('api');
+          config.setGlobalPrefixOptions({
+            exclude: mapToExcludeRoute(['webhooks/stripe']),
+          });
+        },
+      );
+      expect(isExcluded(protection, '/webhooks/stripe')).toBe(false);
+      expect(isExcluded(protection, '/api/webhooks/github')).toBe(false);
+      expect(isExcluded(protection, '/api/WEBHOOKS/github')).toBe(true);
+    });
+
     it('adds the version segment of RouteInfo.version (URI versioning)', () => {
       const protection = createProtection(
         [{ path: 'webhooks', method: RequestMethod.POST, version: '1' }],
