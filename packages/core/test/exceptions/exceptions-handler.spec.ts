@@ -1,4 +1,9 @@
-import { HttpException, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  HttpException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import createHttpError from 'http-errors';
 import { of, throwError } from 'rxjs';
@@ -234,6 +239,29 @@ describe('ExceptionsHandler', () => {
           new ExecutionContextHost([0, response]),
         );
 
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+      it('should not log a user-thrown 5xx whose cause is a Nest error body', () => {
+        // e.g. the error body of another Nest service, kept as the cause
+        handler.next(
+          new BadGatewayException('Upstream failed', {
+            cause: { statusCode: 404, message: 'User not found' },
+          }),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(502);
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+      it('should not log a user-thrown 5xx whose cause is a 4xx "http-errors" error', () => {
+        handler.next(
+          new InternalServerErrorException('Oops', {
+            cause: createHttpError(404),
+          }),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(500);
         expect(errorSpy).not.toHaveBeenCalled();
       });
     });

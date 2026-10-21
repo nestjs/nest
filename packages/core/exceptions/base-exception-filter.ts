@@ -50,9 +50,10 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       applicationRef.end(response);
     }
 
-    // A 5xx "http-errors" error mapped by the adapter (e.g. EACCES from "send")
-    // is a server fault, so it is logged as it was before the mapping
-    if (exception.getStatus() >= 500 && this.isHttpError(exception.cause)) {
+    // The Express adapter wraps "http-errors" errors (e.g. EACCES from "send")
+    // in an HttpException with the same status. A 5xx one is a server fault,
+    // so its cause is logged like an unknown error
+    if (this.isServerFaultHttpErrorCause(exception)) {
       BaseExceptionFilter.logger.error(exception.cause);
     }
   }
@@ -134,6 +135,18 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       err.statusCode < 600 &&
       typeof err.message === 'string' &&
       err.message !== ''
+    );
+  }
+
+  private isServerFaultHttpErrorCause(exception: HttpException): boolean {
+    const cause = exception.cause as { expose?: unknown; statusCode?: unknown };
+    const status = exception.getStatus();
+    return (
+      status >= 500 &&
+      cause instanceof Error &&
+      typeof cause.expose === 'boolean' &&
+      cause.statusCode === status &&
+      this.isHttpError(cause)
     );
   }
 }
