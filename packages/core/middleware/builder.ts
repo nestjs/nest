@@ -62,7 +62,11 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       this.excludedRoutes = [
         ...this.excludedRoutes,
         ...this.getRoutesFlatList(routes).flatMap(route =>
-          this.routeInfoPathExtractor.extractExclusionsFrom(route),
+          this.routeInfoPathExtractor.extractExclusionsFrom(route, {
+            caseSensitive:
+              this.builder.getHttpAdapter().getRouteMatchingOptions?.()
+                ?.caseSensitive ?? true,
+          }),
         ),
       ];
 

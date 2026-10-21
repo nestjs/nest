@@ -283,13 +283,15 @@ export class CrossOriginProtection<TRequest = any> {
    */
   public resolveExclusions(pathExtractor: RouteInfoPathExtractor): void {
     this.resolvedExclusions = this.excludedRoutes.flatMap(route =>
-      pathExtractor.extractExclusionsFrom(route).map(({ path, method }) => {
-        const exclusion = compileExclusion(path, method, true);
-        if (route.version) {
-          exclusion.version = route.version;
-        }
-        return exclusion;
-      }),
+      pathExtractor
+        .extractExclusionsFrom(route, { caseSensitive: true })
+        .map(({ path, method }) => {
+          const exclusion = compileExclusion(path, method, true);
+          if (route.version) {
+            exclusion.version = route.version;
+          }
+          return exclusion;
+        }),
     );
     this.ignoreTrailingSlash =
       !!this.httpAdapter.getRouteMatchingOptions?.()?.ignoreTrailingSlash;
