@@ -274,3 +274,82 @@ for (const [name, createAdapter] of [
     });
   });
 }
+
+@Controller('health')
+class ProbesController {
+  @Get()
+  live() {
+    return RETURN_VALUE;
+  }
+
+  @Get('ready')
+  ready() {
+    return RETURN_VALUE;
+  }
+}
+
+for (const [name, createAdapter] of [
+  ['Express', () => undefined],
+  ['Fastify', () => new FastifyAdapter()],
+] as const) {
+  describe(`Middleware - exclusion covering routes excluded from the global prefix (${name})`, () => {
+    let app: INestApplication;
+
+    const createApp = async (exclusion: string, prefixExclusions: string[]) => {
+      @Module({
+        controllers: [ProbesController, ReportsController, UsersController],
+      })
+      class ProbesModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
+            .exclude(exclusion)
+            .forRoutes('{*path}');
+        }
+      }
+
+      const testingModule = await Test.createTestingModule({
+        imports: [ProbesModule],
+      }).compile();
+      const adapter = createAdapter();
+      app = adapter
+        ? testingModule.createNestApplication(adapter)
+        : testingModule.createNestApplication();
+      app.setGlobalPrefix('api', { exclude: prefixExclusions });
+      await app.listen(0, '127.0.0.1');
+    };
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    for (const exclusion of [
+      'health/{*path}',
+      'health/:check',
+      'health/(.*)',
+    ]) {
+      it(`exclude('${exclusion}') should skip "/health/ready" excluded from the prefix`, async () => {
+        await createApp(exclusion, ['health', 'health/ready']);
+        await request(app.getHttpServer())
+          .get('/health/ready')
+          .expect(200, RETURN_VALUE);
+        await request(app.getHttpServer())
+          .get('/health')
+          .expect(200, MIDDLEWARE_VALUE);
+        await request(app.getHttpServer())
+          .get('/api/users/1')
+          .expect(200, MIDDLEWARE_VALUE);
+      });
+    }
+
+    it(`exclude('reports') should skip "/reports" excluded by a wildcard`, async () => {
+      await createApp('reports', ['reports/{*path}']);
+      await request(app.getHttpServer())
+        .get('/reports')
+        .expect(200, RETURN_VALUE);
+      await request(app.getHttpServer())
+        .get('/reports/1')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+  });
+}
