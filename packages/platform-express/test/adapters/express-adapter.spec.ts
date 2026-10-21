@@ -486,6 +486,17 @@ describe('ExpressAdapter', () => {
           expect(reads).toBeLessThan(chunkCount);
         });
 
+        it('should end the response when the source has no data', async () => {
+          const file = new StreamableFile(Buffer.alloc(0));
+          await new Promise(resolve => setImmediate(resolve));
+          const response = createHeadResponse();
+
+          expressAdapter.reply(response, file);
+
+          await new Promise(resolve => response.once('finish', resolve));
+          expect(response.writableEnded).toBe(true);
+        });
+
         it('should leave an error opening the source to the error handler', async () => {
           const errorHandler = vi.fn();
           const source = new Readable({
