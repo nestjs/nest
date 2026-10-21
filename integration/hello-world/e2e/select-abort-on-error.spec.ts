@@ -111,4 +111,16 @@ describe('select() with abortOnError', () => {
     expect(exit).not.toHaveBeenCalled();
     await other.close();
   });
+
+  it('should throw instead of exiting when a method of the adapter fails with abortOnError set to false', async () => {
+    app = await NestFactory.create(AppModule, {
+      abortOnError: false,
+      logger: false,
+    });
+
+    expect(() => (app as any).setHeader(undefined, 'name', 'value')).toThrow(
+      TypeError,
+    );
+    expect(exit).not.toHaveBeenCalled();
+  });
 });

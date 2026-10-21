@@ -44,10 +44,7 @@ import {
  * @publicApi
  */
 export type IEntryNestModule =
-  | Type<any>
-  | DynamicModule
-  | ForwardReference
-  | Promise<IEntryNestModule>;
+  Type<any> | DynamicModule | ForwardReference | Promise<IEntryNestModule>;
 
 /**
  * @publicApi
@@ -386,7 +383,12 @@ export class NestFactoryStatic {
 
         if (!(prop in receiver) && prop in adapter) {
           return (...args: unknown[]) => {
-            const result = this.createExceptionZone(adapter, prop)(...args);
+            const result = this.createExceptionZone(
+              adapter,
+              prop,
+              // The adapter has no options of its own
+              receiver.appOptions?.abortOnError,
+            )(...args);
             return mapToProxy(result);
           };
         }
