@@ -97,4 +97,18 @@ describe('select() with abortOnError', () => {
     );
     expect(exit).not.toHaveBeenCalled();
   });
+
+  it('should keep the abortOnError of the application when another one is created', async () => {
+    app = await NestFactory.create(AppModule, {
+      abortOnError: false,
+      logger: false,
+    });
+    const other = await NestFactory.createApplicationContext(AppModule, {
+      logger: false,
+    });
+
+    expect(() => app.get('missing')).toThrow(UnknownElementException);
+    expect(exit).not.toHaveBeenCalled();
+    await other.close();
+  });
 });

@@ -297,8 +297,10 @@ export class NestFactoryStatic {
       const selectOptions =
         prop === 'select' ? (args[1] as SelectOptions | undefined) : undefined;
       const contextAbortOnError = selectOptions?.abortOnError ?? abortOnError;
+      // The option the app was created with: "this.abortOnError" belongs to
+      // the last app NestFactory created
       const teardown =
-        (contextAbortOnError ?? this.abortOnError) === false
+        (contextAbortOnError ?? receiver.appOptions?.abortOnError) === false
           ? rethrow
           : undefined;
 
