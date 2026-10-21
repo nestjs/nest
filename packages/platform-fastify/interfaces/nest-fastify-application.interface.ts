@@ -3,7 +3,6 @@ import type { HttpServer, INestApplication } from '@nestjs/common';
 import {
   FastifyBodyParser,
   FastifyInstance,
-  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyPluginOptions,
@@ -20,6 +19,7 @@ import {
 } from 'light-my-request';
 import { FastifyStaticOptions, FastifyViewOptions } from './external/index.js';
 import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options.interface.js';
+import { NestFastifyListenOptions } from './nest-fastify-listen-options.interface.js';
 
 /**
  * @publicApi
@@ -103,10 +103,10 @@ export interface NestFastifyApplication<
    * @returns A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
   listen(
-    opts: FastifyListenOptions,
+    opts: NestFastifyListenOptions,
     callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
-  listen(opts?: FastifyListenOptions): Promise<TServer>;
+  listen(opts?: NestFastifyListenOptions): Promise<TServer>;
   listen(
     callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;

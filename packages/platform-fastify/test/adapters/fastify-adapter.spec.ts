@@ -1615,6 +1615,15 @@ describe('FastifyAdapter', () => {
       expect(listen).toHaveBeenCalledWith({ port: 3000 }, undefined);
     });
 
+    it('should keep an options object with a file descriptor as it is', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+
+      fastifyAdapter.listen({ fd: 3 }, callback);
+
+      expect(listen).toHaveBeenCalledWith({ fd: 3 }, callback);
+    });
+
     it('should keep a number as a port', () => {
       const listen = spyOnListen();
 
