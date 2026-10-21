@@ -226,7 +226,7 @@ describe('Server', () => {
         ]);
       });
 
-      it('should not answer again when an error reply cannot be published', async () => {
+      it('should answer with an internal server error when an error reply cannot be published', async () => {
         sendSpy = vi
           .fn()
           .mockRejectedValueOnce(new Error('publish failed'))
@@ -239,8 +239,27 @@ describe('Server', () => {
         await flush();
 
         expect(loggerErrorSpy).toHaveBeenCalledOnce();
-        expect(sendSpy).toHaveBeenCalledExactlyOnceWith({
-          err: { id: 1n },
+        expect(sendSpy.mock.calls).toEqual([
+          [{ err: { id: 1n }, isDisposed: true }],
+          [
+            {
+              err: { status: 'error', message: 'Internal server error' },
+              isDisposed: true,
+            },
+          ],
+        ]);
+      });
+
+      it('should answer only once when the internal server error cannot be published either', async () => {
+        sendSpy = vi.fn().mockRejectedValue(new Error('publish failed'));
+
+        server.send(of('test'), sendSpy);
+        await flush();
+
+        expect(loggerErrorSpy).toHaveBeenCalledTimes(2);
+        expect(sendSpy).toHaveBeenCalledTimes(2);
+        expect(sendSpy).toHaveBeenLastCalledWith({
+          err: { status: 'error', message: 'Internal server error' },
           isDisposed: true,
         });
       });

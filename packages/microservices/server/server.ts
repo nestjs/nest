@@ -203,6 +203,9 @@ export abstract class Server<
     // shift() would move all the packets queued behind the one it removes
     let nextIndex = 0;
     let isProcessing = false;
+    // The requester is answered with an error in place of a final reply that
+    // cannot be published only once, as that error may fail to publish too
+    let isFallbackQueued = false;
     const scheduleOnNextTick = (data: WritePacket) => {
       if (data.isDisposed && dataQueue.length > nextIndex) {
         dataQueue[dataQueue.length - 1].isDisposed = true;
@@ -221,7 +224,8 @@ export abstract class Server<
               // unhandled rejection nor stop the replies queued behind it.
               // When it was the last one, the requester still gets an error.
               this.logger.error(err);
-              if (packet.isDisposed && !packet.err) {
+              if (packet.isDisposed && !isFallbackQueued) {
+                isFallbackQueued = true;
                 dataQueue.push({
                   err: {
                     status: 'error',
