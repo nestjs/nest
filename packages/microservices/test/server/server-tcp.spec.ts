@@ -579,6 +579,28 @@ describe('ServerTCP', () => {
         expect(server.handleClose()).toBeDefined();
         expect(untypedServer.retryAttemptsCount).toBe(1);
       });
+
+      it('should not charge a new listen to the retry of the session before it', () => {
+        // The session that just ended armed a retry that is still pending
+        server.handleClose();
+        expect(untypedServer.retryTimer).toBeDefined();
+        const staleTimer = untypedServer.retryTimer;
+
+        // A new listen() must not inherit that timer: while it is pending,
+        // "handleClose" returns it instead of arming the new session's own
+        // retry, so the fresh attempt is charged to the old window.
+        const listeningServer: any = new EventEmitter();
+        listeningServer.listen = listen;
+        listeningServer.close = vi.fn();
+        untypedServer.server = listeningServer;
+        server.listen(() => {});
+
+        const retry = server.handleClose();
+        expect(retry).toBeDefined();
+        expect(retry).not.toBe(staleTimer);
+        // The new session counts its own first attempt.
+        expect(untypedServer.retryAttemptsCount).toBe(1);
+      });
     });
 
     describe('when is terminated', () => {
