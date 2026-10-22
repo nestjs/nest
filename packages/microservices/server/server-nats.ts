@@ -180,6 +180,13 @@ export class ServerNats<
       // it, so a message handler subscribed to such a subject answers it.
       return this.handleEvent(channel, message, natsCtx);
     }
+    if (
+      channel !== callerSubject &&
+      this.isAnsweredByOwnMessageHandler(callerSubject, handler)
+    ) {
+      // The message handler subscribed to the subject itself answers it alone
+      return;
+    }
     return this.onProcessingStartHook(this.transportId, natsCtx, async () => {
       const response$ = this.transformToObservable(
         await handler(message.data, natsCtx),
@@ -205,6 +212,25 @@ export class ServerNats<
         (isUndefined(eventQueue) ||
           (handler.extras?.queue ?? defaultQueue) !== eventQueue) &&
         this.matchNatsSubject(pattern, subject),
+    );
+  }
+
+  /**
+   * Whether a message handler subscribed to the subject itself receives a
+   * request published to it as well, as it does unless it shares a queue
+   * group with the given handler.
+   */
+  private isAnsweredByOwnMessageHandler(
+    subject: string,
+    wildcardHandler: MessageHandler,
+  ) {
+    const defaultQueue = this.getOptionsProp(this.options, 'queue');
+    const queue = wildcardHandler.extras?.queue ?? defaultQueue;
+    const handler = this.messageHandlers.get(subject);
+    return (
+      !!handler &&
+      !handler.isEventHandler &&
+      (isUndefined(queue) || (handler.extras?.queue ?? defaultQueue) !== queue)
     );
   }
 

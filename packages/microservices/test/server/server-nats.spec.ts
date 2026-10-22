@@ -357,6 +357,111 @@ describe('ServerNats', () => {
     });
   });
 
+  describe('handleMessage when a message subject matches the subject of another message handler', () => {
+    let getPublisherSpy: sinon.SinonSpy;
+    let wildcardHandler: sinon.SinonSpy & { extras?: any };
+    let messageHandler: sinon.SinonSpy;
+    const id = '3';
+
+    const createRequest = (subject: string): NatsMsg => ({
+      data: JSONCodec().encode({ pattern: subject, data: 'test', id }),
+      subject,
+      sid: +id,
+      reply: 'inbox',
+      respond: sinon.spy(),
+    });
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
+    beforeEach(() => {
+      getPublisherSpy = sinon.spy();
+      sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
+      wildcardHandler = sinon.spy(async () => 'wildcard');
+      messageHandler = sinon.spy(async () => 'message');
+    });
+    ['orders.*', 'orders.>', '*.get'].forEach(wildcardSubject => {
+      it(`should answer it with the message handler of its subject only (wildcard: "${wildcardSubject}")`, async () => {
+        untypedServer.messageHandlers = objectToMap({
+          [wildcardSubject]: wildcardHandler,
+          'orders.get': messageHandler,
+        });
+
+        // NATS delivers the request to each subscription that matches it
+        await server.handleMessage(
+          wildcardSubject,
+          createRequest('orders.get'),
+        );
+        await server.handleMessage('orders.get', createRequest('orders.get'));
+        await flush();
+
+        expect(wildcardHandler.called).to.be.false;
+        expect(getPublisherSpy.callCount).to.equal(1);
+        expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+          response: 'message',
+          isDisposed: true,
+        });
+      });
+    });
+    it('should still answer it with each wildcard handler when no message handler has its subject', async () => {
+      untypedServer.messageHandlers = objectToMap({
+        'orders.*': wildcardHandler,
+        'orders.>': messageHandler,
+      });
+
+      await server.handleMessage('orders.*', createRequest('orders.get'));
+      await server.handleMessage('orders.>', createRequest('orders.get'));
+      await flush();
+
+      expect(getPublisherSpy.callCount).to.equal(2);
+    });
+    it('should still answer it with the wildcard handler when both share a queue group', async () => {
+      // NATS delivers the request to a single member of the group, so the
+      // message handler of its subject does not receive it
+      untypedServer.options.queue = 'orders';
+      untypedServer.messageHandlers = objectToMap({
+        'orders.*': wildcardHandler,
+        'orders.get': messageHandler,
+      });
+
+      await server.handleMessage('orders.*', createRequest('orders.get'));
+      await flush();
+
+      expect(getPublisherSpy.callCount).to.equal(1);
+      expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+        response: 'wildcard',
+        isDisposed: true,
+      });
+    });
+    it('should not answer it with the wildcard handler when it has a queue group of its own', async () => {
+      untypedServer.options.queue = 'orders';
+      wildcardHandler.extras = { queue: 'audit' };
+      untypedServer.messageHandlers = objectToMap({
+        'orders.*': wildcardHandler,
+        'orders.get': messageHandler,
+      });
+
+      await server.handleMessage('orders.*', createRequest('orders.get'));
+      await flush();
+
+      expect(wildcardHandler.called).to.be.false;
+      expect(getPublisherSpy.called).to.be.false;
+    });
+    it('should still dispatch an event to the wildcard handler', async () => {
+      untypedServer.messageHandlers = objectToMap({
+        'orders.*': wildcardHandler,
+        'orders.get': messageHandler,
+      });
+
+      await server.handleMessage('orders.*', {
+        ...createRequest('orders.get'),
+        data: JSONCodec().encode({ pattern: 'orders.get', data: 'test' }),
+      });
+
+      expect(wildcardHandler.calledOnce).to.be.true;
+      expect(wildcardHandler.firstCall.args[0]).to.equal('test');
+      expect(wildcardHandler.firstCall.args[1]).to.be.instanceOf(NatsContext);
+    });
+  });
+
   describe('matchNatsSubject', () => {
     (
       [

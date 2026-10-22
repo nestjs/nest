@@ -272,6 +272,61 @@ describe('ServerRedis', () => {
       });
     });
   });
+  describe('handleMessage when wildcards are enabled and a message pattern matches the channel of another message handler', () => {
+    let getPublisherSpy: sinon.SinonSpy;
+    let wildcardHandler: sinon.SinonSpy;
+    let messageHandler: sinon.SinonSpy;
+    const data = 'test';
+    const id = '3';
+
+    beforeEach(() => {
+      getPublisherSpy = sinon.spy();
+      sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
+      untypedServer.options.wildcards = true;
+      wildcardHandler = sinon.spy(async () => 'wildcard');
+      messageHandler = sinon.spy(async () => 'message');
+      untypedServer.messageHandlers = objectToMap({
+        'users.*': wildcardHandler,
+        'users.get': messageHandler,
+      });
+    });
+    it('should answer a request with the message handler of its channel only', async () => {
+      const request = JSON.stringify({ id, pattern: 'users.get', data });
+
+      // Redis delivers the request once for each pattern that matches it
+      await server.handleMessage('users.*', request, null, 'users.get');
+      await server.handleMessage('users.get', request, null, 'users.get');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(wildcardHandler.called).to.be.false;
+      expect(getPublisherSpy.callCount).to.equal(1);
+      expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+        response: 'message',
+        isDisposed: true,
+      });
+    });
+    it('should still answer a request on a channel without a message handler with the wildcard one', async () => {
+      const request = JSON.stringify({ id, pattern: 'users.list', data });
+
+      await server.handleMessage('users.*', request, null, 'users.list');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(getPublisherSpy.callCount).to.equal(1);
+      expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+        response: 'wildcard',
+        isDisposed: true,
+      });
+    });
+    it('should still dispatch an event to the wildcard handler', async () => {
+      const event = JSON.stringify({ pattern: 'users.get', data });
+
+      await server.handleMessage('users.*', event, null, 'users.get');
+
+      expect(wildcardHandler.calledOnce).to.be.true;
+      expect(wildcardHandler.firstCall.args[0]).to.equal(data);
+      expect(wildcardHandler.firstCall.args[1]).to.be.instanceOf(RedisContext);
+    });
+  });
   describe('getPublisher', () => {
     let publisherSpy: sinon.SinonSpy;
     let pub, publisher;
