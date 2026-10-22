@@ -1,6 +1,10 @@
 import {
+  ArgumentsHost,
+  Catch,
   Controller,
+  ExceptionFilter,
   Get,
+  HttpException,
   HttpStatus,
   INestApplication,
   InternalServerErrorException,
@@ -33,6 +37,17 @@ class ErrorCauseController {
   @Get('error-cause')
   findAll() {
     throw new InternalServerErrorException('Oops', { cause: createError(404) });
+  }
+}
+
+@Catch(HttpException)
+class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    host
+      .switchToHttp()
+      .getResponse()
+      .status(exception.getStatus())
+      .send({ caught: exception.getStatus() });
   }
 }
 
@@ -169,6 +184,9 @@ describe('Error messages', () => {
       app = module.createNestApplication<NestFastifyApplication>(
         new FastifyAdapter(),
       );
+      app.use('/middleware-error', (req, res, next) =>
+        next(createError(503, 'connect ECONNREFUSED 127.0.0.1:6379')),
+      );
       server = app.getHttpServer();
       await listenOnLoopback(app);
     });
@@ -264,6 +282,59 @@ describe('Error messages', () => {
             message: "body must have required property 'name'",
           });
         });
+    });
+
+    it(`/GET (ServiceUnavailable logged when a middleware passes an "http-errors" error to next())`, async () => {
+      const logError = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+
+      const { payload, statusCode } = await app.inject({
+        method: 'GET',
+        url: '/middleware-error',
+      });
+      expect(statusCode).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(JSON.parse(payload)).toEqual({
+        statusCode: 503,
+        message: 'Service Unavailable',
+      });
+      expect(logError).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          statusCode: 503,
+          message: 'connect ECONNREFUSED 127.0.0.1:6379',
+        }),
+      );
+    });
+
+    afterEach(async () => {
+      await app.close();
+      vi.restoreAllMocks();
+    });
+  });
+  describe('Fastify (HttpException filter)', () => {
+    let app: NestFastifyApplication;
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [ErrorsController],
+      }).compile();
+
+      app = module.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+      );
+      app.useGlobalFilters(new HttpExceptionFilter());
+      app.use('/middleware-error', (req, res, next) =>
+        next(createError(413, 'request entity too large')),
+      );
+      await listenOnLoopback(app);
+    });
+
+    it(`/GET (a 4xx "http-errors" error from a middleware reaches the filter)`, async () => {
+      const { payload, statusCode } = await app.inject({
+        method: 'GET',
+        url: '/middleware-error',
+      });
+      expect(statusCode).toBe(HttpStatus.PAYLOAD_TOO_LARGE);
+      expect(JSON.parse(payload)).toEqual({ caught: 413 });
     });
 
     afterEach(async () => {
