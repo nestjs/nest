@@ -18,20 +18,20 @@ describe('DiscoverableMetaHostCollection', () => {
         metadataKey,
       );
 
-      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).toBe(
-        metadataKey,
-      );
+      expect(
+        DiscoverableMetaHostCollection.metaHostLinks.get(TestClass),
+      ).toEqual(new Set([metadataKey]));
     });
 
-    it('should overwrite existing link for the same class', () => {
+    it('should keep a link to each metadata key of the same class', () => {
       class TestClass {}
 
       DiscoverableMetaHostCollection.addClassMetaHostLink(TestClass, 'key1');
       DiscoverableMetaHostCollection.addClassMetaHostLink(TestClass, 'key2');
 
-      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).toBe(
-        'key2',
-      );
+      expect(
+        DiscoverableMetaHostCollection.metaHostLinks.get(TestClass),
+      ).toEqual(new Set(['key1', 'key2']));
     });
   });
 

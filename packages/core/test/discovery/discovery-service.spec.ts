@@ -1,4 +1,4 @@
-import { Injectable, Module as NestModule } from '@nestjs/common';
+import { Controller, Injectable, Module as NestModule } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 import { DiscoveryService } from '../../discovery/discovery-service.js';
@@ -649,6 +649,65 @@ describe('DiscoveryService', () => {
 
       expect(providers).toHaveLength(1);
       expect(providers[0].instance).toBeInstanceOf(AliasedService);
+    });
+  });
+
+  describe('classes decorated with several discovery decorators', () => {
+    it('should discover a provider by the key of each of its decorators', async () => {
+      const FirstDecorator = DiscoveryService.createDecorator();
+      const SecondDecorator = DiscoveryService.createDecorator();
+
+      @FirstDecorator()
+      @SecondDecorator()
+      @Injectable()
+      class DecoratedService {}
+
+      @NestModule({
+        providers: [DiscoveryService, DecoratedService],
+      })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+      const discovery = moduleRef.get(DiscoveryService);
+
+      for (const decorator of [FirstDecorator, SecondDecorator]) {
+        const providers = discovery.getProviders({
+          metadataKey: decorator.KEY,
+        });
+        expect(providers).toHaveLength(1);
+        expect(providers[0].instance).toBeInstanceOf(DecoratedService);
+      }
+    });
+
+    it('should discover a controller by the key of each of its decorators', async () => {
+      const FirstDecorator = DiscoveryService.createDecorator();
+      const SecondDecorator = DiscoveryService.createDecorator();
+
+      @FirstDecorator()
+      @SecondDecorator()
+      @Controller()
+      class DecoratedController {}
+
+      @NestModule({
+        controllers: [DecoratedController],
+        providers: [DiscoveryService],
+      })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+      const discovery = moduleRef.get(DiscoveryService);
+
+      for (const decorator of [FirstDecorator, SecondDecorator]) {
+        const controllers = discovery.getControllers({
+          metadataKey: decorator.KEY,
+        });
+        expect(controllers).toHaveLength(1);
+        expect(controllers[0].instance).toBeInstanceOf(DecoratedController);
+      }
     });
   });
 });
