@@ -235,6 +235,13 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   }
 
   public matchMqttPattern(pattern: string, topic: string) {
+    // MQTT 3.1.1 section 4.7.2 excludes $ topics from leading wildcards.
+    if (
+      topic.startsWith('$') &&
+      (pattern[0] === MQTT_WILDCARD_ALL || pattern[0] === MQTT_WILDCARD_SINGLE)
+    ) {
+      return false;
+    }
     const patternSegments = pattern.split(MQTT_SEPARATOR);
     const topicSegments = topic.split(MQTT_SEPARATOR);
 
@@ -285,7 +292,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   }
 
   public removeHandlerKeySharedPrefix(handlerKey: string) {
-    return handlerKey && handlerKey.startsWith('$share')
+    return handlerKey && handlerKey.startsWith('$share/')
       ? handlerKey.split('/').slice(2).join('/')
       : handlerKey;
   }
