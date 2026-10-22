@@ -19,6 +19,11 @@ export class KafkaResponseDeserializer implements Deserializer<
       };
     }
     if (!isUndefined(message.headers[KafkaHeaders.NEST_IS_DISPOSED])) {
+      // A record cannot leave its value out, so the one that only completes
+      // the stream carries a null that is not a response
+      if (!isUndefined(message.headers[KafkaHeaders.NEST_NO_RESPONSE])) {
+        return { id, isDisposed: true };
+      }
       return {
         id,
         response: message.value,
