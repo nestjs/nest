@@ -207,7 +207,13 @@ export abstract class Server<
     // cannot be published only once, as that error may fail to publish too
     let isFallbackQueued = false;
     const scheduleOnNextTick = (data: WritePacket) => {
-      if (data.isDisposed && dataQueue.length > nextIndex) {
+      // The completion may only be attached to a reply the drain loop has not
+      // taken yet, which is the case for a reply and the completion that arrive
+      // in the same burst before the drain starts. Once the loop has taken a
+      // packet, a reply waiting behind it must stay a packet of its own:
+      // attaching the completion to it would turn it into the completion, and
+      // the requester would never get its value.
+      if (data.isDisposed && nextIndex === 0 && dataQueue.length > 0) {
         dataQueue[dataQueue.length - 1].isDisposed = true;
       } else {
         dataQueue.push(data);

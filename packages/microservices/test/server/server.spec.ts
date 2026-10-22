@@ -316,6 +316,40 @@ describe('Server', () => {
           [{ isDisposed: true }],
         ]);
       });
+
+      it('should publish a reply that is still queued when the stream completes', async () => {
+        // A reply that is queued while the previous one is being published used
+        // to have the completion attached to it, so it went out as the
+        // completion and the requester never got its value.
+        const published: unknown[] = [];
+        let releaseFirst: () => void = () => {};
+        const firstIsInFlight = new Promise<void>(
+          resolve => (releaseFirst = resolve),
+        );
+        sendSpy = vi.fn(async (packet: any) => {
+          published.push(packet);
+          if (packet.response === 'first') {
+            await firstIsInFlight;
+          }
+        });
+        const subject = new Subject<string>();
+
+        server.send(subject, sendSpy);
+        subject.next('first');
+        await flush();
+        // Queued while the first reply is still being published
+        subject.next('second');
+        subject.complete();
+        await flush();
+        releaseFirst();
+        await flush();
+
+        expect(published).toEqual([
+          { response: 'first' },
+          { response: 'second' },
+          { isDisposed: true },
+        ]);
+      });
     });
   });
   describe('transformToObservable', () => {
