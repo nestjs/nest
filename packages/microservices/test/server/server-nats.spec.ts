@@ -199,6 +199,19 @@ describe('ServerNats', () => {
     const channel = 'test';
     const id = '3';
 
+    const createRequest = (subject: string): NatsMsg => {
+      const data = JSON.stringify({ pattern: subject, data: 'test', id });
+      return {
+        data,
+        subject,
+        sid: +id,
+        reply: 'inbox',
+        respond: vi.fn(),
+        json: () => JSON.parse(data),
+      };
+    };
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
     beforeEach(() => {
       getPublisherSpy = vi.fn();
       vi.spyOn(server, 'getPublisher').mockImplementation(
@@ -326,19 +339,6 @@ describe('ServerNats', () => {
       let eventHandler: ReturnType<typeof vi.fn>;
       let messageHandler: ReturnType<typeof vi.fn>;
 
-      const createRequest = (subject: string): NatsMsg => {
-        const data = JSON.stringify({ pattern: subject, data: 'test', id });
-        return {
-          data,
-          subject,
-          sid: +id,
-          reply: 'inbox',
-          respond: vi.fn(),
-          json: () => JSON.parse(data),
-        };
-      };
-      const flush = () => new Promise(resolve => setImmediate(resolve));
-
       beforeEach(() => {
         eventHandler = Object.assign(
           vi.fn(async () => 'event'),
@@ -421,6 +421,99 @@ describe('ServerNats', () => {
 
         expect(eventHandler).toHaveBeenCalled();
         expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+    });
+    describe('when a message subject matches the subject of another message handler', () => {
+      let wildcardHandler: ReturnType<typeof vi.fn>;
+      let messageHandler: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        wildcardHandler = vi.fn(async () => 'wildcard');
+        messageHandler = vi.fn(async () => 'message');
+      });
+      it.each(['orders.*', 'orders.>', '*.get'])(
+        'should answer it with the message handler of its subject only (wildcard: "%s")',
+        async wildcardSubject => {
+          untypedServer.messageHandlers = objectToMap({
+            [wildcardSubject]: wildcardHandler,
+            'orders.get': messageHandler,
+          });
+
+          // NATS delivers the request to each subscription that matches it
+          await server.handleMessage(
+            wildcardSubject,
+            createRequest('orders.get'),
+          );
+          await server.handleMessage('orders.get', createRequest('orders.get'));
+          await flush();
+
+          expect(wildcardHandler).not.toHaveBeenCalled();
+          expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+            response: 'message',
+            isDisposed: true,
+          });
+        },
+      );
+      it('should still answer it with each wildcard handler when no message handler has its subject', async () => {
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': wildcardHandler,
+          'orders.>': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await server.handleMessage('orders.>', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy).toHaveBeenCalledTimes(2);
+      });
+      it('should still answer it with the wildcard handler when both share a queue group', async () => {
+        // NATS delivers the request to a single member of the group, so the
+        // message handler of its subject does not receive it
+        untypedServer.options.queue = 'orders';
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': wildcardHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(getPublisherSpy).toHaveBeenCalledExactlyOnceWith({
+          response: 'wildcard',
+          isDisposed: true,
+        });
+      });
+      it('should not answer it with the wildcard handler when it has a queue group of its own', async () => {
+        untypedServer.options.queue = 'orders';
+        wildcardHandler.extras = { queue: 'audit' };
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': wildcardHandler,
+          'orders.get': messageHandler,
+        });
+
+        await server.handleMessage('orders.*', createRequest('orders.get'));
+        await flush();
+
+        expect(wildcardHandler).not.toHaveBeenCalled();
+        expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+      it('should still dispatch an event to the wildcard handler', async () => {
+        untypedServer.messageHandlers = objectToMap({
+          'orders.*': wildcardHandler,
+          'orders.get': messageHandler,
+        });
+        const data = JSON.stringify({ pattern: 'orders.get', data: 'test' });
+
+        await server.handleMessage('orders.*', {
+          ...createRequest('orders.get'),
+          data,
+          json: () => JSON.parse(data),
+        });
+
+        expect(wildcardHandler).toHaveBeenCalledWith(
+          'test',
+          expect.any(NatsContext),
+        );
       });
     });
   });

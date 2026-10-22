@@ -194,6 +194,10 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       // its channel, so the message handler subscribed to it answers it.
       return this.handleEvent(channel, packet, redisCtx);
     }
+    if (channel !== pattern && this.isAnsweredByMessageHandler(pattern)) {
+      // The message handler subscribed to the channel itself answers it alone
+      return;
+    }
     this.warnIfEventHandlerReplies(handler, channel);
     return this.handleRequest(
       redisCtx,
