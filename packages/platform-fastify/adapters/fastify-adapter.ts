@@ -18,7 +18,6 @@ import {
   FastifyBodyParser,
   FastifyError,
   FastifyInstance,
-  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyRegister,
@@ -77,7 +76,10 @@ import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external/index.js';
-import { NestFastifyBodyParserOptions } from '../interfaces/index.js';
+import {
+  NestFastifyBodyParserOptions,
+  NestFastifyListenOptions,
+} from '../interfaces/index.js';
 const { safeDecodeURI } = urlSanitizer;
 
 const MISSING_MULTIPART_PACKAGE_MESSAGE =
@@ -567,7 +569,7 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(
-    listenOptions: string | number | FastifyListenOptions,
+    listenOptions: string | number | NestFastifyListenOptions,
     ...args: any[]
   ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
@@ -584,9 +586,10 @@ export class FastifyAdapter<
       typeof listenOptions === 'object' &&
       (listenOptions.host !== undefined ||
         listenOptions.port !== undefined ||
-        listenOptions.path !== undefined)
+        listenOptions.path !== undefined ||
+        listenOptions.fd !== undefined)
     ) {
-      // First parameter is an object with a path, port and/or host attributes
+      // First parameter is an object with a path, port, fd and/or host attributes
       options = listenOptions;
     } else {
       options = {
