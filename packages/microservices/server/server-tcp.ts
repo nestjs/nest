@@ -94,6 +94,14 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     // this, a listen() after one that exhausted its attempts starts above the
     // limit and never retries again.
     this.retryAttemptsCount = 0;
+    // A retry armed before this listen() would otherwise still fire, calling
+    // "listen" on a server that is already listening (ERR_SERVER_ALREADY_LISTEN
+    // thrown from a timer), and "handleClose" would keep returning it instead
+    // of arming a retry for this listen().
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = undefined;
+    }
 
     // The once('error') listener outlives a successful listen, so a later
     // error must find the callback already settled.

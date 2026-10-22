@@ -579,6 +579,29 @@ describe('ServerTCP', () => {
         expect(server.handleClose()).toBeDefined();
         expect(untypedServer.retryAttemptsCount).toBe(1);
       });
+
+      it('should drop a retry armed before a new listen', () => {
+        // A retry is still pending when listen() is called again
+        server.handleClose();
+        const staleTimer = untypedServer.retryTimer;
+        expect(staleTimer).toBeDefined();
+
+        const listeningServer: any = new EventEmitter();
+        listeningServer.listen = listen;
+        listeningServer.close = vi.fn();
+        untypedServer.server = listeningServer;
+        server.listen(() => {});
+
+        // The stale retry must not call "listen" on the server again
+        vi.advanceTimersByTime(50);
+        expect(listen).toHaveBeenCalledOnce();
+
+        // and the new listen() arms, and counts, its own retry
+        const retry = server.handleClose();
+        expect(retry).toBeDefined();
+        expect(retry).not.toBe(staleTimer);
+        expect(untypedServer.retryAttemptsCount).toBe(1);
+      });
     });
 
     describe('when is terminated', () => {
