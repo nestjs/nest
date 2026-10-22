@@ -392,6 +392,31 @@ describe('ServerMqtt', () => {
     });
   });
   describe('matchMqttPattern', () => {
+    [
+      ['#', '$SYS'],
+      ['#', '$SYS/broker/uptime'],
+      ['+', '$SYS'],
+      ['+/broker/uptime', '$SYS/broker/uptime'],
+      ['#', '$custom'],
+      ['+/#', '$custom/events'],
+    ].forEach(([pattern, topic]) => {
+      it(`should not match a leading wildcard in ${pattern} against the system topic ${topic}`, () => {
+        expect(server.matchMqttPattern(pattern, topic)).to.be.false;
+      });
+    });
+
+    [
+      ['$SYS/#', '$SYS'],
+      ['$SYS/#', '$SYS/broker/uptime'],
+      ['$SYS/+/uptime', '$SYS/broker/uptime'],
+      ['$custom/#', '$custom/events'],
+      ['devices/+/status', 'devices/$sensor/status'],
+    ].forEach(([pattern, topic]) => {
+      it(`should preserve explicit dollar-prefixed filters and later dollar signs in ${pattern} against ${topic}`, () => {
+        expect(server.matchMqttPattern(pattern, topic)).to.be.true;
+      });
+    });
+
     it('should return true when topic matches with provided pattern', () => {
       expect(server.matchMqttPattern('root/valid/+', 'root/valid/child')).to.be
         .true;
@@ -424,6 +449,47 @@ describe('ServerMqtt', () => {
     });
   });
   describe('getHandlerByPattern', () => {
+    ['$SYS/#', '$share/workers/$SYS/#'].forEach(pattern => {
+      it(`should select ${pattern} over an earlier catch-all filter for a system topic`, () => {
+        const wildcardHandler = sinon.spy();
+        const systemHandler = sinon.spy();
+        server.addHandler('#', wildcardHandler, true);
+        server.addHandler(pattern, systemHandler, true);
+
+        expect(server.getHandlerByPattern('$SYS/broker/uptime')).to.equal(
+          systemHandler,
+        );
+      });
+    });
+
+    ['$shared/devices/#', '$shareware/devices/#'].forEach(pattern => {
+      it(`should treat ${pattern} as a literal filter rather than a shared subscription`, () => {
+        const literalHandler = sinon.spy();
+        const telemetryHandler = sinon.spy();
+        server.addHandler(pattern, literalHandler, true);
+        server.addHandler('telemetry/#', telemetryHandler, true);
+
+        expect(
+          server.getHandlerByPattern(pattern.replace('#', 'status')),
+        ).to.equal(literalHandler);
+        expect(server.getHandlerByPattern('telemetry/temperature')).to.equal(
+          telemetryHandler,
+        );
+      });
+    });
+
+    [
+      ['$share/workers/devices/status', 'devices/status'],
+      ['$share/workers/devices/+', 'devices/status'],
+    ].forEach(([pattern, topic]) => {
+      it(`should continue matching the shared subscription ${pattern} against ${topic}`, () => {
+        const handler = sinon.spy();
+        server.addHandler(pattern, handler, true);
+
+        expect(server.getHandlerByPattern(topic)).to.equal(handler);
+      });
+    });
+
     // A broker takes '"admin/reset"' for a topic of its own, which an ACL
     // that denies "admin/#" lets through
     it('should not route a quoted topic to the handler of the unquoted one', () => {
