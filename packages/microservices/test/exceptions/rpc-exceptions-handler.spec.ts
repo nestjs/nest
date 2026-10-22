@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, lastValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as sinon from 'sinon';
 import { RpcException } from '../../exceptions/rpc-exception';
@@ -57,6 +57,31 @@ describe('RpcExceptionsHandler', () => {
             }),
           )
           .subscribe(() => ({}));
+      });
+      it('should emit the unknown error payload and log the error when it holds an error', async () => {
+        const loggerErrorStub = sinon.stub(
+          (RpcExceptionsHandler as any).logger,
+          'error',
+        );
+        const error = Object.assign(new Error('Request failed'), {
+          config: { headers: { Authorization: 'Bearer secret' } },
+        });
+
+        try {
+          let thrown: unknown;
+          try {
+            await lastValueFrom(handler.handle(new RpcException(error), null!));
+          } catch (err) {
+            thrown = err;
+          }
+          expect(thrown).to.deep.equal({
+            status: 'error',
+            message: 'Internal server error',
+          });
+          expect(loggerErrorStub.calledWith(error)).to.be.true;
+        } finally {
+          loggerErrorStub.restore();
+        }
       });
     });
     describe('when "invokeCustomFilters" returns observable', () => {
