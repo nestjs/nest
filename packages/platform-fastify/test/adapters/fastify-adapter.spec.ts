@@ -5,6 +5,7 @@ import {
   FASTIFY_ROUTE_SCHEMA_METADATA,
 } from '../../constants.js';
 import { createError } from '@fastify/error';
+import createHttpError from 'http-errors';
 import {
   HttpException,
   Logger,
@@ -190,6 +191,48 @@ describe('FastifyAdapter', () => {
 
     it('should return error if it is not FastifyError', () => {
       const error = new Error('Test error');
+      const result = fastifyAdapter.mapException(error);
+      expect(result).toBe(error);
+    });
+
+    it('should map an "http-errors" error to an HttpException', () => {
+      const error = createHttpError(413, 'request entity too large');
+
+      const result = fastifyAdapter.mapException(error) as HttpException;
+
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.getStatus()).toBe(413);
+      expect(result.message).toBe('request entity too large');
+    });
+
+    it('should replace the message of an "http-errors" error that must not be exposed', () => {
+      const error = createHttpError(500, 'connect ECONNREFUSED 10.0.0.5:6379');
+
+      const result = fastifyAdapter.mapException(error) as HttpException;
+
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.getStatus()).toBe(500);
+      expect(result.message).toBe('Internal Server Error');
+    });
+
+    it('should keep the message of a FastifyError that must not be exposed out of the response', () => {
+      const FastifyErrorCls = createError(
+        'FST_ERR_CTP_EMPTY_JSON_BODY',
+        'Body cannot be empty when content-type is set to application/json',
+        400,
+      );
+      const error: any = new FastifyErrorCls();
+      error.expose = false;
+
+      const result = fastifyAdapter.mapException(error) as HttpException;
+
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.getStatus()).toBe(400);
+      expect(result.message).toBe('Bad Request');
+    });
+
+    it('should return an error that carries a status code but is not an "http-errors" one', () => {
+      const error = Object.assign(new Error('Test error'), { statusCode: 500 });
       const result = fastifyAdapter.mapException(error);
       expect(result).toBe(error);
     });

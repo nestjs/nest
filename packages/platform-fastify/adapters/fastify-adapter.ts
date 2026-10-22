@@ -56,6 +56,7 @@ import {
   tryLoadPackage,
   isFunction,
   isNil,
+  isObject,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
@@ -1381,7 +1382,31 @@ export class FastifyAdapter<
 
   public mapException(error: unknown): unknown {
     if (this.isHttpFastifyError(error)) {
-      return new HttpException(error.message, error.statusCode);
+      return new HttpException(
+        // An error that must not reach the client only gets a status text,
+        // like the built-in exception filter answers it
+        error.expose === false
+          ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
+          : error.message,
+        error.statusCode,
+        { cause: error },
+      );
+    }
+
+    // "http-errors" errors raised before the handler, such as a body that is
+    // too large or a failure of a static file, reach the error handler as an
+    // "http-errors" instance rather than a FastifyError. Without this case
+    // they reach custom exception filters as a raw error, so a @Catch()
+    // filter sends the message of a server fault to the client, while the
+    // Express adapter answers it with a status text (#18213, #18214).
+    if (isHttpError(error)) {
+      return new HttpException(
+        error.expose === false
+          ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
+          : error.message,
+        error.statusCode,
+        { cause: error },
+      );
     }
 
     return error;
@@ -1389,7 +1414,7 @@ export class FastifyAdapter<
 
   private isHttpFastifyError(
     error: any,
-  ): error is Error & { statusCode: number } {
+  ): error is Error & { statusCode: number; expose?: boolean } {
     // condition based on this code - https://github.com/fastify/fastify-error/blob/d669b150a82968322f9f7be992b2f6b463272de3/index.js#L22
     return (
       error.statusCode !== undefined &&
@@ -1764,4 +1789,21 @@ export class FastifyAdapter<
       this.openConnections.delete(socket);
     }
   }
+}
+
+/**
+ * Returns true when `err` is an "http-errors"-shaped error (body-parser,
+ * Express, the `send` package behind static files, etc.).
+ * Mirrors the same check in BaseExceptionFilter.isHttpError().
+ */
+function isHttpError(
+  err: unknown,
+): err is { statusCode: number; message: string; expose: boolean } {
+  return (
+    isObject(err) &&
+    err instanceof Error &&
+    typeof (err as any).expose === 'boolean' &&
+    typeof (err as any).statusCode === 'number' &&
+    (err as any).status === (err as any).statusCode
+  );
 }
