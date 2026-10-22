@@ -65,6 +65,34 @@ describe('WsExceptionsHandler', () => {
             }),
           ).to.be.true;
         });
+        it('should emit the unknown error payload and log the error when it holds an error', () => {
+          const loggerErrorStub = sinon.stub(
+            (WsExceptionsHandler as any).logger,
+            'error',
+          );
+          const error = Object.assign(new Error('Request failed'), {
+            config: { headers: { Authorization: 'Bearer secret' } },
+          });
+
+          try {
+            handler.handle(new WsException(error), executionContextHost);
+            expect(emitStub.calledOnce).to.be.true;
+            expect(emitStub.firstCall.args).to.eql([
+              'exception',
+              {
+                status: 'error',
+                message: 'Internal server error',
+                cause: {
+                  pattern,
+                  data,
+                },
+              },
+            ]);
+            expect(loggerErrorStub.calledWith(error)).to.be.true;
+          } finally {
+            loggerErrorStub.restore();
+          }
+        });
       });
     });
 

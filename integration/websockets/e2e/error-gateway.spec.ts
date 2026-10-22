@@ -12,7 +12,7 @@ describe('ErrorGateway', () => {
       providers: [ErrorGateway],
     }).compile();
 
-    app = testingModule.createNestApplication();
+    app = testingModule.createNestApplication({ logger: false });
     await app.listen(3000);
   });
 
@@ -36,6 +36,28 @@ describe('ErrorGateway', () => {
         resolve();
       }),
     );
+  });
+
+  it(`should send the unknown error payload for a WsException holding an error`, async () => {
+    const ws = io('http://localhost:8080');
+    const pattern = 'push-error';
+    const data = {};
+
+    ws.emit(pattern, data);
+
+    const error = await new Promise<unknown>(resolve =>
+      ws.on('exception', resolve),
+    );
+    ws.close();
+
+    expect(error).to.be.eql({
+      status: 'error',
+      message: 'Internal server error',
+      cause: {
+        pattern,
+        data,
+      },
+    });
   });
 
   afterEach(() => app.close());

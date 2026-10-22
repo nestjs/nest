@@ -76,6 +76,11 @@ export class BaseWsExceptionFilter<
     const status = 'error';
     const result = exception.getError();
 
+    // An Error, as in `new WsException(err)`, would be sent with its
+    // enumerable properties, e.g. the request config of an HTTP client error
+    if (result instanceof Error) {
+      return this.handleUnknownError(result as TError, client, cause);
+    }
     if (isObject(result)) {
       return client.emit('exception', result);
     }
