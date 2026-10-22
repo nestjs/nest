@@ -176,18 +176,29 @@ describe('FastifyAdapter', () => {
       expect(result.getStatus()).toBe(415);
     });
 
-    it('should return FastifyError without user status code to Internal Server Error HttpException', () => {
+    it('should not map FastifyError without user status code (500 by default)', () => {
       const FastifyErrorCls = createError(
         'FST_WITHOUT_STATUS_CODE',
         'Error without status code',
       );
       const error = new FastifyErrorCls();
 
-      const result = fastifyAdapter.mapException(error) as HttpException;
-      expect(result).toBeInstanceOf(HttpException);
-      expect(result.message).toBe(error.message);
-      expect(result.getStatus()).toBe(500);
+      expect(fastifyAdapter.mapException(error)).toBe(error);
     });
+
+    it.each([500, 503])(
+      'should not map FastifyError with status %i',
+      status => {
+        const FastifyErrorCls = createError(
+          'FST_ERR_TEST',
+          'internal detail',
+          status,
+        );
+        const error = new FastifyErrorCls();
+
+        expect(fastifyAdapter.mapException(error)).toBe(error);
+      },
+    );
 
     it('should return error if it is not FastifyError', () => {
       const error = new Error('Test error');
