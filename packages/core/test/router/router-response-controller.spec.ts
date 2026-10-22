@@ -1468,7 +1468,11 @@ data: test
 
       // The headers are out, so no exception filter can answer anymore
       it.each([
-        ['an HttpException', new BadRequestException('Some error'), true],
+        [
+          'an HttpException',
+          new BadRequestException('Some error'),
+          'Some error',
+        ],
         [
           'an "http-errors" error',
           Object.assign(new Error('Some error'), {
@@ -1476,19 +1480,41 @@ data: test
             statusCode: 404,
             expose: true,
           }),
-          true,
+          'Some error',
+        ],
+        [
+          'an "http-errors" error that must not be exposed',
+          Object.assign(new Error('Some error'), {
+            status: 404,
+            statusCode: 404,
+            expose: false,
+          }),
+          'Not Found',
+        ],
+        [
+          'a 5xx "http-errors" error',
+          Object.assign(new Error('Some error'), {
+            status: 502,
+            statusCode: 502,
+            expose: false,
+          }),
+          'Bad Gateway',
         ],
         [
           'an http error-shaped value',
           { statusCode: 404, message: 'Some error' },
-          true,
+          'Some error',
         ],
-        ['an Error', new Error('Some error'), false],
-        ['a string', 'Some error', false],
-        ['an IntrinsicException', new IntrinsicException('Some error'), false],
+        ['an Error', new Error('Some error'), 'Internal server error'],
+        ['a string', 'Some error', 'Internal server error'],
+        [
+          'an IntrinsicException',
+          new IntrinsicException('Some error'),
+          'Internal server error',
+        ],
       ])(
         'should write the message BaseExceptionFilter would send for %s',
-        async (_, error, isMessageSent) => {
+        async (_, error, expectedData) => {
           let resolveFirstChunk: (() => void) | undefined;
           const firstChunkWritten = new Promise<void>(resolve => {
             resolveFirstChunk = resolve;
@@ -1535,10 +1561,8 @@ data: test
           await promise;
           await written(response);
           expect(response.content).toContain('event: error');
-          if (isMessageSent) {
-            expect(response.content).toContain('data: Some error\n');
-          } else {
-            expect(response.content).toContain('data: Internal server error\n');
+          expect(response.content).toContain(`data: ${expectedData}\n`);
+          if (expectedData !== 'Some error') {
             expect(response.content).not.toContain('Some error');
           }
           if (error instanceof IntrinsicException) {
