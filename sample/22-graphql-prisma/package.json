@@ -26,7 +26,7 @@
     "@nestjs/core": "12.1.2",
     "@nestjs/graphql": "14.0.3",
     "@nestjs/platform-express": "12.1.2",
-    "@prisma/adapter-better-sqlite3": "7.10.0",
+    "@prisma/adapter-better-sqlite3": "7.10.1",
     "@prisma/client": "7.10.1",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
