@@ -3,6 +3,8 @@ import {
   Get,
   HttpStatus,
   INestApplication,
+  InternalServerErrorException,
+  Logger,
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -13,6 +15,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { RawServerDefault } from 'fastify';
+import createError from 'http-errors';
 import request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
@@ -22,6 +25,14 @@ class ErrorBodyController {
   @Get('error-body')
   findAll() {
     throw new UnauthorizedException(new Error('invalid signature'));
+  }
+}
+
+@Controller()
+class ErrorCauseController {
+  @Get('error-cause')
+  findAll() {
+    throw new InternalServerErrorException('Oops', { cause: createError(404) });
   }
 }
 
@@ -39,10 +50,17 @@ describe('Error messages', () => {
     let app: INestApplication;
     beforeEach(async () => {
       const module = await Test.createTestingModule({
-        controllers: [ErrorsController, ErrorBodyController],
+        controllers: [
+          ErrorsController,
+          ErrorBodyController,
+          ErrorCauseController,
+        ],
       }).compile();
 
       app = module.createNestApplication();
+      app.use('/middleware-error', (req, res, next) =>
+        next(createError(503, 'connect ECONNREFUSED 127.0.0.1:6379')),
+      );
       server = app.getHttpServer();
       await listenOnLoopback(app);
     });
@@ -99,8 +117,45 @@ describe('Error messages', () => {
         });
     });
 
+    it(`/GET (ServiceUnavailable logged when a middleware passes an "http-errors" error to next())`, async () => {
+      const logError = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+
+      await request(server)
+        .get('/middleware-error')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          statusCode: 503,
+          message: 'Service Unavailable',
+        });
+      expect(logError).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          statusCode: 503,
+          message: 'connect ECONNREFUSED 127.0.0.1:6379',
+        }),
+      );
+    });
+
+    it(`/GET (InternalServerError not logged when its cause is a 4xx "http-errors" error)`, async () => {
+      const logError = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+
+      await request(server)
+        .get('/error-cause')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+        .expect({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Oops',
+        });
+      expect(logError).not.toHaveBeenCalled();
+    });
+
     afterEach(async () => {
       await app.close();
+      vi.restoreAllMocks();
     });
   });
 

@@ -540,16 +540,18 @@ describe('ExpressAdapter', () => {
       expect(result.cause).toBe(error);
     });
 
-    it.each([
-      [500, 'Internal Server Error'],
-      [599, 'Internal server error'],
-    ])(
-      'should not expose the message of an http-errors error with status %i',
-      (status, message) => {
+    it('should not expose the message of an http-errors error with expose: false', () => {
+      const error = createHttpError(404, 'internal detail', { expose: false });
+      const result = expressAdapter.mapException(error) as HttpException;
+      expect(result.getStatus()).toBe(404);
+      expect(result.getResponse()).toBe('Not Found');
+    });
+
+    it.each([500, 503])(
+      'should not map an http-errors error with status %i',
+      status => {
         const error = createHttpError(status, 'internal detail');
-        const result = expressAdapter.mapException(error) as HttpException;
-        expect(result.getStatus()).toBe(status);
-        expect(result.getResponse()).toBe(message);
+        expect(expressAdapter.mapException(error)).toBe(error);
       },
     );
   });

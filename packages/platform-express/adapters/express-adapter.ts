@@ -690,7 +690,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       // and an expose flag. Without this case, errors like PayloadTooLargeError reach custom
       // exception filters as a raw http-errors instance rather than an HttpException, so a
       // @Catch(HttpException) filter never runs and a catch-all filter reports 500 (#18213).
-      case isHttpError(error):
+      // A 5xx one (e.g. EACCES from "send") is a server fault: it stays unmapped,
+      // so the built-in filter still logs it, as it does on Fastify.
+      case isHttpError(error) && error.statusCode < 500:
         return new HttpException(
           // An error that must not reach the client only gets a status text,
           // like the built-in exception filter answers it
