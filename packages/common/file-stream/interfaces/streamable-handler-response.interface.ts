@@ -9,4 +9,6 @@ export interface StreamableHandlerResponse {
   send: (body: string) => void;
   /** Signals to the server that all of the response headers and body have been sent. */
   end: () => void;
+  /** Closes the connection without completing the response. */
+  destroy?: (error?: Error) => void;
 }

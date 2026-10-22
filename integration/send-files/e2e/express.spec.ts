@@ -5,6 +5,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
+import { get } from 'http';
 import { join } from 'path';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -83,6 +84,18 @@ describe('Express FileSend', () => {
   });
   it('should answer a HEAD request with an error if the file does not exist', async () => {
     return request(app.getHttpServer()).head('/file/not/exist').expect(400);
+  });
+  it('should not complete the response when the stream fails after sending data', async () => {
+    await app.listen(0, '127.0.0.1');
+    const url = await getHttpBaseOptions(app);
+    const complete = await new Promise<boolean>(resolve => {
+      get(new URL('/file/fails/midway', url), res => {
+        res.resume();
+        res.on('close', () => resolve(res.complete));
+      }).on('error', () => resolve(false));
+    });
+    expect(complete).to.be.false;
+    await app.close();
   });
   // TODO: temporarily turned off (flaky test)
   it.skip(

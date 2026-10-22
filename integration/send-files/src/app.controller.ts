@@ -37,6 +37,11 @@ export class AppController {
     return this.appService.getFileThatDoesNotExist();
   }
 
+  @Get('file/fails/midway')
+  getFileThatFailsMidway(): StreamableFile {
+    return this.appService.getFileThatFailsMidway();
+  }
+
   @Get('/file/slow')
   getSlowFile(): StreamableFile {
     return this.appService.getSlowStream();

@@ -103,9 +103,60 @@ describe('StreamableFile', () => {
         expect(res.send.called).to.be.false;
       });
 
-      it('should call res.end() when headers are already sent', () => {
+      it('should log the error and destroy the response when headers are already sent', () => {
         const stream = new Readable();
-        const streamableFile = new StreamableFile(stream);
+        const errorLogger = sinon.spy();
+        const streamableFile = new StreamableFile(stream).setErrorLogger(
+          errorLogger,
+        );
+        const res = {
+          destroyed: false,
+          headersSent: true,
+          statusCode: 200,
+          end: sinon.spy(),
+          send: sinon.spy(),
+          destroy: sinon.spy(),
+        };
+        const error = new Error('EIO: i/o error, read');
+
+        streamableFile.errorHandler(error, res as any);
+
+        expect(errorLogger.calledWith(error)).to.be.true;
+        expect(res.destroy.calledOnce).to.be.true;
+        expect(res.end.called).to.be.false;
+        expect(res.send.called).to.be.false;
+      });
+
+      it('should not destroy the response when the stream fails after it ended', async () => {
+        const stream = Readable.from(['data']);
+        const errorLogger = sinon.spy();
+        const streamableFile = new StreamableFile(stream).setErrorLogger(
+          errorLogger,
+        );
+        stream.resume();
+        await new Promise(resolve => stream.once('end', resolve));
+        const res = {
+          destroyed: false,
+          headersSent: true,
+          statusCode: 200,
+          end: sinon.spy(),
+          send: sinon.spy(),
+          destroy: sinon.spy(),
+        };
+        const error = new Error('EIO: i/o error, close');
+
+        streamableFile.errorHandler(error, res as any);
+
+        expect(errorLogger.calledWith(error)).to.be.true;
+        expect(res.destroy.called).to.be.false;
+        expect(res.end.calledOnce).to.be.true;
+      });
+
+      it('should call res.end() when headers are already sent and the response has no destroy()', () => {
+        const stream = new Readable();
+        const streamableFile = new StreamableFile(stream).setErrorLogger(
+          sinon.spy(),
+        );
         const res = {
           destroyed: false,
           headersSent: true,
