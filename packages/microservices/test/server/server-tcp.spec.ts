@@ -602,6 +602,33 @@ describe('ServerTCP', () => {
         expect(retry).not.toBe(staleTimer);
         expect(untypedServer.retryAttemptsCount).toBe(1);
       });
+      it('should retry again for a listen that follows a manual close', () => {
+        server.close();
+        expect(server.handleClose()).toBeUndefined();
+
+        const listeningServer: any = new EventEmitter();
+        listeningServer.listen = listen;
+        listeningServer.close = vi.fn();
+        untypedServer.server = listeningServer;
+        server.listen(() => {});
+
+        expect(server.handleClose()).toBeDefined();
+      });
+
+      it('should not retry on a close event while the server is listening', () => {
+        // The event of a close() that a new listen() followed
+        untypedServer.server.listening = true;
+        expect(server.handleClose()).toBeUndefined();
+        vi.advanceTimersByTime(50);
+        expect(listen).not.toHaveBeenCalled();
+      });
+
+      it('should not listen from a retry once the server listens again', () => {
+        server.handleClose();
+        untypedServer.server.listening = true;
+        vi.advanceTimersByTime(50);
+        expect(listen).not.toHaveBeenCalled();
+      });
     });
 
     describe('when is terminated', () => {

@@ -94,6 +94,8 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     // this, a listen() after one that exhausted its attempts starts above the
     // limit and never retries again.
     this.retryAttemptsCount = 0;
+    // A close() before this listen() must not keep retries off for good
+    this.isManuallyTerminated = false;
     // A retry armed before this listen() would otherwise still fire, calling
     // "listen" on a server that is already listening (ERR_SERVER_ALREADY_LISTEN
     // thrown from a timer), and "handleClose" would keep returning it instead
@@ -196,6 +198,9 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     }
     if (
       this.isManuallyTerminated ||
+      // The "close" event of a close() that a listen() already followed (it
+      // fires once the open connections end): there is nothing to retry
+      this.server.listening ||
       !this.getOptionsProp(this.options, 'retryAttempts') ||
       this.retryAttemptsCount >=
         this.getOptionsProp(this.options, 'retryAttempts', 0)
@@ -206,7 +211,8 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.retryTimer = setTimeout(
       () => {
         this.retryTimer = undefined;
-        if (!this.isManuallyTerminated) {
+        // Listening again throws ERR_SERVER_ALREADY_LISTEN from this timer
+        if (!this.isManuallyTerminated && !this.server.listening) {
           this.server.listen(this.port, this.host);
         }
       },
