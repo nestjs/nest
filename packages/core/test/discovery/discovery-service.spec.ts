@@ -1,4 +1,4 @@
-import { Injectable, Module as NestModule } from '@nestjs/common';
+import { Controller, Injectable, Module as NestModule } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 import { DiscoveryService } from '../../discovery/discovery-service.js';
@@ -649,6 +649,67 @@ describe('DiscoveryService', () => {
 
       expect(providers).toHaveLength(1);
       expect(providers[0].instance).toBeInstanceOf(AliasedService);
+    });
+
+    it('should discover providers and controllers by each of the discovery decorators applied to them', async () => {
+      const FirstDecorator = DiscoveryService.createDecorator();
+      const SecondDecorator = DiscoveryService.createDecorator();
+
+      @FirstDecorator()
+      @SecondDecorator()
+      @Injectable()
+      class ClassService {}
+
+      @SecondDecorator()
+      @FirstDecorator()
+      @Injectable()
+      class FactoryService {}
+
+      @FirstDecorator()
+      @SecondDecorator()
+      class ValueService {}
+
+      @FirstDecorator()
+      @SecondDecorator()
+      @Controller()
+      class TestController {}
+
+      @NestModule({
+        providers: [
+          DiscoveryService,
+          ClassService,
+          { provide: FactoryService, useFactory: () => new FactoryService() },
+          { provide: 'VALUE', useValue: new ValueService() },
+          { provide: 'ALIAS', useExisting: ClassService },
+        ],
+        controllers: [TestController],
+      })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+      const discovery = moduleRef.get(DiscoveryService);
+
+      for (const decorator of [FirstDecorator, SecondDecorator]) {
+        const providers = discovery.getProviders({
+          metadataKey: decorator.KEY,
+        });
+        expect(providers).toHaveLength(3);
+        expect(providers.map(wrapper => wrapper.instance)).toEqual(
+          expect.arrayContaining([
+            expect.any(ClassService),
+            expect.any(FactoryService),
+            expect.any(ValueService),
+          ]),
+        );
+        const controllers = discovery.getControllers({
+          metadataKey: decorator.KEY,
+        });
+        expect(controllers.map(wrapper => wrapper.instance)).toEqual([
+          expect.any(TestController),
+        ]);
+      }
     });
   });
 });
