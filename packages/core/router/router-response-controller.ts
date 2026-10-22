@@ -307,13 +307,14 @@ export class RouterResponseController {
 
                 // No exception filter can answer once the headers are out, so
                 // BaseExceptionFilter's rules apply here: the client is only
-                // sent the message of an HTTP error, and any error but an
-                // IntrinsicException is logged.
+                // sent the message of an HTTP error, unless it must not be
+                // exposed, and any error but an IntrinsicException is logged.
                 const data =
-                  err instanceof HttpException ||
-                  this.exceptionFilter.isHttpError(err)
+                  err instanceof HttpException
                     ? err.message
-                    : MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
+                    : this.exceptionFilter.isHttpError(err)
+                      ? this.exceptionFilter.getHttpErrorMessage(err)
+                      : MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
                 if (!(err instanceof IntrinsicException)) {
                   this.logger.error(err);
                 }
