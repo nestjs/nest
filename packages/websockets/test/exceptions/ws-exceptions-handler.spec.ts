@@ -59,6 +59,26 @@ describe('WsExceptionsHandler', () => {
             },
           });
         });
+        it('should emit the unknown error payload and log the error when it holds an error', () => {
+          const loggerErrorSpy = vi
+            .spyOn((WsExceptionsHandler as any).logger, 'error')
+            .mockImplementation(() => undefined);
+          const error = Object.assign(new Error('Request failed'), {
+            config: { headers: { Authorization: 'Bearer secret' } },
+          });
+
+          handler.handle(new WsException(error), executionContextHost);
+          expect(emitStub).toHaveBeenCalledWith('exception', {
+            status: 'error',
+            message: 'Internal server error',
+            cause: {
+              pattern,
+              data,
+            },
+          });
+          expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+          loggerErrorSpy.mockRestore();
+        });
       });
     });
 
@@ -139,6 +159,30 @@ describe('WsExceptionsHandler', () => {
           event: 'exception',
           data: message,
         });
+      });
+
+      it('should send the unknown error payload via "send" for WsException with error', () => {
+        const loggerErrorSpy = vi
+          .spyOn((WsExceptionsHandler as any).logger, 'error')
+          .mockImplementation(() => undefined);
+        const error = Object.assign(new Error('Request failed'), {
+          config: { headers: { Authorization: 'Bearer secret' } },
+        });
+        handler.handle(new WsException(error), wsExecutionContextHost);
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        const sent = JSON.parse(sendStub.mock.calls[0][0]);
+        expect(sent).toEqual({
+          event: 'exception',
+          data: {
+            status: 'error',
+            message: 'Internal server error',
+            cause: {
+              pattern,
+              data,
+            },
+          },
+        });
+        loggerErrorSpy.mockRestore();
       });
 
       it('should send JSON-stringified error via "send" for WsException with string', () => {
