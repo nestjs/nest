@@ -56,6 +56,7 @@ import {
   tryLoadPackage,
   isFunction,
   isNil,
+  isObject,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
@@ -1383,6 +1384,22 @@ export class FastifyAdapter<
     if (this.isHttpFastifyError(error)) {
       return new HttpException(error.message, error.statusCode);
     }
+    // http-errors (used by Express middleware such as body-parser) carry a
+    // numeric statusCode and an expose flag. Without this case, errors like
+    // PayloadTooLargeError reach custom exception filters as a raw http-errors
+    // instance rather than an HttpException, as on Express (#18213). A 5xx one
+    // is a server fault: it stays unmapped, so the built-in filter still logs it.
+    if (isHttpError(error) && error.statusCode < 500) {
+      return new HttpException(
+        // An error that must not reach the client only gets a status text,
+        // like the built-in exception filter answers it
+        error.expose === false
+          ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
+          : error.message,
+        error.statusCode,
+        { cause: error },
+      );
+    }
 
     return error;
   }
@@ -1764,4 +1781,20 @@ export class FastifyAdapter<
       this.openConnections.delete(socket);
     }
   }
+}
+
+/**
+ * Returns true when `err` is an "http-errors"-shaped error (body-parser, Express, etc.).
+ * Mirrors the same check in BaseExceptionFilter.isHttpError().
+ */
+function isHttpError(
+  err: unknown,
+): err is { statusCode: number; message: string; expose: boolean } {
+  return (
+    isObject(err) &&
+    err instanceof Error &&
+    typeof (err as any).expose === 'boolean' &&
+    typeof (err as any).statusCode === 'number' &&
+    (err as any).status === (err as any).statusCode
+  );
 }
