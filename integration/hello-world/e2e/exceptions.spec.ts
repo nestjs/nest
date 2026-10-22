@@ -58,6 +58,14 @@ class SchemaController {
   create() {}
 }
 
+@Controller()
+class SlowController {
+  @Get('slow')
+  findAll() {
+    return new Promise(() => {});
+  }
+}
+
 describe('Error messages', () => {
   let server: RawServerDefault;
 
@@ -315,7 +323,7 @@ describe('Error messages', () => {
     let app: NestFastifyApplication;
     beforeEach(async () => {
       const module = await Test.createTestingModule({
-        controllers: [ErrorsController],
+        controllers: [ErrorsController, SchemaController],
       }).compile();
 
       app = module.createNestApplication<NestFastifyApplication>(
@@ -337,8 +345,59 @@ describe('Error messages', () => {
       expect(JSON.parse(payload)).toEqual({ caught: 413 });
     });
 
+    it(`/POST (a 4xx FastifyError reaches the filter)`, async () => {
+      const { payload, statusCode } = await app.inject({
+        method: 'POST',
+        url: '/schema',
+        headers: { 'content-type': 'text/foo' },
+        payload: 'name',
+      });
+      expect(statusCode).toBe(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+      expect(JSON.parse(payload)).toEqual({ caught: 415 });
+    });
+
     afterEach(async () => {
       await app.close();
+    });
+  });
+  describe('Fastify (handlerTimeout)', () => {
+    let app: NestFastifyApplication;
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [SlowController],
+      }).compile();
+
+      app = module.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter({ handlerTimeout: 50 }),
+      );
+      await listenOnLoopback(app);
+    });
+
+    it(`/GET (ServiceUnavailable logged when the route exceeds "handlerTimeout")`, async () => {
+      const logError = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+
+      const { payload, statusCode } = await app.inject({
+        method: 'GET',
+        url: '/slow',
+      });
+      expect(statusCode).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(JSON.parse(payload)).toEqual({
+        statusCode: 503,
+        message: "Request timed out after 50 ms on route '/slow'",
+      });
+      expect(logError).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          code: 'FST_ERR_HANDLER_TIMEOUT',
+          statusCode: 503,
+        }),
+      );
+    });
+
+    afterEach(async () => {
+      await app.close();
+      vi.restoreAllMocks();
     });
   });
 });
