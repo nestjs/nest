@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { platform } from 'os';
+import { Server as TlsServer } from 'tls';
 import { AbstractHttpAdapter } from './adapters/index.js';
 import { ApplicationConfig } from './application-config.js';
 import { MESSAGES } from './constants.js';
@@ -648,7 +649,10 @@ export class NestApplication
   }
 
   private getProtocol(): 'http' | 'https' {
-    return this.appOptions && this.appOptions.httpsOptions ? 'https' : 'http';
+    // Read from the server: `httpsOptions` is not the only way to serve HTTPS,
+    // the Fastify adapter takes its own `https` option and ignores this one.
+    // `https.Server` and `http2.Http2SecureServer` both extend `tls.Server`.
+    return this.httpServer instanceof TlsServer ? 'https' : 'http';
   }
 
   /**

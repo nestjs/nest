@@ -1,7 +1,7 @@
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module.js';
-import { randomPort } from './utils.js';
+import { randomPort, readTlsOptions } from './utils.js';
 
 describe('Get URL (Fastify Application)', () => {
   let testModule: TestingModule;
@@ -43,5 +43,29 @@ describe('Get URL (Fastify Application)', () => {
     await expect(app.getUrl()).rejects.toEqual(
       'app.listen() needs to be called before calling app.getUrl()',
     );
+  });
+  it('should return an https url when the adapter serves https', async () => {
+    const app = testModule.createNestApplication(
+      new FastifyAdapter({ https: readTlsOptions() }),
+    );
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`https://127.0.0.1:${port}`);
+    await app.close();
+  });
+  it('should return an https url when the adapter serves http2 over tls', async () => {
+    const app = testModule.createNestApplication(
+      new FastifyAdapter({ http2: true, https: readTlsOptions() }),
+    );
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`https://127.0.0.1:${port}`);
+    await app.close();
+  });
+  it('should return an http url for "httpsOptions", which the adapter does not use', async () => {
+    const app = testModule.createNestApplication(new FastifyAdapter(), {
+      httpsOptions: readTlsOptions(),
+    });
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`http://127.0.0.1:${port}`);
+    await app.close();
   });
 });
