@@ -41,6 +41,12 @@ export class ViewsController {
   page() {
     return { message: 'Hello', year: 2026 };
   }
+
+  @Get('locals')
+  @Render('locals')
+  locals() {
+    return { message: 'Hello' };
+  }
 }
 
 @Module({ controllers: [ViewsController] })

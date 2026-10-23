@@ -1,0 +1,1 @@
+<p>{{message}} {{user}}</p>

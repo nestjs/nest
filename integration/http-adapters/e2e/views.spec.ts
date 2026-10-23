@@ -16,6 +16,14 @@ describe.each(adapters('express', 'node'))('@Render() (%s)', name => {
 
   beforeEach(async () => {
     app = await createApp(name, ViewsModule, app => {
+      app.use(
+        (req: unknown, res: { locals: any }, next: (err?: unknown) => void) => {
+          res.locals.user = 'Kamil';
+          // The data the handler returns wins
+          res.locals.message = 'Bye';
+          next();
+        },
+      );
       if (name === 'express') {
         const expressApp = app as NestExpressApplication;
         expressApp.engine('tpl', partialsEngine.__express);
@@ -39,5 +47,12 @@ describe.each(adapters('express', 'node'))('@Render() (%s)', name => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/^text\/html/);
     expect(res.text).toBe('<h1>Hello</h1><footer>2026</footer>');
+  });
+
+  it('should pass res.locals to the view, under the data the handler returns', async () => {
+    const res = await request(app.getHttpServer()).get('/locals');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('<p>Hello Kamil</p>');
   });
 });

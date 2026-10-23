@@ -327,7 +327,12 @@ export class NodeAdapter extends AbstractHttpAdapter<
         'No view engine is configured; call app.setViewEngine() to use @Render().',
       );
     }
-    const html = await this.views.render(view, options);
+    // As with Express' res.render(): the data the handler returns wins over
+    // res.locals, which wins over the engine's defaultContext
+    const html = await this.views.render(view, {
+      ...response.locals,
+      ...options,
+    });
     return this.writeBody(
       response,
       html,
