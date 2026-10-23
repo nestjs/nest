@@ -1176,10 +1176,72 @@ describe('ServerKafka', () => {
 
         expect(getMessageHandlerSpy).toHaveBeenCalledWith(
           perTopicUntyped.consumers.get('topic-a'),
+          'topic-a',
         );
         expect(getMessageHandlerSpy).toHaveBeenCalledWith(
           perTopicUntyped.consumers.get('topic-b'),
+          'topic-b',
         );
+      });
+
+      describe('overlapping patterns', () => {
+        const pattern = /^orders\./;
+        const record = {
+          topic: 'orders.created',
+          partition: 0,
+          message: {},
+          heartbeat: async () => {},
+          pause: () => () => {},
+        } as any;
+        let exact: ReturnType<typeof vi.fn>;
+        let regexp: ReturnType<typeof vi.fn>;
+        let handleMessage: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+          exact = vi.fn();
+          regexp = vi.fn();
+          perTopicUntyped.messageHandlers = new Map<any, any>([
+            ['orders.created', exact],
+            [pattern, regexp],
+          ]);
+          handleMessage = vi
+            .spyOn(perTopicServer, 'handleMessage')
+            .mockResolvedValue(undefined);
+        });
+
+        it('should handle a record only in the group that owns its handler', async () => {
+          const exactConsumer = {} as any;
+          const regexpConsumer = {} as any;
+
+          await perTopicServer.getMessageHandler(
+            exactConsumer,
+            'orders.created',
+          )(record);
+          await perTopicServer.getMessageHandler(
+            regexpConsumer,
+            pattern,
+          )(record);
+
+          expect(handleMessage).toHaveBeenCalledOnce();
+          expect(handleMessage).toHaveBeenCalledWith(record, exactConsumer);
+        });
+
+        it('should handle a record in the RegExp group when no exact handler matches', async () => {
+          const regexpConsumer = {} as any;
+          const other = { ...record, topic: 'orders.updated' };
+
+          await perTopicServer.getMessageHandler(
+            {} as any,
+            'orders.created',
+          )(other);
+          await perTopicServer.getMessageHandler(
+            regexpConsumer,
+            pattern,
+          )(other);
+
+          expect(handleMessage).toHaveBeenCalledOnce();
+          expect(handleMessage).toHaveBeenCalledWith(other, regexpConsumer);
+        });
       });
 
       it('should create and subscribe a dedicated consumer for a RegExp topic pattern', async () => {
