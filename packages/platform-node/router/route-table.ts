@@ -34,6 +34,8 @@ interface RouteRecord {
   hasWildcard: boolean;
   /** Number of "/" in the route path before the wildcard. */
   wildcardSlashes: number;
+  /** Length of the text before the wildcard in its segment ("v-*rest"). */
+  wildcardOffset: number;
 }
 
 interface FoundRoute {
@@ -47,6 +49,7 @@ interface FindMyWayVariant {
   paramNames: string[];
   hasWildcard: boolean;
   wildcardSlashes: number;
+  wildcardOffset: number;
 }
 
 // Route parameters live in an object without a prototype, as with
@@ -211,15 +214,26 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
   const paramNames: string[] = [];
   let hasWildcard = false;
   let wildcardSlashes = 0;
+  // Text since the last "/", and whether a parameter is in that segment
+  let segmentText = 0;
+  let segmentHasParam = false;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     switch (token.type) {
-      case 'text':
+      case 'text': {
         if (UNSAFE_TEXT.test(token.value)) {
           return undefined;
         }
         path += token.value.replaceAll(':', '::');
+        const slash = token.value.lastIndexOf('/');
+        if (slash === -1) {
+          segmentText += token.value.length;
+        } else {
+          segmentText = token.value.length - slash - 1;
+          segmentHasParam = false;
+        }
         break;
+      }
       case 'param': {
         // Anything else right after a parameter (another parameter, a
         // wildcard, "@", "~", ...) would end up in find-my-way's name for it
@@ -232,11 +246,13 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
         }
         path += `:${positionalName(paramNames.length)}`;
         paramNames.push(token.name);
+        segmentHasParam = true;
         break;
       }
       case 'wildcard':
-        // find-my-way only supports a trailing wildcard
-        if (i !== tokens.length - 1) {
+        // find-my-way only supports a trailing wildcard. After a parameter
+        // in its segment ("/:id-*rest"), where it starts varies.
+        if (i !== tokens.length - 1 || segmentHasParam) {
           return undefined;
         }
         wildcardSlashes = path.split('/').length - 1;
@@ -253,7 +269,13 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
   if (path.length > 1 && path.endsWith('/')) {
     return undefined;
   }
-  return { path: path || '/', paramNames, hasWildcard, wildcardSlashes };
+  return {
+    path: path || '/',
+    paramNames,
+    hasWildcard,
+    wildcardSlashes,
+    wildcardOffset: hasWildcard ? segmentText : 0,
+  };
 }
 
 /**
@@ -324,6 +346,7 @@ export class RouteTable {
       paramNames,
       hasWildcard,
       wildcardSlashes,
+      wildcardOffset,
     } of uniqueVariants.values()) {
       const router = method === null ? this.allRouter : this.router;
       const routerMethod = method ?? 'GET';
@@ -342,6 +365,7 @@ export class RouteTable {
         paramNames: [paramNames],
         hasWildcard,
         wildcardSlashes,
+        wildcardOffset,
       };
       try {
         router.on(routerMethod as any, routePath, () => {}, newRecord);
@@ -436,6 +460,9 @@ export class RouteTable {
         }
         start = slash + 1;
       }
+      // Past the text before the wildcard in its segment, which find-my-way
+      // matched ("v-" of "/files/v-*rest")
+      start += record.wildcardOffset;
       let end = path.length;
       if (end > start && path.charCodeAt(end - 1) === 47 /* / */) {
         end -= 1;

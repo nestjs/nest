@@ -147,6 +147,46 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/files')).toBeNull();
     });
 
+    it('should leave the text before a wildcard in its segment out of it', () => {
+      table.add('GET', '/files/v-*rest', handler());
+      // The Express 4 "ab*cd" example, as path-to-regexp 8 reads it
+      table.add('GET', '/ab*cd', handler());
+
+      expect(table.lookup('GET', '/files/v-abc/def')?.params).toEqual({
+        rest: ['abc', 'def'],
+      });
+      expect(table.lookup('GET', '/abxyz')?.params).toEqual({ cd: ['xyz'] });
+    });
+
+    it('should not match the text before a wildcard alone', () => {
+      table.add('GET', '/files/v-*rest', handler());
+      table.add('GET', '/ab*cd', handler());
+
+      // As path-to-regexp, so a route cannot run without its middleware
+      expect(table.lookup('GET', '/files/v-')).toBeNull();
+      expect(table.lookup('GET', '/ab')).toBeNull();
+    });
+
+    it('should prefer a wildcard after text over a parameter of the segment', () => {
+      const id = handler();
+      const rest = handler();
+      table.add('GET', '/files/:id', id);
+      table.add('GET', '/files/v-*rest', rest);
+
+      expect(table.lookup('GET', '/files/v-abc')?.handlers).toEqual([rest]);
+      expect(table.lookup('GET', '/files/abc')?.handlers).toEqual([id]);
+    });
+
+    it('should match a wildcard after a parameter of its segment', () => {
+      table.add('GET', '/tags/:id-*rest', handler());
+
+      expect(table.lookup('GET', '/tags/12-a/b')?.params).toEqual({
+        id: '12',
+        rest: ['a', 'b'],
+      });
+      expect(table.lookup('GET', '/tags/12-')).toBeNull();
+    });
+
     it('should read the parameter name up to the text that follows it', () => {
       table.add('GET', '/users/:id@profile', handler());
       table.add('GET', '/tabs/:id~:tab', handler());
