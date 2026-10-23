@@ -1,6 +1,6 @@
 import FindMyWay from 'find-my-way';
 import { METHODS } from 'http';
-import { match, parse, type Token } from 'path-to-regexp';
+import { match, parse, TokenData, type Token } from 'path-to-regexp';
 import { getLiteralPrefix, getPrefixSkips, loosen } from './utils.js';
 
 export type RouteHandler = (
@@ -93,6 +93,11 @@ interface FallbackRoute {
   seq: number;
   /** Also in find-my-way, but for its variants ending with "/". */
   partial?: boolean;
+  /**
+   * For a partial route, matches its variants ending with "/" alone ("/files/"
+   * of "/files/{*path}"), see `RouteTable.lookup()`.
+   */
+  variantMatcher?: Matcher;
 }
 
 /** Every route, for {@link RouteTable.lookupRest}. */
@@ -116,6 +121,15 @@ function compileMatcher(path: string): Matcher {
     end: true,
     sensitive: true,
   });
+  return (pathname: string) => matcher(pathname) as any;
+}
+
+// Matches the given group-free variants exactly, trailing "/" included
+function compileVariantMatcher(variants: Token[][]): Matcher {
+  const matcher = match(
+    variants.map(tokens => new TokenData(tokens)),
+    { end: true, sensitive: true, trailing: false },
+  );
   return (pathname: string) => matcher(pathname) as any;
 }
 
@@ -358,10 +372,11 @@ export class RouteTable {
     });
     this.routeSkips = undefined;
     const { tokens } = parse(path);
-    const variants =
+    const expanded =
       countGroups(tokens) > MAX_EXPANDED_GROUPS
-        ? [undefined]
-        : expandGroups(tokens).map(toFindMyWayPath);
+        ? undefined
+        : expandGroups(tokens);
+    const variants = expanded?.map(toFindMyWayPath) ?? [undefined];
 
     if (
       variants.some(variant => variant === undefined) ||
@@ -388,6 +403,9 @@ export class RouteTable {
         handler,
         seq,
         partial: true,
+        variantMatcher: compileVariantMatcher(
+          expanded!.filter((_, i) => variants[i]!.trailingSlash),
+        ),
       });
       this.hasPartialRoutes = true;
     }
@@ -508,7 +526,8 @@ export class RouteTable {
     if (found !== null) {
       // find-my-way serves "/admin/" with a route for "/admin" (or a
       // catch-all), while it may be for the variant ending with "/" of a route
-      // registered before ("/admin/{*path}"), as Express would match it
+      // registered before ("/admin/{*path}"), as Express would match it. Any
+      // other path ending with "/" goes to the route it would without it.
       if (
         this.hasPartialRoutes &&
         path.length > 1 &&
@@ -657,7 +676,9 @@ export class RouteTable {
         if (route.seq >= beforeSeq) {
           break;
         }
-        if (!route.partial) {
+        // Only for its variants ending with "/" themselves: "/files/{*path}"
+        // takes "/files/", but not "/files/readme/" from "/files/readme"
+        if (!route.partial || !route.variantMatcher!(path)) {
           continue;
         }
       }

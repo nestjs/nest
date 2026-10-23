@@ -576,6 +576,43 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/about')?.handlers).toEqual([spa]);
     });
 
+    it('should match its variant ending with "/" before a route registered after it', () => {
+      const catchAll = handler();
+      const index = handler();
+      table.add('GET', '/admin/{*path}', catchAll);
+      table.add('GET', '/admin', index);
+
+      // As with Express, where the first route matching "/admin/" wins
+      expect(table.lookup('GET', '/admin/')).toEqual({
+        handlers: [catchAll],
+        params: {},
+        seqs: [0],
+      });
+      expect(table.lookup('GET', '/admin')?.handlers).toEqual([index]);
+    });
+
+    it('should send a path ending with "/" to the route it would go to without it', () => {
+      const catchAll = handler();
+      const readme = handler();
+      const byId = handler();
+      table.add('GET', '/files/{*path}', catchAll);
+      table.add('GET', '/files/readme', readme);
+      table.add('GET', '/files/:id', byId);
+
+      for (const path of ['/files/readme', '/files/readme/']) {
+        expect(table.lookup('GET', path)?.handlers).toEqual([readme]);
+      }
+      for (const path of ['/files/42', '/files/42/']) {
+        expect(table.lookup('GET', path)).toEqual({
+          handlers: [byId],
+          params: { id: '42' },
+          seqs: [2],
+        });
+      }
+      expect(table.lookup('GET', '/files/')?.handlers).toEqual([catchAll]);
+      expect(table.lookup('GET', '/files/a/b/')?.handlers).toEqual([catchAll]);
+    });
+
     it('should give the parameters of path-to-regexp for a path ending with "/"', () => {
       table.add('GET', '/x{/:y}/{*z}', handler());
 
