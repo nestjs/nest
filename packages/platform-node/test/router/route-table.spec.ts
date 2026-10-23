@@ -459,6 +459,46 @@ describe('RouteTable', () => {
         expect(table.lookup('GET', '/admin/x')).not.toBeNull();
       },
     );
+
+    it('should prefer such a route (the legacy "files/*") over less specific routes', () => {
+      const files = handler();
+      const section = handler();
+      const root = handler();
+      table.add('GET', '/files/{*path}', files);
+      table.add('GET', '/:section/:id', section);
+      table.add('GET', '/{*path}', root);
+
+      expect(table.lookup('GET', '/files/readme')).toEqual({
+        handlers: [files],
+        params: { path: ['readme'] },
+        seqs: [0],
+      });
+      expect(table.lookup('GET', '/files/a/b')?.handlers).toEqual([files]);
+      expect(table.lookup('GET', '/files/')?.handlers).toEqual([files]);
+      expect(table.lookup('GET', '/other/1')?.handlers).toEqual([section]);
+      expect(table.lookup('GET', '/x')?.handlers).toEqual([root]);
+    });
+
+    it('should prefer such a route over a catch-all registered before it', () => {
+      const spa = handler();
+      const api = handler();
+      table.add('GET', '/{*path}', spa);
+      table.add(null, '/api/{*path}', api);
+
+      expect(table.lookup('GET', '/api/users')?.handlers).toEqual([api]);
+      expect(table.lookup('GET', '/about')?.handlers).toEqual([spa]);
+    });
+
+    it('should give the parameters of path-to-regexp for a path ending with "/"', () => {
+      table.add('GET', '/x{/:y}/{*z}', handler());
+
+      expect(table.lookup('GET', '/x/1/')?.params).toEqual({ y: '1' });
+      expect(table.lookup('GET', '/x/1/2')?.params).toEqual({
+        y: '1',
+        z: ['2'],
+      });
+      expect(table.lookup('GET', '/x')).toBeNull();
+    });
   });
 
   describe('lookupRest()', () => {
