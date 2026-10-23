@@ -8,9 +8,10 @@ import {
   ErrorsModule,
 } from '../src/errors/errors.module.js';
 
-// Errors raised by middleware reach Nest's exception handling as they were
-// raised: `@Catch()` filters see the original error (class and code), and
-// without a filter, http-errors-style errors answer with their own status.
+// Errors raised by middleware reach Nest's exception handling: a client
+// error shaped like the http-errors ones is mapped to an HttpException with
+// its status, whose cause is the original error (class and code), and without
+// a filter, http-errors-style errors answer with their own status.
 describe.each(adapters('express', 'fastify', 'node'))(
   'Errors from middleware (%s)',
   name => {
@@ -21,7 +22,7 @@ describe.each(adapters('express', 'fastify', 'node'))(
       await app.close();
     });
 
-    it('should hand an error passed to next() by app.use() middleware to a @Catch() filter as it is', async () => {
+    it('should hand an error passed to next() by app.use() middleware to filters as the cause of an HttpException', async () => {
       app = await createApp(name, ErrorsModule, app => {
         app.use((_req: unknown, _res: unknown, next: (e: unknown) => void) =>
           next(new CsrfError()),
@@ -33,13 +34,14 @@ describe.each(adapters('express', 'fastify', 'node'))(
 
       expect(res.status).toBe(499);
       expect(res.body).toEqual({
-        caught: 'CsrfError',
+        status: 403,
+        cause: 'CsrfError',
         code: 'EBADCSRFTOKEN',
         isCsrfError: true,
       });
     });
 
-    it('should hand an error from a class middleware to a @Catch() filter as it is', async () => {
+    it('should hand an error from a class middleware to filters as the cause of an HttpException', async () => {
       app = await createApp(name, ClassMiddlewareErrorsModule, app =>
         app.useGlobalFilters(new CsrfErrorFilter()),
       );
@@ -115,7 +117,7 @@ describe.each(adapters('express', 'node'))(
       await app.close();
     });
 
-    it('should hand the rejection to a @Catch() filter as it is', async () => {
+    it('should hand the rejection to filters as the cause of an HttpException', async () => {
       app = await createApp(name, ErrorsModule, app => {
         app.use(async () => {
           throw new CsrfError();

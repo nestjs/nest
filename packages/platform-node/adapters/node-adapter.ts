@@ -699,10 +699,25 @@ export class NodeAdapter extends AbstractHttpAdapter<
     if (error instanceof SyntaxError || error instanceof URIError) {
       return new BadRequestException(error.message);
     }
-    // Anything else, including the body parsers' http-errors-style errors
-    // (payload too large, unsupported charset, ...), stays as it is, as with
-    // Express: Nest's exception filter answers those with their status and
-    // message, and `@Catch()` filters still see the original error and `code`
+    // As with Express and Fastify: http-errors-style client errors (those of
+    // the body parsers, such as a body that is too large, and of many Express
+    // middleware) reach exception filters as an HttpException with their
+    // status, and the original error as its cause. A 5xx one is a server
+    // fault: it stays unmapped, so the built-in exception filter logs it.
+    if (
+      isHttpError(error) &&
+      error.statusCode < HttpStatus.INTERNAL_SERVER_ERROR
+    ) {
+      return new HttpException(
+        // An error that must not reach the client only gets a status text,
+        // like the built-in exception filter answers it
+        error.expose === false
+          ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
+          : error.message,
+        error.statusCode,
+        { cause: error },
+      );
+    }
     return error;
   }
 
@@ -849,4 +864,20 @@ export class NodeAdapter extends AbstractHttpAdapter<
     );
     this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
   }
+}
+
+/**
+ * Returns true when `err` is an "http-errors"-shaped error (the body parsers,
+ * csrf, etc.), as the ExpressAdapter checks it.
+ */
+function isHttpError(
+  err: unknown,
+): err is { statusCode: number; message: string; expose: boolean } {
+  return (
+    isObject(err) &&
+    err instanceof Error &&
+    typeof (err as any).expose === 'boolean' &&
+    typeof (err as any).statusCode === 'number' &&
+    (err as any).status === (err as any).statusCode
+  );
 }

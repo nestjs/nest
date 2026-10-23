@@ -71,9 +71,9 @@ export class CatchEverythingFilter implements ExceptionFilter {
   catch(error: any, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse();
     const raw = response.raw ?? response;
-    raw.writeHead(error.statusCode ?? error.getStatus?.() ?? 500, {
-      'Content-Type': 'application/json',
-    });
-    raw.end(JSON.stringify({ filtered: true, status: error.statusCode }));
+    // A client error reaches filters as an HttpException
+    const status = error.getStatus?.() ?? error.statusCode ?? 500;
+    raw.writeHead(status, { 'Content-Type': 'application/json' });
+    raw.end(JSON.stringify({ filtered: true, status }));
   }
 }

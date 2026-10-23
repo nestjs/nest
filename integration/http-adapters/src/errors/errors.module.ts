@@ -4,6 +4,7 @@ import {
   Controller,
   ExceptionFilter,
   Get,
+  HttpException,
   Injectable,
   MiddlewareConsumer,
   Module,
@@ -27,20 +28,24 @@ export class CsrfError extends Error {
 }
 
 /**
- * Answers a `CsrfError` with 499 and what it saw of the error, writing to the
- * raw response so that it works the same on every adapter.
+ * Answers the `HttpException` that a client error from a middleware is mapped
+ * to with 499 and what it saw of the exception and of its cause, the original
+ * error, writing to the raw response so that it works the same on every
+ * adapter.
  */
-@Catch(CsrfError)
+@Catch(HttpException)
 export class CsrfErrorFilter implements ExceptionFilter {
-  catch(error: CsrfError, host: ArgumentsHost) {
+  catch(exception: HttpException, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse();
     const raw = response.raw ?? response;
+    const cause = exception.cause as CsrfError | undefined;
     raw.writeHead(499, { 'Content-Type': 'application/json' });
     raw.end(
       JSON.stringify({
-        caught: error.constructor.name,
-        code: error.code,
-        isCsrfError: error instanceof CsrfError,
+        status: exception.getStatus(),
+        cause: cause?.constructor.name,
+        code: cause?.code,
+        isCsrfError: cause instanceof CsrfError,
       }),
     );
   }

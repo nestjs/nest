@@ -27,6 +27,7 @@ import {
   writeFileSync,
 } from 'fs';
 import * as http from 'http';
+import createHttpError from 'http-errors';
 import * as https from 'https';
 import type { AddressInfo } from 'net';
 import { tmpdir } from 'os';
@@ -2066,34 +2067,51 @@ describe('NodeAdapter', () => {
       expect(result.message).toBe(error.message);
     });
 
-    it.each([
-      [
-        'a client error (http-errors style), so @Catch() filters still see it',
-        Object.assign(new Error('invalid csrf token'), {
-          status: 403,
-          statusCode: 403,
-          expose: true,
-          code: 'EBADCSRFTOKEN',
-        }),
-      ],
-      ['a plain error', new Error('boom')],
-      [
-        'a server error',
-        Object.assign(new Error('boom'), {
-          status: 500,
-          statusCode: 500,
-          expose: false,
-        }),
-      ],
-      [
-        'a client error whose message must not be exposed',
-        Object.assign(new Error('internal details'), {
-          status: 400,
-          statusCode: 400,
-          expose: false,
-        }),
-      ],
-    ])('should return %s unchanged', (_, error) => {
+    it('should map an http-errors error to an HttpException with its status', () => {
+      const error = createHttpError(413, 'request entity too large');
+      const result = adapter.mapException(error) as HttpException;
+
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.getStatus()).toBe(413);
+      expect(result.getResponse()).toBe('request entity too large');
+      expect(result.cause).toBe(error);
+    });
+
+    it('should map an error shaped like an http-errors error the same way', () => {
+      // As csrf and many other Express middleware raise them
+      const error = Object.assign(new Error('invalid csrf token'), {
+        status: 403,
+        statusCode: 403,
+        expose: true,
+        code: 'EBADCSRFTOKEN',
+      });
+      const result = adapter.mapException(error) as HttpException;
+
+      expect(result.getStatus()).toBe(403);
+      expect(result.getResponse()).toBe('invalid csrf token');
+      expect(result.cause).toBe(error);
+    });
+
+    it('should not expose the message of an http-errors error with expose: false', () => {
+      const error = createHttpError(404, 'internal detail', { expose: false });
+      const result = adapter.mapException(error) as HttpException;
+
+      expect(result.getStatus()).toBe(404);
+      expect(result.getResponse()).toBe('Not Found');
+    });
+
+    it.each([500, 503])(
+      'should not map an http-errors error with status %i',
+      status => {
+        const error = createHttpError(status, 'internal detail');
+
+        expect(adapter.mapException(error)).toBe(error);
+      },
+    );
+
+    it('should return a plain error unchanged', () => {
+      const error = new Error('boom');
+
       expect(adapter.mapException(error)).toBe(error);
     });
 
