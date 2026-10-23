@@ -200,6 +200,33 @@ describe('RouteTable', () => {
       });
     });
 
+    it('should only decode the parameters and wildcard segments that are escaped', () => {
+      table.add('GET', '/files/*path', handler());
+      // Matched with path-to-regexp
+      table.add('GET', '/raw/*path/end', handler());
+      const decode = vi.spyOn(globalThis, 'decodeURIComponent');
+
+      try {
+        expect(table.lookup('GET', '/files/css/app.min.css')?.params).toEqual({
+          path: ['css', 'app.min.css'],
+        });
+        expect(table.lookup('GET', '/raw/a/b/end')?.params).toEqual({
+          path: ['a', 'b'],
+        });
+        expect(decode).not.toHaveBeenCalled();
+
+        expect(table.lookup('GET', '/files/c%20d/e')?.params).toEqual({
+          path: ['c d', 'e'],
+        });
+        expect(table.lookup('GET', '/raw/a%2Fb/end')?.params).toEqual({
+          path: ['a/b'],
+        });
+        expect(decode).toHaveBeenCalledTimes(2);
+      } finally {
+        decode.mockRestore();
+      }
+    });
+
     it('should not include a trailing slash in a wildcard', () => {
       table.add('GET', '/files/*path', handler());
 

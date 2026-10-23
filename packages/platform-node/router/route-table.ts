@@ -169,10 +169,14 @@ const UNSAFE_TEXT = /[*?(]/;
 const PARAM_NAME_END = /^[/.-]/;
 
 function decodeParam(value: string) {
-  return decodeURIComponent(value);
+  // See decodeParam() in node-router.ts
+  return value.indexOf('%') === -1 ? value : decodeURIComponent(value);
 }
 
 function decodeSegment(value: string) {
+  if (value.indexOf('%') === -1) {
+    return value;
+  }
   try {
     return decodeURIComponent(value);
   } catch {
