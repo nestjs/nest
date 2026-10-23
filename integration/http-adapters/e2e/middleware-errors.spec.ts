@@ -5,6 +5,7 @@ import {
   ClassMiddlewareErrorsModule,
   CsrfError,
   CsrfErrorFilter,
+  ErrorPageFilter,
   ErrorsModule,
 } from '../src/errors/errors.module.js';
 
@@ -129,6 +130,34 @@ describe.each(adapters('express', 'node'))(
 
       expect(res.status).toBe(499);
       expect(res.body.isCsrfError).toBe(true);
+    });
+  },
+);
+
+// res.sendFile() is an Express API (Fastify's reply has its own)
+describe.each(adapters('express', 'node'))(
+  'Exception filters that fail as well (%s)',
+  name => {
+    let app: INestApplication;
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should not run a filter again and again when its res.sendFile() fails', async () => {
+      const filter = new ErrorPageFilter();
+      app = await createApp(name, ErrorsModule, app =>
+        app.useGlobalFilters(filter),
+      );
+
+      // A range that the error page cannot satisfy either
+      const res = await request(app.getHttpServer())
+        .get('/missing')
+        .set('Range', 'bytes=99999-')
+        .timeout(2000);
+
+      expect(res.status).toBe(416);
+      expect(filter.calls).toBe(2);
     });
   },
 );

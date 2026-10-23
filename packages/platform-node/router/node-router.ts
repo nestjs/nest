@@ -94,6 +94,10 @@ export const PARAM_TOO_LONG_KEY = Symbol('nestjs.node.paramTooLong');
  *
  * @internal
  */
+// Where handleError() resumes for a request: the layer after the error
+// handler that ran last (set on the error path only)
+const ERROR_RESUME_KEY = Symbol('nestjs.node.errorResume');
+
 export function createUriTooLongError() {
   return Object.assign(new Error('Route parameter too long'), {
     status: 414,
@@ -179,7 +183,10 @@ export class NodeRouter {
    * stores on every request.
    */
   public handleError(err: unknown, req: NodeRequest, res: NodeResponse) {
-    this.dispatch(req, res, undefined, err);
+    // An error raised by an error handler itself (an exception filter whose
+    // res.sendFile() fails as well) continues past that handler, as with
+    // Express' next(): starting over would run it again, without end
+    this.dispatch(req, res, undefined, err, (req as any)[ERROR_RESUME_KEY]);
   }
 
   public get(...args: any[]) {
@@ -338,9 +345,10 @@ export class NodeRouter {
     res: NodeResponse,
     done: NextFunction | undefined,
     initialError?: unknown,
+    startIndex = 0,
   ) {
     const stack = this.stack;
-    let index = 0;
+    let index = startIndex;
     let routeMatch: RouteMatch | undefined;
     let routeIndex = 0;
     // The other routes matching the path, once every handler of the matched
@@ -484,6 +492,9 @@ export class NodeRouter {
             }
             req.baseUrl = parentBaseUrl + mountPath;
           }
+        }
+        if (err !== undefined) {
+          (req as any)[ERROR_RESUME_KEY] = index;
         }
         return invoke(layer.handler, req, res, next, err);
       }

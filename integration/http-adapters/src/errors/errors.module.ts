@@ -11,6 +11,7 @@ import {
   NestMiddleware,
   NestModule,
 } from '@nestjs/common';
+import { join } from 'path';
 
 /**
  * An http-errors-style error, as csrf, body-parser and many Express
@@ -48,6 +49,24 @@ export class CsrfErrorFilter implements ExceptionFilter {
         isCsrfError: cause instanceof CsrfError,
       }),
     );
+  }
+}
+
+/**
+ * Answers every exception with an error page sent through res.sendFile(), as
+ * applications do for their own 404 page, and counts its calls.
+ */
+@Catch()
+export class ErrorPageFilter implements ExceptionFilter {
+  calls = 0;
+
+  catch(_exception: unknown, host: ArgumentsHost) {
+    this.calls++;
+    host
+      .switchToHttp()
+      .getResponse()
+      .status(404)
+      .sendFile(join(process.cwd(), 'Readme.md'));
   }
 }
 

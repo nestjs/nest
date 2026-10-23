@@ -241,6 +241,71 @@ describe('NodeAdapter', () => {
     });
   });
 
+  describe('error handlers that fail as well', () => {
+    let dir: string;
+
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'nest-adapter-error-page-'));
+      writeFileSync(join(dir, 'error.html'), '<p>Something went wrong</p>');
+    });
+
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('should not run an error handler again for an error it raised itself', async () => {
+      // e.g. a catch-all exception filter answering with an error page through
+      // res.sendFile(), for a range that the page cannot satisfy either
+      const port = await startServer();
+      const page = join(dir, 'error.html');
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+        res.sendFile(page),
+      );
+      let calls = 0;
+      adapter.setErrorHandler(
+        (err: unknown, req: NodeRequest, res: NodeResponse, next: Next) => {
+          if (++calls > 10) {
+            // Ends the loop of an adapter that starts over with this handler
+            return adapter.reply(res, 'loop', 508);
+          }
+          res.sendFile(page);
+        },
+      );
+
+      const res = await request(port, { headers: { range: 'bytes=99999-' } });
+
+      expect(res.status).toBe(416);
+      expect(calls).toBe(1);
+    });
+
+    it('should still run the error handlers registered after it', async () => {
+      const port = await startServer();
+      const page = join(dir, 'error.html');
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+        res.sendFile(page),
+      );
+      const seen: string[] = [];
+      adapter.setErrorHandler(
+        (err: unknown, req: NodeRequest, res: NodeResponse, next: Next) => {
+          seen.push('error page');
+          res.sendFile(page);
+        },
+      );
+      adapter.setErrorHandler(
+        (err: any, req: NodeRequest, res: NodeResponse, next: Next) => {
+          seen.push('fallback');
+          adapter.reply(res, { status: err.statusCode }, err.statusCode);
+        },
+      );
+
+      const res = await request(port, { headers: { range: 'bytes=99999-' } });
+
+      expect(res.status).toBe(416);
+      expect(JSON.parse(res.text)).toEqual({ status: 416 });
+      expect(seen).toEqual(['error page', 'fallback']);
+    });
+  });
+
   describe('maxParamLength option', () => {
     const byId = (req: NodeRequest, res: NodeResponse) =>
       adapter.reply(res, { length: req.params.id.length });
