@@ -754,6 +754,33 @@ describe('NodeAdapter', () => {
         expect(reads).toBeLessThan(chunkCount);
       });
 
+      it('should end a HEAD response when the source has no data', async () => {
+        const file = new StreamableFile(Buffer.alloc(0));
+        await new Promise(resolve => setImmediate(resolve));
+
+        const res = await replyWith(file, undefined, undefined, {
+          method: 'HEAD',
+        });
+
+        expect(res.status).toBe(200);
+      });
+
+      it('should end a HEAD response when the source has already ended', async () => {
+        const source = new Readable({ read() {} });
+        source.push(null);
+        source.resume();
+        await new Promise(resolve => source.once('end', resolve));
+
+        const res = await replyWith(
+          new StreamableFile(source),
+          undefined,
+          undefined,
+          { method: 'HEAD' },
+        );
+
+        expect(res.status).toBe(200);
+      });
+
       it('should leave an error opening the source of a HEAD response to the error handler', async () => {
         const source = new Readable({
           read() {
