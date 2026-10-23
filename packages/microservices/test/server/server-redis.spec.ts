@@ -43,6 +43,32 @@ describe('ServerRedis', () => {
       await server.listen(callbackSpy);
       expect(connectSpy).toHaveBeenCalled();
     });
+    it('should re-arm the connection retries after "close"', async () => {
+      untypedServer.options = { retryAttempts: 3, retryDelay: 5 };
+
+      await server.close();
+      await server.listen(callbackSpy);
+
+      // "close" turned the retries off; the next "listen" must turn them back on
+      expect(server.createRetryStrategy(1)).toEqual(5);
+    });
+    it('should report a reconnecting client again after "close"', async () => {
+      const subClient = new EventEmitter();
+      const pubClient = new EventEmitter();
+      vi.spyOn(server, 'createRedisClient')
+        .mockResolvedValueOnce(subClient as any)
+        .mockResolvedValueOnce(pubClient as any);
+
+      await server.close();
+
+      const statuses: string[] = [];
+      server.status.subscribe(status => statuses.push(status as string));
+
+      await server.listen(callbackSpy);
+      subClient.emit('reconnecting');
+
+      expect(statuses).toContain('reconnecting');
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');

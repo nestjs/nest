@@ -51,6 +51,8 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     try {
+      // A close() before this listen() must not keep retries off for good
+      this.isManuallyClosed = false;
       this.subClient = await this.createRedisClient();
       this.pubClient = await this.createRedisClient();
 
