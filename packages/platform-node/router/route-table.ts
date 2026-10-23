@@ -1,4 +1,5 @@
 import FindMyWay from 'find-my-way';
+import { METHODS } from 'http';
 import { match, parse, type Token } from 'path-to-regexp';
 import { loosen } from './utils.js';
 
@@ -36,6 +37,16 @@ interface RouteRecord {
   wildcardSlashes: number;
   /** Length of the text before the wildcard in its segment ("v-*rest"). */
   wildcardOffset: number;
+  /** Every route of a HEAD record, see `RouteTable.addToRecord()`. */
+  entries?: RecordEntry[];
+}
+
+interface RecordEntry {
+  handler: RouteHandler;
+  seq: number;
+  paramNames: string[];
+  /** Upper-case method of the route, `null` for every method. */
+  method: string | null;
 }
 
 interface FoundRoute {
@@ -134,6 +145,8 @@ export const PARAM_TOO_LONG: RouteMatch = Object.freeze({
 const TOO_LONG = {} as FoundRoute;
 
 function noop() {}
+
+const GET_AND_HEAD = ['GET', 'HEAD'];
 
 const UNSAFE_TEXT = /[*?(]/;
 // find-my-way reads a parameter name up to the next "/", "-" or "."
@@ -292,11 +305,9 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
 export class RouteTable {
   private readonly maxParamLength: number;
   private readonly router: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
-  private readonly allRouter: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
   private readonly records = new Map<string, RouteRecord>();
   private readonly fallbackRoutes: FallbackRoute[] = [];
   private readonly routes: RegisteredRoute[] = [];
-  private hasAllRoutes = false;
   private seq = 0;
 
   constructor(options: RouteTableOptions = {}) {
@@ -309,7 +320,6 @@ export class RouteTable {
       onMaxParamLength: noop,
     };
     this.router = FindMyWay(routerOptions);
-    this.allRouter = FindMyWay(routerOptions);
   }
 
   /**
@@ -341,49 +351,77 @@ export class RouteTable {
         uniqueVariants.set(variant.path, variant);
       }
     }
-    for (const {
+    // One tree per method, which also holds the routes for every method and,
+    // for HEAD, the GET routes: find-my-way then picks the most specific of
+    // all the routes that can serve the request, whatever their method
+    const treeMethods =
+      method === null ? METHODS : method === 'GET' ? GET_AND_HEAD : [method];
+    for (const variant of uniqueVariants.values()) {
+      for (const treeMethod of treeMethods) {
+        if (!this.addToRecord(treeMethod, variant, method, handler, seq)) {
+          // Same shape as an existing route under different parameter names
+          this.fallbackRoutes.push({
+            method,
+            matcher: compileMatcher(path),
+            handler,
+            seq,
+          });
+          return;
+        }
+      }
+    }
+  }
+
+  private addToRecord(
+    treeMethod: string,
+    variant: FindMyWayVariant,
+    method: string | null,
+    handler: RouteHandler,
+    seq: number,
+  ): boolean {
+    const {
       path: routePath,
       paramNames,
       hasWildcard,
       wildcardSlashes,
       wildcardOffset,
-    } of uniqueVariants.values()) {
-      const router = method === null ? this.allRouter : this.router;
-      const routerMethod = method ?? 'GET';
-      const key = `${method} ${routePath}`;
-
-      const record = this.records.get(key);
-      if (record) {
-        record.handlers.push(handler);
-        record.seqs.push(seq);
-        record.paramNames.push(paramNames);
-        continue;
-      }
-      const newRecord: RouteRecord = {
-        handlers: [handler],
-        seqs: [seq],
-        paramNames: [paramNames],
+    } = variant;
+    const key = `${treeMethod} ${routePath}`;
+    let record = this.records.get(key);
+    if (!record) {
+      record = {
+        handlers: [],
+        seqs: [],
+        paramNames: [],
         hasWildcard,
         wildcardSlashes,
         wildcardOffset,
       };
       try {
-        router.on(routerMethod as any, routePath, () => {}, newRecord);
+        this.router.on(treeMethod as any, routePath, noop, record);
       } catch {
-        // Same shape as an existing route under different parameter names
-        this.fallbackRoutes.push({
-          method,
-          matcher: compileMatcher(path),
-          handler,
-          seq,
-        });
-        return;
+        return false;
       }
-      this.records.set(key, newRecord);
+      this.records.set(key, record);
     }
-    if (method === null) {
-      this.hasAllRoutes = true;
+    if (treeMethod !== 'HEAD') {
+      record.handlers.push(handler);
+      record.seqs.push(seq);
+      record.paramNames.push(paramNames);
+      return true;
     }
+    // A HEAD route takes precedence over the GET routes of the same path,
+    // which then only run through lookupRest()
+    const entries = (record.entries ??= []);
+    entries.push({ handler, seq, paramNames, method });
+    const hasHead = entries.some(entry => entry.method === 'HEAD');
+    const active = hasHead
+      ? entries.filter(entry => entry.method !== 'GET')
+      : entries;
+    record.handlers = active.map(entry => entry.handler);
+    record.seqs = active.map(entry => entry.seq);
+    record.paramNames = active.map(entry => entry.paramNames);
+    return true;
   }
 
   public lookup(method: string, path: string): RouteMatch | null {
@@ -398,21 +436,6 @@ export class RouteTable {
     if (found === TOO_LONG) {
       exceeded = true;
       found = null;
-    }
-    if (found === null && method === 'HEAD') {
-      found = this.find(this.router, 'GET', path);
-      if (found === TOO_LONG) {
-        exceeded = true;
-        found = null;
-      }
-    }
-    if (this.hasAllRoutes) {
-      const foundAll = this.find(this.allRouter, 'GET', path);
-      if (foundAll === TOO_LONG) {
-        exceeded = true;
-      } else if (foundAll !== null) {
-        found = found === null ? foundAll : this.merge(found, foundAll);
-      }
     }
     if (found !== null) {
       return found;
@@ -485,18 +508,6 @@ export class RouteTable {
       }
     }
     return { handlers: record.handlers, seqs: record.seqs, params };
-  }
-
-  private merge(left: FoundRoute, right: FoundRoute): FoundRoute {
-    const entries = [
-      ...left.handlers.map((handler, i) => ({ handler, seq: left.seqs[i] })),
-      ...right.handlers.map((handler, i) => ({ handler, seq: right.seqs[i] })),
-    ].sort((a, b) => a.seq - b.seq);
-    return {
-      handlers: entries.map(entry => entry.handler),
-      seqs: entries.map(entry => entry.seq),
-      params: { ...right.params, ...left.params },
-    };
   }
 
   /**

@@ -86,6 +86,41 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/users/me')?.handlers).toEqual([me]);
       expect(table.lookup('GET', '/users/1')?.handlers).toEqual([byId]);
     });
+
+    it('should prefer a more specific route over a catch-all for every method registered before it', () => {
+      const all = handler();
+      const cats = handler();
+      const cat = handler();
+      table.add(null, '/*path', all);
+      table.add('GET', '/cats', cats);
+      table.add('GET', '/cats/:id', cat);
+
+      expect(table.lookup('GET', '/cats')?.handlers).toEqual([cats]);
+      expect(table.lookup('GET', '/cats/1')?.handlers).toEqual([cat]);
+      expect(table.lookup('HEAD', '/cats')?.handlers).toEqual([cats]);
+      expect(table.lookup('POST', '/cats')?.handlers).toEqual([all]);
+      expect(table.lookup('GET', '/dogs')?.handlers).toEqual([all]);
+    });
+
+    it('should prefer a more specific route for every method over a catch-all registered before it', () => {
+      const get = handler();
+      const all = handler();
+      table.add('GET', '/*path', get);
+      table.add(null, '/health', all);
+
+      expect(table.lookup('GET', '/health')?.handlers).toEqual([all]);
+      expect(table.lookup('GET', '/other')?.handlers).toEqual([get]);
+    });
+
+    it('should prefer a more specific GET route over a HEAD catch-all, as Fastify does', () => {
+      const head = handler();
+      const cats = handler();
+      table.add('HEAD', '/*path', head);
+      table.add('GET', '/cats', cats);
+
+      expect(table.lookup('HEAD', '/cats')?.handlers).toEqual([cats]);
+      expect(table.lookup('HEAD', '/dogs')?.handlers).toEqual([head]);
+    });
   });
 
   describe('parameters', () => {
@@ -406,6 +441,7 @@ describe('RouteTable', () => {
         params: { id: '1' },
         seqs: [0, 1],
       });
+      expect(table.lookup('HEAD', '/users/1')?.handlers).toEqual([all, get]);
       expect(table.lookup('DELETE', '/users/1')?.handlers).toEqual([all]);
     });
   });
