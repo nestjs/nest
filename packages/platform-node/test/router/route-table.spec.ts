@@ -150,6 +150,23 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/posts/')).toBeNull();
     });
 
+    it('should try the other routes when the most specific one leaves a parameter empty', () => {
+      const docs = handler();
+      const all = handler();
+      table.add('GET', '/docs/:name.:ext', handler());
+      table.add('GET', '/docs/*path', docs);
+      table.add('GET', '/files/:name.:ext', handler());
+      table.add(null, '/{*path}', all);
+
+      // As Express, which tries the routes in registration order
+      expect(table.lookup('GET', '/docs/.env')).toEqual({
+        handlers: [docs],
+        params: { path: ['.env'] },
+        seqs: [1],
+      });
+      expect(table.lookup('GET', '/files/.env')?.handlers).toEqual([all]);
+    });
+
     it('should split a wildcard into path segments', () => {
       table.add('GET', '/files/*path', handler());
 
@@ -200,6 +217,18 @@ describe('RouteTable', () => {
       // As path-to-regexp, so a route cannot run without its middleware
       expect(table.lookup('GET', '/files/v-')).toBeNull();
       expect(table.lookup('GET', '/ab')).toBeNull();
+    });
+
+    it('should try the other routes for the text before a wildcard alone', () => {
+      const id = handler();
+      table.add('GET', '/files/v-*rest', handler());
+      table.add('GET', '/files/:id', id);
+
+      expect(table.lookup('GET', '/files/v-')).toEqual({
+        handlers: [id],
+        params: { id: 'v-' },
+        seqs: [1],
+      });
     });
 
     it('should prefer a wildcard after text over a parameter of the segment', () => {
@@ -360,6 +389,21 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/a')).not.toBeNull();
       expect(table.lookup('GET', '/a/b/h')).not.toBeNull();
       expect(table.lookup('GET', '/a/h/b')).toBeNull();
+    });
+
+    it('should match without the group when the group would leave a parameter empty', () => {
+      table.add('GET', '/ext/:file{.:ext}', handler());
+      table.add('GET', '/grp/:a{-:b}', handler());
+
+      // "/ext/:file.:ext" would leave "file" empty, "/ext/:file" matches
+      expect(table.lookup('GET', '/ext/.gitignore')?.params).toEqual({
+        file: '.gitignore',
+      });
+      expect(table.lookup('GET', '/grp/x-')?.params).toEqual({ a: 'x-' });
+      expect(table.lookup('GET', '/ext/a.b')?.params).toEqual({
+        file: 'a',
+        ext: 'b',
+      });
     });
   });
 

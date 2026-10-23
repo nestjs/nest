@@ -155,7 +155,7 @@ export const PARAM_TOO_LONG: RouteMatch = Object.freeze({
 // What `find()` returns in that case (find-my-way's onMaxParamLength result)
 const TOO_LONG = {} as FoundRoute;
 // What `find()` returns when path-to-regexp does not match what find-my-way
-// did (see `RouteRecord.pathMatchers`)
+// did, as for an empty parameter (see `lookup()`)
 const EMPTY_PARAM = {} as FoundRoute;
 
 function noop() {}
@@ -486,7 +486,9 @@ export class RouteTable {
       found = null;
     }
     if (found === EMPTY_PARAM) {
-      found = null;
+      // find-my-way does not look past the most specific route, while another
+      // one may match ("/ext/.b" is "/ext/:file", not "/ext/:file.:ext")
+      return this.lookupFirst(method, path);
     }
     if (found !== null) {
       // find-my-way serves "/admin/" with a route for "/admin" (or a
@@ -532,7 +534,7 @@ export class RouteTable {
       // one ("/users//profile"). Treat that as no match, or the route could
       // run without the middleware guarding it.
       if (key !== '*' && values[key] === '') {
-        return null;
+        return EMPTY_PARAM;
       }
     }
     let wildcard: string[] | undefined;
@@ -543,7 +545,7 @@ export class RouteTable {
       for (let i = 0; i < record.wildcardSlashes; i++) {
         const slash = path.indexOf('/', start);
         if (slash === -1) {
-          return null;
+          return EMPTY_PARAM;
         }
         start = slash + 1;
       }
@@ -556,7 +558,7 @@ export class RouteTable {
       }
       // path-to-regexp wildcards match one or more characters
       if (start === 0 || end <= start) {
-        return null;
+        return EMPTY_PARAM;
       }
       wildcard = path.slice(start, end).split('/').map(decodeSegment);
     }
@@ -588,6 +590,32 @@ export class RouteTable {
       }
     }
     return { handlers: record.handlers, seqs: record.seqs, params };
+  }
+
+  // The first route path-to-regexp matches, in registration order, as Express
+  // would pick it (see `lookup()`)
+  private lookupFirst(method: string, path: string): RouteMatch | null {
+    let exceeded = false;
+    for (const route of this.routes) {
+      if (!acceptsMethod(route.method, method)) {
+        continue;
+      }
+      route.matcher ??= compileMatcher(route.path);
+      const result = route.matcher(path);
+      if (!result) {
+        continue;
+      }
+      if (exceedsMaxParamLength(result.params, this.maxParamLength)) {
+        exceeded = true;
+        continue;
+      }
+      return {
+        handlers: [route.handler],
+        seqs: [route.seq],
+        params: result.params,
+      };
+    }
+    return exceeded ? PARAM_TOO_LONG : null;
   }
 
   /**
