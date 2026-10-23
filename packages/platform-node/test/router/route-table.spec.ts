@@ -9,6 +9,22 @@ function handler(): RouteHandler {
   return () => {};
 }
 
+// Path matchers are RegExps (path-to-regexp)
+function countRegexExecutions(fn: () => void) {
+  const { exec } = RegExp.prototype;
+  let count = 0;
+  RegExp.prototype.exec = function (this: RegExp, input: string) {
+    count++;
+    return exec.call(this, input);
+  };
+  try {
+    fn();
+  } finally {
+    RegExp.prototype.exec = exec;
+  }
+  return count;
+}
+
 describe('RouteTable', () => {
   let table: RouteTable;
 
@@ -572,6 +588,57 @@ describe('RouteTable', () => {
         table.lookupRest('HEAD', '/items/1', []).map(e => e.handler),
       ).toEqual([get]);
       expect(table.lookupRest('DELETE', '/items/1', [])).toEqual([]);
+    });
+
+    it('should return the same routes whatever the routes registered around them', () => {
+      const a = handler();
+      const ab = handler();
+      const b = handler();
+      const aAll = handler();
+      const late = handler();
+      table.add('GET', '/a/:x', a);
+      table.add('GET', '/a/b/:y', ab);
+      table.add('GET', '/b/:z', b);
+      table.add(null, '/a/{*rest}', aAll);
+      table.add('GET', '/a/b/c', handler());
+      table.lookupRest('GET', '/x', []);
+      table.add('GET', '/a/:w', late);
+
+      expect(table.lookupRest('GET', '/a/b', []).map(e => e.handler)).toEqual([
+        a,
+        aAll,
+        late,
+      ]);
+      expect(table.lookupRest('GET', '/b/1', []).map(e => e.handler)).toEqual([
+        b,
+      ]);
+      expect(table.lookupRest('GET', '/c', [])).toEqual([]);
+    });
+
+    it('should not run the matcher of every route of a large table', () => {
+      for (let i = 0; i < 100; i++) {
+        for (const route of ['', '/:id', '/:id/items', '/:id/items/:itemId']) {
+          table.add('GET', `/api/res${i}${route}`, handler());
+        }
+      }
+      const found = table.lookup('GET', '/api/res57/42/items/7')!;
+      // Compiles the matchers it needs (once)
+      table.lookupRest('GET', '/api/res57/42/items/7', found.seqs);
+      table.lookup('GET', '/api/res57//items/7');
+
+      // A version or host mismatch on the route makes the adapter look for
+      // another one
+      const count = countRegexExecutions(() =>
+        table.lookupRest('GET', '/api/res57/42/items/7', found.seqs),
+      );
+      // So does a parameter left empty (see lookup())
+      const emptyCount = countRegexExecutions(() =>
+        table.lookup('GET', '/api/res57//items/7'),
+      );
+
+      // One per other route without skipping (399 and 400)
+      expect(count).toBeLessThan(50);
+      expect(emptyCount).toBeLessThan(50);
     });
 
     it('should skip routes whose parameter is too long', () => {

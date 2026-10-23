@@ -1,4 +1,10 @@
-import { getRawPrefixEnd, getRoutingPath, loosen } from '../../router/utils.js';
+import {
+  getLiteralPrefix,
+  getPrefixSkips,
+  getRawPrefixEnd,
+  getRoutingPath,
+  loosen,
+} from '../../router/utils.js';
 
 describe('loosen', () => {
   it('should drop the trailing slashes of a path', () => {
@@ -9,6 +15,41 @@ describe('loosen', () => {
 
   it('should keep the root path', () => {
     expect(loosen('/')).toBe('/');
+  });
+});
+
+describe('getLiteralPrefix', () => {
+  it('should return the text before the first parameter, wildcard or group', () => {
+    expect(getLiteralPrefix('/users/:id')).toBe('/users/');
+    expect(getLiteralPrefix('/users/:id/posts')).toBe('/users/');
+    expect(getLiteralPrefix('/files/*path')).toBe('/files/');
+    expect(getLiteralPrefix('/files/v:version')).toBe('/files/v');
+    expect(getLiteralPrefix('/users{/:id}')).toBe('/users');
+    expect(getLiteralPrefix('{/:lang}/users')).toBe('');
+    expect(getLiteralPrefix('/:id')).toBe('/');
+  });
+
+  it('should return the whole path when it has no parameter', () => {
+    expect(getLiteralPrefix('/users')).toBe('/users');
+    expect(getLiteralPrefix('/')).toBe('/');
+    expect(getLiteralPrefix('')).toBe('');
+  });
+
+  it('should unescape escaped characters', () => {
+    expect(getLiteralPrefix('/a\\:b/:id')).toBe('/a:b/');
+  });
+});
+
+describe('getPrefixSkips', () => {
+  it('should skip the entries that start with the same prefix', () => {
+    expect(
+      getPrefixSkips(['/a', '/a/b', '/a/c', '/b', undefined, '/b/x']),
+    ).toEqual([3, 2, 3, 4, 5, 6]);
+  });
+
+  it('should never skip an entry without a prefix', () => {
+    expect(getPrefixSkips(['/a', undefined, '/a/b'])).toEqual([1, 2, 3]);
+    expect(getPrefixSkips([])).toEqual([]);
   });
 });
 

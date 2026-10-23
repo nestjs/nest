@@ -1,7 +1,7 @@
 import FindMyWay from 'find-my-way';
 import { METHODS } from 'http';
 import { match, parse, type Token } from 'path-to-regexp';
-import { loosen } from './utils.js';
+import { getLiteralPrefix, getPrefixSkips, loosen } from './utils.js';
 
 export type RouteHandler = (
   req: any,
@@ -101,6 +101,8 @@ interface RegisteredRoute {
   path: string;
   /** Compiled on first use. */
   matcher?: Matcher;
+  /** What every path the route matches starts with. */
+  prefix: string;
   handler: RouteHandler;
   seq: number;
 }
@@ -321,6 +323,8 @@ export class RouteTable {
   private readonly records = new Map<string, RouteRecord>();
   private readonly fallbackRoutes: FallbackRoute[] = [];
   private readonly routes: RegisteredRoute[] = [];
+  /** See `getPrefixSkips()`, for `lookupFirst()` and `lookupRest()`. */
+  private routeSkips: number[] | undefined;
   private seq = 0;
   private hasPartialRoutes = false;
 
@@ -341,7 +345,14 @@ export class RouteTable {
    */
   public add(method: string | null, path: string, handler: RouteHandler) {
     const seq = this.seq++;
-    this.routes.push({ method, path, handler, seq });
+    this.routes.push({
+      method,
+      path,
+      prefix: getLiteralPrefix(loosen(path)),
+      handler,
+      seq,
+    });
+    this.routeSkips = undefined;
     const { tokens } = parse(path);
     const variants =
       countGroups(tokens) > MAX_EXPANDED_GROUPS
@@ -596,8 +607,16 @@ export class RouteTable {
   // would pick it (see `lookup()`)
   private lookupFirst(method: string, path: string): RouteMatch | null {
     let exceeded = false;
-    for (const route of this.routes) {
+    const routes = this.routes;
+    const skips = this.getRouteSkips();
+    for (let i = 0; i < routes.length;) {
+      const route = routes[i];
+      const skip = skips[i++];
       if (!acceptsMethod(route.method, method)) {
+        continue;
+      }
+      if (skip > i && !path.startsWith(route.prefix)) {
+        i = skip;
         continue;
       }
       route.matcher ??= compileMatcher(route.path);
@@ -658,6 +677,14 @@ export class RouteTable {
     return exceeded ? PARAM_TOO_LONG : null;
   }
 
+  // A version or host mismatch on a route of a large table, or a parameter
+  // left empty, would otherwise run the matcher of every route
+  private getRouteSkips() {
+    return (this.routeSkips ??= getPrefixSkips(
+      this.routes.map(route => route.prefix),
+    ));
+  }
+
   /**
    * Every other route matching `path`, in registration order, each with its
    * own parameters: where control goes once the handlers `lookup()` returned
@@ -673,8 +700,16 @@ export class RouteTable {
     exclude: number[],
   ): RouteEntry[] {
     const entries: RouteEntry[] = [];
-    for (const route of this.routes) {
+    const routes = this.routes;
+    const skips = this.getRouteSkips();
+    for (let i = 0; i < routes.length;) {
+      const route = routes[i];
+      const skip = skips[i++];
       if (exclude.includes(route.seq) || !acceptsMethod(route.method, method)) {
+        continue;
+      }
+      if (skip > i && !path.startsWith(route.prefix)) {
+        i = skip;
         continue;
       }
       route.matcher ??= compileMatcher(route.path);
