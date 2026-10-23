@@ -708,6 +708,37 @@ describe('NodeAdapter', () => {
         expect(res.text).toBe('Bad Request');
       });
 
+      it('should abort the response when the source fails after sending data', async () => {
+        let reads = 0;
+        const source = new Readable({
+          read() {
+            if (reads++ === 0) {
+              this.push('first chunk');
+            } else {
+              this.destroy(new Error('EIO: i/o error, read'));
+            }
+          },
+        });
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(
+            res,
+            new StreamableFile(source).setErrorLogger(() => {}),
+          ),
+        );
+
+        // A truncated file must not look complete to the client
+        const complete = await new Promise<boolean>(resolve => {
+          http
+            .get({ host: '127.0.0.1', port, path: '/' }, res => {
+              res.resume();
+              res.on('close', () => resolve(res.complete));
+            })
+            .on('error', () => resolve(false));
+        });
+
+        expect(complete).toBe(false);
+      });
+
       it('should hand a source that failed before the reply to the error handler', async () => {
         // e.g. ENOENT from fs.createReadStream() while an interceptor awaits
         const source = new PassThrough();

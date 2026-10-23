@@ -1,6 +1,7 @@
 import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import { readFileSync } from 'fs';
+import { get } from 'http';
 import { join } from 'path';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
@@ -80,6 +81,16 @@ describe('Node FileSend', () => {
   });
   it('should return an error if the file does not exist', async () => {
     return request(app.getHttpServer()).get('/file/not/exist').expect(400);
+  });
+  it('should not complete the response when the stream fails after sending data', async () => {
+    const url = await getHttpBaseOptions(app);
+    const complete = await new Promise<boolean>(resolve => {
+      get(new URL('/file/fails/midway', url), res => {
+        res.resume();
+        res.on('close', () => resolve(res.complete));
+      }).on('error', () => resolve(false));
+    });
+    expect(complete).toBe(false);
   });
   // TODO: temporarily turned off (flaky test)
   it.skip('should allow for the client to end the response and be able to make another', async () => {

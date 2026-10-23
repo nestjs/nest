@@ -842,6 +842,8 @@ export class NodeAdapter extends AbstractHttpAdapter<
         response.end(body);
       },
       end: () => response.end(),
+      // Ending would make a file that failed midway look complete
+      destroy: (error?: Error) => response.destroy(error),
     };
   }
 
