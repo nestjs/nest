@@ -905,6 +905,58 @@ describe('body parsers', () => {
   });
 
   describe('urlencoded', () => {
+    const FORM =
+      'plain=value&plus=a+b&escaped=caf%C3%A9&mixed=x+%26+y&a[b]=c&a[d][]=e&list=1&list=2';
+
+    it.each([
+      [
+        'without extended',
+        false,
+        {
+          plain: 'value',
+          plus: 'a b',
+          escaped: 'café',
+          mixed: 'x & y',
+          'a[b]': 'c',
+          'a[d][]': 'e',
+          list: ['1', '2'],
+        },
+      ],
+      [
+        'with extended',
+        true,
+        {
+          plain: 'value',
+          plus: 'a b',
+          escaped: 'café',
+          mixed: 'x & y',
+          a: { b: 'c', d: ['e'] },
+          list: ['1', '2'],
+        },
+      ],
+    ])(
+      'should decode the keys and values that need it, and only those (%s)',
+      async (_, extended, expected) => {
+        for (const onProtoPoisoning of ['error', 'ignore'] as const) {
+          const { req } = await send(
+            urlencoded({ extended, onProtoPoisoning }),
+            { headers: FORM_TYPE, body: FORM },
+          );
+
+          expect(req.body).toEqual(expected);
+        }
+      },
+    );
+
+    it('should decode a latin1 body without escapes as is', async () => {
+      const { req } = await send(urlencoded({ defaultCharset: 'iso-8859-1' }), {
+        headers: FORM_TYPE,
+        body: Buffer.from('a=café+crème&b=caf%E9', 'latin1'),
+      });
+
+      expect(req.body).toEqual({ a: 'café crème', b: 'café' });
+    });
+
     it('should decode bodies without a charset with defaultCharset', async () => {
       const { req } = await send(urlencoded({ defaultCharset: 'iso-8859-1' }), {
         headers: FORM_TYPE,

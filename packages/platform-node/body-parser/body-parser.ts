@@ -702,26 +702,28 @@ export function urlencoded(options?: NodeUrlencodedParserOptions): Middleware {
   }
   // "qs" silently drops "__proto__" keys; with 'error', reject them as the
   // JSON parser does
-  const decoder =
-    poisoningActions.protoAction === 'error'
-      ? (
-          value: string,
-          defaultDecoder: (value: string, ...args: any[]) => string,
-          charset: string,
-          type: 'key' | 'value',
-        ) => {
-          const decoded = defaultDecoder(value, defaultDecoder, charset);
-          if (
-            type === 'key' &&
-            (extended ? PROTO_KEY.test(decoded) : decoded === '__proto__')
-          ) {
-            throw new SyntaxError(
-              'Object contains forbidden prototype property',
-            );
-          }
-          return decoded;
-        }
-      : undefined;
+  const rejectProtoKeys = poisoningActions.protoAction === 'error';
+  const decoder = (
+    value: string,
+    defaultDecoder: (value: string, ...args: any[]) => string,
+    charset: string,
+    type: 'key' | 'value',
+  ) => {
+    // The decoder of "qs" replaces "+" and calls decodeURIComponent() for
+    // every key and value, which leaves one without "%" or "+" unchanged
+    const decoded =
+      value.indexOf('%') === -1 && value.indexOf('+') === -1
+        ? value
+        : defaultDecoder(value, defaultDecoder, charset);
+    if (
+      rejectProtoKeys &&
+      type === 'key' &&
+      (extended ? PROTO_KEY.test(decoded) : decoded === '__proto__')
+    ) {
+      throw new SyntaxError('Object contains forbidden prototype property');
+    }
+    return decoded;
+  };
   return createReader(
     toReaderOptions(
       options,
