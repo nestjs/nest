@@ -393,6 +393,24 @@ describe('NodeRouter', () => {
       expect(calls).toEqual(['guard', 'route']);
     });
 
+    it('should decode the parameters of the path, as Express does', () => {
+      const names: unknown[] = [];
+      router.useExact(
+        undefined,
+        '/files/:name',
+        (req: any, _res: unknown, next: Next) => {
+          names.push(req.params.name);
+          next();
+        },
+      );
+
+      dispatch('GET', '/files/report');
+      // The routing path keeps an encoded "/" encoded
+      dispatch('GET', '/files/2026%2F10');
+
+      expect(names).toEqual(['report', '2026/10']);
+    });
+
     it('should not let a route with an empty parameter skip its middleware', () => {
       const guard = vi.fn();
       const route = vi.fn();

@@ -42,7 +42,9 @@ export type FinalHandler = (
 ) => void;
 
 function decodeParam(value: string) {
-  return decodeURIComponent(value);
+  // decodeURIComponent() is a call into the runtime (about 80 ns), even for a
+  // value without any "%" to decode
+  return value.indexOf('%') === -1 ? value : decodeURIComponent(value);
 }
 
 function invoke(
