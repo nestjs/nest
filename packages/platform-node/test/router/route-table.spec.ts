@@ -183,6 +183,54 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/files/.env')?.handlers).toEqual([all]);
     });
 
+    it('should try the routes with a wildcard for a path with an empty segment', () => {
+      const rest = handler();
+      table.add('GET', '/users/:id/profile', handler());
+      table.add('GET', '/users/*rest', rest);
+
+      expect(table.lookup('GET', '/users//profile')).toEqual({
+        handlers: [rest],
+        params: { rest: ['', 'profile'] },
+        seqs: [1],
+      });
+      expect(table.lookup('GET', '/users/1/profile')?.seqs).toEqual([0]);
+    });
+
+    it('should only try the routes that can match an empty segment', () => {
+      for (let i = 0; i < 1000; i++) {
+        table.add('GET', `/:tenant/res${i}/:id`, handler());
+        table.add('GET', `/:tenant/res${i}/:id/profile`, handler());
+      }
+      const files = handler();
+      table.add('GET', '/:tenant/files/*path', files);
+      // Compiles the path-to-regexp matchers it needs
+      table.lookup('GET', '/acme/res500//profile');
+
+      let found: unknown;
+      const count = countRegexExecutions(() => {
+        found = table.lookup('GET', '/acme/res500//profile');
+      });
+
+      expect(found).toBeNull();
+      expect(count).toBeLessThan(5);
+      expect(table.lookup('GET', '/acme/files//a')?.handlers).toEqual([files]);
+    });
+
+    it('should not try the other routes for "/" with a parameter at the root', () => {
+      for (let i = 0; i < 100; i++) {
+        table.add('GET', `/:tenant/res${i}`, handler());
+      }
+      table.add('GET', '/:tenant', handler());
+
+      let found: unknown;
+      const count = countRegexExecutions(() => {
+        found = table.lookup('GET', '/');
+      });
+
+      expect(found).toBeNull();
+      expect(count).toBe(0);
+    });
+
     it('should split a wildcard into path segments', () => {
       table.add('GET', '/files/*path', handler());
 
