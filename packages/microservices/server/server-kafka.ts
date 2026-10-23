@@ -273,6 +273,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   public async bindEvents(
     consumer: Consumer,
     topics: (string | RegExp)[] = [...this.messageHandlers.keys()],
+    ownPattern?: string | RegExp,
   ) {
     const consumerSubscribeOptions = this.options.subscribe || {};
 
@@ -285,7 +286,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
 
     const consumerRunOptions = {
       ...(this.options.run || {}),
-      eachMessage: this.getMessageHandler(consumer),
+      eachMessage: this.getMessageHandler(consumer, ownPattern),
     };
     await consumer.run(consumerRunOptions);
   }
@@ -317,7 +318,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     this.registerConsumerEventListenersFor(topicConsumer);
     await topicConsumer.connect();
     this.consumers.set(topic, topicConsumer);
-    await this.bindEvents(topicConsumer, [topic]);
+    await this.bindEvents(topicConsumer, [topic], topic);
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
@@ -398,8 +399,23 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     return isMatch;
   }
 
-  public getMessageHandler(consumer: Consumer = this.consumer!) {
+  public getMessageHandler(
+    consumer: Consumer = this.consumer!,
+    ownPattern?: string | RegExp,
+  ) {
+    const ownHandler =
+      ownPattern === undefined
+        ? undefined
+        : (this.messageHandlers as Map<string | RegExp, MessageHandler>).get(
+            ownPattern,
+          );
     return async (payload: EachMessagePayload) => {
+      if (
+        ownHandler &&
+        this.getHandlerByPattern(payload.topic) !== ownHandler
+      ) {
+        return;
+      }
       try {
         return await this.handleMessage(payload, consumer);
       } catch (err) {
