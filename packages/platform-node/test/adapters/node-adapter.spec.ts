@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   InternalServerErrorException,
+  Logger,
   type NestApplicationOptions,
   NotFoundException,
   RequestMethod,
@@ -2438,6 +2439,177 @@ describe('NodeAdapter', () => {
       expect(res.text).toBe('ok');
       expect(calls).toEqual(['hook /cats', 'route']);
     });
+
+    // What Nest's exception filter does with an error, in short
+    const answerErrorsWith500 = () =>
+      adapter.setErrorHandler(
+        (err: any, req: NodeRequest, res: NodeResponse, next: Next) =>
+          adapter.reply(res, err?.message ?? String(err), 500),
+      );
+
+    it.each([new Error('Hook rejected'), undefined])(
+      'should hand a rejected request hook to the error handlers (%s)',
+      async error => {
+        const port = await startServer();
+        adapter.setOnRequestHook(() => {
+          const result = Promise.reject(error);
+          // Keeps an adapter that drops the rejection from failing the run
+          result.catch(() => {});
+          return result;
+        });
+        const route = vi.fn();
+        adapter.get('/', route);
+        answerErrorsWith500();
+
+        const res = await request(port);
+
+        expect(res.status).toBe(500);
+        expect(res.text).toBe(error?.message ?? 'Request hook failed');
+        expect(route).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should hand an error thrown by the request hook to the error handlers', async () => {
+      const port = await startServer();
+      adapter.setOnRequestHook(() => {
+        throw new Error('Synchronous hook failure');
+      });
+      answerErrorsWith500();
+
+      const res = await request(port);
+
+      expect(res.status).toBe(500);
+      expect(res.text).toBe('Synchronous hook failure');
+    });
+
+    it('should hand an error passed to done() to the error handlers', async () => {
+      const port = await startServer();
+      adapter.setOnRequestHook((req, res, done) => done(new Error('denied')));
+      const route = vi.fn();
+      adapter.get('/', route);
+      answerErrorsWith500();
+
+      const res = await request(port);
+
+      expect(res.status).toBe(500);
+      expect(res.text).toBe('denied');
+      expect(route).not.toHaveBeenCalled();
+    });
+
+    it('should route the request once when done() is called twice', async () => {
+      const port = await startServer();
+      adapter.setOnRequestHook((req, res, done) => {
+        done();
+        done();
+      });
+      const route = vi.fn((req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, 'ok'),
+      );
+      adapter.get('/', route);
+
+      const res = await request(port);
+
+      expect(res.text).toBe('ok');
+      expect(route).toHaveBeenCalledOnce();
+    });
+
+    it('should ignore done() once the request hook has failed', async () => {
+      const port = await startServer();
+      let continueRequest!: () => void;
+      adapter.setOnRequestHook((req, res, done) => {
+        continueRequest = done;
+        return Promise.reject(new Error('Hook rejected'));
+      });
+      const route = vi.fn();
+      adapter.get('/', route);
+      answerErrorsWith500();
+
+      const res = await request(port);
+      continueRequest();
+
+      expect(res.status).toBe(500);
+      expect(route).not.toHaveBeenCalled();
+    });
+
+    it.each(['throw', 'reject'])(
+      'should log a request hook failure after done(), and keep the response (%s)',
+      async failure => {
+        const port = await startServer();
+        const error = new Error('Late hook failure');
+        const logError = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+        adapter.setOnRequestHook((req, res, done) => {
+          done();
+          if (failure === 'throw') {
+            throw error;
+          }
+          return Promise.reject(error);
+        });
+        adapter.get('/', async (req: NodeRequest, res: NodeResponse) => {
+          await new Promise(resolve => setImmediate(resolve));
+          adapter.reply(res, 'ok');
+        });
+        const errorHandler = vi.fn(
+          (err: unknown, req: NodeRequest, res: NodeResponse, next: Next) =>
+            adapter.reply(res, 'error', 500),
+        );
+        adapter.setErrorHandler(errorHandler);
+
+        const res = await request(port);
+
+        expect(res.text).toBe('ok');
+        expect(errorHandler).not.toHaveBeenCalled();
+        expect(logError).toHaveBeenCalledExactlyOnceWith(error);
+      },
+    );
+
+    it('should call the hooks with the adapter as "this"', async () => {
+      const port = await startServer();
+      const receivers: unknown[] = [];
+      adapter.setOnRequestHook(function (this: NodeAdapter, req, res, done) {
+        receivers.push(this);
+        done();
+      });
+      adapter.setOnResponseHook(function (this: NodeAdapter) {
+        receivers.push(this);
+      });
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, 'ok'),
+      );
+
+      await request(port);
+
+      await vi.waitFor(() => expect(receivers).toEqual([adapter, adapter]));
+    });
+
+    it.each(['throw', 'reject'])(
+      'should log a response hook failure (%s)',
+      async failure => {
+        const port = await startServer();
+        const error = new Error('Response hook failed');
+        const logError = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+        adapter.setOnResponseHook(() => {
+          if (failure === 'throw') {
+            throw error;
+          }
+          const result = Promise.reject(error);
+          // Keeps an adapter that drops the rejection from failing the run
+          result.catch(() => {});
+          return result;
+        });
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, 'ok'),
+        );
+
+        expect((await request(port)).text).toBe('ok');
+        await vi.waitFor(() =>
+          expect(logError).toHaveBeenCalledExactlyOnceWith(error),
+        );
+      },
+    );
 
     it('should call the response hook once the response has been sent', async () => {
       const port = await startServer();

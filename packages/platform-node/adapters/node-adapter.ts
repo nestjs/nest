@@ -141,7 +141,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
   private onRequestHook?: (
     req: NodeRequest,
     res: NodeResponse,
-    done: () => void,
+    done: (err?: Error) => void,
   ) => Promise<void> | void;
   private onResponseHook?: (
     req: NodeRequest,
@@ -163,16 +163,26 @@ export class NodeAdapter extends AbstractHttpAdapter<
     );
   }
 
+  /**
+   * Registers a request hook. Call `done()` to continue processing the request,
+   * or `done(err)` to hand an error to the error handlers; resolving the
+   * returned promise does not continue it. Only the first completion counts.
+   * Errors after `done()` are logged without advancing the request again.
+   */
   public setOnRequestHook(
     onRequestHook: (
       req: NodeRequest,
       res: NodeResponse,
-      done: () => void,
+      done: (err?: Error) => void,
     ) => Promise<void> | void,
   ) {
     this.onRequestHook = onRequestHook;
   }
 
+  /**
+   * Registers a hook to run after the response has been sent.
+   * Thrown errors and rejected promises are logged.
+   */
   public setOnResponseHook(
     onResponseHook: (
       req: NodeRequest,
@@ -729,18 +739,51 @@ export class NodeAdapter extends AbstractHttpAdapter<
   private handleRequest(req: NodeRequest, res: NodeResponse) {
     if (this.onResponseHook) {
       res.on('finish', () => {
-        void this.onResponseHook!.apply(this, [req, res]);
+        // The response is gone: an error can only be logged, and must not
+        // become an unhandled rejection (as with the ExpressAdapter)
+        try {
+          const result = this.onResponseHook!.call(this, req, res);
+          if (result && typeof result.then === 'function') {
+            result.then(undefined, err => this.logger.error(err));
+          }
+        } catch (err) {
+          this.logger.error(err);
+        }
       });
     }
     if (this.onRequestHook) {
-      void this.onRequestHook.apply(this, [
-        req,
-        res,
-        () => this.instance.handle(req, res),
-      ]);
-      return;
+      return this.runRequestHook(req, res);
     }
     this.instance.handle(req, res);
+  }
+
+  // As with the ExpressAdapter: only the first completion routes the request
+  // (or hands its error to the error handlers), later errors are logged
+  private runRequestHook(req: NodeRequest, res: NodeResponse) {
+    let completed = false;
+    const doneOnce = (err?: unknown) => {
+      if (completed) {
+        if (err) {
+          this.logger.error(err);
+        }
+        return;
+      }
+      completed = true;
+      if (err) {
+        return this.instance.handleError(err, req, res);
+      }
+      this.instance.handle(req, res);
+    };
+    try {
+      const result = this.onRequestHook!.call(this, req, res, doneOnce);
+      if (result && typeof result.then === 'function') {
+        result.then(undefined, err =>
+          doneOnce(err || new Error('Request hook failed')),
+        );
+      }
+    } catch (err) {
+      doneOnce(err || new Error('Request hook failed'));
+    }
   }
 
   private finalHandler(err: any, req: NodeRequest, res: NodeResponse) {
