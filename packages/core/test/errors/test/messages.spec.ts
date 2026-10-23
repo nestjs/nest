@@ -2,6 +2,7 @@ import { UnknownDependenciesException } from '../../../errors/exceptions/unknown
 import {
   INVALID_MODULE_MESSAGE,
   INVALID_PROVIDER_MESSAGE,
+  UNDEFINED_MODULE_ENTRY_MESSAGE,
   UNDEFINED_MODULE_MESSAGE,
   UNKNOWN_EXPORT_MESSAGE,
   USING_INVALID_CLASS_AS_A_MODULE_MESSAGE,
@@ -396,6 +397,24 @@ Scope [AppModule -> CatsModule]`);
       expect(actualMessage).toBe(
         UNDEFINED_MODULE_MESSAGE(CatsModule, 0, [AppModule]),
       );
+    });
+  });
+
+  describe('UNDEFINED_MODULE_ENTRY_MESSAGE', () => {
+    it('should display the module name, the array and the index', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+The provider at index [2] of the CatsModule "providers" array is undefined.
+
+Potential causes:
+- A circular import between files, often through a barrel file (index.ts). Read more: https://docs.nestjs.com/fundamentals/circular-dependency
+- The provider at index [2] is of type "undefined". Check your import statements and the type of the provider.`);
+
+      const actualMessage = stringCleaner(
+        UNDEFINED_MODULE_ENTRY_MESSAGE(CatsModule, 'providers', 2),
+      );
+
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 
