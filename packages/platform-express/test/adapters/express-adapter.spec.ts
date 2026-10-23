@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  HttpException,
   RequestMethod,
   StreamableFile,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
+import createHttpError from 'http-errors';
 import { PassThrough, Readable, Writable } from 'stream';
 
 describe('ExpressAdapter', () => {
@@ -484,6 +486,30 @@ describe('ExpressAdapter', () => {
           expect(reads).toBeLessThan(chunkCount);
         });
 
+        it('should end the response when the source has no data', async () => {
+          const file = new StreamableFile(Buffer.alloc(0));
+          await new Promise(resolve => setImmediate(resolve));
+          const response = createHeadResponse();
+
+          expressAdapter.reply(response, file);
+
+          await new Promise(resolve => response.once('finish', resolve));
+          expect(response.writableEnded).toBe(true);
+        });
+
+        it('should end the response when the source has already ended', async () => {
+          const source = new Readable({ read() {} });
+          source.push(null);
+          source.resume();
+          await new Promise(resolve => source.once('end', resolve));
+          const response = createHeadResponse();
+
+          expressAdapter.reply(response, new StreamableFile(source));
+
+          await new Promise(resolve => response.once('finish', resolve));
+          expect(response.writableEnded).toBe(true);
+        });
+
         it('should leave an error opening the source to the error handler', async () => {
           const errorHandler = vi.fn();
           const source = new Readable({
@@ -528,5 +554,29 @@ describe('ExpressAdapter', () => {
       const result = expressAdapter.mapException(error);
       expect(result).toBe(error);
     });
+
+    it('should map an http-errors error to an HttpException with its status', () => {
+      const error = createHttpError(413, 'request entity too large');
+      const result = expressAdapter.mapException(error) as HttpException;
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.getStatus()).toBe(413);
+      expect(result.getResponse()).toBe('request entity too large');
+      expect(result.cause).toBe(error);
+    });
+
+    it('should not expose the message of an http-errors error with expose: false', () => {
+      const error = createHttpError(404, 'internal detail', { expose: false });
+      const result = expressAdapter.mapException(error) as HttpException;
+      expect(result.getStatus()).toBe(404);
+      expect(result.getResponse()).toBe('Not Found');
+    });
+
+    it.each([500, 503])(
+      'should not map an http-errors error with status %i',
+      status => {
+        const error = createHttpError(status, 'internal detail');
+        expect(expressAdapter.mapException(error)).toBe(error);
+      },
+    );
   });
 });

@@ -18,20 +18,20 @@ describe('DiscoverableMetaHostCollection', () => {
         metadataKey,
       );
 
-      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).toBe(
-        metadataKey,
-      );
+      expect(
+        DiscoverableMetaHostCollection.metaHostLinks.get(TestClass),
+      ).toEqual(new Set([metadataKey]));
     });
 
-    it('should overwrite existing link for the same class', () => {
+    it('should keep the links of every metadata key for the same class', () => {
       class TestClass {}
 
       DiscoverableMetaHostCollection.addClassMetaHostLink(TestClass, 'key1');
       DiscoverableMetaHostCollection.addClassMetaHostLink(TestClass, 'key2');
 
-      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).toBe(
-        'key2',
-      );
+      expect(
+        DiscoverableMetaHostCollection.metaHostLinks.get(TestClass),
+      ).toEqual(new Set(['key1', 'key2']));
     });
   });
 
@@ -264,6 +264,33 @@ describe('DiscoverableMetaHostCollection', () => {
       );
       expect(result.size).toBe(1);
       expect(result.has(instanceWrapper)).toBe(true);
+    });
+
+    it('should add provider under every metaKey linked to its class', () => {
+      const hostContainerRef = new ModulesContainer();
+      class LinkedClass {}
+
+      DiscoverableMetaHostCollection.addClassMetaHostLink(LinkedClass, 'key1');
+      DiscoverableMetaHostCollection.addClassMetaHostLink(LinkedClass, 'key2');
+      const instanceWrapper = new InstanceWrapper({
+        token: LinkedClass,
+        name: 'LinkedProvider',
+        metatype: LinkedClass,
+      });
+
+      DiscoverableMetaHostCollection.inspectProvider(
+        hostContainerRef,
+        instanceWrapper,
+      );
+
+      for (const metaKey of ['key1', 'key2']) {
+        const result = DiscoverableMetaHostCollection.getProvidersByMetaKey(
+          hostContainerRef,
+          metaKey,
+        );
+        expect(result.size).toBe(1);
+        expect(result.has(instanceWrapper)).toBe(true);
+      }
     });
 
     it('should add provider when metatype is null and inject is not provided (useValue without inject)', () => {

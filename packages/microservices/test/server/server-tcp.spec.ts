@@ -558,6 +558,77 @@ describe('ServerTCP', () => {
         expect(listen).toHaveBeenCalledOnce();
         expect(untypedServer.retryAttemptsCount).toBe(1);
       });
+
+      it('should count the attempts of each listen separately', () => {
+        // Burn the whole retry budget of the first listen()
+        server.handleClose();
+        vi.advanceTimersByTime(50);
+        server.handleClose();
+        vi.advanceTimersByTime(50);
+        expect(server.handleClose()).toBeUndefined();
+        expect(untypedServer.retryAttemptsCount).toBe(2);
+
+        // A new listen() starts a fresh window, so the connection can retry
+        // again instead of staying down because the counter kept its value.
+        const listeningServer: any = new EventEmitter();
+        listeningServer.listen = listen;
+        listeningServer.close = vi.fn();
+        untypedServer.server = listeningServer;
+        server.listen(() => {});
+
+        expect(server.handleClose()).toBeDefined();
+        expect(untypedServer.retryAttemptsCount).toBe(1);
+      });
+
+      it('should drop a retry armed before a new listen', () => {
+        // A retry is still pending when listen() is called again
+        server.handleClose();
+        const staleTimer = untypedServer.retryTimer;
+        expect(staleTimer).toBeDefined();
+
+        const listeningServer: any = new EventEmitter();
+        listeningServer.listen = listen;
+        listeningServer.close = vi.fn();
+        untypedServer.server = listeningServer;
+        server.listen(() => {});
+
+        // The stale retry must not call "listen" on the server again
+        vi.advanceTimersByTime(50);
+        expect(listen).toHaveBeenCalledOnce();
+
+        // and the new listen() arms, and counts, its own retry
+        const retry = server.handleClose();
+        expect(retry).toBeDefined();
+        expect(retry).not.toBe(staleTimer);
+        expect(untypedServer.retryAttemptsCount).toBe(1);
+      });
+      it('should retry again for a listen that follows a manual close', () => {
+        server.close();
+        expect(server.handleClose()).toBeUndefined();
+
+        const listeningServer: any = new EventEmitter();
+        listeningServer.listen = listen;
+        listeningServer.close = vi.fn();
+        untypedServer.server = listeningServer;
+        server.listen(() => {});
+
+        expect(server.handleClose()).toBeDefined();
+      });
+
+      it('should not retry on a close event while the server is listening', () => {
+        // The event of a close() that a new listen() followed
+        untypedServer.server.listening = true;
+        expect(server.handleClose()).toBeUndefined();
+        vi.advanceTimersByTime(50);
+        expect(listen).not.toHaveBeenCalled();
+      });
+
+      it('should not listen from a retry once the server listens again', () => {
+        server.handleClose();
+        untypedServer.server.listening = true;
+        vi.advanceTimersByTime(50);
+        expect(listen).not.toHaveBeenCalled();
+      });
     });
 
     describe('when is terminated', () => {

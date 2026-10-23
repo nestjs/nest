@@ -434,6 +434,30 @@ describe('ServerMqtt', () => {
       expect(context.getTopic()).toBe('sport/');
       expect(context.getPacket()).toBe(originalPacket);
     });
+    it('should dispatch system topics to the explicit system event handler', async () => {
+      const wildcardHandler = vi.fn().mockResolvedValue(undefined);
+      const systemHandler = vi.fn().mockResolvedValue(undefined);
+      const topic = '$SYS/broker/uptime';
+      const originalPacket = { qos: 1 };
+      server.addHandler('#', wildcardHandler, true);
+      server.addHandler('$SYS/#', systemHandler, true);
+
+      await server.handleMessage(
+        topic,
+        Buffer.from(JSON.stringify({ data })),
+        null,
+        originalPacket,
+      );
+
+      expect(wildcardHandler).not.toHaveBeenCalled();
+      expect(systemHandler).toHaveBeenCalledExactlyOnceWith(
+        data,
+        expect.any(MqttContext),
+      );
+      const context = systemHandler.mock.calls[0][1] as MqttContext;
+      expect(context.getTopic()).toBe(topic);
+      expect(context.getPacket()).toBe(originalPacket);
+    });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       await server.handleMessage(
         channel,
@@ -701,6 +725,34 @@ describe('ServerMqtt', () => {
   });
   describe('matchMqttPattern', () => {
     it.each([
+      ['#', '$SYS'],
+      ['#', '$SYS/broker/uptime'],
+      ['+', '$SYS'],
+      ['+/broker/uptime', '$SYS/broker/uptime'],
+      ['#', '$custom'],
+      ['+/#', '$custom/events'],
+    ])(
+      'should not match a leading wildcard in %s against the system topic %s',
+      (pattern, topic) => {
+        expect(server.matchMqttPattern(pattern, topic)).toBe(false);
+      },
+    );
+
+    it.each([
+      ['$SYS/#', '$SYS'],
+      ['$SYS/#', '$SYS/broker/uptime'],
+      ['$SYS/+/uptime', '$SYS/broker/uptime'],
+      ['$custom/#', '$custom/events'],
+      ['devices/+/status', 'devices/$sensor/status'],
+      ['+/#', '/$SYS/broker/uptime'],
+    ])(
+      'should preserve explicit dollar-prefixed filters and later dollar signs in %s against %s',
+      (pattern, topic) => {
+        expect(server.matchMqttPattern(pattern, topic)).toBe(true);
+      },
+    );
+
+    it.each([
       ['sport/+', 'sport/'],
       ['sport/+/score', 'sport//score'],
       ['+/score', '/score'],
@@ -772,6 +824,50 @@ describe('ServerMqtt', () => {
     });
   });
   describe('getHandlerByPattern', () => {
+    it.each(['$SYS/#', '$share/workers/$SYS/#'])(
+      'should select %s over an earlier catch-all filter for a system topic',
+      pattern => {
+        const wildcardHandler = vi.fn();
+        const systemHandler = vi.fn();
+        server.addHandler('#', wildcardHandler, true);
+        server.addHandler(pattern, systemHandler, true);
+
+        expect(server.getHandlerByPattern('$SYS/broker/uptime')).toBe(
+          systemHandler,
+        );
+      },
+    );
+
+    it.each(['$shared/devices/#', '$shareware/devices/#'])(
+      'should treat %s as a literal filter rather than a shared subscription',
+      pattern => {
+        const literalHandler = vi.fn();
+        const telemetryHandler = vi.fn();
+        server.addHandler(pattern, literalHandler, true);
+        server.addHandler('telemetry/#', telemetryHandler, true);
+
+        expect(server.getHandlerByPattern(pattern.replace('#', 'status'))).toBe(
+          literalHandler,
+        );
+        expect(server.getHandlerByPattern('telemetry/temperature')).toBe(
+          telemetryHandler,
+        );
+      },
+    );
+
+    it.each([
+      ['$share/workers/devices/status', 'devices/status'],
+      ['$share/workers/devices/+', 'devices/status'],
+    ])(
+      'should continue matching the shared subscription %s against %s',
+      (pattern, topic) => {
+        const handler = vi.fn();
+        server.addHandler(pattern, handler, true);
+
+        expect(server.getHandlerByPattern(topic)).toBe(handler);
+      },
+    );
+
     // A broker takes '"admin/reset"' for a topic of its own, which an ACL
     // that denies "admin/#" lets through
     it('should not route a quoted topic to the handler of the unquoted one', () => {

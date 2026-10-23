@@ -82,12 +82,15 @@ export class RouteInfoPathExtractor {
    * route's own path, which an exclusion ending in an optional segment such
    * as "reports/{*path}" takes out of the prefix (see
    * `isExcludedWithTrailingSlash()`).
+   *
+   * The route matches case-insensitively unless `caseSensitive` is set: a
+   * caller that skips something for the covered routes (an exclusion) must
+   * match them as strictly as the router does.
    */
-  public extractExcludedRoutesCoveredBy({
-    path,
-    method,
-    version,
-  }: RouteInfo): RouteInfo[] {
+  public extractExcludedRoutesCoveredBy(
+    { path, method, version }: RouteInfo,
+    { caseSensitive = false }: { caseSensitive?: boolean } = {},
+  ): RouteInfo[] {
     if (
       !Array.isArray(this.excludedGlobalPrefixRoutes) ||
       this.isAWildcard(path) ||
@@ -99,6 +102,7 @@ export class RouteInfoPathExtractor {
     try {
       routeRegex = pathToRegexp(
         LegacyRouteConverter.tryConvert(addLeadingSlash(path), { logs: false }),
+        { sensitive: caseSensitive },
       ).regexp;
     } catch {
       // The adapter reports a path it cannot mount
@@ -132,6 +136,29 @@ export class RouteInfoPathExtractor {
       }
       return [routeInfo];
     });
+  }
+
+  /**
+   * Returns the routes that an exclusion (`MiddlewareConsumer.exclude()`, or
+   * the `exclude` option of the CSRF protection) skips, with the paths they
+   * are served at: the route itself and the routes excluded from the global
+   * prefix that it covers, which the router serves without the prefix (see
+   * `extractExcludedRoutesCoveredBy()`). Exclusions match case-sensitively
+   * unless told otherwise, as matching too much skips the middleware.
+   */
+  public extractExclusionsFrom(
+    route: RouteInfo,
+    { caseSensitive = true }: { caseSensitive?: boolean } = {},
+  ): RouteInfo[] {
+    return [
+      route,
+      ...this.extractExcludedRoutesCoveredBy(route, { caseSensitive }),
+    ].flatMap(excludedRoute =>
+      this.extractPathFrom(excludedRoute).map(path => ({
+        ...excludedRoute,
+        path,
+      })),
+    );
   }
 
   /**

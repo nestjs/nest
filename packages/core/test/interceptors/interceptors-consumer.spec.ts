@@ -5,7 +5,15 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { AsyncLocalStorage, createHook } from 'async_hooks';
-import { Observable, defer, lastValueFrom, merge, of, retry } from 'rxjs';
+import {
+  Observable,
+  defer,
+  lastValueFrom,
+  merge,
+  observable,
+  of,
+  retry,
+} from 'rxjs';
 import { PassThrough } from 'stream';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
 
@@ -202,6 +210,21 @@ describe('InterceptorsConsumer', () => {
         expect(
           await lastValueFrom(consumer.transformDeferred(next) as any),
         ).toEqual(val);
+      });
+    });
+    describe('when next() result is an Observable from another copy of rxjs', () => {
+      it('should return Observable of the values it emits', async () => {
+        // Not an instance of the "Observable" class imported here
+        const source$ = of(3);
+        const foreign$ = {
+          lift: source$.lift.bind(source$),
+          subscribe: source$.subscribe.bind(source$),
+          [observable]: () => source$,
+        };
+        const next = async () => foreign$;
+        expect(
+          await lastValueFrom(consumer.transformDeferred(next) as any),
+        ).toEqual(3);
       });
     });
     describe('when the subscriber is closed before the async handler resolves', () => {

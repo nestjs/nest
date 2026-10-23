@@ -316,9 +316,43 @@ function getRequestedVersions(
 }
 
 /**
+ * Splits a header value at separators outside quoted strings in linear time.
+ * Backslash-escaped characters inside quoted strings are treated as literals.
+ */
+const splitOutsideQuotes = (value: string, separator: ',' | ';'): string[] => {
+  const parts: string[] = [];
+  let start = 0;
+  let isQuoted = false;
+  const len = value.length;
+  for (let index = 0; index < len; index++) {
+    const character = value[index];
+    if (isQuoted && character === '\\') {
+      // A quoted-pair consumes the next character, including an escaped quote.
+      index++;
+    } else if (character === '"') {
+      isQuoted = !isQuoted;
+    } else if (character === separator && !isQuoted) {
+      parts.push(value.slice(start, index));
+      start = index + 1;
+    }
+  }
+  parts.push(value.slice(start));
+  return parts;
+};
+
+/**
  * Returns the version carried by an `Accept` header for media type versioning,
  * e.g. `2` for `application/json;v=2` with the `v=` key. A copy of the
- * function the platform packages read it with.
+ * function the platform packages read it with, so the version the middleware
+ * exclusions match is the version the router serves.
+ *
+ * The version parameter may follow other parameters and may belong to any
+ * media range of a list (`text/html, application/json;v=2`); the first match
+ * wins. Returns `undefined` when no parameter starts with the key.
+ *
+ * Quoted parameter values are unescaped, and separators inside them are ignored.
+ * An unterminated quoted string runs to the end of the header value, so a
+ * version that follows its opening quote is not read.
  */
 function getMediaTypeVersion(
   acceptHeader: string | string[] | undefined,
@@ -326,14 +360,18 @@ function getMediaTypeVersion(
 ): string | undefined {
   const mediaRanges = ([] as string[])
     .concat(acceptHeader ?? [])
-    .flatMap(value => value.split(','));
+    .flatMap(value => splitOutsideQuotes(value, ','));
 
   for (const mediaRange of mediaRanges) {
-    const [, ...parameters] = mediaRange.split(';');
+    const [, ...parameters] = splitOutsideQuotes(mediaRange, ';');
     for (const parameter of parameters) {
       const trimmedParameter = parameter.trim();
       if (trimmedParameter.startsWith(key)) {
-        return trimmedParameter.slice(key.length);
+        const version = trimmedParameter.slice(key.length);
+        if (version.startsWith('"') && version.endsWith('"')) {
+          return version.slice(1, -1).replace(/\\([\s\S])/g, '$1');
+        }
+        return version;
       }
     }
   }

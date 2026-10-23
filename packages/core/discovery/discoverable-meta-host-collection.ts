@@ -4,9 +4,13 @@ import { ModulesContainer } from '../injector/modules-container.js';
 
 export class DiscoverableMetaHostCollection {
   /**
-   * A map of class references to metadata keys.
+   * A map of class references to the metadata keys of the discoverable
+   * decorators applied to them.
    */
-  public static readonly metaHostLinks = new Map<Type | Function, string>();
+  public static readonly metaHostLinks = new Map<
+    Type | Function,
+    Set<string>
+  >();
 
   /**
    * A map of metadata keys to instance wrappers (providers) with the corresponding metadata key.
@@ -35,7 +39,9 @@ export class DiscoverableMetaHostCollection {
     target: Type | Function,
     metadataKey: string,
   ) {
-    this.metaHostLinks.set(target, metadataKey);
+    const metadataKeys = this.metaHostLinks.get(target) ?? new Set<string>();
+    metadataKeys.add(metadataKey);
+    this.metaHostLinks.set(target, metadataKeys);
   }
 
   /**
@@ -122,11 +128,11 @@ export class DiscoverableMetaHostCollection {
       Map<string, Set<InstanceWrapper>>
     >,
   ) {
-    const metaKey =
-      DiscoverableMetaHostCollection.getMetaKeyByInstanceWrapper(
+    const metaKeys =
+      DiscoverableMetaHostCollection.getMetaKeysByInstanceWrapper(
         instanceWrapper,
       );
-    if (!metaKey) {
+    if (!metaKeys) {
       return;
     }
 
@@ -137,10 +143,12 @@ export class DiscoverableMetaHostCollection {
       collection = new Map<string, Set<InstanceWrapper>>();
       wrapperByMetaKeyMap.set(hostContainerRef, collection);
     }
-    this.insertByMetaKey(metaKey, instanceWrapper, collection);
+    for (const metaKey of metaKeys) {
+      this.insertByMetaKey(metaKey, instanceWrapper, collection);
+    }
   }
 
-  private static getMetaKeyByInstanceWrapper(
+  private static getMetaKeysByInstanceWrapper(
     instanceWrapper: InstanceWrapper<any>,
   ) {
     return this.metaHostLinks.get(

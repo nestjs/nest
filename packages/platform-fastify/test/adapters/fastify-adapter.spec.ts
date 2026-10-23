@@ -5,6 +5,7 @@ import {
   FASTIFY_ROUTE_SCHEMA_METADATA,
 } from '../../constants.js';
 import { createError } from '@fastify/error';
+import createHttpError from 'http-errors';
 import {
   HttpException,
   Logger,
@@ -175,23 +176,63 @@ describe('FastifyAdapter', () => {
       expect(result.getStatus()).toBe(415);
     });
 
-    it('should return FastifyError without user status code to Internal Server Error HttpException', () => {
+    it('should not map FastifyError without user status code (500 by default)', () => {
       const FastifyErrorCls = createError(
         'FST_WITHOUT_STATUS_CODE',
         'Error without status code',
       );
       const error = new FastifyErrorCls();
 
-      const result = fastifyAdapter.mapException(error) as HttpException;
-      expect(result).toBeInstanceOf(HttpException);
-      expect(result.message).toBe(error.message);
-      expect(result.getStatus()).toBe(500);
+      expect(fastifyAdapter.mapException(error)).toBe(error);
     });
+
+    it.each([500, 503])(
+      'should not map FastifyError with status %i',
+      status => {
+        const FastifyErrorCls = createError(
+          'FST_ERR_TEST',
+          'internal detail',
+          status,
+        );
+        const error = new FastifyErrorCls();
+
+        expect(fastifyAdapter.mapException(error)).toBe(error);
+      },
+    );
 
     it('should return error if it is not FastifyError', () => {
       const error = new Error('Test error');
       const result = fastifyAdapter.mapException(error);
       expect(result).toBe(error);
+    });
+
+    it('should map an http-errors error to an HttpException', () => {
+      const error = createHttpError(413, 'request entity too large');
+      const result = fastifyAdapter.mapException(error) as HttpException;
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.getStatus()).toBe(413);
+      expect(result.getResponse()).toBe('request entity too large');
+      expect(result.cause).toBe(error);
+    });
+
+    it('should not expose the message of an http-errors error with expose: false', () => {
+      const error = createHttpError(404, 'internal detail', { expose: false });
+      const result = fastifyAdapter.mapException(error) as HttpException;
+      expect(result.getStatus()).toBe(404);
+      expect(result.getResponse()).toBe('Not Found');
+    });
+
+    it.each([500, 503])(
+      'should not map an http-errors error with status %i',
+      status => {
+        const error = createHttpError(status, 'internal detail');
+        expect(fastifyAdapter.mapException(error)).toBe(error);
+      },
+    );
+
+    it('should not map an error that only carries a status code', () => {
+      const error = Object.assign(new Error('Test error'), { statusCode: 400 });
+      expect(fastifyAdapter.mapException(error)).toBe(error);
     });
   });
 
@@ -1613,6 +1654,15 @@ describe('FastifyAdapter', () => {
       fastifyAdapter.listen({ port: 3000 });
 
       expect(listen).toHaveBeenCalledWith({ port: 3000 }, undefined);
+    });
+
+    it('should keep an options object with a file descriptor as it is', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+
+      fastifyAdapter.listen({ fd: 3 }, callback);
+
+      expect(listen).toHaveBeenCalledWith({ fd: 3 }, callback);
     });
 
     it('should keep a number as a port', () => {

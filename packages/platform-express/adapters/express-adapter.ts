@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   HttpStatus,
   InternalServerErrorException,
   Logger,
@@ -190,10 +191,15 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       });
       // Node discards the body of a HEAD response without ever applying
       // backpressure, so piping would read the whole source. The response
-      // ends once the source is readable instead, which still leaves an
-      // error opening it (e.g. a missing file) to the error handler.
+      // ends once the source is readable or has ended instead, which still
+      // leaves an error opening it (e.g. a missing file) to the error handler.
       if (response.req?.method === 'HEAD') {
-        stream.once('readable', () => response.end());
+        const end = () => response.end();
+        if (stream.readableEnded) {
+          end();
+        } else {
+          stream.once('readable', end).once('end', end);
+        }
         return response.on('error', (err: Error) => body.errorLogger(err));
       }
       return stream
@@ -424,10 +430,20 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         if (isExactPath && router === this.instance.use) {
           router = this.instance.all;
         }
-        // Express routes are not strict, so "/api" also matches "/api/", which
-        // the wildcard path registered next to it may match too ("/api/{*path}"
-        // does, "/api/*path" does not). The core runs the middleware for the
-        // first of its paths that matches a request only.
+        // Express routes are not strict by default, so "/api" also matches
+        // "/api/", which the wildcard path registered next to it may match too
+        // ("/api/{*path}" does, "/api/*path" does not). The core runs the
+        // middleware for the first of its paths that matches a request only.
+        // With "strict routing", the router serves a route the core passes
+        // with a trailing slash (the root route of a controller, "/users/")
+        // without it ("/users"), so the path is registered without it too.
+        if (
+          this.instance.router?.strict &&
+          convertedPath.length > 1 &&
+          convertedPath.endsWith('/')
+        ) {
+          router.call(this.instance, stripEndSlash(convertedPath), callback);
+        }
         return router.call(this.instance, convertedPath, callback);
       } catch (e) {
         if (e instanceof TypeError) {
@@ -675,6 +691,22 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       // encoding, e.g. '%FF' (#8915)
       case error instanceof SyntaxError || error instanceof URIError:
         return new BadRequestException(error.message);
+      // http-errors (used by body-parser, Express itself, etc.) carry a numeric statusCode
+      // and an expose flag. Without this case, errors like PayloadTooLargeError reach custom
+      // exception filters as a raw http-errors instance rather than an HttpException, so a
+      // @Catch(HttpException) filter never runs and a catch-all filter reports 500 (#18213).
+      // A 5xx one (e.g. EACCES from "send") is a server fault: it stays unmapped,
+      // so the built-in filter still logs it, as it does on Fastify.
+      case isHttpError(error) && error.statusCode < 500:
+        return new HttpException(
+          // An error that must not reach the client only gets a status text,
+          // like the built-in exception filter answers it
+          error.expose === false
+            ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
+            : error.message,
+          error.statusCode,
+          { cause: error },
+        );
       default:
         return error;
     }
@@ -733,4 +765,20 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     );
     this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
   }
+}
+
+/**
+ * Returns true when `err` is an "http-errors"-shaped error (body-parser, Express, etc.).
+ * Mirrors the same check in BaseExceptionFilter.isHttpError().
+ */
+function isHttpError(
+  err: unknown,
+): err is { statusCode: number; message: string; expose: boolean } {
+  return (
+    isObject(err) &&
+    err instanceof Error &&
+    typeof (err as any).expose === 'boolean' &&
+    typeof (err as any).statusCode === 'number' &&
+    (err as any).status === (err as any).statusCode
+  );
 }

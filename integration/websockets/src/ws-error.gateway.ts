@@ -11,4 +11,13 @@ export class WsErrorGateway {
   onPush() {
     return throwError(() => new WsException('test'));
   }
+
+  @SubscribeMessage('push-error')
+  onPushError() {
+    // Shaped like an HTTP client error, whose config holds the request headers
+    const error = Object.assign(new Error('Request failed'), {
+      config: { headers: { Authorization: 'Bearer secret' } },
+    });
+    throw new WsException(error);
+  }
 }

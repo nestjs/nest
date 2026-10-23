@@ -59,13 +59,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     const body = this.isHttpError(exception)
       ? {
           statusCode: exception.statusCode,
-          // "http-errors" sets "expose" to false when the message must not
-          // reach the client (5xx errors, file system errors from "send")
-          message:
-            exception.expose === false
-              ? (STATUS_CODES[exception.statusCode] ??
-                MESSAGES.UNKNOWN_EXCEPTION_MESSAGE)
-              : exception.message,
+          message: this.getHttpErrorMessage(exception),
         }
       : {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -129,5 +123,22 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       typeof err.message === 'string' &&
       err.message !== ''
     );
+  }
+
+  /**
+   * Returns the message of an HTTP error (see `isHttpError()`) that may be
+   * sent to the client.
+   * @param err error object
+   */
+  public getHttpErrorMessage(err: {
+    statusCode: number;
+    message: string;
+    expose?: boolean;
+  }): string {
+    // "http-errors" sets "expose" to false when the message must not
+    // reach the client (5xx errors, file system errors from "send")
+    return err.expose === false
+      ? (STATUS_CODES[err.statusCode] ?? MESSAGES.UNKNOWN_EXCEPTION_MESSAGE)
+      : err.message;
   }
 }

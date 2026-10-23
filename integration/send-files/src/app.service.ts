@@ -45,6 +45,20 @@ export class AppService {
     return new StreamableFile(createReadStream('does-not-exist.txt'));
   }
 
+  getFileThatFailsMidway(): StreamableFile {
+    let reads = 0;
+    const stream = new Readable({
+      read() {
+        if (reads++ === 0) {
+          this.push('first chunk');
+        } else {
+          this.destroy(new Error('EIO: i/o error, read'));
+        }
+      },
+    });
+    return new StreamableFile(stream);
+  }
+
   getSlowStream(): StreamableFile {
     const stream = new Readable();
     stream.push(Buffer.from(randomBytes(this.MAX_BITES)));

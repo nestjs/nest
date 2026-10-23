@@ -24,6 +24,11 @@ export class BaseRpcExceptionFilter<
       return this.handleUnknownError(exception, status);
     }
     const res = exception.getError();
+    // An Error, as in `new RpcException(err)`, would be sent with its
+    // enumerable properties, e.g. the request config of an HTTP client error
+    if (res instanceof Error) {
+      return this.handleUnknownError(res as T, status);
+    }
     const message = isObject(res) ? res : { status, message: res };
     return _throw(() => message);
   }

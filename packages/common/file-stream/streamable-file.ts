@@ -25,7 +25,15 @@ export class StreamableFile {
       return;
     }
     if (res.headersSent) {
-      res.end();
+      // Ending the response would make the truncated file look complete. A
+      // stream that fails after it ended (e.g. while closing the file) has
+      // already handed over every byte, so the response is left to finish.
+      this.logError(err);
+      if (isFunction(res.destroy) && !this.stream?.readableEnded) {
+        res.destroy();
+      } else {
+        res.end();
+      }
       return;
     }
 

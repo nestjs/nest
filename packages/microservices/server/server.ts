@@ -50,6 +50,7 @@ import {
   loadPackage,
   loadPackageSync,
 } from '@nestjs/common/internal';
+import { MESSAGES } from '@nestjs/core/internal';
 
 const MAX_PACKET_ID_LENGTH = 256;
 
@@ -202,6 +203,9 @@ export abstract class Server<
     // shift() would move all the packets queued behind the one it removes
     let nextIndex = 0;
     let isProcessing = false;
+    // The requester is answered with an error in place of a final reply that
+    // cannot be published only once, as that error may fail to publish too
+    let isFallbackQueued = false;
     const scheduleOnNextTick = (data: WritePacket) => {
       if (data.isDisposed && dataQueue.length > nextIndex) {
         dataQueue[dataQueue.length - 1].isDisposed = true;
@@ -218,7 +222,18 @@ export abstract class Server<
             } catch (err) {
               // A reply that cannot be published must neither surface as an
               // unhandled rejection nor stop the replies queued behind it.
+              // When it was the last one, the requester still gets an error.
               this.logger.error(err);
+              if (packet.isDisposed && !isFallbackQueued) {
+                isFallbackQueued = true;
+                dataQueue.push({
+                  err: {
+                    status: 'error',
+                    message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+                  },
+                  isDisposed: true,
+                });
+              }
             }
           }
           dataQueue.length = 0;

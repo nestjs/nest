@@ -26,9 +26,11 @@ import { DependenciesScanner } from './scanner.js';
 import {
   type NestMicroserviceOptions,
   type NestApplicationContextOptions,
+  type SelectOptions,
   loadPackage,
   isFunction,
   isNil,
+  isObject,
 } from '@nestjs/common/internal';
 import {
   type NestApplicationOptions,
@@ -42,10 +44,7 @@ import {
  * @publicApi
  */
 export type IEntryNestModule =
-  | Type<any>
-  | DynamicModule
-  | ForwardReference
-  | Promise<IEntryNestModule>;
+  Type<any> | DynamicModule | ForwardReference | Promise<IEntryNestModule>;
 
 /**
  * @publicApi
@@ -266,21 +265,21 @@ export class NestFactoryStatic {
     rethrow(err);
   }
 
-  private createProxy(target: any) {
-    const proxy = this.createExceptionProxy();
+  private createProxy(target: any, abortOnError?: boolean) {
+    const proxy = this.createExceptionProxy(abortOnError);
     return new Proxy(target, {
       get: proxy,
       set: proxy,
     });
   }
 
-  private createExceptionProxy() {
+  private createExceptionProxy(abortOnError?: boolean) {
     return (receiver: Record<string, any>, prop: string) => {
       if (!(prop in receiver)) {
         return;
       }
       if (isFunction(receiver[prop])) {
-        return this.createExceptionZone(receiver, prop);
+        return this.createExceptionZone(receiver, prop, abortOnError);
       }
       return receiver[prop];
     };
@@ -289,10 +288,19 @@ export class NestFactoryStatic {
   private createExceptionZone(
     receiver: Record<string, any>,
     prop: string,
+    abortOnError?: boolean,
   ): Function {
-    const teardown = this.abortOnError === false ? rethrow : undefined;
-
     return (...args: unknown[]) => {
+      const selectOptions =
+        prop === 'select' ? (args[1] as SelectOptions | undefined) : undefined;
+      const contextAbortOnError = selectOptions?.abortOnError ?? abortOnError;
+      // The option the app was created with: "this.abortOnError" belongs to
+      // the last app NestFactory created
+      const teardown =
+        (contextAbortOnError ?? receiver.appOptions?.abortOnError) === false
+          ? rethrow
+          : undefined;
+
       let result: unknown;
       ExceptionsZone.run(
         () => {
@@ -302,6 +310,13 @@ export class NestFactoryStatic {
         this.autoFlushLogs,
       );
 
+      if (
+        prop === 'select' &&
+        contextAbortOnError !== undefined &&
+        isObject(result)
+      ) {
+        return this.createProxy(result, contextAbortOnError);
+      }
       return result;
     };
   }
@@ -368,7 +383,12 @@ export class NestFactoryStatic {
 
         if (!(prop in receiver) && prop in adapter) {
           return (...args: unknown[]) => {
-            const result = this.createExceptionZone(adapter, prop)(...args);
+            const result = this.createExceptionZone(
+              adapter,
+              prop,
+              // The adapter has no options of its own
+              receiver.appOptions?.abortOnError,
+            )(...args);
             return mapToProxy(result);
           };
         }

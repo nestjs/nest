@@ -334,6 +334,29 @@ describe.each(adapters)('CSRF protection (%s)', (_name, createAdapter) => {
     });
   });
 
+  describe('with an exclusion covering a route excluded from the global prefix', () => {
+    beforeEach(() =>
+      init(app => {
+        app.setGlobalPrefix('api', { exclude: ['webhooks/stripe'] });
+        app.enableCsrfProtection({
+          exclude: [{ path: 'webhooks/*path', method: RequestMethod.POST }],
+        });
+      }),
+    );
+
+    it('allows a cross-site POST to the route served without the prefix', async () => {
+      const post = (path: string) =>
+        request(app.getHttpServer())
+          .post(path)
+          .set('Host', HOST)
+          .set('Sec-Fetch-Site', 'cross-site')
+          .set('Origin', 'https://api.stripe.example');
+
+      await post('/webhooks/stripe').expect(201, { received: true });
+      await post('/api/items').expect(403);
+    });
+  });
+
   describe('with a global exception filter', () => {
     beforeEach(() =>
       init(app => {

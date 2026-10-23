@@ -59,6 +59,23 @@ describe('RpcExceptionsHandler', () => {
             )
             .subscribe(() => ({}));
         }));
+      it('should emit the unknown error payload and log the error when it holds an error', async () => {
+        const loggerErrorSpy = vi
+          .spyOn((RpcExceptionsHandler as any).logger, 'error')
+          .mockImplementation(() => undefined);
+        const error = Object.assign(new Error('Request failed'), {
+          config: { headers: { Authorization: 'Bearer secret' } },
+        });
+
+        await expect(
+          lastValueFrom(handler.handle(new RpcException(error), null!)),
+        ).rejects.toEqual({
+          status: 'error',
+          message: 'Internal server error',
+        });
+        expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+        loggerErrorSpy.mockRestore();
+      });
     });
     describe('when "invokeCustomFilters" returns observable', () => {
       const observable$ = of(true);

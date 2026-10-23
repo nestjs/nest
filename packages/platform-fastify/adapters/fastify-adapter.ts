@@ -18,7 +18,6 @@ import {
   FastifyBodyParser,
   FastifyError,
   FastifyInstance,
-  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyRegister,
@@ -57,6 +56,7 @@ import {
   tryLoadPackage,
   isFunction,
   isNil,
+  isObject,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
@@ -77,7 +77,10 @@ import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external/index.js';
-import { NestFastifyBodyParserOptions } from '../interfaces/index.js';
+import {
+  NestFastifyBodyParserOptions,
+  NestFastifyListenOptions,
+} from '../interfaces/index.js';
 const { safeDecodeURI } = urlSanitizer;
 
 const MISSING_MULTIPART_PACKAGE_MESSAGE =
@@ -215,6 +218,13 @@ export class FastifyAdapter<
     done: (err?: Error) => void,
   ) => void | Promise<void>;
   private securityHook?: SecurityRequestHook<TRequest>;
+  // The request hook `@fastify/cors` adds for `app.enableCors()`, which the
+  // constructor's hook runs (see `enableCors()`)
+  private corsHook?: (
+    request: TRequest,
+    reply: TReply,
+    done: (err?: Error) => void,
+  ) => void;
   private isMiddieRegistered: boolean;
   private multipartMode: 'auto' | 'eager' | 'off' = 'auto';
   private multipartOptions: FastifyMultipartOptions = {};
@@ -406,6 +416,21 @@ export class FastifyAdapter<
       }
     });
 
+    // The request hook of `app.enableCors()` (see `enableCors()`). Added here
+    // for the same reason as the hook above: it must run before Nest
+    // middleware, so that a preflight is answered before them and the
+    // responses they end carry the CORS headers, as on Express. Before the
+    // security hook, so that its responses carry them too.
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (!this.corsHook) {
+        return done();
+      }
+      this.corsHook(request as TRequest, reply as TReply, (err?: Error) => {
+        this.copyCorsHeadersToRaw(reply as TReply);
+        done(err);
+      });
+    });
+
     // The request hook of `app.enableCsrfProtection()` and
     // `app.useSecurityHeaders()` (see `registerSecurityHook()`). Added here
     // for the same reason as the hook above: it must run before Nest
@@ -545,7 +570,7 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(
-    listenOptions: string | number | FastifyListenOptions,
+    listenOptions: string | number | NestFastifyListenOptions,
     ...args: any[]
   ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
@@ -562,9 +587,10 @@ export class FastifyAdapter<
       typeof listenOptions === 'object' &&
       (listenOptions.host !== undefined ||
         listenOptions.port !== undefined ||
-        listenOptions.path !== undefined)
+        listenOptions.path !== undefined ||
+        listenOptions.fd !== undefined)
     ) {
-      // First parameter is an object with a path, port and/or host attributes
+      // First parameter is an object with a path, port, fd and/or host attributes
       options = listenOptions;
     } else {
       options = {
@@ -1035,12 +1061,84 @@ export class FastifyAdapter<
   }
 
   public enableCors(options?: FastifyCorsOptions) {
-    this.register(
-      import('@fastify/cors') as unknown as Parameters<
-        TInstance['register']
-      >[0],
-      options,
-    );
+    const hook = options?.hook;
+    if (hook && hook !== 'onRequest') {
+      // A later hook runs after Nest middleware wherever it is added
+      this.register(
+        import('@fastify/cors') as unknown as Parameters<
+          TInstance['register']
+        >[0],
+        options,
+      );
+      return;
+    }
+    const registerCors = async (instance: TInstance) => {
+      const { default: fastifyCors } = await import('@fastify/cors');
+      // `@fastify/cors` adds its request hook to the instance it is given,
+      // which would run after middie: the hook is kept so that the hook added
+      // in the constructor runs it instead
+      const corsInstance = new Proxy(instance, {
+        get: (target, prop) => {
+          if (prop === 'addHook') {
+            return (
+              name: string,
+              hookFn: NonNullable<typeof this.corsHook>,
+            ) => {
+              if (name === 'onRequest' && !this.corsHook) {
+                this.corsHook = hookFn;
+                return corsInstance;
+              }
+              return (target.addHook as Function).call(target, name, hookFn);
+            };
+          }
+          const value = Reflect.get(target, prop, target);
+          return isFunction(value) ? value.bind(target) : value;
+        },
+      });
+      // As `register()` would, call a function that takes the instance for
+      // the options; one that takes `(request, callback)` is the options
+      // delegate of `@fastify/cors` (and the `cors` option)
+      const corsOptions =
+        isFunction(options) && (options as Function).length < 2
+          ? (options as Function)(instance)
+          : options;
+      await new Promise<void>((resolve, reject) =>
+        (fastifyCors as unknown as FastifyPluginCallback<FastifyCorsOptions>)(
+          corsInstance as unknown as FastifyInstance,
+          corsOptions ?? {},
+          err => (err ? reject(err) : resolve()),
+        ),
+      );
+    };
+    // Like `fastify-plugin`: register on the root context, not a child one.
+    Object.assign(registerCors, {
+      [Symbol.for('skip-override')]: true,
+      [Symbol.for('fastify.display-name')]: 'nestjs-cors',
+    });
+    this.instance.register(registerCors as any);
+  }
+
+  /**
+   * Copies the headers `@fastify/cors` set on the reply to the Node.js
+   * response, so that a response a middleware ends itself, or the error
+   * response of a middleware that throws (sent through a new reply), carries
+   * them too. Fastify merges them into the response it sends, in which the
+   * reply's own values win.
+   */
+  private copyCorsHeadersToRaw(reply: TReply) {
+    if (reply.raw.headersSent) {
+      return;
+    }
+    const headers = reply.getHeaders();
+    for (const name of Object.keys(headers)) {
+      const value = headers[name];
+      if (
+        !isUndefined(value) &&
+        (name === 'vary' || name.startsWith('access-control-'))
+      ) {
+        reply.raw.setHeader(name, value);
+      }
+    }
   }
 
   /**
@@ -1283,8 +1381,26 @@ export class FastifyAdapter<
   }
 
   public mapException(error: unknown): unknown {
-    if (this.isHttpFastifyError(error)) {
+    // A 5xx FastifyError (e.g. FST_ERR_HANDLER_TIMEOUT) is a server fault: it
+    // stays unmapped, so the built-in filter logs it, like an http-errors one.
+    if (this.isHttpFastifyError(error) && error.statusCode < 500) {
       return new HttpException(error.message, error.statusCode);
+    }
+    // http-errors (used by Express middleware such as body-parser) carry a
+    // numeric statusCode and an expose flag. Without this case, errors like
+    // PayloadTooLargeError reach custom exception filters as a raw http-errors
+    // instance rather than an HttpException, as on Express (#18213). A 5xx one
+    // is a server fault: it stays unmapped, so the built-in filter still logs it.
+    if (isHttpError(error) && error.statusCode < 500) {
+      return new HttpException(
+        // An error that must not reach the client only gets a status text,
+        // like the built-in exception filter answers it
+        error.expose === false
+          ? (http.STATUS_CODES[error.statusCode] ?? 'Internal server error')
+          : error.message,
+        error.statusCode,
+        { cause: error },
+      );
     }
 
     return error;
@@ -1667,4 +1783,20 @@ export class FastifyAdapter<
       this.openConnections.delete(socket);
     }
   }
+}
+
+/**
+ * Returns true when `err` is an "http-errors"-shaped error (body-parser, Express, etc.).
+ * Mirrors the same check in BaseExceptionFilter.isHttpError().
+ */
+function isHttpError(
+  err: unknown,
+): err is { statusCode: number; message: string; expose: boolean } {
+  return (
+    isObject(err) &&
+    err instanceof Error &&
+    typeof (err as any).expose === 'boolean' &&
+    typeof (err as any).statusCode === 'number' &&
+    (err as any).status === (err as any).statusCode
+  );
 }

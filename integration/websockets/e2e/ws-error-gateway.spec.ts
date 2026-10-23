@@ -54,6 +54,33 @@ describe('WebSocketGateway (WsAdapter) - Error Handling', () => {
     );
   });
 
+  it('should send the unknown error payload for a WsException holding an error', async () => {
+    app = await createNestApp(WsErrorGateway);
+    app.useLogger(false);
+    await app.listen(3000);
+
+    ws = new WebSocket('ws://localhost:8085');
+    await new Promise(resolve => ws.on('open', resolve));
+
+    const response = new Promise<unknown>(resolve =>
+      ws.on('message', data => resolve(JSON.parse(data.toString()))),
+    );
+    ws.send(JSON.stringify({ event: 'push-error', data: {} }));
+
+    expect(await response).toEqual({
+      event: 'exception',
+      data: {
+        status: 'error',
+        message: 'Internal server error',
+        cause: {
+          pattern: 'push-error',
+          data: {},
+        },
+      },
+    });
+    ws.close();
+  });
+
   afterEach(async function () {
     await app.close();
   });
