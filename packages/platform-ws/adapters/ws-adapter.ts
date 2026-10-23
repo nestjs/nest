@@ -9,11 +9,10 @@ import { loadPackageSync, isNil, normalizePath } from '@nestjs/common/internal';
 import {
   CLOSE_EVENT,
   CONNECTION_EVENT,
-  DEFAULT_MAX_CONCURRENT_MESSAGES,
   ERROR_EVENT,
-  mergeMapBounded,
 } from '@nestjs/websockets/internal';
 import type { MessageMappingProperties } from '@nestjs/websockets';
+import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
 
 let wsPackage: any = {};
 
@@ -54,6 +53,10 @@ type WsAdapterOptions = {
 };
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
+// How many messages of a client are handled at the same time. Kept here, like
+// mergeMapBounded(), so that this package still loads with an older
+// `@nestjs/websockets`.
+const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 // Reading from a client stops while more than this is queued for it
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;

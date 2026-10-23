@@ -4,7 +4,7 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { isPlainObject } from '@nestjs/common/internal';
-import { isRejectedByPipes } from '@nestjs/core/internal';
+import * as coreInternal from '@nestjs/core/internal';
 import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { finished } from 'stream';
 import {
@@ -17,6 +17,26 @@ import {
   MulterLimits,
   MulterOptions,
 } from '../interfaces/multer-options.interface.js';
+
+/**
+ * Set on a request whose pipes rejected it, by the router of
+ * `@nestjs/core` (see `markRejectedByPipes()` there). Read through the
+ * registered symbol rather than an import, so this package still loads with
+ * a version of `@nestjs/core` that does not set it.
+ */
+const REJECTED_BY_PIPES = Symbol.for('nestjs:rejected-by-pipes');
+
+function isRejectedByPipes(req: any): boolean {
+  if (req?.[REJECTED_BY_PIPES] === true) {
+    return true;
+  }
+  // `@nestjs/core` 12.2.0 keeps the record to itself, so ask its helper too.
+  // Read off the namespace, since a named import fails with an older core.
+  const core = coreInternal as {
+    isRejectedByPipes?: (req: unknown) => boolean;
+  };
+  return core.isRejectedByPipes?.(req) === true;
+}
 
 /**
  * Merges module-level (global) multer options with interceptor-level (local)

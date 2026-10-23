@@ -241,6 +241,24 @@ describe('removeFilesOnPipeRejection', () => {
     },
   );
 
+  it('should remove the files of a request marked under the registered symbol', async () => {
+    const storage = createStorage();
+    const file = { fieldname: 'doc', path: '/uploads/a' };
+    const req = { file, [Symbol.for('nestjs:rejected-by-pipes')]: true };
+    const res = createResponse();
+
+    await expect(fail(storage, req, res)).rejects.toBe(error);
+    res.end();
+
+    await vi.waitFor(() =>
+      expect(storage._removeFile).toHaveBeenCalledWith(
+        req,
+        file,
+        expect.any(Function),
+      ),
+    );
+  });
+
   it('should keep the files when the route handler failed', async () => {
     const storage = createStorage();
     const req = { file: { fieldname: 'doc', path: '/uploads/a' } };

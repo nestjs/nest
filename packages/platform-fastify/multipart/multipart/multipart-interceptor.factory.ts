@@ -10,7 +10,7 @@ import {
   type Type,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { isRejectedByPipes } from '@nestjs/core/internal';
+import * as coreInternal from '@nestjs/core/internal';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { catchError, concatMap, from, type Observable, throwError } from 'rxjs';
 import { finished } from 'stream';
@@ -36,6 +36,26 @@ import {
 } from './multipart.parser.js';
 import { mergeMultipartOptions } from './multipart.utils.js';
 import type { FastifyAdapter } from '../../adapters/fastify-adapter.js';
+
+/**
+ * Set on a request whose pipes rejected it, by the router of
+ * `@nestjs/core` (see `markRejectedByPipes()` there). Read through the
+ * registered symbol rather than an import, so this package still loads with
+ * a version of `@nestjs/core` that does not set it.
+ */
+const REJECTED_BY_PIPES = Symbol.for('nestjs:rejected-by-pipes');
+
+function isRejectedByPipes(req: any): boolean {
+  if (req?.[REJECTED_BY_PIPES] === true) {
+    return true;
+  }
+  // `@nestjs/core` 12.2.0 keeps the record to itself, so ask its helper too.
+  // Read off the namespace, since a named import fails with an older core.
+  const core = coreInternal as {
+    isRejectedByPipes?: (req: unknown) => boolean;
+  };
+  return core.isRejectedByPipes?.(req) === true;
+}
 
 const verifiedInstances = new WeakSet<object>();
 
