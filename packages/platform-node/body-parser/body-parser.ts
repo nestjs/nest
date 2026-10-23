@@ -251,8 +251,9 @@ function hasBody(req: IncomingMessage) {
 }
 
 function getContentStream(req: IncomingMessage, inflate: boolean): Readable {
+  // An empty header is an empty list of codings, as body-parser reads it
   const encoding = (
-    req.headers['content-encoding'] ?? 'identity'
+    req.headers['content-encoding'] || 'identity'
   ).toLowerCase();
   if (encoding === 'identity') {
     return req;
@@ -311,7 +312,8 @@ function createReader(
     ) {
       return next();
     }
-    const charset = getCharset(req) ?? options.defaultCharset;
+    // An empty charset parameter gets the default too, as with body-parser
+    const charset = getCharset(req) || options.defaultCharset;
     if (options.isValidCharset && !options.isValidCharset(charset)) {
       return next(
         createHttpError(

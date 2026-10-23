@@ -448,6 +448,17 @@ describe('body parsers', () => {
       expect(req.body).toEqual({ name: 'nest' });
     });
 
+    it('should read a body with an empty content-encoding as is, as body-parser does', async () => {
+      // An empty header is an empty list of codings
+      const { status, req } = await send(json(), {
+        headers: { ...JSON_TYPE, 'content-encoding': '' },
+        body: '{"name":"nest"}',
+      });
+
+      expect(status).toBe(200);
+      expect(req.body).toEqual({ name: 'nest' });
+    });
+
     it('should reject an encoded body with 415 when inflate is false', async () => {
       const { status, error } = await send(json({ inflate: false }), {
         headers: { ...JSON_TYPE, 'content-encoding': 'gzip' },
@@ -504,6 +515,29 @@ describe('body parsers', () => {
 
       expect(req.body).toEqual({ name: 'nést 🚀' });
     });
+
+    it.each([
+      ['json', json, 'application/json; charset=""', { name: 'nést' }],
+      [
+        'urlencoded',
+        urlencoded,
+        'application/x-www-form-urlencoded; charset=""',
+        { name: 'nést' },
+      ],
+      ['text', text, 'text/plain; charset=""', 'name=nést'],
+    ])(
+      'should use the default charset for an empty charset parameter, as body-parser does (%s)',
+      async (_, parser, contentType, expected) => {
+        const body = parser === json ? '{"name":"nést"}' : 'name=nést';
+        const { status, req } = await send(parser(), {
+          headers: { 'content-type': contentType },
+          body: Buffer.from(body, 'utf8'),
+        });
+
+        expect(status).toBe(200);
+        expect(req.body).toEqual(expected);
+      },
+    );
 
     it.each([
       ['json', json, 'application/json; charset=iso-8859-1', 'iso-8859-1'],
