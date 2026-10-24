@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   PayloadTooLargeException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import multer from 'multer';
 import {
@@ -331,6 +332,30 @@ describe('transformException', () => {
         };
         expect(transformException(err as any)).toBeInstanceOf(
           BadRequestException,
+        );
+      });
+
+      it('should return "UnsupportedMediaTypeException" for an unsupported content type', () => {
+        const err = new Error(
+          'Unsupported content type: multipart/mixed; boundary=x',
+        );
+        const result = transformException(err);
+        expect(result).toBeInstanceOf(UnsupportedMediaTypeException);
+        expect(result!.message).toBe('Unsupported content type');
+      });
+
+      it('should map the error multer raises for a non form-data multipart request', async () => {
+        const req = Object.assign(Readable.from([]), {
+          headers: {
+            'content-type': 'multipart/mixed; boundary=x',
+            'content-length': '0',
+          },
+        });
+        const err = await new Promise<any>(resolve =>
+          multer().none()(req as any, {} as any, resolve),
+        );
+        expect(transformException(err)).toBeInstanceOf(
+          UnsupportedMediaTypeException,
         );
       });
     });

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   PayloadTooLargeException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { isPlainObject } from '@nestjs/common/internal';
 import * as coreInternal from '@nestjs/core/internal';
@@ -165,6 +166,14 @@ export function transformException(
     case busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FORM:
     case busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FILE:
       return new BadRequestException(`Multipart: ${error.message}`);
+  }
+  // multer accepts any `multipart/*` request, but busboy only parses
+  // `multipart/form-data`. The client's content type is left out of the
+  // response.
+  if (error.message?.startsWith(busboyExceptions.UNSUPPORTED_CONTENT_TYPE)) {
+    return new UnsupportedMediaTypeException(
+      busboyExceptions.UNSUPPORTED_CONTENT_TYPE,
+    );
   }
   return error;
 }
