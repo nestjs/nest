@@ -120,6 +120,78 @@ describe('FastifyAdapter', () => {
       );
     });
 
+    it.each([
+      ['without a "statusCode"', { errors: ['name is required'] }, 400],
+      [
+        'with a "statusCode" when no status code is given',
+        { statusCode: 404 },
+        undefined,
+      ],
+    ])(
+      'should force a JSON content type for error bodies %s',
+      (_, body, statusCode) => {
+        const reply = createReply();
+        reply.getHeader.mockReturnValue('text/html');
+        const warnSpy = vi.spyOn(Logger, 'warn').mockImplementation(() => {});
+
+        fastifyAdapter.reply(reply as any, body, statusCode);
+
+        expect(reply.header).toHaveBeenCalledWith(
+          'Content-Type',
+          'application/json',
+        );
+        expect(warnSpy).toHaveBeenCalled();
+        expect(reply.send).toHaveBeenCalledWith(body);
+      },
+    );
+
+    it.each([
+      ['a text error body', '<h1>Not found</h1>', 404],
+      ['a Buffer error body', Buffer.from('id,name'), 404],
+      ['a stream error body', new PassThrough(), 404],
+      ['a web stream error body', new ReadableStream(), 404],
+      ['a Response error body', new Response('id,name'), 404],
+      ['an object body with a successful status', { id: 1 }, 200],
+    ])('should keep the content type of %s', (_, body, statusCode) => {
+      const reply = createReply();
+      reply.getHeader.mockReturnValue('text/csv');
+
+      fastifyAdapter.reply(reply as any, body, statusCode);
+
+      expect(reply.header).not.toHaveBeenCalled();
+      expect(reply.send).toHaveBeenCalledWith(body);
+    });
+
+    it('should answer a custom error body with its status on a route with a non-JSON content type', async () => {
+      vi.spyOn(Logger, 'warn').mockImplementation(() => {});
+      fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+        reply.header('Content-Type', 'text/csv');
+        // e.g. the response of `new NotFoundException({ code, message })`
+        fastifyAdapter.reply(reply, { code: 'REPORT_NOT_FOUND' }, 404);
+      });
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.json()).toEqual({ code: 'REPORT_NOT_FOUND' });
+      await fastifyAdapter.close();
+    });
+
+    it('should keep the content type of an error body sent through a reply serializer', async () => {
+      fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+        reply.header('Content-Type', 'text/csv');
+        reply.serializer((payload: any) => Object.values(payload).join(','));
+        fastifyAdapter.reply(reply, { code: 'REPORT_NOT_FOUND' }, 404);
+      });
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.headers['content-type']).toBe('text/csv');
+      expect(res.body).toBe('REPORT_NOT_FOUND');
+      await fastifyAdapter.close();
+    });
+
     // e.g. `new UnauthorizedException(err)`, whose response is `err`. On the
     // raw response middleware gets, Fastify's reply has no error handler.
     it.each([
