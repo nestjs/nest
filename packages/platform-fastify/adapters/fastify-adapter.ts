@@ -63,7 +63,7 @@ import {
 import { AbstractHttpAdapter } from '@nestjs/core';
 import { LegacyRouteConverter } from '@nestjs/core/internal';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
-const { kRouteContext } = fastifySymbols;
+const { kReplySerializer, kRouteContext } = fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
 import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
@@ -106,17 +106,26 @@ function isJsonContentType(contentType: string): boolean {
 }
 
 // A custom error body need not have a "statusCode" of its own. Fastify sends
-// streams and binary data as they are and answers 500 for any other object.
-function isErrorBody(body: any, statusCode?: number): boolean {
+// streams, Responses and binary data as they are, and other objects through
+// the serializer of `reply.serializer()`. Without one, it answers 500 for an
+// object sent with a non-JSON Content-Type.
+function isErrorBody(
+  body: any,
+  statusCode: number | undefined,
+  reply: any,
+): boolean {
   if (body?.statusCode >= HttpStatus.BAD_REQUEST) {
     return true;
   }
   return (
+    !isNil(statusCode) &&
+    statusCode >= HttpStatus.BAD_REQUEST &&
     isObject(body) &&
     !isFunction((body as any).pipe) &&
+    !isFunction((body as any).getReader) &&
+    Object.prototype.toString.call(body) !== '[object Response]' &&
     !ArrayBuffer.isView(body) &&
-    !isNil(statusCode) &&
-    statusCode >= HttpStatus.BAD_REQUEST
+    isNil(reply[kReplySerializer])
   );
 }
 
@@ -809,7 +818,7 @@ export class FastifyAdapter<
     if (
       typeof responseContentType === 'string' &&
       !isJsonContentType(responseContentType) &&
-      isErrorBody(body, statusCode)
+      isErrorBody(body, statusCode, fastifyReply)
     ) {
       Logger.warn(
         "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",

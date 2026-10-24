@@ -149,6 +149,8 @@ describe('FastifyAdapter', () => {
       ['a text error body', '<h1>Not found</h1>', 404],
       ['a Buffer error body', Buffer.from('id,name'), 404],
       ['a stream error body', new PassThrough(), 404],
+      ['a web stream error body', new ReadableStream(), 404],
+      ['a Response error body', new Response('id,name'), 404],
       ['an object body with a successful status', { id: 1 }, 200],
     ])('should keep the content type of %s', (_, body, statusCode) => {
       const reply = createReply();
@@ -172,6 +174,21 @@ describe('FastifyAdapter', () => {
 
       expect(res.statusCode).toBe(404);
       expect(res.json()).toEqual({ code: 'REPORT_NOT_FOUND' });
+      await fastifyAdapter.close();
+    });
+
+    it('should keep the content type of an error body sent through a reply serializer', async () => {
+      fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+        reply.header('Content-Type', 'text/csv');
+        reply.serializer((payload: any) => Object.values(payload).join(','));
+        fastifyAdapter.reply(reply, { code: 'REPORT_NOT_FOUND' }, 404);
+      });
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.headers['content-type']).toBe('text/csv');
+      expect(res.body).toBe('REPORT_NOT_FOUND');
       await fastifyAdapter.close();
     });
 
