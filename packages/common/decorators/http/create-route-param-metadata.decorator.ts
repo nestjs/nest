@@ -5,6 +5,7 @@ import { PipeTransform } from '../../index.js';
 import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface.js';
 import { Type } from '../../interfaces/index.js';
 import { assignCustomParameterMetadata } from '../../utils/assign-custom-metadata.util.js';
+import { getParamArgsMetadata } from '../../utils/extend-metadata.util.js';
 import { isFunction, isNil } from '../../utils/shared.utils.js';
 import { isParameterDecoratorOptions } from '../../utils/parameter-decorator-options.util.js';
 import { ParameterDecoratorOptions } from './route-params.decorator.js';
@@ -41,9 +42,12 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
       )[]
     ): ParameterDecorator =>
     (target, key, index) => {
-      const args =
-        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) ||
-        {};
+      const args = getParamArgsMetadata(
+        ROUTE_ARGS_METADATA,
+        target,
+        key!,
+        index,
+      );
 
       const isPipe = (pipe: any) =>
         pipe &&

@@ -1,6 +1,6 @@
 import { ROUTE_ARGS_METADATA } from '../../constants.js';
 import { createParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator.js';
-import { ParseIntPipe } from '../../index.js';
+import { Body, ParseIntPipe } from '../../index.js';
 
 describe('createParamDecorator', () => {
   let result;
@@ -188,6 +188,22 @@ describe('createParamDecorator', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
         expect(metadata[key].data).toBe(Data);
+      });
+    });
+
+    describe('when an overriding method uses it in place of an inherited decorator', () => {
+      class Parent {
+        public test(@Body() body) {}
+      }
+      class Test extends Parent {
+        public test(@Decorator() param, @Body() body?) {}
+      }
+
+      it('should replace the inherited route param of that argument', () => {
+        const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+        const args = Object.values<any>(metadata);
+        expect(args).toHaveLength(2);
+        expect(args.find(arg => arg.index === 0).factory).toBe(factoryFn);
       });
     });
 

@@ -10,6 +10,7 @@ import {
   Param,
   Query,
   RawBody,
+  Req,
   Res,
   Search,
   SignedCookies,
@@ -502,6 +503,56 @@ describe('Inheritance', () => {
     expect(method).toEqual(requestProps.method);
     expect(pathUsingArray).toEqual(requestPathUsingArray);
     expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
+  });
+
+  describe('when a subclass overrides a method with its own param decorators', () => {
+    it('should keep one route param per argument', () => {
+      class Parent {
+        public create(@Body() dto) {}
+      }
+      class Test extends Parent {
+        public create(@Req() req, @Body() dto?) {}
+      }
+
+      const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'create');
+      expect(Object.keys(metadata).sort()).toEqual([
+        `${RouteParamtypes.REQUEST}:0`,
+        `${RouteParamtypes.BODY}:1`,
+      ]);
+      expect(
+        Object.keys(Reflect.getMetadata(ROUTE_ARGS_METADATA, Parent, 'create')),
+      ).toEqual([`${RouteParamtypes.BODY}:0`]);
+    });
+
+    it('should keep every route param it declares on one argument', () => {
+      class Parent {
+        public create(@Body() dto) {}
+      }
+      class Test extends Parent {
+        public create(@Req() @Body() dto) {}
+      }
+
+      const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'create');
+      expect(Object.keys(metadata).sort()).toEqual([
+        `${RouteParamtypes.REQUEST}:0`,
+        `${RouteParamtypes.BODY}:0`,
+      ]);
+    });
+
+    it('should keep the inherited route params of arguments it does not decorate', () => {
+      class Parent {
+        public update(@Param('id') id, @Body() dto) {}
+      }
+      class Test extends Parent {
+        public update(@Query('id') id, dto) {}
+      }
+
+      const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'update');
+      expect(Object.keys(metadata).sort()).toEqual([
+        `${RouteParamtypes.BODY}:1`,
+        `${RouteParamtypes.QUERY}:0`,
+      ]);
+    });
   });
 });
 
