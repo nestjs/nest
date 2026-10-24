@@ -53,6 +53,10 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     try {
       this.subClient = await this.createRedisClient();
       this.pubClient = await this.createRedisClient();
+      // A close() before this listen() must not keep retries off for good.
+      // Set once the replacement clients exist, so an old client cannot report
+      // its own "end" through the flag while the swap is in progress
+      this.isManuallyClosed = false;
 
       [this.subClient, this.pubClient].forEach((client, index) => {
         const type = index === 0 ? 'sub' : 'pub';
@@ -306,7 +310,13 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     on: (event: string, fn: () => void) => void;
   }) {
     client.on('end', () => {
-      if (this.isManuallyClosed) {
+      if (
+        this.isManuallyClosed ||
+        // The "end" of a client a newer "listen" replaced: quit() resolves
+        // before ioredis emits "end", so this can arrive while the
+        // replacement clients are already connected
+        ![this.subClient, this.pubClient].includes(client)
+      ) {
         return;
       }
       this._status$.next(RedisStatus.DISCONNECTED);
