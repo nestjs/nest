@@ -220,6 +220,20 @@ describe('RouterExecutionContext', () => {
         expect(isRejectedByPipes(req)).toBe(true);
       });
 
+      it('should record it under the registered symbol the platform packages read', async () => {
+        const error = new HttpException('Validation failed', 400);
+        const req = {};
+        const proxy = createProxy(() => Promise.reject(error), vi.fn());
+
+        await expect(proxy(req, {}, vi.fn())).rejects.toBe(error);
+
+        expect(
+          (req as Record<symbol, unknown>)[
+            Symbol.for('nestjs:rejected-by-pipes')
+          ],
+        ).toBe(true);
+      });
+
       it('should not record a request whose route handler fails', async () => {
         const error = new Error('handler failed');
         const req = {};
