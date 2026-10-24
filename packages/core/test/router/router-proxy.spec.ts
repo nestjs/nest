@@ -47,6 +47,25 @@ describe('RouterProxy', () => {
         new ExecutionContextHost([null, null, null]),
       );
     });
+
+    it('should wait for an exceptions handler that is asynchronous', async () => {
+      let finishHandling!: () => void;
+      nextStub.mockReturnValue(
+        new Promise<void>(resolve => (finishHandling = resolve)),
+      );
+      const proxy = routerProxy.createProxy(() => {
+        throw httpException;
+      }, handler);
+
+      let isSettled = false;
+      const settled = proxy(null, null, null!).then(() => (isSettled = true));
+      await new Promise(resolve => setImmediate(resolve));
+      expect(isSettled).toBe(false);
+
+      finishHandling();
+      await settled;
+      expect(isSettled).toBe(true);
+    });
   });
 
   describe('createExceptionLayerProxy', () => {
@@ -86,6 +105,27 @@ describe('RouterProxy', () => {
         httpException,
         new ExecutionContextHost([null, null, null]),
       );
+    });
+
+    it('should wait for an exceptions handler that is asynchronous', async () => {
+      let finishHandling!: () => void;
+      nextStub.mockReturnValue(
+        new Promise<void>(resolve => (finishHandling = resolve)),
+      );
+      const proxy = routerProxy.createExceptionLayerProxy(() => {
+        throw httpException;
+      }, handler);
+
+      let isSettled = false;
+      const settled = proxy(null, null, null, null!).then(
+        () => (isSettled = true),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      expect(isSettled).toBe(false);
+
+      finishHandling();
+      await settled;
+      expect(isSettled).toBe(true);
     });
   });
 });
