@@ -39,4 +39,5 @@ export enum KafkaHeaders {
   // framework specific headers
   NEST_ERR = 'kafka_nest-err',
   NEST_IS_DISPOSED = 'kafka_nest-is-disposed',
+  NEST_NO_RESPONSE = 'kafka_nest-no-response',
 }

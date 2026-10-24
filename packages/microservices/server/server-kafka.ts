@@ -1,4 +1,5 @@
 import {
+  defaultIfEmpty,
   finalize,
   isObservable,
   lastValueFrom,
@@ -348,7 +349,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
 
         const replayStream$ = new ReplaySubject();
         await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
-        return replayStream$;
+        // Requesters have always received null for a stream that completes
+        // without emitting, so it still replies with an undefined response
+        return replayStream$.pipe(defaultIfEmpty(undefined));
       },
       publish,
     );
@@ -435,6 +438,11 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       return;
     }
     outgoingMessage.headers![KafkaHeaders.NEST_IS_DISPOSED] = Buffer.alloc(1);
+    // A completion that comes after the replies have been produced is sent on
+    // its own, and its null value must not reach the requester as a response
+    if (!('response' in outgoingResponse) && !outgoingResponse.err) {
+      outgoingMessage.headers![KafkaHeaders.NEST_NO_RESPONSE] = Buffer.alloc(1);
+    }
   }
 
   public assignErrorHeader(
