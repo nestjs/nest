@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "moduleResolution": "nodenext",
+    "types": ["node", "@cloudflare/workers-types", "vitest/globals"],
+    "rootDir": ".",
+    "useDefineForClassFields": false,
+    "strictPropertyInitialization": false
+  },
+  "include": ["src/**/*", "e2e/**/*"]
+}

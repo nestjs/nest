@@ -14,6 +14,9 @@
       "path": "./platform-express/tsconfig.build.json"
     },
     {
+      "path": "./platform-cloudflare/tsconfig.build.json"
+    },
+    {
       "path": "./platform-fastify/tsconfig.build.json"
     },
     {

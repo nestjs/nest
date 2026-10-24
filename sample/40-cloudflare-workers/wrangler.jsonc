@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nest-cloudflare-workers",
+  // "tsc" emits the decorator metadata that dependency injection relies on;
+  // wrangler then bundles its output
+  "main": "dist/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // The core imports these optional packages on demand: without them
+  // installed, the bundler needs a module to resolve them to
+  "alias": {
+    "@nestjs/microservices": "@nestjs/platform-cloudflare/shims/unavailable",
+    "@nestjs/microservices/microservices-module.js": "@nestjs/platform-cloudflare/shims/unavailable",
+    "@nestjs/websockets/socket-module.js": "@nestjs/platform-cloudflare/shims/unavailable"
+  },
+  "vars": {
+    "GREETING": "Hello from Nest on Cloudflare Workers"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "CATS",
+      // Replace with the id printed by "wrangler kv namespace create CATS"
+      "id": "00000000000000000000000000000000"
+    }
+  ]
+}
