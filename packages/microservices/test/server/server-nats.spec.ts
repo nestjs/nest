@@ -779,5 +779,52 @@ describe('ServerNats', () => {
       expect(logErrorSpy).toHaveBeenCalledWith(error);
       expect(reconnectListener).toHaveBeenCalledWith('localhost');
     });
+    describe('when the status iterator completes', () => {
+      const createClientMock = () => ({
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {
+            yield { type: 'disconnect', server: 'localhost' };
+            yield { type: 'reconnecting' };
+            yield { type: 'close' };
+          },
+        }),
+        close: vi.fn(),
+      });
+
+      it('should report the server as disconnected and log an error', async () => {
+        const logErrorSpy = vi.spyOn(untypedServer.logger, 'error');
+        const statuses: string[] = [];
+        server.status.subscribe(status => statuses.push(status));
+        const natsClient = createClientMock();
+        untypedServer.natsClient = natsClient;
+
+        await server.handleStatusUpdates(natsClient as any);
+
+        expect(statuses).toEqual([
+          'disconnected',
+          'reconnecting',
+          'disconnected',
+        ]);
+        expect(logErrorSpy).toHaveBeenLastCalledWith(
+          expect.stringContaining('will not be reopened'),
+        );
+      });
+
+      it('should not report a connection that close() closed', async () => {
+        const logErrorSpy = vi.spyOn(untypedServer.logger, 'error');
+        const natsClient = createClientMock();
+        untypedServer.natsClient = natsClient;
+        // nats resolves close() once the status iterator has completed
+        natsClient.close.mockImplementation(() =>
+          server.handleStatusUpdates(natsClient as any),
+        );
+
+        await server.close();
+
+        expect(logErrorSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining('will not be reopened'),
+        );
+      });
+    });
   });
 });

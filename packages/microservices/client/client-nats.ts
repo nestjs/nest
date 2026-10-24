@@ -64,13 +64,15 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   public async close() {
     this.handleClose();
+    // Reset first, so that the status updates do not take this close for a
+    // client that gave up
+    const natsClient = this.natsClient;
+    this.natsClient = null;
+    this.connectionPromise = null;
     try {
-      await this.natsClient?.close();
+      await natsClient?.close();
     } finally {
       this.statusEventEmitter.removeAllListeners();
-
-      this.natsClient = null;
-      this.connectionPromise = null;
     }
   }
 
@@ -239,6 +241,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     if (this.natsClient === client) {
       this.natsClient = null;
       this.connectionPromise = null;
+      this._status$.next(NatsStatus.DISCONNECTED);
       // nats never calls back the reply subscriptions it closes. Fail them
       // after the reset, so that a request retried from its callback reconnects.
       this.handleClose();
