@@ -40,7 +40,15 @@ async function executeNpmScriptInSamples(
     '23-graphql-code-first',
     '33-graphql-mercurius',
   ];
-  for (const sample of samplesWithCompilerPlugins) {
+  // TODO: samples that depend on a package of this repository that has not
+  // been published yet are excluded, as "npm install" runs before move:samples
+  // copies the local builds into node_modules. Remove each one once its
+  // package is on npm.
+  const samplesWithUnpublishedPackages = ['40-cloudflare-workers'];
+  for (const sample of [
+    ...samplesWithCompilerPlugins,
+    ...samplesWithUnpublishedPackages,
+  ]) {
     const idx = directories.indexOf(`${samplePath}/${sample}`);
     if (idx !== -1) {
       directories.splice(idx, 1);
