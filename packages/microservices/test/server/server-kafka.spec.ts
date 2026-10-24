@@ -5,6 +5,7 @@ import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { KafkaRetriableException } from '../../exceptions/index.js';
+import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
 import {
   EachMessagePayload,
   KafkaMessage,
@@ -765,6 +766,26 @@ describe('ServerKafka', () => {
         async () => {
           throw new KafkaRetriableException('retry me');
         },
+        { isEventHandler: false },
+      );
+
+      // The rejection has to travel on so that kafkajs redelivers the message.
+      await expect(server.handleMessage(payload)).rejects.toThrow(
+        KafkaRetriableException,
+      );
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should reject with a retriable exception that passed through the exception filter', async () => {
+      const exceptionHandler = new RpcExceptionsHandler();
+      const endHook = bindHandler(
+        () =>
+          exceptionHandler.handle(
+            new KafkaRetriableException('retry me'),
+            null!,
+          ),
         { isEventHandler: false },
       );
 
