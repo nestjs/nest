@@ -1,5 +1,6 @@
 import {
   ArgumentsHost,
+  Body,
   Catch,
   Controller,
   ExceptionFilter,
@@ -17,6 +18,7 @@ import {
   NestFastifyApplication,
   RouteSchema,
 } from '@nestjs/platform-fastify';
+import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import { RawServerDefault } from 'fastify';
 import createError from 'http-errors';
@@ -56,6 +58,14 @@ class SchemaController {
   @RouteSchema({ body: { type: 'object', required: ['name'] } })
   @Post('schema')
   create() {}
+}
+
+@Controller()
+class EchoController {
+  @Post('echo')
+  echo(@Body() body: unknown) {
+    return body;
+  }
 }
 
 @Controller()
@@ -398,6 +408,160 @@ describe('Error messages', () => {
     afterEach(async () => {
       await app.close();
       vi.restoreAllMocks();
+    });
+  });
+
+  describe('Node', () => {
+    let app: INestApplication;
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [
+          ErrorsController,
+          ErrorBodyController,
+          ErrorCauseController,
+        ],
+      }).compile();
+
+      app = module.createNestApplication(new NodeAdapter());
+      app.use('/middleware-error', (req, res, next) =>
+        next(createError(503, 'connect ECONNREFUSED 127.0.0.1:6379')),
+      );
+      server = app.getHttpServer();
+      await listenOnLoopback(app);
+    });
+
+    it(`/GET`, () => {
+      return request(server)
+        .get('/sync')
+        .expect(HttpStatus.BAD_REQUEST)
+        .expect({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Integration test',
+        });
+    });
+
+    it(`/GET (Promise/async)`, () => {
+      return request(server)
+        .get('/async')
+        .expect(HttpStatus.BAD_REQUEST)
+        .expect({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Integration test',
+        });
+    });
+
+    it(`/GET (InternalServerError despite custom content-type)`, async () => {
+      return request(server)
+        .get('/unexpected-error')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+        .expect('Content-Type', /application\/json/)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it(`/GET (InternalServerError when Error instance has statusCode)`, async () => {
+      return request(server)
+        .get('/error-with-status-code')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it(`/GET (Unauthorized when the body of the HttpException is an Error)`, async () => {
+      return request(server)
+        .get('/error-body')
+        .expect(HttpStatus.UNAUTHORIZED)
+        .expect({
+          statusCode: 401,
+          message: 'Unauthorized',
+        });
+    });
+
+    it(`/GET (ServiceUnavailable logged when a middleware passes an "http-errors" error to next())`, async () => {
+      const logError = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+
+      await request(server)
+        .get('/middleware-error')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          statusCode: 503,
+          message: 'Service Unavailable',
+        });
+      expect(logError).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          statusCode: 503,
+          message: 'connect ECONNREFUSED 127.0.0.1:6379',
+        }),
+      );
+    });
+
+    it(`/GET (InternalServerError not logged when its cause is a 4xx "http-errors" error)`, async () => {
+      const logError = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+
+      await request(server)
+        .get('/error-cause')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+        .expect({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Oops',
+        });
+      expect(logError).not.toHaveBeenCalled();
+    });
+
+    afterEach(async () => {
+      await app.close();
+      vi.restoreAllMocks();
+    });
+  });
+
+  describe('Node (HttpException filter)', () => {
+    let app: NestNodeApplication;
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [ErrorsController, EchoController],
+      }).compile();
+
+      app = module.createNestApplication<NestNodeApplication>(
+        new NodeAdapter(),
+      );
+      app.useGlobalFilters(new HttpExceptionFilter());
+      app.useBodyParser('json', { limit: 16 });
+      app.use('/middleware-error', (req, res, next) =>
+        next(createError(413, 'request entity too large')),
+      );
+      server = app.getHttpServer();
+      await listenOnLoopback(app);
+    });
+
+    it(`/GET (a 4xx "http-errors" error from a middleware reaches the filter)`, () => {
+      return request(server)
+        .get('/middleware-error')
+        .expect(HttpStatus.PAYLOAD_TOO_LARGE)
+        .expect({ caught: 413 });
+    });
+
+    it(`/POST (a body parser error reaches the filter)`, () => {
+      return request(server)
+        .post('/echo')
+        .set('content-type', 'application/json')
+        .send(JSON.stringify({ name: 'x'.repeat(32) }))
+        .expect(HttpStatus.PAYLOAD_TOO_LARGE)
+        .expect({ caught: 413 });
+    });
+
+    afterEach(async () => {
+      await app.close();
     });
   });
 });

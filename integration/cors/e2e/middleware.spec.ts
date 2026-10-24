@@ -10,6 +10,7 @@ import {
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import request from 'supertest';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
@@ -51,6 +52,7 @@ class AppModule implements NestModule {
 const adapters = [
   ['Express', () => new ExpressAdapter()],
   ['Fastify', () => new FastifyAdapter()],
+  ['Node', () => new NodeAdapter()],
 ] as const;
 
 describe.each(adapters)(

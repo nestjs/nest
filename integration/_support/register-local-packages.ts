@@ -24,6 +24,7 @@ const packageRoots = new Map<string, string>([
     '@nestjs/platform-fastify',
     path.join(workspaceRoot, 'packages/platform-fastify'),
   ],
+  ['@nestjs/platform-node', path.join(workspaceRoot, 'packages/platform-node')],
   [
     '@nestjs/platform-socket.io',
     path.join(workspaceRoot, 'packages/platform-socket.io'),

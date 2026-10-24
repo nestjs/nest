@@ -2,7 +2,13 @@ import { fork, ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { run } from './autocannon/run';
 
-type Framework = 'express' | 'fastify' | 'nest-express' | 'nest-fastify';
+type Framework =
+  | 'node'
+  | 'express'
+  | 'fastify'
+  | 'nest-node'
+  | 'nest-express'
+  | 'nest-fastify';
 
 type Args = {
   connections: number;
@@ -308,6 +314,8 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
   const targets: Framework[] = [
+    'node',
+    'nest-node',
     'express',
     'nest-express',
     'fastify',
@@ -324,6 +332,7 @@ async function main(): Promise<void> {
   }
 
   // Compare raw framework vs Nest adapter for same underlying HTTP server
+  printComparison('NODE', results['node'], 'NEST-NODE', results['nest-node']);
   printComparison(
     'EXPRESS',
     results['express'],
@@ -335,6 +344,19 @@ async function main(): Promise<void> {
     results['fastify'],
     'NEST-FASTIFY',
     results['nest-fastify'],
+  );
+  // Compare the Nest adapters with each other
+  printComparison(
+    'NEST-EXPRESS',
+    results['nest-express'],
+    'NEST-NODE',
+    results['nest-node'],
+  );
+  printComparison(
+    'NEST-FASTIFY',
+    results['nest-fastify'],
+    'NEST-NODE',
+    results['nest-node'],
   );
 }
 
