@@ -288,7 +288,7 @@ The following is the list of supported scopes:
 - **testing**: for changes made on `packages/testing` directory
 - **websockets**: for changes made on `packages/websockets` directory
 
-If your change affect more than one package, separate the scopes with a comma (e.g. `common,core`).
+If your change affects more than one package, separate the scopes with a comma (e.g. `common,core`).
 
 There are currently a few exceptions to the "use package name" rule:
 
