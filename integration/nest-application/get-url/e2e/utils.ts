@@ -1,4 +1,6 @@
+import { readFileSync } from 'fs';
 import * as net from 'net';
+import { join } from 'path';
 
 export let port: number;
 
@@ -29,4 +31,12 @@ export async function getAvailableIpv4Host(
       server.close(() => resolve(preferredHost));
     });
   });
+}
+
+export function readTlsOptions() {
+  const dir = join(import.meta.dirname, '../../../microservices/src/tcp-tls');
+  return {
+    key: readFileSync(join(dir, 'privkey.pem')),
+    cert: readFileSync(join(dir, 'ca.cert.pem')),
+  };
 }
