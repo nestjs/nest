@@ -55,6 +55,7 @@ export default defineConfig({
       '@nestjs/websockets': './packages/websockets',
       '@nestjs/testing': './packages/testing',
       '@nestjs/platform-express': './packages/platform-express',
+      '@nestjs/platform-cloudflare': './packages/platform-cloudflare',
       '@nestjs/platform-ws': './packages/platform-ws',
       '@nestjs/platform-fastify': './packages/platform-fastify',
       '@nestjs/platform-socket.io': './packages/platform-socket.io',
