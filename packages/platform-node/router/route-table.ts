@@ -1,6 +1,7 @@
 import FindMyWay from 'find-my-way';
-import { match, parse, type Token } from 'path-to-regexp';
-import { loosen } from './utils.js';
+import { METHODS } from 'http';
+import { match, parse, TokenData, type Token } from 'path-to-regexp';
+import { getLiteralPrefix, getPrefixSkips, loosen } from './utils.js';
 
 export type RouteHandler = (
   req: any,
@@ -34,6 +35,27 @@ interface RouteRecord {
   hasWildcard: boolean;
   /** Number of "/" in the route path before the wildcard. */
   wildcardSlashes: number;
+  /** Length of the text before the wildcard in its segment ("v-*rest"). */
+  wildcardOffset: number;
+  /** See `FindMyWayVariant.hasMixedSegment`. */
+  hasMixedSegment: boolean;
+  /** Every route of a HEAD record, see `RouteTable.addToRecord()`. */
+  entries?: RecordEntry[];
+  /**
+   * For each handler, the path-to-regexp matcher of its route when it has
+   * variants ending with "/" (see `RouteTable.add()`).
+   */
+  pathMatchers: (Matcher | undefined)[];
+  hasPathMatchers: boolean;
+}
+
+interface RecordEntry {
+  handler: RouteHandler;
+  seq: number;
+  paramNames: string[];
+  pathMatcher: Matcher | undefined;
+  /** Upper-case method of the route, `null` for every method. */
+  method: string | null;
 }
 
 interface FoundRoute {
@@ -47,6 +69,14 @@ interface FindMyWayVariant {
   paramNames: string[];
   hasWildcard: boolean;
   wildcardSlashes: number;
+  wildcardOffset: number;
+  /**
+   * Whether a segment holds a parameter next to text or to another parameter
+   * ("/ext/:file.:ext"), where it may be left empty without an empty segment.
+   */
+  hasMixedSegment: boolean;
+  /** Ends with "/", see `toFindMyWayPath()`. */
+  trailingSlash: boolean;
 }
 
 // Route parameters live in an object without a prototype, as with
@@ -68,6 +98,13 @@ interface FallbackRoute {
   matcher: Matcher;
   handler: RouteHandler;
   seq: number;
+  /** Also in find-my-way, but for its variants ending with "/". */
+  partial?: boolean;
+  /**
+   * For a partial route, matches its variants ending with "/" alone ("/files/"
+   * of "/files/{*path}"), see `RouteTable.lookup()`.
+   */
+  variantMatcher?: Matcher;
 }
 
 /** Every route, for {@link RouteTable.lookupRest}. */
@@ -76,6 +113,8 @@ interface RegisteredRoute {
   path: string;
   /** Compiled on first use. */
   matcher?: Matcher;
+  /** What every path the route matches starts with. */
+  prefix: string;
   handler: RouteHandler;
   seq: number;
 }
@@ -89,6 +128,15 @@ function compileMatcher(path: string): Matcher {
     end: true,
     sensitive: true,
   });
+  return (pathname: string) => matcher(pathname) as any;
+}
+
+// Matches the given group-free variants exactly, trailing "/" included
+function compileVariantMatcher(variants: Token[][]): Matcher {
+  const matcher = match(
+    variants.map(tokens => new TokenData(tokens)),
+    { end: true, sensitive: true, trailing: false },
+  );
   return (pathname: string) => matcher(pathname) as any;
 }
 
@@ -129,18 +177,31 @@ export const PARAM_TOO_LONG: RouteMatch = Object.freeze({
 
 // What `find()` returns in that case (find-my-way's onMaxParamLength result)
 const TOO_LONG = {} as FoundRoute;
+// What `find()` returns when path-to-regexp does not match what find-my-way
+// did, as for an empty parameter (see `lookup()`)
+const EMPTY_PARAM = {} as FoundRoute;
+// The same, for a parameter or wildcard that is a whole segment of the route:
+// the path then has an empty segment ("/users//profile" for
+// "/users/:id/profile"), or is "/" (for "/:id")
+const EMPTY_SEGMENT = {} as FoundRoute;
 
 function noop() {}
+
+const GET_AND_HEAD = ['GET', 'HEAD'];
 
 const UNSAFE_TEXT = /[*?(]/;
 // find-my-way reads a parameter name up to the next "/", "-" or "."
 const PARAM_NAME_END = /^[/.-]/;
 
 function decodeParam(value: string) {
-  return decodeURIComponent(value);
+  // See decodeParam() in node-router.ts
+  return value.indexOf('%') === -1 ? value : decodeURIComponent(value);
 }
 
 function decodeSegment(value: string) {
+  if (value.indexOf('%') === -1) {
+    return value;
+  }
   try {
     return decodeURIComponent(value);
   } catch {
@@ -211,15 +272,31 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
   const paramNames: string[] = [];
   let hasWildcard = false;
   let wildcardSlashes = 0;
+  // Text since the last "/", and whether a parameter is in that segment
+  let segmentText = 0;
+  let segmentHasParam = false;
+  let hasMixedSegment = false;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     switch (token.type) {
-      case 'text':
+      case 'text': {
         if (UNSAFE_TEXT.test(token.value)) {
           return undefined;
         }
         path += token.value.replaceAll(':', '::');
+        // Text right after a parameter, in its segment (".json" of ":id.json")
+        if (segmentHasParam && token.value[0] !== '/') {
+          hasMixedSegment = true;
+        }
+        const slash = token.value.lastIndexOf('/');
+        if (slash === -1) {
+          segmentText += token.value.length;
+        } else {
+          segmentText = token.value.length - slash - 1;
+          segmentHasParam = false;
+        }
         break;
+      }
       case 'param': {
         // Anything else right after a parameter (another parameter, a
         // wildcard, "@", "~", ...) would end up in find-my-way's name for it
@@ -230,13 +307,18 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
         ) {
           return undefined;
         }
+        if (segmentText > 0 || segmentHasParam) {
+          hasMixedSegment = true;
+        }
         path += `:${positionalName(paramNames.length)}`;
         paramNames.push(token.name);
+        segmentHasParam = true;
         break;
       }
       case 'wildcard':
-        // find-my-way only supports a trailing wildcard
-        if (i !== tokens.length - 1) {
+        // find-my-way only supports a trailing wildcard. After a parameter
+        // in its segment ("/:id-*rest"), where it starts varies.
+        if (i !== tokens.length - 1 || segmentHasParam) {
           return undefined;
         }
         wildcardSlashes = path.split('/').length - 1;
@@ -250,10 +332,16 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
   }
   // A variant ending with "/" ("/admin/" of "/admin/{*path}") must not match
   // "/admin", as with Express, but find-my-way's ignoreTrailingSlash would
-  if (path.length > 1 && path.endsWith('/')) {
-    return undefined;
-  }
-  return { path: path || '/', paramNames, hasWildcard, wildcardSlashes };
+  const trailingSlash = path.length > 1 && path.endsWith('/');
+  return {
+    path: path || '/',
+    paramNames,
+    hasWildcard,
+    wildcardSlashes,
+    wildcardOffset: hasWildcard ? segmentText : 0,
+    hasMixedSegment,
+    trailingSlash,
+  };
 }
 
 /**
@@ -270,12 +358,19 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
 export class RouteTable {
   private readonly maxParamLength: number;
   private readonly router: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
-  private readonly allRouter: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
   private readonly records = new Map<string, RouteRecord>();
   private readonly fallbackRoutes: FallbackRoute[] = [];
   private readonly routes: RegisteredRoute[] = [];
-  private hasAllRoutes = false;
+  /**
+   * The routes that can match a path with an empty segment ("/a//b"), in
+   * registration order: those with a wildcard, a variant ending with "/" or
+   * holding "//", or a variant find-my-way cannot express.
+   */
+  private readonly emptySegmentRoutes: RegisteredRoute[] = [];
+  /** See `getPrefixSkips()`, for `lookupFirst()` and `lookupRest()`. */
+  private routeSkips: number[] | undefined;
   private seq = 0;
+  private hasPartialRoutes = false;
 
   constructor(options: RouteTableOptions = {}) {
     this.maxParamLength = options.maxParamLength ?? MAX_PARAM_LENGTH;
@@ -287,7 +382,6 @@ export class RouteTable {
       onMaxParamLength: noop,
     };
     this.router = FindMyWay(routerOptions);
-    this.allRouter = FindMyWay(routerOptions);
   }
 
   /**
@@ -295,14 +389,39 @@ export class RouteTable {
    */
   public add(method: string | null, path: string, handler: RouteHandler) {
     const seq = this.seq++;
-    this.routes.push({ method, path, handler, seq });
+    const route: RegisteredRoute = {
+      method,
+      path,
+      prefix: getLiteralPrefix(loosen(path)),
+      handler,
+      seq,
+    };
+    this.routes.push(route);
+    this.routeSkips = undefined;
     const { tokens } = parse(path);
-    const variants =
+    const expanded =
       countGroups(tokens) > MAX_EXPANDED_GROUPS
-        ? [undefined]
-        : expandGroups(tokens).map(toFindMyWayPath);
+        ? undefined
+        : expandGroups(tokens);
+    const variants = expanded?.map(toFindMyWayPath) ?? [undefined];
+    // A variant ending with "/" also matches the path with one more "/"
+    // ("/a{/}" matches "/a//"); one find-my-way cannot express may be anything
+    if (
+      variants.some(
+        variant =>
+          variant === undefined ||
+          variant.hasWildcard ||
+          variant.trailingSlash ||
+          variant.path.includes('//'),
+      )
+    ) {
+      this.emptySegmentRoutes.push(route);
+    }
 
-    if (variants.some(variant => variant === undefined)) {
+    if (
+      variants.some(variant => variant === undefined) ||
+      variants.every(variant => variant!.trailingSlash)
+    ) {
       this.fallbackRoutes.push({
         method,
         matcher: compileMatcher(path),
@@ -311,55 +430,121 @@ export class RouteTable {
       });
       return;
     }
+    // The variants ending with "/" ("/admin/" of "/admin/{*path}") stay out
+    // of find-my-way, and the route is matched with path-to-regexp for the
+    // paths ending with "/". The other variants ("/admin/*") go in the tree,
+    // where the most specific route wins, as for any other route.
+    let pathMatcher: Matcher | undefined;
+    if (variants.some(variant => variant!.trailingSlash)) {
+      pathMatcher = compileMatcher(path);
+      this.fallbackRoutes.push({
+        method,
+        matcher: pathMatcher,
+        handler,
+        seq,
+        partial: true,
+        variantMatcher: compileVariantMatcher(
+          expanded!.filter((_, i) => variants[i]!.trailingSlash),
+        ),
+      });
+      this.hasPartialRoutes = true;
+    }
     // Several variants may translate to the same path ("/a{/}" for instance);
     // the first one wins
     const uniqueVariants = new Map<string, FindMyWayVariant>();
     for (const variant of variants as FindMyWayVariant[]) {
-      if (!uniqueVariants.has(variant.path)) {
+      if (!variant.trailingSlash && !uniqueVariants.has(variant.path)) {
         uniqueVariants.set(variant.path, variant);
       }
     }
-    for (const {
+    // One tree per method, which also holds the routes for every method and,
+    // for HEAD, the GET routes: find-my-way then picks the most specific of
+    // all the routes that can serve the request, whatever their method
+    const treeMethods =
+      method === null ? METHODS : method === 'GET' ? GET_AND_HEAD : [method];
+    for (const variant of uniqueVariants.values()) {
+      for (const treeMethod of treeMethods) {
+        if (
+          !this.addToRecord(
+            treeMethod,
+            variant,
+            method,
+            handler,
+            seq,
+            pathMatcher,
+          )
+        ) {
+          // Same shape as an existing route under different parameter names
+          this.fallbackRoutes.push({
+            method,
+            matcher: compileMatcher(path),
+            handler,
+            seq,
+          });
+          return;
+        }
+      }
+    }
+  }
+
+  private addToRecord(
+    treeMethod: string,
+    variant: FindMyWayVariant,
+    method: string | null,
+    handler: RouteHandler,
+    seq: number,
+    pathMatcher: Matcher | undefined,
+  ): boolean {
+    const {
       path: routePath,
       paramNames,
       hasWildcard,
       wildcardSlashes,
-    } of uniqueVariants.values()) {
-      const router = method === null ? this.allRouter : this.router;
-      const routerMethod = method ?? 'GET';
-      const key = `${method} ${routePath}`;
-
-      const record = this.records.get(key);
-      if (record) {
-        record.handlers.push(handler);
-        record.seqs.push(seq);
-        record.paramNames.push(paramNames);
-        continue;
-      }
-      const newRecord: RouteRecord = {
-        handlers: [handler],
-        seqs: [seq],
-        paramNames: [paramNames],
+      wildcardOffset,
+      hasMixedSegment,
+    } = variant;
+    const key = `${treeMethod} ${routePath}`;
+    let record = this.records.get(key);
+    if (!record) {
+      record = {
+        handlers: [],
+        seqs: [],
+        paramNames: [],
         hasWildcard,
         wildcardSlashes,
+        wildcardOffset,
+        hasMixedSegment,
+        pathMatchers: [],
+        hasPathMatchers: false,
       };
       try {
-        router.on(routerMethod as any, routePath, () => {}, newRecord);
+        this.router.on(treeMethod as any, routePath, noop, record);
       } catch {
-        // Same shape as an existing route under different parameter names
-        this.fallbackRoutes.push({
-          method,
-          matcher: compileMatcher(path),
-          handler,
-          seq,
-        });
-        return;
+        return false;
       }
-      this.records.set(key, newRecord);
+      this.records.set(key, record);
     }
-    if (method === null) {
-      this.hasAllRoutes = true;
+    record.hasPathMatchers ||= pathMatcher !== undefined;
+    if (treeMethod !== 'HEAD') {
+      record.handlers.push(handler);
+      record.seqs.push(seq);
+      record.paramNames.push(paramNames);
+      record.pathMatchers.push(pathMatcher);
+      return true;
     }
+    // A HEAD route takes precedence over the GET routes of the same path,
+    // which then only run through lookupRest()
+    const entries = (record.entries ??= []);
+    entries.push({ handler, seq, paramNames, pathMatcher, method });
+    const hasHead = entries.some(entry => entry.method === 'HEAD');
+    const active = hasHead
+      ? entries.filter(entry => entry.method !== 'GET')
+      : entries;
+    record.handlers = active.map(entry => entry.handler);
+    record.seqs = active.map(entry => entry.seq);
+    record.paramNames = active.map(entry => entry.paramNames);
+    record.pathMatchers = active.map(entry => entry.pathMatcher);
+    return true;
   }
 
   public lookup(method: string, path: string): RouteMatch | null {
@@ -375,22 +560,40 @@ export class RouteTable {
       exceeded = true;
       found = null;
     }
-    if (found === null && method === 'HEAD') {
-      found = this.find(this.router, 'GET', path);
-      if (found === TOO_LONG) {
-        exceeded = true;
-        found = null;
+    if (found === EMPTY_PARAM || found === EMPTY_SEGMENT) {
+      // find-my-way does not look past the most specific route, while another
+      // one may match ("/ext/.b" is "/ext/:file", not "/ext/:file.:ext"). A
+      // path with an empty segment can only match `emptySegmentRoutes`. When
+      // the empty parameter is a whole segment of its route otherwise ("/"
+      // for "/:id"), find-my-way would have found any route matching it.
+      if (path.indexOf('//') !== -1) {
+        return this.lookupFirst(method, path, this.emptySegmentRoutes);
       }
-    }
-    if (this.hasAllRoutes) {
-      const foundAll = this.find(this.allRouter, 'GET', path);
-      if (foundAll === TOO_LONG) {
-        exceeded = true;
-      } else if (foundAll !== null) {
-        found = found === null ? foundAll : this.merge(found, foundAll);
+      if (found === EMPTY_PARAM) {
+        return this.lookupFirst(
+          method,
+          path,
+          this.routes,
+          this.getRouteSkips(),
+        );
       }
+      found = null;
     }
     if (found !== null) {
+      // find-my-way serves "/admin/" with a route for "/admin" (or a
+      // catch-all), while it may be for the variant ending with "/" of a route
+      // registered before ("/admin/{*path}"), as Express would match it. Any
+      // other path ending with "/" goes to the route it would without it.
+      if (
+        this.hasPartialRoutes &&
+        path.length > 1 &&
+        path.charCodeAt(path.length - 1) === 47 /* / */
+      ) {
+        const partial = this.lookupFallback(method, path, found.seqs[0]);
+        if (partial !== null && partial !== PARAM_TOO_LONG) {
+          return partial;
+        }
+      }
       return found;
     }
     const fallback =
@@ -421,7 +624,7 @@ export class RouteTable {
       // one ("/users//profile"). Treat that as no match, or the route could
       // run without the middleware guarding it.
       if (key !== '*' && values[key] === '') {
-        return null;
+        return record.hasMixedSegment ? EMPTY_PARAM : EMPTY_SEGMENT;
       }
     }
     let wildcard: string[] | undefined;
@@ -432,23 +635,44 @@ export class RouteTable {
       for (let i = 0; i < record.wildcardSlashes; i++) {
         const slash = path.indexOf('/', start);
         if (slash === -1) {
-          return null;
+          return EMPTY_PARAM;
         }
         start = slash + 1;
       }
+      // Past the text before the wildcard in its segment, which find-my-way
+      // matched ("v-" of "/files/v-*rest")
+      start += record.wildcardOffset;
       let end = path.length;
       if (end > start && path.charCodeAt(end - 1) === 47 /* / */) {
         end -= 1;
       }
       // path-to-regexp wildcards match one or more characters
       if (start === 0 || end <= start) {
-        return null;
+        return record.wildcardOffset > 0 || record.hasMixedSegment
+          ? EMPTY_PARAM
+          : EMPTY_SEGMENT;
       }
       wildcard = path.slice(start, end).split('/').map(decodeSegment);
     }
     // Every handler sees the parameters under the names its route uses
     const params = new ParamsObject();
-    for (const names of record.paramNames) {
+    // find-my-way matched "/admin/x/" with the variant of "/admin/{*path}"
+    // without the "/", path-to-regexp gives the route's own parameters
+    const usePathMatchers =
+      record.hasPathMatchers &&
+      path.length > 1 &&
+      path.charCodeAt(path.length - 1) === 47; /* / */
+    for (let h = 0; h < record.paramNames.length; h++) {
+      const pathMatcher = usePathMatchers ? record.pathMatchers[h] : undefined;
+      if (pathMatcher !== undefined) {
+        const result = pathMatcher(path);
+        if (!result) {
+          return EMPTY_PARAM;
+        }
+        Object.assign(params, result.params);
+        continue;
+      }
+      const names = record.paramNames[h];
       const last = names.length - 1;
       for (let i = 0; i <= last; i++) {
         params[names[i]] =
@@ -460,25 +684,69 @@ export class RouteTable {
     return { handlers: record.handlers, seqs: record.seqs, params };
   }
 
-  private merge(left: FoundRoute, right: FoundRoute): FoundRoute {
-    const entries = [
-      ...left.handlers.map((handler, i) => ({ handler, seq: left.seqs[i] })),
-      ...right.handlers.map((handler, i) => ({ handler, seq: right.seqs[i] })),
-    ].sort((a, b) => a.seq - b.seq);
-    return {
-      handlers: entries.map(entry => entry.handler),
-      seqs: entries.map(entry => entry.seq),
-      params: { ...right.params, ...left.params },
-    };
+  // The first of `routes` path-to-regexp matches, in registration order, as
+  // Express would pick it (see `lookup()`)
+  private lookupFirst(
+    method: string,
+    path: string,
+    routes: RegisteredRoute[],
+    // See `getRouteSkips()`, when `routes` are all the routes
+    skips?: number[],
+  ): RouteMatch | null {
+    let exceeded = false;
+    for (let i = 0; i < routes.length;) {
+      const route = routes[i];
+      const skip = skips === undefined ? 0 : skips[i];
+      i++;
+      if (!acceptsMethod(route.method, method)) {
+        continue;
+      }
+      if (!path.startsWith(route.prefix)) {
+        if (skip > i) {
+          i = skip;
+        }
+        continue;
+      }
+      route.matcher ??= compileMatcher(route.path);
+      const result = route.matcher(path);
+      if (!result) {
+        continue;
+      }
+      if (exceedsMaxParamLength(result.params, this.maxParamLength)) {
+        exceeded = true;
+        continue;
+      }
+      return {
+        handlers: [route.handler],
+        seqs: [route.seq],
+        params: result.params,
+      };
+    }
+    return exceeded ? PARAM_TOO_LONG : null;
   }
 
   /**
    * The first route matched with path-to-regexp (see `lookupRest()` for the
    * others).
    */
-  private lookupFallback(method: string, path: string): RouteMatch | null {
+  private lookupFallback(
+    method: string,
+    path: string,
+    // Only the partial routes registered before this one
+    beforeSeq?: number,
+  ): RouteMatch | null {
     let exceeded = false;
     for (const route of this.fallbackRoutes) {
+      if (beforeSeq !== undefined) {
+        if (route.seq >= beforeSeq) {
+          break;
+        }
+        // Only for its variants ending with "/" themselves: "/files/{*path}"
+        // takes "/files/", but not "/files/readme/" from "/files/readme"
+        if (!route.partial || !route.variantMatcher!(path)) {
+          continue;
+        }
+      }
       if (!acceptsMethod(route.method, method)) {
         continue;
       }
@@ -499,6 +767,14 @@ export class RouteTable {
     return exceeded ? PARAM_TOO_LONG : null;
   }
 
+  // A version or host mismatch on a route of a large table, or a parameter
+  // left empty, would otherwise run the matcher of every route
+  private getRouteSkips() {
+    return (this.routeSkips ??= getPrefixSkips(
+      this.routes.map(route => route.prefix),
+    ));
+  }
+
   /**
    * Every other route matching `path`, in registration order, each with its
    * own parameters: where control goes once the handlers `lookup()` returned
@@ -514,8 +790,16 @@ export class RouteTable {
     exclude: number[],
   ): RouteEntry[] {
     const entries: RouteEntry[] = [];
-    for (const route of this.routes) {
+    const routes = this.routes;
+    const skips = this.getRouteSkips();
+    for (let i = 0; i < routes.length;) {
+      const route = routes[i];
+      const skip = skips[i++];
       if (exclude.includes(route.seq) || !acceptsMethod(route.method, method)) {
+        continue;
+      }
+      if (skip > i && !path.startsWith(route.prefix)) {
+        i = skip;
         continue;
       }
       route.matcher ??= compileMatcher(route.path);

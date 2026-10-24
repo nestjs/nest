@@ -9,6 +9,22 @@ function handler(): RouteHandler {
   return () => {};
 }
 
+// Path matchers are RegExps (path-to-regexp)
+function countRegexExecutions(fn: () => void) {
+  const { exec } = RegExp.prototype;
+  let count = 0;
+  RegExp.prototype.exec = function (this: RegExp, input: string) {
+    count++;
+    return exec.call(this, input);
+  };
+  try {
+    fn();
+  } finally {
+    RegExp.prototype.exec = exec;
+  }
+  return count;
+}
+
 describe('RouteTable', () => {
   let table: RouteTable;
 
@@ -86,6 +102,41 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/users/me')?.handlers).toEqual([me]);
       expect(table.lookup('GET', '/users/1')?.handlers).toEqual([byId]);
     });
+
+    it('should prefer a more specific route over a catch-all for every method registered before it', () => {
+      const all = handler();
+      const cats = handler();
+      const cat = handler();
+      table.add(null, '/*path', all);
+      table.add('GET', '/cats', cats);
+      table.add('GET', '/cats/:id', cat);
+
+      expect(table.lookup('GET', '/cats')?.handlers).toEqual([cats]);
+      expect(table.lookup('GET', '/cats/1')?.handlers).toEqual([cat]);
+      expect(table.lookup('HEAD', '/cats')?.handlers).toEqual([cats]);
+      expect(table.lookup('POST', '/cats')?.handlers).toEqual([all]);
+      expect(table.lookup('GET', '/dogs')?.handlers).toEqual([all]);
+    });
+
+    it('should prefer a more specific route for every method over a catch-all registered before it', () => {
+      const get = handler();
+      const all = handler();
+      table.add('GET', '/*path', get);
+      table.add(null, '/health', all);
+
+      expect(table.lookup('GET', '/health')?.handlers).toEqual([all]);
+      expect(table.lookup('GET', '/other')?.handlers).toEqual([get]);
+    });
+
+    it('should prefer a more specific GET route over a HEAD catch-all, as Fastify does', () => {
+      const head = handler();
+      const cats = handler();
+      table.add('HEAD', '/*path', head);
+      table.add('GET', '/cats', cats);
+
+      expect(table.lookup('HEAD', '/cats')?.handlers).toEqual([cats]);
+      expect(table.lookup('HEAD', '/dogs')?.handlers).toEqual([head]);
+    });
   });
 
   describe('parameters', () => {
@@ -115,6 +166,71 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/posts/')).toBeNull();
     });
 
+    it('should try the other routes when the most specific one leaves a parameter empty', () => {
+      const docs = handler();
+      const all = handler();
+      table.add('GET', '/docs/:name.:ext', handler());
+      table.add('GET', '/docs/*path', docs);
+      table.add('GET', '/files/:name.:ext', handler());
+      table.add(null, '/{*path}', all);
+
+      // As Express, which tries the routes in registration order
+      expect(table.lookup('GET', '/docs/.env')).toEqual({
+        handlers: [docs],
+        params: { path: ['.env'] },
+        seqs: [1],
+      });
+      expect(table.lookup('GET', '/files/.env')?.handlers).toEqual([all]);
+    });
+
+    it('should try the routes with a wildcard for a path with an empty segment', () => {
+      const rest = handler();
+      table.add('GET', '/users/:id/profile', handler());
+      table.add('GET', '/users/*rest', rest);
+
+      expect(table.lookup('GET', '/users//profile')).toEqual({
+        handlers: [rest],
+        params: { rest: ['', 'profile'] },
+        seqs: [1],
+      });
+      expect(table.lookup('GET', '/users/1/profile')?.seqs).toEqual([0]);
+    });
+
+    it('should only try the routes that can match an empty segment', () => {
+      for (let i = 0; i < 1000; i++) {
+        table.add('GET', `/:tenant/res${i}/:id`, handler());
+        table.add('GET', `/:tenant/res${i}/:id/profile`, handler());
+      }
+      const files = handler();
+      table.add('GET', '/:tenant/files/*path', files);
+      // Compiles the path-to-regexp matchers it needs
+      table.lookup('GET', '/acme/res500//profile');
+
+      let found: unknown;
+      const count = countRegexExecutions(() => {
+        found = table.lookup('GET', '/acme/res500//profile');
+      });
+
+      expect(found).toBeNull();
+      expect(count).toBeLessThan(5);
+      expect(table.lookup('GET', '/acme/files//a')?.handlers).toEqual([files]);
+    });
+
+    it('should not try the other routes for "/" with a parameter at the root', () => {
+      for (let i = 0; i < 100; i++) {
+        table.add('GET', `/:tenant/res${i}`, handler());
+      }
+      table.add('GET', '/:tenant', handler());
+
+      let found: unknown;
+      const count = countRegexExecutions(() => {
+        found = table.lookup('GET', '/');
+      });
+
+      expect(found).toBeNull();
+      expect(count).toBe(0);
+    });
+
     it('should split a wildcard into path segments', () => {
       table.add('GET', '/files/*path', handler());
 
@@ -132,6 +248,33 @@ describe('RouteTable', () => {
       });
     });
 
+    it('should only decode the parameters and wildcard segments that are escaped', () => {
+      table.add('GET', '/files/*path', handler());
+      // Matched with path-to-regexp
+      table.add('GET', '/raw/*path/end', handler());
+      const decode = vi.spyOn(globalThis, 'decodeURIComponent');
+
+      try {
+        expect(table.lookup('GET', '/files/css/app.min.css')?.params).toEqual({
+          path: ['css', 'app.min.css'],
+        });
+        expect(table.lookup('GET', '/raw/a/b/end')?.params).toEqual({
+          path: ['a', 'b'],
+        });
+        expect(decode).not.toHaveBeenCalled();
+
+        expect(table.lookup('GET', '/files/c%20d/e')?.params).toEqual({
+          path: ['c d', 'e'],
+        });
+        expect(table.lookup('GET', '/raw/a%2Fb/end')?.params).toEqual({
+          path: ['a/b'],
+        });
+        expect(decode).toHaveBeenCalledTimes(2);
+      } finally {
+        decode.mockRestore();
+      }
+    });
+
     it('should not include a trailing slash in a wildcard', () => {
       table.add('GET', '/files/*path', handler());
 
@@ -145,6 +288,58 @@ describe('RouteTable', () => {
 
       expect(table.lookup('GET', '/files/')).toBeNull();
       expect(table.lookup('GET', '/files')).toBeNull();
+    });
+
+    it('should leave the text before a wildcard in its segment out of it', () => {
+      table.add('GET', '/files/v-*rest', handler());
+      // The Express 4 "ab*cd" example, as path-to-regexp 8 reads it
+      table.add('GET', '/ab*cd', handler());
+
+      expect(table.lookup('GET', '/files/v-abc/def')?.params).toEqual({
+        rest: ['abc', 'def'],
+      });
+      expect(table.lookup('GET', '/abxyz')?.params).toEqual({ cd: ['xyz'] });
+    });
+
+    it('should not match the text before a wildcard alone', () => {
+      table.add('GET', '/files/v-*rest', handler());
+      table.add('GET', '/ab*cd', handler());
+
+      // As path-to-regexp, so a route cannot run without its middleware
+      expect(table.lookup('GET', '/files/v-')).toBeNull();
+      expect(table.lookup('GET', '/ab')).toBeNull();
+    });
+
+    it('should try the other routes for the text before a wildcard alone', () => {
+      const id = handler();
+      table.add('GET', '/files/v-*rest', handler());
+      table.add('GET', '/files/:id', id);
+
+      expect(table.lookup('GET', '/files/v-')).toEqual({
+        handlers: [id],
+        params: { id: 'v-' },
+        seqs: [1],
+      });
+    });
+
+    it('should prefer a wildcard after text over a parameter of the segment', () => {
+      const id = handler();
+      const rest = handler();
+      table.add('GET', '/files/:id', id);
+      table.add('GET', '/files/v-*rest', rest);
+
+      expect(table.lookup('GET', '/files/v-abc')?.handlers).toEqual([rest]);
+      expect(table.lookup('GET', '/files/abc')?.handlers).toEqual([id]);
+    });
+
+    it('should match a wildcard after a parameter of its segment', () => {
+      table.add('GET', '/tags/:id-*rest', handler());
+
+      expect(table.lookup('GET', '/tags/12-a/b')?.params).toEqual({
+        id: '12',
+        rest: ['a', 'b'],
+      });
+      expect(table.lookup('GET', '/tags/12-')).toBeNull();
     });
 
     it('should read the parameter name up to the text that follows it', () => {
@@ -286,6 +481,21 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/a/b/h')).not.toBeNull();
       expect(table.lookup('GET', '/a/h/b')).toBeNull();
     });
+
+    it('should match without the group when the group would leave a parameter empty', () => {
+      table.add('GET', '/ext/:file{.:ext}', handler());
+      table.add('GET', '/grp/:a{-:b}', handler());
+
+      // "/ext/:file.:ext" would leave "file" empty, "/ext/:file" matches
+      expect(table.lookup('GET', '/ext/.gitignore')?.params).toEqual({
+        file: '.gitignore',
+      });
+      expect(table.lookup('GET', '/grp/x-')?.params).toEqual({ a: 'x-' });
+      expect(table.lookup('GET', '/ext/a.b')?.params).toEqual({
+        file: 'a',
+        ext: 'b',
+      });
+    });
   });
 
   describe('paths find-my-way cannot express', () => {
@@ -366,6 +576,7 @@ describe('RouteTable', () => {
         params: { id: '1' },
         seqs: [0, 1],
       });
+      expect(table.lookup('HEAD', '/users/1')?.handlers).toEqual([all, get]);
       expect(table.lookup('DELETE', '/users/1')?.handlers).toEqual([all]);
     });
   });
@@ -383,6 +594,83 @@ describe('RouteTable', () => {
         expect(table.lookup('GET', '/admin/x')).not.toBeNull();
       },
     );
+
+    it('should prefer such a route (the legacy "files/*") over less specific routes', () => {
+      const files = handler();
+      const section = handler();
+      const root = handler();
+      table.add('GET', '/files/{*path}', files);
+      table.add('GET', '/:section/:id', section);
+      table.add('GET', '/{*path}', root);
+
+      expect(table.lookup('GET', '/files/readme')).toEqual({
+        handlers: [files],
+        params: { path: ['readme'] },
+        seqs: [0],
+      });
+      expect(table.lookup('GET', '/files/a/b')?.handlers).toEqual([files]);
+      expect(table.lookup('GET', '/files/')?.handlers).toEqual([files]);
+      expect(table.lookup('GET', '/other/1')?.handlers).toEqual([section]);
+      expect(table.lookup('GET', '/x')?.handlers).toEqual([root]);
+    });
+
+    it('should prefer such a route over a catch-all registered before it', () => {
+      const spa = handler();
+      const api = handler();
+      table.add('GET', '/{*path}', spa);
+      table.add(null, '/api/{*path}', api);
+
+      expect(table.lookup('GET', '/api/users')?.handlers).toEqual([api]);
+      expect(table.lookup('GET', '/about')?.handlers).toEqual([spa]);
+    });
+
+    it('should match its variant ending with "/" before a route registered after it', () => {
+      const catchAll = handler();
+      const index = handler();
+      table.add('GET', '/admin/{*path}', catchAll);
+      table.add('GET', '/admin', index);
+
+      // As with Express, where the first route matching "/admin/" wins
+      expect(table.lookup('GET', '/admin/')).toEqual({
+        handlers: [catchAll],
+        params: {},
+        seqs: [0],
+      });
+      expect(table.lookup('GET', '/admin')?.handlers).toEqual([index]);
+    });
+
+    it('should send a path ending with "/" to the route it would go to without it', () => {
+      const catchAll = handler();
+      const readme = handler();
+      const byId = handler();
+      table.add('GET', '/files/{*path}', catchAll);
+      table.add('GET', '/files/readme', readme);
+      table.add('GET', '/files/:id', byId);
+
+      for (const path of ['/files/readme', '/files/readme/']) {
+        expect(table.lookup('GET', path)?.handlers).toEqual([readme]);
+      }
+      for (const path of ['/files/42', '/files/42/']) {
+        expect(table.lookup('GET', path)).toEqual({
+          handlers: [byId],
+          params: { id: '42' },
+          seqs: [2],
+        });
+      }
+      expect(table.lookup('GET', '/files/')?.handlers).toEqual([catchAll]);
+      expect(table.lookup('GET', '/files/a/b/')?.handlers).toEqual([catchAll]);
+    });
+
+    it('should give the parameters of path-to-regexp for a path ending with "/"', () => {
+      table.add('GET', '/x{/:y}/{*z}', handler());
+
+      expect(table.lookup('GET', '/x/1/')?.params).toEqual({ y: '1' });
+      expect(table.lookup('GET', '/x/1/2')?.params).toEqual({
+        y: '1',
+        z: ['2'],
+      });
+      expect(table.lookup('GET', '/x')).toBeNull();
+    });
   });
 
   describe('lookupRest()', () => {
@@ -412,6 +700,57 @@ describe('RouteTable', () => {
         table.lookupRest('HEAD', '/items/1', []).map(e => e.handler),
       ).toEqual([get]);
       expect(table.lookupRest('DELETE', '/items/1', [])).toEqual([]);
+    });
+
+    it('should return the same routes whatever the routes registered around them', () => {
+      const a = handler();
+      const ab = handler();
+      const b = handler();
+      const aAll = handler();
+      const late = handler();
+      table.add('GET', '/a/:x', a);
+      table.add('GET', '/a/b/:y', ab);
+      table.add('GET', '/b/:z', b);
+      table.add(null, '/a/{*rest}', aAll);
+      table.add('GET', '/a/b/c', handler());
+      table.lookupRest('GET', '/x', []);
+      table.add('GET', '/a/:w', late);
+
+      expect(table.lookupRest('GET', '/a/b', []).map(e => e.handler)).toEqual([
+        a,
+        aAll,
+        late,
+      ]);
+      expect(table.lookupRest('GET', '/b/1', []).map(e => e.handler)).toEqual([
+        b,
+      ]);
+      expect(table.lookupRest('GET', '/c', [])).toEqual([]);
+    });
+
+    it('should not run the matcher of every route of a large table', () => {
+      for (let i = 0; i < 100; i++) {
+        for (const route of ['', '/:id', '/:id/items', '/:id/items/:itemId']) {
+          table.add('GET', `/api/res${i}${route}`, handler());
+        }
+      }
+      const found = table.lookup('GET', '/api/res57/42/items/7')!;
+      // Compiles the matchers it needs (once)
+      table.lookupRest('GET', '/api/res57/42/items/7', found.seqs);
+      table.lookup('GET', '/api/res57//items/7');
+
+      // A version or host mismatch on the route makes the adapter look for
+      // another one
+      const count = countRegexExecutions(() =>
+        table.lookupRest('GET', '/api/res57/42/items/7', found.seqs),
+      );
+      // So does a parameter left empty (see lookup())
+      const emptyCount = countRegexExecutions(() =>
+        table.lookup('GET', '/api/res57//items/7'),
+      );
+
+      // One per other route without skipping (399 and 400)
+      expect(count).toBeLessThan(50);
+      expect(emptyCount).toBeLessThan(50);
     });
 
     it('should skip routes whose parameter is too long', () => {

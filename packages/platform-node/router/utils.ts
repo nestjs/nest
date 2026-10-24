@@ -1,4 +1,5 @@
 import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
+import { parse } from 'path-to-regexp';
 
 /**
  * Drops the trailing slash of a pattern, so that "/users/" matches "/users"
@@ -6,6 +7,54 @@ import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
  */
 export function loosen(path: string) {
   return path === '/' ? path : path.replace(/\/+$/, '');
+}
+
+/**
+ * The text every path a pattern (path-to-regexp syntax, as given to the
+ * case-sensitive matchers) matches starts with: "/users/" for "/users/:id",
+ * the whole path when it has no parameter.
+ */
+export function getLiteralPrefix(path: string): string {
+  let prefix = '';
+  try {
+    for (const token of parse(path).tokens) {
+      if (token.type !== 'text') {
+        break;
+      }
+      prefix += token.value;
+    }
+  } catch {
+    // No prefix to compare: the matcher decides (and throws) on its own
+    return '';
+  }
+  return prefix;
+}
+
+/**
+ * For each entry of a list of literal prefixes (`undefined` for an entry that
+ * must always be visited), the index of the first entry after it that a path
+ * not starting with its prefix may still match. The entries registered right
+ * after it whose prefix starts with its own (e.g. the other routes of the same
+ * controller) cannot match that path either, so a lookup skips them all with
+ * a single comparison.
+ */
+export function getPrefixSkips(prefixes: (string | undefined)[]): number[] {
+  const skips = new Array<number>(prefixes.length);
+  for (let i = prefixes.length - 1; i >= 0; i--) {
+    const prefix = prefixes[i];
+    let next = i + 1;
+    if (prefix !== undefined) {
+      while (next < prefixes.length) {
+        const other = prefixes[next];
+        if (other === undefined || !other.startsWith(prefix)) {
+          break;
+        }
+        next = skips[next];
+      }
+    }
+    skips[i] = next;
+  }
+  return skips;
 }
 
 /**

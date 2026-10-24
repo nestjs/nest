@@ -11,6 +11,22 @@ function createRequest(method: string, url: string) {
   return req;
 }
 
+// Path matchers are RegExps (path-to-regexp)
+function countRegexExecutions(fn: () => void) {
+  const { exec } = RegExp.prototype;
+  let count = 0;
+  RegExp.prototype.exec = function (this: RegExp, input: string) {
+    count++;
+    return exec.call(this, input);
+  };
+  try {
+    fn();
+  } finally {
+    RegExp.prototype.exec = exec;
+  }
+  return count;
+}
+
 describe('NodeRouter', () => {
   let finalHandler: ReturnType<typeof vi.fn>;
   let router: NodeRouter;
@@ -422,6 +438,86 @@ describe('NodeRouter', () => {
       expect(guard).not.toHaveBeenCalled();
       expect(route).not.toHaveBeenCalled();
       expect(finalHandler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('path prefixes', () => {
+    function record(calls: string[], name: string) {
+      return (_req: unknown, _res: unknown, next: Next) => {
+        calls.push(name);
+        next();
+      };
+    }
+
+    it('should run the same middleware whatever the paths registered before', () => {
+      const calls: string[] = [];
+      router.useExact(undefined, '/admin', record(calls, '/admin'));
+      router.useExact(undefined, '/admin/:id', record(calls, '/admin/:id'));
+      router.useExact('GET', '/admin/users', record(calls, '/admin/users'));
+      router.use(record(calls, 'root'));
+      router.useExact(undefined, '/admin/logs', record(calls, '/admin/logs'));
+      router.use('/admin', record(calls, 'mount'));
+      router.get('/admin/{*path}', () => calls.push('route'));
+      router.useExact(undefined, '/admin/late', record(calls, '/admin/late'));
+      router.use(() => calls.push('last'));
+
+      dispatch('GET', '/users');
+      expect(calls).toEqual(['root', 'last']);
+
+      calls.length = 0;
+      dispatch('GET', '/admin/logs');
+      expect(calls).toEqual([
+        '/admin/:id',
+        'root',
+        '/admin/logs',
+        'mount',
+        'route',
+      ]);
+
+      calls.length = 0;
+      dispatch('GET', '/admin/users');
+      expect(calls).toEqual([
+        '/admin/:id',
+        '/admin/users',
+        'root',
+        'mount',
+        'route',
+      ]);
+    });
+
+    it('should take the layers added after a request into account', () => {
+      const calls: string[] = [];
+      router.useExact(undefined, '/a/b', record(calls, '/a/b'));
+      dispatch('GET', '/x');
+      router.useExact(undefined, '/a/c', record(calls, '/a/c'));
+      router.use(record(calls, 'root'));
+
+      dispatch('GET', '/a/c');
+
+      expect(calls).toEqual(['/a/c', 'root']);
+    });
+
+    it('should not run the matcher of every middleware layer bound to other controllers', () => {
+      // Nest registers a middleware bound to a controller once per route path
+      const middleware = vi.fn((_req: unknown, _res: unknown, next: Next) =>
+        next(),
+      );
+      for (let i = 0; i < 100; i++) {
+        for (const route of ['', '/:id', '/:id/items', '/:id/items/:itemId']) {
+          router.useExact('GET', `/api/res${i}${route}`, middleware);
+        }
+      }
+      const handler = vi.fn();
+      router.get('/api/res57/:id/items/:itemId', handler);
+
+      const count = countRegexExecutions(() =>
+        dispatch('GET', '/api/res57/42/items/7'),
+      );
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(middleware).toHaveBeenCalledTimes(1);
+      // About one per layer without skipping (401)
+      expect(count).toBeLessThan(50);
     });
   });
 

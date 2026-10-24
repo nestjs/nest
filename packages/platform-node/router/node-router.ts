@@ -9,7 +9,13 @@ import {
   type RouteTableOptions,
   RouteTable,
 } from './route-table.js';
-import { getRawPrefixEnd, getRoutingPath, loosen } from './utils.js';
+import {
+  getLiteralPrefix,
+  getPrefixSkips,
+  getRawPrefixEnd,
+  getRoutingPath,
+  loosen,
+} from './utils.js';
 
 type NextFunction = (err?: any) => void;
 type PathMatcher = (path: string) => false | { path: string; params: any };
@@ -18,6 +24,8 @@ interface MiddlewareLayer {
   table?: undefined;
   /** `null` matches every path. */
   matcher: PathMatcher | null;
+  /** What every path `matcher` matches starts with, see `getLiteralPrefix()`. */
+  prefix: string;
   /** Strip the matched path from `req.url` (a `use(path, ...)` mount). */
   isMount: boolean;
   /** Upper-case method, or `undefined` for every method. */
@@ -127,6 +135,8 @@ export interface NodeRouter {
  */
 export class NodeRouter {
   declare private stack: Layer[];
+  /** See `getPrefixSkips()`; computed on first use after a layer is added. */
+  declare private skips: number[] | undefined;
   declare private finalHandler: FinalHandler;
   declare private routeTableOptions: RouteTableOptions;
   /**
@@ -154,6 +164,7 @@ export class NodeRouter {
     ) => router.handle(req, res, done)) as NodeRouter;
     Object.setPrototypeOf(router, new.target.prototype);
     router.stack = [];
+    router.skips = undefined;
     router.finalHandler = finalHandler;
     router.routeTableOptions = { maxParamLength };
     return router;
@@ -271,6 +282,7 @@ export class NodeRouter {
           // Case-sensitive, as routes are (see RouteTable)
           sensitive: true,
         }) as PathMatcher);
+    const prefix = isRoot ? '' : getLiteralPrefix(loosen(path));
 
     for (const handler of handlers.flat()) {
       if (typeof handler !== 'function') {
@@ -278,8 +290,10 @@ export class NodeRouter {
           `NodeRouter.use() requires a middleware function, received ${typeof handler}`,
         );
       }
+      this.skips = undefined;
       this.stack.push({
         matcher,
+        prefix,
         isMount: !isRoot,
         method: undefined,
         handler,
@@ -296,6 +310,7 @@ export class NodeRouter {
     let last = this.stack[this.stack.length - 1];
     if (!last?.table) {
       last = { table: new RouteTable(this.routeTableOptions) };
+      this.skips = undefined;
       this.stack.push(last);
     }
     last.table.add(method, path, handler);
@@ -308,12 +323,14 @@ export class NodeRouter {
    * whose method is `method`.
    */
   public useExact(method: string | undefined, path: string, handler: Function) {
+    this.skips = undefined;
     this.stack.push({
       matcher: match(loosen(path), {
         decode: decodeParam,
         end: true,
         sensitive: true,
       }) as PathMatcher,
+      prefix: getLiteralPrefix(loosen(path)),
       isMount: false,
       method,
       handler,
@@ -340,6 +357,17 @@ export class NodeRouter {
     return this.stack.some(
       layer => !layer.table && (layer.handler as Function).name === name,
     );
+  }
+
+  // Nest registers a middleware bound to a controller once per route path
+  // (see createMiddlewareFactory()): without skipping, every request would
+  // run the matcher of each one
+  private getSkips() {
+    return (this.skips ??= getPrefixSkips(
+      this.stack.map(layer =>
+        layer.table || layer.matcher === null ? undefined : layer.prefix,
+      ),
+    ));
   }
 
   private dispatch(
@@ -466,6 +494,14 @@ export class NodeRouter {
           continue;
         }
         if (layer.matcher !== null) {
+          // When the path does not start with the prefix of a layer that the
+          // next ones share (e.g. the first one registered for a controller),
+          // skip them all; for a single layer, its matcher is as cheap
+          const skip = this.getSkips()[index - 1];
+          if (skip > index && !cachedPath.startsWith(layer.prefix)) {
+            index = skip;
+            continue;
+          }
           let result;
           try {
             result = layer.matcher(cachedPath);
