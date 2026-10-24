@@ -58,6 +58,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected logger = new Logger(ServerKafka.name);
   protected client: Kafka | null = null;
   protected consumer: Consumer | null = null;
+  protected consumers: Map<string | RegExp, Consumer> = new Map();
   protected producer: Producer | null = null;
   protected parser: KafkaParser | null = null;
   protected brokers: string[] | BrokersFunction;
@@ -134,6 +135,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async close(): Promise<void> {
+    await this.disconnectTopicConsumers();
     this.consumer && (await this.consumer.disconnect());
     this.producer && (await this.producer.disconnect());
     this.consumer = null;
@@ -146,34 +148,58 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       ...(this.options.consumer || {}),
       groupId: this.groupId,
     };
-    this.consumer = this.client!.consumer(consumerOptions);
-    this.producer = this.client!.producer(this.options.producer);
-    this.registerConsumerEventListeners();
-    this.registerProducerEventListeners();
 
-    await this.consumer.connect();
+    this.producer = this.client!.producer(this.options.producer);
+    this.registerProducerEventListeners();
     await this.producer.connect();
-    await this.bindEvents(this.consumer);
+
+    if (this.getOptionsProp(this.options, 'topicConsumers', false)) {
+      await this.bindEventsPerTopic(consumerOptions);
+    } else {
+      this.consumer = this.client!.consumer(consumerOptions);
+      this.registerConsumerEventListeners();
+      await this.consumer.connect();
+      await this.bindEvents(this.consumer);
+    }
     callback();
+  }
+
+  private async disconnectTopicConsumers(): Promise<void> {
+    if (this.consumers.size === 0) {
+      return;
+    }
+    const results = await Promise.allSettled(
+      [...this.consumers.values()].map(consumer => consumer.disconnect()),
+    );
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        this.logger.error(result.reason);
+      }
+    }
+    this.consumers.clear();
   }
 
   protected registerConsumerEventListeners() {
     if (!this.consumer) {
       return;
     }
-    this.consumer.on(this.consumer.events.CONNECT, () =>
+    this.registerConsumerEventListenersFor(this.consumer);
+  }
+
+  protected registerConsumerEventListenersFor(consumer: Consumer) {
+    consumer.on(consumer.events.CONNECT, () =>
       this._status$.next(KafkaStatus.CONNECTED),
     );
-    this.consumer.on(this.consumer.events.DISCONNECT, () =>
+    consumer.on(consumer.events.DISCONNECT, () =>
       this._status$.next(KafkaStatus.DISCONNECTED),
     );
-    this.consumer.on(this.consumer.events.REBALANCING, () =>
+    consumer.on(consumer.events.REBALANCING, () =>
       this._status$.next(KafkaStatus.REBALANCING),
     );
-    this.consumer.on(this.consumer.events.STOP, () =>
+    consumer.on(consumer.events.STOP, () =>
       this._status$.next(KafkaStatus.STOPPED),
     );
-    this.consumer.on(this.consumer.events.CRASH, () =>
+    consumer.on(consumer.events.CRASH, () =>
       this._status$.next(KafkaStatus.CRASHED),
     );
   }
@@ -204,22 +230,55 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     } as KafkaConfig) as T;
   }
 
-  public async bindEvents(consumer: Consumer) {
-    const registeredPatterns = [...this.messageHandlers.keys()];
+  public async bindEvents(
+    consumer: Consumer,
+    topics: (string | RegExp)[] = [...this.messageHandlers.keys()],
+    ownPattern?: string | RegExp,
+  ) {
     const consumerSubscribeOptions = this.options.subscribe || {};
 
-    if (registeredPatterns.length > 0) {
-      await this.consumer!.subscribe({
+    if (topics.length > 0) {
+      await consumer.subscribe({
         ...consumerSubscribeOptions,
-        topics: registeredPatterns,
+        topics,
       });
     }
 
     const consumerRunOptions = {
       ...(this.options.run || {}),
-      eachMessage: this.getMessageHandler(),
+      eachMessage: this.getMessageHandler(consumer, ownPattern),
     };
     await consumer.run(consumerRunOptions);
+  }
+
+  public async bindEventsPerTopic(consumerOptions: ConsumerConfig) {
+    const registeredPatterns = [...this.messageHandlers.keys()];
+
+    try {
+      await Promise.all(
+        registeredPatterns.map(topic =>
+          this.bindTopicConsumer(topic, consumerOptions),
+        ),
+      );
+    } catch (err) {
+      await this.disconnectTopicConsumers();
+      throw err;
+    }
+  }
+
+  private async bindTopicConsumer(
+    topic: string | RegExp,
+    consumerOptions: ConsumerConfig,
+  ) {
+    const composedGroupId = `${this.groupId}-${topic}`;
+    const topicConsumer = this.client!.consumer({
+      ...consumerOptions,
+      groupId: composedGroupId,
+    });
+    this.registerConsumerEventListenersFor(topicConsumer);
+    await topicConsumer.connect();
+    this.consumers.set(topic, topicConsumer);
+    await this.bindEvents(topicConsumer, [topic], topic);
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
@@ -252,8 +311,25 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     return isMatch;
   }
 
-  public getMessageHandler() {
-    return async (payload: EachMessagePayload) => this.handleMessage(payload);
+  public getMessageHandler(
+    consumer: Consumer = this.consumer!,
+    ownPattern?: string | RegExp,
+  ) {
+    const ownHandler =
+      ownPattern === undefined
+        ? undefined
+        : (this.messageHandlers as Map<string | RegExp, MessageHandler>).get(
+            ownPattern,
+          );
+    return async (payload: EachMessagePayload) => {
+      if (
+        ownHandler &&
+        this.getHandlerByPattern(payload.topic) !== ownHandler
+      ) {
+        return;
+      }
+      return this.handleMessage(payload, consumer);
+    };
   }
 
   public getPublisher(
@@ -282,7 +358,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
    * handler is a `@MessagePattern()` one, so that such handlers can consume
    * topics written by producers that do not add these headers.
    */
-  public async handleMessage(payload: EachMessagePayload) {
+  public async handleMessage(
+    payload: EachMessagePayload,
+    consumer: Consumer = this.consumer!,
+  ) {
     const channel = payload.topic;
     let rawMessage: KafkaMessage;
     try {
@@ -308,7 +387,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       rawMessage,
       payload.partition,
       payload.topic,
-      this.consumer!,
+      consumer,
       payload.heartbeat,
       this.producer!,
     ]);
@@ -363,7 +442,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         'Not initialized. Please call the "listen"/"startAllMicroservices" method before accessing the server.',
       );
     }
-    return [this.client, this.consumer, this.producer] as T;
+    return [this.client, this.consumer, this.producer, this.consumers] as T;
   }
 
   public on<
