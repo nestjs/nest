@@ -105,6 +105,21 @@ function isJsonContentType(contentType: string): boolean {
   );
 }
 
+// A custom error body need not have a "statusCode" of its own. Fastify sends
+// streams and binary data as they are and answers 500 for any other object.
+function isErrorBody(body: any, statusCode?: number): boolean {
+  if (body?.statusCode >= HttpStatus.BAD_REQUEST) {
+    return true;
+  }
+  return (
+    isObject(body) &&
+    !isFunction((body as any).pipe) &&
+    !ArrayBuffer.isView(body) &&
+    !isNil(statusCode) &&
+    statusCode >= HttpStatus.BAD_REQUEST
+  );
+}
+
 type FastifyAdapterBaseOptions<
   Server extends RawServerBase = RawServerDefault,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
@@ -794,7 +809,7 @@ export class FastifyAdapter<
     if (
       typeof responseContentType === 'string' &&
       !isJsonContentType(responseContentType) &&
-      body?.statusCode >= HttpStatus.BAD_REQUEST
+      isErrorBody(body, statusCode)
     ) {
       Logger.warn(
         "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
