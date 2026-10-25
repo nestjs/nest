@@ -24,7 +24,6 @@ import { MiddlewareContainer } from './container.js';
 import { MiddlewareResolver } from './resolver.js';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
-import { isRouteVersionRequested } from './utils.js';
 import { RequestMethod, type NestMiddleware } from '@nestjs/common';
 import {
   type MiddlewareConfiguration,
@@ -176,6 +175,12 @@ export class MiddlewareModule<
     applicationRef: any,
   ) {
     const { forRoutes } = config;
+    // Shared by the routes of this configuration that differ only in their
+    // version (see `getHandledRequests()`)
+    const handledRequestsByRoute = new Map<
+      unknown,
+      Map<string, WeakSet<object>>
+    >();
     for (const routeInfo of forRoutes) {
       await this.registerRouteMiddleware(
         middlewareContainer,
@@ -183,6 +188,7 @@ export class MiddlewareModule<
         config,
         moduleKey,
         applicationRef,
+        handledRequestsByRoute,
       );
     }
   }
@@ -193,6 +199,7 @@ export class MiddlewareModule<
     config: MiddlewareConfiguration,
     moduleKey: string,
     applicationRef: any,
+    handledRequestsByRoute = new Map<unknown, Map<string, WeakSet<object>>>(),
   ) {
     const middlewareCollection = [].concat(config.middleware);
     const moduleRef = this.container.getModuleByKey(moduleKey)!;
@@ -235,6 +242,7 @@ export class MiddlewareModule<
         routeInfo,
         moduleRef,
         collection,
+        this.getHandledRequests(handledRequestsByRoute, metatype, routeInfo),
       );
     }
   }
@@ -245,6 +253,7 @@ export class MiddlewareModule<
     routeInfo: RouteInfo,
     moduleRef: Module,
     collection: Map<InjectionToken, InstanceWrapper>,
+    handledRequests: WeakSet<object>,
   ) {
     const { instance, metatype } = wrapper;
 
@@ -257,7 +266,12 @@ export class MiddlewareModule<
     const isStatic = wrapper.isDependencyTreeStatic() && !wrapper.isTransient;
     if (isStatic) {
       const proxy = await this.createProxy(instance);
-      return this.registerHandler(applicationRef, routeInfo, proxy);
+      return this.registerHandler(
+        applicationRef,
+        routeInfo,
+        proxy,
+        handledRequests,
+      );
     }
 
     const isTreeDurable = wrapper.isDependencyTreeDurable();
@@ -296,7 +310,34 @@ export class MiddlewareModule<
           exceptionsHandler.next(err, host);
         }
       },
+      handledRequests,
     );
+  }
+
+  /**
+   * Returns the requests the middleware already ran for on the route. Routes
+   * that differ only in their version (e.g. a controller with the versions
+   * `['1', '2']`) share it: unless the version is part of the path (URI
+   * versioning), they are mounted on the same path, and the middleware would
+   * run once for each of them.
+   */
+  private getHandledRequests(
+    handledRequestsByRoute: Map<unknown, Map<string, WeakSet<object>>>,
+    middleware: unknown,
+    { path, method }: RouteInfo,
+  ): WeakSet<object> {
+    let byRoute = handledRequestsByRoute.get(middleware);
+    if (!byRoute) {
+      byRoute = new Map();
+      handledRequestsByRoute.set(middleware, byRoute);
+    }
+    const key = `${method}:${path}`;
+    let handledRequests = byRoute.get(key);
+    if (!handledRequests) {
+      handledRequests = new WeakSet();
+      byRoute.set(key, handledRequests);
+    }
+    return handledRequests;
   }
 
   private async createProxy<TRequest = unknown, TResponse = unknown>(
@@ -321,11 +362,10 @@ export class MiddlewareModule<
       res: TResponse,
       next: () => void,
     ) => void,
+    handledRequests: WeakSet<object>,
   ) {
-    const { method, version } = routeInfo;
+    const { method } = routeInfo;
     const paths = this.routeInfoPathExtractor.extractPathsFrom(routeInfo);
-    const versioningOptions =
-      this.routeInfoPathExtractor.getVersioningOptions();
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
@@ -348,23 +388,13 @@ export class MiddlewareModule<
         };
     // The paths may overlap (e.g. "/" and "/api/*" when the root path is
     // excluded from the global prefix): the middleware runs for the first of
-    // them that matches a request, and the others skip that request. Unless
-    // the version is part of the path (URI versioning), the requests for the
-    // other versions of the path skip it as well
-    const handledRequests = new WeakSet<object>();
+    // them that matches a request, and the others skip that request
     const handler = <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
     ) => {
-      if (
-        handledRequests.has(req as object) ||
-        !isRouteVersionRequested(
-          req as Record<string, any>,
-          version,
-          versioningOptions,
-        )
-      ) {
+      if (handledRequests.has(req as object)) {
         return next();
       }
       handledRequests.add(req as object);

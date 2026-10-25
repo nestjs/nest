@@ -266,7 +266,7 @@ describe('MiddlewareModule', () => {
       expect(next).toHaveBeenCalledTimes(2);
     });
 
-    it('should run the middleware of a versioned route only for the requests for its version', async () => {
+    it('should run the middleware once for the routes that differ only in their version', async () => {
       const appConfig = new ApplicationConfig();
       appConfig.enableVersioning({
         type: VersioningType.HEADER,
@@ -277,12 +277,16 @@ describe('MiddlewareModule', () => {
       );
       const configuration = {
         middleware: [TestMiddleware],
-        forRoutes: [{ path: 'test', method: RequestMethod.ALL, version: '1' }],
+        forRoutes: [
+          { path: 'test', method: RequestMethod.GET, version: '1' },
+          { path: 'test', method: RequestMethod.GET, version: '2' },
+        ],
       };
 
       const router = vi.fn();
       const app = {
         createMiddlewareFactory: vi.fn().mockResolvedValue(router),
+        getRequestMethod: vi.fn().mockReturnValue('GET'),
       };
 
       const stubContainer = new NestContainer();
@@ -304,24 +308,26 @@ describe('MiddlewareModule', () => {
       );
       middlewareModule['container'] = stubContainer;
 
-      await middlewareModule.registerRouteMiddleware(
+      await middlewareModule.registerMiddlewareConfig(
         container,
-        configuration.forRoutes[0],
         configuration,
         moduleKey,
         app,
       );
-      expect(router.mock.calls.map(([path]) => path)).toEqual(['/test']);
+      // Both are mounted on the path, as the version is not part of it
+      expect(router.mock.calls.map(([path]) => path)).toEqual([
+        '/test',
+        '/test',
+      ]);
 
-      const [[, handler]] = router.mock.calls;
+      const request = {};
       const next = vi.fn();
-      await handler({ headers: { 'x-version': '2' } }, {}, next);
-      await handler({ headers: {} }, {}, next);
-      expect(useSpy).not.toHaveBeenCalled();
-      expect(next).toHaveBeenCalledTimes(2);
-
-      await handler({ headers: { 'x-version': '1' } }, {}, next);
+      for (const [, handler] of router.mock.calls) {
+        await handler(request, {}, next);
+      }
       expect(useSpy).toHaveBeenCalledOnce();
+      // The second route passes the request on
+      expect(next).toHaveBeenCalledOnce();
     });
 
     it('should mount a transient middleware and the middleware listed after it', async () => {

@@ -130,7 +130,6 @@ describe('Middleware', () => {
     it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
       return request(app.getHttpServer())
         .get('/versioned')
-        .set('Accept', 'application/json;v1')
         .expect(200, VERSIONED_VALUE);
     });
   });
@@ -275,7 +274,7 @@ describe.each([
   ['Express', () => undefined],
   ['Fastify', () => new FastifyAdapter()],
 ])(
-  'Middleware - versions that are not in the path (%s)',
+  'Middleware - routes that differ only in their version (%s)',
   (_, createAdapter) => {
     let app: INestApplication;
 
@@ -334,19 +333,9 @@ describe.each([
       const get = (path: string, version: string) =>
         request(app.getHttpServer()).get(path).set(headers(version));
 
-      it(`forRoutes(CatsV1Controller) should only run for version 1`, async () => {
-        await createApp(versioningOptions, CatsV1Controller);
+      it(`forRoutes(CatsV1Controller, CatsV2Controller) should run once for each version`, async () => {
+        await createApp(versioningOptions, CatsV1Controller, CatsV2Controller);
         await get('/cats', '1').expect(200, 'v1:1');
-        await get('/cats', '2').expect(200, 'v2:0');
-      });
-
-      it(`forRoutes({ path: 'cats', method: RequestMethod.GET, version: '2' }) should only run for version 2`, async () => {
-        await createApp(versioningOptions, {
-          path: 'cats',
-          method: RequestMethod.GET,
-          version: '2',
-        });
-        await get('/cats', '1').expect(200, 'v1:0');
         await get('/cats', '2').expect(200, 'v2:1');
       });
 

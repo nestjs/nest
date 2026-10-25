@@ -14,7 +14,6 @@ import type { HttpServer, Type } from '@nestjs/common';
 import {
   type RouteInfo,
   type RouteMatchingOptions,
-  type VersionValue,
   addLeadingSlash,
   isFunction,
   isString,
@@ -280,42 +279,6 @@ export function createRequestedVersionMatcher(
       ? requestedVersions.every(requested => versions.includes(requested))
       : versions.includes(VERSION_NEUTRAL);
   };
-}
-
-/**
- * Tells whether the request may be served by a route of the given version,
- * so that middleware bound to that route runs for it. With header, media type
- * and custom versioning, the version is not part of the path, so the requests
- * for another version of the path skip the middleware. The versions of the
- * request are read as the version filters of the HTTP adapters read them.
- *
- * A request that asks for several versions (custom versioning) may be served
- * by a route of any of them, so one of them must be a version of the route.
- * A request whose versions cannot be read fails anyway, so the middleware
- * runs for it. A route that is only version-neutral may serve every request,
- * as the router serves it for the versions no other route takes.
- */
-export function isRouteVersionRequested(
-  request: Record<string, any>,
-  version: VersionValue | undefined,
-  versioningOptions?: VersioningOptions,
-): boolean {
-  if (
-    !version ||
-    version === VERSION_NEUTRAL ||
-    !versioningOptions ||
-    versioningOptions.type === VersioningType.URI
-  ) {
-    return true;
-  }
-  const requestedVersions = getRequestedVersions(request, versioningOptions);
-  if (!requestedVersions) {
-    return true;
-  }
-  const versions: unknown[] = Array.isArray(version) ? version : [version];
-  return requestedVersions.length > 0
-    ? requestedVersions.some(requested => versions.includes(requested))
-    : versions.includes(VERSION_NEUTRAL);
 }
 
 /**
