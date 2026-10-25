@@ -5,6 +5,7 @@ import type {
 } from '@nestjs/common';
 import { assignMetadata } from '@nestjs/common';
 import {
+  getParamArgsMetadata,
   isNil,
   isParameterDecoratorOptions,
   isString,
@@ -18,9 +19,12 @@ export function createWsParamDecorator(
 ): (...pipes: (Type<PipeTransform> | PipeTransform)[]) => ParameterDecorator {
   return (...pipes: (Type<PipeTransform> | PipeTransform)[]) =>
     (target, key, index) => {
-      const args =
-        Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key!) ||
-        {};
+      const args = getParamArgsMetadata(
+        PARAM_ARGS_METADATA,
+        target,
+        key!,
+        index,
+      );
       Reflect.defineMetadata(
         PARAM_ARGS_METADATA,
         assignMetadata(args, paramtype, index, { pipes }),
@@ -41,8 +45,7 @@ export const createPipesWsParamDecorator =
     ...pipes: (Type<PipeTransform> | PipeTransform)[]
   ): ParameterDecorator =>
   (target, key, index) => {
-    const args =
-      Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key!) || {};
+    const args = getParamArgsMetadata(PARAM_ARGS_METADATA, target, key!, index);
 
     const isDataOptions = isParameterDecoratorOptions(data);
 
