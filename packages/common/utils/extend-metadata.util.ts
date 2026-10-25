@@ -29,6 +29,9 @@ export function getParamArgsMetadata(
       Object.getPrototypeOf(target.constructor),
       key,
     ) || {};
+  // `assignMetadata` and `assignCustomParameterMetadata` spread shallowly, so
+  // an entry the override inherited keeps the parent's reference. If they ever
+  // clone entries, this check stops filtering.
   return Object.fromEntries(
     Object.entries(args).filter(
       ([argKey, arg]) => arg.index !== index || arg !== inherited[argKey],
