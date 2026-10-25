@@ -1,4 +1,4 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable, Scope, VersioningType } from '@nestjs/common';
 import { RouteInfoPathExtractor } from '@nestjs/core/middleware/route-info-path-extractor.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator.js';
@@ -264,6 +264,64 @@ describe('MiddlewareModule', () => {
       }
       expect(useSpy).toHaveBeenCalledOnce();
       expect(next).toHaveBeenCalledTimes(2);
+    });
+
+    it('should run the middleware of a versioned route only for the requests for its version', async () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.enableVersioning({
+        type: VersioningType.HEADER,
+        header: 'X-Version',
+      });
+      middlewareModule['routeInfoPathExtractor'] = new RouteInfoPathExtractor(
+        appConfig,
+      );
+      const configuration = {
+        middleware: [TestMiddleware],
+        forRoutes: [{ path: 'test', method: RequestMethod.ALL, version: '1' }],
+      };
+
+      const router = vi.fn();
+      const app = {
+        createMiddlewareFactory: vi.fn().mockResolvedValue(router),
+      };
+
+      const stubContainer = new NestContainer();
+      const container = new MiddlewareContainer(stubContainer);
+      const moduleKey = 'Test';
+      stubContainer
+        .getModules()
+        .set(moduleKey, new Module(TestModule, stubContainer));
+      container.insertConfig([configuration], moduleKey);
+
+      const instance = new TestMiddleware();
+      const useSpy = vi.spyOn(instance, 'use');
+      container.getMiddlewareCollection(moduleKey).set(
+        TestMiddleware,
+        new InstanceWrapper({
+          metatype: TestMiddleware,
+          instance,
+        }),
+      );
+      middlewareModule['container'] = stubContainer;
+
+      await middlewareModule.registerRouteMiddleware(
+        container,
+        configuration.forRoutes[0],
+        configuration,
+        moduleKey,
+        app,
+      );
+      expect(router.mock.calls.map(([path]) => path)).toEqual(['/test']);
+
+      const [[, handler]] = router.mock.calls;
+      const next = vi.fn();
+      await handler({ headers: { 'x-version': '2' } }, {}, next);
+      await handler({ headers: {} }, {}, next);
+      expect(useSpy).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledTimes(2);
+
+      await handler({ headers: { 'x-version': '1' } }, {}, next);
+      expect(useSpy).toHaveBeenCalledOnce();
     });
 
     it('should mount a transient middleware and the middleware listed after it', async () => {

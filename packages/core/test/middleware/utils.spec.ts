@@ -11,6 +11,7 @@ import {
   filterMiddleware,
   isMiddlewareClass,
   isMiddlewareRouteExcluded,
+  isRouteVersionRequested,
   mapToClass,
   mapToExcludeRoute,
 } from '../../middleware/utils.js';
@@ -519,6 +520,98 @@ describe('middleware utils', () => {
           false,
         );
       });
+    });
+  });
+
+  describe('isRouteVersionRequested', () => {
+    const isRequested = (
+      version: Parameters<typeof isRouteVersionRequested>[1],
+      headers: Record<string, string>,
+      versioningOptions?: VersioningOptions,
+    ) => isRouteVersionRequested({ headers }, version, versioningOptions);
+
+    describe('with header versioning', () => {
+      const versioning: VersioningOptions = {
+        type: VersioningType.HEADER,
+        header: 'X-Version',
+      };
+
+      it('should match a route only for a request for its version', () => {
+        expect(isRequested('1', { 'x-version': '1' }, versioning)).toBe(true);
+        expect(isRequested('1', { 'x-version': '2' }, versioning)).toBe(false);
+        expect(isRequested('1', {}, versioning)).toBe(false);
+        expect(isRequested(['1', '2'], { 'x-version': '2' }, versioning)).toBe(
+          true,
+        );
+        expect(isRequested(['1', '2'], { 'x-version': '3' }, versioning)).toBe(
+          false,
+        );
+      });
+
+      it('should match a version-neutral route as the router serves it', () => {
+        expect(isRequested(['1', VERSION_NEUTRAL], {}, versioning)).toBe(true);
+        expect(
+          isRequested(['1', VERSION_NEUTRAL], { 'x-version': '2' }, versioning),
+        ).toBe(false);
+        expect(
+          isRequested(VERSION_NEUTRAL, { 'x-version': '2' }, versioning),
+        ).toBe(true);
+        expect(isRequested(undefined, { 'x-version': '2' }, versioning)).toBe(
+          true,
+        );
+      });
+    });
+
+    it('should read the version of the Accept header with media type versioning', () => {
+      const versioning: VersioningOptions = {
+        type: VersioningType.MEDIA_TYPE,
+        key: 'v=',
+      };
+      expect(
+        isRequested('1', { accept: 'application/json;v=1' }, versioning),
+      ).toBe(true);
+      expect(
+        isRequested('1', { accept: 'application/json;v="1"' }, versioning),
+      ).toBe(true);
+      expect(
+        isRequested('1', { accept: 'application/json;v=2' }, versioning),
+      ).toBe(false);
+      expect(isRequested('1', { accept: 'application/json' }, versioning)).toBe(
+        false,
+      );
+    });
+
+    it('should read the version with the extractor of custom versioning', () => {
+      const extractor = vi.fn((request: any) =>
+        request.headers.versions?.split(','),
+      );
+      const versioning: VersioningOptions = {
+        type: VersioningType.CUSTOM,
+        extractor,
+      };
+      expect(isRequested('1', { versions: '1' }, versioning)).toBe(true);
+      expect(isRequested('1', { versions: '2' }, versioning)).toBe(false);
+      // The route that serves it may be one of any of these versions
+      expect(isRequested('1', { versions: '2,1' }, versioning)).toBe(true);
+      // Not called for a route without a version
+      extractor.mockClear();
+      expect(isRequested(undefined, {}, versioning)).toBe(true);
+      expect(extractor).not.toHaveBeenCalled();
+    });
+
+    it('should match the route when the extractor throws', () => {
+      const versioning: VersioningOptions = {
+        type: VersioningType.CUSTOM,
+        extractor: () => {
+          throw new Error('no version');
+        },
+      };
+      expect(isRequested('1', {}, versioning)).toBe(true);
+    });
+
+    it('should leave the version to the path with URI versioning', () => {
+      expect(isRequested('1', {}, { type: VersioningType.URI })).toBe(true);
+      expect(isRequested('1', {})).toBe(true);
     });
   });
 });

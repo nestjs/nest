@@ -24,6 +24,7 @@ import { MiddlewareContainer } from './container.js';
 import { MiddlewareResolver } from './resolver.js';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
+import { isRouteVersionRequested } from './utils.js';
 import { RequestMethod, type NestMiddleware } from '@nestjs/common';
 import {
   type MiddlewareConfiguration,
@@ -321,8 +322,10 @@ export class MiddlewareModule<
       next: () => void,
     ) => void,
   ) {
-    const { method } = routeInfo;
+    const { method, version } = routeInfo;
     const paths = this.routeInfoPathExtractor.extractPathsFrom(routeInfo);
+    const versioningOptions =
+      this.routeInfoPathExtractor.getVersioningOptions();
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
@@ -345,14 +348,23 @@ export class MiddlewareModule<
         };
     // The paths may overlap (e.g. "/" and "/api/*" when the root path is
     // excluded from the global prefix): the middleware runs for the first of
-    // them that matches a request, and the others skip that request
+    // them that matches a request, and the others skip that request. Unless
+    // the version is part of the path (URI versioning), the requests for the
+    // other versions of the path skip it as well
     const handledRequests = new WeakSet<object>();
     const handler = <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
     ) => {
-      if (handledRequests.has(req as object)) {
+      if (
+        handledRequests.has(req as object) ||
+        !isRouteVersionRequested(
+          req as Record<string, any>,
+          version,
+          versioningOptions,
+        )
+      ) {
         return next();
       }
       handledRequests.add(req as object);
