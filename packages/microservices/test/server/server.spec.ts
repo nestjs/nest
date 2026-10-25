@@ -115,6 +115,56 @@ describe('Server', () => {
         );
       });
     });
+
+    describe(`when gets a 'string' pattern that is not 'json'`, () => {
+      it(`should not parse it`, () => {
+        const parseSpy = vi.spyOn(JSON, 'parse');
+        untypedServer.getRouteFromPattern('user.created');
+        untypedServer.getRouteFromPattern('notify');
+        untypedServer.getRouteFromPattern(' trueish');
+
+        expect(parseSpy).not.toHaveBeenCalled();
+        expect(normalizePatternStub.mock.calls.map(([arg]) => arg)).toEqual([
+          'user.created',
+          'notify',
+          ' trueish',
+        ]);
+      });
+    });
+
+    describe(`when gets a 'string' pattern that may be 'json'`, () => {
+      it(`should call 'transformPatternToRoute' with what 'JSON.parse' returns`, () => {
+        const patterns = [
+          '42',
+          '-1',
+          ' true ',
+          'false',
+          'null',
+          '"hello"',
+          '[1]',
+        ];
+        patterns.forEach(item => untypedServer.getRouteFromPattern(item));
+
+        expect(normalizePatternStub.mock.calls.map(([arg]) => arg)).toEqual([
+          42,
+          -1,
+          true,
+          false,
+          null,
+          'hello',
+          [1],
+        ]);
+      });
+
+      it(`should call 'transformPatternToRoute' with the 'string' argument when it is not 'json'`, () => {
+        const patterns = ['2fa.verify', '{"cmd":', '"hello', 'null.created'];
+        patterns.forEach(item => untypedServer.getRouteFromPattern(item));
+
+        expect(normalizePatternStub.mock.calls.map(([arg]) => arg)).toEqual(
+          patterns,
+        );
+      });
+    });
   });
 
   describe('send', () => {
