@@ -14,6 +14,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { CustomVersioningOptions } from '@nestjs/common/interfaces/index.js';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
@@ -240,6 +241,112 @@ describe('Middleware - URI versioning with a default version', () => {
       .expect(200, '1');
   });
 });
+
+// With Fastify, the middleware gets the raw request
+type RunsRequest = { runs?: number; raw?: { runs?: number } };
+const getRuns = (req: RunsRequest) => (req.raw ?? req).runs ?? 0;
+
+@Controller({ path: 'cats', version: '1' })
+class CatsV1Controller {
+  @Get()
+  findAll(@Req() req: RunsRequest) {
+    return `v1:${getRuns(req)}`;
+  }
+}
+
+@Controller({ path: 'cats', version: '2' })
+class CatsV2Controller {
+  @Get()
+  findAll(@Req() req: RunsRequest) {
+    return `v2:${getRuns(req)}`;
+  }
+}
+
+@Controller({ path: 'birds', version: ['1', '2'] })
+class BirdsController {
+  @Get()
+  findAll(@Req() req: RunsRequest) {
+    return `${getRuns(req)}`;
+  }
+}
+
+describe.each([
+  ['Express', () => undefined],
+  ['Fastify', () => new FastifyAdapter()],
+])(
+  'Middleware - routes that differ only in their version (%s)',
+  (_, createAdapter) => {
+    let app: INestApplication;
+
+    const createApp = async (
+      versioningOptions: VersioningOptions,
+      ...routes: (Type<any> | RouteInfo)[]
+    ): Promise<void> => {
+      @Module({
+        controllers: [CatsV1Controller, CatsV2Controller, BirdsController],
+      })
+      class CatsModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply((req, res, next) => {
+              req.runs = (req.runs ?? 0) + 1;
+              next();
+            })
+            .forRoutes(...routes);
+        }
+      }
+
+      app = (
+        await Test.createTestingModule({
+          imports: [CatsModule],
+        }).compile()
+      ).createNestApplication(createAdapter());
+      app.enableVersioning(versioningOptions);
+      await listenOnLoopback(app);
+    };
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    describe.each([
+      [
+        'HEADER',
+        { type: VersioningType.HEADER, header: 'X-Version' },
+        (version: string) => ({ 'X-Version': version }),
+      ],
+      [
+        'MEDIA TYPE',
+        { type: VersioningType.MEDIA_TYPE, key: 'v=' },
+        (version: string) => ({ Accept: `application/json;v=${version}` }),
+      ],
+      [
+        'CUSTOM',
+        {
+          type: VersioningType.CUSTOM,
+          extractor: (req: { headers: Record<string, string> }) =>
+            req.headers['x-version'],
+        },
+        (version: string) => ({ 'X-Version': version }),
+      ],
+    ] as const)('when using %s versioning', (_, versioningOptions, headers) => {
+      const get = (path: string, version: string) =>
+        request(app.getHttpServer()).get(path).set(headers(version));
+
+      it(`forRoutes(CatsV1Controller, CatsV2Controller) should run once for each version`, async () => {
+        await createApp(versioningOptions, CatsV1Controller, CatsV2Controller);
+        await get('/cats', '1').expect(200, 'v1:1');
+        await get('/cats', '2').expect(200, 'v2:1');
+      });
+
+      it(`forRoutes(BirdsController) should run once for each of its versions`, async () => {
+        await createApp(versioningOptions, BirdsController);
+        await get('/birds', '1').expect(200, '1');
+        await get('/birds', '2').expect(200, '1');
+      });
+    });
+  },
+);
 
 async function createAppWithVersioning(
   versioningOptions: VersioningOptions,
