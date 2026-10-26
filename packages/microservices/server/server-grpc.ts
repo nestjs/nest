@@ -128,11 +128,6 @@ export class ServerGrpc extends Server<never, never> {
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
-    grpcPackage = this.loadPackageSynchronously(
-      '@grpc/grpc-js',
-      ServerGrpc.name,
-      () => createRequire(import.meta.url)('@grpc/grpc-js'),
-    );
     grpcProtoLoaderPackage = this.loadPackageSynchronously(
       protoLoader,
       ServerGrpc.name,
@@ -157,6 +152,7 @@ export class ServerGrpc extends Server<never, never> {
   }
 
   public async bindEvents() {
+    await this.loadGrpcPackage();
     const grpcContext = this.loadProto();
     const packageOption = this.getOptionsProp(this.options, 'package');
     const packageNames = Array.isArray(packageOption)
@@ -760,6 +756,7 @@ export class ServerGrpc extends Server<never, never> {
   }
 
   public async createClient() {
+    await this.loadGrpcPackage();
     const channelOptions: ChannelOptions =
       this.options && this.options.channelOptions
         ? this.options.channelOptions
@@ -812,6 +809,14 @@ export class ServerGrpc extends Server<never, never> {
     }
 
     return pkg;
+  }
+
+  private async loadGrpcPackage() {
+    grpcPackage = await this.loadPackage(
+      '@grpc/grpc-js',
+      ServerGrpc.name,
+      () => import('@grpc/grpc-js'),
+    );
   }
 
   public loadProto(): any {

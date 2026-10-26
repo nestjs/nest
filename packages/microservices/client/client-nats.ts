@@ -1,8 +1,7 @@
 import { Logger } from '@nestjs/common';
-import { isObject, loadPackageSync } from '@nestjs/common/internal';
+import { isObject, loadPackage } from '@nestjs/common/internal';
 import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
-import { createRequire } from 'module';
 import { NATS_DEFAULT_URL } from '../constants.js';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer.js';
 import { EmptyResponseException } from '../errors/empty-response.exception.js';
@@ -52,12 +51,6 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   constructor(protected readonly options: Required<NatsOptions>['options']) {
     super();
-    natsPackage = loadPackageSync(
-      '@nats-io/transport-node',
-      ClientNats.name,
-      () => createRequire(import.meta.url)('@nats-io/transport-node'),
-    );
-
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
@@ -131,6 +124,12 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
   }
 
   public async createClient(): Promise<Client> {
+    natsPackage = await loadPackage(
+      '@nats-io/transport-node',
+      ClientNats.name,
+      () => import('@nats-io/transport-node'),
+    );
+
     // Eagerly initialize serializer/deserializer so they can be used synchronously
     if (
       this.serializer &&

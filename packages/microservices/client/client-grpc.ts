@@ -50,6 +50,10 @@ export class ClientGrpcProxy
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
+    // Loaded synchronously, unlike the packages of the other transports:
+    // getService() is synchronous and the clients are created right here.
+    // Bundlers such as esbuild cannot follow createRequire(), so applications
+    // bundling a gRPC client have to mark these packages as external.
     grpcPackage = loadPackageSync('@grpc/grpc-js', ClientGrpcProxy.name, () =>
       createRequire(import.meta.url)('@grpc/grpc-js'),
     );
