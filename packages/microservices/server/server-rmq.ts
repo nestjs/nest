@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-import { createRequire } from 'module';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
@@ -85,10 +84,6 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||
       RMQ_DEFAULT_QUEUE_OPTIONS;
-
-    this.loadPackageSynchronously('amqplib', ServerRMQ.name, () =>
-      createRequire(import.meta.url)('amqplib'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -211,6 +206,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public async createClient<T = any>(): Promise<T> {
+    // amqp-connection-manager imports amqplib, so amqplib is checked first to
+    // name the package that is actually missing.
+    await this.loadPackage('amqplib', ServerRMQ.name, () => import('amqplib'));
     const rmqPackage = await this.loadPackage(
       'amqp-connection-manager',
       ServerRMQ.name,

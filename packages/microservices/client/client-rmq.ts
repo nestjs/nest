@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import { randomUUID } from 'crypto';
-import { createRequire } from 'module';
 import { EventEmitter } from 'events';
 import {
   EmptyError,
@@ -35,7 +34,13 @@ import { RmqRecord } from '../record-builders/index.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
-import { loadPackageSync, isFunction, isString } from '@nestjs/common/internal';
+import {
+  loadPackage,
+  loadPackageSync,
+  isFunction,
+  isString,
+} from '@nestjs/common/internal';
+import { createRequire } from 'module';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -52,7 +57,7 @@ type ChannelWrapper = any;
 type ConsumeMessage = any;
 type AmqpConnectionManager = any;
 
-let rmqPackage = {} as any; // typeof import('amqp-connection-manager');
+let rmqPackage: any = null; // typeof import('amqp-connection-manager');
 
 const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
 
@@ -64,6 +69,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected connection$: ReplaySubject<any>;
   protected connectionPromise: Promise<void> | null;
   protected client: AmqpConnectionManager | null = null;
+  private closeCount = 0;
   protected channel: ChannelWrapper | null = null;
   protected pendingEventListeners: Array<{
     event: keyof RmqEvents;
@@ -94,20 +100,12 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.queueOptions.noAssert ??
       RMQ_DEFAULT_NO_ASSERT;
 
-    loadPackageSync('amqplib', ClientRMQ.name, () =>
-      createRequire(import.meta.url)('amqplib'),
-    );
-    rmqPackage = loadPackageSync(
-      'amqp-connection-manager',
-      ClientRMQ.name,
-      () => createRequire(import.meta.url)('amqp-connection-manager'),
-    );
-
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
 
   public async close(): Promise<void> {
+    this.closeCount++;
     this.handleClose();
     try {
       // The channel goes first, as amqplib settles its close on the broker's
@@ -159,6 +157,19 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   public async connect(): Promise<any> {
     if (this.client) {
       return this.connectionPromise;
+    }
+    if (!rmqPackage) {
+      // Only the first connection waits for the packages. Another connect()
+      // or a close() call may run in the meantime, so the state is checked
+      // again once they are loaded.
+      const closeCount = this.closeCount;
+      await this.loadRmqPackage();
+      if (this.client) {
+        return this.connectionPromise;
+      }
+      if (this.closeCount !== closeCount) {
+        throw new Error('Connection closed');
+      }
     }
     this.client = this.createClient();
 
@@ -243,9 +254,26 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     });
   }
 
+  private async loadRmqPackage() {
+    // amqp-connection-manager imports amqplib, so amqplib is checked first to
+    // name the package that is actually missing.
+    await loadPackage('amqplib', ClientRMQ.name, () => import('amqplib'));
+    rmqPackage = await loadPackage(
+      'amqp-connection-manager',
+      ClientRMQ.name,
+      () => import('amqp-connection-manager'),
+    );
+  }
+
   public createClient(): AmqpConnectionManager {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     const urls = this.getOptionsProp(this.options, 'urls') || [RMQ_DEFAULT_URL];
+    // connect() loads the package first; this keeps a direct call working
+    rmqPackage ??= loadPackageSync(
+      'amqp-connection-manager',
+      ClientRMQ.name,
+      () => createRequire(import.meta.url)('amqp-connection-manager'),
+    );
     return rmqPackage.connect(urls, socketOptions);
   }
 

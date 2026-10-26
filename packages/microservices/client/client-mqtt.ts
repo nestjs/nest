@@ -1,4 +1,3 @@
-import { createRequire } from 'module';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
 import {
@@ -26,9 +25,14 @@ import {
 import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
-import { loadPackageSync, isObject } from '@nestjs/common/internal';
+import {
+  loadPackage,
+  loadPackageSync,
+  isObject,
+} from '@nestjs/common/internal';
+import { createRequire } from 'module';
 
-let mqttPackage: any = {};
+let mqttPackage: any = null;
 
 // To enable type safety for MQTT. This cant be uncommented by default
 // because it would require the user to install the mqtt package even if they dont use MQTT
@@ -47,6 +51,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
   protected mqttClient: MqttClient | null = null;
   protected connectionPromise: Promise<any> | null = null;
+  private closeCount = 0;
   protected isInitialConnection = false;
   protected isReconnecting = false;
   protected pendingEventListeners: Array<{
@@ -57,10 +62,6 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   constructor(protected readonly options: Required<MqttOptions>['options']) {
     super();
     this.url = this.getOptionsProp(this.options, 'url') ?? MQTT_DEFAULT_URL;
-
-    mqttPackage = loadPackageSync('mqtt', ClientMqtt.name, () =>
-      createRequire(import.meta.url)('mqtt'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -75,6 +76,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   }
 
   public async close() {
+    this.closeCount++;
     this.handleClose();
     if (this.mqttClient) {
       await this.mqttClient.endAsync();
@@ -107,6 +109,23 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   public async connect(): Promise<any> {
     if (this.mqttClient) {
       return this.connectionPromise!;
+    }
+    if (!mqttPackage) {
+      // Only the first connection waits for the package. Another connect() or
+      // a close() call may run in the meantime, so the state is checked again
+      // once it is loaded.
+      const closeCount = this.closeCount;
+      mqttPackage = await loadPackage(
+        'mqtt',
+        ClientMqtt.name,
+        () => import('mqtt'),
+      );
+      if (this.mqttClient) {
+        return this.connectionPromise!;
+      }
+      if (this.closeCount !== closeCount) {
+        throw new Error('Connection closed');
+      }
     }
     const mqttClient = this.createClient();
     this.mqttClient = mqttClient;
@@ -180,6 +199,10 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   }
 
   public createClient(): MqttClient {
+    // connect() loads the package first; this keeps a direct call working
+    mqttPackage ??= loadPackageSync('mqtt', ClientMqtt.name, () =>
+      createRequire(import.meta.url)('mqtt'),
+    );
     return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 

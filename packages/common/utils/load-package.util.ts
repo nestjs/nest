@@ -38,9 +38,16 @@ export async function loadPackage(
  * This is meant for optional dependencies that must be loaded in
  * synchronous contexts (e.g. constructors).
  *
+ * Prefer {@link loadPackage} with a literal `() => import('pkg')` loader, or a
+ * static import for packages that are regular dependencies: not every bundler
+ * can see a package loaded through `createRequire`. webpack 5 resolves
+ * `createRequire(import.meta.url)('pkg')`, while esbuild and rolldown leave it
+ * out of the bundle without a warning (evanw/esbuild#1828), so applications
+ * bundled with those have to mark the package as external.
+ *
  * @param loaderFn Optional synchronous loader (e.g.
- *   `() => createRequire(import.meta.url)('pkg')`).
- *   When provided, bundlers can statically analyse the string literal.
+ *   `() => createRequire(import.meta.url)('pkg')`), resolved from the calling
+ *   package rather than from `@nestjs/common`.
  *   Falls back to a `createRequire` call resolved from this file.
  */
 export function loadPackageSync(
