@@ -29,7 +29,7 @@
     "cors": "2.8.6",
     "express": "5.3.0",
     "multer": "2.5.0",
-    "path-to-regexp": "8.4.2",
+    "path-to-regexp": "9.0.0",
     "tslib": "2.8.1"
   },
   "devDependencies": {
