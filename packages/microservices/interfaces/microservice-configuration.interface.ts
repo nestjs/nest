@@ -130,21 +130,32 @@ export interface TcpOptions {
     /**
      * Maximum buffer size in characters (default: 16 * 1024 * 1024, which a
      * string holds in 16 to 32MB). This limit prevents memory exhaustion
-     * when receiving large TCP messages. A complete packet is parsed in one
-     * go, which blocks the event loop meanwhile, and the parsed value can
-     * take many times the memory of its text (about 40 bytes per character
-     * for an array of small objects), so raise it with care.
+     * when receiving large TCP messages; a packet declaring a greater length
+     * is rejected before any of it is buffered. A complete packet is parsed
+     * in one go, which blocks the event loop meanwhile, and the parsed value
+     * can take many times the memory of its text (about 40 bytes per
+     * character for an array of small objects), so raise it with care.
      */
     maxBufferSize?: number;
     /**
      * How long a peer may stay silent in the middle of a packet before the
      * connection is dropped, in milliseconds (default: 30000). The timer is
-     * refreshed on every read, so a slow but progressing transfer is never
-     * interrupted; it only fires when a peer stops sending mid-packet, which
-     * would otherwise pin the partial packet in memory indefinitely.
+     * refreshed on every read, so it never interrupts a slow but progressing
+     * transfer (see "messageReceiveTimeout"); it only fires when a peer stops
+     * sending mid-packet, which would otherwise pin the partial packet in
+     * memory indefinitely.
      * Set to 0 to disable.
      */
     incompleteMessageTimeout?: number;
+    /**
+     * How long a peer may take to send a single packet, from its first
+     * character to its last, before the connection is dropped, in milliseconds
+     * (default: 300000). Unlike "incompleteMessageTimeout", it is not extended
+     * by further reads, so a peer cannot hold a partial packet in memory by
+     * sending a little now and then. Time spent with reading suspended due to
+     * backpressure does not count. Set to 0 to disable.
+     */
+    messageReceiveTimeout?: number;
     /**
      * Maximum number of response bytes that may sit queued for a single peer
      * that is not reading them, in bytes (default: 128MB). Reading from a peer

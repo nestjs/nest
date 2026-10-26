@@ -64,16 +64,33 @@ describe('JsonSocket maxBufferSize', () => {
       ]);
     });
 
+    it('should reject a packet declaring more than the default maxBufferSize', () => {
+      const netSocket = new Socket();
+      const errors: unknown[] = [];
+      netSocket.on('error', error => errors.push(error));
+      const socket = new JsonSocket(netSocket, { maxBufferSize: NaN });
+
+      socket['handleData'](`${DEFAULT_MAX_BUFFER_SIZE + 1}#`);
+
+      expect(errors).to.deep.equal([
+        new MaxPacketLengthExceededException(DEFAULT_MAX_BUFFER_SIZE + 1)
+          .message,
+      ]);
+      expect(netSocket.destroyed).to.be.true;
+    });
+
     it('should use the defaults of the other limits', () => {
       const defaults = new JsonSocket(new Socket());
       const socket = new JsonSocket(new Socket(), {
         incompleteMessageTimeout: NaN,
+        messageReceiveTimeout: NaN,
         maxSendBufferSize: NaN,
         drainTimeout: NaN,
       });
 
       for (const option of [
         'incompleteMessageTimeout',
+        'messageReceiveTimeout',
         'maxSendBufferSize',
         'drainTimeout',
       ]) {
@@ -86,12 +103,14 @@ describe('JsonSocket maxBufferSize', () => {
       const socket = new JsonSocket(new Socket(), {
         maxBufferSize: Infinity,
         incompleteMessageTimeout: 0,
+        messageReceiveTimeout: 0,
         maxSendBufferSize: 0,
         drainTimeout: 0,
       });
 
       expect(socket['maxBufferSize']).to.equal(Infinity);
       expect(socket['incompleteMessageTimeout']).to.equal(0);
+      expect(socket['messageReceiveTimeout']).to.equal(0);
       expect(socket['maxSendBufferSize']).to.equal(0);
       expect(socket['drainTimeout']).to.equal(0);
     });
@@ -221,16 +240,20 @@ describe('JsonSocket maxBufferSize', () => {
       expect(socket['buffer']).to.equal('');
     });
 
-    it('should still reject a packet above the limit once more than the limit of it is read', () => {
-      // Its header is read first and its declared length kept, which allows
-      // no more than the limit to be buffered either
+    it('should still reject a packet above the limit whose header is read first', () => {
+      // Its declared length is checked as soon as its header is read, so
+      // none of it is buffered, and what the peer sends next is ignored
       socket['handleData']('1000#');
       socket['handleData']('"' + 'z'.repeat(60));
-      expect(() => socket['handleData']('z'.repeat(60))).to.throw(
-        MaxPacketLengthExceededException,
-      );
+      socket['handleData']('z'.repeat(60));
+
+      expect(errors).to.deep.equal([
+        new MaxPacketLengthExceededException(1000).message,
+      ]);
+      expect(netSocket.destroyed).to.be.true;
       expect(messages).to.deep.equal([]);
       expect(socket['buffer']).to.equal('');
+      expect(socket['contentLength']).to.be.null;
     });
 
     it('should still reject data without a header that follows a packet', () => {

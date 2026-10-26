@@ -6,6 +6,7 @@ import { DrainTimeoutException } from '../../errors/drain-timeout.exception';
 import { IncompleteMessageTimeoutException } from '../../errors/incomplete-message-timeout.exception';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import { MaxSendBufferSizeExceededException } from '../../errors/max-send-buffer-size-exceeded.exception';
+import { MessageReceiveTimeoutException } from '../../errors/message-receive-timeout.exception';
 import { PendingMessagesTimeoutException } from '../../errors/pending-messages-timeout.exception';
 import { JsonSocket } from '../../helpers/json-socket';
 
@@ -79,6 +80,7 @@ describe('JsonSocket', () => {
     beforeEach(() => {
       jsonSocket = new JsonSocket(socketStub, {
         incompleteMessageTimeout: 0,
+        messageReceiveTimeout: 0,
       });
       bufferFrom = sinon.spy(Buffer, 'from');
     });
@@ -174,6 +176,36 @@ describe('JsonSocket', () => {
       expect(() => {
         (tiny as any).handleData('123456#');
       }).to.throw(MaxPacketLengthExceededException);
+    });
+
+    it('rejects a packet declaring more than maxBufferSize before buffering any of it', () => {
+      const errors: string[] = [];
+      socketStub.on('error', (message: string) => errors.push(message));
+      const tiny = new JsonSocket(socketStub, { maxBufferSize: 10 });
+      (tiny as any).handleData('11#{"a"');
+
+      expect(errors).to.deep.equal([
+        new MaxPacketLengthExceededException(11).message,
+      ]);
+      expect(socketStub.destroy.calledOnce).to.be.true;
+      expect((tiny as any).buffer).to.equal('');
+      expect((tiny as any).contentLength).to.be.null;
+    });
+
+    it('accepts a packet declaring exactly maxBufferSize', () => {
+      const json = JSON.stringify({ a: 'xxxx' });
+      const tiny = new JsonSocket(socketStub, { maxBufferSize: json.length });
+      (tiny as any).handleData(`${json.length}#`);
+      (tiny as any).handleData(json);
+
+      expect(received).to.deep.equal([{ a: 'xxxx' }]);
+    });
+
+    it('throws CorruptedPacketLengthException for a negative length prefix', () => {
+      expect(() => (jsonSocket as any).handleData('-1#{}')).to.throw(
+        CorruptedPacketLengthException,
+      );
+      expect((jsonSocket as any).contentLength).to.be.null;
     });
 
     it('does not keep data without a delimiter beyond the size of a content length', () => {
@@ -288,6 +320,109 @@ describe('JsonSocket', () => {
 
       (socketUnderTest as any).handleData('999999#partial');
       clock.tick(10_000);
+
+      expect(socket.destroy.called).to.be.false;
+    });
+  });
+
+  describe('message receive timeout', () => {
+    let clock: sinon.SinonFakeTimers;
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+    });
+    afterEach(() => {
+      clock.restore();
+    });
+
+    it('drops a peer that keeps a packet incomplete by sending a little now and then', () => {
+      const socket = makeSocketStub();
+      const errors: string[] = [];
+      socket.on('error', (message: string) => errors.push(message));
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 1000,
+        messageReceiveTimeout: 3000,
+      });
+
+      (socketUnderTest as any).handleData('100#');
+      for (let i = 0; i < 3; i++) {
+        clock.tick(900);
+        (socketUnderTest as any).handleData('a');
+      }
+      clock.tick(299);
+      expect(socket.destroy.called).to.be.false;
+
+      clock.tick(1);
+
+      expect(socket.destroy.calledOnce).to.be.true;
+      expect(errors).to.deep.equal([
+        new MessageReceiveTimeoutException(3, 3000).message,
+      ]);
+      expect((socketUnderTest as any).buffer).to.equal('');
+    });
+
+    it('gives every packet its own time', () => {
+      const socket = makeSocketStub();
+      const messages: unknown[] = [];
+      socket.on('message', (msg: unknown) => messages.push(msg));
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 0,
+        messageReceiveTimeout: 1000,
+      });
+      const first = frame({ n: 1 });
+      const second = frame({ n: 2 });
+
+      (socketUnderTest as any).handleData(first.slice(0, 4));
+      clock.tick(900);
+      // Completes the first packet and starts the second one
+      (socketUnderTest as any).handleData(first.slice(4) + second.slice(0, 4));
+      clock.tick(900);
+      (socketUnderTest as any).handleData(second.slice(4));
+      clock.tick(10_000);
+
+      expect(messages).to.deep.equal([{ n: 1 }, { n: 2 }]);
+      expect(socket.destroy.called).to.be.false;
+    });
+
+    it('does not count the time reading is suspended due to backpressure', () => {
+      const socket = makeSocketStub();
+      const errors: string[] = [];
+      socket.on('error', (message: string) => errors.push(message));
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 0,
+        messageReceiveTimeout: 1000,
+      });
+
+      socket.emit('data', Buffer.from('100#partial'));
+      clock.tick(500);
+      socket.write.returns(false);
+      socketUnderTest.sendMessage({ response: 'ok' });
+      clock.tick(5000);
+      expect(socket.destroy.called).to.be.false;
+
+      socket.emit('drain');
+      clock.tick(499);
+      expect(socket.destroy.called).to.be.false;
+      clock.tick(1);
+
+      expect(socket.destroy.calledOnce).to.be.true;
+      expect(errors).to.deep.equal([
+        new MessageReceiveTimeoutException(7, 1000).message,
+      ]);
+    });
+
+    it('can be disabled with 0', () => {
+      const socket = makeSocketStub();
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 1000,
+        messageReceiveTimeout: 0,
+      });
+
+      (socketUnderTest as any).handleData('100#');
+      for (let i = 0; i < 20; i++) {
+        clock.tick(900);
+        (socketUnderTest as any).handleData('a');
+      }
 
       expect(socket.destroy.called).to.be.false;
     });
@@ -429,6 +564,7 @@ describe('JsonSocket', () => {
         const socket = makeSocketStub();
         const jsonSocket = new JsonSocket(socket, {
           incompleteMessageTimeout: 1000,
+          messageReceiveTimeout: 3000,
         });
         socket.emit('data', Buffer.from('100#partial'));
         clock.tick(500);

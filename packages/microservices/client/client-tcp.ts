@@ -21,6 +21,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   protected readonly tlsOptions?: ConnectionOptions;
   protected readonly maxBufferSize?: number;
   protected readonly incompleteMessageTimeout?: number;
+  protected readonly messageReceiveTimeout?: number;
   protected readonly maxSendBufferSize?: number;
   protected socket: TcpSocket | null = null;
   protected connectionPromise: Promise<any> | null = null;
@@ -41,6 +42,10 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     this.incompleteMessageTimeout = this.getOptionsProp(
       options,
       'incompleteMessageTimeout',
+    );
+    this.messageReceiveTimeout = this.getOptionsProp(
+      options,
+      'messageReceiveTimeout',
     );
     this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
 
@@ -125,6 +130,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       return new this.socketClass(socket, {
         maxBufferSize: this.maxBufferSize,
         incompleteMessageTimeout: this.incompleteMessageTimeout,
+        messageReceiveTimeout: this.messageReceiveTimeout,
         maxSendBufferSize: this.maxSendBufferSize,
         // Reading replies is what lets the server drain and read the queued
         // requests, so pausing reads here deadlocks both ends

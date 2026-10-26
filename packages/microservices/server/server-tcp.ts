@@ -46,6 +46,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly socketClass: Type<TcpSocket>;
   protected readonly maxBufferSize?: number;
   protected readonly incompleteMessageTimeout?: number;
+  protected readonly messageReceiveTimeout?: number;
   protected readonly maxSendBufferSize?: number;
   protected readonly drainTimeout?: number;
   protected readonly maxConcurrentMessages: number;
@@ -99,6 +100,10 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.incompleteMessageTimeout = this.getOptionsProp(
       options,
       'incompleteMessageTimeout',
+    );
+    this.messageReceiveTimeout = this.getOptionsProp(
+      options,
+      'messageReceiveTimeout',
     );
     this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
     this.drainTimeout = this.getOptionsProp(options, 'drainTimeout');
@@ -471,6 +476,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     const hasJsonSocketOptions =
       this.maxBufferSize !== undefined ||
       this.incompleteMessageTimeout !== undefined ||
+      this.messageReceiveTimeout !== undefined ||
       this.maxSendBufferSize !== undefined ||
       this.drainTimeout !== undefined;
 
@@ -478,6 +484,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       return new this.socketClass(socket, {
         maxBufferSize: this.maxBufferSize,
         incompleteMessageTimeout: this.incompleteMessageTimeout,
+        messageReceiveTimeout: this.messageReceiveTimeout,
         maxSendBufferSize: this.maxSendBufferSize,
         drainTimeout: this.drainTimeout,
       });
