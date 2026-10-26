@@ -4,6 +4,7 @@ import { DrainTimeoutException } from '../../errors/drain-timeout.exception.js';
 import { IncompleteMessageTimeoutException } from '../../errors/incomplete-message-timeout.exception.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { MaxSendBufferSizeExceededException } from '../../errors/max-send-buffer-size-exceeded.exception.js';
+import { MessageReceiveTimeoutException } from '../../errors/message-receive-timeout.exception.js';
 import { JsonSocket } from '../../helpers/json-socket.js';
 
 function makeSocketStub(): any {
@@ -113,6 +114,36 @@ describe('JsonSocket', () => {
       }).toThrow(MaxPacketLengthExceededException);
     });
 
+    it('rejects a packet declaring more than maxBufferSize before buffering any of it', () => {
+      const errors: string[] = [];
+      socketStub.on('error', (message: string) => errors.push(message));
+      const tiny = new JsonSocket(socketStub, { maxBufferSize: 10 });
+      (tiny as any).handleData('11#{"a"');
+
+      expect(errors).toEqual([
+        new MaxPacketLengthExceededException(11).message,
+      ]);
+      expect(socketStub.destroy).toHaveBeenCalledOnce();
+      expect((tiny as any).buffer).toBe('');
+      expect((tiny as any).contentLength).toBeNull();
+    });
+
+    it('accepts a packet declaring exactly maxBufferSize', () => {
+      const json = JSON.stringify({ a: 'xxxx' });
+      const tiny = new JsonSocket(socketStub, { maxBufferSize: json.length });
+      (tiny as any).handleData(`${json.length}#`);
+      (tiny as any).handleData(json);
+
+      expect(received).toEqual([{ a: 'xxxx' }]);
+    });
+
+    it('throws CorruptedPacketLengthException for a negative length prefix', () => {
+      expect(() => (jsonSocket as any).handleData('-1#{}')).toThrow(
+        CorruptedPacketLengthException,
+      );
+      expect((jsonSocket as any).contentLength).toBeNull();
+    });
+
     it('does not keep data without a delimiter beyond the size of a content length', () => {
       // Every read scans the buffered data for the delimiter, so data that
       // never contains one must not pile up and be scanned again and again.
@@ -219,6 +250,107 @@ describe('JsonSocket', () => {
 
       (jsonSocket as any).handleData('999999#partial');
       vi.advanceTimersByTime(10_000);
+
+      expect(socket.destroy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('message receive timeout', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('drops a peer that keeps a packet incomplete by sending a little now and then', () => {
+      const socket = makeSocketStub();
+      const errors: string[] = [];
+      socket.on('error', (message: string) => errors.push(message));
+      const jsonSocket = new JsonSocket(socket, {
+        incompleteMessageTimeout: 1000,
+        messageReceiveTimeout: 3000,
+      });
+
+      (jsonSocket as any).handleData('100#');
+      for (let i = 0; i < 3; i++) {
+        vi.advanceTimersByTime(900);
+        (jsonSocket as any).handleData('a');
+      }
+      vi.advanceTimersByTime(299);
+      expect(socket.destroy).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1);
+
+      expect(socket.destroy).toHaveBeenCalledOnce();
+      expect(errors).toEqual([
+        new MessageReceiveTimeoutException(3, 3000).message,
+      ]);
+      expect((jsonSocket as any).buffer).toBe('');
+    });
+
+    it('gives every packet its own time', () => {
+      const socket = makeSocketStub();
+      const received: unknown[] = [];
+      socket.on('message', (msg: unknown) => received.push(msg));
+      const jsonSocket = new JsonSocket(socket, {
+        incompleteMessageTimeout: 0,
+        messageReceiveTimeout: 1000,
+      });
+      const first = frame({ n: 1 });
+      const second = frame({ n: 2 });
+
+      (jsonSocket as any).handleData(first.slice(0, 4));
+      vi.advanceTimersByTime(900);
+      // Completes the first packet and starts the second one
+      (jsonSocket as any).handleData(first.slice(4) + second.slice(0, 4));
+      vi.advanceTimersByTime(900);
+      (jsonSocket as any).handleData(second.slice(4));
+      vi.advanceTimersByTime(10_000);
+
+      expect(received).toEqual([{ n: 1 }, { n: 2 }]);
+      expect(socket.destroy).not.toHaveBeenCalled();
+    });
+
+    it('does not count the time reading is suspended due to backpressure', () => {
+      const socket = makeSocketStub();
+      const errors: string[] = [];
+      socket.on('error', (message: string) => errors.push(message));
+      const jsonSocket = new JsonSocket(socket, {
+        incompleteMessageTimeout: 0,
+        messageReceiveTimeout: 1000,
+      });
+
+      socket.emit('data', Buffer.from('100#partial'));
+      vi.advanceTimersByTime(500);
+      socket.write.mockReturnValue(false);
+      jsonSocket.sendMessage({ response: 'ok' });
+      vi.advanceTimersByTime(5000);
+      expect(socket.destroy).not.toHaveBeenCalled();
+
+      socket.emit('drain');
+      vi.advanceTimersByTime(499);
+      expect(socket.destroy).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+
+      expect(socket.destroy).toHaveBeenCalledOnce();
+      expect(errors).toEqual([
+        new MessageReceiveTimeoutException(7, 1000).message,
+      ]);
+    });
+
+    it('can be disabled with 0', () => {
+      const socket = makeSocketStub();
+      const jsonSocket = new JsonSocket(socket, {
+        incompleteMessageTimeout: 1000,
+        messageReceiveTimeout: 0,
+      });
+
+      (jsonSocket as any).handleData('100#');
+      for (let i = 0; i < 20; i++) {
+        vi.advanceTimersByTime(900);
+        (jsonSocket as any).handleData('a');
+      }
 
       expect(socket.destroy).not.toHaveBeenCalled();
     });

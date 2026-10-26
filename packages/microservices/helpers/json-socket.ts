@@ -5,11 +5,13 @@ import { DrainTimeoutException } from '../errors/drain-timeout.exception.js';
 import { IncompleteMessageTimeoutException } from '../errors/incomplete-message-timeout.exception.js';
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
 import { MaxSendBufferSizeExceededException } from '../errors/max-send-buffer-size-exceeded.exception.js';
+import { MessageReceiveTimeoutException } from '../errors/message-receive-timeout.exception.js';
 import { TcpEventsMap } from '../events/tcp.events.js';
 import { TcpSocket } from './tcp-socket.js';
 
-const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
+const DEFAULT_MAX_BUFFER_SIZE = 128 * 1024 * 1024; // in characters, 128 to 256 MBs as a string takes 1 or 2 bytes per character
 const DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT = 30_000;
+const DEFAULT_MESSAGE_RECEIVE_TIMEOUT = 300_000;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024; // 128 MBs in bytes
 const DEFAULT_DRAIN_TIMEOUT = 30_000;
 const MAX_CONTENT_LENGTH_SIZE = 32; // in characters, a string length never has more than 16 digits
@@ -17,6 +19,7 @@ const MAX_CONTENT_LENGTH_SIZE = 32; // in characters, a string length never has 
 export interface JsonSocketOptions {
   maxBufferSize?: number;
   incompleteMessageTimeout?: number;
+  messageReceiveTimeout?: number;
   maxSendBufferSize?: number;
   drainTimeout?: number;
   pauseOnBackpressure?: boolean;
@@ -30,12 +33,15 @@ export class JsonSocket extends TcpSocket {
   private readonly delimiter = '#';
   private readonly maxBufferSize: number;
   private readonly incompleteMessageTimeout: number;
+  private readonly messageReceiveTimeout: number;
   private readonly maxSendBufferSize: number;
   private readonly drainTimeout: number;
   private readonly pauseOnBackpressure: boolean;
   private incompleteMessageTimer: NodeJS.Timeout | null = null;
+  private messageReceiveDeadline: number | null = null;
   private drainTimer: NodeJS.Timeout | null = null;
   private isBackpressured = false;
+  private backpressuredAt: number | null = null;
   private writtenLength = 0;
 
   constructor(socket: any, options?: JsonSocketOptions) {
@@ -43,6 +49,8 @@ export class JsonSocket extends TcpSocket {
     this.maxBufferSize = options?.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE;
     this.incompleteMessageTimeout =
       options?.incompleteMessageTimeout ?? DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT;
+    this.messageReceiveTimeout =
+      options?.messageReceiveTimeout ?? DEFAULT_MESSAGE_RECEIVE_TIMEOUT;
     this.maxSendBufferSize =
       options?.maxSendBufferSize ?? DEFAULT_MAX_SEND_BUFFER_SIZE;
     this.drainTimeout = options?.drainTimeout ?? DEFAULT_DRAIN_TIMEOUT;
@@ -140,13 +148,24 @@ export class JsonSocket extends TcpSocket {
           break;
         }
         const rawContentLength = this.buffer.substring(0, i);
-        this.contentLength = parseInt(rawContentLength, 10);
+        const contentLength = parseInt(rawContentLength, 10);
 
-        if (isNaN(this.contentLength)) {
-          this.contentLength = null;
+        if (isNaN(contentLength) || contentLength < 0) {
           this.buffer = '';
           throw new CorruptedPacketLengthException(rawContentLength);
         }
+        // A packet declaring more than the buffer may hold can never be
+        // accepted, so there is no point in buffering any of it. Whatever
+        // the peer sends next is the rest of that packet, so stop reading.
+        if (contentLength > this.maxBufferSize) {
+          this.buffer = '';
+          this.handleDataError(
+            new MaxPacketLengthExceededException(contentLength),
+            { destroy: true },
+          );
+          return;
+        }
+        this.contentLength = contentLength;
         this.buffer = this.buffer.substring(i + 1);
       }
 
@@ -176,8 +195,9 @@ export class JsonSocket extends TcpSocket {
       return;
     }
     this.isBackpressured = true;
+    this.backpressuredAt = Date.now();
     // Reads are paused by us, so the peer cannot make progress on an inbound
-    // packet. Resume its idle timeout only after outgoing data has drained.
+    // packet. Resume its timeouts only after outgoing data has drained.
     this.clearIncompleteMessageTimer();
     this.socket.pause();
     this.socket.once(TcpEventsMap.DRAIN, () => this.releaseBackpressure());
@@ -186,6 +206,11 @@ export class JsonSocket extends TcpSocket {
 
   private releaseBackpressure() {
     this.isBackpressured = false;
+    // The time spent paused is not counted against the peer
+    if (this.messageReceiveDeadline !== null && this.backpressuredAt !== null) {
+      this.messageReceiveDeadline += Date.now() - this.backpressuredAt;
+    }
+    this.backpressuredAt = null;
     this.clearDrainTimer();
     this.socket.resume();
 
@@ -252,27 +277,46 @@ export class JsonSocket extends TcpSocket {
   }
 
   /**
-   * Arms an idle timer whenever a packet is only partially received, and
-   * disarms it as soon as the buffer is drained. The timer is refreshed on
-   * every read, so it only fires when the peer stops sending mid-packet -
-   * a slow but progressing transfer is never interrupted.
+   * Arms a timer whenever a packet is only partially received, and disarms
+   * it as soon as the buffer is drained. It fires on whichever comes first:
+   * - the peer staying silent mid-packet for "incompleteMessageTimeout", as
+   *   the timer is refreshed on every read,
+   * - the packet not being complete "messageReceiveTimeout" after it began,
+   *   which no amount of reads extends. Otherwise, a peer sending a byte now
+   *   and then would pin a partial packet in memory indefinitely.
    */
   private refreshIncompleteMessageTimer() {
     this.clearIncompleteMessageTimer();
 
     const hasIncompleteMessage =
       this.buffer.length > 0 || this.contentLength !== null;
-    if (
-      this.isBackpressured ||
-      !this.incompleteMessageTimeout ||
-      !hasIncompleteMessage
-    ) {
+    if (!hasIncompleteMessage) {
+      this.messageReceiveDeadline = null;
+      return;
+    }
+    if (this.isBackpressured) {
+      return;
+    }
+    if (this.messageReceiveTimeout && this.messageReceiveDeadline === null) {
+      this.messageReceiveDeadline = Date.now() + this.messageReceiveTimeout;
+    }
+
+    const idleTimeout = this.incompleteMessageTimeout || Infinity;
+    const remainingTime =
+      this.messageReceiveDeadline === null
+        ? Infinity
+        : Math.max(this.messageReceiveDeadline - Date.now(), 0);
+    if (idleTimeout === Infinity && remainingTime === Infinity) {
       return;
     }
 
+    const isDeadlineFirst = remainingTime <= idleTimeout;
     this.incompleteMessageTimer = setTimeout(
-      () => this.handleIncompleteMessageTimeout(),
-      this.incompleteMessageTimeout,
+      () =>
+        isDeadlineFirst
+          ? this.handleMessageReceiveTimeout()
+          : this.handleIncompleteMessageTimeout(),
+      Math.min(idleTimeout, remainingTime),
     );
     this.incompleteMessageTimer.unref?.();
   }
@@ -286,10 +330,7 @@ export class JsonSocket extends TcpSocket {
   }
 
   private handleIncompleteMessageTimeout() {
-    const bufferedLength = this.buffer.length;
-    this.buffer = '';
-    this.contentLength = null;
-    this.incompleteMessageTimer = null;
+    const bufferedLength = this.discardIncompleteMessage();
 
     // The peer already stopped talking mid-packet, so do not wait on a FIN.
     this.handleDataError(
@@ -301,8 +342,32 @@ export class JsonSocket extends TcpSocket {
     );
   }
 
+  private handleMessageReceiveTimeout() {
+    const bufferedLength = this.discardIncompleteMessage();
+
+    // A FIN would only queue up behind the rest of the packet the peer is
+    // still trickling in.
+    this.handleDataError(
+      new MessageReceiveTimeoutException(
+        bufferedLength,
+        this.messageReceiveTimeout,
+      ),
+      { destroy: true },
+    );
+  }
+
+  private discardIncompleteMessage() {
+    const bufferedLength = this.buffer.length;
+    this.buffer = '';
+    this.contentLength = null;
+    this.messageReceiveDeadline = null;
+    this.incompleteMessageTimer = null;
+    return bufferedLength;
+  }
+
   private handleMessage(message: any) {
     this.contentLength = null;
+    this.messageReceiveDeadline = null;
     this.buffer = '';
     this.emitMessage(message);
   }
