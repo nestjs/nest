@@ -9,9 +9,8 @@ import { getHostname } from './utils/hostname.util.js';
 type TrustFunction = (address: string, hop: number) => boolean;
 
 /**
- * Compiles the `trustProxy` option the way Express compiles its "trust proxy"
- * setting, and Fastify its `trustProxy` option, but for a hop count, which
- * Fastify no longer trusts and Express does.
+ * Compiles the `trustProxy` option the way Fastify compiles its own (and
+ * Express its "trust proxy" setting, but for a hop count).
  */
 function compileTrust(
   trustProxy: Exclude<NodeTrustProxy, false>,
@@ -22,8 +21,10 @@ function compileTrust(
   if (trustProxy === true) {
     return () => true;
   }
-  if (typeof trustProxy === 'number') {
-    return (_address, hop) => hop < trustProxy;
+  if (typeof (trustProxy as unknown) === 'number') {
+    // As with Fastify: a hop count cannot tell the socket's peer from a client
+    // that sends its own X-Forwarded-For, so it trusts no proxy
+    return () => false;
   }
   return proxyAddr.compile(
     typeof trustProxy === 'string'

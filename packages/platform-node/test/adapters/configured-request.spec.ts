@@ -104,7 +104,6 @@ describe('createRequestClass', () => {
 
     it.each([
       ['a subnet that leaves the proxy out', 'loopback'],
-      ['a hop count, as with Express', 1],
       [
         'a function',
         (address: string, hop: number) => hop === 0 && address === '127.0.0.1',
@@ -124,17 +123,24 @@ describe('createRequestClass', () => {
       },
     );
 
-    it('should ignore the headers when the socket peer is not a trusted proxy', async () => {
-      expect(
-        await inspect({ trustProxy: '10.0.0.1' }, describeRequest, FORWARDED),
-      ).toEqual({
-        ip: '127.0.0.1',
-        ips: [],
-        protocol: 'http',
-        secure: false,
-        hostname: 'internal',
-      });
-    });
+    it.each([
+      ['an address other than the socket peer', '10.0.0.1'],
+      // As with Fastify, which no longer trusts one
+      ['a hop count', 1 as any],
+    ])(
+      'should ignore the headers for proxies it does not trust (%s)',
+      async (_, trustProxy) => {
+        expect(
+          await inspect({ trustProxy }, describeRequest, FORWARDED),
+        ).toEqual({
+          ip: '127.0.0.1',
+          ips: [],
+          protocol: 'http',
+          secure: false,
+          hostname: 'internal',
+        });
+      },
+    );
 
     it('should read the first of several X-Forwarded-Proto and X-Forwarded-Host values, as Express does', async () => {
       const observed = await inspect(
