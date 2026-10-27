@@ -23,6 +23,10 @@ export const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
  * `handleDisconnect`. `handleConnection(client, req)` receives the same map on
  * `req.params`.
  *
+ * A registered symbol, so that `@nestjs/platform-ws` can store the params
+ * under it without importing it, and still loads with an older
+ * `@nestjs/websockets`.
+ *
  * @publicApi
  */
-export const WS_PATH_PARAMS = Symbol('WS_PATH_PARAMS');
+export const WS_PATH_PARAMS = Symbol.for('nestjs:ws-path-params');

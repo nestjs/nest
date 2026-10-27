@@ -1,9 +1,5 @@
 import { type INestApplicationContext, Logger } from '@nestjs/common';
-import {
-  AbstractWsAdapter,
-  WS_PATH_PARAMS,
-  type MessageMappingProperties,
-} from '@nestjs/websockets';
+import { AbstractWsAdapter } from '@nestjs/websockets';
 import * as http from 'http';
 import type { Duplex } from 'stream';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
@@ -15,6 +11,7 @@ import {
   CONNECTION_EVENT,
   ERROR_EVENT,
 } from '@nestjs/websockets/internal';
+import type { MessageMappingProperties } from '@nestjs/websockets';
 import { match } from 'path-to-regexp';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
 
@@ -62,6 +59,10 @@ const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 // Reading from a client stops while more than this is queued for it
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;
+// `WS_PATH_PARAMS` of `@nestjs/websockets`, the key the path params of a client
+// are stored under. Taken from the symbol registry rather than imported, so
+// that this package still loads with an older `@nestjs/websockets`.
+const WS_PATH_PARAMS = Symbol.for('nestjs:ws-path-params');
 
 function isDynamicPath(path: string): boolean {
   return path.includes(':') || path.includes('*') || path.includes('{');
