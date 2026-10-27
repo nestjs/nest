@@ -38,7 +38,7 @@
     "@types/express": "5.0.6",
     "@types/node": "24.19.2",
     "@types/supertest": "7.2.1",
-    "oxlint": "1.89.0",
+    "oxlint": "1.90.0",
     "prettier": "3.9.10",
     "sqlite3": "^6.0.0",
     "supertest": "7.3.1",
