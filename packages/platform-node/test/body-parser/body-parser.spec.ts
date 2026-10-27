@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'async_hooks';
 import { once } from 'events';
 import http, { IncomingMessage, ServerResponse } from 'http';
 import { connect, type AddressInfo } from 'net';
@@ -1409,6 +1410,60 @@ describe('body parsers', () => {
       await new Promise(resolve => setImmediate(resolve));
       expect(next).toHaveBeenCalledTimes(1);
       expect(error).toBeUndefined();
+    });
+  });
+
+  describe('in an AsyncLocalStorage store', () => {
+    // The events of a request body are emitted in the async context of its
+    // socket, not of the middleware that reads it
+    const storage = new AsyncLocalStorage<string>();
+
+    /**
+     * Runs `parser` in a store, as a request hook or an earlier middleware
+     * enters one, and records the store `next()` is called in.
+     */
+    function inStore(parser: Middleware) {
+      const stores: Array<string | undefined> = [];
+      const middleware: Middleware = (req, res, next) =>
+        storage.run('request', () =>
+          parser(req, res, (error?: any) => {
+            stores.push(storage.getStore());
+            next(error);
+          }),
+        );
+      return { middleware, stores };
+    }
+
+    it.each([
+      { name: 'json', parser: json(), headers: JSON_TYPE },
+      { name: 'urlencoded', parser: urlencoded(), headers: FORM_TYPE },
+      { name: 'text', parser: text(), headers: TEXT_TYPE },
+      { name: 'raw', parser: raw(), headers: BINARY_TYPE },
+    ])(
+      'should call next() in that store once the body is read ($name)',
+      async ({ parser, headers }) => {
+        const { middleware, stores } = inStore(parser);
+
+        const { status } = await send(middleware, {
+          headers,
+          body: ['{"name":', '"nest"}'],
+        });
+
+        expect(status).toBe(200);
+        expect(stores).toEqual(['request']);
+      },
+    );
+
+    it('should call next() in that store with the error that ends the read', async () => {
+      const { middleware, stores } = inStore(raw({ limit: 10 }));
+
+      const { status } = await send(middleware, {
+        headers: BINARY_TYPE,
+        body: ['012345', '678901'],
+      });
+
+      expect(status).toBe(413);
+      expect(stores).toEqual(['request']);
     });
   });
 });

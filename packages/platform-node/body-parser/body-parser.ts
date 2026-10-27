@@ -1,3 +1,4 @@
+import { AsyncResource } from 'async_hooks';
 import type { IncomingMessage, ServerResponse } from 'http';
 import contentType from 'content-type';
 import qs from 'qs';
@@ -312,6 +313,11 @@ function createReader(
     ) {
       return next();
     }
+    // The events of the body are emitted in the async context of the socket.
+    // Bound to the context the request reached the parser in, `next` keeps an
+    // AsyncLocalStorage store a request hook or a middleware entered, as
+    // body-parser and Fastify do
+    next = bindAsyncScope(next, name);
     // An empty charset parameter gets the default too, as with body-parser
     const charset = getCharset(req) || options.defaultCharset;
     if (options.isValidCharset && !options.isValidCharset(charset)) {
@@ -449,6 +455,20 @@ function createReader(
 }
 
 function noop() {}
+
+/**
+ * Same as `AsyncResource.bind(next)`: `next` runs in the async context of this
+ * call. `bind()` also defines a deprecated `asyncResource` accessor on the
+ * function it returns, which makes it about 25 times slower (as in the
+ * interceptors of @nestjs/core).
+ */
+function bindAsyncScope(
+  next: (err?: any) => void,
+  type: string,
+): (err?: any) => void {
+  const resource = new AsyncResource(type);
+  return err => resource.runInAsyncScope(next, undefined, err);
+}
 
 // As with body-parser: a status the error carries wins over the 403
 function toVerifyError(error: unknown, buffer: Buffer) {
