@@ -33,11 +33,16 @@ describe('Observable response lifecycle (Node Application)', () => {
   it('stops the producer Observable once the client disconnects', async () => {
     await requestAndAbort(port, '/observable', 100);
 
-    const ticksAtClose = readTicks();
-    expect(ticksAtClose).toBeGreaterThan(0);
+    // The server sees the disconnect only once the socket close reaches it,
+    // and the producer may tick once more in between
+    await expect(
+      waitFor(() => readEvents().includes('producer-stopped')),
+    ).resolves.toBe(true);
+    const ticksAtStop = readTicks();
+    expect(ticksAtStop).toBeGreaterThan(0);
 
     await sleep(200);
-    expect(readTicks()).toBe(ticksAtClose);
+    expect(readTicks()).toBe(ticksAtStop);
   });
 
   it('still replies normally when the Observable completes', async () => {
@@ -47,11 +52,16 @@ describe('Observable response lifecycle (Node Application)', () => {
   it('stops an intercepted producer Observable once the client disconnects', async () => {
     await requestAndAbort(port, '/observable-intercepted', 100);
 
-    const ticksAtClose = readTicks();
-    expect(ticksAtClose).toBeGreaterThan(0);
+    // The server sees the disconnect only once the socket close reaches it,
+    // and the producer may tick once more in between
+    await expect(
+      waitFor(() => readEvents().includes('producer-stopped')),
+    ).resolves.toBe(true);
+    const ticksAtStop = readTicks();
+    expect(ticksAtStop).toBeGreaterThan(0);
 
     await sleep(200);
-    expect(readTicks()).toBe(ticksAtClose);
+    expect(readTicks()).toBe(ticksAtStop);
   });
 
   it('still replies normally when an intercepted Observable completes', async () => {

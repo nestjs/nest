@@ -1,7 +1,7 @@
 import { NodeAdapter } from '@nestjs/platform-node';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module.js';
-import { randomPort } from './utils.js';
+import { randomPort, readTlsOptions } from './utils.js';
 
 describe('Get URL (Node Application)', () => {
   let testModule: TestingModule;
@@ -51,5 +51,13 @@ describe('Get URL (Node Application)', () => {
     await expect(app.getUrl()).rejects.toEqual(
       'app.listen() needs to be called before calling app.getUrl()',
     );
+  });
+  it('should return an https url for "httpsOptions"', async () => {
+    const app = testModule.createNestApplication(new NodeAdapter(), {
+      httpsOptions: readTlsOptions(),
+    });
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`https://127.0.0.1:${port}`);
+    await app.close();
   });
 });
