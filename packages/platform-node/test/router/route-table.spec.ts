@@ -499,6 +499,22 @@ describe('RouteTable', () => {
   });
 
   describe('paths find-my-way cannot express', () => {
+    it('should match a route path without a leading "/" as Express does', () => {
+      // How @nestjs/serve-static registers the fallback of a single-page app
+      table.add('GET', '{*any}', handler());
+
+      expect(table.lookup('GET', '/')?.params).toEqual({ any: ['', ''] });
+      expect(table.lookup('GET', '/some/spa/route')?.params).toEqual({
+        any: ['', 'some', 'spa', 'route'],
+      });
+    });
+
+    it('should not match "/users" with the route path "users", as Express does not', () => {
+      table.add('GET', 'users', handler());
+
+      expect(table.lookup('GET', '/users')).toBeNull();
+    });
+
     it('should match a wildcard followed by more segments', () => {
       table.add('GET', '/files/*path/raw', handler());
 

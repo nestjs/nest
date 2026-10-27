@@ -118,3 +118,31 @@ describe.each(adapters('express', 'node'))(
     });
   },
 );
+
+// A route registered on the adapter itself, the way @nestjs/serve-static
+// registers the fallback of a single-page app ("{*any}", without a "/")
+describe.each(adapters('express', 'node'))(
+  'A route path without a leading "/" (%s)',
+  name => {
+    let app: INestApplication;
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should match every path, as "{*any}" does with Express', async () => {
+      app = await createApp(name, WildcardsModule, app =>
+        app
+          .getHttpAdapter()
+          .get('{*any}', (req: any, res: any) =>
+            res.json({ any: req.params.any }),
+          ),
+      );
+
+      const res = await request(app.getHttpServer()).get('/some/spa/route');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ any: ['', 'some', 'spa', 'route'] });
+    });
+  },
+);

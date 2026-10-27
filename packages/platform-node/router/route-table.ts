@@ -330,6 +330,13 @@ function toFindMyWayPath(tokens: Token[]): FindMyWayVariant | undefined {
         return undefined;
     }
   }
+  // find-my-way reads the first character of a route path as its leading
+  // "/", so "{*any}" would be its "*" route, whose wildcard then includes
+  // that "/" (see find()). Matched with path-to-regexp, a path without the
+  // leading "/" works as with Express: "{*any}" matches every path.
+  if (path !== '' && path.charCodeAt(0) !== 47 /* / */) {
+    return undefined;
+  }
   // A variant ending with "/" ("/admin/" of "/admin/{*path}") must not match
   // "/admin", as with Express, but find-my-way's ignoreTrailingSlash would
   const trailingSlash = path.length > 1 && path.endsWith('/');
