@@ -133,6 +133,38 @@ describe('RouteConflictDetector', () => {
     });
   });
 
+  describe('pathsHaveSameShape', () => {
+    it('should be true for paths that differ by parameter names only', () => {
+      expect(
+        RouteConflictDetector.pathsHaveSameShape('/users/:id', '/users/:name'),
+      ).toBe(true);
+      expect(
+        RouteConflictDetector.pathsHaveSameShape(
+          '/files/*path',
+          '/files/*rest',
+        ),
+      ).toBe(true);
+    });
+
+    it('should be false for paths of a different shape', () => {
+      expect(
+        RouteConflictDetector.pathsHaveSameShape(
+          '/files/:id',
+          '/files/:name.:ext',
+        ),
+      ).toBe(false);
+      expect(
+        RouteConflictDetector.pathsHaveSameShape('/users/me', '/users/:id'),
+      ).toBe(false);
+      expect(
+        RouteConflictDetector.pathsHaveSameShape(
+          '/users/:id',
+          '/users/:id{.:ext}',
+        ),
+      ).toBe(false);
+    });
+  });
+
   describe('detect', () => {
     it('should flag two identical routes as a duplicate', () => {
       const earlierRoute = makeResolvedRoute({ path: '/users/me' });
