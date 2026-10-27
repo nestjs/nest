@@ -1,8 +1,17 @@
-import { Controller, Get, Logger, UnauthorizedException } from '@nestjs/common';
+import { AsyncLocalStorage } from 'async_hooks';
+import {
+  Controller,
+  Get,
+  Logger,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { listenOnLoopback } from '../../../_support/listen-on-loopback.js';
+
+const storage = new AsyncLocalStorage<string>();
 
 @Controller()
 class TestController {
@@ -10,6 +19,11 @@ class TestController {
   async get() {
     await new Promise(resolve => setImmediate(resolve));
     return 'ok';
+  }
+
+  @Post()
+  post() {
+    return storage.getStore();
   }
 }
 
@@ -56,5 +70,19 @@ describe('Request hooks (Node Application)', () => {
 
     await request(app.getHttpServer()).get('/').timeout(2000).expect(200, 'ok');
     expect(logError).toHaveBeenCalledExactlyOnceWith(error);
+  });
+
+  it('should run a request with a body in the async context of the request hook', async () => {
+    adapter.setOnRequestHook((_req, _res, done) => storage.run('hook', done));
+    const responseHookStore = new Promise<string | undefined>(resolve =>
+      adapter.setOnResponseHook(() => resolve(storage.getStore())),
+    );
+
+    await request(app.getHttpServer())
+      .post('/')
+      .send({ name: 'nest' })
+      .timeout(2000)
+      .expect(201, 'hook');
+    expect(await responseHookStore).toBe('hook');
   });
 });
