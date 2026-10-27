@@ -240,6 +240,25 @@ export class RouterResponseController {
           let pendingDataLength = 0;
           const maxPendingDataLength =
             options?.maxPendingDataLength ?? DEFAULT_MAX_PENDING_DATA_LENGTH;
+          // Events wait in concatMap() while the client is not reading.
+          // Past a limit, the connection is dropped as if the client had
+          // disconnected, rather than holding events for a client that may
+          // never read them. An EventSource then reconnects, and sends the
+          // id of the last event it received. A limit of 0, like Infinity,
+          // keeps every event.
+          const dropIfNotReading = () => {
+            if (
+              maxPendingDataLength &&
+              pendingDataLength > maxPendingDataLength &&
+              stream.writableNeedDrain
+            ) {
+              this.logger.warn(
+                `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
+              );
+              (response as { destroy?(): void }).destroy?.();
+              onClose();
+            }
+          };
           subscription = observableResult
             .pipe(
               map((message): MessageEvent => {
@@ -262,34 +281,23 @@ export class RouterResponseController {
                       data: JSON.stringify(event.data),
                     };
               }),
-              // Events wait in concatMap() while the client is not reading.
-              // Past a limit, the connection is dropped as if the client had
-              // disconnected, rather than holding events for a client that may
-              // never read them. An EventSource then reconnects, and sends the
-              // id of the last event it received. A limit of 0, like Infinity,
-              // keeps every event.
               tap(message => {
                 pendingDataLength += getDataLength(message);
-                if (
-                  maxPendingDataLength &&
-                  pendingDataLength > maxPendingDataLength &&
-                  stream.writableNeedDrain
-                ) {
-                  this.logger.warn(
-                    `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
-                  );
-                  (response as { destroy?(): void }).destroy?.();
-                  onClose();
-                }
+                dropIfNotReading();
               }),
               concatMap(
                 message =>
-                  new Promise<void>((resolve, reject) =>
+                  new Promise<void>((resolve, reject) => {
                     stream.writeMessage(message, err => {
                       pendingDataLength -= getDataLength(message);
                       return err ? reject(err) : resolve();
-                    }),
-                  ),
+                    });
+                    // A synchronous producer emits all of its events before
+                    // the first write, while the stream is not backed up yet,
+                    // and none after it. They are checked again once a write
+                    // backs the stream up.
+                    dropIfNotReading();
+                  }),
               ),
               catchError(err => {
                 if (!stream.headersCommitted) {

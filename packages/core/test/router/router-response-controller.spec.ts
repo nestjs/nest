@@ -1,6 +1,14 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
-import { EMPTY, NEVER, Observable, of, Subject, throwError } from 'rxjs';
+import {
+  concat,
+  EMPTY,
+  NEVER,
+  Observable,
+  of,
+  Subject,
+  throwError,
+} from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
@@ -1173,6 +1181,57 @@ data: test
         expect(Logger.prototype.warn).toHaveBeenCalledWith(
           expect.stringContaining('exceeds the maximum allowed 1024'),
         );
+        request.destroy();
+      });
+
+      // Events replayed at once, before the live ones, as a producer does
+      // to resume from the id sent on reconnect
+      const replayThenEmit = (producer: Subject<MessageEvent>, count: number) =>
+        concat(
+          Array.from({ length: count }, () => ({ data })),
+          producer,
+        );
+
+      const turns = async (count: number) => {
+        for (let i = 0; i < count; i++) {
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      };
+
+      it('should drop the connection once too much event data, emitted synchronously, waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          replayThenEmit(producer, 128),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await turns(128);
+
+        expect(response.destroyed).toBe(true);
+        await lifecycle;
+        expect(producer.observed).toBe(false);
+        request.destroy();
+      });
+
+      it('should keep the connection while less event data, emitted synchronously, waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          replayThenEmit(producer, 48),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await turns(128);
+
+        expect(response.destroyed).toBe(false);
+        expect(producer.observed).toBe(true);
+        response.destroy();
+        await lifecycle;
         request.destroy();
       });
 
