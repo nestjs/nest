@@ -603,15 +603,17 @@ export class NestApplication
   }
 
   /**
-   * Pre-load optional packages so that createNestApplication,
-   * createNestMicroservice and createHttpAdapter can stay synchronous.
+   * Pre-loads `@nestjs/microservices` so that `connectMicroservice()` can read
+   * it synchronously from the package cache.
+   *
+   * `@nestjs/platform-express` is deliberately not preloaded here: on this path
+   * the HTTP adapter has already been created (or passed in) by
+   * `NestFactory.create()` before this runs, and `TestingModule` preloads the
+   * package itself in `compile()`. Importing it here would load Express,
+   * body-parser and multer into every process that uses another adapter.
    */
   public async preloadLazyPackages(): Promise<void> {
-    // Best-effort: silently swallow if packages are not installed
-    await tryLoadPackage(
-      '@nestjs/platform-express',
-      () => import('@nestjs/platform-express'),
-    );
+    // Best-effort: silently swallow if the package is not installed
     await tryLoadPackage(
       '@nestjs/microservices',
       () => import('@nestjs/microservices'),
