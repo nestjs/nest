@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   PayloadTooLargeException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import multer from 'multer';
 import {
@@ -241,6 +242,24 @@ describe('removeFilesOnPipeRejection', () => {
     },
   );
 
+  it('should remove the files of a request marked under the registered symbol', async () => {
+    const storage = createStorage();
+    const file = { fieldname: 'doc', path: '/uploads/a' };
+    const req = { file, [Symbol.for('nestjs:rejected-by-pipes')]: true };
+    const res = createResponse();
+
+    await expect(fail(storage, req, res)).rejects.toBe(error);
+    res.end();
+
+    await vi.waitFor(() =>
+      expect(storage._removeFile).toHaveBeenCalledWith(
+        req,
+        file,
+        expect.any(Function),
+      ),
+    );
+  });
+
   it('should keep the files when the route handler failed', async () => {
     const storage = createStorage();
     const req = { file: { fieldname: 'doc', path: '/uploads/a' } };
@@ -313,6 +332,30 @@ describe('transformException', () => {
         };
         expect(transformException(err as any)).toBeInstanceOf(
           BadRequestException,
+        );
+      });
+
+      it('should return "UnsupportedMediaTypeException" for an unsupported content type', () => {
+        const err = new Error(
+          'Unsupported content type: multipart/mixed; boundary=x',
+        );
+        const result = transformException(err);
+        expect(result).toBeInstanceOf(UnsupportedMediaTypeException);
+        expect(result!.message).toBe('Unsupported content type');
+      });
+
+      it('should map the error multer raises for a non form-data multipart request', async () => {
+        const req = Object.assign(Readable.from([]), {
+          headers: {
+            'content-type': 'multipart/mixed; boundary=x',
+            'content-length': '0',
+          },
+        });
+        const err = await new Promise<any>(resolve =>
+          multer().none()(req as any, {} as any, resolve),
+        );
+        expect(transformException(err)).toBeInstanceOf(
+          UnsupportedMediaTypeException,
         );
       });
     });

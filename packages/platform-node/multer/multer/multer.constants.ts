@@ -34,4 +34,7 @@ export const busboyExceptions = {
   MULTIPART_MALFORMED_PART_HEADER: 'Malformed part header',
   MULTIPART_UNEXPECTED_END_OF_FORM: 'Unexpected end of form',
   MULTIPART_UNEXPECTED_END_OF_FILE: 'Unexpected end of file',
+  // from https://github.com/mscdex/busboy/blob/master/lib/index.js, followed
+  // by the request's content type
+  UNSUPPORTED_CONTENT_TYPE: 'Unsupported content type',
 };
