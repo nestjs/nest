@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { NodeAdapter } from '@nestjs/platform-node';
+import qs from 'qs';
 import request from 'supertest';
 import { type AdapterName, adapters, createApp } from '../src/adapters.js';
 import { RequestOptionsModule } from '../src/request-options/request-options.module.js';
@@ -32,11 +33,37 @@ const trustingLoopback: Record<AdapterName, () => Promise<INestApplication>> = {
     ),
 };
 
+// Each adapter set up to parse nested objects and arrays with "qs"
+const parsingWithQs: Record<AdapterName, () => Promise<INestApplication>> = {
+  express: () =>
+    createApp('express', RequestOptionsModule, app =>
+      (app as NestExpressApplication).set('query parser', 'extended'),
+    ),
+  fastify: () =>
+    createApp(
+      'fastify',
+      RequestOptionsModule,
+      undefined,
+      {},
+      new FastifyAdapter({ querystringParser: str => qs.parse(str) }),
+    ),
+  node: () =>
+    createApp(
+      'node',
+      RequestOptionsModule,
+      undefined,
+      {},
+      new NodeAdapter({ querystringParser: str => qs.parse(str) }),
+    ),
+};
+
 const FORWARDED = {
   'X-Forwarded-For': '203.0.113.7',
   'X-Forwarded-Proto': 'https',
   'X-Forwarded-Host': 'example.com',
 };
+
+const QUERY = 'filter[where][name]=John&item[]=1&item[]=2';
 
 describe.each(adapters('express', 'fastify', 'node'))(
   'Adapter options for requests (%s)',
@@ -72,6 +99,28 @@ describe.each(adapters('express', 'fastify', 'node'))(
         ip: '127.0.0.1',
         protocol: 'http',
         hostname: '127.0.0.1',
+      });
+    });
+
+    it('should parse nested objects and arrays in the query string with the parser it is given', async () => {
+      app = await parsingWithQs[name]();
+
+      const res = await request(app.getHttpServer()).get(`/search?${QUERY}`);
+
+      expect(res.body).toEqual({
+        filter: { where: { name: 'John' } },
+        item: ['1', '2'],
+      });
+    });
+
+    it('should leave the query string flat by default', async () => {
+      app = await createApp(name, RequestOptionsModule);
+
+      const res = await request(app.getHttpServer()).get(`/search?${QUERY}`);
+
+      expect(res.body).toEqual({
+        'filter[where][name]': 'John',
+        'item[]': ['1', '2'],
       });
     });
   },

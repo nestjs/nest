@@ -36,4 +36,12 @@ export interface NodeAdapterOptions {
    * `req.app.get('trust proxy')` returns the setting.
    */
   trustProxy?: NodeTrustProxy;
+  /**
+   * Parses the query string (without the leading "?", and `''` when the URL
+   * has none) into `req.query`, as with Fastify's option of the same name.
+   * By default, `fast-querystring` parses it into flat keys
+   * (`?a[b]=1` gives `{ 'a[b]': '1' }`); `(str) => qs.parse(str)` gives
+   * nested objects and arrays.
+   */
+  querystringParser?: (str: string) => Record<string, any>;
 }

@@ -306,19 +306,24 @@ describe('NodeAdapter', () => {
     });
   });
 
-  describe('trustProxy option', () => {
-    it('should give the requests of the server the behavior it sets', async () => {
-      adapter = new NodeAdapter({ trustProxy: 'loopback' });
+  describe('trustProxy and querystringParser options', () => {
+    it('should give the requests of the server the behavior they set', async () => {
+      adapter = new NodeAdapter({
+        trustProxy: 'loopback',
+        querystringParser: str => ({ raw: str }),
+      });
       const port = await startServer();
       adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
         adapter.reply(res, {
           ip: req.ip,
+          query: req.query,
           // What host-filtered routes match
           hostname: adapter.getRequestHostname(req),
         }),
       );
 
       const res = await request(port, {
+        path: '/?a=1',
         headers: {
           'x-forwarded-for': '203.0.113.7',
           'x-forwarded-host': 'example.com',
@@ -327,6 +332,7 @@ describe('NodeAdapter', () => {
 
       expect(JSON.parse(res.text)).toEqual({
         ip: '203.0.113.7',
+        query: { raw: 'a=1' },
         hostname: 'example.com',
       });
     });
@@ -353,7 +359,7 @@ describe('NodeAdapter', () => {
       }
     });
 
-    it('should leave the requests of an adapter without it NodeRequests', async () => {
+    it('should leave the requests of an adapter without them NodeRequests', async () => {
       const port = await startServer();
       adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
         adapter.reply(res, {

@@ -40,17 +40,47 @@ function firstValue(header: string): string {
 
 /**
  * The class of the requests of an adapter whose options change how requests
- * read the headers of proxies: a subclass of `NodeRequest` overriding those
- * getters. Without such options, it is `NodeRequest` itself, so that requests
- * run the same code as without this function.
+ * read the query string or the headers of proxies: a subclass of
+ * `NodeRequest` overriding those getters. Without such options, it is
+ * `NodeRequest` itself, so that requests run the same code as without this
+ * function.
  *
  * @internal
  */
 export function createRequestClass(
-  options: Pick<NodeAdapterOptions, 'trustProxy'>,
+  options: Pick<NodeAdapterOptions, 'trustProxy' | 'querystringParser'>,
 ): typeof NodeRequest {
-  const { trustProxy } = options;
+  const { trustProxy, querystringParser } = options;
   let RequestClass = NodeRequest;
+
+  if (querystringParser !== undefined) {
+    if (typeof querystringParser !== 'function') {
+      throw new TypeError(
+        `Invalid querystringParser: ${String(querystringParser)} (expected a function)`,
+      );
+    }
+    const QUERY = Symbol('query');
+    RequestClass = class extends RequestClass {
+      declare [QUERY]: Record<string, any> | undefined;
+
+      get query(): Record<string, any> {
+        let query = this[QUERY];
+        if (query === undefined) {
+          const url = this.url!;
+          const index = url.indexOf('?');
+          // As Fastify calls it: with "" for a URL without a query string
+          query = this[QUERY] = querystringParser(
+            index === -1 ? '' : url.slice(index + 1),
+          );
+        }
+        return query;
+      }
+
+      set query(value: Record<string, any>) {
+        this[QUERY] = value;
+      }
+    };
+  }
 
   if (trustProxy !== undefined && trustProxy !== false) {
     const trust = compileTrust(trustProxy);

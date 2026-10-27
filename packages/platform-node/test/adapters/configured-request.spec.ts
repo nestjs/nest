@@ -184,4 +184,56 @@ describe('createRequestClass', () => {
       );
     });
   });
+
+  describe('querystringParser', () => {
+    it('should parse the query string with the given parser, as Fastify does', async () => {
+      const querystringParser = vi.fn((str: string) => ({ parsed: str }));
+
+      const withQuery = await inspect({ querystringParser }, req => req.query, {
+        path: '/?a[b]=1&c=2',
+      });
+      // Fastify calls the parser for a URL without a query string as well
+      const withoutQuery = await inspect(
+        { querystringParser },
+        req => req.query,
+      );
+
+      expect(withQuery).toEqual({ parsed: 'a[b]=1&c=2' });
+      expect(withoutQuery).toEqual({ parsed: '' });
+    });
+
+    it('should parse the query string once, and let req.query be replaced', async () => {
+      const querystringParser = vi.fn(() => ({ parsed: true }));
+
+      const observed = await inspect(
+        { querystringParser },
+        req => {
+          const first = req.query;
+          const second = req.query;
+          req.query = { replaced: true };
+          return [first === second, req.query];
+        },
+        { path: '/?a=1' },
+      );
+
+      expect(observed).toEqual([true, { replaced: true }]);
+      expect(querystringParser).toHaveBeenCalledOnce();
+    });
+
+    it('should throw for a querystringParser that is not a function', () => {
+      expect(() =>
+        createRequestClass({ querystringParser: 'qs' as any }),
+      ).toThrow(TypeError);
+    });
+  });
+
+  it('should apply both options together', async () => {
+    const observed = await inspect(
+      { trustProxy: true, querystringParser: str => ({ raw: str }) },
+      req => [req.ip, req.query],
+      { path: '/?a=1', headers: { 'x-forwarded-for': '203.0.113.7' } },
+    );
+
+    expect(observed).toEqual(['203.0.113.7', { raw: 'a=1' }]);
+  });
 });
