@@ -4,6 +4,7 @@ import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
+import { HostListModule } from '../src/host-list/host-list.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
@@ -137,5 +138,24 @@ describe('Route conflict policy (Node)', () => {
         .get('/users/me')
         .expect(200, { from: 'A' });
     });
+  });
+
+  describe('host-list fixture', () => {
+    it.each([{ duplicate: 'off' }, { duplicate: 'error' }] as const)(
+      'keeps a route whose host list only partly matches a repeated one (%j)',
+      async routeConflictPolicy => {
+        app = await buildNodeApp(HostListModule, { routeConflictPolicy });
+        await expect(listenOnLoopback(app)).resolves.toBeDefined();
+
+        await request(app.getHttpServer())
+          .get('/users/me')
+          .set('Host', 'a.example.com')
+          .expect(200, { from: 'repeated' });
+        await request(app.getHttpServer())
+          .get('/users/me')
+          .set('Host', 'b.example.com')
+          .expect(200, { from: 'two-hosts' });
+      },
+    );
   });
 });
