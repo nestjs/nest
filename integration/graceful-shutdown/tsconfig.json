@@ -21,6 +21,8 @@
       "@nestjs/core/*": ["../../packages/core/*"],
       "@nestjs/platform-express": ["../../packages/platform-express"],
       "@nestjs/platform-express/*": ["../../packages/platform-express/*"],
+      "@nestjs/platform-node": ["../../packages/platform-node"],
+      "@nestjs/platform-node/*": ["../../packages/platform-node/*"],
       "@nestjs/testing": ["../../packages/testing"],
       "@nestjs/testing/*": ["../../packages/testing/*"]
     }

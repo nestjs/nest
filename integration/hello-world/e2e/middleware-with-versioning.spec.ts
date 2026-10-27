@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { CustomVersioningOptions } from '@nestjs/common/interfaces/index.js';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
@@ -273,6 +274,7 @@ class BirdsController {
 describe.each([
   ['Express', () => undefined],
   ['Fastify', () => new FastifyAdapter()],
+  ['Node', () => new NodeAdapter()],
 ])(
   'Middleware - routes that differ only in their version (%s)',
   (_, createAdapter) => {

@@ -22,7 +22,9 @@
       "@nestjs/platform-express": ["../../packages/platform-express"],
       "@nestjs/platform-express/*": ["../../packages/platform-express/*"],
       "@nestjs/platform-fastify": ["../../packages/platform-fastify"],
-      "@nestjs/platform-fastify/*": ["../../packages/platform-fastify/*"]
+      "@nestjs/platform-fastify/*": ["../../packages/platform-fastify/*"],
+      "@nestjs/platform-node": ["../../packages/platform-node"],
+      "@nestjs/platform-node/*": ["../../packages/platform-node/*"]
     }
   },
   "include": ["src/**/*", "e2e/**/*"],
