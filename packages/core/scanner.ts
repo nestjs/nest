@@ -12,6 +12,7 @@ import { CircularDependencyException } from './errors/exceptions/circular-depend
 import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception.js';
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception.js';
 import { RequestScopedGlobalEnhancerException } from './errors/exceptions/request-scoped-global-enhancer.exception.js';
+import { UndefinedModuleEntryException } from './errors/exceptions/undefined-module-entry.exception.js';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception.js';
 import { UninstantiatedGlobalEnhancerException } from './errors/exceptions/uninstantiated-global-enhancer.exception.js';
 import { getClassScope } from './helpers/get-class-scope.js';
@@ -256,7 +257,10 @@ export class DependenciesScanner {
       )!,
     ];
     const applyProvidersKeys = Object.keys(this.getApplyProvidersMap());
-    providers.forEach(provider => {
+    providers.forEach((provider, index) => {
+      if (provider === undefined) {
+        throw new UndefinedModuleEntryException(module, 'providers', index);
+      }
       this.insertProvider(provider, token);
       if (!this.isCustomProvider(provider)) {
         return this.reflectDynamicMetadata(provider, token);
@@ -278,7 +282,10 @@ export class DependenciesScanner {
         MODULE_METADATA.CONTROLLERS as 'controllers',
       )!,
     ];
-    controllers.forEach(item => {
+    controllers.forEach((item, index) => {
+      if (item === undefined) {
+        throw new UndefinedModuleEntryException(module, 'controllers', index);
+      }
       this.insertController(item, token);
       this.reflectDynamicMetadata(item, token);
     });
@@ -307,9 +314,12 @@ export class DependenciesScanner {
         MODULE_METADATA.EXPORTS as 'exports',
       )!,
     ];
-    exports.forEach(exportedProvider =>
-      this.insertExportedProviderOrModule(exportedProvider, token),
-    );
+    exports.forEach((exportedProvider, index) => {
+      if (exportedProvider === undefined) {
+        throw new UndefinedModuleEntryException(module, 'exports', index);
+      }
+      this.insertExportedProviderOrModule(exportedProvider, token);
+    });
   }
 
   public reflectInjectables(

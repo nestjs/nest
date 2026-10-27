@@ -981,4 +981,24 @@ describe('DependenciesScanner', () => {
       }
     });
   });
+  describe('scanModulesForDependencies', () => {
+    it.each([
+      ['providers', TestComponent],
+      ['controllers', TestController],
+      ['exports', TestComponent],
+    ] as const)(
+      'should throw an exception naming the index when the %s array includes undefined',
+      async (metadataKey, entry) => {
+        @Module({
+          providers: [TestComponent],
+          [metadataKey]: [entry, undefined],
+        })
+        class ModuleWithUndefinedEntry {}
+
+        await expect(scanner.scan(ModuleWithUndefinedEntry)).rejects.toThrow(
+          `at index [1] of the ModuleWithUndefinedEntry "${metadataKey}" array is undefined.`,
+        );
+      },
+    );
+  });
 });

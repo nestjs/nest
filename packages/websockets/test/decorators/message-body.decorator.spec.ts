@@ -1,6 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { PARAM_ARGS_METADATA } from '../../constants.js';
-import { MessageBody } from '../../decorators/index.js';
+import { ConnectedSocket, MessageBody } from '../../decorators/index.js';
 import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
 
 class MessagePayloadTest {
@@ -22,6 +22,27 @@ describe('@MessagePayload', () => {
       },
     };
     expect(argsMetadata).toEqual(expectedMetadata);
+  });
+
+  describe('when an overriding method moves it to another argument', () => {
+    it('should keep one param per argument', () => {
+      class Parent {
+        public test(@MessageBody() body: any, @ConnectedSocket() socket: any) {}
+      }
+      class Test extends Parent {
+        public test(@ConnectedSocket() socket: any, @MessageBody() body: any) {}
+      }
+
+      const argsMetadata = Reflect.getMetadata(
+        PARAM_ARGS_METADATA,
+        Test,
+        'test',
+      );
+      expect(Object.keys(argsMetadata).sort()).toEqual([
+        `${WsParamtype.SOCKET}:0`,
+        `${WsParamtype.PAYLOAD}:1`,
+      ]);
+    });
   });
 });
 

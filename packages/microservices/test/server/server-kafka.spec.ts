@@ -1,10 +1,11 @@
 import { Logger } from '@nestjs/common';
-import { EMPTY, of, throwError } from 'rxjs';
+import { concat, EMPTY, of, Subject, throwError } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { KafkaRetriableException } from '../../exceptions/index.js';
+import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
 import {
   EachMessagePayload,
   KafkaMessage,
@@ -777,6 +778,26 @@ describe('ServerKafka', () => {
       expect(endHook).toHaveBeenCalledOnce();
     });
 
+    it('should reject with a retriable exception that passed through the exception filter', async () => {
+      const exceptionHandler = new RpcExceptionsHandler();
+      const endHook = bindHandler(
+        () =>
+          exceptionHandler.handle(
+            new KafkaRetriableException('retry me'),
+            null!,
+          ),
+        { isEventHandler: false },
+      );
+
+      // The rejection has to travel on so that kafkajs redelivers the message.
+      await expect(server.handleMessage(payload)).rejects.toThrow(
+        KafkaRetriableException,
+      );
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
     it('should not run the end hook when there is no message handler', async () => {
       const endHook = bindHandler(async () => 'plain', {
         isEventHandler: false,
@@ -787,6 +808,41 @@ describe('ServerKafka', () => {
       await flushPublishes();
 
       expect(endHook).not.toHaveBeenCalled();
+    });
+
+    it('should mark a completion that comes after the replies as carrying no response', async () => {
+      const completion$ = new Subject<never>();
+      bindHandler(async () => concat(of('first'), completion$), {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+      // The stream completes once its reply has already been produced
+      completion$.complete();
+      await flushPublishes();
+
+      expect(producerSend).toHaveBeenCalledTimes(2);
+      const [reply] = producerSend.mock.calls[0][0].messages;
+      const [completion] = producerSend.mock.calls[1][0].messages;
+      expect(reply.value).toBe('first');
+      expect(reply.headers).not.toHaveProperty(KafkaHeaders.NEST_NO_RESPONSE);
+      expect(completion.value).toBeNull();
+      expect(completion.headers).toHaveProperty(KafkaHeaders.NEST_IS_DISPOSED);
+      expect(completion.headers).toHaveProperty(KafkaHeaders.NEST_NO_RESPONSE);
+    });
+
+    it('should still reply null to a stream that completes without emitting', async () => {
+      bindHandler(async () => EMPTY, { isEventHandler: false });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(producerSend).toHaveBeenCalledOnce();
+      const [reply] = producerSend.mock.calls[0][0].messages;
+      expect(reply.value).toBeNull();
+      expect(reply.headers).toHaveProperty(KafkaHeaders.NEST_IS_DISPOSED);
+      expect(reply.headers).not.toHaveProperty(KafkaHeaders.NEST_NO_RESPONSE);
     });
 
     it('should log a failed publish and still run the end hook once', async () => {
@@ -897,6 +953,35 @@ describe('ServerKafka', () => {
       await server.sendMessage(
         {
           id: correlationId,
+          isDisposed: true,
+        },
+        replyTopic,
+        replyPartition,
+        correlationId,
+        context,
+      );
+
+      expect(sendSpy).toHaveBeenCalledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            value: null,
+            partition: parseFloat(replyPartition),
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1),
+              [KafkaHeaders.NEST_NO_RESPONSE]: Buffer.alloc(1),
+            },
+          },
+        ],
+      });
+    });
+    it('should send `isDisposed` message with its response', async () => {
+      await server.sendMessage(
+        {
+          id: correlationId,
+          // what a handler that returns nothing replies with
+          response: undefined,
           isDisposed: true,
         },
         replyTopic,

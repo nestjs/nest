@@ -43,6 +43,63 @@ describe('ServerRedis', () => {
       await server.listen(callbackSpy);
       expect(connectSpy).toHaveBeenCalled();
     });
+    it('should re-arm the connection retries after "close"', async () => {
+      untypedServer.options = { retryAttempts: 3, retryDelay: 5 };
+
+      await server.close();
+      await server.listen(callbackSpy);
+
+      // "close" turned the retries off; the next "listen" must turn them back on
+      expect(server.createRetryStrategy(1)).toEqual(5);
+    });
+    it('should report a reconnecting client again after "close"', async () => {
+      const subClient = new EventEmitter();
+      const pubClient = new EventEmitter();
+      vi.spyOn(server, 'createRedisClient')
+        .mockResolvedValueOnce(subClient as any)
+        .mockResolvedValueOnce(pubClient as any);
+
+      await server.close();
+
+      const statuses: string[] = [];
+      server.status.subscribe(status => statuses.push(status as string));
+
+      await server.listen(callbackSpy);
+      subClient.emit('reconnecting');
+
+      expect(statuses).toContain('reconnecting');
+    });
+    it('should ignore the "end" of a client that a newer "listen" replaced', async () => {
+      const fakeClient = () => {
+        const client: any = new EventEmitter();
+        client.connect = async () => {};
+        client.quit = async () => {};
+        client.disconnect = () => {};
+        return client;
+      };
+      const subClient = fakeClient();
+      const pubClient = fakeClient();
+      const nextSubClient = fakeClient();
+      const nextPubClient = fakeClient();
+      vi.spyOn(server, 'createRedisClient')
+        .mockResolvedValueOnce(subClient)
+        .mockResolvedValueOnce(pubClient)
+        .mockResolvedValueOnce(nextSubClient)
+        .mockResolvedValueOnce(nextPubClient);
+
+      await server.listen(callbackSpy);
+      await server.close();
+
+      const statuses: string[] = [];
+      server.status.subscribe(status => statuses.push(status as string));
+
+      await server.listen(callbackSpy);
+      // "quit" resolves before ioredis emits "end", so the replaced client can
+      // report its own "end" while the replacement clients are connected
+      subClient.emit('end');
+
+      expect(statuses).not.toContain('disconnected');
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');

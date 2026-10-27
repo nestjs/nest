@@ -808,6 +808,58 @@ describe('ClientNats', () => {
       createClientSpy.mockRestore();
     });
 
+    it('should report the client as disconnected when the status iterator completes', async () => {
+      const statuses: string[] = [];
+      client.status.subscribe(status => statuses.push(status));
+      vi.spyOn(client, 'createClient').mockResolvedValueOnce({
+        status: () => ({
+          async *[Symbol.asyncIterator]() {
+            yield { type: 'disconnect' };
+            yield { type: 'reconnecting' };
+          },
+        }),
+        close: vi.fn(),
+      } as any);
+
+      await client.connect();
+      await vi.waitFor(() => expect(untypedClient.natsClient).toBeNull());
+
+      expect(statuses).toEqual([
+        'connected',
+        'disconnected',
+        'reconnecting',
+        'disconnected',
+      ]);
+    });
+
+    it('should not report a client that close() closed as disconnected', async () => {
+      const statuses: string[] = [];
+      client.status.subscribe(status => statuses.push(status));
+      let closeIterator: () => void;
+      const closed = new Promise<void>(resolve => {
+        closeIterator = resolve;
+      });
+      const handleStatusUpdatesSpy = vi.spyOn(client, 'handleStatusUpdates');
+      vi.spyOn(client, 'createClient').mockResolvedValueOnce({
+        status: () => ({
+          async *[Symbol.asyncIterator]() {
+            await closed;
+            yield { type: 'close' };
+          },
+        }),
+        // nats resolves close() once the status iterator has completed
+        close: vi.fn(() => {
+          closeIterator();
+          return handleStatusUpdatesSpy.mock.results[0].value;
+        }),
+      } as any);
+
+      await client.connect();
+      await client.close();
+
+      expect(statuses).toEqual(['connected']);
+    });
+
     describe('with a pending request', () => {
       const secondClient = {
         status: () => ({

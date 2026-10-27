@@ -362,6 +362,29 @@ describe('FileInterceptor', () => {
       );
     });
 
+    it('should remove the stored file of a request marked under the registered symbol', async () => {
+      const storage = createStorage();
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([file('avatar')]);
+      const reply = createReply();
+      req[Symbol.for('nestjs:rejected-by-pipes')] = true;
+
+      const result$ = await target.intercept(
+        createContext(req, reply),
+        failing,
+      );
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      reply.raw.end();
+
+      await vi.waitFor(() =>
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          expect.objectContaining({ path: '/uploads/a' }),
+          expect.any(Function),
+        ),
+      );
+    });
+
     it('should keep the stored file when the route handler fails', async () => {
       const storage = createStorage();
       const target = new (FileInterceptor('avatar', { storage }))();

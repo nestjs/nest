@@ -2,9 +2,10 @@ import {
   BadRequestException,
   HttpException,
   PayloadTooLargeException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { isPlainObject } from '@nestjs/common/internal';
-import { isRejectedByPipes } from '@nestjs/core/internal';
+import * as coreInternal from '@nestjs/core/internal';
 import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { finished } from 'stream';
 import {
@@ -17,6 +18,26 @@ import {
   MulterLimits,
   MulterOptions,
 } from '../interfaces/multer-options.interface.js';
+
+/**
+ * Set on a request whose pipes rejected it, by the router of
+ * `@nestjs/core` (see `markRejectedByPipes()` there). Read through the
+ * registered symbol rather than an import, so this package still loads with
+ * a version of `@nestjs/core` that does not set it.
+ */
+const REJECTED_BY_PIPES = Symbol.for('nestjs:rejected-by-pipes');
+
+function isRejectedByPipes(req: any): boolean {
+  if (req?.[REJECTED_BY_PIPES] === true) {
+    return true;
+  }
+  // `@nestjs/core` 12.2.0 keeps the record to itself, so ask its helper too.
+  // Read off the namespace, since a named import fails with an older core.
+  const core = coreInternal as {
+    isRejectedByPipes?: (req: unknown) => boolean;
+  };
+  return core.isRejectedByPipes?.(req) === true;
+}
 
 /**
  * Merges module-level (global) multer options with interceptor-level (local)
@@ -145,6 +166,14 @@ export function transformException(
     case busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FORM:
     case busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FILE:
       return new BadRequestException(`Multipart: ${error.message}`);
+  }
+  // multer accepts any `multipart/*` request, but busboy only parses
+  // `multipart/form-data`. The client's content type is left out of the
+  // response.
+  if (error.message?.startsWith(busboyExceptions.UNSUPPORTED_CONTENT_TYPE)) {
+    return new UnsupportedMediaTypeException(
+      busboyExceptions.UNSUPPORTED_CONTENT_TYPE,
+    );
   }
   return error;
 }

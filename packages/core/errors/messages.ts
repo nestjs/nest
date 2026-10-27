@@ -224,6 +224,22 @@ Potential causes:
 Scope [${stringifyScope(scope)}]`;
 };
 
+export const UNDEFINED_MODULE_ENTRY_MESSAGE = (
+  parentModule: any,
+  metadataKey: 'providers' | 'controllers' | 'exports',
+  index: number,
+) => {
+  const parentModuleName = getInstanceName(parentModule) || 'module';
+  const entry = metadataKey.slice(0, -1);
+
+  return `Nest cannot create the ${parentModuleName} instance.
+The ${entry} at index [${index}] of the ${parentModuleName} "${metadataKey}" array is undefined.
+
+Potential causes:
+- A circular import between files, often through a barrel file (index.ts). Read more: https://docs.nestjs.com/fundamentals/circular-dependency
+- The ${entry} at index [${index}] is of type "undefined". Check your import statements and the type of the ${entry}.`;
+};
+
 export const INVALID_PROVIDER_MESSAGE = (
   token: InjectorDependency,
   moduleName: string,

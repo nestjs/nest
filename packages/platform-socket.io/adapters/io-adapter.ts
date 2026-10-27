@@ -14,11 +14,13 @@ import {
 import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
 import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/internal';
-import {
-  DEFAULT_MAX_CONCURRENT_MESSAGES,
-  DISCONNECT_EVENT,
-  mergeMapBounded,
-} from '@nestjs/websockets/internal';
+import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
+import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
+
+// How many messages of one event a client may have handled at the same time.
+// Kept here, like mergeMapBounded(), so that this package still loads with an
+// older `@nestjs/websockets`.
+const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 
 type IoAdapterOptions = {
   /**

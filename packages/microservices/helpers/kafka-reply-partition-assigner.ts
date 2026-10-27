@@ -1,4 +1,3 @@
-import { createRequire } from 'module';
 import { ClientKafka } from '../client/client-kafka.js';
 import {
   Cluster,
@@ -7,7 +6,7 @@ import {
   GroupState,
   MemberMetadata,
 } from '../external/kafka.interface.js';
-import { loadPackageSync, isUndefined } from '@nestjs/common/internal';
+import { loadPackageCached, isUndefined } from '@nestjs/common/internal';
 
 let kafkaPackage: any = {};
 
@@ -21,10 +20,10 @@ export class KafkaReplyPartitionAssigner {
       cluster: Cluster;
     },
   ) {
-    kafkaPackage = loadPackageSync(
+    // ClientKafka loads kafkajs (createClient()) before it creates the assigner
+    kafkaPackage = loadPackageCached(
       'kafkajs',
       KafkaReplyPartitionAssigner.name,
-      () => createRequire(import.meta.url)('kafkajs'),
     );
   }
 

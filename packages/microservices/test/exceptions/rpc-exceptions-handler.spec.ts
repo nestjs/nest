@@ -1,5 +1,6 @@
 import { EMPTY, lastValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { KafkaRetriableException } from '../../exceptions/kafka-retriable-exception.js';
 import { RpcException } from '../../exceptions/rpc-exception.js';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
 
@@ -75,6 +76,15 @@ describe('RpcExceptionsHandler', () => {
         });
         expect(loggerErrorSpy).toHaveBeenCalledWith(error);
         loggerErrorSpy.mockRestore();
+      });
+    });
+    describe('when exception is a KafkaRetriableException', () => {
+      it('should rethrow it unchanged so the transport can redeliver the message', async () => {
+        const exception = new KafkaRetriableException('retry me');
+
+        await expect(
+          lastValueFrom(handler.handle(exception, null!)),
+        ).rejects.toThrow(KafkaRetriableException);
       });
     });
     describe('when "invokeCustomFilters" returns observable', () => {

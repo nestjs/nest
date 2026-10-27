@@ -1,6 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { PARAM_ARGS_METADATA } from '../../constants.js';
-import { Payload } from '../../decorators/index.js';
+import { Ctx, Payload } from '../../decorators/index.js';
 import { RpcParamtype } from '../../enums/rpc-paramtype.enum.js';
 
 class MessagePayloadTest {
@@ -22,6 +22,27 @@ describe('@Payload', () => {
       },
     };
     expect(argsMetadata).toEqual(expectedMetadata);
+  });
+
+  describe('when an overriding method moves it to another argument', () => {
+    it('should keep one param per argument', () => {
+      class Parent {
+        public test(@Payload() payload: any, @Ctx() ctx: any) {}
+      }
+      class Test extends Parent {
+        public test(@Ctx() ctx: any, @Payload() payload: any) {}
+      }
+
+      const argsMetadata = Reflect.getMetadata(
+        PARAM_ARGS_METADATA,
+        Test,
+        'test',
+      );
+      expect(Object.keys(argsMetadata).sort()).toEqual([
+        `${RpcParamtype.PAYLOAD}:1`,
+        `${RpcParamtype.CONTEXT}:0`,
+      ]);
+    });
   });
 });
 

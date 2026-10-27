@@ -119,9 +119,12 @@ export class ServerNats<
       this.subscriptions.forEach(sub => sub.unsubscribe());
       await this.waitForGracePeriod();
     }
-    await this.natsClient?.close();
-    this.statusEventEmitter.removeAllListeners();
+    // Reset first, so that the status updates do not take this close for a
+    // connection that gave up
+    const natsClient = this.natsClient;
     this.natsClient = null;
+    await natsClient?.close();
+    this.statusEventEmitter.removeAllListeners();
   }
 
   public async createNatsClient(): Promise<Client> {
@@ -348,6 +351,14 @@ export class ServerNats<
         // escape as an unhandled rejection
         this.logger.error(err);
       }
+    }
+    // The status iterator only completes once the client is closed for good.
+    // Unless close() closed it, the server no longer receives any message.
+    if (this.natsClient === client) {
+      this._status$.next(NatsStatus.DISCONNECTED as S);
+      this.logger.error(
+        'The connection to the NATS server is closed and will not be reopened (see the "maxReconnectAttempts" option). The microservice no longer receives messages.',
+      );
     }
   }
 

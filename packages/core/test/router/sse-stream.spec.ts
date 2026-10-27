@@ -590,6 +590,20 @@ data: pong
     expect(calls).toEqual([]);
   });
 
+  it('tolerates a socket without the tuning methods', () => {
+    // Runtimes that emulate "node:http" (e.g. Cloudflare Workers) expose a
+    // socket-like object that only carries address information
+    const socket = { remoteAddress: '127.0.0.1', destroy: () => {} };
+
+    expect(
+      () =>
+        new SseStream({
+          httpVersionMajor: 1,
+          socket,
+        } as unknown as IncomingMessage),
+    ).not.toThrow();
+  });
+
   it('allows an eventsource to connect', () =>
     new Promise<void>(callback => {
       let sse: SseStream;

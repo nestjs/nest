@@ -74,6 +74,7 @@ export class AppController {
         ticks++;
         return { tick: ticks };
       }),
+      finalize(() => events.push('producer-stopped')),
     );
   }
 

@@ -54,6 +54,10 @@ import { MESSAGES } from '@nestjs/core/internal';
 
 const MAX_PACKET_ID_LENGTH = 256;
 
+// Matches every text JSON.parse() accepts. A string pattern it does not match
+// (e.g. "user.created") is used as it is, as parsing it would only throw.
+const JSON_TEXT = /^\s*(?:[{["\-\d]|(?:true|false|null)\s*$)/;
+
 /**
  * @publicApi
  */
@@ -461,7 +465,7 @@ export abstract class Server<
     let validPattern: MsPattern;
 
     try {
-      validPattern = JSON.parse(pattern);
+      validPattern = JSON_TEXT.test(pattern) ? JSON.parse(pattern) : pattern;
     } catch (error) {
       // Uses a fundamental object (`pattern` variable without any conversion)
       validPattern = pattern;

@@ -467,6 +467,102 @@ describe('FileTypeValidator', () => {
       );
     });
 
+    it('should report the type detected from the content rather than the declared mimetype', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/jpeg',
+      });
+      const file = { mimetype: 'image/jpeg', buffer: pngBuffer } as IFile;
+
+      expect(await fileTypeValidator.isValid(file)).toBe(false);
+      expect(fileTypeValidator.buildErrorMessage(file)).toBe(
+        'Validation failed (current file type is image/png, expected type is image/jpeg)',
+      );
+    });
+
+    it('should not claim a mimetype fallback when the type was detected from the content', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/jpeg',
+        fallbackToMimetype: true,
+      });
+      const file = { mimetype: 'image/jpeg', buffer: pngBuffer } as IFile;
+
+      expect(await fileTypeValidator.isValid(file)).toBe(false);
+      expect(fileTypeValidator.buildErrorMessage(file)).toBe(
+        'Validation failed (current file type is image/png, expected type is image/jpeg)',
+      );
+    });
+
+    it('should report that the type could not be detected from the content', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'text/plain',
+      });
+      const file = {
+        mimetype: 'text/plain',
+        buffer: Buffer.from('hi'),
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(file)).toBe(false);
+      expect(fileTypeValidator.buildErrorMessage(file)).toBe(
+        'Validation failed (file type could not be detected from its content; expected type is text/plain)',
+      );
+    });
+
+    it('should mention the mimetype fallback when the type could not be detected from the content', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'text/plain',
+        fallbackToMimetype: true,
+      });
+      const file = {
+        mimetype: 'text/csv',
+        buffer: Buffer.from('hi'),
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(file)).toBe(false);
+      expect(fileTypeValidator.buildErrorMessage(file)).toBe(
+        'Validation failed (current file type is text/csv, expected type is text/plain) - magic number detection failed, used mimetype fallback',
+      );
+    });
+
+    it('should not claim a mimetype fallback when magic number validation is skipped', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/png',
+        skipMagicNumbersValidation: true,
+        fallbackToMimetype: true,
+      });
+      const file = { mimetype: 'image/jpeg', buffer: pngBuffer } as IFile;
+
+      expect(await fileTypeValidator.isValid(file)).toBe(false);
+      expect(fileTypeValidator.buildErrorMessage(file)).toBe(
+        'Validation failed (current file type is image/jpeg, expected type is image/png)',
+      );
+    });
+
+    it('should report the type detected for each file when the validator is shared', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'application/pdf',
+      });
+      const pngFile = {
+        mimetype: 'application/pdf',
+        buffer: pngBuffer,
+      } as IFile;
+      const jpegFile = {
+        mimetype: 'application/pdf',
+        buffer: jpegBuffer,
+      } as IFile;
+
+      await Promise.all([
+        fileTypeValidator.isValid(pngFile),
+        fileTypeValidator.isValid(jpegFile),
+      ]);
+
+      expect(fileTypeValidator.buildErrorMessage(pngFile)).toBe(
+        'Validation failed (current file type is image/png, expected type is application/pdf)',
+      );
+      expect(fileTypeValidator.buildErrorMessage(jpegFile)).toBe(
+        'Validation failed (current file type is image/jpeg, expected type is application/pdf)',
+      );
+    });
+
     it('should return false for text file with small buffer and correct mimetype but fail magic number validation', async () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'text/plain',

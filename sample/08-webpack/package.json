@@ -12,21 +12,21 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@nestjs/common": "12.1.2",
-    "@nestjs/core": "12.1.2",
-    "@nestjs/platform-express": "12.1.2",
+    "@nestjs/common": "12.2.0",
+    "@nestjs/core": "12.2.0",
+    "@nestjs/platform-express": "12.2.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "typescript": "5.9.3"
   },
   "devDependencies": {
-    "@nestjs/cli": "12.0.8",
-    "@nestjs/schematics": "12.0.7",
+    "@nestjs/cli": "12.0.10",
+    "@nestjs/schematics": "12.0.10",
     "@types/node": "24.19.2",
-    "oxlint": "1.88.0",
+    "oxlint": "1.89.0",
     "start-server-webpack-plugin": "2.2.5",
     "vitest": "5.0.5",
-    "webpack": "5.111.1",
+    "webpack": "5.112.2",
     "webpack-cli": "7.2.3",
     "webpack-node-externals": "3.0.0"
   },

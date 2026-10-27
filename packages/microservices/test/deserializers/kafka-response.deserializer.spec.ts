@@ -40,5 +40,21 @@ describe('KafkaResponseDeserializer', () => {
         expect(packet.response).toEqual(value);
       });
     });
+    describe('when is disposed and no response headers are present', () => {
+      it('should return an object with "isDisposed" and without "response"', () => {
+        const packet = instance.deserialize({
+          headers: {
+            [KafkaHeaders.CORRELATION_ID]: id,
+            [KafkaHeaders.NEST_IS_DISPOSED]: true,
+            [KafkaHeaders.NEST_NO_RESPONSE]: true,
+          },
+          value: null,
+        });
+        expect(packet.id).toBe(id);
+        expect(packet.err).toBeUndefined();
+        expect(packet.isDisposed).toBe(true);
+        expect(packet.response).toBeUndefined();
+      });
+    });
   });
 });

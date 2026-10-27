@@ -6,6 +6,7 @@ import {
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum.js';
 import { PipeTransform } from '../../index.js';
 import { Type } from '../../interfaces/index.js';
+import { getParamArgsMetadata } from '../../utils/extend-metadata.util.js';
 import { isNil, isString } from '../../utils/shared.utils.js';
 import { isParameterDecoratorOptions } from '../../utils/parameter-decorator-options.util.js';
 
@@ -82,9 +83,12 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
 function createRouteParamDecorator(paramtype: RouteParamtypes) {
   return (data?: ParamData): ParameterDecorator =>
     (target, key, index) => {
-      const args =
-        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) ||
-        {};
+      const args = getParamArgsMetadata(
+        ROUTE_ARGS_METADATA,
+        target,
+        key!,
+        index,
+      );
       Reflect.defineMetadata(
         ROUTE_ARGS_METADATA,
         assignMetadata<RouteParamtypes, Record<number, RouteParamMetadata>>(
@@ -109,8 +113,7 @@ const createPipesRouteParamDecorator =
     schema,
   }: ParameterDecoratorOptions & { data?: unknown }): ParameterDecorator =>
   (target, key, index) => {
-    const args =
-      Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) || {};
+    const args = getParamArgsMetadata(ROUTE_ARGS_METADATA, target, key!, index);
     const hasParamData = isNil(data) || isString(data);
     const paramData = hasParamData ? data : undefined;
     const paramPipes = hasParamData

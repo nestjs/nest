@@ -25,8 +25,11 @@ export class BaseRpcExceptionFilter<
     }
     const res = exception.getError();
     // An Error, as in `new RpcException(err)`, would be sent with its
-    // enumerable properties, e.g. the request config of an HTTP client error
-    if (res instanceof Error) {
+    // enumerable properties, e.g. the request config of an HTTP client error.
+    // An exception that returns itself from `getError()` is a control signal
+    // rather than a held error: `KafkaRetriableException` uses it to ask the
+    // transport to redeliver the message, so it has to keep travelling.
+    if (res instanceof Error && res !== exception) {
       return this.handleUnknownError(res as T, status);
     }
     const message = isObject(res) ? res : { status, message: res };

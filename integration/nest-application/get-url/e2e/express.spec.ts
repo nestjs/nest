@@ -2,7 +2,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import express from 'express';
 import { AppModule } from '../src/app.module.js';
-import { randomPort } from './utils.js';
+import { randomPort, readTlsOptions } from './utils.js';
 
 describe('Get URL (Express Application)', () => {
   let testModule: TestingModule;
@@ -52,5 +52,14 @@ describe('Get URL (Express Application)', () => {
     await expect(app.getUrl()).rejects.toEqual(
       'app.listen() needs to be called before calling app.getUrl()',
     );
+  });
+  it('should return an https url for "httpsOptions"', async () => {
+    const app = testModule.createNestApplication(
+      new ExpressAdapter(express()),
+      { httpsOptions: readTlsOptions() },
+    );
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`https://127.0.0.1:${port}`);
+    await app.close();
   });
 });

@@ -1,21 +1,18 @@
 import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import * as http from 'http';
-import { createRequire } from 'module';
 import type { Duplex } from 'stream';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { catchError, filter, first, share, takeUntil } from 'rxjs/operators';
-import { loadPackageSync, isNil, normalizePath } from '@nestjs/common/internal';
+import { WebSocketServer } from 'ws';
+import { isNil, normalizePath } from '@nestjs/common/internal';
 import {
   CLOSE_EVENT,
   CONNECTION_EVENT,
-  DEFAULT_MAX_CONCURRENT_MESSAGES,
   ERROR_EVENT,
-  mergeMapBounded,
 } from '@nestjs/websockets/internal';
 import type { MessageMappingProperties } from '@nestjs/websockets';
-
-let wsPackage: any = {};
+import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
 
 enum READY_STATE {
   CONNECTING_STATE = 0,
@@ -54,6 +51,10 @@ type WsAdapterOptions = {
 };
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
+// How many messages of a client are handled at the same time. Kept here, like
+// mergeMapBounded(), so that this package still loads with an older
+// `@nestjs/websockets`.
+const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 // Reading from a client stops while more than this is queued for it
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;
@@ -102,14 +103,6 @@ export class WsAdapter extends AbstractWsAdapter {
     options?: WsAdapterOptions,
   ) {
     super(appOrHttpServer);
-    wsPackage = loadPackageSync('ws', 'WsAdapter', () =>
-      createRequire(import.meta.url)('ws'),
-    );
-    // Normalize CJS/ESM: In CJS, require('ws') returns WebSocket with .Server.
-    // We need .Server for creating WebSocketServer instances.
-    if (!wsPackage.Server) {
-      wsPackage = { ...wsPackage, Server: wsPackage.WebSocketServer };
-    }
 
     if (options?.messageParser) {
       this.messageParser = options.messageParser;
@@ -146,7 +139,7 @@ export class WsAdapter extends AbstractWsAdapter {
     if (port === UNDERLYING_HTTP_SERVER_PORT && this.httpServer) {
       this.ensureHttpServerExists(port, this.httpServer);
       const wsServer = this.bindErrorHandler(
-        new wsPackage.Server({
+        new WebSocketServer({
           noServer: true,
           ...wsOptions,
         }),
@@ -169,7 +162,7 @@ export class WsAdapter extends AbstractWsAdapter {
       httpServer?.listen(port, wsOptions.host, wsOptions.backlog);
 
       const wsServer = this.bindErrorHandler(
-        new wsPackage.Server({
+        new WebSocketServer({
           noServer: true,
           ...wsOptions,
         }),
@@ -178,7 +171,7 @@ export class WsAdapter extends AbstractWsAdapter {
       return wsServer;
     }
     const wsServer = this.bindErrorHandler(
-      new wsPackage.Server({
+      new WebSocketServer({
         port,
         path,
         ...wsOptions,

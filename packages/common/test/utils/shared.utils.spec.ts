@@ -79,6 +79,11 @@ describe('Shared utils', () => {
       function CustomObject() {}
       expect(isPlainObject(new CustomObject())).toBe(false);
     });
+    it('should return false when the prototype constructor is an arrow function', () => {
+      expect(isPlainObject(Object.create({ constructor: () => ({}) }))).toBe(
+        false,
+      );
+    });
   });
 
   describe('isString', () => {

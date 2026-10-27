@@ -77,7 +77,7 @@ describe('TCP transport memory bounds', () => {
       );
 
       // Declare a packet far larger than what is actually sent, then stall.
-      socket.write('999999999#');
+      socket.write('999999#');
       socket.write('partial payload');
 
       await closed;
@@ -112,6 +112,46 @@ describe('TCP transport memory bounds', () => {
       await sleep(800);
 
       expect(closed).to.be.false;
+    });
+  });
+
+  describe('messageReceiveTimeout', () => {
+    it('should drop a peer that keeps a packet incomplete by trickling it out', async () => {
+      await start({
+        incompleteMessageTimeout: 300,
+        messageReceiveTimeout: 600,
+      });
+      const socket = await connect();
+      let closed = false;
+      socket.once('close', () => (closed = true));
+
+      const startedAt = Date.now();
+      socket.write('999999#');
+      // Each byte arrives well within the idle timeout
+      while (!closed && Date.now() - startedAt < 5000) {
+        socket.write('x');
+        await sleep(100);
+      }
+
+      expect(closed).to.be.true;
+      expect(Date.now() - startedAt).to.be.lessThan(2000);
+    });
+  });
+
+  describe('maxBufferSize', () => {
+    it('should reject a packet declaring more than maxBufferSize right away', async () => {
+      await start({ maxBufferSize: 1024, incompleteMessageTimeout: 0 });
+      const socket = await connect();
+      const closed = new Promise<void>(resolve =>
+        socket.once('close', () => resolve()),
+      );
+
+      socket.write('1099511627776#');
+      socket.write('x'.repeat(512));
+
+      // Nothing else would close it, as the idle timeout is disabled
+      await closed;
+      expect(socket.destroyed).to.be.true;
     });
   });
 
