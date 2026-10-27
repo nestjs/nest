@@ -358,16 +358,20 @@ export class RouteConflictDetector {
 
     const leftHosts = Array.isArray(leftHost) ? leftHost : [leftHost];
     const rightHosts = Array.isArray(rightHost) ? rightHost : [rightHost];
-    if (leftHosts.length !== rightHosts.length) return false;
 
-    // Order-insensitive set comparison: ['a', 'b'] and ['b', 'a']
-    // describe the same allowed-host set, so they are identical for
-    // duplicate-classification purposes.
-    return leftHosts.every(leftValue =>
-      rightHosts.some(rightValue =>
-        RouteConflictDetector.hostValuesAreIdentical(leftValue, rightValue),
-      ),
-    );
+    // Set comparison, in both directions: ['a', 'b'] and ['b', 'a'] allow
+    // the same hosts, and so do ['a', 'a'] and ['a'], while ['a', 'a'] and
+    // ['a', 'b'] do not, although they have the same length.
+    const isSubset = (
+      hosts: Array<string | RegExp>,
+      otherHosts: Array<string | RegExp>,
+    ) =>
+      hosts.every(value =>
+        otherHosts.some(otherValue =>
+          RouteConflictDetector.hostValuesAreIdentical(value, otherValue),
+        ),
+      );
+    return isSubset(leftHosts, rightHosts) && isSubset(rightHosts, leftHosts);
   }
 
   private static hostValuesAreIdentical(

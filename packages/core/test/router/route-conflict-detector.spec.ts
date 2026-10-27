@@ -379,6 +379,58 @@ describe('RouteConflictDetector', () => {
       expect(conflicts[0].kind).toBe('duplicate');
     });
 
+    it.each([
+      [
+        ['api.example.com', 'api.example.com'],
+        ['api.example.com', 'admin.example.com'],
+      ],
+      [
+        ['api.example.com', 'admin.example.com'],
+        ['api.example.com', 'api.example.com'],
+      ],
+    ])(
+      'should classify host arrays %j and %j as a shadow, not a duplicate',
+      (earlierHosts, laterHosts) => {
+        const earlierRoute = makeResolvedRoute({
+          path: '/users/me',
+          host: earlierHosts,
+        });
+        const laterRoute = makeResolvedRoute({
+          path: '/users/me',
+          host: laterHosts,
+          methodName: 'meAgain',
+        });
+
+        const conflicts = RouteConflictDetector.detect(
+          [earlierRoute, laterRoute],
+          undefined,
+        );
+
+        expect(conflicts).toHaveLength(1);
+        expect(conflicts[0].kind).toBe('shadow');
+      },
+    );
+
+    it('should classify a host array with a repeated value as a duplicate of the same hosts listed once', () => {
+      const earlierRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['api.example.com', 'api.example.com'],
+      });
+      const laterRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['api.example.com'],
+        methodName: 'meAgain',
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [earlierRoute, laterRoute],
+        undefined,
+      );
+
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('duplicate');
+    });
+
     it('should compare across multiple routes only once per unique pair', () => {
       const firstRoute = makeResolvedRoute({ path: '/users/me' });
       const secondRoute = makeResolvedRoute({ path: '/users/me' });
