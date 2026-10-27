@@ -9,6 +9,7 @@ import { isAbsolute } from 'path';
 import send from 'send';
 import typeIs from 'type-is';
 import { getRoutingPath } from '../router/utils.js';
+import { getHostname } from './utils/hostname.util.js';
 
 const QUERY = Symbol('query');
 const LOCALS = Symbol('locals');
@@ -28,12 +29,12 @@ export const ROUTE_ERROR_HANDLER = Symbol('nestjs.node.routeErrorHandler');
 /**
  * What `req.app` returns: middleware written for Express reads settings from
  * it (`express-rate-limit` checks `req.app.get('trust proxy')`). There are no
- * Express settings here; `get()` reports the adapter's fixed behavior.
+ * Express settings here; `get()` reports the adapter's behavior.
  */
 const NODE_APP = Object.freeze({
   /**
-   * `'trust proxy'` is `false` (`req.ip` is the socket address); every other
-   * setting is `undefined`.
+   * `'trust proxy'` is `false` (`req.ip` is the socket address) unless the
+   * adapter's `trustProxy` option is set; every other setting is `undefined`.
    */
   get(setting: string): unknown {
     return setting === 'trust proxy' ? false : undefined;
@@ -154,28 +155,34 @@ export class NodeRequest extends IncomingMessage {
   }
 
   /**
-   * Host name from the `Host` header, without the port.
+   * Host name from the `Host` header, without the port (from
+   * `X-Forwarded-Host` for a trusted proxy, see the `trustProxy` option).
    */
   get hostname(): string | undefined {
-    const host = this.headers.host;
-    if (!host) {
-      return undefined;
-    }
-    // IPv6 literal, e.g. "[::1]:3000"
-    const offset =
-      host.charCodeAt(0) === 91 /* [ */ ? host.indexOf(']') + 1 : 0;
-    const index = host.indexOf(':', offset);
-    return index === -1 ? host : host.slice(0, index);
+    return getHostname(this.headers.host);
   }
 
   /**
-   * Remote address of the underlying socket.
+   * Remote address of the underlying socket (the client's address from
+   * `X-Forwarded-For` for a trusted proxy, see the `trustProxy` option).
    */
   get ip(): string | undefined {
     return this.socket?.remoteAddress;
   }
 
-  get protocol(): 'http' | 'https' {
+  /**
+   * Addresses from `X-Forwarded-For`, from the client to the closest trusted
+   * proxy, as Express lists them; empty unless the `trustProxy` option is set.
+   */
+  get ips(): string[] {
+    return [];
+  }
+
+  /**
+   * `'https'` over TLS, `'http'` otherwise (from `X-Forwarded-Proto` for a
+   * trusted proxy, see the `trustProxy` option).
+   */
+  get protocol(): string {
     return (this.socket as { encrypted?: boolean })?.encrypted
       ? 'https'
       : 'http';
@@ -205,8 +212,8 @@ export class NodeRequest extends IncomingMessage {
 
   /**
    * Stand-in for the Express application, for middleware that reads its
-   * settings: `req.app.get('trust proxy')` is `false`, every other setting
-   * `undefined`.
+   * settings: `req.app.get('trust proxy')` is `false` (or the `trustProxy`
+   * option), every other setting `undefined`.
    */
   get app(): { get(setting: string): unknown } {
     return NODE_APP;

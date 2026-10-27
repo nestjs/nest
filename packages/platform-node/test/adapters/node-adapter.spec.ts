@@ -306,6 +306,68 @@ describe('NodeAdapter', () => {
     });
   });
 
+  describe('trustProxy option', () => {
+    it('should give the requests of the server the behavior it sets', async () => {
+      adapter = new NodeAdapter({ trustProxy: 'loopback' });
+      const port = await startServer();
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, {
+          ip: req.ip,
+          // What host-filtered routes match
+          hostname: adapter.getRequestHostname(req),
+        }),
+      );
+
+      const res = await request(port, {
+        headers: {
+          'x-forwarded-for': '203.0.113.7',
+          'x-forwarded-host': 'example.com',
+        },
+      });
+
+      expect(JSON.parse(res.text)).toEqual({
+        ip: '203.0.113.7',
+        hostname: 'example.com',
+      });
+    });
+
+    it('should apply them to the requests of another server the router handles', async () => {
+      adapter = new NodeAdapter({ trustProxy: true });
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, { ip: req.ip }),
+      );
+      // e.g. a second server for another port, as for HTTP and HTTPS
+      const other = http.createServer(adapter.getInstance());
+      await new Promise<void>(resolve =>
+        other.listen(0, '127.0.0.1', () => resolve()),
+      );
+
+      try {
+        const res = await request((other.address() as AddressInfo).port, {
+          headers: { 'x-forwarded-for': '203.0.113.7' },
+        });
+
+        expect(JSON.parse(res.text)).toEqual({ ip: '203.0.113.7' });
+      } finally {
+        await new Promise(resolve => other.close(resolve));
+      }
+    });
+
+    it('should leave the requests of an adapter without it NodeRequests', async () => {
+      const port = await startServer();
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+        adapter.reply(res, {
+          exactlyNodeRequest:
+            Object.getPrototypeOf(req) === NodeRequest.prototype,
+        }),
+      );
+
+      const res = await request(port);
+
+      expect(JSON.parse(res.text)).toEqual({ exactlyNodeRequest: true });
+    });
+  });
+
   describe('maxParamLength option', () => {
     const byId = (req: NodeRequest, res: NodeResponse) =>
       adapter.reply(res, { length: req.params.id.length });

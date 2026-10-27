@@ -47,6 +47,7 @@ import {
   PARAM_TOO_LONG_KEY,
 } from '../router/node-router.js';
 import { getRoutingPath } from '../router/utils.js';
+import { createRequestClass } from './configured-request.js';
 import { type NodeViewOptions, ViewRenderer } from '../views/view-renderer.js';
 import {
   endWithoutBody,
@@ -148,19 +149,29 @@ export class NodeAdapter extends AbstractHttpAdapter<
     res: NodeResponse,
   ) => Promise<void> | void;
 
+  // The class of the requests of the server (see createRequestClass())
+  private readonly requestClass: typeof NodeRequest;
+
   /**
    * @param routerOrOptions The adapter's options, or the `NodeRouter` to use
    * (one is created by default).
    */
   constructor(routerOrOptions?: NodeRouter | NodeAdapterOptions) {
     super();
-    this.setInstance(
+    const options =
+      routerOrOptions instanceof NodeRouter ? {} : (routerOrOptions ?? {});
+    this.requestClass = createRequestClass(options);
+    const router =
       routerOrOptions instanceof NodeRouter
         ? routerOrOptions
         : new NodeRouter((err, req, res) => this.finalHandler(err, req, res), {
-            maxParamLength: routerOrOptions?.maxParamLength,
-          }),
-    );
+            maxParamLength: options.maxParamLength,
+          });
+    if (this.requestClass !== NodeRequest) {
+      // For the requests of another server the router handles
+      router.requestPrototype = this.requestClass.prototype;
+    }
+    this.setInstance(router);
   }
 
   /**
@@ -511,7 +522,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
 
   public initHttpServer(options: NestApplicationOptions) {
     const serverOptions = {
-      IncomingMessage: NodeRequest,
+      IncomingMessage: this.requestClass,
       ServerResponse: NodeResponse,
     } as http.ServerOptions<typeof NodeRequest, typeof NodeResponse>;
     const listener = (req: NodeRequest, res: NodeResponse) =>

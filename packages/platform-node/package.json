@@ -26,6 +26,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@fastify/proxy-addr": "5.1.0",
     "content-type": "2.1.0",
     "cookie": "0.7.2",
     "cookie-signature": "1.2.2",

@@ -146,6 +146,14 @@ export class NodeRouter {
    */
   declare public onRejectedTarget:
     ((req: NodeRequest, res: NodeResponse) => void) | undefined;
+  /**
+   * Prototype given to a request of another server, which is not a
+   * `NodeRequest` (`NodeRequest.prototype` by default): the `NodeAdapter`
+   * sets that of its request class, so that its options apply there too.
+   *
+   * @internal
+   */
+  declare public requestPrototype: NodeRequest | undefined;
 
   constructor(finalHandler: FinalHandler, options: NodeRouterOptions = {}) {
     const { maxParamLength } = options;
@@ -181,7 +189,10 @@ export class NodeRouter {
     done?: NextFunction,
   ) {
     if (!(req instanceof NodeRequest)) {
-      Object.setPrototypeOf(req, NodeRequest.prototype);
+      Object.setPrototypeOf(
+        req,
+        this.requestPrototype ?? NodeRequest.prototype,
+      );
     }
     if (!(res instanceof NodeResponse)) {
       Object.setPrototypeOf(res, NodeResponse.prototype);
