@@ -1172,6 +1172,130 @@ describe('body parsers', () => {
     });
   });
 
+  // body-parser's regression tests for GHSA-27r3-jxmh-p828: since Node.js 11,
+  // zlib ends a decompression stream as soon as the compressed frame is
+  // complete, while the rest of the request keeps flowing into it
+  describe('with trailing bytes after a compressed body', () => {
+    const answerWithBody =
+      (parser: Middleware, waitForRequest = false) =>
+      (req: IncomingMessage, res: ServerResponse) =>
+        parser(req, res, (error?: any) => {
+          const reply = () => {
+            res.statusCode = error ? (error.status ?? 500) : 200;
+            res.end(error ? '' : JSON.stringify((req as any).body));
+          };
+          if (error || !waitForRequest) {
+            return reply();
+          }
+          // Like a downstream middleware that waits for the whole request
+          if (req.complete) {
+            return reply();
+          }
+          req.once('end', reply);
+          req.once('close', reply);
+        });
+
+    const post = (
+      port: number,
+      headers: http.OutgoingHttpHeaders,
+      write: (request: http.ClientRequest) => void,
+    ) =>
+      new Promise<{ status: number; text: string }>((resolve, reject) => {
+        const request = http.request(
+          { host: '127.0.0.1', port, method: 'POST', path: '/', headers },
+          response => {
+            let text = '';
+            response.setEncoding('utf8');
+            response.on('data', chunk => (text += chunk));
+            response.on('end', () =>
+              resolve({ status: response.statusCode!, text }),
+            );
+          },
+        );
+        request.on('error', reject);
+        request.setTimeout(1000, () =>
+          request.destroy(new Error('Timed out waiting for the response')),
+        );
+        write(request);
+      });
+
+    it('should finish the request when the decompressor finishes early', async () => {
+      const first = Buffer.concat([deflateSync('{"a":1}'), Buffer.from([0])]);
+      const trailing = Buffer.alloc(1024);
+      let client!: http.ClientRequest;
+      const server = http.createServer((req, res) =>
+        answerWithBody(json(), true)(req, res),
+      );
+      server.on('request', req =>
+        // The last bytes arrive once the parser has read the frame
+        req.once('readable', () => setTimeout(() => client.end(trailing), 20)),
+      );
+      const port = await listen(server);
+
+      const res = await post(
+        port,
+        {
+          ...JSON_TYPE,
+          'content-encoding': 'deflate',
+          'content-length': first.length + trailing.length,
+        },
+        request => {
+          client = request;
+          request.write(first);
+        },
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('{"a":1}');
+    });
+
+    it('should not crash on trailing bytes after a gzip body', async () => {
+      const body = Buffer.concat([
+        gzipSync('{"a":1}'),
+        Buffer.from([0]),
+        Buffer.alloc(100 * 1024, 0x58),
+      ]);
+      const port = await listen(http.createServer(answerWithBody(json())));
+
+      const res = await post(
+        port,
+        {
+          ...JSON_TYPE,
+          'content-encoding': 'gzip',
+          'content-length': body.length,
+        },
+        request => request.end(body),
+      );
+      // An error the decoder emits now must not end the process
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('{"a":1}');
+    });
+
+    it('should not crash when an unsupported charset rejects a compressed body', async () => {
+      const body = Buffer.concat([
+        gzipSync('{"a":1}'),
+        Buffer.from([0]),
+        Buffer.alloc(100 * 1024, 0x58),
+      ]);
+      const port = await listen(http.createServer(answerWithBody(json())));
+
+      const res = await post(
+        port,
+        {
+          'content-type': 'application/json; charset=utf-999',
+          'content-encoding': 'gzip',
+          'content-length': body.length,
+        },
+        request => request.end(body),
+      );
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      expect(res.status).toBe(415);
+    });
+  });
+
   describe('when the client aborts mid-body', () => {
     /**
      * Sends the headers and part of the body over a raw socket, then destroys
