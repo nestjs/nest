@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@fastify/proxy-addr": "5.1.2",
-    "content-type": "2.1.0",
+    "content-type": "3.1.1",
     "cookie": "0.7.2",
     "cookie-signature": "1.2.2",
     "cors": "2.8.6",
