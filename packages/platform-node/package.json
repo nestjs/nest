@@ -36,7 +36,7 @@
     "find-my-way": "9.10.0",
     "mime-types": "3.0.2",
     "multer": "2.5.0",
-    "on-finished": "2.4.1",
+    "on-finished": "2.4.2",
     "path-to-regexp": "8.4.2",
     "qs": "6.16.1",
     "secure-json-parse": "4.1.1",
