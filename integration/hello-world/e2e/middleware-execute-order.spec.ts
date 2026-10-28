@@ -102,3 +102,48 @@ describe('Middleware (execution order)', () => {
     await app.close();
   });
 });
+
+const RETURN_VALUE_LOGGER = 'test_LOGGER';
+const RETURN_VALUE_AUTH = 'test_AUTH';
+
+@Module({})
+class LoggerModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(RETURN_VALUE_LOGGER))
+      .forRoutes('hello');
+  }
+}
+
+@Module({ imports: [LoggerModule] })
+class AuthModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(RETURN_VALUE_AUTH))
+      .forRoutes('hello');
+  }
+}
+
+describe('Middleware (execution order of a module also imported by a sibling)', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    app = (
+      await Test.createTestingModule({
+        imports: [LoggerModule, AuthModule],
+      }).compile()
+    ).createNestApplication();
+
+    await listenOnLoopback(app);
+  });
+
+  it('should execute the middleware of the importing module first', () => {
+    return request(app.getHttpServer())
+      .get('/hello')
+      .expect(200, RETURN_VALUE_AUTH);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+});
