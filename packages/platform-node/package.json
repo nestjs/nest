@@ -38,7 +38,7 @@
     "multer": "2.5.0",
     "on-finished": "2.4.1",
     "path-to-regexp": "8.4.2",
-    "qs": "6.16.0",
+    "qs": "6.16.1",
     "secure-json-parse": "4.1.1",
     "send": "1.2.1",
     "serve-static": "2.2.1",
