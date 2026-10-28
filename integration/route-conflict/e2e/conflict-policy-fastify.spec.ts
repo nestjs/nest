@@ -7,6 +7,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
+import { SameShapeModule } from '../src/same-shape/same-shape.module.js';
 
 interface CapturedLogger {
   warnings: string[];
@@ -134,6 +135,17 @@ describe('Route conflict policy (Fastify)', () => {
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({ from: 'A' });
       expect(capture.warnings).toHaveLength(0);
+    });
+  });
+
+  describe('same-shape fixture', () => {
+    it('aborts on shadow=error with the aggregated RouteConflictException', async () => {
+      const builtApp = await buildFastifyApp(SameShapeModule, {
+        routeConflictPolicy: { shadow: 'error' },
+      });
+      await expect(builtApp.init()).rejects.toBeInstanceOf(
+        RouteConflictException,
+      );
     });
   });
 });

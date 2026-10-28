@@ -6,6 +6,7 @@ import {
   type RouteConflictPolicy,
   type VersioningOptions,
 } from '@nestjs/common';
+import { parse } from 'path-to-regexp';
 import { RouteConflictException } from '../errors/exceptions/route-conflict.exception.js';
 import {
   DUPLICATE_ROUTE_MESSAGE,
@@ -59,6 +60,26 @@ export class RouteConflictDetector {
       });
 
     return segments;
+  }
+
+  /**
+   * Tells whether two paths only differ by the names of their parameters and
+   * wildcards (`/users/:id` and `/users/:username`, but not `/files/:id` and
+   * `/files/:name.:ext`).
+   */
+  public static pathsHaveSameShape(
+    leftPath: string,
+    rightPath: string,
+  ): boolean {
+    const shapeOf = (path: string) =>
+      JSON.stringify(parse(path).tokens, (key, value) =>
+        key === 'name' ? undefined : value,
+      );
+    try {
+      return shapeOf(leftPath) === shapeOf(rightPath);
+    } catch {
+      return false;
+    }
   }
 
   /**

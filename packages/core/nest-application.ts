@@ -273,10 +273,6 @@ export class NestApplication
 
     const routesToSkip = new Set<ResolvedRoute>();
     if (conflictPolicy) {
-      const filteredPolicy = adapterIsOrderSensitive
-        ? conflictPolicy
-        : { duplicate: conflictPolicy.duplicate };
-
       const conflicts = RouteConflictDetector.detect(
         orderedRoutes,
         this.config.getVersioning(),
@@ -304,16 +300,29 @@ export class NestApplication
       // work correctly after specificity ordering. Genuine shadows — where the
       // winner was already first in declaration order and the sort did not help
       // — are kept and still apply the configured policy.
+      //
+      // Adapters that are not order-sensitive pick the most specific route,
+      // so a shadow is only real there between routes that differ by their
+      // parameter names alone ("/users/:id" and "/users/:username").
       const effectiveConflicts = shouldSortBySpecificity
         ? RouteConflictDetector.filterSortResolvedShadows(
             conflicts,
             resolvedRoutes,
           )
-        : conflicts;
+        : adapterIsOrderSensitive
+          ? conflicts
+          : conflicts.filter(
+              conflict =>
+                conflict.kind === 'duplicate' ||
+                RouteConflictDetector.pathsHaveSameShape(
+                  conflict.winner.path,
+                  conflict.shadowed.path,
+                ),
+            );
 
       RouteConflictDetector.handle(
         effectiveConflicts,
-        filteredPolicy,
+        conflictPolicy,
         this.logger,
       );
     }

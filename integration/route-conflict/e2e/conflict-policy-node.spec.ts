@@ -6,6 +6,7 @@ import request from 'supertest';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
 import { HostListModule } from '../src/host-list/host-list.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
+import { SameShapeModule } from '../src/same-shape/same-shape.module.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 interface CapturedLogger {
@@ -137,6 +138,33 @@ describe('Route conflict policy (Node)', () => {
       await request(app.getHttpServer())
         .get('/users/me')
         .expect(200, { from: 'A' });
+    });
+  });
+
+  describe('same-shape fixture', () => {
+    it('aborts on shadow=error with the aggregated RouteConflictException', async () => {
+      const builtApp = await buildNodeApp(SameShapeModule, {
+        routeConflictPolicy: { shadow: 'error' },
+      });
+      await expect(builtApp.init()).rejects.toBeInstanceOf(
+        RouteConflictException,
+      );
+    });
+
+    it('boots on shadow=warn and emits one warning (the first route wins)', async () => {
+      const capture = createCaptureLogger();
+      app = await buildNodeApp(
+        SameShapeModule,
+        { routeConflictPolicy: { shadow: 'warn' } },
+        capture,
+      );
+      await expect(listenOnLoopback(app)).resolves.toBeDefined();
+      expect(capture.warnings).toHaveLength(1);
+      expect(capture.warnings[0]).toContain('/accounts/:username');
+
+      await request(app.getHttpServer())
+        .get('/accounts/alice')
+        .expect(200, { handler: 'byId', id: 'alice' });
     });
   });
 
