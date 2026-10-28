@@ -1,4 +1,12 @@
-import { NestApplicationOptions } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Module,
+  NestApplicationOptions,
+  Param,
+  Version,
+  VersioningType,
+} from '@nestjs/common';
 import { RouteConflictException } from '@nestjs/core/errors/exceptions/route-conflict.exception.js';
 import {
   FastifyAdapter,
@@ -146,6 +154,84 @@ describe('Route conflict policy (Fastify)', () => {
       await expect(builtApp.init()).rejects.toBeInstanceOf(
         RouteConflictException,
       );
+    });
+
+    it('boots on shadow=warn and emits one warning instead of throwing from Fastify', async () => {
+      const capture = createCaptureLogger();
+      app = await buildFastifyApp(
+        SameShapeModule,
+        { routeConflictPolicy: { shadow: 'warn' } },
+        capture,
+      );
+      await expect(app.init()).resolves.toBeDefined();
+      expect(capture.warnings).toHaveLength(1);
+      expect(capture.warnings[0]).toContain('/accounts/:username');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/accounts/alice',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ handler: 'byId', id: 'alice' });
+    });
+
+    it('boots on shadow=off silently (later route is dropped, first wins)', async () => {
+      const capture = createCaptureLogger();
+      app = await buildFastifyApp(
+        SameShapeModule,
+        { routeConflictPolicy: { shadow: 'off' } },
+        capture,
+      );
+      await expect(app.init()).resolves.toBeDefined();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/accounts/alice',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ handler: 'byId', id: 'alice' });
+      expect(capture.warnings).toHaveLength(0);
+    });
+
+    it('keeps a same-shape route with another version under header versioning', async () => {
+      @Controller('accounts')
+      class VersionedAccountsController {
+        @Get(':id')
+        byId(@Param('id') id: string) {
+          return { handler: 'byId', id };
+        }
+
+        @Version('2')
+        @Get(':username')
+        byUsername(@Param('username') username: string) {
+          return { handler: 'byUsername', username };
+        }
+      }
+
+      @Module({ controllers: [VersionedAccountsController] })
+      class VersionedSameShapeModule {}
+
+      app = await buildFastifyApp(
+        VersionedSameShapeModule,
+        { routeConflictPolicy: { shadow: 'warn' } },
+        createCaptureLogger(),
+      );
+      app.enableVersioning({
+        type: VersioningType.HEADER,
+        header: 'Accept-Version',
+      });
+      await app.init();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/accounts/alice',
+        headers: { 'accept-version': '2' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        handler: 'byUsername',
+        username: 'alice',
+      });
     });
   });
 });
