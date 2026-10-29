@@ -33,7 +33,7 @@
     "@nestjs/cli": "12.0.11",
     "@nestjs/schematics": "12.0.12",
     "@types/express": "5.0.6",
-    "@types/node": "24.19.2",
+    "@types/node": "26.6.6",
     "@types/pg": "8.23.1",
     "drizzle-kit": "0.31.11",
     "oxlint": "1.90.0",
