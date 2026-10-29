@@ -46,15 +46,14 @@ export class TestingModule extends NestApplicationContext {
   }
 
   /**
-   * Pre-load optional packages so that createNestApplication,
-   * createNestMicroservice and createHttpAdapter can stay synchronous.
-   * Called from TestingModuleBuilder.compile().
+   * Pre-load optional packages so that createNestMicroservice() can stay
+   * synchronous. `@nestjs/platform-express` is intentionally not preloaded
+   * here: TestingModule.compile() does not assume an Express adapter, and
+   * applications may use another adapter without pulling Express into the
+   * process. The package is loaded lazily only when `createHttpAdapter()` is
+   * actually needed.
    */
   private async preloadLazyPackages(): Promise<void> {
-    await tryLoadPackage(
-      '@nestjs/platform-express',
-      () => import('@nestjs/platform-express'),
-    );
     await tryLoadPackage(
       '@nestjs/microservices',
       () => import('@nestjs/microservices'),
@@ -63,10 +62,7 @@ export class TestingModule extends NestApplicationContext {
 
   private isHttpServer(
     serverOrOptions:
-      | HttpServer
-      | AbstractHttpAdapter
-      | NestApplicationOptions
-      | undefined,
+      HttpServer | AbstractHttpAdapter | NestApplicationOptions | undefined,
   ): serverOrOptions is HttpServer | AbstractHttpAdapter {
     return !!(serverOrOptions && (serverOrOptions as HttpServer).patch);
   }
@@ -80,10 +76,7 @@ export class TestingModule extends NestApplicationContext {
   ): T;
   public createNestApplication<T extends INestApplication = INestApplication>(
     serverOrOptions:
-      | HttpServer
-      | AbstractHttpAdapter
-      | NestApplicationOptions
-      | undefined,
+      HttpServer | AbstractHttpAdapter | NestApplicationOptions | undefined,
     options?: NestApplicationOptions,
   ): T {
     const [httpAdapter, appOptions] = this.isHttpServer(serverOrOptions)

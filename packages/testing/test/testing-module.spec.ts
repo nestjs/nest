@@ -5,6 +5,7 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { Module } from '@nestjs/core/injector/module';
 import { NestApplicationContext } from '@nestjs/core';
 import { NoopGraphInspector } from '@nestjs/core/inspector/noop-graph-inspector';
+import * as internal from '@nestjs/common/internal';
 import { tryLoadPackage } from '@nestjs/common/internal';
 import { Test } from '../test.js';
 import { TestingModule as TM } from '../testing-module.js';
@@ -67,6 +68,26 @@ describe('TestingModule', () => {
       const microservice = module.createNestMicroservice(options);
 
       expect((microservice as any).options).toBe(options);
+    });
+
+    it('should not preload @nestjs/platform-express during compile()', async () => {
+      const requestedPackages: string[] = [];
+      vi.spyOn(internal, 'tryLoadPackage').mockImplementation(
+        async (name: string) => {
+          requestedPackages.push(name);
+          return null as any;
+        },
+      );
+
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
+
+      expect(requestedPackages).not.toContain('@nestjs/platform-express');
+      expect(requestedPackages).toContain('@nestjs/microservices');
     });
   });
 
