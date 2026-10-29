@@ -473,6 +473,58 @@ data: test
       );
     });
 
+    it('should tolerate a socket without event emitter methods', async () => {
+      // Runtimes that emulate "node:http" without a real "net.Socket" (e.g.
+      // Cloudflare Workers) expose a socket-like object that only carries
+      // address information, so it cannot report a "close" event.
+      const chunks: string[] = [];
+      const response = new Writable({
+        write(chunk, _encoding, callback) {
+          chunks.push(chunk.toString());
+          callback();
+        },
+      });
+      const request = Object.assign(new PassThrough(), {
+        socket: { remoteAddress: '127.0.0.1', destroy() {} },
+      });
+
+      await expect(
+        routerResponseController.sse(
+          of('test'),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        ),
+      ).resolves.toBeUndefined();
+      expect(chunks.join('')).toContain('data: test');
+    });
+
+    it('should observe the response close when the socket cannot report it', async () => {
+      const response = new Writable({
+        write(_chunk, _encoding, callback) {
+          callback();
+        },
+      });
+      const request = Object.assign(new PassThrough(), {
+        socket: { remoteAddress: '127.0.0.1', destroy() {} },
+      });
+      const subscribe = vi.fn();
+
+      const lifecycle = routerResponseController.sse(
+        new Observable(subscribe),
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      // Let the producer subscribe, then simulate the client going away.
+      await new Promise(resolve => setImmediate(resolve));
+      response.emit('close');
+
+      await expect(lifecycle).resolves.toBeUndefined();
+      expect(subscribe).toHaveBeenCalledOnce();
+      expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).toBe(true);
+      expect(response.writableEnded).toBe(true);
+    });
+
     it('should use custom status code from response', async () => {
       class SinkWithStatusCode extends Writable {
         statusCode = 404;
