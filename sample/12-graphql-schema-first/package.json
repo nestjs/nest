@@ -21,10 +21,10 @@
   "dependencies": {
     "@apollo/server": "5.5.1",
     "@graphql-tools/utils": "13.2.0",
-    "@nestjs/apollo": "14.0.3",
+    "@nestjs/apollo": "14.1.1",
     "@nestjs/common": "12.3.2",
     "@nestjs/core": "12.3.2",
-    "@nestjs/graphql": "14.0.3",
+    "@nestjs/graphql": "14.1.0",
     "@nestjs/platform-express": "12.3.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
