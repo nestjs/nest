@@ -1336,10 +1336,8 @@ data: test
         request as unknown as IncomingMessage,
       );
 
-      // Wait for microtasks (subscription) + macrotask (setTimeout(0))
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      expect(response.writeHead).toHaveBeenCalled();
+      // Headers are committed in a macrotask (setTimeout(0)) after subscribing
+      await vi.waitFor(() => expect(response.writeHead).toHaveBeenCalled());
       expect(response.writeHead.mock.calls[0][0]).toBe(200);
 
       result.complete();
@@ -1406,7 +1404,7 @@ data: test
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await vi.waitFor(() => expect(response.writableFinished).toBe(true));
 
       expect(response.content).toBe(
         '\nid: 1\ndata: 1\n\nid: 2\ndata: 0\n\nid: 3\ndata: false\n\n',
@@ -1449,10 +1447,10 @@ data: test
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      expect(response.content).toBe(
-        '\nevent: update\nid: 1\ndata: {"value":1}\n\n',
+      await vi.waitFor(() =>
+        expect(response.content).toBe(
+          '\nevent: update\nid: 1\ndata: {"value":1}\n\n',
+        ),
       );
       request.destroy();
     });
@@ -1715,7 +1713,7 @@ data: test
         result.next({ data: { value: 1n } });
         result.next({ data: 'after' });
         await promise;
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.waitFor(() => expect(response.writableFinished).toBe(true));
 
         expect(response.content).toContain('event: error');
         expect(response.content).toContain('data: Internal server error');
@@ -1756,7 +1754,7 @@ data: test
         result.next({ comment: 5 });
         result.next({ data: 'after' });
         await promise;
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.waitFor(() => expect(response.writableFinished).toBe(true));
 
         expect(response.content).toContain('data: before');
         expect(response.content).toContain('event: error');
