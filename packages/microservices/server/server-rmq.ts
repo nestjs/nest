@@ -127,6 +127,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   ) {
     // Each start counts its own attempts towards "maxConnectionAttempts"
     this.connectionAttempts = 0;
+    // The channel of an earlier start, closed since, must not stop this one
+    // from setting up its own or be taken for a reconnect
+    this.channel = null;
     this.server = await this.createClient();
     let listenCallback = callback;
     const settleListenCallback = (...args: unknown[]) => {

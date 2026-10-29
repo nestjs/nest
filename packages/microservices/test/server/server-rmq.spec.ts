@@ -213,6 +213,76 @@ describe('ServerRMQ', () => {
         );
       });
     });
+    describe('when listening again after "close"', () => {
+      let channel: EventEmitter;
+      let secondListenCallback: ReturnType<
+        typeof vi.fn<(err?: unknown) => void>
+      >;
+
+      beforeEach(() => {
+        createClient.mockImplementation(async () => {
+          client = Object.assign(new EventEmitter(), {
+            close: vi.fn().mockResolvedValue(undefined),
+            createChannel: createChannelStub,
+          });
+          return client;
+        });
+        createChannelStub.mockImplementation(({ setup }) => {
+          channel = Object.assign(new EventEmitter(), {
+            close: vi.fn().mockResolvedValue(undefined),
+          });
+          void setup({});
+          return channel;
+        });
+        setupChannelStub.mockImplementation(async (_channel, setupCallback) =>
+          setupCallback(),
+        );
+        vi.spyOn(server['logger'], 'error').mockImplementation(() => {});
+        secondListenCallback = vi.fn<(err?: unknown) => void>();
+      });
+      it('should set a channel up again and call the callback', async () => {
+        await server.listen(callbackSpy);
+        client.emit('connect');
+        await server.close();
+
+        await server.listen(secondListenCallback);
+        client.emit('connect');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(createChannelStub).toHaveBeenCalledTimes(2);
+        expect(secondListenCallback).toHaveBeenCalledExactlyOnceWith();
+      });
+      it('should call the callback after a listen whose channel setup failed', async () => {
+        const setupError = new Error('NOT_FOUND');
+        setupChannelStub.mockImplementationOnce(async () => {});
+        await server.listen(callbackSpy);
+        client.emit('connect');
+        channel.emit('error', setupError);
+        await new Promise(resolve => setImmediate(resolve));
+        expect(callbackSpy).toHaveBeenCalledExactlyOnceWith(setupError);
+
+        await server.listen(secondListenCallback);
+        client.emit('connect');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(secondListenCallback).toHaveBeenCalledExactlyOnceWith();
+      });
+      it('should count the connection attempts again', async () => {
+        const connectionError = new Error('ECONNREFUSED');
+        untypedServer.options = { maxConnectionAttempts: 1 };
+        await server.listen(callbackSpy);
+        client.emit('connect');
+        await server.close();
+
+        await server.listen(secondListenCallback);
+        client.emit('connectFailed', { err: connectionError });
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(secondListenCallback).toHaveBeenCalledExactlyOnceWith(
+          connectionError,
+        );
+      });
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
