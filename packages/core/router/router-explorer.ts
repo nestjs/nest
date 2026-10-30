@@ -499,7 +499,7 @@ export class RouterExplorer {
           moduleKey,
         );
         const host = new ExecutionContextHost([req, res, next]);
-        exceptionFilter.next(err, host);
+        await exceptionFilter.next(err, host);
       }
     };
   }
