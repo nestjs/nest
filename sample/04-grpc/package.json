@@ -19,7 +19,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@grpc/grpc-js": "1.14.6",
+    "@grpc/grpc-js": "1.14.7",
     "@grpc/reflection": "1.0.4",
     "@nestjs/common": "12.3.2",
     "@nestjs/core": "12.3.2",
