@@ -6,7 +6,16 @@ import {
   type RouteConflictPolicy,
   type VersioningOptions,
 } from '@nestjs/common';
-import { parse } from 'path-to-regexp';
+import {
+  parse,
+  pathToRegexp,
+  stringify,
+  TokenData,
+  type Parameter,
+  type Text,
+  type Token,
+  type Wildcard,
+} from 'path-to-regexp';
 import { RouteConflictException } from '../errors/exceptions/route-conflict.exception.js';
 import {
   DUPLICATE_ROUTE_MESSAGE,
@@ -15,12 +24,50 @@ import {
 import { ResolvedRoute } from './interfaces/resolved-route.interface.js';
 import { RouteConflict } from './interfaces/route-conflict.interface.js';
 
-type SegmentKind = 'literal' | 'param' | 'wildcard';
+type SegmentKind = 'literal' | 'mixed' | 'param' | 'wildcard';
 
 export interface PathSegment {
   kind: SegmentKind;
   value: string;
 }
+
+/**
+ * A token of a path with its groups flattened, and whether it belongs to
+ * an optional group.
+ */
+interface PathPart {
+  token: Text | Parameter | Wildcard;
+  optional: boolean;
+}
+
+/**
+ * A segment as the detector compares it. A mixed one carries its matcher and
+ * the text every segment it matches starts and ends with.
+ */
+type ComparableSegment =
+  | { kind: Exclude<SegmentKind, 'mixed'>; value: string }
+  | {
+      kind: 'mixed';
+      value: string;
+      matcher: RegExp;
+      start: string;
+      end: string;
+    };
+
+/**
+ * The segments of each variant of a path, one per combination of its
+ * optional groups, and the text every path it matches starts with.
+ */
+interface ComparablePath {
+  variants: ComparableSegment[][];
+  leadingText: string;
+}
+
+// Each optional group doubles the number of path variants to compare
+const MAX_EXPANDED_GROUPS = 6;
+
+const joinText = (tokens: Token[]) =>
+  tokens.map(token => (token.type === 'text' ? token.value : '')).join('');
 
 /**
  * Static utility class that detects overlapping HTTP routes and reports
@@ -29,37 +76,21 @@ export interface PathSegment {
  */
 export class RouteConflictDetector {
   /**
-   * Strips the leading `:` / `*` marker (if present) and tags each
-   * segment as a literal, named param, or named wildcard. Supports both
-   * bare named wildcards (`*path`) and adapter-normalized path-to-regexp
-   * wildcard groups (`{*path}`).
+   * Tags each segment of a path as a literal, a named param, a named
+   * wildcard, or a mix of text and params (`v:version`, `:name.:ext`).
+   * Optional groups are read as present (`/users{/:id}` as `/users/:id`).
+   * Paths path-to-regexp cannot match (such as `/files/*` or
+   * `/files/:name:ext` on Fastify) are split on `/` and tagged by the
+   * first character of each segment.
    */
   public static tokenizePath(rawPath: string): PathSegment[] {
-    const segments: PathSegment[] = [];
-
-    rawPath
-      .split('/')
-      .filter(rawSegment => rawSegment.length > 0)
-      .forEach(rawSegment => {
-        if (rawSegment.startsWith('*')) {
-          segments.push({ kind: 'wildcard', value: rawSegment.slice(1) });
-          return;
-        }
-        if (rawSegment.startsWith('{*') && rawSegment.endsWith('}')) {
-          segments.push({
-            kind: 'wildcard',
-            value: rawSegment.slice(2, -1),
-          });
-          return;
-        }
-        if (rawSegment.startsWith(':')) {
-          segments.push({ kind: 'param', value: rawSegment.slice(1) });
-          return;
-        }
-        segments.push({ kind: 'literal', value: rawSegment });
-      });
-
-    return segments;
+    const tokens = RouteConflictDetector.parseTokens(rawPath);
+    if (!tokens) {
+      return RouteConflictDetector.splitPath(rawPath);
+    }
+    return RouteConflictDetector.toSegments(
+      RouteConflictDetector.flattenGroups(tokens, false),
+    );
   }
 
   /**
@@ -87,9 +118,37 @@ export class RouteConflictDetector {
    * only their declared patterns (no host/method/version considered).
    */
   public static pathsCanOverlap(leftPath: string, rightPath: string): boolean {
-    const leftSegments = RouteConflictDetector.tokenizePath(leftPath);
-    const rightSegments = RouteConflictDetector.tokenizePath(rightPath);
+    return RouteConflictDetector.comparablePathsCanOverlap(
+      RouteConflictDetector.toComparablePath(leftPath),
+      RouteConflictDetector.toComparablePath(rightPath),
+    );
+  }
 
+  private static comparablePathsCanOverlap(
+    leftPath: ComparablePath,
+    rightPath: ComparablePath,
+  ): boolean {
+    // Rules out most pairs before comparing every pair of variants
+    if (
+      !leftPath.leadingText.startsWith(rightPath.leadingText) &&
+      !rightPath.leadingText.startsWith(leftPath.leadingText)
+    ) {
+      return false;
+    }
+    return leftPath.variants.some(leftSegments =>
+      rightPath.variants.some(rightSegments =>
+        RouteConflictDetector.segmentListsCanOverlap(
+          leftSegments,
+          rightSegments,
+        ),
+      ),
+    );
+  }
+
+  private static segmentListsCanOverlap(
+    leftSegments: ComparableSegment[],
+    rightSegments: ComparableSegment[],
+  ): boolean {
     const leftEndsInWildcard =
       leftSegments[leftSegments.length - 1]?.kind === 'wildcard';
     const rightEndsInWildcard =
@@ -137,6 +196,13 @@ export class RouteConflictDetector {
     versioningOptions: VersioningOptions | undefined,
   ): RouteConflict[] {
     const conflicts: RouteConflict[] = [];
+    // Every route is compared with every other one: read each path once
+    const comparablePaths = new Map(
+      routes.map(route => [
+        route.path,
+        RouteConflictDetector.toComparablePath(route.path),
+      ]),
+    );
 
     RouteConflictDetector.forEachUniquePair(
       routes,
@@ -167,9 +233,9 @@ export class RouteConflictDetector {
           return;
         }
         if (
-          !RouteConflictDetector.pathsCanOverlap(
-            earlierRoute.path,
-            laterRoute.path,
+          !RouteConflictDetector.comparablePathsCanOverlap(
+            comparablePaths.get(earlierRoute.path)!,
+            comparablePaths.get(laterRoute.path)!,
           )
         ) {
           return;
@@ -262,8 +328,8 @@ export class RouteConflictDetector {
   }
 
   private static segmentsCanOverlap(
-    leftSegment: PathSegment,
-    rightSegment: PathSegment,
+    leftSegment: ComparableSegment,
+    rightSegment: ComparableSegment,
   ): boolean {
     if (leftSegment.kind === 'wildcard' || rightSegment.kind === 'wildcard') {
       return true;
@@ -271,7 +337,194 @@ export class RouteConflictDetector {
     if (leftSegment.kind === 'param' || rightSegment.kind === 'param') {
       return true;
     }
+    if (leftSegment.kind === 'mixed' && rightSegment.kind === 'mixed') {
+      return (
+        (leftSegment.start.startsWith(rightSegment.start) ||
+          rightSegment.start.startsWith(leftSegment.start)) &&
+        (leftSegment.end.endsWith(rightSegment.end) ||
+          rightSegment.end.endsWith(leftSegment.end))
+      );
+    }
+    if (leftSegment.kind === 'mixed') {
+      return leftSegment.matcher.test(rightSegment.value);
+    }
+    if (rightSegment.kind === 'mixed') {
+      return rightSegment.matcher.test(leftSegment.value);
+    }
     return leftSegment.value === rightSegment.value;
+  }
+
+  /**
+   * Paths path-to-regexp cannot match, or with more than
+   * `MAX_EXPANDED_GROUPS` groups, are split on `/` instead.
+   */
+  private static toComparablePath(rawPath: string): ComparablePath {
+    const tokens = RouteConflictDetector.parseTokens(rawPath);
+    if (
+      !tokens ||
+      RouteConflictDetector.countGroups(tokens) > MAX_EXPANDED_GROUPS
+    ) {
+      return {
+        variants: [
+          RouteConflictDetector.splitPath(rawPath).map(
+            RouteConflictDetector.toComparableSegment,
+          ),
+        ],
+        leadingText: '',
+      };
+    }
+    const firstNonText = tokens.findIndex(token => token.type !== 'text');
+    return {
+      variants: RouteConflictDetector.expandGroups(tokens).map(variant =>
+        RouteConflictDetector.toSegments(
+          variant.map(token => ({ token, optional: false })),
+        ).map(RouteConflictDetector.toComparableSegment),
+      ),
+      // Slashes collapsed, as the segments ignore empty ones
+      leadingText: `/${joinText(
+        firstNonText === -1 ? tokens : tokens.slice(0, firstNonText),
+      )}`.replace(/\/{2,}/g, '/'),
+    };
+  }
+
+  private static toComparableSegment(segment: PathSegment): ComparableSegment {
+    if (segment.kind !== 'mixed') {
+      return { kind: segment.kind, value: segment.value };
+    }
+    // A segment matching this one starts with the text before its first
+    // param and ends with the text after its last one
+    const tokens = parse(segment.value).tokens;
+    return {
+      kind: 'mixed',
+      value: segment.value,
+      matcher: pathToRegexp(segment.value, { sensitive: true }).regexp,
+      start: joinText(
+        tokens.slice(
+          0,
+          tokens.findIndex(token => token.type !== 'text'),
+        ),
+      ),
+      end: joinText(
+        tokens.slice(tokens.findLastIndex(token => token.type !== 'text') + 1),
+      ),
+    };
+  }
+
+  private static parseTokens(rawPath: string): Token[] | undefined {
+    try {
+      // Also rejects what parse() accepts but cannot be matched, such as
+      // `:name:ext`, which Fastify takes as a single param
+      pathToRegexp(rawPath);
+      return parse(rawPath).tokens;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private static countGroups(tokens: Token[]): number {
+    return tokens.reduce(
+      (count, token) =>
+        token.type === 'group'
+          ? count + 1 + RouteConflictDetector.countGroups(token.tokens)
+          : count,
+      0,
+    );
+  }
+
+  private static expandGroups(
+    tokens: Token[],
+  ): Array<Array<Text | Parameter | Wildcard>> {
+    return tokens.reduce<Array<Array<Text | Parameter | Wildcard>>>(
+      (variants, token) => {
+        if (token.type !== 'group') {
+          return variants.map(variant => [...variant, token]);
+        }
+        const groupVariants = RouteConflictDetector.expandGroups(token.tokens);
+        return variants.flatMap(variant => [
+          variant,
+          ...groupVariants.map(groupVariant => [...variant, ...groupVariant]),
+        ]);
+      },
+      [[]],
+    );
+  }
+
+  private static flattenGroups(tokens: Token[], optional: boolean): PathPart[] {
+    return tokens.flatMap(token =>
+      token.type === 'group'
+        ? RouteConflictDetector.flattenGroups(token.tokens, true)
+        : [{ token, optional }],
+    );
+  }
+
+  private static toSegments(parts: PathPart[]): PathSegment[] {
+    const segments: PathPart[][] = [[]];
+    parts.forEach(part => {
+      if (part.token.type !== 'text') {
+        segments[segments.length - 1].push(part);
+        return;
+      }
+      part.token.value.split('/').forEach((text, index) => {
+        if (index > 0) {
+          segments.push([]);
+        }
+        if (text.length > 0) {
+          segments[segments.length - 1].push({
+            token: { type: 'text', value: text },
+            optional: part.optional,
+          });
+        }
+      });
+    });
+    return segments
+      .filter(segmentParts => segmentParts.length > 0)
+      .map(segmentParts => RouteConflictDetector.classifySegment(segmentParts));
+  }
+
+  private static classifySegment(parts: PathPart[]): PathSegment {
+    const tokens = parts.map(part => part.token);
+    // After text, a wildcard is compared as a mixed segment, which keeps
+    // `static*path` from overlapping `/users`
+    if (tokens[0].type === 'wildcard') {
+      return { kind: 'wildcard', value: tokens[0].name };
+    }
+    if (tokens.every(token => token.type === 'text')) {
+      return {
+        kind: 'literal',
+        value: tokens.map(token => token.value).join(''),
+      };
+    }
+    // An optional suffix does not narrow a param down: `:id{.:format}`
+    // matches the same segments as `:id`
+    const requiredParts = parts.filter(part => !part.optional);
+    const [onlyPart, ...otherParts] =
+      requiredParts.length > 0 ? requiredParts : parts;
+    if (otherParts.length === 0 && onlyPart.token.type === 'param') {
+      return { kind: 'param', value: onlyPart.token.name };
+    }
+    return { kind: 'mixed', value: stringify(new TokenData(tokens)) };
+  }
+
+  /**
+   * Tags each `/`-separated segment by its first character, for the paths
+   * that are not parsed with path-to-regexp.
+   */
+  private static splitPath(rawPath: string): PathSegment[] {
+    return rawPath
+      .split('/')
+      .filter(rawSegment => rawSegment.length > 0)
+      .map(rawSegment => {
+        if (rawSegment.startsWith('*')) {
+          return { kind: 'wildcard', value: rawSegment.slice(1) };
+        }
+        if (rawSegment.startsWith('{*') && rawSegment.endsWith('}')) {
+          return { kind: 'wildcard', value: rawSegment.slice(2, -1) };
+        }
+        if (rawSegment.startsWith(':')) {
+          return { kind: 'param', value: rawSegment.slice(1) };
+        }
+        return { kind: 'literal', value: rawSegment };
+      });
   }
 
   private static methodsCanOverlap(

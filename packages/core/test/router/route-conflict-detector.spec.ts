@@ -63,6 +63,56 @@ describe('RouteConflictDetector', () => {
         { kind: 'literal', value: 'me' },
       ]);
     });
+
+    it('should classify segments that mix text and params', () => {
+      expect(RouteConflictDetector.tokenizePath('/v:version/items')).toEqual([
+        { kind: 'mixed', value: 'v:version' },
+        { kind: 'literal', value: 'items' },
+      ]);
+      expect(RouteConflictDetector.tokenizePath('/files/:name.:ext')).toEqual([
+        { kind: 'literal', value: 'files' },
+        { kind: 'mixed', value: ':name.:ext' },
+      ]);
+    });
+
+    it('should classify a wildcard after text in the same segment as mixed', () => {
+      expect(RouteConflictDetector.tokenizePath('/static*path')).toEqual([
+        { kind: 'mixed', value: 'static*path' },
+      ]);
+    });
+
+    it('should read optional groups as present', () => {
+      expect(RouteConflictDetector.tokenizePath('/users{/:userId}')).toEqual([
+        { kind: 'literal', value: 'users' },
+        { kind: 'param', value: 'userId' },
+      ]);
+      expect(RouteConflictDetector.tokenizePath('/report{.:format}')).toEqual([
+        { kind: 'mixed', value: 'report.:format' },
+      ]);
+    });
+
+    it('should keep a param with an optional suffix a param, as it matches the same segments', () => {
+      expect(
+        RouteConflictDetector.tokenizePath('/users/:id{.:format}'),
+      ).toEqual([
+        { kind: 'literal', value: 'users' },
+        { kind: 'param', value: 'id' },
+      ]);
+    });
+
+    it('should split paths path-to-regexp cannot parse on "/"', () => {
+      expect(RouteConflictDetector.tokenizePath('/files/*')).toEqual([
+        { kind: 'literal', value: 'files' },
+        { kind: 'wildcard', value: '' },
+      ]);
+    });
+
+    it('should split paths path-to-regexp parses but cannot match on "/"', () => {
+      expect(RouteConflictDetector.tokenizePath('/files/:name:ext')).toEqual([
+        { kind: 'literal', value: 'files' },
+        { kind: 'param', value: 'name:ext' },
+      ]);
+    });
   });
 
   describe('pathsCanOverlap', () => {
@@ -129,6 +179,116 @@ describe('RouteConflictDetector', () => {
           '/api/users/me',
           '/api/v1/users/me',
         ),
+      ).toBe(false);
+    });
+
+    it('should compare every variant of a path with optional groups', () => {
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/users{/:userId}', '/users/:id'),
+      ).toBe(true);
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/users{/:userId}', '/users'),
+      ).toBe(true);
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/files/{*path}', '/files'),
+      ).toBe(true);
+      expect(RouteConflictDetector.pathsCanOverlap('/{*path}', '/')).toBe(true);
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/users{/:userId}',
+          '/users/:id/images',
+        ),
+      ).toBe(false);
+    });
+
+    it('should match a literal against a segment that mixes text and params', () => {
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/v:version/items', '/v1/items'),
+      ).toBe(true);
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/v:version/items', '/api/items'),
+      ).toBe(false);
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/files/:name.:ext',
+          '/files/readme.md',
+        ),
+      ).toBe(true);
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/files/:name.:ext',
+          '/files/readme',
+        ),
+      ).toBe(false);
+    });
+
+    it('should let a param or another mixed segment overlap a mixed segment', () => {
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/files/:name.:ext',
+          '/files/:id',
+        ),
+      ).toBe(true);
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/files/:name.:ext',
+          '/files/v:version',
+        ),
+      ).toBe(true);
+    });
+
+    it('should not overlap mixed segments whose leading or trailing text differ', () => {
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/orders/ord_:id',
+          '/orders/inv_:id',
+        ),
+      ).toBe(false);
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/files/:name.json',
+          '/files/:name.xml',
+        ),
+      ).toBe(false);
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/orders/ord_:id',
+          '/orders/ord_:id.json',
+        ),
+      ).toBe(true);
+    });
+
+    it('should keep the text before a wildcard in the same segment', () => {
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/static*path', '/users/:id'),
+      ).toBe(false);
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/files{*path}', '/users/:id'),
+      ).toBe(false);
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/static*path', '/staticfiles'),
+      ).toBe(true);
+    });
+
+    it('should compare paths with more optional groups than it expands segment by segment', () => {
+      const manyGroups = '/a{/b}{/c}{/d}{/e}{/f}{/g}{/h}';
+      expect(RouteConflictDetector.pathsCanOverlap(manyGroups, '/x')).toBe(
+        false,
+      );
+      expect(
+        RouteConflictDetector.pathsCanOverlap(manyGroups, manyGroups),
+      ).toBe(true);
+    });
+
+    it('should compare paths that path-to-regexp parses but cannot match segment by segment', () => {
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/files/:name:ext',
+          '/files/:name:ext',
+        ),
+      ).toBe(true);
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/files/:name:ext', '/users/me'),
       ).toBe(false);
     });
   });
