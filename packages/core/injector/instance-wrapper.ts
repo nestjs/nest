@@ -245,6 +245,9 @@ export class InstanceWrapper<T = any> {
     if (!this[INSTANCE_METADATA_SYMBOL].dependencies) {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];
     }
+    if (this[INSTANCE_METADATA_SYMBOL].dependencies[index] === wrapper) {
+      return;
+    }
     this[INSTANCE_METADATA_SYMBOL].dependencies[index] = wrapper;
     this.registerDependencyTreeParent(wrapper);
     this.resetDependencyTreeState();
@@ -641,6 +644,9 @@ export class InstanceWrapper<T = any> {
 
   private resetDependencyTreeState(lookupRegistry = new Set<string>()) {
     if (lookupRegistry.has(this[INSTANCE_ID_SYMBOL])) {
+      return;
+    }
+    if (isUndefined(this.isTreeStatic) && isUndefined(this.isTreeDurable)) {
       return;
     }
     lookupRegistry.add(this[INSTANCE_ID_SYMBOL]);

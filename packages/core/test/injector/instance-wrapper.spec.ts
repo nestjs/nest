@@ -145,6 +145,83 @@ describe('InstanceWrapper', () => {
 
         expect(wrapper.isDependencyTreeStatic()).toBe(false);
       });
+      it('should recompute when a deep transitive dependency changes after static introspection', () => {
+        const wrapper = new InstanceWrapper({});
+        const dependency = new InstanceWrapper({});
+        const nestedDependency = new InstanceWrapper({});
+        wrapper.addCtorMetadata(0, dependency);
+        dependency.addCtorMetadata(0, nestedDependency);
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
+
+        nestedDependency.addCtorMetadata(
+          0,
+          new InstanceWrapper({
+            scope: Scope.REQUEST,
+          }),
+        );
+
+        expect(dependency.isDependencyTreeStatic()).toBe(false);
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
+      });
+      it('should recompute when a transitive dependency changes after a non-static introspection skipped it', () => {
+        const wrapper = new InstanceWrapper({});
+        const requestScoped = new InstanceWrapper({ scope: Scope.REQUEST });
+        const dependency = new InstanceWrapper({});
+        wrapper.addCtorMetadata(0, requestScoped);
+        wrapper.addCtorMetadata(1, dependency);
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
+
+        dependency.addCtorMetadata(0, new InstanceWrapper({}));
+
+        expect(dependency.isDependencyTreeStatic()).toBe(true);
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
+
+        dependency.addCtorMetadata(
+          1,
+          new InstanceWrapper({
+            scope: Scope.REQUEST,
+          }),
+        );
+
+        expect(dependency.isDependencyTreeStatic()).toBe(false);
+      });
+      it('should not reset ancestors when the same dependency is added again at the same index', () => {
+        const wrapper = new InstanceWrapper({});
+        const dependency = new InstanceWrapper({});
+        wrapper.addCtorMetadata(0, dependency);
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
+
+        const resetSpy = vi.spyOn(
+          InstanceWrapper.prototype as any,
+          'resetDependencyTreeState',
+        );
+        try {
+          wrapper.addCtorMetadata(0, dependency);
+          expect(resetSpy).not.toHaveBeenCalled();
+        } finally {
+          resetSpy.mockRestore();
+        }
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
+      });
+      it('should stop the ancestor walk at wrappers that were never introspected', () => {
+        const root = new InstanceWrapper({});
+        const middle = new InstanceWrapper({});
+        const leaf = new InstanceWrapper({});
+        root.addCtorMetadata(0, middle);
+        middle.addCtorMetadata(0, leaf);
+
+        const resetSpy = vi.spyOn(
+          InstanceWrapper.prototype as any,
+          'resetDependencyTreeState',
+        );
+        try {
+          leaf.addCtorMetadata(0, new InstanceWrapper({}));
+          expect(resetSpy).toHaveBeenCalledTimes(1);
+        } finally {
+          resetSpy.mockRestore();
+        }
+        expect(root.isDependencyTreeStatic()).toBe(true);
+      });
     });
     describe('when statically scoped', () => {
       describe('dependencies, properties, enhancers', () => {
@@ -251,6 +328,23 @@ describe('InstanceWrapper', () => {
   });
 
   describe('isDependencyTreeDurable', () => {
+    it('should recompute when transitive dependencies change after durable introspection', () => {
+      const wrapper = new InstanceWrapper({});
+      const dependency = new InstanceWrapper({});
+      wrapper.addCtorMetadata(0, dependency);
+      dependency.addCtorMetadata(
+        0,
+        new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+      );
+      expect(wrapper.isDependencyTreeDurable()).toBe(true);
+
+      dependency.addCtorMetadata(
+        1,
+        new InstanceWrapper({ scope: Scope.REQUEST }),
+      );
+
+      expect(wrapper.isDependencyTreeDurable()).toBe(false);
+    });
     describe('when circular reference and default scope', () => {
       it('should return false', () => {
         const wrapper = new InstanceWrapper();

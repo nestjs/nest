@@ -845,18 +845,36 @@ export class Injector {
     keyOrIndex?: symbol | string | number,
     isTraversing?: boolean,
   ): Promise<any> {
+    return this.lookupComponentInImportsSync(
+      moduleRef,
+      name,
+      wrapper,
+      moduleRegistry,
+      resolutionContext,
+      keyOrIndex,
+      isTraversing,
+    );
+  }
+
+  private lookupComponentInImportsSync(
+    moduleRef: Module,
+    name: InjectionToken,
+    wrapper: InstanceWrapper,
+    moduleRegistry: Set<string>,
+    resolutionContext: ResolutionContext,
+    keyOrIndex?: symbol | string | number,
+    isTraversing?: boolean,
+  ): InstanceWrapper | null {
     let instanceWrapperRef: InstanceWrapper | null = null;
     const imports = moduleRef.imports || new Set<Module>();
-    const identity = (item: any) => item;
 
-    let children = [...imports.values()].filter(identity);
-    if (isTraversing) {
-      const contextModuleExports = moduleRef.exports;
-      children = children.filter(child =>
-        contextModuleExports.has(child.metatype),
-      );
-    }
-    for (const relatedModule of children) {
+    for (const relatedModule of imports) {
+      if (!relatedModule) {
+        continue;
+      }
+      if (isTraversing && !moduleRef.exports.has(relatedModule.metatype)) {
+        continue;
+      }
       if (moduleRegistry.has(relatedModule.id)) {
         continue;
       }
@@ -865,7 +883,7 @@ export class Injector {
 
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
-        const instanceRef = await this.lookupComponentInImports(
+        const instanceRef = this.lookupComponentInImportsSync(
           relatedModule,
           name,
           wrapper,
