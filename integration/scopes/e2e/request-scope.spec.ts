@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { Agent } from 'node:http';
 import request from 'supertest';
 import { Guard } from '../src/hello/guards/request-scoped.guard.js';
 import { HelloController } from '../src/hello/hello.controller.js';
@@ -18,6 +19,9 @@ class Meta {
 
 describe('Request scope', () => {
   const OVERLAP_REQUEST_COUNT = 1000;
+  // Opening a connection per request at once can overflow the listen queue
+  // of a busy CI machine, which then resets some of them.
+  const OVERLAP_SOCKET_COUNT = 100;
   let server;
   let app: INestApplication;
   let baseUrl: string;
@@ -90,8 +94,10 @@ describe('Request scope', () => {
     let interceptorDataLengthBefore: number;
     let guardDataLengthBefore: number;
     let responses: request.Response[];
+    let agent: Agent;
 
     beforeAll(async () => {
+      agent = new Agent({ keepAlive: true, maxSockets: OVERLAP_SOCKET_COUNT });
       controllerCounterBefore = HelloController.COUNTER;
       usersCounterBefore = UsersService.COUNTER;
       pipeCounterBefore = UserByIdPipe.COUNTER;
@@ -103,10 +109,14 @@ describe('Request scope', () => {
 
       responses = await Promise.all(
         Array.from({ length: OVERLAP_REQUEST_COUNT }, () =>
-          request(baseUrl).get('/hello'),
+          request(baseUrl).get('/hello').agent(agent),
         ),
       );
     }, 20000);
+
+    afterAll(() => {
+      agent.destroy();
+    });
 
     it('should complete every overlapping request successfully', () => {
       expect(responses.map(response => response.status)).toEqual(
