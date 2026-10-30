@@ -12,6 +12,7 @@ import {
   ERROR_EVENT,
 } from '@nestjs/websockets/internal';
 import type { MessageMappingProperties } from '@nestjs/websockets';
+import { match } from 'path-to-regexp';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
 
 enum READY_STATE {
@@ -58,6 +59,14 @@ const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 // Reading from a client stops while more than this is queued for it
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;
+// `WS_PATH_PARAMS` of `@nestjs/websockets`, the key the path params of a client
+// are stored under. Taken from the symbol registry rather than imported, so
+// that this package still loads with an older `@nestjs/websockets`.
+const WS_PATH_PARAMS = Symbol.for('nestjs:ws-path-params');
+
+function isDynamicPath(path: string): boolean {
+  return path.includes(':') || path.includes('*') || path.includes('{');
+}
 
 // Kept out of the class so that an adapter can be compared against it to tell
 // whether the parser in use is still the built-in one.
@@ -394,21 +403,28 @@ export class WsAdapter extends AbstractWsAdapter {
       try {
         const baseUrl = 'ws://' + request.headers.host + '/';
         const pathname = new URL(request.url!, baseUrl).pathname;
-        const wsServersCollection = this.wsServersRegistry.get(port)!;
+        const wsServersCollection = this.wsServersRegistry.get(port) || [];
 
-        let isRequestDelegated = false;
         for (const wsServer of wsServersCollection) {
-          if (pathname === wsServer.path) {
-            wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
-              wsServer.emit('connection', ws, request);
-            });
-            isRequestDelegated = true;
-            break;
+          const matched = wsServer.matchPath
+            ? wsServer.matchPath(pathname)
+            : pathname === wsServer.path
+              ? { params: {} }
+              : undefined;
+          if (!matched) {
+            continue;
           }
+
+          const params = { ...matched.params };
+          (request as any).params = params;
+          wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
+            (ws as any)[WS_PATH_PARAMS] = params;
+            wsServer.emit('connection', ws, request);
+          });
+          return;
         }
-        if (!isRequestDelegated) {
-          socket.destroy();
-        }
+
+        socket.destroy();
       } catch (err) {
         // Node hands the socket over without listeners of its own, and end()
         // only half-closes it. A client resetting the connection afterwards
@@ -430,9 +446,25 @@ export class WsAdapter extends AbstractWsAdapter {
     path: string,
   ) {
     const entries = this.wsServersRegistry.get(port) ?? [];
-    entries.push(wsServer);
+    const normalizedPath = normalizePath(path);
+    (wsServer as any).path = normalizedPath;
 
-    wsServer.path = normalizePath(path);
+    if (isDynamicPath(normalizedPath)) {
+      try {
+        (wsServer as any).matchPath = match(normalizedPath, {
+          sensitive: true,
+          trailing: false,
+        });
+      } catch (err) {
+        const error = new Error(
+          `Invalid WebSocket gateway path "${normalizedPath}": ${(err as Error).message}. path-to-regexp v8 requires named wildcards (e.g. "/files/*path") and brace optional groups (e.g. "/files{/id}").`,
+        );
+        this.logger.error(error);
+        throw error;
+      }
+    }
+
+    entries.push(wsServer);
     this.wsServersRegistry.set(port, entries);
   }
 }
