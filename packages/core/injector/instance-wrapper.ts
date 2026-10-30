@@ -102,6 +102,12 @@ export class InstanceWrapper<T = any> {
     Map<string, WeakMap<ContextId, InstancePerContext<T>>> | undefined;
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
+  /**
+   * Whether either flag was computed since the last reset. Unlike the flags,
+   * it is not cleared by `invalidateDependencyTreeParents`, so a wrapper whose
+   * flag was only invalidated still passes a reset on to its parents.
+   */
+  private isTreeIntrospected = false;
   private _hierarchyLevel = 0;
 
   get hierarchyLevel(): number {
@@ -295,6 +301,7 @@ export class InstanceWrapper<T = any> {
     if (!isUndefined(this.isTreeDurable)) {
       return this.isTreeDurable;
     }
+    this.isTreeIntrospected = true;
     if (this.scope === Scope.REQUEST) {
       this.isTreeDurable = this.durable === undefined ? false : this.durable;
       if (this.isTreeDurable) {
@@ -363,6 +370,7 @@ export class InstanceWrapper<T = any> {
     if (!isUndefined(this.isTreeStatic)) {
       return this.isTreeStatic;
     }
+    this.isTreeIntrospected = true;
     if (this.scope === Scope.REQUEST) {
       this.isTreeStatic = false;
       this.printIntrospectedAsRequestScoped();
@@ -646,10 +654,11 @@ export class InstanceWrapper<T = any> {
     if (lookupRegistry.has(this[INSTANCE_ID_SYMBOL])) {
       return;
     }
-    if (isUndefined(this.isTreeStatic) && isUndefined(this.isTreeDurable)) {
+    if (!this.isTreeIntrospected) {
       return;
     }
     lookupRegistry.add(this[INSTANCE_ID_SYMBOL]);
+    this.isTreeIntrospected = false;
     this.isTreeStatic = undefined;
     this.isTreeDurable = undefined;
     dependencyTreeParents

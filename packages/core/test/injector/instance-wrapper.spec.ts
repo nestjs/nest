@@ -345,6 +345,32 @@ describe('InstanceWrapper', () => {
 
       expect(wrapper.isDependencyTreeDurable()).toBe(false);
     });
+    it('should recompute when a dependency whose static flag was invalidated changes', () => {
+      const wrapper = new InstanceWrapper({});
+      const dependency = new InstanceWrapper({});
+      const replaced = new InstanceWrapper({});
+      const nested = new InstanceWrapper({});
+      dependency.addCtorMetadata(0, replaced);
+      dependency.addCtorMetadata(0, nested);
+      wrapper.addCtorMetadata(0, dependency);
+      wrapper.addCtorMetadata(
+        1,
+        new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+      );
+      expect(wrapper.isDependencyTreeDurable()).toBe(true);
+
+      // "dependency" is still registered as a parent of "replaced", so this
+      // invalidates its (static) flag
+      replaced.addCtorMetadata(
+        0,
+        new InstanceWrapper({ scope: Scope.REQUEST }),
+      );
+      expect(replaced.isDependencyTreeStatic()).toBe(false);
+
+      nested.addCtorMetadata(0, new InstanceWrapper({ scope: Scope.REQUEST }));
+
+      expect(wrapper.isDependencyTreeDurable()).toBe(false);
+    });
     describe('when circular reference and default scope', () => {
       it('should return false', () => {
         const wrapper = new InstanceWrapper();

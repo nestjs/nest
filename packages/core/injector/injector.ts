@@ -856,6 +856,11 @@ export class Injector {
     );
   }
 
+  /**
+   * Recursive part of `lookupComponentInImports`. Kept synchronous so a lookup
+   * walks the import graph in one go instead of yielding to other in-flight
+   * resolutions at every import level.
+   */
   private lookupComponentInImportsSync(
     moduleRef: Module,
     name: InjectionToken,
