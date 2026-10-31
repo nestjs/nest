@@ -101,6 +101,64 @@ describe('LazyModuleLoader', () => {
       });
     });
 
+    describe('when the first load() fails', () => {
+      let factoryCalls: number;
+
+      const connectionProvider = {
+        provide: 'CONNECTION',
+        useFactory: () => {
+          factoryCalls++;
+          if (factoryCalls === 1) {
+            throw new Error('Connection refused');
+          }
+          return 'connection';
+        },
+      };
+
+      @Injectable()
+      class ConnectionConsumer {
+        constructor(@Inject('CONNECTION') readonly connection: string) {}
+      }
+
+      @Module({ providers: [connectionProvider, ConnectionConsumer] })
+      class FailingModule {}
+
+      @Global()
+      @Module({
+        providers: [connectionProvider],
+        exports: [connectionProvider],
+      })
+      class FailingGlobalModule {}
+
+      @Module({ providers: [ConnectionConsumer] })
+      class ConsumerModule {}
+
+      beforeEach(() => {
+        factoryCalls = 0;
+      });
+
+      it('should build the module again on the next load()', async () => {
+        await expect(
+          lazyModuleLoader.load(() => FailingModule),
+        ).rejects.toThrow('Connection refused');
+        const moduleRef = await lazyModuleLoader.load(() => FailingModule);
+
+        expect(moduleRef.get('CONNECTION')).toBe('connection');
+        expect(moduleRef.get(ConnectionConsumer).connection).toBe('connection');
+        expect(factoryCalls).toBe(2);
+      });
+
+      it('should build a global module again on the next load()', async () => {
+        await expect(
+          lazyModuleLoader.load(() => FailingGlobalModule),
+        ).rejects.toThrow('Connection refused');
+        await lazyModuleLoader.load(() => FailingGlobalModule);
+        const moduleRef = await lazyModuleLoader.load(() => ConsumerModule);
+
+        expect(moduleRef.get(ConnectionConsumer).connection).toBe('connection');
+      });
+    });
+
     describe('singleton sharing and repeated loading (#17428)', () => {
       let constructionsCount = 0;
       let globalConstructionsCount = 0;

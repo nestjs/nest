@@ -44,12 +44,18 @@ export class LazyModuleLoader {
       }
       const lazyModulesContainer =
         this.createLazyModulesContainer(moduleInstances);
-      await this.dependenciesScanner.scanModulesForDependencies(
-        lazyModulesContainer,
-      );
-      await this.instanceLoader.createInstancesOfDependencies(
-        lazyModulesContainer,
-      );
+      try {
+        await this.dependenciesScanner.scanModulesForDependencies(
+          lazyModulesContainer,
+        );
+        await this.instanceLoader.createInstancesOfDependencies(
+          lazyModulesContainer,
+        );
+      } catch (err) {
+        // Half-built modules would otherwise be returned by every later load().
+        this.dependenciesScanner.removeModules(lazyModulesContainer.values());
+        throw err;
+      }
       const [targetModule] = moduleInstances;
       return this.getTargetModuleRef(targetModule);
     } finally {
