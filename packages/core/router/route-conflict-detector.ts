@@ -114,6 +114,34 @@ export class RouteConflictDetector {
   }
 
   /**
+   * Tells whether two routes differ only by the names of their parameters
+   * and wildcards, so that an adapter routing by path shape (Fastify)
+   * registers them as one route and rejects the second.
+   */
+  public static routesRegisterAsSame(
+    leftRoute: ResolvedRoute,
+    rightRoute: ResolvedRoute,
+    versioningOptions: VersioningOptions | undefined,
+  ): boolean {
+    return (
+      leftRoute.method === rightRoute.method &&
+      RouteConflictDetector.pathsHaveSameShape(
+        leftRoute.path,
+        rightRoute.path,
+      ) &&
+      RouteConflictDetector.hostsAreIdentical(
+        leftRoute.host,
+        rightRoute.host,
+      ) &&
+      RouteConflictDetector.versionsAreIdentical(
+        leftRoute.version,
+        rightRoute.version,
+        versioningOptions,
+      )
+    );
+  }
+
+  /**
    * Decides whether two paths can match the same incoming request, given
    * only their declared patterns (no host/method/version considered).
    */

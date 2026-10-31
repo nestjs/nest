@@ -325,6 +325,46 @@ describe('RouteConflictDetector', () => {
     });
   });
 
+  describe('routesRegisterAsSame', () => {
+    const versioningOptions: VersioningOptions = {
+      type: VersioningType.HEADER,
+      header: 'Accept-Version',
+    };
+
+    it('should be true for routes that differ by parameter names only', () => {
+      expect(
+        RouteConflictDetector.routesRegisterAsSame(
+          makeResolvedRoute({
+            path: '/users/:id',
+            host: 'a.com',
+            version: '1',
+          }),
+          makeResolvedRoute({
+            path: '/users/:name',
+            host: 'a.com',
+            version: '1',
+          }),
+          versioningOptions,
+        ),
+      ).toBe(true);
+    });
+
+    it.each([
+      { method: RequestMethod.POST },
+      { path: '/users/me' },
+      { host: 'a.com' },
+      { version: '2' },
+    ])('should be false when %j differs', other => {
+      expect(
+        RouteConflictDetector.routesRegisterAsSame(
+          makeResolvedRoute({ path: '/users/:id', version: '1' }),
+          makeResolvedRoute({ path: '/users/:name', version: '1', ...other }),
+          versioningOptions,
+        ),
+      ).toBe(false);
+    });
+  });
+
   describe('detect', () => {
     it('should flag two identical routes as a duplicate', () => {
       const earlierRoute = makeResolvedRoute({ path: '/users/me' });

@@ -273,20 +273,30 @@ export class NestApplication
 
     const routesToSkip = new Set<ResolvedRoute>();
     if (conflictPolicy) {
+      const versioningOptions = this.config.getVersioning();
       const conflicts = RouteConflictDetector.detect(
         orderedRoutes,
-        this.config.getVersioning(),
+        versioningOptions,
       );
 
       // On adapters that reject duplicate registrations the policy
       // cannot be honoured by simply logging — the adapter would
       // throw on the second `instance.route()` call. Drop the
-      // shadowed route of every duplicate conflict so the detector
+      // shadowed route of every duplicate conflict, and of every
+      // shadow the adapter registers as the same route
+      // ("/users/:id" and "/users/:username"), so the detector
       // (not the adapter) decides which one wins. The detector
       // always picks the earlier-registered route as the winner.
       if (adapterRejectsDuplicates) {
         conflicts.forEach(conflict => {
-          if (conflict.kind === 'duplicate') {
+          if (
+            conflict.kind === 'duplicate' ||
+            RouteConflictDetector.routesRegisterAsSame(
+              conflict.winner,
+              conflict.shadowed,
+              versioningOptions,
+            )
+          ) {
             routesToSkip.add(conflict.shadowed);
           }
         });
