@@ -936,6 +936,25 @@ describe('Injector', () => {
         },
       );
 
+      it('should record a pending forward ref before waiting on a completed load in the same context', async () => {
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+          scope: Scope.REQUEST,
+        });
+        const instanceHost = wrapper.getInstanceByContextId(contextId);
+        instanceHost.isPending = true;
+        instanceHost.donePromise = Promise.resolve();
+        instanceHost.settlementSignal = new SettlementSignal();
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+          inquirer,
+        });
+
+        expect(inquirerSignal.isCycle(wrapper.id)).toBe(true);
+      });
+
       it('should follow the signal of the dependency for this context', async () => {
         const wrapper = new InstanceWrapper({
           isResolved: false,

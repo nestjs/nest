@@ -713,7 +713,18 @@ export class Injector {
        * resolve instance host for a specific contextId or inquirer, to ensure
        * that eventual lazily created instance will be merged with the prototype
        * instantiated beforehand.
+       *
+       * Record the edge before waiting on a previous load or scheduling a new one.
+       * This keeps request-scoped forward refs from hanging when the same provider
+       * is already pending for the current inquirer but the dependency graph has
+       * not yet recorded the relationship in the signal.
        */
+      this.insertSettlementRef(
+        resolutionContext,
+        instanceWrapper,
+        instanceHost,
+      );
+
       if (instanceHost.donePromise) {
         const deferredLoad = instanceHost.donePromise.then((err?: unknown) => {
           // The placeholder handed out belongs to the load that failed
@@ -736,20 +747,6 @@ export class Injector {
           deferredLoad,
         );
       } else {
-        /**
-         * No load has ever been scheduled for this context (e.g., request-scoped
-         * providers are no longer instantiated during static bootstrap, so a fresh
-         * durable/request sub-tree host has no inherited `donePromise`).
-         * Record the edge before loading it, so that if this load reaches the
-         * inquirer while it is still pending, `isCycle()` sees the cycle and throws
-         * instead of awaiting a `donePromise` that depends on itself.
-         */
-        this.insertSettlementRef(
-          resolutionContext,
-          instanceWrapper,
-          instanceHost,
-        );
-
         await this.loadProvider(
           instanceWrapper,
           instanceWrapper.host ?? moduleRef,
