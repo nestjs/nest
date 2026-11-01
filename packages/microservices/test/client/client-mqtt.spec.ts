@@ -614,6 +614,22 @@ describe('ClientMqtt', () => {
       expect(untypedClient.subscriptionsCount.size).toBe(0);
     });
 
+    it('should reset the client state when ending the connection fails', async () => {
+      endSpy.mockRejectedValue(new Error('end failed'));
+      untypedClient.connectionPromise = Promise.resolve();
+      untypedClient.isInitialConnection = true;
+      untypedClient.subscriptionsCount.set('response/reply', 1);
+      untypedClient.pendingEventListeners = [{ event: 'x', callback: vi.fn() }];
+
+      await expect(client.close()).rejects.toThrow('end failed');
+
+      expect(untypedClient.mqttClient).toBeNull();
+      expect(untypedClient.connectionPromise).toBeNull();
+      expect(untypedClient.isInitialConnection).toBe(false);
+      expect(untypedClient.subscriptionsCount.size).toBe(0);
+      expect(untypedClient.pendingEventListeners).toEqual([]);
+    });
+
     it('should fail pending requests with a connection closed error', async () => {
       const callback = vi.fn();
       untypedClient.routingMap.set('some id', callback);
