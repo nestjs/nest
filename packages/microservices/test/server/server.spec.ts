@@ -662,7 +662,7 @@ describe('Server', () => {
       expect(endHook).toHaveBeenCalledOnce();
     });
 
-    it('should run the end hook once and pass the rejection on when "produce" rejects', async () => {
+    it('should answer and pass the rejection on when "produce" rejects', async () => {
       const endHook = bindHooks();
       const respond = vi.fn();
 
@@ -675,6 +675,35 @@ describe('Server', () => {
           respond,
         ),
       ).rejects.toThrow('handler failed');
+      await flush();
+
+      expect(respond).toHaveBeenCalledExactlyOnceWith({
+        err: {
+          status: 'error',
+          message: 'Internal server error',
+        },
+        isDisposed: true,
+      });
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should pass a redelivery signal on without answering it', async () => {
+      const endHook = bindHooks();
+      const respond = vi.fn();
+      const signal: Error & { getError?: () => unknown } = new Error(
+        'retry me',
+      );
+      signal.getError = () => signal;
+
+      await expect(
+        untypedServer.handleRequest(
+          context,
+          async () => {
+            throw signal;
+          },
+          respond,
+        ),
+      ).rejects.toThrow(signal);
       await flush();
 
       expect(respond).not.toHaveBeenCalled();

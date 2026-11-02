@@ -9,6 +9,7 @@ import {
   ReplaySubject,
   Subject,
   Subscription,
+  throwError,
 } from 'rxjs';
 import {
   catchError,
@@ -53,6 +54,17 @@ import {
 import { MESSAGES } from '@nestjs/core/internal';
 
 const MAX_PACKET_ID_LENGTH = 256;
+
+// An exception that returns itself from getError() is a redelivery signal
+// (KafkaRetriableException). Answering it would publish a reply for a
+// message the transport is about to redeliver.
+function isRedeliverySignal(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+  const getError = (err as { getError?: () => unknown }).getError;
+  return typeof getError === 'function' && getError.call(err) === err;
+}
 
 // Matches every text JSON.parse() accepts. A string pattern it does not match
 // (e.g. "user.created") is used as it is, as parsing it would only throw.
@@ -294,7 +306,26 @@ export abstract class Server<
     respond: (data: WritePacket) => Promise<unknown> | void,
   ) {
     return this.runWithProcessingHooks(context, async runEndHook => {
-      const response$ = await produce();
+      let response$: Observable<any>;
+      try {
+        response$ = await produce();
+      } catch (err) {
+        // The handler promise rejected. An inherited HTTP filter does this
+        // when it replies through host.switchToHttp().getResponse(): on RPC
+        // that object is the context, so the reply throws. gRPC fails the
+        // call with INTERNAL. Answer here too, then rethrow so the transport
+        // still logs the rejection. A redelivery signal is not answered.
+        if (!isRedeliverySignal(err)) {
+          this.send(
+            throwError(() => ({
+              status: 'error',
+              message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+            })).pipe(finalize(runEndHook)),
+            respond,
+          );
+        }
+        throw err;
+      }
       this.send(response$.pipe(finalize(runEndHook)), respond);
     });
   }

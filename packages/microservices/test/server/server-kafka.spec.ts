@@ -775,6 +775,7 @@ describe('ServerKafka', () => {
       );
       await flushPublishes();
 
+      expect(producerSend).not.toHaveBeenCalled();
       expect(endHook).toHaveBeenCalledOnce();
     });
 
@@ -795,6 +796,7 @@ describe('ServerKafka', () => {
       );
       await flushPublishes();
 
+      expect(producerSend).not.toHaveBeenCalled();
       expect(endHook).toHaveBeenCalledOnce();
     });
 
