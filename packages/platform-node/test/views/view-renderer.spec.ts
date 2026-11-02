@@ -261,6 +261,54 @@ describe('ViewRenderer', () => {
       },
     );
 
+    it('should fall back to the index file of a directory named like the view, as Express does', async () => {
+      write('views/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('users')).resolves.toBe('users index');
+      await expect(renderer.render('users.ejs')).resolves.toBe('users index');
+    });
+
+    it('should prefer a view file to the index file of a directory named like it', async () => {
+      write('views/users.ejs', 'users file');
+      write('views/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('users')).resolves.toBe('users file');
+    });
+
+    it('should not take a directory named like the view file for it', async () => {
+      mkdirSync(join(views, 'users.ejs'));
+      write('views/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('users')).resolves.toBe('users index');
+    });
+
+    it('should look for the index file in a subdirectory', async () => {
+      write('views/admin/users/index.ejs', 'admin users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('admin/users')).resolves.toBe(
+        'admin users index',
+      );
+    });
+
+    it('should prefer a view file of a later directory to the index file of an earlier one', async () => {
+      write('views/users/index.ejs', 'users index');
+      write('more/users.ejs', 'users file');
+      renderer.setEngine({ engine: { ejs }, root: [views, join(dir, 'more')] });
+
+      await expect(renderer.render('users')).resolves.toBe('users file');
+    });
+
+    it('should look for the index file in every directory', async () => {
+      write('more/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: [views, join(dir, 'more')] });
+
+      await expect(renderer.render('users')).resolves.toBe('users index');
+    });
+
     it('should append viewExt to names without an extension', async () => {
       const file = write('views/index.html');
       write('views/index.fn');
@@ -275,6 +323,16 @@ describe('ViewRenderer', () => {
 
     it('should keep the extension of a name that has one', async () => {
       const file = write('views/page.txt');
+      renderer.setEngine({
+        engine: { fn: createCallbackEngine() },
+        root: views,
+      });
+
+      await expect(renderer.render('page.txt')).resolves.toBe(file);
+    });
+
+    it('should fall back to the index file with the extension of the name', async () => {
+      const file = write('views/page/index.txt');
       renderer.setEngine({
         engine: { fn: createCallbackEngine() },
         root: views,
@@ -301,7 +359,9 @@ describe('ViewRenderer', () => {
       'should not render %s resolving outside the views directories',
       async (_, getView) => {
         write('secret.fn', 'secret');
+        write('secret/index.fn', 'secret');
         write('views-secret/page.fn', 'secret');
+        write('views-secret/page/index.fn', 'secret');
         const engine = createCallbackEngine();
         renderer.setEngine({ engine: { fn: engine }, root: views });
 

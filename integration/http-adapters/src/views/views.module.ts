@@ -47,6 +47,12 @@ export class ViewsController {
   locals() {
     return { message: 'Hello' };
   }
+
+  @Get('section')
+  @Render('section')
+  section() {
+    return { message: 'Hello' };
+  }
 }
 
 @Module({ controllers: [ViewsController] })
