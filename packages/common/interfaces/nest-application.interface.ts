@@ -207,7 +207,9 @@ export interface INestApplication<
   /**
    * Registers a global preRequest hook (executed before all enhancers for every
    * gateway message handler).
-   * Hooks receive an `ExecutionContext` and a `next` function that executes the rest of the pipeline.
+   * Hooks receive an `ExecutionContext` and a `next` function that executes the rest of the pipeline,
+   * and must return an `Observable`.
+   * They run for `@SubscribeMessage()` handlers only, not for `handleConnection()` or `handleDisconnect()`.
    * Useful for setting up AsyncLocalStorage context, tracing, or correlation IDs.
    *
    * @param {...PreRequestHook} hooks

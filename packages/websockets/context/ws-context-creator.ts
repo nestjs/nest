@@ -3,6 +3,7 @@ import type {
   ContextType,
   PipeTransform,
   PreRequestHook,
+  Type,
 } from '@nestjs/common';
 import {
   type Controller,
@@ -26,7 +27,7 @@ import {
   type PipesContextCreator,
   STATIC_CONTEXT,
 } from '@nestjs/core/internal';
-import { defer, Observable } from 'rxjs';
+import { defer, isObservable, Observable } from 'rxjs';
 import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants.js';
 import { WsException } from '../errors/ws-exception.js';
 import { WsParamsFactory } from '../factories/ws-params-factory.js';
@@ -123,8 +124,9 @@ export class WsContextCreator {
       return callback.apply(instance, args);
     };
     const targetPattern = this.reflectCallbackPattern(callback);
+    // Optional call, as an older "@nestjs/core" may not implement it
     const preRequestHooks =
-      this.applicationConfig?.getGlobalGatewayPreRequestHooks() ?? [];
+      this.applicationConfig?.getGlobalGatewayPreRequestHooks?.() ?? [];
 
     return this.wsProxy.create(
       async (...args: unknown[]) => {
@@ -149,7 +151,7 @@ export class WsContextCreator {
         }
         const executionContext = new ExecutionContextHost(
           args,
-          instance.constructor as any,
+          instance.constructor as Type<unknown>,
           callback,
         );
         executionContext.setType(contextType);
@@ -167,7 +169,8 @@ export class WsContextCreator {
   /**
    * Chains the hooks in registration order, the last one handing over to the
    * guards, interceptors and pipes of the handler. A hook that never calls
-   * `next()` short-circuits the handler.
+   * `next()` short-circuits the handler. Each hook gets its own `next()`, so
+   * one that calls it more than once still runs every hook after it.
    */
   private runPreRequestHooks(
     hooks: PreRequestHook[],
@@ -183,12 +186,19 @@ export class WsContextCreator {
       this.interceptorsConsumer.transformDeferred(executePipeline),
     );
 
-    let index = 0;
-    const next = (): Observable<unknown> => {
-      if (index >= hooks.length) return pipeline$;
-      return hooks[index++](executionContext, next);
+    const dispatch = (index: number) => (): Observable<unknown> => {
+      if (index >= hooks.length) {
+        return pipeline$;
+      }
+      const result = hooks[index](executionContext, dispatch(index + 1));
+      if (!isObservable(result)) {
+        throw new TypeError(
+          `The gateway preRequest hook at index ${index} must return an Observable (did you forget to "return next()"?).`,
+        );
+      }
+      return result;
     };
-    return next();
+    return dispatch(0)();
   }
 
   public reflectCallbackParamtypes(

@@ -280,15 +280,24 @@ export class NestMicroservice
     return this;
   }
 
-  /**
-   * Registers a global preRequest hook (executed before all enhancers for every gateway message handler).
-   *
-   * @param {...PreRequestHook} hooks
-   */
   public registerGatewayPreRequestHook(...hooks: PreRequestHook[]): this {
+    if (this.isConnectedToApplication) {
+      // The hybrid application binds the gateways, with its own config
+      this.logger.warn(
+        'registerGatewayPreRequestHook() has no effect on a microservice connected to an application, as the application binds the gateways. Call app.registerGatewayPreRequestHook() instead.',
+      );
+      return this;
+    }
+    // Optional call, as an older "@nestjs/core" may not implement it
+    if (!this.applicationConfig.registerGatewayPreRequestHook) {
+      this.logger.warn(
+        'registerGatewayPreRequestHook() requires a newer version of "@nestjs/core". The hooks will not run.',
+      );
+      return this;
+    }
     if (this.isInitialized) {
       this.logger.warn(
-        'Cannot apply global gateway preRequest hooks: registration must occur before initialization.',
+        'registerGatewayPreRequestHook() was called after WebSocket gateways were already bound. The hooks are stored but will NOT run for the gateways bound so far. Register them before app.init() (or app.listen()).',
       );
     }
     this.applicationConfig.registerGatewayPreRequestHook(...hooks);

@@ -6,6 +6,7 @@ import {
   lastValueFrom,
   Observable,
   of,
+  switchMap,
   throwError,
   toArray,
 } from 'rxjs';
@@ -546,6 +547,71 @@ describe('WsContextCreator (preRequest hooks)', () => {
       firstValueFrom(result as Observable<unknown>),
     ).rejects.toBeInstanceOf(WsException);
     expect(order).toEqual(['hook']);
+  });
+
+  it('should run every hook again when an earlier one calls next() twice', async () => {
+    const creator = createContextCreator([
+      (_ctx: unknown, next: () => Observable<unknown>) =>
+        next().pipe(switchMap(() => next())),
+      (_ctx: unknown, next: () => Observable<unknown>) => {
+        order.push('second');
+        return next();
+      },
+    ]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    await lastValueFrom(
+      (await proxy('client', 'data', 'pattern')) as Observable<unknown>,
+    );
+
+    expect(order).toEqual(['second', 'guard', 'second', 'guard']);
+  });
+
+  it('should reject a hook that does not return an observable', async () => {
+    const creator = createContextCreator([
+      (_ctx: unknown, next: () => Observable<unknown>) => {
+        next();
+      },
+    ]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    await expect(proxy('client', 'data', 'pattern')).rejects.toThrow(
+      /hook at index 0 must return an Observable/,
+    );
+    expect(order).toEqual([]);
+  });
+
+  it('should reject an async hook placed after another hook', async () => {
+    const creator = createContextCreator([
+      (_ctx: unknown, next: () => Observable<unknown>) => next(),
+      async (_ctx: unknown, next: () => Observable<unknown>) => next(),
+    ]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    await expect(proxy('client', 'data', 'pattern')).rejects.toThrow(
+      /hook at index 1 must return an Observable/,
+    );
+  });
+
+  it('should take the no-hook path with an older @nestjs/core', async () => {
+    // An older "ApplicationConfig" has no gateway hooks
+    const creator = new WsContextCreator(
+      Object.assign(new WsProxy(), { create: (callback: any) => callback }),
+      new ExceptionFiltersContext(new NestContainer()),
+      new PipesContextCreator(new NestContainer()) as any,
+      new PipesConsumer() as any,
+      new GuardsContextCreator(new NestContainer()) as any,
+      new GuardsConsumer() as any,
+      new InterceptorsContextCreator(new NestContainer()) as any,
+      new InterceptorsConsumer() as any,
+      {} as ApplicationConfig,
+    );
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    await expect(proxy('client', 'data', 'pattern')).resolves.toEqual({
+      client: 'client',
+      data: 'data',
+    });
   });
 
   describe('when wrapped by WsProxy', () => {

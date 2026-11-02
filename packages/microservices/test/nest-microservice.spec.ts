@@ -347,6 +347,34 @@ describe('NestMicroservice', () => {
 
       expect(warnSpy).toHaveBeenCalled();
     });
+
+    it('should warn and not store the hooks when connected to an application', () => {
+      const mockConfig = {
+        ...createMockAppConfig(),
+        registerGatewayPreRequestHook: vi.fn(),
+      } as unknown as ApplicationConfig;
+      const instance = createInstance(mockConfig);
+      instance.setIsConnectedToApplication(true);
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
+
+      expect(instance.registerGatewayPreRequestHook(hook)).toBe(instance);
+      expect(mockConfig.registerGatewayPreRequestHook).not.toHaveBeenCalled();
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(
+        /Call app\.registerGatewayPreRequestHook\(\) instead/,
+      );
+    });
+
+    it('should warn instead of throwing with an older @nestjs/core', () => {
+      // An older "ApplicationConfig" has no gateway hooks
+      const mockConfig = createMockAppConfig() as unknown as ApplicationConfig;
+      const instance = createInstance(mockConfig);
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
+
+      expect(() => instance.registerGatewayPreRequestHook(hook)).not.toThrow();
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(
+        /requires a newer version of "@nestjs\/core"/,
+      );
+    });
   });
 
   describe('close', () => {

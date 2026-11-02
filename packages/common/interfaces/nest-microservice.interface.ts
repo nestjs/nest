@@ -70,8 +70,11 @@ export interface INestMicroservice extends INestApplicationContext {
   /**
    * Registers a global preRequest hook (executed before all enhancers for every
    * gateway message handler).
-   * Hooks receive an `ExecutionContext` and a `next` function that executes the rest of the pipeline.
+   * Hooks receive an `ExecutionContext` and a `next` function that executes the rest of the pipeline,
+   * and must return an `Observable`.
+   * They run for `@SubscribeMessage()` handlers only, not for `handleConnection()` or `handleDisconnect()`.
    * Useful for setting up AsyncLocalStorage context, tracing, or correlation IDs.
+   * In a hybrid application, register the hooks on the application instead, as it binds the gateways.
    *
    * @param {...PreRequestHook} hooks
    */

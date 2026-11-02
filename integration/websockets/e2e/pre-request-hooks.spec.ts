@@ -1,15 +1,22 @@
 import {
+  ArgumentsHost,
   CanActivate,
+  Catch,
   ExecutionContext,
+  Inject,
   INestApplication,
   Injectable,
   PreRequestHook,
+  Scope,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { Transport } from '@nestjs/microservices';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
 import {
+  BaseWsExceptionFilter,
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
@@ -43,8 +50,47 @@ class BaseGateway {
   }
 }
 
+@Catch()
+class StoreFilter extends BaseWsExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    calls.push(`filter:${als.getStore()?.traceId}`);
+    super.catch(exception, host);
+  }
+}
+
 @WebSocketGateway()
-class IoHooksGateway extends BaseGateway {}
+class IoHooksGateway extends BaseGateway {
+  @SubscribeMessage('ack')
+  onAck() {
+    calls.push(`handler:${als.getStore()?.traceId}`);
+    return { traceId: als.getStore()?.traceId };
+  }
+
+  @UseFilters(StoreFilter)
+  @SubscribeMessage('fail')
+  onFail() {
+    throw new WsException('handler failed');
+  }
+}
+
+@Injectable({ scope: Scope.REQUEST })
+class ConnectionState {
+  constructor(@Inject(REQUEST) readonly client: { id?: string }) {}
+}
+
+@WebSocketGateway()
+class ScopedHooksGateway {
+  constructor(private readonly connectionState: ConnectionState) {}
+
+  @SubscribeMessage('ping')
+  onPing(@MessageBody() data: unknown) {
+    calls.push(`handler:${als.getStore()?.traceId}`);
+    return {
+      event: 'pong',
+      data: { data, clientId: this.connectionState.client.id },
+    };
+  }
+}
 
 @WebSocketGateway({ path: '/hooks' })
 class WsHooksGateway extends BaseGateway {}
@@ -66,10 +112,10 @@ const record =
 async function createApp(
   gateway: any,
   configure: (app: INestApplication) => void,
-  options: { ws?: boolean } = {},
+  options: { ws?: boolean; providers?: any[] } = {},
 ) {
   const testingModule = await Test.createTestingModule({
-    providers: [StoreGuard, gateway],
+    providers: [StoreGuard, gateway, ...(options.providers ?? [])],
   }).compile();
   const app = testingModule.createNestApplication();
   if (options.ws) {
@@ -172,6 +218,77 @@ describe('Gateway preRequest hooks', () => {
     });
   });
 
+  describe('socket.io responses', () => {
+    it('should answer through the ack callback', async () => {
+      let port: number;
+      ({ app, port } = await createApp(IoHooksGateway, app =>
+        app.registerGatewayPreRequestHook(runWithStore('ack')),
+      ));
+
+      const client = io(`http://localhost:${port}`, {
+        transports: ['websocket'],
+      });
+      socket = client;
+
+      await expect(client.emitWithAck('ack', 'hello')).resolves.toEqual({
+        traceId: 'ack',
+      });
+      expect(calls).toEqual(['handler:ack']);
+    });
+
+    it('should expose the hook context to exception filters', async () => {
+      let port: number;
+      ({ app, port } = await createApp(IoHooksGateway, app =>
+        app.registerGatewayPreRequestHook(runWithStore('filter')),
+      ));
+
+      const emitted = emitIo(port, 'fail', 'hello');
+      socket = emitted.socket;
+
+      await expect(emitted.response).resolves.toMatchObject({
+        event: 'exception',
+        payload: { status: 'error', message: 'handler failed' },
+      });
+      expect(calls).toEqual(['filter:filter']);
+    });
+  });
+
+  describe('request-scoped gateway', () => {
+    it('should run the hooks for every message', async () => {
+      let port: number;
+      ({ app, port } = await createApp(
+        ScopedHooksGateway,
+        app =>
+          app.registerGatewayPreRequestHook(
+            record('hook'),
+            runWithStore('scoped'),
+          ),
+        { providers: [ConnectionState] },
+      ));
+
+      const client = io(`http://localhost:${port}`, {
+        transports: ['websocket'],
+      });
+      socket = client;
+      await new Promise(resolve => client.on('connect', resolve));
+
+      for (const data of ['first', 'second']) {
+        const response = new Promise(resolve => client.once('pong', resolve));
+        client.emit('ping', data);
+        await expect(response).resolves.toEqual({
+          data,
+          clientId: client.id,
+        });
+      }
+      expect(calls).toEqual([
+        'hook:ws',
+        'handler:scoped',
+        'hook:ws',
+        'handler:scoped',
+      ]);
+    });
+  });
+
   describe('AsyncLocalStorage', () => {
     it.each([
       ['run() around the subscription', runWithStore('scoped')],
@@ -239,6 +356,29 @@ describe('Gateway preRequest hooks', () => {
         'guard:undefined',
         'handler:undefined',
       ]);
+    });
+
+    it('should warn and ignore gateway hooks registered on a connected microservice', async () => {
+      let port: number;
+      let warnSpy: ReturnType<typeof vi.spyOn> | undefined;
+      ({ app, port } = await createApp(IoHooksGateway, app => {
+        const microservice = app.connectMicroservice(
+          { transport: Transport.TCP, options: { port: 0 } },
+          { inheritAppConfig: false },
+        );
+        warnSpy = vi.spyOn((microservice as any).logger, 'warn');
+        microservice.registerGatewayPreRequestHook(record('ignored-hook'));
+      }));
+      await app.startAllMicroservices();
+
+      const emitted = emitIo(port, 'ping', 'hello');
+      socket = emitted.socket;
+      await emitted.response;
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/Call app\.registerGatewayPreRequestHook\(\)/),
+      );
+      expect(calls).toEqual(['guard:undefined', 'handler:undefined']);
     });
   });
 });

@@ -601,7 +601,7 @@ export class NestApplication
   public registerGatewayPreRequestHook(...hooks: PreRequestHook[]): this {
     if (this.isWsModuleRegistered) {
       this.logger.warn(
-        'Cannot apply global gateway preRequest hooks: registration must occur before initialization.',
+        'registerGatewayPreRequestHook() was called after WebSocket gateways were already bound. The hooks are stored but will NOT run for the gateways bound so far. Register them before app.init() (or app.listen()).',
       );
     }
     this.config.registerGatewayPreRequestHook(...hooks);
