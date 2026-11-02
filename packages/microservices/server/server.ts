@@ -55,17 +55,6 @@ import { MESSAGES } from '@nestjs/core/internal';
 
 const MAX_PACKET_ID_LENGTH = 256;
 
-// An exception that returns itself from getError() is a redelivery signal
-// (KafkaRetriableException). Answering it would publish a reply for a
-// message the transport is about to redeliver.
-function isRedeliverySignal(err: unknown): boolean {
-  if (!err || typeof err !== 'object') {
-    return false;
-  }
-  const getError = (err as { getError?: () => unknown }).getError;
-  return typeof getError === 'function' && getError.call(err) === err;
-}
-
 // Matches every text JSON.parse() accepts. A string pattern it does not match
 // (e.g. "user.created") is used as it is, as parsing it would only throw.
 const JSON_TEXT = /^\s*(?:[{["\-\d]|(?:true|false|null)\s*$)/;
@@ -314,8 +303,8 @@ export abstract class Server<
         // when it replies through host.switchToHttp().getResponse(): on RPC
         // that object is the context, so the reply throws. gRPC fails the
         // call with INTERNAL. Answer here too, then rethrow so the transport
-        // still logs the rejection. A redelivery signal is not answered.
-        if (!isRedeliverySignal(err)) {
+        // still logs the rejection.
+        if (this.shouldAnswerRejectedRequest(err)) {
           this.send(
             throwError(() => ({
               status: 'error',
@@ -328,6 +317,14 @@ export abstract class Server<
       }
       this.send(response$.pipe(finalize(runEndHook)), respond);
     });
+  }
+
+  /**
+   * Whether a request is answered with an error when `produce` rejects with
+   * `err`, rather than only passing the rejection on to the transport.
+   */
+  protected shouldAnswerRejectedRequest(err: unknown): boolean {
+    return true;
   }
 
   /**

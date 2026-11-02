@@ -357,6 +357,12 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     );
   }
 
+  // A retriable exception makes kafkajs redeliver the message, and it is the
+  // redelivered message that gets answered
+  protected override shouldAnswerRejectedRequest(err: unknown): boolean {
+    return !(err instanceof KafkaRetriableException);
+  }
+
   public unwrap<T>(): T {
     if (!this.client) {
       throw new Error(

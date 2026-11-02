@@ -7,6 +7,7 @@ import {
 } from 'rxjs';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
+import { KafkaRetriableException } from '../../exceptions/kafka-retriable-exception.js';
 import { Server } from '../../server/server.js';
 
 class TestServer extends Server {
@@ -687,26 +688,29 @@ describe('Server', () => {
       expect(endHook).toHaveBeenCalledOnce();
     });
 
-    it('should pass a redelivery signal on without answering it', async () => {
+    it('should answer a rejection with a retriable exception (only Kafka redelivers)', async () => {
       const endHook = bindHooks();
       const respond = vi.fn();
-      const signal: Error & { getError?: () => unknown } = new Error(
-        'retry me',
-      );
-      signal.getError = () => signal;
+      const exception = new KafkaRetriableException('retry me');
 
       await expect(
         untypedServer.handleRequest(
           context,
           async () => {
-            throw signal;
+            throw exception;
           },
           respond,
         ),
-      ).rejects.toThrow(signal);
+      ).rejects.toThrow(exception);
       await flush();
 
-      expect(respond).not.toHaveBeenCalled();
+      expect(respond).toHaveBeenCalledExactlyOnceWith({
+        err: {
+          status: 'error',
+          message: 'Internal server error',
+        },
+        isDisposed: true,
+      });
       expect(endHook).toHaveBeenCalledOnce();
     });
   });
