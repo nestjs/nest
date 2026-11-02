@@ -185,11 +185,14 @@ describe('ServerKafka', () => {
   });
 
   describe('close', () => {
-    const consumer = { disconnect: vi.fn() };
-    const producer = { disconnect: vi.fn() };
+    let consumer: { disconnect: ReturnType<typeof vi.fn> };
+    let producer: { disconnect: ReturnType<typeof vi.fn> };
     beforeEach(() => {
+      consumer = { disconnect: vi.fn() };
+      producer = { disconnect: vi.fn() };
       untypedServer.consumer = consumer;
       untypedServer.producer = producer;
+      untypedServer.client = client;
     });
     it('should close server', async () => {
       await server.close();
@@ -199,6 +202,56 @@ describe('ServerKafka', () => {
       expect(untypedServer.consumer).toBeNull();
       expect(untypedServer.producer).toBeNull();
       expect(untypedServer.client).toBeNull();
+    });
+    // Replies of the handlers the consumer waits for go through the producer
+    it('should disconnect the producer only once the consumer has disconnected', async () => {
+      let resolveConsumer!: () => void;
+      consumer.disconnect.mockReturnValue(
+        new Promise<void>(resolve => (resolveConsumer = resolve)),
+      );
+
+      const closing = server.close();
+      await new Promise(resolve => setImmediate(resolve));
+      expect(producer.disconnect).not.toHaveBeenCalled();
+
+      resolveConsumer();
+      await closing;
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+    });
+    it('should disconnect the producer and reset the clients when the consumer fails to disconnect', async () => {
+      const error = new Error('consumer');
+      consumer.disconnect.mockRejectedValue(error);
+
+      await expect(server.close()).rejects.toBe(error);
+
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedServer.consumer).toBeNull();
+      expect(untypedServer.producer).toBeNull();
+      expect(untypedServer.client).toBeNull();
+    });
+    it('should reset the clients when the producer fails to disconnect', async () => {
+      const error = new Error('producer');
+      producer.disconnect.mockRejectedValue(error);
+
+      await expect(server.close()).rejects.toBe(error);
+
+      expect(consumer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedServer.consumer).toBeNull();
+      expect(untypedServer.producer).toBeNull();
+      expect(untypedServer.client).toBeNull();
+    });
+    it('should reject with the consumer error and log the producer error when both fail to disconnect', async () => {
+      const consumerError = new Error('consumer');
+      const producerError = new Error('producer');
+      consumer.disconnect.mockRejectedValue(consumerError);
+      producer.disconnect.mockRejectedValue(producerError);
+      const logError = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+
+      await expect(server.close()).rejects.toBe(consumerError);
+
+      expect(logError).toHaveBeenCalledWith(producerError);
     });
   });
 

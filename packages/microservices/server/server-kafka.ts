@@ -134,11 +134,32 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async close(): Promise<void> {
-    this.consumer && (await this.consumer.disconnect());
-    this.producer && (await this.producer.disconnect());
-    this.consumer = null;
-    this.producer = null;
-    this.client = null;
+    // The consumer goes first: disconnecting it waits for the running message
+    // handlers, which send their replies through the producer. The producer is
+    // disconnected even when the consumer fails to.
+    let consumerFailed = false;
+    let consumerError: unknown;
+    try {
+      await this.consumer?.disconnect();
+    } catch (err) {
+      consumerFailed = true;
+      consumerError = err;
+    }
+    try {
+      await this.producer?.disconnect();
+    } catch (err) {
+      if (!consumerFailed) {
+        throw err;
+      }
+      this.logger.error(err);
+    } finally {
+      this.consumer = null;
+      this.producer = null;
+      this.client = null;
+    }
+    if (consumerFailed) {
+      throw consumerError;
+    }
   }
 
   public async start(callback: () => void): Promise<void> {
