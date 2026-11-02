@@ -277,6 +277,14 @@ describe('ViewRenderer', () => {
       await expect(renderer.render('users')).resolves.toBe('users file');
     });
 
+    it('should not take a directory named like the view file for it', async () => {
+      mkdirSync(join(views, 'users.ejs'));
+      write('views/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('users')).resolves.toBe('users index');
+    });
+
     it('should look for the index file in a subdirectory', async () => {
       write('views/admin/users/index.ejs', 'admin users index');
       renderer.setEngine({ engine: { ejs }, root: views });
@@ -323,6 +331,16 @@ describe('ViewRenderer', () => {
       await expect(renderer.render('page.txt')).resolves.toBe(file);
     });
 
+    it('should fall back to the index file with the extension of the name', async () => {
+      const file = write('views/page/index.txt');
+      renderer.setEngine({
+        engine: { fn: createCallbackEngine() },
+        root: views,
+      });
+
+      await expect(renderer.render('page.txt')).resolves.toBe(file);
+    });
+
     it('should reject a view that does not exist', async () => {
       const engine = createCallbackEngine();
       renderer.setEngine({ engine: { fn: engine }, root: views });
@@ -341,7 +359,9 @@ describe('ViewRenderer', () => {
       'should not render %s resolving outside the views directories',
       async (_, getView) => {
         write('secret.fn', 'secret');
+        write('secret/index.fn', 'secret');
         write('views-secret/page.fn', 'secret');
+        write('views-secret/page/index.fn', 'secret');
         const engine = createCallbackEngine();
         renderer.setEngine({ engine: { fn: engine }, root: views });
 
