@@ -78,14 +78,19 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   public async close() {
     this.closeCount++;
     this.handleClose();
-    if (this.mqttClient) {
-      await this.mqttClient.endAsync();
+    try {
+      if (this.mqttClient) {
+        await this.mqttClient.endAsync();
+      }
+    } finally {
+      // The state must be reset even when `endAsync()` fails, otherwise a later
+      // `connect()` reuses the cached client and connection promise.
+      this.mqttClient = null;
+      this.connectionPromise = null;
+      this.isInitialConnection = false;
+      this.subscriptionsCount.clear();
+      this.pendingEventListeners = [];
     }
-    this.mqttClient = null;
-    this.connectionPromise = null;
-    this.isInitialConnection = false;
-    this.subscriptionsCount.clear();
-    this.pendingEventListeners = [];
   }
 
   public handleClose() {
