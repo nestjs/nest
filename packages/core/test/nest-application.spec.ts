@@ -503,6 +503,45 @@ describe('NestApplication', () => {
       expect((instance as any).config.getIoAdapter()).toBe(adapter);
     });
   });
+  describe('registerGatewayPreRequestHook', () => {
+    function createInstance(): NestApplication {
+      const noopHttpAdapter = new NoopHttpAdapter({});
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      container.setHttpAdapter(noopHttpAdapter);
+      return new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+    }
+    const hook = (_ctx: any, next: any) => next();
+
+    it('should store the hooks on ApplicationConfig and return the instance', () => {
+      const instance = createInstance();
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
+
+      expect(instance.registerGatewayPreRequestHook(hook)).toBe(instance);
+      expect(
+        (instance as any).config.getGlobalGatewayPreRequestHooks(),
+      ).toEqual([hook]);
+      expect((instance as any).config.getGlobalPreRequestHooks()).toEqual([]);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should warn when called after WS module registration', async () => {
+      const instance = createInstance();
+      (instance as any).socketModule = { register: vi.fn() };
+      await instance.registerWsModule();
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
+
+      instance.registerGatewayPreRequestHook(hook);
+
+      expect(warnSpy).toHaveBeenCalledOnce();
+    });
+  });
   describe('enableCsrfProtection', () => {
     const createApp = (adapter: any) => {
       const applicationConfig = new ApplicationConfig();

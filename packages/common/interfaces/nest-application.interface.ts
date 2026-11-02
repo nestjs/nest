@@ -10,6 +10,7 @@ import {
   NestHybridApplicationOptions,
   PipeTransform,
 } from './index.js';
+import { PreRequestHook } from './microservices/pre-request-hook.interface.js';
 import { INestApplicationContext } from './nest-application-context.interface.js';
 import { VersioningOptions } from './version-options.interface.js';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface.js';
@@ -202,6 +203,16 @@ export interface INestApplication<
    * @param {...CanActivate} guards
    */
   useGlobalGuards(...guards: CanActivate[]): this;
+
+  /**
+   * Registers a global preRequest hook (executed before all enhancers for every
+   * gateway message handler).
+   * Hooks receive an `ExecutionContext` and a `next` function that executes the rest of the pipeline.
+   * Useful for setting up AsyncLocalStorage context, tracing, or correlation IDs.
+   *
+   * @param {...PreRequestHook} hooks
+   */
+  registerGatewayPreRequestHook(...hooks: PreRequestHook[]): this;
 
   /**
    * Terminates the application (including NestApplication, Gateways, and each connected

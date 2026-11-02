@@ -8,6 +8,7 @@ import {
   type NestHybridApplicationOptions,
   type NestInterceptor,
   type PipeTransform,
+  type PreRequestHook,
   type SecurityHeadersOptions,
   type VersioningOptions,
   VersioningType,
@@ -594,6 +595,16 @@ export class NestApplication
         ref: item,
       }),
     );
+    return this;
+  }
+
+  public registerGatewayPreRequestHook(...hooks: PreRequestHook[]): this {
+    if (this.isWsModuleRegistered) {
+      this.logger.warn(
+        'Cannot apply global gateway preRequest hooks: registration must occur before initialization.',
+      );
+    }
+    this.config.registerGatewayPreRequestHook(...hooks);
     return this;
   }
 

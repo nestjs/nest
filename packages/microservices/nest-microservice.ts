@@ -280,6 +280,21 @@ export class NestMicroservice
     return this;
   }
 
+  /**
+   * Registers a global preRequest hook (executed before all enhancers for every gateway message handler).
+   *
+   * @param {...PreRequestHook} hooks
+   */
+  public registerGatewayPreRequestHook(...hooks: PreRequestHook[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global gateway preRequest hooks: registration must occur before initialization.',
+      );
+    }
+    this.applicationConfig.registerGatewayPreRequestHook(...hooks);
+    return this;
+  }
+
   public async init(): Promise<this> {
     if (this.isInitialized) {
       return this;

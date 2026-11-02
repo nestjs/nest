@@ -22,6 +22,7 @@ export class ApplicationConfig {
   private globalInterceptors: Array<NestInterceptor> = [];
   private globalGuards: Array<CanActivate> = [];
   private globalPreRequestHooks: Array<PreRequestHook> = [];
+  private globalGatewayPreRequestHooks: Array<PreRequestHook> = [];
   private versioningOptions: VersioningOptions;
   private routeConflictPolicy: RouteConflictPolicy | undefined;
   private routeResolutionStrategy: RouteResolutionStrategy | undefined;
@@ -149,6 +150,15 @@ export class ApplicationConfig {
 
   public getGlobalPreRequestHooks(): PreRequestHook[] {
     return this.globalPreRequestHooks;
+  }
+
+  public registerGatewayPreRequestHook(...hooks: PreRequestHook[]) {
+    this.globalGatewayPreRequestHooks =
+      this.globalGatewayPreRequestHooks.concat(hooks);
+  }
+
+  public getGlobalGatewayPreRequestHooks(): PreRequestHook[] {
+    return this.globalGatewayPreRequestHooks;
   }
 
   public enableVersioning(options: VersioningOptions): void {

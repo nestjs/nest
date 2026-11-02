@@ -1,5 +1,14 @@
+import { ApplicationConfig } from '@nestjs/core/application-config.js';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { of } from 'rxjs';
+import {
+  firstValueFrom,
+  isObservable,
+  lastValueFrom,
+  Observable,
+  of,
+  throwError,
+  toArray,
+} from 'rxjs';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
 import { Injectable, UseGuards, UsePipes } from '../../../common/index.js';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
@@ -17,6 +26,7 @@ import { WsContextCreator } from '../../context/ws-context-creator.js';
 import { WsProxy } from '../../context/ws-proxy.js';
 import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
 import { WsParamsFactory } from '../../factories/ws-params-factory.js';
+import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler.js';
 import { MessageBody, WsException } from '../../index.js';
 
 @Injectable()
@@ -367,5 +377,225 @@ describe('WsContextCreator (pattern forwarding)', () => {
 
     const host = new ExecutionContextHost(recordedArgs);
     expect(host.switchToWs().getPattern()).toEqual('myEvent');
+  });
+});
+
+describe('WsContextCreator (preRequest hooks)', () => {
+  @Injectable()
+  class HookGateway {
+    onValue(client: unknown, data: unknown) {
+      return { client, data };
+    }
+    onObservable() {
+      return of(1, 2);
+    }
+  }
+
+  let instance: HookGateway;
+  let guardsContextCreator: GuardsContextCreator;
+  let exceptionFiltersContext: ExceptionFiltersContext;
+  let order: string[];
+
+  function createContextCreator(
+    hooks: any[],
+    wsProxy: WsProxy = Object.assign(new WsProxy(), {
+      create: (callback: any) => callback,
+    }),
+  ) {
+    const container = new NestContainer();
+    const config = new ApplicationConfig();
+    config.registerGatewayPreRequestHook(...hooks);
+
+    guardsContextCreator = new GuardsContextCreator(container);
+    vi.spyOn(guardsContextCreator, 'create').mockReturnValue([
+      {
+        canActivate: () => {
+          order.push('guard');
+          return true;
+        },
+      },
+    ] as any);
+    exceptionFiltersContext = new ExceptionFiltersContext(container);
+
+    return new WsContextCreator(
+      wsProxy,
+      exceptionFiltersContext,
+      new PipesContextCreator(container) as any,
+      new PipesConsumer() as any,
+      guardsContextCreator as any,
+      new GuardsConsumer() as any,
+      new InterceptorsContextCreator(container) as any,
+      new InterceptorsConsumer() as any,
+      config,
+    );
+  }
+
+  beforeEach(() => {
+    instance = new HookGateway();
+    order = [];
+  });
+
+  it('should not wrap the result when no hooks are registered', async () => {
+    const creator = createContextCreator([]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    const result = await proxy('client', 'data', 'pattern');
+
+    expect(isObservable(result)).toBe(false);
+    expect(result).toEqual({ client: 'client', data: 'data' });
+  });
+
+  it('should run the hooks in registration order, before guards', async () => {
+    const hook =
+      (name: string) => (_ctx: unknown, next: () => Observable<unknown>) => {
+        order.push(name);
+        return next();
+      };
+    const creator = createContextCreator([hook('first'), hook('second')]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    const result = await proxy('client', 'data', 'pattern');
+
+    await expect(
+      firstValueFrom(result as Observable<unknown>),
+    ).resolves.toEqual({ client: 'client', data: 'data' });
+    expect(order).toEqual(['first', 'second', 'guard']);
+  });
+
+  it('should hand a "ws" execution context to the hooks', async () => {
+    let context: ExecutionContextHost | undefined;
+    const creator = createContextCreator([
+      (ctx: ExecutionContextHost, next: () => Observable<unknown>) => {
+        context = ctx;
+        return next();
+      },
+    ]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    await firstValueFrom(
+      (await proxy('client', 'data', 'pattern')) as Observable<unknown>,
+    );
+
+    expect(context!.getType()).toBe('ws');
+    expect(context!.getClass()).toBe(HookGateway);
+    expect(context!.getHandler()).toBe(instance.onValue);
+    expect(context!.switchToWs().getClient()).toBe('client');
+    expect(context!.switchToWs().getData()).toBe('data');
+    expect(context!.switchToWs().getPattern()).toBe('pattern');
+  });
+
+  it('should skip guards and the handler when a hook does not call next()', async () => {
+    const handlerSpy = vi.spyOn(instance, 'onValue');
+    const creator = createContextCreator([() => of('short-circuited')]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    const result = await proxy('client', 'data', 'pattern');
+
+    await expect(firstValueFrom(result as Observable<unknown>)).resolves.toBe(
+      'short-circuited',
+    );
+    expect(order).toEqual([]);
+    expect(handlerSpy).not.toHaveBeenCalled();
+  });
+
+  it('should flatten an observable returned by the handler', async () => {
+    const creator = createContextCreator([
+      (_ctx: unknown, next: () => Observable<unknown>) => next(),
+    ]);
+    const proxy = creator.create(
+      instance,
+      instance.onObservable,
+      'test',
+      'onObservable',
+    );
+
+    const result = await proxy('client', 'data', 'pattern');
+
+    await expect(
+      lastValueFrom((result as Observable<unknown>).pipe(toArray())),
+    ).resolves.toEqual([1, 2]);
+  });
+
+  it('should reject when a hook throws synchronously', async () => {
+    const error = new Error('hook failed');
+    const creator = createContextCreator([
+      () => {
+        throw error;
+      },
+    ]);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    await expect(proxy('client', 'data', 'pattern')).rejects.toBe(error);
+  });
+
+  it('should surface a forbidden guard after the hooks have run', async () => {
+    const creator = createContextCreator([
+      (_ctx: unknown, next: () => Observable<unknown>) => {
+        order.push('hook');
+        return next();
+      },
+    ]);
+    vi.spyOn(guardsContextCreator, 'create').mockReturnValue([
+      { canActivate: () => false },
+    ] as any);
+    const proxy = creator.create(instance, instance.onValue, 'test', 'onValue');
+
+    const result = await proxy('client', 'data', 'pattern');
+
+    await expect(
+      firstValueFrom(result as Observable<unknown>),
+    ).rejects.toBeInstanceOf(WsException);
+    expect(order).toEqual(['hook']);
+  });
+
+  describe('when wrapped by WsProxy', () => {
+    it('should pass a synchronous hook error to the exceptions handler', async () => {
+      const handleSpy = vi
+        .spyOn(WsExceptionsHandler.prototype, 'handle')
+        .mockImplementation(() => {});
+      const error = new Error('hook failed');
+      const creator = createContextCreator(
+        [
+          () => {
+            throw error;
+          },
+        ],
+        new WsProxy(),
+      );
+      const proxy = creator.create(
+        instance,
+        instance.onValue,
+        'test',
+        'onValue',
+      );
+
+      await proxy('client', 'data');
+
+      expect(handleSpy).toHaveBeenCalledWith(error, expect.anything());
+    });
+
+    it('should pass an observable hook error to the exceptions handler', async () => {
+      const handleSpy = vi
+        .spyOn(WsExceptionsHandler.prototype, 'handle')
+        .mockImplementation(() => {});
+      const error = new Error('hook failed');
+      const creator = createContextCreator(
+        [() => throwError(() => error)],
+        new WsProxy(),
+      );
+      const proxy = creator.create(
+        instance,
+        instance.onValue,
+        'test',
+        'onValue',
+      );
+
+      const result = await proxy('client', 'data');
+
+      await expect(
+        lastValueFrom((result as Observable<unknown>).pipe(toArray())),
+      ).resolves.toEqual([]);
+      expect(handleSpy).toHaveBeenCalledWith(error, expect.anything());
+    });
   });
 });

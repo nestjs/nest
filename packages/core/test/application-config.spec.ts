@@ -121,6 +121,30 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalPreRequestHooks()).toEqual([hook1, hook2]);
     });
   });
+  describe('GatewayPreRequestHooks', () => {
+    it('should accumulate multiple registerGatewayPreRequestHook calls', () => {
+      const hook1 = () => {};
+      const hook2 = () => {};
+      appConfig.registerGatewayPreRequestHook(hook1 as any);
+      appConfig.registerGatewayPreRequestHook(hook2 as any);
+
+      expect(appConfig.getGlobalGatewayPreRequestHooks()).toEqual([
+        hook1,
+        hook2,
+      ]);
+    });
+    it('should keep gateway hooks apart from the microservice hooks', () => {
+      const rpcHook = () => {};
+      const gatewayHook = () => {};
+      appConfig.registerPreRequestHook(rpcHook as any);
+      appConfig.registerGatewayPreRequestHook(gatewayHook as any);
+
+      expect(appConfig.getGlobalPreRequestHooks()).toEqual([rpcHook]);
+      expect(appConfig.getGlobalGatewayPreRequestHooks()).toEqual([
+        gatewayHook,
+      ]);
+    });
+  });
   describe('Interceptors', () => {
     it('should set global interceptors', () => {
       const interceptors = ['test', 'test2'];

@@ -2,6 +2,7 @@ import type {
   ArgumentMetadata,
   ContextType,
   PipeTransform,
+  PreRequestHook,
 } from '@nestjs/common';
 import {
   type Controller,
@@ -9,9 +10,10 @@ import {
   isEmptyArray,
   PARAMTYPES_METADATA,
 } from '@nestjs/common/internal';
+import type { ApplicationConfig } from '@nestjs/core';
 import {
   ContextUtils,
-  type ExecutionContextHost,
+  ExecutionContextHost,
   FORBIDDEN_MESSAGE,
   type GuardsConsumer,
   type GuardsContextCreator,
@@ -24,6 +26,7 @@ import {
   type PipesContextCreator,
   STATIC_CONTEXT,
 } from '@nestjs/core/internal';
+import { defer, Observable } from 'rxjs';
 import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants.js';
 import { WsException } from '../errors/ws-exception.js';
 import { WsParamsFactory } from '../factories/ws-params-factory.js';
@@ -53,6 +56,7 @@ export class WsContextCreator {
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: InterceptorsConsumer,
+    private readonly applicationConfig?: ApplicationConfig,
   ) {}
 
   public create<T extends ParamsMetadata = ParamsMetadata>(
@@ -119,25 +123,72 @@ export class WsContextCreator {
       return callback.apply(instance, args);
     };
     const targetPattern = this.reflectCallbackPattern(callback);
+    const preRequestHooks =
+      this.applicationConfig?.getGlobalGatewayPreRequestHooks() ?? [];
+
     return this.wsProxy.create(
       async (...args: unknown[]) => {
         // The pattern is already appended by `WsProxy` before this callback runs,
         // so it is the last element of `args` at this point.
         const initialArgs = this.contextUtils.createNullArray(argsLength);
-        fnCanActivate && (await fnCanActivate(args));
+        const executePipeline = async () => {
+          fnCanActivate && (await fnCanActivate(args));
 
-        return this.interceptorsConsumer.intercept(
-          interceptors,
+          return this.interceptorsConsumer.intercept(
+            interceptors,
+            args,
+            instance,
+            callback,
+            handler(initialArgs, args),
+            contextType,
+          );
+        };
+
+        if (preRequestHooks.length === 0) {
+          return executePipeline();
+        }
+        const executionContext = new ExecutionContextHost(
           args,
-          instance,
+          instance.constructor as any,
           callback,
-          handler(initialArgs, args),
-          contextType,
+        );
+        executionContext.setType(contextType);
+        return this.runPreRequestHooks(
+          preRequestHooks,
+          executionContext,
+          executePipeline,
         );
       },
       exceptionHandler,
       targetPattern,
     );
+  }
+
+  /**
+   * Chains the hooks in registration order, the last one handing over to the
+   * guards, interceptors and pipes of the handler. A hook that never calls
+   * `next()` short-circuits the handler.
+   */
+  private runPreRequestHooks(
+    hooks: PreRequestHook[],
+    executionContext: ExecutionContextHost,
+    executePipeline: () => Promise<unknown>,
+  ): Observable<unknown> {
+    // With no interceptors registered, `InterceptorsConsumer#intercept`
+    // resolves to whatever the handler returned rather than to an observable,
+    // so the result has to be wrapped rather than merged.
+    // `InterceptorsConsumer#transformDeferred` does exactly that, and also
+    // skips subscribing the producer once the consumer has unsubscribed.
+    const pipeline$: Observable<unknown> = defer(() =>
+      this.interceptorsConsumer.transformDeferred(executePipeline),
+    );
+
+    let index = 0;
+    const next = (): Observable<unknown> => {
+      if (index >= hooks.length) return pipeline$;
+      return hooks[index++](executionContext, next);
+    };
+    return next();
   }
 
   public reflectCallbackParamtypes(

@@ -2,7 +2,8 @@ import { Observable } from 'rxjs';
 import { ExecutionContext } from '../features/execution-context.interface.js';
 
 /**
- * Interface describing a global preRequest hook for microservices.
+ * Interface describing a global preRequest hook for microservices
+ * (`registerPreRequestHook`) and WebSocket gateways (`registerGatewayPreRequestHook`).
  *
  * Hooks are executed before guards, allowing setup of context (e.g. AsyncLocalStorage)
  * that is available to all downstream enhancers.
