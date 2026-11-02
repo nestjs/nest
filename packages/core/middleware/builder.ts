@@ -1,6 +1,7 @@
 import { iterate } from 'iterare';
 import { pathToRegexp } from 'path-to-regexp';
 import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
+import { isRequestMethodAll } from '../router/utils/index.js';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
 import { filterMiddleware, isStaticPath } from './utils.js';
@@ -155,7 +156,12 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           method: RequestMethod;
           regexes: RegExp[];
         }): boolean =>
-          route.method === item.method &&
+          // A parameterized route mounted for every method (a plain string
+          // passed to forRoutes(), or RequestMethod.ALL) also serves the
+          // requests of a route declared for a specific method, while a
+          // specific-method parameterized route covers none of the methods
+          // an all-methods route is mounted on
+          (route.method === item.method || isRequestMethodAll(item.method)) &&
           mountPaths.every(path =>
             item.regexes.some(regex => regex.test(path)),
           );

@@ -234,6 +234,41 @@ describe('MiddlewareBuilder', () => {
           expect(builder.build()[0].forRoutes).toEqual(routes);
         });
 
+        it('should remove a route of a specific method covered by an all-methods parameterized one', () => {
+          // A route passed to forRoutes() as a plain string is mounted for
+          // every method, so it serves "cats/me" declared for GET too:
+          // keeping both mounts would run the middleware twice for it
+          configProxy.forRoutes('cats/:id', {
+            path: 'cats/me',
+            method: RequestMethod.GET,
+          });
+
+          expect(builder.build()).toEqual([
+            {
+              middleware: [],
+              forRoutes: [
+                {
+                  method: -1,
+                  path: '/cats/:id',
+                },
+              ],
+            },
+          ]);
+        });
+
+        it('should not remove an all-methods route covered by a parameterized one of a specific method', () => {
+          // The parameterized route only serves GET requests, while the
+          // concrete route is mounted for every method: dropping it would
+          // leave its other methods (e.g. POST "cats/me") without middleware
+          const routes = [
+            { path: '/cats/:id', method: RequestMethod.GET },
+            { path: '/cats/me', method: -1 as any },
+          ];
+          configProxy.forRoutes(...routes);
+
+          expect(builder.build()[0].forRoutes).toEqual(routes);
+        });
+
         it('should remove every route overlapping the same parameterized one', () => {
           // The parameterized route's regex is reused for each candidate, so a
           // stateful (global) regex would leave `lastIndex` past the end of the
