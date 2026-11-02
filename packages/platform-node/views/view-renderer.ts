@@ -135,8 +135,9 @@ export class ViewRenderer {
   private async createRenderFn(view: string): Promise<RenderFn> {
     const { name, module } = await this.getEngine();
     const extension = this.viewExt ?? DEFAULT_EXTENSIONS[name] ?? name;
+    const cleanView = view.replace(/[/\\]+$/, '');
     const file = await this.resolveFile(
-      extname(view) ? view : `${view}.${extension}`,
+      extname(cleanView) ? cleanView : `${cleanView}.${extension}`,
     );
     // Express-style engines take the data and the options in one object.
     // "settings" is where Express puts application settings and where ejs

@@ -266,6 +266,7 @@ describe('ViewRenderer', () => {
       renderer.setEngine({ engine: { ejs }, root: views });
 
       await expect(renderer.render('users')).resolves.toBe('users index');
+      await expect(renderer.render('users/')).resolves.toBe('users index');
       await expect(renderer.render('users.ejs')).resolves.toBe('users index');
     });
 
