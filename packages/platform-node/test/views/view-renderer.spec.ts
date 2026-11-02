@@ -261,6 +261,46 @@ describe('ViewRenderer', () => {
       },
     );
 
+    it('should fall back to the index file of a directory named like the view, as Express does', async () => {
+      write('views/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('users')).resolves.toBe('users index');
+      await expect(renderer.render('users.ejs')).resolves.toBe('users index');
+    });
+
+    it('should prefer a view file to the index file of a directory named like it', async () => {
+      write('views/users.ejs', 'users file');
+      write('views/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('users')).resolves.toBe('users file');
+    });
+
+    it('should look for the index file in a subdirectory', async () => {
+      write('views/admin/users/index.ejs', 'admin users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('admin/users')).resolves.toBe(
+        'admin users index',
+      );
+    });
+
+    it('should prefer a view file of a later directory to the index file of an earlier one', async () => {
+      write('views/users/index.ejs', 'users index');
+      write('more/users.ejs', 'users file');
+      renderer.setEngine({ engine: { ejs }, root: [views, join(dir, 'more')] });
+
+      await expect(renderer.render('users')).resolves.toBe('users file');
+    });
+
+    it('should look for the index file in every directory', async () => {
+      write('more/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: [views, join(dir, 'more')] });
+
+      await expect(renderer.render('users')).resolves.toBe('users index');
+    });
+
     it('should append viewExt to names without an extension', async () => {
       const file = write('views/index.html');
       write('views/index.fn');

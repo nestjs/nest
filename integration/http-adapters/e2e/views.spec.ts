@@ -55,4 +55,11 @@ describe.each(adapters('express', 'node'))('@Render() (%s)', name => {
     expect(res.status).toBe(200);
     expect(res.text).toBe('<p>Hello Kamil</p>');
   });
+
+  it('should fall back to the index file of a directory named like the view', async () => {
+    const res = await request(app.getHttpServer()).get('/section');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('<h1>Hello section</h1>');
+  });
 });

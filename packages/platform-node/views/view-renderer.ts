@@ -1,5 +1,5 @@
 import { access, readFile } from 'fs/promises';
-import { extname, isAbsolute, relative, resolve, sep } from 'path';
+import { extname, isAbsolute, join, parse, relative, resolve, sep } from 'path';
 
 /**
  * Template engine configuration for `app.setViewEngine()`, shaped like the
@@ -202,22 +202,27 @@ export class ViewRenderer {
   }
 
   private async resolveFile(view: string): Promise<string> {
-    for (const root of this.roots) {
-      const file = resolve(root, view);
-      // Never resolve outside the views directories ("../", absolute paths)
-      const relativePath = relative(root, file);
-      if (
-        relativePath === '..' ||
-        relativePath.startsWith(`..${sep}`) ||
-        isAbsolute(relativePath)
-      ) {
-        continue;
-      }
-      try {
-        await access(file);
-        return file;
-      } catch {
-        // try the next directory
+    const { dir, name, ext } = parse(view);
+    // As with Express: "users" is "users.ext", then "users/index.ext". A file in
+    // any directory comes first, so a view found without an index stays the same
+    for (const candidate of [view, join(dir, name, `index${ext}`)]) {
+      for (const root of this.roots) {
+        const file = resolve(root, candidate);
+        // Never resolve outside the views directories ("../", absolute paths)
+        const relativePath = relative(root, file);
+        if (
+          relativePath === '..' ||
+          relativePath.startsWith(`..${sep}`) ||
+          isAbsolute(relativePath)
+        ) {
+          continue;
+        }
+        try {
+          await access(file);
+          return file;
+        } catch {
+          // try the next directory, then the next candidate
+        }
       }
     }
     throw new Error(
