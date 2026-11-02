@@ -31,6 +31,22 @@ export function getLiteralPrefix(path: string): string {
 }
 
 /**
+ * The longest text all the given prefixes start with ("" for none).
+ */
+export function getCommonPrefix(prefixes: string[]): string {
+  if (prefixes.length === 0) {
+    return '';
+  }
+  return prefixes.reduce((common, prefix) => {
+    let length = 0;
+    while (length < common.length && common[length] === prefix[length]) {
+      length++;
+    }
+    return common.slice(0, length);
+  });
+}
+
+/**
  * For each entry of a list of literal prefixes (`undefined` for an entry that
  * must always be visited), the index of the first entry after it that a path
  * not starting with its prefix may still match. The entries registered right

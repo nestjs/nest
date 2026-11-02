@@ -286,6 +286,85 @@ describe('NodeRouter', () => {
       expect(url).toBe('/app.js');
     });
 
+    it('should mount a middleware on each path of a list', () => {
+      const mounts: string[] = [];
+      router.use(['/css', '/js'], (req: NodeRequest) => {
+        mounts.push(`${req.baseUrl} ${req.url}`);
+      });
+
+      dispatch('GET', '/css/site.css');
+      dispatch('GET', '/js/app.js');
+      dispatch('GET', '/img/logo.png');
+
+      expect(mounts).toEqual(['/css /site.css', '/js /app.js']);
+    });
+
+    it('should accept a nested list of paths', () => {
+      const middleware = vi.fn();
+      router.use([['/css'], '/js'], middleware);
+
+      dispatch('GET', '/css/site.css');
+      dispatch('GET', '/js/app.js');
+
+      expect(middleware).toHaveBeenCalledTimes(2);
+    });
+
+    it('should run the middleware once, mounted on the first matching path, when several paths match', () => {
+      const mounts: string[] = [];
+      router.use(['/assets', '/assets/js'], (req: NodeRequest) => {
+        mounts.push(`${req.baseUrl} ${req.url}`);
+      });
+
+      dispatch('GET', '/assets/js/app.js');
+
+      expect(mounts).toEqual(['/assets /js/app.js']);
+    });
+
+    it('should not skip a list of paths along with the middleware registered after it under its first path', () => {
+      const first = vi.fn((_req: unknown, _res: unknown, next: Next) => next());
+      const second = vi.fn();
+      router.use(['/a', '/b'], first);
+      router.use('/a/x', second);
+
+      dispatch('GET', '/b/y');
+
+      expect(first).toHaveBeenCalledOnce();
+      expect(second).not.toHaveBeenCalled();
+    });
+
+    it('should match a list holding only "/" against "/" alone, as Express does', () => {
+      const middleware = vi.fn();
+      router.use(['/'], middleware);
+
+      dispatch('GET', '/a/x');
+      expect(middleware).not.toHaveBeenCalled();
+
+      dispatch('GET', '/');
+      expect(middleware).toHaveBeenCalledOnce();
+    });
+
+    it('should not skip a list holding an empty list, which matches every path', () => {
+      const middleware = vi.fn((_req: unknown, _res: unknown, next: Next) =>
+        next(),
+      );
+      router.use(['/a', []], middleware);
+      router.use('/a/x', vi.fn());
+
+      dispatch('GET', '/b');
+
+      expect(middleware).toHaveBeenCalledOnce();
+    });
+
+    it('should never run a middleware mounted on an empty list of paths', () => {
+      const middleware = vi.fn();
+      router.use([], middleware);
+
+      dispatch('GET', '/');
+      dispatch('GET', '/a/x');
+
+      expect(middleware).not.toHaveBeenCalled();
+    });
+
     it('should throw for a middleware that is not a function', () => {
       expect(() => router.use('/a', 'not a function' as any)).toThrow(
         TypeError,

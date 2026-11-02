@@ -10,6 +10,7 @@ import {
   RouteTable,
 } from './route-table.js';
 import {
+  getCommonPrefix,
   getLiteralPrefix,
   getPrefixSkips,
   getRawPrefixEnd,
@@ -48,6 +49,27 @@ export type FinalHandler = (
   req: NodeRequest,
   res: NodeResponse,
 ) => void;
+
+/**
+ * The mount paths a `use()` call starts with: a path, or a list of paths as
+ * Express accepts (`use(['/css', '/js'], serveStatic(...))`), each of which
+ * may itself be a list matched as one path; `undefined` when it starts with
+ * the middleware.
+ */
+function getMountPaths(value: unknown): (string | string[])[] | undefined {
+  if (typeof value === 'string') {
+    return [value];
+  }
+  if (
+    !Array.isArray(value) ||
+    !value.flat(Infinity).every(path => typeof path === 'string')
+  ) {
+    return undefined;
+  }
+  return value.map(path =>
+    Array.isArray(path) ? (path.flat(Infinity) as string[]) : path,
+  );
+}
 
 function decodeParam(value: string) {
   // decodeURIComponent() is a call into the runtime (about 80 ns), even for a
@@ -282,18 +304,47 @@ export class NodeRouter {
   }
 
   public use(...args: any[]) {
-    const [path, handlers] =
-      typeof args[0] === 'string' ? [args[0], args.slice(1)] : ['/', args];
-    const isRoot = path === '/' || path === '';
-    const matcher = isRoot
+    const paths = getMountPaths(args[0]);
+    const handlers = paths ? args.slice(1) : args;
+    // Only the string "/" (or "") mounts at the root: as with Express, ["/"]
+    // matches "/" alone
+    const isRoot = !paths || args[0] === '/' || args[0] === '';
+    const matchers = isRoot
+      ? []
+      : paths.map(
+          path =>
+            match(Array.isArray(path) ? path.map(loosen) : loosen(path), {
+              decode: decodeParam,
+              end: false,
+              // Case-sensitive, as routes are (see RouteTable)
+              sensitive: true,
+            }) as PathMatcher,
+        );
+    // With several paths, the first one that matches is the mount path and
+    // the middleware runs once, as with Express
+    const matcher: PathMatcher | null = isRoot
       ? null
-      : (match(loosen(path), {
-          decode: decodeParam,
-          end: false,
-          // Case-sensitive, as routes are (see RouteTable)
-          sensitive: true,
-        }) as PathMatcher);
-    const prefix = isRoot ? '' : getLiteralPrefix(loosen(path));
+      : matchers.length === 1
+        ? matchers[0]
+        : path => {
+            for (const pathMatcher of matchers) {
+              const result = pathMatcher(path);
+              if (result) {
+                return result;
+              }
+            }
+            return false;
+          };
+    const prefix = isRoot
+      ? ''
+      : getCommonPrefix(
+          paths.map(path =>
+            Array.isArray(path)
+              ? // An empty list matches every path: no prefix
+                getCommonPrefix(path.map(p => getLiteralPrefix(loosen(p))))
+              : getLiteralPrefix(loosen(path)),
+          ),
+        );
 
     for (const handler of handlers.flat()) {
       if (typeof handler !== 'function') {
