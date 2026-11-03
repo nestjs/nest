@@ -164,12 +164,15 @@ const ABORTED = Symbol('aborted');
 
 /**
  * Runs the storage engine. Resolves `ABORTED` when `@fastify/multipart`
- * destroys the file stream mid-way (it does so, without an error, when the
- * client disconnects or a limit is hit), because a storage engine waiting
- * for `end` would otherwise never call back. The actual reason is then read
- * from the parts iterator. A stream destroyed with an error was destroyed by
- * the engine (e.g. by a `pipeline()` to a file that cannot be written), which
- * reports that error itself.
+ * destroys the file stream mid-way (when the client disconnects, the body is
+ * malformed or a limit is hit), because a storage engine waiting for `end`
+ * (or one that only `pipe()`s the stream) would otherwise never call back.
+ * The actual reason is then read from the parts iterator. Since 10.1.7,
+ * `@fastify/multipart` destroys the stream with that same error, and before
+ * without one. A stream destroyed with any other error was destroyed by the
+ * engine (e.g. by a `pipeline()` to a file that cannot be written), which
+ * reports that error itself. `readAhead` reads the next part, which the
+ * parse loop then takes over.
  *
  * Whatever the engine stores after an abort is removed, as multer does. The
  * file at `path` (which engines set before writing, by multer's convention)
@@ -182,6 +185,7 @@ function storeFile(
   storage: MultipartStorageEngine,
   req: FastifyRequest,
   file: IncomingMultipartFile,
+  readAhead: () => Promise<unknown>,
 ) {
   return new Promise<Partial<UploadedMultipartFile> | typeof ABORTED>(
     (resolve, reject) => {
@@ -190,18 +194,36 @@ function storeFile(
         return resolve(ABORTED);
       }
       let aborted = false;
-      const onClose = () => {
-        if (!stream.readableEnded && !stream.errored) {
-          aborted = true;
-          resolve(ABORTED);
-          const partial = file as unknown as UploadedMultipartFile;
-          if (partial.path) {
-            removeFiles(storage, req, [partial]).catch(() => undefined);
-          }
+      let calledBack = false;
+      const abort = () => {
+        if (calledBack) {
+          return;
         }
+        aborted = true;
+        resolve(ABORTED);
+        const partial = file as unknown as UploadedMultipartFile;
+        if (partial.path) {
+          removeFiles(storage, req, [partial]).catch(() => undefined);
+        }
+      };
+      const onClose = () => {
+        if (stream.readableEnded) {
+          return;
+        }
+        const reason = stream.errored;
+        if (!reason) {
+          return abort();
+        }
+        // The parts iterator fails with this very error when the parser
+        // destroyed the stream; it stays pending when the engine did.
+        readAhead().then(
+          () => undefined,
+          err => err === reason && abort(),
+        );
       };
       stream.once('close', onClose);
       storage._handleFile(req, file, (err, info) => {
+        calledBack = true;
         stream.off('close', onClose);
         if (!aborted) {
           return err ? reject(err) : resolve(info ?? {});
@@ -216,6 +238,30 @@ function storeFile(
       });
     },
   );
+}
+
+/**
+ * Wraps the parts iterator so that `storeFile()` can read the next part ahead
+ * and the parse loop then takes that part over: an async iterator queues the
+ * calls to `next()`, so calling it again would skip the part read ahead.
+ */
+function readingAhead<T>(iterator: AsyncIterator<T>) {
+  let partReadAhead: Promise<IteratorResult<T>> | undefined;
+  return {
+    nextPart() {
+      const part = partReadAhead ?? iterator.next();
+      partReadAhead = undefined;
+      return part;
+    },
+    readAhead() {
+      if (!partReadAhead) {
+        partReadAhead = iterator.next();
+        // Rejects once the parse loop has failed for another reason
+        partReadAhead.catch(() => undefined);
+      }
+      return partReadAhead;
+    },
+  };
 }
 
 export function removeFiles(
@@ -442,10 +488,11 @@ export async function processMultipart(
     const iterator = req
       .parts(toBusboyConfig(limits, options))
       [Symbol.asyncIterator]();
+    const { nextPart, readAhead } = readingAhead(iterator);
     for (
-      let result = await iterator.next();
+      let result = await nextPart();
       !result.done;
-      result = await iterator.next()
+      result = await nextPart()
     ) {
       const part = result.value;
       if (part.type === 'field') {
@@ -468,11 +515,11 @@ export async function processMultipart(
       }
       filesLeft.set(part.fieldname, left - 1);
 
-      const info = await storeFile(storage, req, incoming);
+      const info = await storeFile(storage, req, incoming, readAhead);
       if (info === ABORTED) {
-        // Rejects with what aborted the stream: a limit, or the client
-        // disconnecting.
-        await iterator.next();
+        // Rejects with what aborted the stream: a limit, a malformed body or
+        // the client disconnecting.
+        await nextPart();
         throw new BadRequestException(
           busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FILE,
         );
