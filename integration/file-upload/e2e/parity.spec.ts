@@ -183,6 +183,20 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       expect(res.body.message).toMatch(/^Multipart: Unexpected end of/);
     });
 
+    it("should reject a body that ends in the middle of a file multer's diskStorage stores", async () => {
+      const res = await expectParity(http =>
+        http
+          .post('/engine-disk')
+          .set('Content-Type', `multipart/form-data; boundary=${boundary}`)
+          .send(head.replace('"avatar"', '"doc"') + 'partial content'),
+      );
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/^Multipart: Unexpected end of/);
+      for (const adapterName of adapterNames) {
+        expect(readdirSync(engineDir(dirs[adapterName]))).toEqual([]);
+      }
+    });
+
     it('should reject a body that ends between parts', async () => {
       const res = await expectParity(http =>
         http

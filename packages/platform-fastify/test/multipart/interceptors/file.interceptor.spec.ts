@@ -214,97 +214,103 @@ describe('FileInterceptor', () => {
       );
     });
 
-    describe('when the client disconnects while a file is being stored', () => {
-      const aborted = { ...file('avatar'), aborted: true };
+    describe.each([
+      ['without an error', false],
+      ['with the error the parts iterator fails with', true],
+    ])(
+      'when the client disconnects while a file is being stored (stream destroyed %s)',
+      (_, abortedWithError) => {
+        const aborted = { ...file('avatar'), aborted: true, abortedWithError };
 
-      it('should remove the partial file the storage engine reports a path for', async () => {
-        const storage = {
-          _handleFile: vi.fn((_req, incoming, cb) => {
-            incoming.path = '/uploads/partial';
-            incoming.stream.resume();
-            incoming.stream.once('close', () =>
-              setImmediate(() => cb(new Error('premature close'))),
-            );
-          }),
-          _removeFile: vi.fn((_req, _file, cb) => cb(null)),
-        };
-        const target = new (FileInterceptor('avatar', { storage }))();
-        const req = createFakeRequest([aborted]);
+        it('should remove the partial file the storage engine reports a path for', async () => {
+          const storage = {
+            _handleFile: vi.fn((_req, incoming, cb) => {
+              incoming.path = '/uploads/partial';
+              incoming.stream.resume();
+              incoming.stream.once('close', () =>
+                setImmediate(() => cb(new Error('premature close'))),
+              );
+            }),
+            _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+          };
+          const target = new (FileInterceptor('avatar', { storage }))();
+          const req = createFakeRequest([aborted]);
 
-        await expect(
-          target.intercept(createContext(req), handler),
-        ).rejects.toEqual(new BadRequestException('the request was closed'));
-        await vi.waitFor(() =>
+          await expect(
+            target.intercept(createContext(req), handler),
+          ).rejects.toEqual(new BadRequestException('the request was closed'));
+          await vi.waitFor(() =>
+            expect(storage._removeFile).toHaveBeenCalledWith(
+              req,
+              expect.objectContaining({ path: '/uploads/partial' }),
+              expect.any(Function),
+            ),
+          );
+        });
+
+        it('should remove a file the storage engine stores anyway', async () => {
+          const storage = {
+            _handleFile: vi.fn((_req, incoming, cb) => {
+              incoming.stream.resume();
+              incoming.stream.once('close', () =>
+                setImmediate(() => cb(null, { key: 'bucket/object' })),
+              );
+            }),
+            _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+          };
+          const target = new (FileInterceptor('avatar', { storage }))();
+          const req = createFakeRequest([aborted]);
+
+          await expect(
+            target.intercept(createContext(req), handler),
+          ).rejects.toBeInstanceOf(BadRequestException);
+          await vi.waitFor(() =>
+            expect(storage._removeFile).toHaveBeenCalledWith(
+              req,
+              expect.objectContaining({ key: 'bucket/object' }),
+              expect.any(Function),
+            ),
+          );
+        });
+
+        it('should remove the partial file right away, as the storage engine may never call back', async () => {
+          // e.g. an engine waiting on pipeline(), which never settles for a
+          // stream destroyed after its last chunk was pushed
+          const storage = {
+            _handleFile: vi.fn((_req, incoming) => {
+              incoming.path = '/uploads/partial';
+              incoming.stream.resume();
+            }),
+            _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+          };
+          const target = new (FileInterceptor('avatar', { storage }))();
+          const req = createFakeRequest([aborted]);
+
+          await expect(
+            target.intercept(createContext(req), handler),
+          ).rejects.toBeInstanceOf(BadRequestException);
           expect(storage._removeFile).toHaveBeenCalledWith(
             req,
             expect.objectContaining({ path: '/uploads/partial' }),
             expect.any(Function),
-          ),
-        );
-      });
+          );
+        });
 
-      it('should remove a file the storage engine stores anyway', async () => {
-        const storage = {
-          _handleFile: vi.fn((_req, incoming, cb) => {
-            incoming.stream.resume();
-            incoming.stream.once('close', () =>
-              setImmediate(() => cb(null, { key: 'bucket/object' })),
-            );
-          }),
-          _removeFile: vi.fn((_req, _file, cb) => cb(null)),
-        };
-        const target = new (FileInterceptor('avatar', { storage }))();
-        const req = createFakeRequest([aborted]);
+        it('should not wait for a storage engine that never calls back', async () => {
+          const storage = {
+            _handleFile: vi.fn((_req, incoming) => incoming.stream.resume()),
+            _removeFile: vi.fn(),
+          };
+          const target = new (FileInterceptor('avatar', { storage }))();
+          const req = createFakeRequest([aborted]);
 
-        await expect(
-          target.intercept(createContext(req), handler),
-        ).rejects.toBeInstanceOf(BadRequestException);
-        await vi.waitFor(() =>
-          expect(storage._removeFile).toHaveBeenCalledWith(
-            req,
-            expect.objectContaining({ key: 'bucket/object' }),
-            expect.any(Function),
-          ),
-        );
-      });
-
-      it('should remove the partial file right away, as the storage engine may never call back', async () => {
-        // e.g. an engine waiting on pipeline(), which never settles for a
-        // stream destroyed after its last chunk was pushed
-        const storage = {
-          _handleFile: vi.fn((_req, incoming) => {
-            incoming.path = '/uploads/partial';
-            incoming.stream.resume();
-          }),
-          _removeFile: vi.fn((_req, _file, cb) => cb(null)),
-        };
-        const target = new (FileInterceptor('avatar', { storage }))();
-        const req = createFakeRequest([aborted]);
-
-        await expect(
-          target.intercept(createContext(req), handler),
-        ).rejects.toBeInstanceOf(BadRequestException);
-        expect(storage._removeFile).toHaveBeenCalledWith(
-          req,
-          expect.objectContaining({ path: '/uploads/partial' }),
-          expect.any(Function),
-        );
-      });
-
-      it('should not wait for a storage engine that never calls back', async () => {
-        const storage = {
-          _handleFile: vi.fn((_req, incoming) => incoming.stream.resume()),
-          _removeFile: vi.fn(),
-        };
-        const target = new (FileInterceptor('avatar', { storage }))();
-        const req = createFakeRequest([aborted]);
-
-        await expect(
-          target.intercept(createContext(req), handler),
-        ).rejects.toBeInstanceOf(BadRequestException);
-        expect(storage._removeFile).not.toHaveBeenCalled();
-      });
-    });
+          await expect(
+            target.intercept(createContext(req), handler),
+          ).rejects.toBeInstanceOf(BadRequestException);
+          expect(storage._removeFile).not.toHaveBeenCalled();
+        });
+      },
+    );
 
     it('should use the storage engine from the options', async () => {
       const storage = {

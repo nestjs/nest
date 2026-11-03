@@ -16,6 +16,11 @@ export interface FakePart {
    * then fails, as @fastify/multipart does.
    */
   aborted?: boolean;
+  /**
+   * With `aborted`, destroys the stream with the error the parts iterator
+   * then fails with, as @fastify/multipart does since 10.1.7.
+   */
+  abortedWithError?: boolean;
 }
 
 /**
@@ -27,14 +32,16 @@ const decoratedRequest = {
   files() {},
 };
 
-function createFileStream(part: FakePart) {
+function createFileStream(part: FakePart, abortError: Error) {
   const chunk = Buffer.from(part.content ?? '');
   if (!part.aborted) {
     return Readable.from([chunk]);
   }
   const stream = new Readable({ read() {} });
   stream.push(chunk);
-  setImmediate(() => stream.destroy());
+  setImmediate(() =>
+    stream.destroy(part.abortedWithError ? abortError : undefined),
+  );
   return stream;
 }
 
@@ -69,7 +76,11 @@ export function createFakeRequest(
             };
             continue;
           }
-          const file = Object.assign(createFileStream(part), {
+          const abortError = Object.assign(
+            new Error('the request was closed'),
+            { code: 'FST_MP_PREMATURE_CLOSE' },
+          );
+          const file = Object.assign(createFileStream(part, abortError), {
             truncated: !!part.truncated,
           });
           // @fastify/multipart always listens for file stream errors.
@@ -88,9 +99,7 @@ export function createFakeRequest(
             await new Promise(resolve => file.once('close', resolve));
           }
           if (part.aborted) {
-            throw Object.assign(new Error('the request was closed'), {
-              code: 'FST_MP_PREMATURE_CLOSE',
-            });
+            throw abortError;
           }
         }
       })(),
