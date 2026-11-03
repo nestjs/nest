@@ -101,6 +101,106 @@ describe('LazyModuleLoader', () => {
       });
     });
 
+    describe('when load() is called while another load() of the module is in flight', () => {
+      let requestConnection: () => Promise<string>;
+      let connectionRequested: Promise<void>;
+      let releaseConnection: (value: string) => void;
+      let constructionsCount: number;
+
+      @Injectable()
+      class ReportsService {
+        constructor(@Inject('CONNECTION') readonly connection: string) {
+          constructionsCount++;
+        }
+      }
+
+      @Module({
+        providers: [
+          {
+            provide: 'CONNECTION',
+            useFactory: () => requestConnection(),
+          },
+          ReportsService,
+        ],
+        exports: [ReportsService],
+      })
+      class ReportsModule {}
+
+      @Module({ imports: [ReportsModule] })
+      class DashboardModule {}
+
+      // get() as soon as load() resolves: once every load settles, the
+      // provider is built on master too.
+      const loadReportsService = () =>
+        lazyModuleLoader
+          .load(() => ReportsModule)
+          .then(moduleRef => moduleRef.get(ReportsService));
+
+      beforeEach(() => {
+        constructionsCount = 0;
+        const connection = new Promise<string>(
+          resolve => (releaseConnection = resolve),
+        );
+        connectionRequested = new Promise(resolve => {
+          requestConnection = () => {
+            resolve();
+            return connection;
+          };
+        });
+      });
+
+      it('should return the providers after the first load() built them', async () => {
+        const first = lazyModuleLoader.load(() => ReportsModule);
+        await connectionRequested;
+        const second = loadReportsService();
+        releaseConnection('connection');
+
+        const [, reportsService] = await Promise.all([first, second]);
+        expect(reportsService.connection).toBe('connection');
+        expect(constructionsCount).toBe(1);
+      });
+
+      it('should construct the providers once when both load() calls start together', async () => {
+        const loads = Promise.all([loadReportsService(), loadReportsService()]);
+        await connectionRequested;
+        releaseConnection('connection');
+
+        const [first, second] = await loads;
+        expect(first.connection).toBe('connection');
+        expect(second).toBe(first);
+        expect(constructionsCount).toBe(1);
+      });
+
+      it('should wait for a load() that builds the module as an import', async () => {
+        const dashboard = lazyModuleLoader.load(() => DashboardModule);
+        await connectionRequested;
+        const reports = loadReportsService();
+        releaseConnection('connection');
+
+        const [, reportsService] = await Promise.all([dashboard, reports]);
+        expect(reportsService.connection).toBe('connection');
+        expect(constructionsCount).toBe(1);
+      });
+
+      it('should restore the logger after concurrent load() calls with logger false', async () => {
+        const logSpy = vitest.spyOn(instanceLoader['logger'], 'log');
+
+        const first = lazyModuleLoader.load(() => ReportsModule, {
+          logger: false,
+        });
+        await connectionRequested;
+        const second = lazyModuleLoader.load(() => ReportsModule, {
+          logger: false,
+        });
+        releaseConnection('connection');
+        await Promise.all([first, second]);
+        expect(logSpy).not.toHaveBeenCalled();
+
+        await lazyModuleLoader.load(() => DashboardModule);
+        expect(logSpy).toHaveBeenCalled();
+      });
+    });
+
     describe('singleton sharing and repeated loading (#17428)', () => {
       let constructionsCount = 0;
       let globalConstructionsCount = 0;
@@ -277,10 +377,7 @@ describe('LazyModuleLoader', () => {
         const moduleRef = await lazyModuleLoader.load(() => definition);
 
         // Assert
-        expect(moduleRef.get(ParentService).items).toEqual([
-          'itemA',
-          'itemB',
-        ]);
+        expect(moduleRef.get(ParentService).items).toEqual(['itemA', 'itemB']);
       });
 
       it('should keep the module resolvable on repeated load() calls', async () => {
@@ -298,10 +395,7 @@ describe('LazyModuleLoader', () => {
 
         // Assert
         expect(first).toBe(second);
-        expect(second.get(ParentService).items).toEqual([
-          'itemA',
-          'itemB',
-        ]);
+        expect(second.get(ParentService).items).toEqual(['itemA', 'itemB']);
       });
 
       it('should bind global providers into a rescanned dynamic import', async () => {
