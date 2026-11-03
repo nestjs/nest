@@ -63,3 +63,58 @@ describe.each(adapters('express', 'node'))('@Render() (%s)', name => {
     expect(res.text).toBe('<h1>Hello section</h1>');
   });
 });
+
+// app.setLocal() sets the application-wide locals (Express' app.locals),
+// which the docs use for the layout of the hbs engine
+describe.each(adapters('express', 'node'))('app.setLocal() (%s)', name => {
+  let app: INestApplication | undefined;
+
+  const setup = (
+    app: INestApplication,
+    middleware?: (req: unknown, res: any, next: () => void) => void,
+  ) => {
+    const viewsApp = app as NestExpressApplication | NestNodeApplication;
+    // Before the engine is set, as in the docs
+    viewsApp.setLocal('user', 'Kamil');
+    if (middleware) {
+      app.use(middleware);
+    }
+    if (name === 'express') {
+      const expressApp = app as NestExpressApplication;
+      expressApp.engine('tpl', partialsEngine.__express);
+      expressApp.setBaseViewsDir(VIEWS_DIR);
+      expressApp.setViewEngine('tpl');
+    } else {
+      const nodeApp = app as NestNodeApplication;
+      nodeApp.setBaseViewsDir(VIEWS_DIR);
+      nodeApp.setViewEngine({ engine: { tpl: partialsEngine } });
+    }
+  };
+
+  afterEach(async () => {
+    await app?.close();
+    app = undefined;
+  });
+
+  it('should pass the value to every view', async () => {
+    app = await createApp(name, ViewsModule, app => setup(app));
+
+    const res = await request(app!.getHttpServer()).get('/locals');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('<p>Hello Kamil</p>');
+  });
+
+  it('should let res.locals win over it', async () => {
+    app = await createApp(name, ViewsModule, app =>
+      setup(app, (req, res, next) => {
+        res.locals.user = 'Mysliwiec';
+        next();
+      }),
+    );
+
+    const res = await request(app!.getHttpServer()).get('/locals');
+
+    expect(res.text).toBe('<p>Hello Mysliwiec</p>');
+  });
+});

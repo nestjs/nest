@@ -495,6 +495,16 @@ export class NodeAdapter extends AbstractHttpAdapter<
     return this;
   }
 
+  /**
+   * Sets a value every view rendered with `@Render()` gets, as with
+   * `app.setLocal()` on Express (`app.locals`); `res.locals` and the data the
+   * handler returns win over it.
+   */
+  public setLocal(key: string, value: any) {
+    this.views.setLocal(key, value);
+    return this;
+  }
+
   public getRequestHostname(request: NodeRequest): string | undefined {
     return request.hostname;
   }

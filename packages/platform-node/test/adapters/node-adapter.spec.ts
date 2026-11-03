@@ -1490,6 +1490,46 @@ describe('NodeAdapter', () => {
       expect(res.text).toBe('<h1>Hello Zażółć</h1>');
     });
 
+    it('should pass the values of setLocal() to every view, under res.locals and the handler data', async () => {
+      const seen: Record<string, any>[] = [];
+      // Before the engine is set, as with Express' app.locals
+      const returned = adapter.setLocal('site', 'local').setLocal('user', 'x');
+      adapter.setViewEngine({
+        engine: {
+          fake: {
+            __express: (
+              file: string,
+              data: Record<string, any>,
+              callback: (err: unknown, html?: string) => void,
+            ) => {
+              seen.push(data);
+              callback(null, 'ok');
+            },
+          },
+        },
+        root: viewsDir,
+        defaultContext: { site: 'default', theme: 'default' },
+      });
+      const port = await startServer();
+      adapter.use((req: NodeRequest, res: NodeResponse, next: Next) => {
+        res.locals.user = 'from locals';
+        next();
+      });
+      adapter.get('/', async (req: NodeRequest, res: NodeResponse) => {
+        await adapter.render(res, 'index', { name: 'from handler' });
+      });
+
+      await request(port);
+
+      expect(returned).toBe(adapter);
+      expect(seen[0]).toMatchObject({
+        theme: 'default',
+        site: 'local',
+        user: 'from locals',
+        name: 'from handler',
+      });
+    });
+
     it('should reject when no view engine is configured', async () => {
       await expect(
         adapter.render({} as NodeResponse, 'index', {}),
