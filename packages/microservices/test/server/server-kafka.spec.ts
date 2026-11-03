@@ -457,6 +457,50 @@ describe('ServerKafka', () => {
       expect(handleEventSpy).toHaveBeenCalled();
     });
 
+    describe('packet metadata', () => {
+      const handleWithHeaders = async (headers: Record<string, any>) => {
+        const handleEventSpy = vi
+          .spyOn(server, 'handleEvent')
+          .mockResolvedValue(undefined);
+        await server.handleMessage({
+          ...eventPayload,
+          message: { ...eventMessage, headers },
+        });
+        const context: KafkaContext = handleEventSpy.mock.calls[0][2];
+        return context.getMetadata();
+      };
+
+      it('should expose the text headers on the context, as they arrived', async () => {
+        const metadata = await handleWithHeaders({
+          'x-request-id': Buffer.from('trace-1'),
+          // Decoded into an object in the message the context returns
+          'x-json': Buffer.from('{"a":1}'),
+          plain: 'already a string',
+        });
+
+        expect(metadata).toEqual({
+          'x-request-id': 'trace-1',
+          'x-json': '{"a":1}',
+          plain: 'already a string',
+        });
+      });
+
+      it('should leave out repeated and binary headers', async () => {
+        const metadata = await handleWithHeaders({
+          'x-request-id': Buffer.from('trace-1'),
+          'x-tag': [Buffer.from('a'), Buffer.from('b')],
+          'x-binary': Buffer.from([0x00, 0xff, 0xfe]),
+          'x-absent': undefined,
+        });
+
+        expect(metadata).toEqual({ 'x-request-id': 'trace-1' });
+      });
+
+      it('should be undefined for a message without headers', async () => {
+        expect(await handleWithHeaders({})).toBeUndefined();
+      });
+    });
+
     it('should call event handler when "handleEvent" is called', async () => {
       const messageHandler = vi.fn();
       const context = { test: true } as any;

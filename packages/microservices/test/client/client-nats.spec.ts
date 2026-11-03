@@ -243,6 +243,67 @@ describe('ClientNats', () => {
       });
     });
 
+    describe('packet metadata', () => {
+      it('should send it as headers, and not in the payload', () => {
+        msg.metadata = { 'x-request-id': 'trace-1', tenant: 'acme' };
+
+        client['publish'](msg, () => {});
+
+        const [, data, { headers }] = publishSpy.mock.calls[0];
+        expect(headers.get('x-request-id')).toEqual('trace-1');
+        expect(headers.get('tenant')).toEqual('acme');
+        expect(JSON.parse(data)).not.toHaveProperty('metadata');
+        expect(JSON.parse(data)).toMatchObject({ pattern, data: 'data' });
+      });
+
+      it('should let the record headers and the static headers win', () => {
+        untypedClient.options.headers = { tenant: 'from-options' };
+        const recordHeaders = createHeaders();
+        recordHeaders.set('x-request-id', 'from-record');
+        msg.data = new NatsRecord('data', recordHeaders);
+        msg.metadata = {
+          'x-request-id': 'trace-1',
+          tenant: 'acme',
+          locale: 'pl',
+        };
+
+        client['publish'](msg, () => {});
+
+        const headers = publishSpy.mock.calls[0][2].headers;
+        expect(headers.values('x-request-id')).toEqual(['from-record']);
+        expect(headers.values('tenant')).toEqual(['from-options']);
+        expect(headers.get('locale')).toEqual('pl');
+      });
+
+      it('should not generate headers for empty metadata', () => {
+        msg.metadata = {};
+
+        client['publish'](msg, () => {});
+
+        expect(publishSpy.mock.calls[0][2].headers).toBeUndefined();
+      });
+
+      it('should leave it off a message to a server without header support', () => {
+        // Every NATS server since 2.2 announces "headers: true"
+        natsClient.info = { headers: false };
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        client['publish'](msg, () => {});
+
+        expect(publishSpy.mock.calls[0][2].headers).toBeUndefined();
+      });
+
+      it('should fail the request over a value nats.js cannot send', () => {
+        const callback = vi.fn();
+        msg.metadata = { 'x-request-id': 'trace\r\n1' };
+
+        client['publish'](msg, callback);
+
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(callback).toHaveBeenCalledWith({ err: expect.any(Error) });
+      });
+    });
+
     it('should release the inbox when a reply cannot be deserialized', async () => {
       const error = new SyntaxError('Unexpected token');
       const undecodable = {
@@ -1007,6 +1068,27 @@ describe('ClientNats', () => {
         expect(
           natsClient.publish.mock.calls[0][2].headers.get('client-id'),
         ).toEqual('override-client-id');
+      });
+
+      it('should send the packet metadata as headers, and not in the payload', async () => {
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        await client['dispatchEvent'](msg);
+
+        const [, data, { headers }] = natsClient.publish.mock.calls[0];
+        expect(headers.get('x-request-id')).toEqual('trace-1');
+        expect(JSON.parse(data)).toEqual({ pattern: 'pattern', data: 'data' });
+      });
+
+      it('should prefer the record headers over the packet metadata', async () => {
+        msg.data = new NatsRecord('data', { 'x-request-id': 'from-record' });
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        await client['dispatchEvent'](msg);
+
+        expect(
+          natsClient.publish.mock.calls[0][2].headers.values('x-request-id'),
+        ).toEqual(['from-record']);
       });
     });
   });

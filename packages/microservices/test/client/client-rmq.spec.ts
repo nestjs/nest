@@ -678,6 +678,48 @@ describe('ClientRMQ', function () {
           );
         });
       });
+
+      it('should send the packet metadata as headers, and not in the content', () => {
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        client['publish'](msg, () => {});
+
+        const [, content, options] = sendToQueueStub.mock.calls[0];
+        expect(options.headers).toEqual({ 'x-request-id': 'trace-1' });
+        expect(JSON.parse(content.toString())).toEqual({
+          pattern,
+          data: 'data',
+          id: options.correlationId,
+        });
+      });
+
+      it('should let the record headers and the static headers win over the packet metadata', () => {
+        untypedClient.options.headers = { tenant: 'from-options' };
+        msg.data = new RmqRecord('data', {
+          headers: { 'x-request-id': 'from-record' },
+        });
+        msg.metadata = {
+          'x-request-id': 'trace-1',
+          tenant: 'acme',
+          locale: 'pl',
+        };
+
+        client['publish'](msg, () => {});
+
+        expect(sendToQueueStub.mock.calls[0][2].headers).toEqual({
+          'x-request-id': 'from-record',
+          tenant: 'from-options',
+          locale: 'pl',
+        });
+      });
+
+      it('should not generate headers for empty packet metadata', () => {
+        msg.metadata = {};
+
+        client['publish'](msg, () => {});
+
+        expect(sendToQueueStub.mock.calls[0][2].headers).toBeUndefined();
+      });
     });
   });
 
@@ -1075,6 +1117,26 @@ describe('ClientRMQ', function () {
         expect(sendToQueueStub.mock.calls[0][2].headers).toEqual(
           requestHeaders,
         );
+      });
+
+      it('should send the packet metadata as headers, and not in the content', async () => {
+        sendToQueueStub.mockImplementation((a, b, c, d) => d());
+        msg.data = new RmqRecord('data', {
+          headers: { 'x-request-id': 'from-record' },
+        });
+        msg.metadata = { 'x-request-id': 'trace-1', tenant: 'acme' };
+
+        await client['dispatchEvent'](msg);
+
+        const [, content, options] = sendToQueueStub.mock.calls[0];
+        expect(options.headers).toEqual({
+          'x-request-id': 'from-record',
+          tenant: 'acme',
+        });
+        expect(JSON.parse(content.toString())).toEqual({
+          pattern: 'pattern',
+          data: 'data',
+        });
       });
     });
   });

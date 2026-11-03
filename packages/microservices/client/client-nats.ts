@@ -14,11 +14,13 @@ import {
   IncomingResponse,
   NatsOptions,
   PacketId,
+  PacketMetadata,
   ReadPacket,
   WritePacket,
 } from '../interfaces/index.js';
 import { NatsRecord } from '../record-builders/index.js';
 import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
+import { hasPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { ClientProxy } from './client-proxy.js';
 
 let natsPackage = {} as any;
@@ -320,8 +322,10 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
     try {
       const channel = this.normalizePattern(partialPacket.pattern);
+      // The metadata travels as headers, not in the payload
+      const { metadata, ...outgoingPacket } = packet;
       const serializedPacket: NatsRecord = this.serializer.serialize(
-        packet,
+        outgoingPacket,
       ) as NatsRecord;
       // A reply is accepted on its inbox even without an id, and createInbox()
       // names the inbox after a counter that grows by a constant step, so the
@@ -348,7 +352,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
         subscription.unsubscribe();
       };
 
-      const headers = this.mergeHeaders(serializedPacket.headers);
+      const headers = this.mergeHeaders(serializedPacket.headers, metadata);
       this.natsClient!.publish(channel, serializedPacket.data, {
         reply: inbox,
         headers,
@@ -364,9 +368,10 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   protected async dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    const { metadata, ...outgoingPacket } = packet;
     const serializedPacket: NatsRecord =
-      await this.serializer.serialize(packet);
-    const headers = this.mergeHeaders(serializedPacket.headers);
+      await this.serializer.serialize(outgoingPacket);
+    const headers = this.mergeHeaders(serializedPacket.headers, metadata);
 
     return new Promise<void>((resolve, reject) => {
       try {
@@ -389,8 +394,19 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       options?.deserializer ?? new NatsResponseJSONDeserializer();
   }
 
-  protected mergeHeaders<THeaders = any>(requestHeaders?: THeaders) {
-    if (!requestHeaders && !this.options?.headers) {
+  protected mergeHeaders<THeaders = any>(
+    requestHeaders?: THeaders,
+    metadata?: PacketMetadata,
+  ) {
+    const metadataEntries =
+      hasPacketMetadata(metadata) && this.supportsHeaders()
+        ? Object.entries(metadata)
+        : [];
+    if (
+      !requestHeaders &&
+      !this.options?.headers &&
+      metadataEntries.length === 0
+    ) {
       return undefined;
     }
 
@@ -423,6 +439,24 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       }
     }
 
+    // The packet metadata only fills in what neither the record nor the
+    // client options set
+    for (const [key, value] of metadataEntries) {
+      if (!headers.has(key)) {
+        headers.set(key, value);
+      }
+    }
+
     return headers;
+  }
+
+  /**
+   * Whether the server accepts message headers, as every NATS server does
+   * since 2.2. Packet metadata is left off a message to one that does not:
+   * the publish would fail over a header the application never set.
+   */
+  protected supportsHeaders(): boolean {
+    const info = this.natsClient?.info;
+    return !info || !!info.headers;
   }
 }

@@ -58,4 +58,25 @@ describe('KafkaContext', () => {
       expect(context.getProducer()).toEqual({ test: 'producer' });
     });
   });
+  describe('getMetadata', () => {
+    it('should return the metadata the server read off the headers', () => {
+      const metadata = { 'x-request-id': 'trace-1' };
+      const withMetadata = new KafkaContext([
+        ...(args as [
+          KafkaMessage,
+          number,
+          string,
+          Consumer,
+          () => Promise<void>,
+          Producer,
+        ]),
+        metadata,
+      ]);
+
+      expect(withMetadata.getMetadata()).toBe(metadata);
+    });
+    it('should return undefined when there is none', () => {
+      expect(context.getMetadata()).toBeUndefined();
+    });
+  });
 });

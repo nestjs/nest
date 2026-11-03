@@ -15,6 +15,7 @@ import {
 import {
   IncomingResponse,
   MqttOptions,
+  PacketMetadata,
   ReadPacket,
   WritePacket,
 } from '../interfaces/index.js';
@@ -23,6 +24,7 @@ import {
   MqttRecordOptions,
 } from '../record-builders/mqtt.record-builder.js';
 import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
+import { hasPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
 import {
@@ -388,13 +390,15 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
             isObject(packet?.data) && packet.data instanceof MqttRecord
               ? packet.data.options
               : undefined;
+          // The metadata travels as user properties, not in the payload
+          const { metadata, ...outgoingPacket } = packet;
           const serializedPacket: string | Buffer =
-            this.serializer.serialize(packet);
+            this.serializer.serialize(outgoingPacket);
 
           this.mqttClient!.publish(
             this.getRequestPattern(pattern),
             serializedPacket,
-            this.mergePacketOptions(options),
+            this.mergePacketOptions(options, metadata),
             (err?: Error) => {
               if (err && isCounted) {
                 undoBookkeeping();
@@ -449,12 +453,14 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         ? packet.data.options
         : undefined;
 
-    const serializedPacket: string | Buffer = this.serializer.serialize(packet);
+    const { metadata, ...outgoingPacket } = packet;
+    const serializedPacket: string | Buffer =
+      this.serializer.serialize(outgoingPacket);
     return new Promise<void>((resolve, reject) =>
       this.mqttClient!.publish(
         pattern,
         serializedPacket,
-        this.mergePacketOptions(options),
+        this.mergePacketOptions(options, metadata),
         (err: any) => (err ? reject(err) : resolve()),
       ),
     );
@@ -503,8 +509,19 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   protected mergePacketOptions(
     requestOptions?: MqttRecordOptions,
+    metadata?: PacketMetadata,
   ): MqttRecordOptions | undefined {
-    if (!requestOptions && !this.options?.userProperties) {
+    // MQTT 3 has no user properties, so the packet metadata only travels
+    // over MQTT 5
+    const metadataProperties =
+      this.options?.protocolVersion === 5 && hasPacketMetadata(metadata)
+        ? metadata
+        : undefined;
+    if (
+      !requestOptions &&
+      !this.options?.userProperties &&
+      !metadataProperties
+    ) {
       return undefined;
     }
 
@@ -515,10 +532,13 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     if (requestOptions) {
       options = { ...requestOptions };
     }
-    if (this.options?.userProperties) {
+    if (this.options?.userProperties || metadataProperties) {
       options.properties = {
         ...options.properties,
         userProperties: {
+          // The packet metadata only fills in what neither the record nor
+          // the client options set
+          ...metadataProperties,
           ...this.options?.userProperties,
           ...options.properties?.userProperties,
         },

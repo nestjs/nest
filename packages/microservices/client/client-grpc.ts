@@ -7,9 +7,15 @@ import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definit
 import { ChannelOptions } from '../external/grpc-options.interface.js';
 import { getGrpcPackageDefinition } from '../helpers/index.js';
 import { ClientGrpc, GrpcOptions } from '../interfaces/index.js';
+import { hasPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
-import { loadPackageSync, isFunction, isObject } from '@nestjs/common/internal';
+import {
+  loadPackageSync,
+  isFunction,
+  isNil,
+  isObject,
+} from '@nestjs/common/internal';
 
 const GRPC_CANCELLED = 'Cancelled';
 
@@ -173,8 +179,9 @@ export class ClientGrpcProxy
         let isClientCanceled = false;
         let upstreamSubscription: Subscription | null = null;
 
-        const upstreamSubjectOrData = args[0];
-        const maybeMetadata = args[1];
+        const callArgs = this.applyDispatchHook(client, methodName, args);
+        const upstreamSubjectOrData = callArgs[0];
+        const maybeMetadata = callArgs[1];
 
         const isUpstreamSubject =
           upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
@@ -182,7 +189,7 @@ export class ClientGrpcProxy
         const call =
           isRequestStream && isUpstreamSubject
             ? client![methodName](maybeMetadata)
-            : client![methodName](...args);
+            : client![methodName](...callArgs);
 
         if (isRequestStream && isUpstreamSubject) {
           upstreamSubscription = upstreamSubjectOrData.subscribe(
@@ -254,7 +261,11 @@ export class ClientGrpcProxy
               observer.complete();
             },
           ];
-          const maybeMetadata = args[1];
+          const maybeMetadata = this.applyDispatchHook(
+            client,
+            methodName,
+            args,
+          )[1];
           if (maybeMetadata) {
             callArgs.unshift(maybeMetadata);
           }
@@ -277,13 +288,17 @@ export class ClientGrpcProxy
         });
       }
       return new Observable(observer => {
-        const call = client[methodName](...args, (error: any, data: any) => {
-          if (error) {
-            return observer.error(this.serializeError(error));
-          }
-          observer.next(data);
-          observer.complete();
-        });
+        const callArgs = this.applyDispatchHook(client, methodName, args);
+        const call = client[methodName](
+          ...callArgs,
+          (error: any, data: any) => {
+            if (error) {
+              return observer.error(this.serializeError(error));
+            }
+            observer.next(data);
+            observer.complete();
+          },
+        );
 
         return () => {
           if (!call.finished) {
@@ -292,6 +307,45 @@ export class ClientGrpcProxy
         };
       });
     };
+  }
+
+  /**
+   * Runs the dispatch hook for a call - gRPC calls do not go through `send()`
+   * or `emit()` - once per subscription, in the subscriber's context.
+   *
+   * Returns the arguments to make the call with: the caller's, with the
+   * metadata the hook attached added to the call's `Metadata` under every key
+   * the caller did not set. A `Metadata` the caller passed is cloned rather
+   * than changed, as it may be reused for other calls.
+   */
+  protected applyDispatchHook(
+    client: any,
+    methodName: string,
+    args: any[],
+  ): any[] {
+    if (!this.onDispatchHook) {
+      return args;
+    }
+    // A gRPC method is known by its path, e.g. "/hero.HeroesService/FindOne"
+    const pattern = client[methodName]?.path ?? methodName;
+    const packet = this.createPacket(pattern, args[0]);
+    if (!hasPacketMetadata(packet.metadata)) {
+      return args;
+    }
+    const [data, maybeMetadata, ...rest] = args;
+    const isMetadata = maybeMetadata instanceof grpcPackage.Metadata;
+    const metadata = isMetadata
+      ? maybeMetadata.clone()
+      : new grpcPackage.Metadata();
+    for (const [key, value] of Object.entries(packet.metadata)) {
+      if (metadata.get(key).length === 0) {
+        metadata.set(key, value);
+      }
+    }
+    // Call options passed in place of the metadata move one place along
+    return isMetadata || isNil(maybeMetadata)
+      ? [data, metadata, ...rest]
+      : [data, metadata, maybeMetadata, ...rest];
   }
 
   public createClients(): any[] {

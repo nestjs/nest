@@ -23,11 +23,12 @@ import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exce
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception.js';
 import { ChannelOptions } from '../external/grpc-options.interface.js';
 import { getGrpcPackageDefinition } from '../helpers/index.js';
-import { MessageHandler } from '../interfaces/index.js';
+import { MessageHandler, PacketMetadata } from '../interfaces/index.js';
 import {
   GrpcOptions,
   TransportId,
 } from '../interfaces/microservice-configuration.interface.js';
+import { toPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { Server } from './server.js';
 import {
   isFunction,
@@ -343,10 +344,35 @@ export class ServerGrpc extends Server<never, never> {
       : this.createUnaryServiceMethod(methodHandler);
   }
 
+  /**
+   * The context the processing hooks receive for a call: the call, named by
+   * its handler, with the `getMetadata()` of the other transports' contexts.
+   * It returns the call's metadata as packet metadata: what the client
+   * attached to the packet, and every other entry with a single text value
+   * (binary `-bin` entries are only available on `call.metadata`).
+   */
+  protected createProcessingContext(call: GrpcCall, methodHandler: Function) {
+    return {
+      ...call,
+      operationId: methodHandler.name,
+      getMetadata: (): PacketMetadata | undefined =>
+        isFunction(call.metadata?.toJSON)
+          ? toPacketMetadata(
+              Object.entries(
+                call.metadata.toJSON() as Record<string, unknown[]>,
+              ).map(([key, values]) => [
+                key,
+                values.length === 1 ? values[0] : undefined,
+              ]),
+            )
+          : undefined,
+    } as any;
+  }
+
   public createUnaryServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
       return this.runWithProcessingHooks(
-        { ...call, operationId: methodHandler.name } as any,
+        this.createProcessingContext(call, methodHandler),
         async runEndHook => {
           let result$: Observable<any>;
           try {
@@ -391,7 +417,7 @@ export class ServerGrpc extends Server<never, never> {
   public createStreamServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
       return this.runWithProcessingHooks(
-        { ...call, operationId: methodHandler.name } as any,
+        this.createProcessingContext(call, methodHandler),
         async runEndHook => {
           let result$: Observable<any>;
           try {
@@ -568,7 +594,7 @@ export class ServerGrpc extends Server<never, never> {
       callback: (err: unknown, value: unknown) => void,
     ) => {
       return this.runWithProcessingHooks(
-        { ...call, operationId: methodHandler.name } as any,
+        this.createProcessingContext(call, methodHandler),
         async runEndHook => {
           // Needs to be a Proxy in order to buffer messages that come before handler is executed
           // This could happen if handler has any async guards or interceptors registered that would delay
@@ -661,7 +687,7 @@ export class ServerGrpc extends Server<never, never> {
       callback: (err: unknown, value: unknown) => void,
     ) => {
       return this.runWithProcessingHooks(
-        { ...call, operationId: methodHandler.name } as any,
+        this.createProcessingContext(call, methodHandler),
         async runEndHook => {
           try {
             let handlerStream: Observable<any>;

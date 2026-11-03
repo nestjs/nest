@@ -136,6 +136,20 @@ export abstract class ClientProxy<
    * side attaches here, the other reads from the RPC context, which is what
    * lets instrumentation carry a trace id across a hop without touching the
    * application's payloads.
+   *
+   * TCP and Redis carry the metadata inside the packet. NATS, Kafka, RabbitMQ,
+   * MQTT 5 and gRPC carry it as headers, under the names the hook gave it, and
+   * never in the payload. There, metadata only fills in what the message does
+   * not set itself: a header set on the record (`NatsRecordBuilder`,
+   * `RmqRecordBuilder`, `MqttRecordBuilder`, a Kafka message's `headers`, the
+   * `Metadata` passed to a gRPC call) or in the client options (`headers`,
+   * `userProperties`) wins over a metadata entry of the same name.
+   *
+   * An entry the transport cannot carry (a NATS header value with a line
+   * break, a gRPC metadata key with a space) fails the call, as the same
+   * header set on the record would. MQTT 3 has no header channel, so metadata
+   * does not travel over it, and it is left off for a NATS server without
+   * header support.
    */
   public setOnDispatchHook(hook: (packet: ReadPacket) => void): void {
     this.onDispatchHook = hook;

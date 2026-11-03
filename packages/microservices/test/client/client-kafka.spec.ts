@@ -1,5 +1,5 @@
 import { Producer } from 'kafkajs';
-import { Observable } from 'rxjs';
+import { lastValueFrom, Observable } from 'rxjs';
 import { ClientKafka } from '../../client/client-kafka.js';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaHeaders } from '../../enums/index.js';
@@ -897,6 +897,29 @@ describe('ClientKafka', () => {
           expect(dispatchBatchEventSpy).toHaveBeenCalledOnce();
         });
       });
+
+      it('should run the dispatch hook once, and send its metadata with every message', async () => {
+        const send = vi.fn().mockResolvedValue([]);
+        vi.spyOn(client as any, 'producer', 'get').mockReturnValue({ send });
+        const hook = vi.fn(packet => {
+          packet.metadata = { 'x-request-id': 'trace-1' };
+        });
+        client.setOnDispatchHook(hook);
+
+        await lastValueFrom(
+          client.emitBatch(topic, {
+            messages: [
+              { value: 'a' },
+              { value: 'b', headers: { 'x-request-id': 'own-id' } },
+            ],
+          }),
+        );
+
+        expect(hook).toHaveBeenCalledOnce();
+        const [first, second] = send.mock.calls[0][0].messages;
+        expect(first.headers).toEqual({ 'x-request-id': 'trace-1' });
+        expect(second.headers).toEqual({ 'x-request-id': 'own-id' });
+      });
     });
 
     it('should return Observable with error', () => {
@@ -946,6 +969,46 @@ describe('ClientKafka', () => {
       client['dispatchEvent'](eventMessage).catch(err =>
         expect(err).toBeInstanceOf(Error),
       );
+    });
+
+    it('should send the packet metadata as headers', async () => {
+      vi.spyOn(client as any, '_producer', 'get').mockReturnValue({
+        send: sendSpy,
+      });
+
+      await client['dispatchEvent']({
+        pattern: topic,
+        data: messageValue,
+        metadata: { 'x-request-id': 'trace-1' },
+      });
+
+      const sentMessage = sendSpy.mock.calls[0][0].messages[0];
+      expect(sentMessage.value).toEqual(messageValue);
+      expect(sentMessage.headers).toEqual({ 'x-request-id': 'trace-1' });
+    });
+
+    it('should let the headers of the message win, and leave them unchanged', async () => {
+      vi.spyOn(client as any, '_producer', 'get').mockReturnValue({
+        send: sendSpy,
+      });
+      const record = {
+        key: 'key',
+        value: messageValue,
+        headers: { 'x-request-id': 'own-id' },
+      };
+
+      await client['dispatchEvent']({
+        pattern: topic,
+        data: record,
+        metadata: { 'x-request-id': 'trace-1', tenant: 'acme' },
+      });
+
+      const sentMessage = sendSpy.mock.calls[0][0].messages[0];
+      expect(sentMessage.headers).toEqual({
+        'x-request-id': 'own-id',
+        tenant: 'acme',
+      });
+      expect(record.headers).toEqual({ 'x-request-id': 'own-id' });
     });
   });
 
@@ -1098,6 +1161,31 @@ describe('ClientKafka', () => {
       expect(sentMessage.headers[KafkaHeaders.REPLY_PARTITION]).toEqual(
         replyPartition,
       );
+    });
+
+    it('should send the packet metadata as headers, which never replace the reply headers', async () => {
+      client['publish'](
+        {
+          pattern: topic,
+          data: messageValue,
+          metadata: {
+            'x-request-id': 'trace-1',
+            [KafkaHeaders.CORRELATION_ID]: 'not-the-id',
+            [KafkaHeaders.REPLY_TOPIC]: 'elsewhere',
+          },
+        },
+        callback,
+      );
+
+      await waitForNextTick();
+
+      const sentMessage = sendSpy.mock.calls[0][0].messages[0];
+      expect(sentMessage.headers).toEqual({
+        'x-request-id': 'trace-1',
+        [KafkaHeaders.CORRELATION_ID]: correlationId,
+        [KafkaHeaders.REPLY_TOPIC]: replyTopic,
+        [KafkaHeaders.REPLY_PARTITION]: replyPartition,
+      });
     });
 
     it('should remove callback from routing map when unsubscribe', async () => {

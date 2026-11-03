@@ -289,6 +289,67 @@ describe('ClientMqtt', () => {
       });
     });
 
+    describe('packet metadata', () => {
+      it('should send it as MQTT 5 user properties, and not in the payload', () => {
+        untypedClient.options.protocolVersion = 5;
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        client['publish'](msg, () => {});
+
+        const [, payload, options] = publishSpy.mock.calls[0];
+        expect(options).toEqual({
+          properties: { userProperties: { 'x-request-id': 'trace-1' } },
+        });
+        expect(JSON.parse(payload)).toEqual({ pattern, data: 'data', id });
+      });
+
+      it('should let the record and the static user properties win', () => {
+        untypedClient.options.protocolVersion = 5;
+        untypedClient.options.userProperties = { tenant: 'from-options' };
+        msg.data = new MqttRecord('data', {
+          qos: 1,
+          properties: { userProperties: { 'x-request-id': 'from-record' } },
+        });
+        msg.metadata = {
+          'x-request-id': 'trace-1',
+          tenant: 'acme',
+          locale: 'pl',
+        };
+
+        client['publish'](msg, () => {});
+
+        expect(publishSpy.mock.calls[0][2]).toEqual({
+          qos: 1,
+          properties: {
+            userProperties: {
+              'x-request-id': 'from-record',
+              tenant: 'from-options',
+              locale: 'pl',
+            },
+          },
+        });
+      });
+
+      it('should not send it over MQTT 3, which has no user properties', () => {
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        client['publish'](msg, () => {});
+
+        const [, payload, options] = publishSpy.mock.calls[0];
+        expect(options).toBeUndefined();
+        expect(JSON.parse(payload)).toEqual({ pattern, data: 'data', id });
+      });
+
+      it('should not add empty user properties for empty metadata', () => {
+        untypedClient.options.protocolVersion = 5;
+        msg.metadata = {};
+
+        client['publish'](msg, () => {});
+
+        expect(publishSpy.mock.calls[0][2]).toBeUndefined();
+      });
+    });
+
     describe('when publishing throws', () => {
       const responseChannel = `${pattern}/reply`;
 
@@ -1050,6 +1111,30 @@ describe('ClientMqtt', () => {
         expect(publishStub.mock.calls[0][2].properties.userProperties).toEqual(
           requestHeaders,
         );
+      });
+      it('should send the packet metadata as MQTT 5 user properties, and not in the payload', async () => {
+        publishStub.mockImplementation((a, b, c, d) => d());
+        untypedClient.options.protocolVersion = 5;
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        await client['dispatchEvent'](msg);
+
+        const [, payload, options] = publishStub.mock.calls[0];
+        expect(options.properties.userProperties).toEqual({
+          'x-request-id': 'trace-1',
+        });
+        expect(JSON.parse(payload)).toEqual({
+          pattern: 'pattern',
+          data: 'data',
+        });
+      });
+      it('should not send the packet metadata over MQTT 3', async () => {
+        publishStub.mockImplementation((a, b, c, d) => d());
+        msg.metadata = { 'x-request-id': 'trace-1' };
+
+        await client['dispatchEvent'](msg);
+
+        expect(publishStub.mock.calls[0][2]).toBeUndefined();
       });
     });
   });
