@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { match } from 'path-to-regexp';
+import { NODE_HTTP2 } from '../adapters/node-http2.js';
 import { NodeRequest, NodeResponse } from '../adapters/node-request.js';
 import {
   PARAM_TOO_LONG,
@@ -210,13 +211,13 @@ export class NodeRouter {
     res: ServerResponse,
     done?: NextFunction,
   ) {
-    if (!(req instanceof NodeRequest)) {
+    if (!(req instanceof NodeRequest) && !(NODE_HTTP2 in req)) {
       Object.setPrototypeOf(
         req,
         this.requestPrototype ?? NodeRequest.prototype,
       );
     }
-    if (!(res instanceof NodeResponse)) {
+    if (!(res instanceof NodeResponse) && !(NODE_HTTP2 in res)) {
       Object.setPrototypeOf(res, NodeResponse.prototype);
     }
     (req as NodeRequest).res = res as NodeResponse;

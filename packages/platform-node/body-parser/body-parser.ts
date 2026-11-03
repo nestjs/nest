@@ -247,7 +247,11 @@ function createTypeMatcher(
 function hasBody(req: IncomingMessage) {
   return (
     req.headers['transfer-encoding'] !== undefined ||
-    req.headers['content-length'] !== undefined
+    req.headers['content-length'] !== undefined ||
+    // HTTP/2 has no chunked encoding: a body of unknown length comes without
+    // either header, and only a stream that ended with its headers has none
+    (req as { stream?: { endAfterHeaders?: boolean } }).stream
+      ?.endAfterHeaders === false
   );
 }
 
