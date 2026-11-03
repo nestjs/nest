@@ -216,7 +216,7 @@ export class NodeRouter {
         this.requestPrototype ?? NodeRequest.prototype,
       );
     }
-    if (!(res instanceof NodeResponse)) {
+    if (!(res instanceof NodeResponse) && !(res.constructor && res.constructor.name === 'Http2ServerResponse')) {
       Object.setPrototypeOf(res, NodeResponse.prototype);
     }
     this.dispatch(req as NodeRequest, res as NodeResponse, done);

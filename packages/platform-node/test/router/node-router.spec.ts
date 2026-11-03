@@ -69,6 +69,23 @@ describe('NodeRouter', () => {
     expect(received![1]).toBeInstanceOf(NodeResponse);
   });
 
+  it('should not mutate Http2ServerResponse prototype', () => {
+    let receivedRes: any;
+    router.use((_req: unknown, res: unknown) => {
+      receivedRes = res;
+    });
+    class Http2ServerResponse {
+      public send() {}
+    }
+    const req = Object.assign(Object.create(null), { method: 'GET', url: '/' });
+    const res = new Http2ServerResponse();
+
+    router(req, res as any);
+
+    expect(receivedRes).toBeInstanceOf(Http2ServerResponse);
+    expect(receivedRes).not.toBeInstanceOf(NodeResponse);
+  });
+
   describe('stack order', () => {
     it('should run middleware and routes in registration order', () => {
       const calls: string[] = [];
