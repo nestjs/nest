@@ -56,10 +56,11 @@ describe('Packet metadata (RabbitMQ)', () => {
       imports: [MetadataModule],
     }).compile();
 
+    // Durable, as RabbitMQ 4 refuses transient queues that are not exclusive
     const options = {
       urls: [RMQ_URL],
       queue: QUEUE,
-      queueOptions: { durable: false },
+      queueOptions: { durable: true },
     };
     app = module.createNestMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
@@ -72,8 +73,8 @@ describe('Packet metadata (RabbitMQ)', () => {
   });
 
   afterEach(async () => {
-    await client.close();
-    await app.close();
+    await client?.close();
+    await app?.close();
   });
 
   it('delivers what the dispatch hook attached to a request as headers, and not in the content', async () => {
