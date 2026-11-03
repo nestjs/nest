@@ -5,7 +5,7 @@ import {
 } from './route-conflict-detector.js';
 
 type SegmentKindOrMissing =
-  'literal' | 'param' | 'wildcard' | 'end' | 'missing';
+  'literal' | 'mixed' | 'param' | 'wildcard' | 'end' | 'missing';
 
 /**
  * Static utility class that orders resolved routes by specificity so the
@@ -14,14 +14,14 @@ type SegmentKindOrMissing =
  */
 export class RouteSpecificitySorter {
   /**
-   * Lower rank means more specific. A literal segment beats a named
-   * param, which beats a named wildcard. A position that is absent on
-   * one side means the path is shorter at that point. A shorter path
-   * with a wildcard is the least specific of all (`missing`), as the
-   * wildcard can absorb the extra segments. Without one, it ranks after
-   * a literal but before a param or wildcard (`end`): those can sit in
-   * an optional group (`/users{/:id}`, `/{*path}`) and then also match
-   * the shorter path.
+   * Lower rank means more specific. A literal segment beats one mixing
+   * text and params (`v:version`), which beats a named param, which beats
+   * a named wildcard. A position that is absent on one side means the
+   * path is shorter at that point. A shorter path with a wildcard is the
+   * least specific of all (`missing`), as the wildcard can absorb the
+   * extra segments. Without one, it ranks after a literal but before the
+   * other kinds (`end`): those can sit in an optional group
+   * (`/users{/:id}`, `/{*path}`) and then also match the shorter path.
    */
   private static readonly SEGMENT_KIND_RANK: Record<
     SegmentKindOrMissing,
@@ -29,9 +29,10 @@ export class RouteSpecificitySorter {
   > = {
     literal: 0,
     end: 1,
-    param: 2,
-    wildcard: 3,
-    missing: 4,
+    mixed: 2,
+    param: 3,
+    wildcard: 4,
+    missing: 5,
   };
 
   /**
@@ -43,12 +44,13 @@ export class RouteSpecificitySorter {
     const decoratedRoutes = routes.map((route, declarationIndex) => ({
       route,
       declarationIndex,
+      segments: RouteConflictDetector.tokenizePath(route.path),
     }));
 
     decoratedRoutes.sort((leftEntry, rightEntry) => {
       const specificityDelta = RouteSpecificitySorter.comparePathSpecificity(
-        leftEntry.route.path,
-        rightEntry.route.path,
+        leftEntry.segments,
+        rightEntry.segments,
       );
       if (specificityDelta !== 0) return specificityDelta;
       return leftEntry.declarationIndex - rightEntry.declarationIndex;
@@ -58,11 +60,9 @@ export class RouteSpecificitySorter {
   }
 
   private static comparePathSpecificity(
-    leftPath: string,
-    rightPath: string,
+    leftSegments: PathSegment[],
+    rightSegments: PathSegment[],
   ): number {
-    const leftSegments = RouteConflictDetector.tokenizePath(leftPath);
-    const rightSegments = RouteConflictDetector.tokenizePath(rightPath);
     const longestPathLength = Math.max(
       leftSegments.length,
       rightSegments.length,

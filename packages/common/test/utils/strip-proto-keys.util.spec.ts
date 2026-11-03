@@ -126,6 +126,66 @@ describe('stripProtoKeys', () => {
     });
   });
 
+  describe('with cycles', () => {
+    it('should strip a self-referencing object', () => {
+      const value: Record<string, any> = { constructor: 'malicious' };
+      value.self = value;
+
+      expect(() => stripProtoKeys(value)).not.toThrow();
+      expect(value).not.toHaveProperty('constructor');
+      expect(value.self).toBe(value);
+    });
+
+    it('should strip both objects of a cycle between two objects', () => {
+      const user: Record<string, any> = { constructor: 'malicious' };
+      const profile: Record<string, any> = { constructor: 'alsoMalicious' };
+      user.profile = profile;
+      profile.owner = user;
+
+      expect(() => stripProtoKeys(user)).not.toThrow();
+      expect(user).not.toHaveProperty('constructor');
+      expect(profile).not.toHaveProperty('constructor');
+    });
+
+    it('should strip a cycle that goes through an array', () => {
+      const value: Record<string, any> = { constructor: 'malicious' };
+      value.items = [value, { constructor: 'alsoMalicious' }];
+
+      expect(() => stripProtoKeys(value)).not.toThrow();
+      expect(value).not.toHaveProperty('constructor');
+      expect(value.items[1]).not.toHaveProperty('constructor');
+    });
+  });
+
+  describe('with deeply nested values', () => {
+    it('should not overflow the stack on deeply nested objects', () => {
+      const value: Record<string, any> = {};
+      let current = value;
+      for (let i = 0; i < 20_000; i++) {
+        current.next = {};
+        current = current.next;
+      }
+      current.constructor = 'malicious';
+
+      expect(() => stripProtoKeys(value)).not.toThrow();
+      expect(current).not.toHaveProperty('constructor');
+    });
+
+    it('should not overflow the stack on deeply nested arrays', () => {
+      const value: any[] = [];
+      let current = value;
+      for (let i = 0; i < 20_000; i++) {
+        const next: any[] = [];
+        current.push(next);
+        current = next;
+      }
+      current.push({ constructor: 'malicious' });
+
+      expect(() => stripProtoKeys(value)).not.toThrow();
+      expect(current[0]).not.toHaveProperty('constructor');
+    });
+  });
+
   describe('Issue #16195: Jest useFakeTimers compatibility', () => {
     it('should handle Date objects with non-configurable constructor', () => {
       const value = { date: new Date() };

@@ -1,8 +1,10 @@
 import {
+  Controller,
   Module as ModuleDecorator,
   Inject,
   Injectable,
   Scope,
+  UseGuards,
 } from '@nestjs/common';
 import { UndefinedDependencyException } from '@nestjs/core/errors/exceptions/undefined-dependency.exception.js';
 import {
@@ -280,6 +282,67 @@ describe('TestingModuleBuilder', () => {
         .compile();
 
       expect(module.get('SERVICE')).toBe('mock-service');
+    });
+
+    describe('when a class is both a provider and a guard', () => {
+      class AuthGuard {
+        canActivate() {
+          return true;
+        }
+      }
+
+      @Controller()
+      @UseGuards(AuthGuard)
+      class TestController {}
+
+      @ModuleDecorator({
+        controllers: [TestController],
+        providers: [AuthGuard],
+      })
+      class TestModule {}
+
+      const providerMock = { canActivate: () => true };
+      const guardMock = { canActivate: () => false };
+
+      const getInstances = (testingModule: TestingModule) => {
+        const moduleRef = [
+          ...testingModule['container'].getModules().values(),
+        ].find(moduleRef => moduleRef.metatype === TestModule)!;
+        return {
+          provider: moduleRef.getProviderByKey(AuthGuard).instance,
+          guard: moduleRef.injectables.get(AuthGuard)!.instance,
+        };
+      };
+
+      it('should apply both overrides when the provider is overridden first', async () => {
+        const module = await Test.createTestingModule({
+          imports: [TestModule],
+        })
+          .overrideProvider(AuthGuard)
+          .useValue(providerMock)
+          .overrideGuard(AuthGuard)
+          .useValue(guardMock)
+          .compile();
+
+        const { provider, guard } = getInstances(module);
+        expect(provider).toBe(providerMock);
+        expect(guard).toBe(guardMock);
+      });
+
+      it('should apply both overrides when the guard is overridden first', async () => {
+        const module = await Test.createTestingModule({
+          imports: [TestModule],
+        })
+          .overrideGuard(AuthGuard)
+          .useValue(guardMock)
+          .overrideProvider(AuthGuard)
+          .useValue(providerMock)
+          .compile();
+
+        const { provider, guard } = getInstances(module);
+        expect(provider).toBe(providerMock);
+        expect(guard).toBe(guardMock);
+      });
     });
 
     it('should use mocker for unresolved providers', async () => {

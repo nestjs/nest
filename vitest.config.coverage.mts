@@ -57,6 +57,7 @@ export default defineConfig({
       '@nestjs/platform-express': './packages/platform-express',
       '@nestjs/platform-ws': './packages/platform-ws',
       '@nestjs/platform-fastify': './packages/platform-fastify',
+      '@nestjs/platform-node': './packages/platform-node',
       '@nestjs/platform-socket.io': './packages/platform-socket.io',
     },
     coverage: {

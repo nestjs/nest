@@ -78,6 +78,50 @@ describe('OnModuleDestroy', () => {
     );
   });
 
+  it('should call onModuleDestroy of an imported module last when a longer import path also leads to it', async () => {
+    @Injectable()
+    class DatabaseService implements OnModuleDestroy {
+      onModuleDestroy = vi.fn();
+    }
+
+    @Module({
+      providers: [DatabaseService],
+      exports: [DatabaseService],
+    })
+    class DatabaseModule {}
+
+    @Injectable()
+    class UsersService implements OnModuleDestroy {
+      constructor(private db: DatabaseService) {}
+      onModuleDestroy = vi.fn();
+    }
+
+    @Module({
+      imports: [DatabaseModule],
+      providers: [UsersService],
+      exports: [UsersService],
+    })
+    class UsersModule {}
+
+    @Module({ imports: [UsersModule] })
+    class PaymentsModule {}
+
+    @Module({ imports: [PaymentsModule] })
+    class OrdersModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [DatabaseModule, UsersModule, OrdersModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const db = module.get(DatabaseService);
+    const users = module.get(UsersService);
+    expect(users.onModuleDestroy).toHaveBeenCalledBefore(db.onModuleDestroy);
+  });
+
   it('should sort components within a single module by injection hierarchy - ASC order', async () => {
     @Injectable()
     class A implements OnModuleDestroy {

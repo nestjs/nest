@@ -1,12 +1,14 @@
 import { INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import { LateHeadersModule } from '../src/late-headers.module.js';
 
 const adapters = [
   ['Express', () => new ExpressAdapter()],
   ['Fastify', () => new FastifyAdapter()],
+  ['Node', () => new NodeAdapter()],
 ] as const;
 
 describe.each(adapters)('Sse late headers (%s)', (_name, createAdapter) => {

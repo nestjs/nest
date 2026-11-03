@@ -26,8 +26,8 @@ import {
   ROUTE_ARGS_METADATA,
   RouteParamtypes,
   SSE_METADATA,
-  SSE_OPTIONS_METADATA,
 } from '@nestjs/common/internal';
+import * as commonInternal from '@nestjs/common/internal';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { IncomingMessage } from 'http';
 import {
@@ -357,7 +357,10 @@ export class RouterExecutionContext {
   public reflectSseOptions(
     callback: (...args: unknown[]) => unknown,
   ): SseOptions | undefined {
-    return Reflect.getMetadata(SSE_OPTIONS_METADATA, callback);
+    // Check the namespace, since a named import fails with an older common.
+    return 'SSE_OPTIONS_METADATA' in commonInternal
+      ? Reflect.getMetadata(commonInternal.SSE_OPTIONS_METADATA, callback)
+      : undefined;
   }
 
   public exchangeKeysForValues(

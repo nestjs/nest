@@ -29,6 +29,34 @@ import { isNil, isObject, isString } from '@nestjs/common/internal';
  */
 const DEFAULT_MAX_PENDING_DATA_LENGTH = 4 * 1024 * 1024;
 
+/**
+ * The surface the SSE lifecycle listens on to learn that the client is gone.
+ * Runtimes that emulate "node:http" without a real "net.Socket" (e.g.
+ * Cloudflare Workers) expose a socket-like object that only carries address
+ * information, so it cannot be used as an event source.
+ */
+interface CloseSource {
+  destroyed?: boolean;
+  once(event: 'close', listener: () => void): unknown;
+  removeListener(event: 'close', listener: () => void): unknown;
+}
+
+function isCloseSource(source: unknown): source is CloseSource {
+  return (
+    typeof (source as Partial<CloseSource> | undefined)?.once === 'function'
+  );
+}
+
+function pickCloseSource(
+  socket: unknown,
+  response: unknown,
+): CloseSource | undefined {
+  if (isCloseSource(socket)) {
+    return socket;
+  }
+  return isCloseSource(response) ? response : undefined;
+}
+
 function getDataLength(message: MessageEvent): number {
   return (
     (isString(message.data) ? message.data.length : 0) +
@@ -157,7 +185,10 @@ export class RouterResponseController {
     return new Promise<void>((resolve, reject) => {
       let settled = false;
       let subscription: { unsubscribe(): void } | undefined;
-      const disconnectSource = request.socket ?? response;
+      // The response is a stream in every adapter, so it can still report the
+      // disconnect when the socket cannot. When neither source can, the
+      // listener is skipped rather than breaking the handler.
+      const disconnectSource = pickCloseSource(request.socket, response);
 
       // Ends the request-scoped lifetime: stops listening for disconnects and
       // aborts the signal handed to the route handler. Every terminal path of
@@ -166,7 +197,7 @@ export class RouterResponseController {
       // regardless of how the stream ended. `abort()` is idempotent, so paths
       // that already aborted on disconnect are unaffected.
       const finalize = () => {
-        disconnectSource.removeListener('close', onClose);
+        disconnectSource?.removeListener('close', onClose);
         abortController.abort();
       };
 
@@ -215,10 +246,10 @@ export class RouterResponseController {
         resolve();
       };
 
-      disconnectSource.once('close', onClose);
+      disconnectSource?.once('close', onClose);
       // The client may have disconnected before the handler ran (e.g., during
       // a guard), in which case "close" has already been emitted.
-      if ((disconnectSource as { destroyed?: boolean }).destroyed) {
+      if (disconnectSource?.destroyed) {
         onClose();
       }
 
@@ -240,6 +271,25 @@ export class RouterResponseController {
           let pendingDataLength = 0;
           const maxPendingDataLength =
             options?.maxPendingDataLength ?? DEFAULT_MAX_PENDING_DATA_LENGTH;
+          // Events wait in concatMap() while the client is not reading.
+          // Past a limit, the connection is dropped as if the client had
+          // disconnected, rather than holding events for a client that may
+          // never read them. An EventSource then reconnects, and sends the
+          // id of the last event it received. A limit of 0, like Infinity,
+          // keeps every event.
+          const dropIfNotReading = () => {
+            if (
+              maxPendingDataLength &&
+              pendingDataLength > maxPendingDataLength &&
+              stream.writableNeedDrain
+            ) {
+              this.logger.warn(
+                `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
+              );
+              (response as { destroy?(): void }).destroy?.();
+              onClose();
+            }
+          };
           subscription = observableResult
             .pipe(
               map((message): MessageEvent => {
@@ -262,34 +312,23 @@ export class RouterResponseController {
                       data: JSON.stringify(event.data),
                     };
               }),
-              // Events wait in concatMap() while the client is not reading.
-              // Past a limit, the connection is dropped as if the client had
-              // disconnected, rather than holding events for a client that may
-              // never read them. An EventSource then reconnects, and sends the
-              // id of the last event it received. A limit of 0, like Infinity,
-              // keeps every event.
               tap(message => {
                 pendingDataLength += getDataLength(message);
-                if (
-                  maxPendingDataLength &&
-                  pendingDataLength > maxPendingDataLength &&
-                  stream.writableNeedDrain
-                ) {
-                  this.logger.warn(
-                    `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
-                  );
-                  (response as { destroy?(): void }).destroy?.();
-                  onClose();
-                }
+                dropIfNotReading();
               }),
               concatMap(
                 message =>
-                  new Promise<void>((resolve, reject) =>
+                  new Promise<void>((resolve, reject) => {
                     stream.writeMessage(message, err => {
                       pendingDataLength -= getDataLength(message);
                       return err ? reject(err) : resolve();
-                    }),
-                  ),
+                    });
+                    // A synchronous producer emits all of its events before
+                    // the first write, while the stream is not backed up yet,
+                    // and none after it. They are checked again once a write
+                    // backs the stream up.
+                    dropIfNotReading();
+                  }),
               ),
               catchError(err => {
                 if (!stream.headersCommitted) {

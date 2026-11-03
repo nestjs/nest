@@ -1,57 +1,58 @@
 import { Module } from '../module.js';
-import { TreeNode } from './tree-node.js';
 
+/**
+ * Depth of every module the root module (depth 1) imports, directly or not:
+ * the length of the longest import path that leads to it. A module is then
+ * deeper than every module importing it, whichever path reached it first. An
+ * import that closes a cycle (with `forwardRef()`) is left out, as no depth
+ * could satisfy it.
+ */
 export class TopologyTree {
-  private root: TreeNode<Module>;
-  private links: Map<Module, TreeNode<Module>> = new Map();
+  private readonly depths = new Map<Module, number>();
 
   constructor(moduleRef: Module) {
-    this.root = new TreeNode<Module>({
-      value: moduleRef,
-      parent: null,
-    });
-    this.links.set(moduleRef, this.root);
-    this.traverseAndMapToTree(this.root);
+    const order = this.sortTopologically(moduleRef);
+    const positions = new Map(order.map((module, index) => [module, index]));
+
+    // Every import comes after its importer in "order" (but those closing a
+    // cycle), so the depth of a module is final before its imports are visited
+    this.depths.set(moduleRef, 1);
+    for (const module of order) {
+      const position = positions.get(module)!;
+      const childDepth = this.depths.get(module)! + 1;
+      module.imports?.forEach(child => {
+        if (!child || positions.get(child)! <= position) {
+          return;
+        }
+        if ((this.depths.get(child) ?? 0) < childDepth) {
+          this.depths.set(child, childDepth);
+        }
+      });
+    }
   }
 
   public walk(callback: (value: Module, depth: number) => void) {
-    function walkNode(node: TreeNode<Module>, depth = 1) {
-      callback(node.value, depth);
-      node.children.forEach(child => walkNode(child, depth + 1));
-    }
-    walkNode(this.root);
+    this.depths.forEach((depth, module) => callback(module, depth));
   }
 
-  private traverseAndMapToTree(node: TreeNode<Module>, depth = 1) {
-    if (!node.value.imports) {
-      return;
-    }
-    node.value.imports.forEach(child => {
-      if (!child) {
-        return;
-      }
-      if (this.links.has(child)) {
-        const existingSubtree = this.links.get(child)!;
-
-        if (node.hasCycleWith(child)) {
-          return;
+  /**
+   * Reverse post-order of a depth-first traversal: every module comes before
+   * its imports, except for an import back to a module still being traversed
+   * (a cycle).
+   */
+  private sortTopologically(root: Module): Module[] {
+    const visited = new Set<Module>();
+    const order: Module[] = [];
+    const visit = (module: Module) => {
+      visited.add(module);
+      module.imports?.forEach(child => {
+        if (child && !visited.has(child)) {
+          visit(child);
         }
-        const existingDepth = existingSubtree.getDepth();
-        if (existingDepth < depth) {
-          existingSubtree.relink(node);
-        }
-        return;
-      }
-
-      const childNode = new TreeNode<Module>({
-        value: child,
-        parent: node,
       });
-      node.addChild(childNode);
-
-      this.links.set(child, childNode);
-
-      this.traverseAndMapToTree(childNode, depth + 1);
-    });
+      order.push(module);
+    };
+    visit(root);
+    return order.reverse();
   }
 }

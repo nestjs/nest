@@ -138,6 +138,7 @@ describe('RouteSpecificitySorter', () => {
       ['/api', '/api{/*path}'],
       ['/users', '/users{/:userId}'],
       ['/files', '/files/{*path}'],
+      ['/report', '/report{.:format}'],
     ])(
       'should put `%s` before `%s`, whose optional group also matches it',
       (exactPath, optionalGroupPath) => {
@@ -154,6 +155,36 @@ describe('RouteSpecificitySorter', () => {
         expect(pathsOf(sorted)).toEqual([exactPath, optionalGroupPath]);
       },
     );
+
+    it('should put a literal before a segment that mixes text and params', () => {
+      const mixedRoute = makeResolvedRoute({ path: '/v:version/items' });
+      const staticRoute = makeResolvedRoute({ path: '/v1/items' });
+
+      const sorted = RouteSpecificitySorter.sort([mixedRoute, staticRoute]);
+
+      expect(pathsOf(sorted)).toEqual(['/v1/items', '/v:version/items']);
+    });
+
+    it('should put a segment that mixes text and params before a param', () => {
+      const parametricRoute = makeResolvedRoute({ path: '/files/:fileId' });
+      const mixedRoute = makeResolvedRoute({ path: '/files/:name.:ext' });
+
+      const sorted = RouteSpecificitySorter.sort([parametricRoute, mixedRoute]);
+
+      expect(pathsOf(sorted)).toEqual(['/files/:name.:ext', '/files/:fileId']);
+    });
+
+    it('should keep declaration order between a param and the same param with an optional suffix', () => {
+      const parametricRoute = makeResolvedRoute({ path: '/users/:id' });
+      const suffixedRoute = makeResolvedRoute({ path: '/users/:id{.:format}' });
+
+      expect(
+        pathsOf(RouteSpecificitySorter.sort([parametricRoute, suffixedRoute])),
+      ).toEqual(['/users/:id', '/users/:id{.:format}']);
+      expect(
+        pathsOf(RouteSpecificitySorter.sort([suffixedRoute, parametricRoute])),
+      ).toEqual(['/users/:id{.:format}', '/users/:id']);
+    });
 
     it('should put the exact route before a catch-all declared ahead of it', () => {
       const catchAllRoute = makeResolvedRoute({ path: '/users/{*path}' });

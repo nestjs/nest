@@ -9,6 +9,7 @@ import {
   ReplaySubject,
   Subject,
   Subscription,
+  throwError,
 } from 'rxjs';
 import {
   catchError,
@@ -294,9 +295,36 @@ export abstract class Server<
     respond: (data: WritePacket) => Promise<unknown> | void,
   ) {
     return this.runWithProcessingHooks(context, async runEndHook => {
-      const response$ = await produce();
+      let response$: Observable<any>;
+      try {
+        response$ = await produce();
+      } catch (err) {
+        // The handler promise rejected. An inherited HTTP filter does this
+        // when it replies through host.switchToHttp().getResponse(): on RPC
+        // that object is the context, so the reply throws. gRPC fails the
+        // call with INTERNAL. Answer here too, then rethrow so the transport
+        // still logs the rejection.
+        if (this.shouldAnswerRejectedRequest(err)) {
+          this.send(
+            throwError(() => ({
+              status: 'error',
+              message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+            })).pipe(finalize(runEndHook)),
+            respond,
+          );
+        }
+        throw err;
+      }
       this.send(response$.pipe(finalize(runEndHook)), respond);
     });
+  }
+
+  /**
+   * Whether a request is answered with an error when `produce` rejects with
+   * `err`, rather than only passing the rejection on to the transport.
+   */
+  protected shouldAnswerRejectedRequest(err: unknown): boolean {
+    return true;
   }
 
   /**

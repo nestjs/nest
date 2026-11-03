@@ -113,6 +113,50 @@ describe('OnModuleInit', () => {
     await app.close();
   });
 
+  it('should call onModuleInit of an imported module first when a longer import path also leads to it', async () => {
+    @Injectable()
+    class DatabaseService implements OnModuleInit {
+      onModuleInit = vi.fn();
+    }
+
+    @Module({
+      providers: [DatabaseService],
+      exports: [DatabaseService],
+    })
+    class DatabaseModule {}
+
+    @Injectable()
+    class UsersService implements OnModuleInit {
+      constructor(private db: DatabaseService) {}
+      onModuleInit = vi.fn();
+    }
+
+    @Module({
+      imports: [DatabaseModule],
+      providers: [UsersService],
+      exports: [UsersService],
+    })
+    class UsersModule {}
+
+    @Module({ imports: [UsersModule] })
+    class PaymentsModule {}
+
+    @Module({ imports: [PaymentsModule] })
+    class OrdersModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [DatabaseModule, UsersModule, OrdersModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const db = module.get(DatabaseService);
+    const users = module.get(UsersService);
+    expect(db.onModuleInit).toHaveBeenCalledBefore(users.onModuleInit);
+  });
+
   it('should sort components within a single module by injection hierarchy - DESC order', async () => {
     @Injectable()
     class A implements OnModuleInit {

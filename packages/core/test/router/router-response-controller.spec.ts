@@ -1,6 +1,14 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
-import { EMPTY, NEVER, Observable, of, Subject, throwError } from 'rxjs';
+import {
+  concat,
+  EMPTY,
+  NEVER,
+  Observable,
+  of,
+  Subject,
+  throwError,
+} from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
@@ -463,6 +471,58 @@ data: test
 
 `,
       );
+    });
+
+    it('should tolerate a socket without event emitter methods', async () => {
+      // Runtimes that emulate "node:http" without a real "net.Socket" (e.g.
+      // Cloudflare Workers) expose a socket-like object that only carries
+      // address information, so it cannot report a "close" event.
+      const chunks: string[] = [];
+      const response = new Writable({
+        write(chunk, _encoding, callback) {
+          chunks.push(chunk.toString());
+          callback();
+        },
+      });
+      const request = Object.assign(new PassThrough(), {
+        socket: { remoteAddress: '127.0.0.1', destroy() {} },
+      });
+
+      await expect(
+        routerResponseController.sse(
+          of('test'),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        ),
+      ).resolves.toBeUndefined();
+      expect(chunks.join('')).toContain('data: test');
+    });
+
+    it('should observe the response close when the socket cannot report it', async () => {
+      const response = new Writable({
+        write(_chunk, _encoding, callback) {
+          callback();
+        },
+      });
+      const request = Object.assign(new PassThrough(), {
+        socket: { remoteAddress: '127.0.0.1', destroy() {} },
+      });
+      const subscribe = vi.fn();
+
+      const lifecycle = routerResponseController.sse(
+        new Observable(subscribe),
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      // Let the producer subscribe, then simulate the client going away.
+      await new Promise(resolve => setImmediate(resolve));
+      response.emit('close');
+
+      await expect(lifecycle).resolves.toBeUndefined();
+      expect(subscribe).toHaveBeenCalledOnce();
+      expect((request as any)[SSE_ABORT_CONTROLLER].signal.aborted).toBe(true);
+      expect(response.writableEnded).toBe(true);
     });
 
     it('should use custom status code from response', async () => {
@@ -1176,6 +1236,57 @@ data: test
         request.destroy();
       });
 
+      // Events replayed at once, before the live ones, as a producer does
+      // to resume from the id sent on reconnect
+      const replayThenEmit = (producer: Subject<MessageEvent>, count: number) =>
+        concat(
+          Array.from({ length: count }, () => ({ data })),
+          producer,
+        );
+
+      const turns = async (count: number) => {
+        for (let i = 0; i < count; i++) {
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      };
+
+      it('should drop the connection once too much event data, emitted synchronously, waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          replayThenEmit(producer, 128),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await turns(128);
+
+        expect(response.destroyed).toBe(true);
+        await lifecycle;
+        expect(producer.observed).toBe(false);
+        request.destroy();
+      });
+
+      it('should keep the connection while less event data, emitted synchronously, waits for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          replayThenEmit(producer, 48),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await turns(128);
+
+        expect(response.destroyed).toBe(false);
+        expect(producer.observed).toBe(true);
+        response.destroy();
+        await lifecycle;
+        request.destroy();
+      });
+
       it.each([0, Infinity])(
         'should keep the connection when the route lifts the limit with %s',
         async maxPendingDataLength => {
@@ -1225,10 +1336,8 @@ data: test
         request as unknown as IncomingMessage,
       );
 
-      // Wait for microtasks (subscription) + macrotask (setTimeout(0))
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      expect(response.writeHead).toHaveBeenCalled();
+      // Headers are committed in a macrotask (setTimeout(0)) after subscribing
+      await vi.waitFor(() => expect(response.writeHead).toHaveBeenCalled());
       expect(response.writeHead.mock.calls[0][0]).toBe(200);
 
       result.complete();
@@ -1295,7 +1404,7 @@ data: test
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await vi.waitFor(() => expect(response.writableFinished).toBe(true));
 
       expect(response.content).toBe(
         '\nid: 1\ndata: 1\n\nid: 2\ndata: 0\n\nid: 3\ndata: false\n\n',
@@ -1338,10 +1447,10 @@ data: test
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      expect(response.content).toBe(
-        '\nevent: update\nid: 1\ndata: {"value":1}\n\n',
+      await vi.waitFor(() =>
+        expect(response.content).toBe(
+          '\nevent: update\nid: 1\ndata: {"value":1}\n\n',
+        ),
       );
       request.destroy();
     });
@@ -1604,7 +1713,7 @@ data: test
         result.next({ data: { value: 1n } });
         result.next({ data: 'after' });
         await promise;
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.waitFor(() => expect(response.writableFinished).toBe(true));
 
         expect(response.content).toContain('event: error');
         expect(response.content).toContain('data: Internal server error');
@@ -1645,7 +1754,7 @@ data: test
         result.next({ comment: 5 });
         result.next({ data: 'after' });
         await promise;
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await vi.waitFor(() => expect(response.writableFinished).toBe(true));
 
         expect(response.content).toContain('data: before');
         expect(response.content).toContain('event: error');

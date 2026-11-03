@@ -44,7 +44,10 @@ export type TestingModuleOptions = Pick<
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container: NestContainer;
-  private readonly overloadsMap = new Map();
+  private readonly providerOverloadsMap = new Map();
+  // Kept apart from the providers: one class can be both a provider and an
+  // enhancer (guard, interceptor, pipe or filter), each overridden on its own
+  private readonly injectableOverloadsMap = new Map();
   private readonly moduleOverloadsMap = new Map<
     ModuleDefinition,
     ModuleDefinition
@@ -141,8 +144,11 @@ export class TestingModuleBuilder {
   }
 
   private override<T = any>(typeOrToken: T, isProvider: boolean): OverrideBy {
+    const overloads = isProvider
+      ? this.providerOverloadsMap
+      : this.injectableOverloadsMap;
     const addOverload = (options: any) => {
-      this.overloadsMap.set(typeOrToken, {
+      overloads.set(typeOrToken, {
         ...options,
         isProvider,
       });
@@ -163,7 +169,10 @@ export class TestingModuleBuilder {
   }
 
   private applyOverloadsMap() {
-    const overloads = [...this.overloadsMap.entries()];
+    const overloads = [
+      ...this.providerOverloadsMap.entries(),
+      ...this.injectableOverloadsMap.entries(),
+    ];
     overloads.forEach(([item, options]) => {
       this.container.replace(item, options);
     });

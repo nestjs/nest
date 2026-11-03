@@ -797,6 +797,75 @@ describe('Injector', () => {
 
       expect(result).to.eq(featureModule.providers.get(token));
     });
+
+    describe('when the provider is exported by a nested import', () => {
+      const token = 'NestedToken';
+      class ReExportingModule {}
+      class ProvidingModule {}
+      let provider: InstanceWrapper;
+      let providingModule: any;
+      let reExportingModule: any;
+
+      beforeEach(() => {
+        provider = new InstanceWrapper({
+          name: token,
+          instance: {},
+          isResolved: true,
+        });
+        providingModule = {
+          id: 'providing',
+          metatype: ProvidingModule,
+          imports: new Set(),
+          providers: new Map([[token, provider]]),
+          exports: new Set([token]),
+        };
+        reExportingModule = {
+          id: 're-exporting',
+          metatype: ReExportingModule,
+          imports: new Set([undefined, providingModule]),
+          providers: new Map(),
+          exports: new Set([ProvidingModule]),
+        };
+      });
+
+      it('should resolve it through the re-exporting module and record it as a constructor dependency', async () => {
+        const host = new InstanceWrapper({ name: 'Host' });
+        const addCtorMetadata = vi.spyOn(host, 'addCtorMetadata');
+        const moduleRef = { imports: new Set([reExportingModule]) };
+
+        const result = await injector.lookupComponentInImports(
+          moduleRef as any,
+          token,
+          host,
+          new Set(),
+          undefined,
+          0,
+        );
+
+        expect(result).toBe(provider);
+        expect(host.getCtorMetadata()[0]).toBe(provider);
+        expect(addCtorMetadata).toHaveBeenCalled();
+        for (const call of addCtorMetadata.mock.calls) {
+          expect(call).toEqual([0, provider]);
+        }
+      });
+
+      it('should not traverse an import that the module does not export', async () => {
+        reExportingModule.exports = new Set();
+        const moduleRef = { imports: new Set([reExportingModule]) };
+
+        const result = await injector.lookupComponentInImports(
+          moduleRef as any,
+          token,
+          new InstanceWrapper({ name: 'Host' }),
+          new Set(),
+          undefined,
+          0,
+        );
+
+        expect(result).toBe(null);
+      });
+    });
   });
 
   describe('resolveParamToken', () => {

@@ -5,7 +5,6 @@ import type {
 } from '@nestjs/common';
 import { assignMetadata } from '@nestjs/common';
 import {
-  getParamArgsMetadata,
   isNil,
   isParameterDecoratorOptions,
   isString,
@@ -13,6 +12,7 @@ import {
 import 'reflect-metadata';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { WsParamtype } from '../enums/ws-paramtype.enum.js';
+import { getParamArgsMetadata } from './get-param-args-metadata.util.js';
 
 export function createWsParamDecorator(
   paramtype: WsParamtype,

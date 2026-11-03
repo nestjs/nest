@@ -81,6 +81,14 @@ export class FileTypeValidator extends FileValidator<
   FileTypeValidatorOptions,
   IFile
 > {
+  /**
+   * The type detected from the content of each validated file (`null` when
+   * none was), so that the error message can report the type that was
+   * actually checked rather than the one the client declared. Keyed by file,
+   * as the validator is shared by concurrent uploads.
+   */
+  private readonly detectedMimeTypes = new WeakMap<IFile, string | null>();
+
   buildErrorMessage(file?: IFile): string {
     const { errorMessage, ...config } = this.validationOptions;
 
@@ -105,6 +113,17 @@ export class FileTypeValidator extends FileValidator<
       return `Validation failed (file buffer is not available; file type validation could not be performed; expected type is ${this.validationOptions.fileType})`;
     }
 
+    const detectedMimeType = file && this.detectedMimeTypes.get(file);
+    if (detectedMimeType) {
+      return `Validation failed (current file type is ${detectedMimeType}, expected type is ${this.validationOptions.fileType})`;
+    }
+    if (
+      detectedMimeType === null &&
+      !this.validationOptions.fallbackToMimetype
+    ) {
+      return `Validation failed (file type could not be detected from its content; expected type is ${this.validationOptions.fileType})`;
+    }
+
     if (file?.mimetype) {
       const baseMessage = `Validation failed (current file type is ${file.mimetype}, expected type is ${this.validationOptions.fileType})`;
 
@@ -115,7 +134,10 @@ export class FileTypeValidator extends FileValidator<
        *
        * This message clarifies that fallback logic was used, in case users rely on file signatures.
        */
-      if (this.validationOptions.fallbackToMimetype) {
+      if (
+        this.validationOptions.fallbackToMimetype &&
+        !this.validationOptions.skipMagicNumbersValidation
+      ) {
         return `${baseMessage} - magic number detection failed, used mimetype fallback`;
       }
 
@@ -149,6 +171,7 @@ export class FileTypeValidator extends FileValidator<
     try {
       const { fileTypeFromBuffer } = await import('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
+      this.detectedMimeTypes.set(file, fileType?.mime ?? null);
 
       if (fileType) {
         if (this.validationOptions.overrideMimeType) {
@@ -168,6 +191,7 @@ export class FileTypeValidator extends FileValidator<
       }
       return false;
     } catch (error) {
+      this.detectedMimeTypes.set(file, null);
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 
