@@ -559,7 +559,11 @@ describe('NodeAdapter', () => {
       // lets Node.js reject the value, whereas skipping them would send the
       // body with the status set before the handler ran (200/201).
       for (const statusCode of [0, NaN]) {
-        const response = { statusCode: 200, end: vi.fn() };
+        const response = {
+          statusCode: 200,
+          end: vi.fn(),
+          send: NodeResponse.prototype.send,
+        };
 
         adapter.reply(response as any, undefined, statusCode);
 
@@ -731,6 +735,108 @@ describe('NodeAdapter', () => {
       expect(res.headers['content-type']).toBeUndefined();
       expect(res.headers['content-length']).toBe('0');
       expect(res.body).toHaveLength(0);
+    });
+
+    // Middleware written for Express wraps them to log or reshape the body,
+    // and the Express adapter replies through them
+    describe('when a middleware wrapped res.send() and res.json()', () => {
+      const wrap = (calls: string[]) => (res: NodeResponse) => {
+        const { send, json } = res;
+        res.send = function (this: NodeResponse, body?: unknown) {
+          calls.push(`send ${typeof body === 'string' ? body : typeof body}`);
+          return send.call(this, body);
+        };
+        res.json = function (this: NodeResponse, body: unknown) {
+          calls.push(`json ${JSON.stringify(body)}`);
+          return json.call(this, body);
+        };
+      };
+
+      it.each([
+        {
+          kind: 'an object',
+          body: { a: 1 },
+          calls: ['json {"a":1}', 'send {"a":1}'],
+          type: 'application/json; charset=utf-8',
+          text: '{"a":1}',
+        },
+        {
+          kind: 'a string',
+          body: 'Nest',
+          calls: ['send Nest'],
+          type: 'text/plain; charset=utf-8',
+          text: 'Nest',
+        },
+        {
+          kind: 'a number',
+          body: 42,
+          calls: ['send 42'],
+          type: 'text/plain; charset=utf-8',
+          text: '42',
+        },
+      ])(
+        'should send $kind through them',
+        async ({ body, calls, type, text }) => {
+          const seen: string[] = [];
+
+          const res = await replyWith(body, undefined, wrap(seen));
+
+          expect(seen).toEqual(calls);
+          expect(res.headers['content-type']).toBe(type);
+          expect(res.text).toBe(text);
+        },
+      );
+
+      it('should send the body they reshaped, with its length', async () => {
+        const res = await replyWith({ a: 'ż' }, 201, response => {
+          const json = response.json;
+          response.json = function (this: NodeResponse, body: unknown) {
+            return json.call(this, { data: body });
+          };
+        });
+
+        expect(res.status).toBe(201);
+        expect(res.headers['content-length']).toBe(
+          String(Buffer.byteLength('{"data":{"a":"ż"}}')),
+        );
+        expect(res.text).toBe('{"data":{"a":"ż"}}');
+      });
+
+      it.each([200, 204])(
+        'should hand them an empty reply with a %i, as Express does',
+        async statusCode => {
+          const seen: string[] = [];
+
+          const res = await replyWith(undefined, statusCode, wrap(seen));
+
+          expect(seen).toEqual(['send undefined']);
+          expect(res.status).toBe(statusCode);
+          expect(res.text).toBe('');
+        },
+      );
+
+      it('should hand them the 400 a failed StreamableFile answers with', async () => {
+        const seen: string[] = [];
+        const source = new Readable({
+          read() {
+            this.destroy(new Error('read failed'));
+          },
+        });
+
+        const res = await replyWith(
+          new StreamableFile(source, { length: 100 }).setErrorLogger(() => {}),
+          undefined,
+          wrap(seen),
+        );
+
+        expect(seen).toEqual(['send Bad Request']);
+        expect(res.status).toBe(400);
+        expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
+        expect(res.headers['content-length']).toBe(
+          String('Bad Request'.length),
+        );
+        expect(res.text).toBe('Bad Request');
+      });
     });
 
     describe('when the body is a StreamableFile', () => {
@@ -1359,6 +1465,29 @@ describe('NodeAdapter', () => {
         user: 'from locals',
         name: 'from handler',
       });
+    });
+
+    it('should send the HTML through a res.send() a middleware wrapped, as Express does', async () => {
+      adapter.setViewEngine({ engine: { fake: fakeEngine }, root: viewsDir });
+      const sent: unknown[] = [];
+      const port = await startServer();
+      adapter.use((req: NodeRequest, res: NodeResponse, next: Next) => {
+        const send = res.send;
+        res.send = function (this: NodeResponse, body?: unknown) {
+          sent.push(body);
+          return send.call(this, body);
+        };
+        next();
+      });
+      adapter.get('/', async (req: NodeRequest, res: NodeResponse) => {
+        await adapter.render(res, 'index', { name: 'Zażółć' });
+      });
+
+      const res = await request(port);
+
+      expect(sent).toEqual(['<h1>Hello Zażółć</h1>']);
+      expect(res.headers['content-type']).toBe('text/html; charset=utf-8');
+      expect(res.text).toBe('<h1>Hello Zażółć</h1>');
     });
 
     it('should reject when no view engine is configured', async () => {
