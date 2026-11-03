@@ -26,11 +26,19 @@ export class LazyModuleLoader {
     loadOpts?: LazyModuleLoaderLoadOptions,
   ): Promise<ModuleRef> {
     const moduleClassOrDynamicDefinition = await loaderFn();
-    const moduleInstances = await this.dependenciesScanner.scanForModules({
-      moduleDefinition: moduleClassOrDynamicDefinition,
-      overrides: this.moduleOverrides,
-      lazy: true,
-    });
+    const insertedModules: Module[] = [];
+    let moduleInstances: Module[];
+    try {
+      moduleInstances = await this.dependenciesScanner.scanForModules({
+        moduleDefinition: moduleClassOrDynamicDefinition,
+        overrides: this.moduleOverrides,
+        lazy: true,
+        insertedModules,
+      });
+    } catch (err) {
+      this.dependenciesScanner.removeModules(insertedModules);
+      throw err;
+    }
     if (moduleInstances.length === 0) {
       // The module has been loaded already. In this case, we must
       // retrieve a module reference from the existing container.
@@ -54,6 +62,9 @@ export class LazyModuleLoader {
     );
     try {
       await build;
+    } catch (err) {
+      this.dependenciesScanner.removeModules(modulesToBuild);
+      throw err;
     } finally {
       modulesToBuild.forEach(moduleInstance =>
         this.modulesInFlight.delete(moduleInstance),

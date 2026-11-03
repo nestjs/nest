@@ -201,6 +201,160 @@ describe('LazyModuleLoader', () => {
       });
     });
 
+    describe('when the first load() fails', () => {
+      let factoryCalls: number;
+
+      const connectionProvider = {
+        provide: 'CONNECTION',
+        useFactory: () => {
+          factoryCalls++;
+          if (factoryCalls === 1) {
+            throw new Error('Connection refused');
+          }
+          return 'connection';
+        },
+      };
+
+      @Injectable()
+      class ConnectionConsumer {
+        constructor(@Inject('CONNECTION') readonly connection: string) {}
+      }
+
+      @Module({ providers: [connectionProvider, ConnectionConsumer] })
+      class FailingModule {}
+
+      @Global()
+      @Module({
+        providers: [connectionProvider],
+        exports: [connectionProvider],
+      })
+      class FailingGlobalModule {}
+
+      @Module({ providers: [ConnectionConsumer] })
+      class ConsumerModule {}
+
+      @Module({ imports: [undefined as any] })
+      class FailingScanModule {}
+
+      beforeEach(() => {
+        factoryCalls = 0;
+      });
+
+      it('should build the module again on the next load()', async () => {
+        await expect(
+          lazyModuleLoader.load(() => FailingModule),
+        ).rejects.toThrow('Connection refused');
+        const moduleRef = await lazyModuleLoader.load(() => FailingModule);
+
+        expect(moduleRef.get('CONNECTION')).toBe('connection');
+        expect(moduleRef.get(ConnectionConsumer).connection).toBe('connection');
+        expect(factoryCalls).toBe(2);
+      });
+
+      it('should build a global module again on the next load()', async () => {
+        await expect(
+          lazyModuleLoader.load(() => FailingGlobalModule),
+        ).rejects.toThrow('Connection refused');
+        await lazyModuleLoader.load(() => FailingGlobalModule);
+        const moduleRef = await lazyModuleLoader.load(() => ConsumerModule);
+
+        expect(moduleRef.get(ConnectionConsumer).connection).toBe('connection');
+      });
+
+      it('should roll back modules if scanForModules() fails midway', async () => {
+        await expect(
+          lazyModuleLoader.load(() => FailingScanModule),
+        ).rejects.toThrow();
+        expect(modulesContainer.size).toBe(0);
+      });
+
+      it('should not evict a module that a concurrent load() still uses', async () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        let sharedInstances = 0;
+
+        @Injectable()
+        class SharedService {
+          constructor() {
+            sharedInstances++;
+          }
+        }
+
+        @Module({ providers: [SharedService], exports: [SharedService] })
+        class SharedModule {}
+
+        @Module({
+          imports: [SharedModule],
+          providers: [
+            {
+              provide: 'FAIL',
+              useFactory: () =>
+                delay(10).then(() => Promise.reject(new Error('A failed'))),
+            },
+          ],
+        })
+        class AModule {}
+
+        @Module({
+          imports: [SharedModule],
+          providers: [{ provide: 'SLOW', useFactory: () => delay(30) }],
+        })
+        class BModule {}
+
+        const [a, b] = await Promise.allSettled([
+          lazyModuleLoader.load(() => AModule),
+          lazyModuleLoader.load(() => BModule),
+        ]);
+        expect(a.status).toBe('rejected');
+        expect(b.status).toBe('fulfilled');
+        const instancesBefore = sharedInstances;
+
+        await lazyModuleLoader.load(() => SharedModule);
+
+        expect(sharedInstances).toBe(instancesBefore);
+      });
+
+      it('should allow a retry after a failure while another load is in flight', async () => {
+        let xCalls = 0;
+        const xProvider = {
+          provide: 'X_PROVIDER',
+          useFactory: () => {
+            xCalls++;
+            if (xCalls === 1) {
+              throw new Error('X failed');
+            }
+            return 'x_value';
+          },
+        };
+
+        @Module({ providers: [xProvider], exports: [xProvider] })
+        class XModule {}
+
+        @Module({
+          imports: [XModule],
+          providers: [
+            {
+              provide: 'Z_PROVIDER',
+              useFactory: () => new Promise(resolve => setTimeout(resolve, 20)),
+            },
+          ],
+        })
+        class ZModule {}
+
+        const p1 = lazyModuleLoader.load(() => XModule);
+        const p2 = lazyModuleLoader.load(() => ZModule);
+
+        await expect(p1).rejects.toThrow('X failed');
+        // Start retry immediately from first rejection
+        const retry = await lazyModuleLoader.load(() => XModule);
+        expect(retry.get('X_PROVIDER')).toBe('x_value');
+
+        await expect(p2).rejects.toThrow('X failed');
+        // Ensure retry module ref is still healthy and in container
+        const retryAfter = await lazyModuleLoader.load(() => XModule);
+        expect(retryAfter).toBe(retry);
+      });
+    });
+
     describe('singleton sharing and repeated loading (#17428)', () => {
       let constructionsCount = 0;
       let globalConstructionsCount = 0;
