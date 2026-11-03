@@ -278,6 +278,37 @@ describe('ViewRenderer', () => {
       await expect(renderer.render('users')).resolves.toBe('users file');
     });
 
+    it('should resolve to the index file when trailing slash is used, even if a file shares the name', async () => {
+      write('views/a.ejs', 'a file');
+      write('views/a/index.ejs', 'a index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('a')).resolves.toBe('a file');
+      await expect(renderer.render('a/')).resolves.toBe('a index');
+    });
+
+    it('should not fall back to a view file when trailing slash names a missing index file', async () => {
+      write('views/a.ejs', 'a file');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('a')).resolves.toBe('a file');
+      await expect(renderer.render('a/')).rejects.toThrow(
+        'Failed to lookup view',
+      );
+    });
+
+    it('should not resolve "/" to ".<ext>" at the views root', async () => {
+      write('views/.ejs', 'root dot ejs');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('/')).rejects.toThrow(
+        'Failed to lookup view',
+      );
+      await expect(renderer.render('\\')).rejects.toThrow(
+        'Failed to lookup view',
+      );
+    });
+
     it('should not take a directory named like the view file for it', async () => {
       mkdirSync(join(views, 'users.ejs'));
       write('views/users/index.ejs', 'users index');

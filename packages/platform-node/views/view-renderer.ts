@@ -135,10 +135,7 @@ export class ViewRenderer {
   private async createRenderFn(view: string): Promise<RenderFn> {
     const { name, module } = await this.getEngine();
     const extension = this.viewExt ?? DEFAULT_EXTENSIONS[name] ?? name;
-    const cleanView = view.replace(/[/\\]+$/, '');
-    const file = await this.resolveFile(
-      extname(cleanView) ? cleanView : `${cleanView}.${extension}`,
-    );
+    const file = await this.resolveFile(view, extension);
     // Express-style engines take the data and the options in one object.
     // "settings" is where Express puts application settings and where ejs
     // reads its options from ("view options"): it is set last, so data derived
@@ -202,12 +199,29 @@ export class ViewRenderer {
     return this.engine;
   }
 
-  private async resolveFile(view: string): Promise<string> {
-    const { dir, name, ext } = parse(view);
-    // "users" is "users.ext", then "users/index.ext", as with Express. Unlike
-    // Express, which tries both in each directory in turn, a file in any
-    // directory wins over an index
-    for (const candidate of [view, join(dir, name, `index${ext}`)]) {
+  private async resolveFile(view: string, extension: string): Promise<string> {
+    const hasTrailingSlash = /[/\\]$/.test(view);
+    const cleanView = view.replace(/[/\\]+$/, '');
+    const ext = extname(cleanView) || `.${extension}`;
+
+    let candidates: string[] = [];
+    if (cleanView) {
+      if (hasTrailingSlash) {
+        // A trailing slash names the directory, so only look up <view>/index.<ext>
+        candidates = [join(cleanView, `index${ext}`)];
+      } else {
+        // "users" is "users.ext", then "users/index.ext", as with Express. Unlike
+        // Express, which tries both in each directory in turn, a file in any
+        // directory wins over an index
+        const fileCandidate = extname(cleanView)
+          ? cleanView
+          : `${cleanView}${ext}`;
+        const { dir, name, ext: candidateExt } = parse(fileCandidate);
+        candidates = [fileCandidate, join(dir, name, `index${candidateExt}`)];
+      }
+    }
+
+    for (const candidate of candidates) {
       for (const root of this.roots) {
         const file = resolve(root, candidate);
         // Never resolve outside the views directories ("../", absolute paths)
