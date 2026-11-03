@@ -895,6 +895,67 @@ describe('RouterExecutionContext', () => {
         expect(adapterReplySpy).not.toHaveBeenCalled();
       });
 
+      it('should watch the response when the request socket cannot report the close', async () => {
+        const { producer, source, observable } = createProducer();
+        // Runtimes that emulate "node:http" without a real "net.Socket" (e.g.
+        // Cloudflare Workers) expose a socket-like object that only carries
+        // address information, so it cannot report a "close" event.
+        const socketlessRequest = { socket: { remoteAddress: '127.0.0.1' } };
+        const streamedResponse = new PassThrough();
+
+        const pending = handler(
+          observable,
+          streamedResponse,
+          socketlessRequest,
+        );
+        source.next('partial');
+        await new Promise(resolve => setImmediate(resolve));
+        streamedResponse.emit('close');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(producer.tornDown).toBe(true);
+        expect(streamedResponse.listenerCount('close')).toBe(0);
+
+        source.complete();
+        await pending;
+        expect(adapterReplySpy).not.toHaveBeenCalled();
+      });
+
+      it('should watch the raw response when the request socket cannot report the close', async () => {
+        const { producer, observable } = createProducer();
+        const socketlessRequest = { socket: { remoteAddress: '127.0.0.1' } };
+        const rawResponse = new PassThrough();
+
+        const pending = handler(
+          observable,
+          { raw: rawResponse },
+          socketlessRequest,
+        );
+        await new Promise(resolve => setImmediate(resolve));
+        rawResponse.emit('close');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(producer.tornDown).toBe(true);
+        expect(rawResponse.listenerCount('close')).toBe(0);
+
+        rawResponse.destroy();
+        await pending.catch(() => undefined);
+      });
+
+      it('should still reply when neither the socket nor the response can report the close', async () => {
+        const plainResponse = {};
+
+        await handler(of('value'), plainResponse, {
+          socket: { remoteAddress: '127.0.0.1' },
+        });
+
+        expect(adapterReplySpy).toHaveBeenCalledWith(
+          plainResponse,
+          'value',
+          200,
+        );
+      });
+
       it('should watch the raw request socket (e.g. Fastify)', async () => {
         const { producer, observable } = createProducer();
 

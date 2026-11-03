@@ -655,12 +655,23 @@ export class RouterExecutionContext {
 
   /**
    * Emits once the client connection closes, or right away if it already has.
-   * Watches the request socket, like `RouterResponseController#sse()` does.
+   * Watches the request socket, like `RouterResponseController#sse()` does,
+   * and falls back to the response when the socket cannot report the close.
+   * Runtimes that emulate "node:http" without a real "net.Socket" (e.g.
+   * Cloudflare Workers) expose a socket-like object that only carries address
+   * information, so it cannot be used as an event source.
    */
   private fromClientDisconnect(req: any, res: any): Observable<void> {
     return new Observable<void>(subscriber => {
-      const source = (req?.raw ?? req)?.socket ?? res?.raw ?? res;
-      if (typeof source?.once !== 'function') {
+      const socket = (req?.raw ?? req)?.socket;
+      const response = res?.raw ?? res;
+      const source =
+        typeof socket?.once === 'function'
+          ? socket
+          : typeof response?.once === 'function'
+            ? response
+            : undefined;
+      if (!source) {
         return;
       }
       if (source.destroyed) {
