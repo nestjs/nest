@@ -259,14 +259,30 @@ export class WebSocketsController {
     const adapter = this.config.getIoAdapter();
     return (...args: unknown[]) => {
       const [client] = args;
-      connection.next(args);
-      context.subscribeMessages(subscribersMap, client, instance);
-
+      // Bound before the connection hooks run, since socket.io emits the
+      // disconnect synchronously when one of them calls client.disconnect().
+      // Such a disconnect is held back until every gateway sharing this
+      // server has handled the connection.
+      let isConnecting = true;
+      let heldDisconnect: { reason?: string } | undefined;
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
-        disconnectHook.call(adapter, client, (reason?: string) =>
-          disconnect.next({ client, reason }),
-        );
+        disconnectHook.call(adapter, client, (reason?: string) => {
+          if (isConnecting) {
+            heldDisconnect = { reason };
+            return;
+          }
+          disconnect.next({ client, reason });
+        });
+
+      try {
+        connection.next(args);
+        context.subscribeMessages(subscribersMap, client, instance);
+      } finally {
+        isConnecting = false;
+        heldDisconnect &&
+          disconnect.next({ client, reason: heldDisconnect.reason });
+      }
     };
   }
 
