@@ -31,6 +31,12 @@ export interface NodeAdapterOptions {
    */
   http2?: boolean;
   /**
+   * Milliseconds after which an idle HTTP/2 session is closed (letting its
+   * open streams finish), as with Fastify's option of the same name; `72000`
+   * by default, `0` for none. Node.js sets no such timeout itself.
+   */
+  http2SessionTimeout?: number;
+  /**
    * Longest (decoded) route parameter a route matches; `100` by default, as
    * with Fastify's `maxParamLength`. A request whose parameter is longer falls
    * through to another matching route (a sibling wildcard, for instance), if

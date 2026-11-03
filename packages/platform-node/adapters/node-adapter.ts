@@ -160,6 +160,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
   // The class of the requests of the server (see createRequestClass())
   private readonly requestClass: typeof NodeRequest;
   private readonly isHttp2: boolean;
+  private readonly http2SessionTimeout: number;
 
   /**
    * @param routerOrOptions The adapter's options, or the `NodeRouter` to use
@@ -171,6 +172,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
       routerOrOptions instanceof NodeRouter ? {} : (routerOrOptions ?? {});
     this.requestClass = createRequestClass(options);
     this.isHttp2 = !!options.http2;
+    this.http2SessionTimeout = options.http2SessionTimeout ?? 72_000;
     const router =
       routerOrOptions instanceof NodeRouter
         ? routerOrOptions
@@ -911,6 +913,8 @@ export class NodeAdapter extends AbstractHttpAdapter<
     server.on('session', session => {
       this.http2Sessions.add(session);
       session.once('close', () => this.http2Sessions.delete(session));
+      // As an idle keep-alive connection over HTTP/1
+      session.setTimeout(this.http2SessionTimeout, () => session.close());
     });
     // Typed as an HTTP/1 server, which an HTTP/2 server stands in for except
     // for a few methods (e.g. closeAllConnections())

@@ -50,6 +50,19 @@ export function createHttp2RequestClass(
 ): typeof Http2ServerRequest {
   class NodeHttp2Request extends Http2ServerRequest {
     declare [NODE_HTTP2]: true;
+
+    constructor(...args: ConstructorParameters<typeof Http2ServerRequest>) {
+      super(...args);
+      // Once the stream closes (before "finish", see NodeHttp2Response),
+      // req.socket reads from the stream rather than the session's socket:
+      // what req.ip and req.protocol read there is kept, as over HTTP/1
+      const [stream] = args;
+      const { remoteAddress, encrypted } = (stream.session?.socket ?? {}) as {
+        remoteAddress?: string;
+        encrypted?: boolean;
+      };
+      Object.assign(stream, { remoteAddress, encrypted });
+    }
   }
   NodeHttp2Request.prototype[NODE_HTTP2] = true;
   copyMembers(
@@ -100,6 +113,13 @@ export class NodeHttp2Response extends Http2ServerResponse {
   }
 }
 NodeHttp2Response.prototype[NODE_HTTP2] = true;
+// As ServerResponse's, which StreamableFile reads to stay silent once the
+// client is gone (typed, but missing from Http2ServerResponse)
+Object.defineProperty(NodeHttp2Response.prototype, 'destroyed', {
+  get(this: NodeHttp2Response) {
+    return this.stream.destroyed;
+  },
+});
 copyMembers(
   NodeHttp2Response.prototype,
   NodeResponse.prototype,
