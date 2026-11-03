@@ -1,4 +1,15 @@
-import { Controller, Get, Module, Param, Redirect, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Injectable,
+  Module,
+  Param,
+  Redirect,
+  Res,
+  Scope,
+} from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -61,5 +72,29 @@ export class ResponsesController {
   }
 }
 
-@Module({ controllers: [ResponsesController] })
+// Holds only the request, as a GraphQL context does too
+@Injectable({ scope: Scope.REQUEST })
+export class RequestScopedService {
+  constructor(@Inject(REQUEST) private readonly request: any) {}
+
+  setHeader(name: string, value: string) {
+    this.request.res.setHeader(name, value);
+  }
+}
+
+@Controller('request-scoped')
+export class RequestScopedController {
+  constructor(private readonly service: RequestScopedService) {}
+
+  @Get()
+  get() {
+    this.service.setHeader('x-from-provider', 'yes');
+    return 'ok';
+  }
+}
+
+@Module({
+  controllers: [ResponsesController, RequestScopedController],
+  providers: [RequestScopedService],
+})
 export class ResponsesModule {}

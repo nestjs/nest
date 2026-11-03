@@ -25,6 +25,13 @@ describe.each(adapters('express', 'node'))(
       await app.close();
     });
 
+    it('should let a request-scoped provider reach the response through req.res', async () => {
+      const res = await request(app.getHttpServer()).get('/request-scoped');
+
+      expect(res.status).toBe(200);
+      expect(res.headers['x-from-provider']).toBe('yes');
+    });
+
     it('should send @Redirect() with an encoded Location, a short note and "Vary: Accept"', async () => {
       const res = await request(app.getHttpServer()).get('/redirect');
 

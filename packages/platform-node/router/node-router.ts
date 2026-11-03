@@ -219,6 +219,7 @@ export class NodeRouter {
     if (!(res instanceof NodeResponse)) {
       Object.setPrototypeOf(res, NodeResponse.prototype);
     }
+    (req as NodeRequest).res = res as NodeResponse;
     this.dispatch(req as NodeRequest, res as NodeResponse, done);
   }
 
