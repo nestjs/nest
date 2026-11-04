@@ -931,6 +931,17 @@ describe('NodeResponse', () => {
   });
 
   describe('send()', () => {
+    it('should leave out the Content-Length when the Transfer-Encoding is set', async () => {
+      const response = await respond((req, res) => {
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.send('x');
+      });
+
+      expect(response.headers['transfer-encoding']).toBe('chunked');
+      expect(response.headers['content-length']).toBeUndefined();
+      expect(response.body.toString()).toBe('x');
+    });
+
     it('should send the Content-Length in answer to a HEAD request', async () => {
       const response = await respond((req, res) => res.send('héllo'), {
         method: 'HEAD',
@@ -1049,6 +1060,17 @@ describe('NodeResponse', () => {
   });
 
   describe('json()', () => {
+    it('should leave out the Content-Length when the Transfer-Encoding is set', async () => {
+      const response = await respond((req, res) => {
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.json({});
+      });
+
+      expect(response.headers['transfer-encoding']).toBe('chunked');
+      expect(response.headers['content-length']).toBeUndefined();
+      expect(response.body.toString()).toBe('{}');
+    });
+
     it('should set no Content-Type when the body cannot be serialized', async () => {
       const contentType = await inspect((req, res) => {
         expect(() => res.json(1n)).toThrow(TypeError);

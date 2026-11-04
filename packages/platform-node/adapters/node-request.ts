@@ -717,12 +717,15 @@ export function toBytes(view: ArrayBufferView): Uint8Array {
 }
 
 // With an explicit "Content-Length", which Node.js leaves out in answer to
-// HEAD requests otherwise
+// HEAD requests otherwise, unless a "Transfer-Encoding" is set (as Express
+// does), which forbids it
 function endWithBody(response: ServerResponse, body: string | Uint8Array) {
-  response.setHeader(
-    'Content-Length',
-    typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength,
-  );
+  if (!response.hasHeader('Transfer-Encoding')) {
+    response.setHeader(
+      'Content-Length',
+      typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength,
+    );
+  }
   response.end(body);
 }
 
