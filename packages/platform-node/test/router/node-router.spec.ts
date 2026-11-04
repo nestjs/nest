@@ -69,6 +69,21 @@ describe('NodeRouter', () => {
     expect(received![1]).toBeInstanceOf(NodeResponse);
   });
 
+  it('should link each request to its response, as Express does', () => {
+    router.use(() => undefined);
+
+    const { req, res } = dispatch('GET', '/');
+    expect(req.res).toBe(res);
+
+    const plainReq = Object.assign(Object.create(null), {
+      method: 'GET',
+      url: '/',
+    });
+    const plainRes = Object.create(null);
+    router(plainReq, plainRes);
+    expect(plainReq.res).toBe(plainRes);
+  });
+
   describe('stack order', () => {
     it('should run middleware and routes in registration order', () => {
       const calls: string[] = [];

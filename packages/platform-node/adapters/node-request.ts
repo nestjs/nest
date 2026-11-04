@@ -116,6 +116,11 @@ export class NodeRequest extends IncomingMessage {
    * Path the current middleware is mounted on (see `use(path, handler)`).
    */
   declare baseUrl: string;
+  /**
+   * The response to this request, as with Express, for code that only holds
+   * the request (a request-scoped provider, a GraphQL context).
+   */
+  declare res: NodeResponse;
 
   declare [QUERY]: Record<string, any> | undefined;
 
