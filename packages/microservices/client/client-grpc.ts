@@ -19,6 +19,22 @@ import {
 
 const GRPC_CANCELLED = 'Cancelled';
 
+/**
+ * Values `@grpc/grpc-js` reads after the request: metadata, then call
+ * options. Nil slots are removed. A nil is not a slot grpc-js skips: one
+ * before a `CallOptions` object hides that object, and one in front of the
+ * unary-response callback is stored as `CallOptions` and then read as
+ * `options.interceptors`.
+ */
+function getArgumentsAfterRequest(hookedArgs: any[]): any[] {
+  const rest = hookedArgs.slice(1);
+  const present = rest.filter(value => !isNil(value));
+  if (present.length === 0) {
+    return [rest[0]];
+  }
+  return present;
+}
+
 // To enable type safety for gRPC. This cant be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
 // Otherwise, TypeScript would fail to compile the code.
@@ -181,14 +197,13 @@ export class ClientGrpcProxy
 
         const callArgs = this.applyDispatchHook(client, methodName, args);
         const upstreamSubjectOrData = callArgs[0];
-        const maybeMetadata = callArgs[1];
 
         const isUpstreamSubject =
           upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
 
         const call =
           isRequestStream && isUpstreamSubject
-            ? client![methodName](maybeMetadata)
+            ? client![methodName](...getArgumentsAfterRequest(callArgs))
             : client![methodName](...callArgs);
 
         if (isRequestStream && isUpstreamSubject) {
@@ -261,13 +276,11 @@ export class ClientGrpcProxy
               observer.complete();
             },
           ];
-          const maybeMetadata = this.applyDispatchHook(
-            client,
-            methodName,
-            args,
-          )[1];
-          if (maybeMetadata) {
-            callArgs.unshift(maybeMetadata);
+          const afterRequest = getArgumentsAfterRequest(
+            this.applyDispatchHook(client, methodName, args),
+          );
+          if (afterRequest.length > 1 || !isNil(afterRequest[0])) {
+            callArgs.unshift(...afterRequest);
           }
           const call = client[methodName](...callArgs);
 

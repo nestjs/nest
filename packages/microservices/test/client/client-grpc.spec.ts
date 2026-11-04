@@ -613,6 +613,371 @@ describe('ClientGrpcProxy', () => {
       expect(metadata.get('x-request-id')).toEqual(['trace-1']);
       expect(callback).toBeInstanceOf(Function);
     });
+
+    it('should keep call options on a request stream call when the hook inserts metadata', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const options = { deadline: Date.now() + 1000 };
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod({ sum: clientStream }, 'sum')(
+          new Subject(),
+          options,
+        )
+        .subscribe();
+
+      const [metadata, callOptions, callback] = clientStream.mock
+        .calls[0] as any[];
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+      expect(callOptions).toBe(options);
+      expect(callback).toBeInstanceOf(Function);
+    });
+
+    it('should keep call options passed after the caller metadata on a request stream call', () => {
+      const options = { deadline: Date.now() + 1000 };
+      const callerMetadata = new Metadata();
+      callerMetadata.set('x-request-id', 'own-id');
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod({ sum: clientStream }, 'sum')(
+          new Subject(),
+          callerMetadata,
+          options,
+        )
+        .subscribe();
+
+      const [metadata, callOptions, callback] = clientStream.mock
+        .calls[0] as any[];
+      expect(metadata).toBe(callerMetadata);
+      expect(callOptions).toBe(options);
+      expect(callback).toBeInstanceOf(Function);
+    });
+
+    it('should keep call options on a request stream call without a hook', () => {
+      const options = { deadline: Date.now() + 1000 };
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod({ sum: clientStream }, 'sum')(
+          new Subject(),
+          options,
+        )
+        .subscribe();
+
+      const [callOptions, callback] = clientStream.mock.calls[0] as any[];
+      expect(callOptions).toBe(options);
+      expect(callback).toBeInstanceOf(Function);
+    });
+
+    it('should omit nil call options on a request stream call', () => {
+      const callerMetadata = new Metadata();
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod({ sum: clientStream }, 'sum')(
+          new Subject(),
+          callerMetadata,
+          undefined,
+        )
+        .subscribe();
+
+      const args = clientStream.mock.calls[0] as any[];
+      expect(args).toHaveLength(2);
+      expect(args[0]).toBe(callerMetadata);
+      expect(args[1]).toBeInstanceOf(Function);
+    });
+
+    it('should keep call options that follow a nil slot on a request stream call', () => {
+      for (const missing of [undefined, null]) {
+        const options = { deadline: Date.now() + 1000 };
+        const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+        Object.assign(clientStream, { path, requestStream: true });
+
+        client
+          .createServiceMethod({ sum: clientStream }, 'sum')(
+            new Subject(),
+            missing,
+            options,
+          )
+          .subscribe();
+
+        const [callOptions, callback] = clientStream.mock.calls[0] as any[];
+        expect(callOptions).toBe(options);
+        expect(callback).toBeInstanceOf(Function);
+      }
+    });
+
+    it('should keep call options when a nil slot sits between metadata and options', () => {
+      const options = { deadline: Date.now() + 1000 };
+      const callerMetadata = new Metadata();
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod({ sum: clientStream }, 'sum')(
+          new Subject(),
+          callerMetadata,
+          undefined,
+          options,
+        )
+        .subscribe();
+
+      const [metadata, callOptions, callback] = clientStream.mock
+        .calls[0] as any[];
+      expect(metadata).toBe(callerMetadata);
+      expect(callOptions).toBe(options);
+      expect(callback).toBeInstanceOf(Function);
+    });
+
+    it('should keep call options when the hook merges caller metadata on a request stream call', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const options = { deadline: Date.now() + 1000 };
+      const callerMetadata = new Metadata();
+      callerMetadata.set('x-request-id', 'own-id');
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod({ sum: clientStream }, 'sum')(
+          new Subject(),
+          callerMetadata,
+          options,
+        )
+        .subscribe();
+
+      const [metadata, callOptions, callback] = clientStream.mock
+        .calls[0] as any[];
+      expect(metadata).not.toBe(callerMetadata);
+      expect(metadata.get('x-request-id')).toEqual(['own-id']);
+      expect(metadata.get('tenant')).toEqual(['acme']);
+      expect(callOptions).toBe(options);
+      expect(callback).toBeInstanceOf(Function);
+    });
+
+    it('should call a request stream method with only the callback when nothing follows the request', () => {
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod(
+          { sum: clientStream },
+          'sum',
+        )(new Subject())
+        .subscribe();
+
+      const args = clientStream.mock.calls[0] as any[];
+      expect(args).toHaveLength(1);
+      expect(args[0]).toBeInstanceOf(Function);
+    });
+
+    it('should keep call options on a bidirectional call when the hook inserts metadata', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const options = { deadline: Date.now() + 1000 };
+      const bidi = vi.fn(() => ({
+        on: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        cancel: vi.fn(),
+        finished: false,
+      }));
+      Object.assign(bidi, {
+        path,
+        requestStream: true,
+        responseStream: true,
+      });
+
+      client
+        .createServiceMethod({ chat: bidi }, 'chat')(new Subject(), options)
+        .subscribe();
+
+      const [metadata, callOptions] = bidi.mock.calls[0] as any[];
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+      expect(callOptions).toBe(options);
+    });
+
+    it('should keep call options passed after the caller metadata on a bidirectional call', () => {
+      const options = { deadline: Date.now() + 1000 };
+      const callerMetadata = new Metadata();
+      callerMetadata.set('tenant', 'acme');
+      const bidi = vi.fn(() => ({
+        on: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        cancel: vi.fn(),
+        finished: false,
+      }));
+      Object.assign(bidi, {
+        path,
+        requestStream: true,
+        responseStream: true,
+      });
+
+      client
+        .createServiceMethod({ chat: bidi }, 'chat')(
+          new Subject(),
+          callerMetadata,
+          options,
+        )
+        .subscribe();
+
+      expect(bidi.mock.calls[0]).toEqual([callerMetadata, options]);
+    });
+
+    it('should keep call options on a bidirectional call without a hook', () => {
+      const options = { deadline: Date.now() + 1000 };
+      const bidi = vi.fn(() => ({
+        on: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        cancel: vi.fn(),
+        finished: false,
+      }));
+      Object.assign(bidi, {
+        path,
+        requestStream: true,
+        responseStream: true,
+      });
+
+      client
+        .createServiceMethod({ chat: bidi }, 'chat')(new Subject(), options)
+        .subscribe();
+
+      expect(bidi.mock.calls[0]).toEqual([options]);
+    });
+
+    it('should keep call options that follow a nil slot on a bidirectional call', () => {
+      for (const missing of [undefined, null]) {
+        const options = { deadline: Date.now() + 1000 };
+        const bidi = vi.fn(() => ({
+          on: vi.fn(),
+          write: vi.fn(),
+          end: vi.fn(),
+          cancel: vi.fn(),
+          finished: false,
+        }));
+        Object.assign(bidi, {
+          path,
+          requestStream: true,
+          responseStream: true,
+        });
+
+        client
+          .createServiceMethod({ chat: bidi }, 'chat')(
+            new Subject(),
+            missing,
+            options,
+          )
+          .subscribe();
+
+        expect(bidi.mock.calls[0]).toEqual([options]);
+      }
+    });
+
+    it('should keep call options when a nil slot sits between metadata and options on a bidirectional call', () => {
+      const options = { deadline: Date.now() + 1000 };
+      const callerMetadata = new Metadata();
+      const bidi = vi.fn(() => ({
+        on: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        cancel: vi.fn(),
+        finished: false,
+      }));
+      Object.assign(bidi, {
+        path,
+        requestStream: true,
+        responseStream: true,
+      });
+
+      client
+        .createServiceMethod({ chat: bidi }, 'chat')(
+          new Subject(),
+          callerMetadata,
+          undefined,
+          options,
+        )
+        .subscribe();
+
+      expect(bidi.mock.calls[0]).toEqual([callerMetadata, options]);
+    });
+
+    it('should keep call options when the hook merges caller metadata on a bidirectional call', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const options = { deadline: Date.now() + 1000 };
+      const callerMetadata = new Metadata();
+      callerMetadata.set('tenant', 'acme');
+      const bidi = vi.fn(() => ({
+        on: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        cancel: vi.fn(),
+        finished: false,
+      }));
+      Object.assign(bidi, {
+        path,
+        requestStream: true,
+        responseStream: true,
+      });
+
+      client
+        .createServiceMethod({ chat: bidi }, 'chat')(
+          new Subject(),
+          callerMetadata,
+          options,
+        )
+        .subscribe();
+
+      const [metadata, callOptions] = bidi.mock.calls[0] as any[];
+      expect(metadata).not.toBe(callerMetadata);
+      expect(metadata.get('tenant')).toEqual(['acme']);
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+      expect(callOptions).toBe(options);
+    });
+
+    it('should call a bidirectional method with one missing argument when nothing follows the request', () => {
+      const bidi = vi.fn(() => ({
+        on: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        cancel: vi.fn(),
+        finished: false,
+      }));
+      Object.assign(bidi, {
+        path,
+        requestStream: true,
+        responseStream: true,
+      });
+
+      client
+        .createServiceMethod(
+          { chat: bidi },
+          'chat',
+        )(new Subject())
+        .subscribe();
+
+      expect(bidi.mock.calls[0]).toEqual([undefined]);
+    });
+
+    it('should keep call options on a response stream call when the hook inserts metadata', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const options = { deadline: Date.now() + 1000 };
+      const serverStream = vi.fn(() => ({ on: vi.fn() }));
+      Object.assign(serverStream, { path, responseStream: true });
+
+      client
+        .createServiceMethod({ list: serverStream }, 'list')({ id: 1 }, options)
+        .subscribe();
+
+      const [data, metadata, callOptions] = serverStream.mock.calls[0] as any[];
+      expect(data).toEqual({ id: 1 });
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+      expect(callOptions).toBe(options);
+    });
   });
 
   describe('createClients', () => {
