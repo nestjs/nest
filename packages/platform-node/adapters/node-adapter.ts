@@ -433,7 +433,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
   }
 
   public setHeader(response: NodeResponse, name: string, value: string) {
-    return response.setHeader(name, value);
+    return response.set(name, value);
   }
 
   public appendHeader(response: NodeResponse, name: string, value: string) {

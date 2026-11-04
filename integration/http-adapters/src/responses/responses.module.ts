@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Header,
   Inject,
   Injectable,
   Module,
@@ -35,6 +36,12 @@ export class ResponsesController {
   @Get('send-boolean')
   sendBoolean(@Res() res: any) {
     res.send(true);
+  }
+
+  @Get('html-header')
+  @Header('Content-Type', 'text/html')
+  htmlHeader() {
+    return '<p>zażółć</p>';
   }
 
   @Get('typed-array')

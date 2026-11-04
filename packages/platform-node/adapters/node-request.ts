@@ -285,10 +285,15 @@ export class NodeResponse<
    */
   set(field: string | Record<string, any>, value?: any): this {
     if (typeof field === 'string') {
-      this.setHeader(
-        field,
-        Array.isArray(value) ? value.map(String) : String(value),
-      );
+      let header = Array.isArray(value) ? value.map(String) : String(value);
+      if (field.toLowerCase() === 'content-type') {
+        if (Array.isArray(header)) {
+          throw new TypeError('Content-Type cannot be set to an Array');
+        }
+        // Adds the charset, as Express does
+        header = lookupContentType(header) || header;
+      }
+      this.setHeader(field, header);
     } else {
       for (const name of Object.keys(field)) {
         this.set(name, field[name]);
@@ -378,13 +383,12 @@ export class NodeResponse<
    * file extension (`'json'`, `'.html'`, `'png'`). Chainable.
    */
   type(type: string): this {
-    this.setHeader(
+    return this.set(
       'Content-Type',
       type.includes('/')
         ? type
         : lookupContentType(type) || 'application/octet-stream',
     );
-    return this;
   }
 
   /**

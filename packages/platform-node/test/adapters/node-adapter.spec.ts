@@ -1256,6 +1256,29 @@ describe('NodeAdapter', () => {
       expect(res.headers['x-custom']).toBe('two');
     });
 
+    it('should add the charset to a Content-Type, as the ExpressAdapter does', async () => {
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) => {
+        adapter.setHeader(res, 'Content-Type', 'text/html');
+        adapter.reply(res, '<p>zażółć</p>');
+      });
+
+      const res = await request(port);
+
+      expect(res.headers['content-type']).toBe('text/html; charset=utf-8');
+      expect(res.text).toBe('<p>zażółć</p>');
+    });
+
+    it('should keep a Content-Type that has a charset already', async () => {
+      adapter.get('/', (req: NodeRequest, res: NodeResponse) => {
+        adapter.setHeader(res, 'Content-Type', 'text/html; charset=latin1');
+        adapter.reply(res, '<p>abc</p>');
+      });
+
+      const res = await request(port);
+
+      expect(res.headers['content-type']).toBe('text/html; charset=latin1');
+    });
+
     it('should append to an existing header instead of overwriting it', async () => {
       const { got } = await run(response => {
         adapter.appendHeader(response, 'x-a', '1');
