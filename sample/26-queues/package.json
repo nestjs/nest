@@ -26,7 +26,7 @@
     "bull": "4.16.5",
     "dotenv": "18.0.9",
     "reflect-metadata": "0.2.2",
-    "rimraf": "6.1.3",
+    "rimraf": "6.1.4",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
