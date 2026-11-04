@@ -65,11 +65,19 @@ type Engine = { name: string; module: any };
 type RenderFn = (data: Record<string, any>) => string | Promise<string>;
 
 function promisify(
-  fn: (callback: (err: unknown, html?: string) => void) => void,
+  fn: (callback: (err: unknown, html?: string) => void) => unknown,
 ): Promise<string> {
-  return new Promise((resolvePromise, reject) =>
-    fn((err, html) => (err ? reject(err) : resolvePromise(html ?? ''))),
-  );
+  return new Promise((resolvePromise, reject) => {
+    const result = fn((err, html) =>
+      err ? reject(err) : resolvePromise(html ?? ''),
+    );
+    // An engine may ignore the callback and return the html (art-template) or
+    // a promise of it (liquidjs). Anything else leaves it to the callback
+    Promise.resolve(result).then(
+      html => typeof html === 'string' && resolvePromise(html),
+      reject,
+    );
+  });
 }
 
 /**
@@ -172,7 +180,9 @@ export class ViewRenderer {
         ...this.engineOptions,
         filename: file,
       });
-      return data => template(data);
+      // An Eta template runs with its instance as "this", and finds relative
+      // includes from the file in its options
+      return data => template.call(module, data, { filepath: file });
     }
     if (typeof module.renderFile === 'function') {
       return data =>
