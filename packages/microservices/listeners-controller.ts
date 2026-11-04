@@ -21,7 +21,6 @@ import {
 } from './context/rpc-metadata-constants.js';
 import { BaseRpcContext } from './ctx-host/base-rpc.context.js';
 import { Transport } from './enums/index.js';
-import { RpcExceptionsHandler } from './exceptions/rpc-exceptions-handler.js';
 import {
   MessageHandler,
   PatternMetadata,
@@ -272,15 +271,11 @@ export class ListenersController {
     const { instance } = wrapper;
 
     const isTreeDurable = wrapper.isDependencyTreeDurable();
-    // Kept per controller and pattern, not per handler function: controllers
-    // that inherit the handler from a base class can declare different filters
-    let exceptionFilter: RpcExceptionsHandler | undefined;
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
       const originalArgs = [...args];
+      let contextId: ContextId | undefined;
       try {
-        let contextId: ContextId;
-
         let [dataOrContextHost] = args;
         if (dataOrContextHost instanceof RequestContextHost) {
           contextId = this.getContextId(dataOrContextHost, isTreeDurable);
@@ -323,12 +318,38 @@ export class ListenersController {
         }
         return returnValue;
       } catch (err) {
-        exceptionFilter ??= this.exceptionFiltersContext.create(
+        // The context id is known once the request was registered, including
+        // when `loadPerContext` then fails. Caching the handler would keep the
+        // first message's filters for every later failure. A leading
+        // `RequestContextHost` is shifted off `args` before this catch, so the
+        // host is built from the arguments the handler itself would see.
+        // Enhancers are not loaded when construction throws. A transient
+        // filter is stored under this controller, which is the id `create`
+        // looks up; without this load the lookup clones a prototype.
+        if (contextId && contextId !== STATIC_CONTEXT) {
+          try {
+            await this.injector.loadEnhancersPerContext(
+              wrapper,
+              contextId,
+              wrapper,
+            );
+          } catch (loadError) {
+            // Keep `err`. A filter that fails to load must not replace it.
+            void loadError;
+          }
+        }
+        const exceptionFilter = this.exceptionFiltersContext.create(
           instance,
           instance[methodKey],
           moduleKey,
+          contextId ?? STATIC_CONTEXT,
+          wrapper.id,
         );
-        const host = new ExecutionContextHost(args);
+        const hostArgs =
+          originalArgs[0] instanceof RequestContextHost
+            ? originalArgs.slice(1)
+            : originalArgs;
+        const host = new ExecutionContextHost(hostArgs);
         host.setType('rpc');
         const returnValue = exceptionFilter.handle(
           err,

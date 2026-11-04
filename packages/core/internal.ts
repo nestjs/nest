@@ -54,6 +54,13 @@ export { InterceptorsContextCreator } from './interceptors/interceptors-context-
 
 // Exceptions
 export { BaseExceptionFilterContext } from './exceptions/base-exception-filter-context.js';
+export {
+  areScopedGlobalFiltersDurable,
+  bindRequestContext,
+  createContextInjector,
+  hasUnconstructedScopedGlobalFilter,
+  loadScopedGlobalFilters,
+} from './exceptions/scoped-global-exception-filters.js';
 
 // Router
 export { LegacyRouteConverter } from './router/legacy-route-converter.js';
