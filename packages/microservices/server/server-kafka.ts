@@ -1,3 +1,4 @@
+import { isUtf8 } from 'buffer';
 import {
   defaultIfEmpty,
   finalize,
@@ -23,6 +24,7 @@ import {
   Consumer,
   ConsumerConfig,
   EachMessagePayload,
+  IHeaders,
   Kafka,
   KafkaConfig,
   KafkaMessage,
@@ -39,6 +41,7 @@ import {
   TransportId,
 } from '../interfaces/index.js';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
+import { toPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { Server } from './server.js';
 import { Logger } from '@nestjs/common';
 import { isNil, isString } from '@nestjs/common/internal';
@@ -332,6 +335,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       this.consumer!,
       payload.heartbeat,
       this.producer!,
+      this.readMetadata(payload.message.headers),
     ]);
     const handler = this.getHandlerByPattern(packet.pattern);
     // if the correlation id or reply topic is not set
@@ -375,6 +379,21 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         return replayStream$.pipe(defaultIfEmpty(undefined));
       },
       publish,
+    );
+  }
+
+  /**
+   * Reads the packet metadata off the headers of a message as the broker
+   * delivered them, before the parser decodes them: every header with a
+   * single value that is UTF-8 text. A repeated header (an array) or one with
+   * binary content has no `PacketMetadata` form.
+   */
+  protected readMetadata(headers: IHeaders | undefined) {
+    return toPacketMetadata(
+      Object.entries(headers ?? {}).map(([key, value]) => [
+        key,
+        Buffer.isBuffer(value) && isUtf8(value) ? value.toString() : value,
+      ]),
     );
   }
 

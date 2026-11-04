@@ -1,8 +1,10 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Logger } from '@nestjs/common';
 import { EventEmitter } from 'events';
 import { join } from 'path';
-import { Observable, Subject, throwError } from 'rxjs';
+import { lastValueFrom, Observable, Subject, throwError } from 'rxjs';
 import { ClientGrpcProxy } from '../../client/index.js';
+import { ReadPacket } from '../../interfaces/index.js';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception.js';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
@@ -466,6 +468,150 @@ describe('ClientGrpcProxy', () => {
         expect(errorSpy).toHaveBeenCalledWith(upstreamError);
         expect(callMock.cancel).toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('dispatch hook', () => {
+    const path = '/test.TestService/Find';
+    const attachTraceId = (packet: ReadPacket) => {
+      packet.metadata = { 'x-request-id': 'trace-1', tenant: 'acme' };
+    };
+    let unary: ReturnType<typeof vi.fn>;
+    let grpcClient: Record<string, any>;
+
+    const callArgs = () => unary.mock.calls[0].slice(0, -1);
+
+    beforeEach(() => {
+      unary = vi.fn((...args: any[]) => {
+        args[args.length - 1](null, { ok: true });
+        return { finished: true };
+      });
+      grpcClient = { find: Object.assign(unary, { path }) };
+    });
+
+    it('should run once per call, when subscribed, with the method path and the request', async () => {
+      const hook = vi.fn(attachTraceId);
+      client.setOnDispatchHook(hook);
+      const find = client.createServiceMethod(grpcClient, 'find');
+
+      const call$ = find({ id: 1 });
+      expect(hook).not.toHaveBeenCalled();
+      await lastValueFrom(call$);
+      await lastValueFrom(call$);
+
+      expect(hook).toHaveBeenCalledTimes(2);
+      expect(hook.mock.calls[0][0]).toMatchObject({
+        pattern: path,
+        data: { id: 1 },
+      });
+    });
+
+    it('should send the metadata it attached as call metadata', async () => {
+      client.setOnDispatchHook(attachTraceId);
+
+      await lastValueFrom(
+        client.createServiceMethod(grpcClient, 'find')({ id: 1 }),
+      );
+
+      const [data, metadata] = callArgs();
+      expect(data).toEqual({ id: 1 });
+      expect(metadata).toBeInstanceOf(Metadata);
+      expect(metadata.getMap()).toEqual({
+        'x-request-id': 'trace-1',
+        tenant: 'acme',
+      });
+    });
+
+    it("should let the caller's metadata win, and leave the caller's Metadata unchanged", async () => {
+      client.setOnDispatchHook(attachTraceId);
+      const callerMetadata = new Metadata();
+      callerMetadata.set('x-request-id', 'own-id');
+
+      await lastValueFrom(
+        client.createServiceMethod(grpcClient, 'find')(
+          { id: 1 },
+          callerMetadata,
+        ),
+      );
+
+      const [, metadata] = callArgs();
+      expect(metadata).not.toBe(callerMetadata);
+      expect(metadata.get('x-request-id')).toEqual(['own-id']);
+      expect(metadata.get('tenant')).toEqual(['acme']);
+      expect(callerMetadata.getMap()).toEqual({ 'x-request-id': 'own-id' });
+    });
+
+    it('should keep call options passed in place of the metadata', async () => {
+      client.setOnDispatchHook(attachTraceId);
+      const options = { deadline: Date.now() + 1000 };
+
+      await lastValueFrom(
+        client.createServiceMethod(grpcClient, 'find')({ id: 1 }, options),
+      );
+
+      const [, metadata, callOptions] = callArgs();
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+      expect(callOptions).toBe(options);
+    });
+
+    it('should leave the arguments as they are without a hook or without metadata', async () => {
+      await lastValueFrom(
+        client.createServiceMethod(grpcClient, 'find')({ id: 1 }),
+      );
+      client.setOnDispatchHook(() => {});
+      await lastValueFrom(
+        client.createServiceMethod(grpcClient, 'find')({ id: 1 }),
+      );
+
+      expect(unary.mock.calls.map(args => args.slice(0, -1))).toEqual([
+        [{ id: 1 }],
+        [{ id: 1 }],
+      ]);
+    });
+
+    it('should fail the call over a key gRPC cannot carry', async () => {
+      client.setOnDispatchHook(packet => {
+        packet.metadata = { 'not a key': 'value' };
+      });
+
+      await expect(
+        lastValueFrom(client.createServiceMethod(grpcClient, 'find')({})),
+      ).rejects.toThrow(/illegal characters/);
+      expect(unary).not.toHaveBeenCalled();
+    });
+
+    it('should send the metadata with a response stream call', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const serverStream = vi.fn(() => ({ on: vi.fn() }));
+      Object.assign(serverStream, { path, responseStream: true });
+
+      client
+        .createServiceMethod(
+          { list: serverStream },
+          'list',
+        )({ id: 1 })
+        .subscribe();
+
+      const [data, metadata] = serverStream.mock.calls[0] as any[];
+      expect(data).toEqual({ id: 1 });
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+    });
+
+    it('should send the metadata with a request stream call', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const clientStream = vi.fn(() => ({ write: vi.fn(), end: vi.fn() }));
+      Object.assign(clientStream, { path, requestStream: true });
+
+      client
+        .createServiceMethod(
+          { sum: clientStream },
+          'sum',
+        )(new Subject())
+        .subscribe();
+
+      const [metadata, callback] = clientStream.mock.calls[0] as any[];
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+      expect(callback).toBeInstanceOf(Function);
     });
   });
 

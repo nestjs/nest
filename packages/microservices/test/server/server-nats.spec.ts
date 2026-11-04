@@ -1,3 +1,4 @@
+import { headers as createHeaders } from '@nats-io/transport-node';
 import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
@@ -276,6 +277,24 @@ describe('ServerNats', () => {
       };
       await server.handleMessage(channel, natsMsg);
       expect(handler).toHaveBeenCalledWith('test', natsContext);
+    });
+    it('should expose the message headers as packet metadata on the context', async () => {
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+      const headers = createHeaders();
+      headers.set('x-request-id', 'trace-1');
+      const data = JSON.stringify({ pattern: channel, data: 'test', id });
+
+      await server.handleMessage(channel, {
+        data,
+        subject: channel,
+        respond: vi.fn(),
+        headers,
+        json: () => JSON.parse(data),
+      });
+
+      const context: NatsContext = handler.mock.calls[0][1];
+      expect(context.getMetadata()).toEqual({ 'x-request-id': 'trace-1' });
     });
     it('should still reply with an event handler, but warn once that this is deprecated', async () => {
       const handler = Object.assign(async () => 'stored', {

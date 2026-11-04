@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Logger } from '@nestjs/common';
 import { join } from 'path';
 import { EventEmitter } from 'events';
@@ -1602,6 +1603,92 @@ describe('ServerGrpc', () => {
           call.request,
         );
       });
+    });
+  });
+
+  describe('processing hook context', () => {
+    const createCall = (metadata: unknown) =>
+      Object.assign(new EventEmitter(), {
+        request: { id: 1 },
+        metadata,
+        write: vi.fn(() => true),
+        end: vi.fn(),
+        sendMetadata: vi.fn(),
+      });
+
+    const captureContext = () => {
+      const contexts: any[] = [];
+      server.setOnProcessingStartHook((_transportId, ctx, done) => {
+        contexts.push(ctx);
+        return done();
+      });
+      return contexts;
+    };
+
+    async function findOne() {
+      return { ok: true };
+    }
+
+    it('should hold the call, named by its handler, with its metadata as packet metadata', async () => {
+      const contexts = captureContext();
+      const metadata = new Metadata();
+      metadata.set('x-request-id', 'trace-1');
+      metadata.add('x-tag', 'a');
+      metadata.add('x-tag', 'b');
+      metadata.set('trace-bin', Buffer.from([0x00, 0x01]));
+      const call = createCall(metadata);
+
+      await server.createUnaryServiceMethod(findOne)(call as any, vi.fn());
+
+      const [ctx] = contexts;
+      expect(ctx.operationId).toBe('findOne');
+      expect(ctx.request).toBe(call.request);
+      expect(ctx.metadata).toBe(metadata);
+      expect(ctx.getMetadata()).toEqual({ 'x-request-id': 'trace-1' });
+    });
+
+    it.each([
+      [
+        'a response stream',
+        (handler: Function) => server.createStreamServiceMethod(handler),
+      ],
+      [
+        'a request stream',
+        (handler: Function) => server.createRequestStreamMethod(handler, false),
+      ],
+      [
+        'a call stream',
+        (handler: Function) => server.createStreamCallMethod(handler, false),
+      ],
+    ])('should offer getMetadata() for %s too', async (_kind, create) => {
+      const contexts = captureContext();
+      const metadata = new Metadata();
+      metadata.set('x-request-id', 'trace-1');
+      const call = createCall(metadata);
+
+      const result = create(findOne)(call as any, vi.fn());
+      call.emit('end');
+      await result;
+
+      expect(contexts[0].getMetadata()).toEqual({ 'x-request-id': 'trace-1' });
+    });
+
+    it('should return undefined when the call has no metadata', async () => {
+      const contexts = captureContext();
+
+      await server.createUnaryServiceMethod(findOne)(
+        createCall(new Metadata()) as any,
+        vi.fn(),
+      );
+      await server.createUnaryServiceMethod(findOne)(
+        createCall(undefined) as any,
+        vi.fn(),
+      );
+
+      expect(contexts.map(ctx => ctx.getMetadata())).toEqual([
+        undefined,
+        undefined,
+      ]);
     });
   });
 

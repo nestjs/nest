@@ -395,6 +395,20 @@ describe('ServerRMQ', () => {
       await server.handleMessage(createMessage({ pattern: '', data: '' }), '');
       expect(handleEventSpy).toHaveBeenCalled();
     });
+    it('should expose the message headers as packet metadata on the context', async () => {
+      const handleEventSpy = vi
+        .spyOn(server, 'handleEvent')
+        .mockResolvedValue(undefined);
+      const message = {
+        ...createMessage({ pattern, data: 'tests' }),
+        properties: { headers: { 'x-request-id': 'trace-1', 'x-count': 1 } },
+      };
+
+      await server.handleMessage(message, channel);
+
+      const context: RmqContext = handleEventSpy.mock.calls[0][2];
+      expect(context.getMetadata()).toEqual({ 'x-request-id': 'trace-1' });
+    });
     it('should send NO_MESSAGE_HANDLER error if pattern is too deeply nested to be serialized', async () => {
       const deeplyNestedMsg = createRawMessage(
         `{"pattern":${createDeeplyNestedJson(100_000)},"data":"tests","id":"3"}`,

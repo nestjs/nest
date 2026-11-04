@@ -3,6 +3,7 @@ import {
   KafkaMessage,
   Producer,
 } from '../external/kafka.interface.js';
+import { PacketMetadata } from '../interfaces/packet.interface.js';
 import { BaseRpcContext } from './base-rpc.context.js';
 
 type KafkaContextArgs = [
@@ -12,6 +13,7 @@ type KafkaContextArgs = [
   consumer: Consumer,
   heartbeat: () => Promise<void>,
   producer: Producer,
+  metadata?: PacketMetadata,
 ];
 
 /**
@@ -62,5 +64,16 @@ export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
    */
   getProducer() {
     return this.args[5];
+  }
+
+  /**
+   * Returns the message headers as packet metadata: what the client attached
+   * to the packet, and every other header with a single, UTF-8 text value,
+   * as it arrived (the headers of `getMessage()` are decoded, so a value that
+   * reads as JSON is an object there). A header with several values or with
+   * binary content is only available through `getMessage()`.
+   */
+  getMetadata(): PacketMetadata | undefined {
+    return this.args[6];
   }
 }

@@ -26,12 +26,14 @@ import {
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
 import {
   IncomingResponse,
+  PacketMetadata,
   ReadPacket,
   RmqOptions,
   WritePacket,
 } from '../interfaces/index.js';
 import { RmqRecord } from '../record-builders/index.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
+import { hasPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
 import {
@@ -519,8 +521,10 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         );
 
       Object.assign(message, { id: correlationId });
+      // The metadata travels as headers, not in the payload
+      const { metadata, ...outgoingMessage } = message;
       const serializedPacket: ReadPacket & Partial<RmqRecord> =
-        this.serializer.serialize(message);
+        this.serializer.serialize(outgoingMessage);
 
       const options = serializedPacket.options;
       delete serializedPacket.options;
@@ -541,7 +545,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           RMQ_DEFAULT_PERSISTENT,
         ),
         ...options,
-        headers: this.mergeHeaders(options?.headers),
+        headers: this.mergeHeaders(options?.headers, metadata),
         correlationId,
       };
 
@@ -578,8 +582,9 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    const { metadata, ...outgoingPacket } = packet;
     const serializedPacket: ReadPacket & Partial<RmqRecord> =
-      this.serializer.serialize(packet);
+      this.serializer.serialize(outgoingPacket);
 
     const options = serializedPacket.options;
     delete serializedPacket.options;
@@ -593,7 +598,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           RMQ_DEFAULT_PERSISTENT,
         ),
         ...options,
-        headers: this.mergeHeaders(options?.headers),
+        headers: this.mergeHeaders(options?.headers, metadata),
       };
       const errorCallback = (err: unknown) =>
         err ? reject(err as Error) : resolve();
@@ -625,12 +630,20 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   protected mergeHeaders(
     requestHeaders?: Record<string, string>,
+    metadata?: PacketMetadata,
   ): Record<string, string> | undefined {
-    if (!requestHeaders && !this.options?.headers) {
+    if (
+      !requestHeaders &&
+      !this.options?.headers &&
+      !hasPacketMetadata(metadata)
+    ) {
       return undefined;
     }
 
+    // The packet metadata only fills in what neither the record nor the
+    // client options set
     return {
+      ...metadata,
       ...this.options?.headers,
       ...requestHeaders,
     };

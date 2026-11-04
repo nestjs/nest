@@ -434,6 +434,20 @@ describe('ServerMqtt', () => {
       expect(context.getTopic()).toBe('sport/');
       expect(context.getPacket()).toBe(originalPacket);
     });
+    it('should expose the MQTT 5 user properties as packet metadata on the context', async () => {
+      const handler = vi.fn().mockResolvedValue(undefined);
+      server.addHandler(channel, handler, true);
+
+      await server.handleMessage(
+        channel,
+        Buffer.from(JSON.stringify({ pattern: channel, data })),
+        null,
+        { properties: { userProperties: { 'x-request-id': 'trace-1' } } },
+      );
+
+      const context = handler.mock.calls[0][1] as MqttContext;
+      expect(context.getMetadata()).toEqual({ 'x-request-id': 'trace-1' });
+    });
     it('should dispatch system topics to the explicit system event handler', async () => {
       const wildcardHandler = vi.fn().mockResolvedValue(undefined);
       const systemHandler = vi.fn().mockResolvedValue(undefined);

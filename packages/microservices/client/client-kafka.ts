@@ -39,6 +39,7 @@ import {
   KafkaOptions,
   MsPattern,
   OutgoingEvent,
+  PacketMetadata,
   ReadPacket,
   WritePacket,
 } from '../interfaces/index.js';
@@ -46,6 +47,7 @@ import {
   KafkaRequest,
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer.js';
+import { hasPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
 import { loadPackage, isNil, isUndefined } from '@nestjs/common/internal';
@@ -369,7 +371,7 @@ export class ClientKafka
       return _throw(() => new InvalidMessageException());
     }
     const source = defer(async () => this.connect()).pipe(
-      mergeMap(() => this.dispatchBatchEvent({ pattern, data })),
+      mergeMap(() => this.dispatchBatchEvent(this.createPacket(pattern, data))),
     );
     const connectableSource = connectable(source, {
       connector: () => new Subject(),
@@ -453,7 +455,10 @@ export class ClientKafka
 
     const message = {
       topic: pattern,
-      messages: outgoingEvents,
+      // The batch is a single packet, so its metadata goes on every message
+      messages: outgoingEvents.map(outgoingEvent =>
+        this.mergeMetadata(outgoingEvent, packets.metadata),
+      ),
       ...(this.options.send || {}),
     };
 
@@ -462,9 +467,10 @@ export class ClientKafka
 
   protected async dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const outgoingEvent = await this.serializer.serialize(packet.data, {
-      pattern,
-    });
+    const outgoingEvent = this.mergeMetadata(
+      await this.serializer.serialize(packet.data, { pattern }),
+      packet.metadata,
+    );
     const message = {
       topic: pattern,
       messages: [outgoingEvent],
@@ -503,7 +509,12 @@ export class ClientKafka
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
       Promise.resolve(this.serializer.serialize(packet.data, { pattern }))
-        .then((serializedPacket: KafkaRequest) => {
+        .then((serializedRequest: KafkaRequest) => {
+          // Ahead of the reply headers, which no metadata entry may replace
+          const serializedPacket = this.mergeMetadata(
+            serializedRequest,
+            packet.metadata,
+          );
           serializedPacket.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
           serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
           serializedPacket.headers[KafkaHeaders.REPLY_PARTITION] =
@@ -528,6 +539,21 @@ export class ClientKafka
 
   protected getResponsePatternName(pattern: string): string {
     return `${pattern}.reply`;
+  }
+
+  /**
+   * Adds the metadata a dispatch hook attached to a packet to the headers of
+   * a serialized message, under every name the message does not set itself.
+   * Returns a copy, as the message may be the caller's own record.
+   */
+  protected mergeMetadata<T extends { headers?: Record<string, any> }>(
+    message: T,
+    metadata: PacketMetadata | undefined,
+  ): T {
+    if (!hasPacketMetadata(metadata)) {
+      return message;
+    }
+    return { ...message, headers: { ...metadata, ...message.headers } };
   }
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
