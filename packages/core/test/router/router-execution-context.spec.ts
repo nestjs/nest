@@ -938,8 +938,8 @@ describe('RouterExecutionContext', () => {
         expect(producer.tornDown).toBe(true);
         expect(rawResponse.listenerCount('close')).toBe(0);
 
-        rawResponse.destroy();
-        await pending.catch(() => undefined);
+        await pending;
+        expect(adapterReplySpy).not.toHaveBeenCalled();
       });
 
       it('should still reply when neither the socket nor the response can report the close', async () => {
