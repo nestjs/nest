@@ -22,8 +22,10 @@ export function createContextInjector(container: NestContainer): Injector {
 /**
  * A request-scoped filter, or a transient one whose own dependencies are not
  * static, has no constructed instance on the static context. A transient
- * filter whose tree is static was already constructed for its host, and
- * looking it up under a new context id would run the prototype instead.
+ * filter whose tree is static was already constructed for each host it is
+ * enhancing, so a handler that passes that host as the inquirer finds it. A
+ * handler without an inquirer only gets such a filter when another one needs
+ * the filters to be built for the call, as they are then all built for it.
  */
 export function hasUnconstructedScopedGlobalFilter(
   config: ApplicationConfig,

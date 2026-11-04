@@ -3,11 +3,16 @@ import { UseFilters } from '../../../common/decorators/core/exception-filters.de
 import { Scope } from '../../../common/interfaces/scope-options.interface.js';
 import { ApplicationConfig } from '../../application-config.js';
 import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context.js';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
 import { NestContainer } from '../../injector/container.js';
+import { Injector } from '../../injector/injector.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { Module } from '../../injector/module.js';
+import { REQUEST_CONTEXT_ID } from '../../router/request/request-constants.js';
 
 describe('ExternalExceptionFilterContext', () => {
   let applicationConfig: ApplicationConfig;
+  let container: NestContainer;
   let exceptionFilter: ExternalExceptionFilterContext;
 
   class CustomException {}
@@ -21,10 +26,15 @@ describe('ExternalExceptionFilterContext', () => {
 
   beforeEach(() => {
     applicationConfig = new ApplicationConfig();
+    container = new NestContainer();
     exceptionFilter = new ExternalExceptionFilterContext(
-      new NestContainer(),
+      container,
       applicationConfig,
     );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
   describe('create', () => {
     describe('when filters metadata is empty', () => {
@@ -52,6 +62,137 @@ describe('ExternalExceptionFilterContext', () => {
           undefined!,
         );
         expect((filter as any).filters).not.toHaveLength(0);
+      });
+    });
+    describe('when a scoped global filter has to be built for the call', () => {
+      @Catch()
+      class CatchAllFilter {
+        public catch(exc, res) {}
+      }
+      const exception = new CustomException() as Error;
+      const callback = () => ({}) as any;
+      let wrapper: InstanceWrapper;
+      let scopedFilter: ExceptionFilter;
+      let sharedFilter: CatchAllFilter;
+      let req: object;
+      let host: ExecutionContextHost;
+
+      beforeEach(() => {
+        wrapper = new InstanceWrapper({
+          scope: Scope.REQUEST,
+          host: new Module(class HostModule {}, container),
+        });
+        scopedFilter = new ExceptionFilter();
+        sharedFilter = new CatchAllFilter();
+        req = {};
+        host = new ExecutionContextHost([req, {}]);
+
+        applicationConfig.addGlobalRequestFilter(wrapper);
+        applicationConfig.addGlobalFilter(sharedFilter);
+        // `undefined` means "not handled", which would rethrow the exception
+        vi.spyOn(scopedFilter, 'catch').mockReturnValue('scoped');
+        vi.spyOn(sharedFilter, 'catch').mockReturnValue('shared');
+        vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+          () => {},
+        );
+        vi.spyOn(Injector.prototype, 'loadInjectable').mockImplementation(
+          async (item, _, contextId, inquirer) =>
+            item.setInstanceByContextId(
+              contextId!,
+              { instance: scopedFilter, isResolved: true },
+              inquirer!.id,
+            ),
+        );
+      });
+
+      it('should build it for the request of the call', async () => {
+        const handler = exceptionFilter.create({}, callback, undefined!);
+        expect(Injector.prototype.loadInjectable).not.toHaveBeenCalled();
+
+        await handler.next(exception, host);
+
+        const contextId = req[REQUEST_CONTEXT_ID];
+        expect(contextId).toBeDefined();
+        expect(container.registerRequestProvider).toHaveBeenCalledWith(
+          req,
+          contextId,
+        );
+        expect(Injector.prototype.loadInjectable).toHaveBeenCalledWith(
+          wrapper,
+          wrapper.host,
+          contextId,
+          wrapper,
+        );
+        expect(scopedFilter.catch).toHaveBeenCalledWith(exception, host);
+        expect(sharedFilter.catch).not.toHaveBeenCalled();
+      });
+
+      it('should build it under the host the handler was created for', async () => {
+        const inquirer = new InstanceWrapper();
+        const moduleRef = new Module(class EntryModule {}, container);
+        vi.spyOn(moduleRef, 'getProviderById').mockReturnValue(inquirer);
+        vi.spyOn(container, 'getModules').mockReturnValue(
+          new Map([['moduleKey', moduleRef]]) as ReturnType<
+            NestContainer['getModules']
+          >,
+        );
+        const contextId = { id: 1 };
+
+        await exceptionFilter
+          .create({}, callback, 'moduleKey', contextId, inquirer.id)
+          .next(exception, host);
+
+        expect(Injector.prototype.loadInjectable).toHaveBeenCalledWith(
+          wrapper,
+          wrapper.host,
+          contextId,
+          inquirer,
+        );
+        expect(scopedFilter.catch).toHaveBeenCalledWith(exception, host);
+      });
+
+      it('should use the filters without a scope when the host is unknown', async () => {
+        await exceptionFilter
+          .create({}, callback, 'moduleKey', { id: 1 }, 'unknown')
+          .next(exception, host);
+
+        expect(Injector.prototype.loadInjectable).not.toHaveBeenCalled();
+        expect(sharedFilter.catch).toHaveBeenCalledWith(exception, host);
+      });
+
+      it('should use the filters without a scope for a host other than http', async () => {
+        host.setType('ws');
+
+        await exceptionFilter
+          .create({}, callback, undefined!)
+          .next(exception, host);
+
+        expect(req[REQUEST_CONTEXT_ID]).toBeUndefined();
+        expect(Injector.prototype.loadInjectable).not.toHaveBeenCalled();
+        expect(sharedFilter.catch).toHaveBeenCalledWith(exception, host);
+      });
+
+      it('should use the filters without a scope for a frozen request', async () => {
+        const frozenHost = new ExecutionContextHost([Object.freeze({}), {}]);
+
+        await exceptionFilter
+          .create({}, callback, undefined!)
+          .next(exception, frozenHost);
+
+        expect(Injector.prototype.loadInjectable).not.toHaveBeenCalled();
+        expect(sharedFilter.catch).toHaveBeenCalledWith(exception, frozenHost);
+      });
+
+      it('should pass the load error to the filters without a scope', async () => {
+        const error = new Error('cannot be instantiated');
+        vi.spyOn(Injector.prototype, 'loadInjectable').mockRejectedValue(error);
+
+        await exceptionFilter
+          .create({}, callback, undefined!)
+          .next(exception, host);
+
+        expect(scopedFilter.catch).not.toHaveBeenCalled();
+        expect(sharedFilter.catch).toHaveBeenCalledWith(error, host);
       });
     });
   });

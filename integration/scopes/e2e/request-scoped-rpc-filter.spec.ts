@@ -12,6 +12,7 @@ import {
   Scope,
   SetMetadata,
   Type,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import { ENTRY_PROVIDER_WATERMARK } from '@nestjs/common/internal';
@@ -36,6 +37,8 @@ const TRANSIENT_PORT = 3898;
 const TRANSIENT_STATIC_PORT = 3899;
 const TRANSIENT_SCOPED_PORT = 3900;
 const TRANSIENT_GUARD_PORT = 3901;
+const ORIGINAL_ERROR_PORT = 3902;
+const METHOD_FILTER_PORT = 3903;
 
 interface MessageRequest {
   getData(): unknown;
@@ -163,6 +166,41 @@ class GuardedMessageController {
   }
 }
 
+class SpecialError extends Error {}
+
+@Catch(SpecialError)
+@Injectable({ scope: Scope.TRANSIENT })
+class StaticTransientFilter implements ExceptionFilter {
+  // Field initializers run in the constructor, so the prototype has no token.
+  private readonly token = 'built';
+
+  catch() {
+    return `transient:${this.token}`;
+  }
+}
+
+@Catch(TypeError)
+@Injectable({ scope: Scope.REQUEST })
+class UnrelatedRequestFilter implements ExceptionFilter {
+  catch() {
+    return 'unrelated';
+  }
+}
+
+class SpecialService {
+  read(_request?: object) {
+    throw new SpecialError('boom');
+  }
+}
+
+@Catch()
+@Injectable({ scope: Scope.REQUEST })
+class MessageFilter implements ExceptionFilter {
+  catch(exception: Error) {
+    return `caught:${exception.message}`;
+  }
+}
+
 @Controller()
 class StaticMessageController {
   @MessagePattern('fail')
@@ -180,6 +218,38 @@ class ExplodingDependency {
 
 @Controller()
 class ScopedMessageController {
+  constructor(private readonly dependency: ExplodingDependency) {}
+
+  @MessagePattern('fail')
+  fail() {
+    return 'should-not-run';
+  }
+}
+
+@Catch()
+@Injectable({ scope: Scope.TRANSIENT })
+class MethodTransientFilter implements ExceptionFilter {
+  private readonly token = 'method';
+
+  catch(exception: Error) {
+    return `${this.token}:${exception.message}`;
+  }
+}
+
+@Controller()
+class FilteredScopedMessageController {
+  constructor(private readonly dependency: ExplodingDependency) {}
+
+  @MessagePattern('fail')
+  @UseFilters(MethodTransientFilter)
+  fail() {
+    return 'should-not-run';
+  }
+}
+
+@Controller()
+@UseGuards(ExplodingGuard)
+class GuardedScopedMessageController {
   constructor(private readonly dependency: ExplodingDependency) {}
 
   @MessagePattern('fail')
@@ -396,6 +466,113 @@ describe('Request-scoped global filters outside HTTP controllers', () => {
       );
       await expect(handler({ headers: { 'x-id': 'b' } })).resolves.toBe(
         'transient:b',
+      );
+    });
+  });
+
+  describe('external handler with a static transient filter next to a request-scoped one', () => {
+    let app: INestApplication;
+
+    beforeAll(async () => {
+      @Module({
+        providers: [
+          { provide: APP_FILTER, useClass: UnrelatedRequestFilter },
+          { provide: APP_FILTER, useClass: StaticTransientFilter },
+        ],
+      })
+      class MixedFiltersModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [MixedFiltersModule],
+      }).compile();
+      app = moduleRef.createNestApplication();
+      await listenOnLoopback(app);
+    });
+
+    afterAll(async () => {
+      await app?.close();
+    });
+
+    it('should run the instance built for the call when there is no host', async () => {
+      const instance = new SpecialService();
+      const handler = app
+        .get(ExternalContextCreator)
+        .create(instance, instance.read, 'read');
+
+      await expect(handler({ headers: {} })).resolves.toBe('transient:built');
+    });
+  });
+
+  describe('request-scoped handler whose dependency and guard both fail', () => {
+    let microservice: INestMicroservice;
+    let client: ClientProxy;
+
+    beforeAll(async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [
+          createModule(GuardedScopedMessageController, MessageFilter, [
+            ExplodingDependency,
+          ]),
+        ],
+      }).compile();
+      microservice = moduleRef.createNestMicroservice<MicroserviceOptions>({
+        transport: Transport.TCP,
+        options: { host: '127.0.0.1', port: ORIGINAL_ERROR_PORT },
+      });
+      await microservice.listen();
+      client = ClientProxyFactory.create({
+        transport: Transport.TCP,
+        options: { host: '127.0.0.1', port: ORIGINAL_ERROR_PORT },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client?.close();
+      await microservice?.close();
+    });
+
+    it('should pass the error that stopped the message to the filter', async () => {
+      await expect(firstValueFrom(client.send('fail', 'one'))).resolves.toBe(
+        'caught:setup:one',
+      );
+    });
+  });
+
+  describe('handler filter when a dependency of the handler fails', () => {
+    let microservice: INestMicroservice;
+    let client: ClientProxy;
+
+    beforeAll(async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [
+          createModule(
+            FilteredScopedMessageController,
+            UnrelatedRequestFilter,
+            [ExplodingDependency],
+          ),
+        ],
+      }).compile();
+      microservice = moduleRef.createNestMicroservice<MicroserviceOptions>({
+        transport: Transport.TCP,
+        options: { host: '127.0.0.1', port: METHOD_FILTER_PORT },
+      });
+      await microservice.listen();
+      client = ClientProxyFactory.create({
+        transport: Transport.TCP,
+        options: { host: '127.0.0.1', port: METHOD_FILTER_PORT },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client?.close();
+      await microservice?.close();
+    });
+
+    it('should run the transient filter of the handler, not its prototype', async () => {
+      await expect(firstValueFrom(client.send('fail', 'one'))).resolves.toBe(
+        'method:setup:one',
       );
     });
   });

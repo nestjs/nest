@@ -26,21 +26,23 @@ import {
 import type { ArgumentsHost } from '@nestjs/common';
 
 /**
- * Builds the real filters once the call that failed is known. Without a
- * request, the handler falls back to the filters that have no scope.
+ * Builds the real filters once the call that failed is known. Its own filters
+ * are the ones without a scope: they handle the call when `open` finds no
+ * request to build the scoped filters for, or when those cannot be built.
  */
 class DeferredExternalExceptionsHandler extends ExternalExceptionsHandler {
   constructor(
     private readonly open: (
       host: ArgumentsHost,
-    ) => Promise<ExternalExceptionsHandler>,
+    ) => Promise<ExternalExceptionsHandler | undefined>,
   ) {
     super();
   }
 
   public next(exception: Error, host: ArgumentsHost): Promise<any> {
     return this.open(host).then(
-      handler => handler.next(exception, host),
+      handler =>
+        handler ? handler.next(exception, host) : super.next(exception, host),
       (err: Error) => super.next(err, host),
     );
   }
@@ -74,12 +76,6 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       );
     }
     const config = this.config;
-    const unscopedHandler = this.createHandler(
-      new ExternalExceptionsHandler(),
-      instance,
-      callback,
-      module,
-    );
     const deferredHandler = new DeferredExternalExceptionsHandler(
       async host => {
         // `ExternalContextCreator` passes the entry provider as the inquirer,
@@ -92,7 +88,7 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
             ? this.contextIdForStaticHost(host, config)
             : contextId;
         if (!requestContextId || (inquirerId && !inquirer)) {
-          return unscopedHandler;
+          return undefined;
         }
         await this.loadFilters(config, requestContextId, inquirer);
         return this.createHandler(
@@ -125,11 +121,10 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       .map(wrapper =>
         wrapper.getInstanceByContextId(
           this.getContextId(contextId, wrapper),
-          // Without a host, a transient filter built for the call is its own
-          // inquirer (see `loadScopedGlobalFilters()`). One with a static tree
-          // keeps the instance it already has.
-          inquirerId ??
-            (wrapper.isDependencyTreeStatic() ? undefined : wrapper.id),
+          // Without a host, a transient filter is its own inquirer (see
+          // `loadScopedGlobalFilters()`). A filter that was not loaded under
+          // it is an unresolved clone and is left out below.
+          inquirerId ?? wrapper.id,
         ),
       )
       .filter(

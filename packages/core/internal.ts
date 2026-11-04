@@ -55,8 +55,6 @@ export { InterceptorsContextCreator } from './interceptors/interceptors-context-
 // Exceptions
 export { BaseExceptionFilterContext } from './exceptions/base-exception-filter-context.js';
 export {
-  areScopedGlobalFiltersDurable,
-  bindRequestContext,
   createContextInjector,
   findFilterInquirer,
   hasUnconstructedScopedGlobalFilter,

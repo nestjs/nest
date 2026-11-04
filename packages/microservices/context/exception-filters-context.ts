@@ -1,7 +1,6 @@
 import { iterate } from 'iterare';
 import { from, isObservable, Observable, of } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
-import { RequestContextHost } from './request-context-host.js';
 import { RpcException } from '../exceptions/rpc-exception.js';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler.js';
 import {
@@ -14,7 +13,6 @@ import type { ApplicationConfig, ContextId, NestContainer } from '@nestjs/core';
 import {
   BaseExceptionFilterContext,
   STATIC_CONTEXT,
-  bindRequestContext,
   createContextInjector,
   findFilterInquirer,
   hasUnconstructedScopedGlobalFilter,
@@ -26,13 +24,13 @@ import {
 /**
  * Builds the real filters once the message that failed is known. A
  * request-scoped filter has no instance at registration time, and the one
- * stored for the static context is only a prototype.
+ * stored for the static context is only a prototype. Its own filters are the
+ * ones without a scope: they handle the message when `open` returns no
+ * handler, or when the scoped filters cannot be built.
  */
 class DeferredRpcExceptionsHandler extends RpcExceptionsHandler {
   constructor(
-    private readonly open: (
-      host: ArgumentsHost,
-    ) => Promise<RpcExceptionsHandler>,
+    private readonly open: () => Promise<RpcExceptionsHandler | undefined>,
   ) {
     super();
   }
@@ -45,8 +43,11 @@ class DeferredRpcExceptionsHandler extends RpcExceptionsHandler {
     // A rejection from `open` is a failure to load the filters. A rejection
     // from `handler.handle` is the filter's own result and must not be
     // replaced by the load-failure fallback.
-    const opened = this.open(host).then(
-      handler => handler.handle(exception, host, reportUnhandled),
+    const opened = this.open().then(
+      handler =>
+        handler
+          ? handler.handle(exception, host, reportUnhandled)
+          : super.handle(exception, host, reportUnhandled),
       (err: Error) => super.handle(err, host, reportUnhandled),
     );
     // `mergeMap` would iterate a string and reject a plain object.
@@ -84,7 +85,13 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): RpcExceptionsHandler {
-    if (!hasUnconstructedScopedGlobalFilter(this.config)) {
+    // `ListenersController` passes a context id for every controller that has
+    // a scoped global filter, as such a filter makes the controller
+    // request-scoped. A static one has no message to build the filters for.
+    if (
+      contextId === STATIC_CONTEXT ||
+      !hasUnconstructedScopedGlobalFilter(this.config)
+    ) {
       return this.createHandler(
         new RpcExceptionsHandler(),
         instance,
@@ -94,31 +101,22 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
         inquirerId,
       );
     }
-    // The inquirer id is not enough: a static lookup still returns a null
-    // instance or an unconstructed prototype for a request-scoped filter.
-    const deferredHandler = new DeferredRpcExceptionsHandler(async host => {
+    const deferredHandler = new DeferredRpcExceptionsHandler(async () => {
       // Transient filters are looked up under the controller, so they are
       // loaded under it too.
       const inquirer = inquirerId
         ? findFilterInquirer(this.container, module, inquirerId)
         : undefined;
       if (inquirerId && !inquirer) {
-        return this.createHandler(
-          new RpcExceptionsHandler(),
-          instance,
-          callback,
-          module,
-        );
+        return undefined;
       }
-      const requestContextId =
-        contextId === STATIC_CONTEXT ? this.bindRpcRequest(host) : contextId;
-      await this.loadFilters(requestContextId, inquirer);
+      await this.loadFilters(contextId, inquirer);
       return this.createHandler(
         new RpcExceptionsHandler(),
         instance,
         callback,
         module,
-        requestContextId,
+        contextId,
         inquirerId,
       );
     });
@@ -139,11 +137,10 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
       .map(wrapper =>
         wrapper.getInstanceByContextId(
           this.getContextId(contextId, wrapper),
-          // Without a controller, a transient filter built for the message is
-          // its own inquirer (see `loadScopedGlobalFilters()`). One with a
-          // static tree keeps the instance it already has.
-          inquirerId ??
-            (wrapper.isDependencyTreeStatic() ? undefined : wrapper.id),
+          // Without a controller, a transient filter is its own inquirer (see
+          // `loadScopedGlobalFilters()`). A filter that was not loaded under
+          // it is an unresolved clone and is left out below.
+          inquirerId ?? wrapper.id,
         ),
       )
       .filter(
@@ -191,31 +188,4 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
       inquirer,
     );
   }
-
-  /**
-   * The server calls a handler as `(data, rpcContext)`. A request-scoped
-   * handler may instead be invoked with the `RequestContextHost` it already
-   * registered. `switchToHttp()` is the wrong request here.
-   */
-  private bindRpcRequest(host: ArgumentsHost): ContextId {
-    const args = host.getArgs();
-    const request =
-      args[0] instanceof RequestContextHost
-        ? args[0]
-        : RequestContextHost.create(patternOf(args[1]), args[0], args[1]);
-    return bindRequestContext(this.container, this.config, request);
-  }
-}
-
-function patternOf(context: unknown): string | Record<string, any> {
-  if (
-    context !== null &&
-    typeof context === 'object' &&
-    typeof (context as { getPattern?: unknown }).getPattern === 'function'
-  ) {
-    return (
-      context as { getPattern: () => string | Record<string, any> }
-    ).getPattern();
-  }
-  return '';
 }
