@@ -218,7 +218,7 @@ export class ConsoleLogger implements LoggerService {
         ? [undefined, options]
         : [contextOrOptions?.context, contextOrOptions];
 
-    opts = opts ?? {};
+    opts = { ...opts };
     opts.colors ??= opts.colors ?? (opts.json ? false : isColorAllowed());
     opts.prefix ??= 'Nest';
 
