@@ -47,7 +47,7 @@ function isCloseSource(source: unknown): source is CloseSource {
   );
 }
 
-function pickCloseSource(
+export function pickCloseSource(
   socket: unknown,
   response: unknown,
 ): CloseSource | undefined {

@@ -62,6 +62,7 @@ import { IRouteParamsFactory } from './interfaces/route-params-factory.interface
 import { markRejectedByPipes } from './rejected-by-pipes.js';
 import {
   CustomHeader,
+  pickCloseSource,
   RedirectResponse,
   RouterResponseController,
 } from './router-response-controller.js';
@@ -655,12 +656,16 @@ export class RouterExecutionContext {
 
   /**
    * Emits once the client connection closes, or right away if it already has.
-   * Watches the request socket, like `RouterResponseController#sse()` does.
+   * Picks the close source the same way `RouterResponseController#sse()`
+   * does, so the two disconnect watchers cannot drift apart.
    */
   private fromClientDisconnect(req: any, res: any): Observable<void> {
     return new Observable<void>(subscriber => {
-      const source = (req?.raw ?? req)?.socket ?? res?.raw ?? res;
-      if (typeof source?.once !== 'function') {
+      const source = pickCloseSource(
+        (req?.raw ?? req)?.socket,
+        res?.raw ?? res,
+      );
+      if (!source) {
         return;
       }
       if (source.destroyed) {
