@@ -1,7 +1,13 @@
-import { ForbiddenException, SetMetadata } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  ForbiddenException,
+  SetMetadata,
+} from '@nestjs/common';
 import {
   CUSTOM_ROUTE_ARGS_METADATA,
   ENTRY_PROVIDER_WATERMARK,
+  ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants.js';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
 import { of } from 'rxjs';
@@ -335,6 +341,52 @@ describe('ExternalContextCreator', () => {
           expect(await contextCreator.transformToResult(value)).toBe(100);
         });
       });
+    });
+  });
+  describe('getMetadata', () => {
+    const ContextType = createParamDecorator(
+      (_data: unknown, ctx: ExecutionContext) => ctx.getType<string>(),
+    );
+    class Tools {
+      find(@ContextType() type: string) {
+        return type;
+      }
+    }
+    const paramsFactory = { exchangeKeyForValue: () => undefined };
+
+    it('should cache an entry per context type', () => {
+      const instance = new Tools();
+      const get = (type: string) =>
+        contextCreator.getMetadata(
+          instance,
+          'find',
+          ROUTE_ARGS_METADATA,
+          paramsFactory,
+          type,
+        );
+      const first = get('mcp');
+      expect(get('mcp')).toBe(first);
+      expect(get('ai')).not.toBe(first);
+    });
+
+    it('should give param decorators the context type of each wrapper of the same method', async () => {
+      const instance = new Tools();
+      const wrap = (type: string) =>
+        contextCreator.create(
+          instance,
+          instance.find,
+          'find',
+          ROUTE_ARGS_METADATA,
+          paramsFactory,
+          undefined,
+          undefined,
+          { guards: false, interceptors: false, filters: false },
+          type,
+        );
+      const mcp = wrap('mcp');
+      const ai = wrap('ai');
+      expect(await mcp({}, {})).toBe('mcp');
+      expect(await ai({}, {})).toBe('ai');
     });
   });
 });

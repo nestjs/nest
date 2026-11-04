@@ -205,7 +205,11 @@ export class ExternalContextCreator {
     paramsFactory?: ParamsFactory,
     contextType?: TContext,
   ): ExternalHandlerMetadata {
-    const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
+    // The metadata is built for one context type (the `ExecutionContext` that
+    // param decorators receive) and one metadata key, and two libraries may
+    // wrap the same method with different ones: cache an entry for each.
+    const cacheKey = `${contextType ?? ''}:${metadataKey ?? ''}:${methodName}`;
+    const cacheMetadata = this.handlerMetadataStorage.get(instance, cacheKey);
     if (cacheMetadata) {
       return cacheMetadata;
     }
@@ -248,7 +252,7 @@ export class ExternalContextCreator {
       paramtypes,
       getParamsMetadata: getParamsMetadata as any,
     };
-    this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
+    this.handlerMetadataStorage.set(instance, cacheKey, handlerMetadata);
     return handlerMetadata;
   }
 
