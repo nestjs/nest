@@ -399,7 +399,11 @@ export class NodeResponse<
     if (!this.hasHeader('Content-Type')) {
       this.setHeader('Content-Type', 'application/json; charset=utf-8');
     }
-    if (text === undefined) {
+    if (this.send !== NodeResponse.prototype.send) {
+      // Through the res.send() a middleware wrapped, with the serialized body,
+      // as Express' res.json() does
+      this.send(text);
+    } else if (text === undefined) {
       this.end();
     } else {
       endWithBody(this, text);

@@ -1084,6 +1084,27 @@ describe('NodeResponse', () => {
       expect(response.headers['content-type']).toBe('application/vnd.api+json');
       expect(response.body.toString()).toBe('{"data":[]}');
     });
+
+    it('should send the JSON through a res.send() a middleware wrapped, as Express does', async () => {
+      const sent: unknown[] = [];
+      const response = await respond((req, res) => {
+        const send = res.send;
+        res.send = function (this: NodeResponse, body?: unknown) {
+          sent.push(body);
+          return send.call(this, `{"data":${body as string}}`);
+        };
+        res.json({ name: 'Grüß' });
+      });
+
+      expect(sent).toEqual(['{"name":"Grüß"}']);
+      expect(response.headers['content-type']).toBe(
+        'application/json; charset=utf-8',
+      );
+      expect(response.headers['content-length']).toBe(
+        String(Buffer.byteLength('{"data":{"name":"Grüß"}}')),
+      );
+      expect(response.body.toString()).toBe('{"data":{"name":"Grüß"}}');
+    });
   });
 
   // send() gets a string body, since it hands objects over to json()

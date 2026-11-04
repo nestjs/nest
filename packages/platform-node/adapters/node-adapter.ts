@@ -227,6 +227,11 @@ export class NodeAdapter extends AbstractHttpAdapter<
       response.statusCode = statusCode;
     }
     if (isNil(body)) {
+      // A res.send() a middleware wrapped sees the empty reply as well, as
+      // with Express
+      if (response.send !== NodeResponse.prototype.send) {
+        return response.send();
+      }
       if (endWithoutBody(response)) {
         return;
       }
@@ -298,6 +303,16 @@ export class NodeAdapter extends AbstractHttpAdapter<
       // With the charset Express' res.json() ends up sending
       response.setHeader('Content-Type', 'application/json; charset=utf-8');
     }
+    // Middleware written for Express wraps res.send() or res.json() to log or
+    // reshape the body: reply through them then, as the Express adapter does
+    if (
+      response.send !== NodeResponse.prototype.send ||
+      response.json !== NodeResponse.prototype.json
+    ) {
+      return isObject(body) && !ArrayBuffer.isView(body)
+        ? response.json(body)
+        : response.send(ArrayBuffer.isView(body) ? body : String(body));
+    }
     // Buffers, typed arrays and DataViews go out as binary, as with Fastify
     if (ArrayBuffer.isView(body)) {
       return this.writeBody(
@@ -344,6 +359,13 @@ export class NodeAdapter extends AbstractHttpAdapter<
       ...response.locals,
       ...options,
     });
+    // Through a res.send() a middleware wrapped, as with Express' res.render()
+    if (response.send !== NodeResponse.prototype.send) {
+      if (!response.hasHeader('Content-Type')) {
+        response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      }
+      return response.send(html);
+    }
     return this.writeBody(
       response,
       html,
@@ -895,10 +917,10 @@ export class NodeAdapter extends AbstractHttpAdapter<
         response.statusCode = statusCode;
       },
       send: (body: string) => {
-        // Replaces the headers describing the file (its length, notably)
+        // Replaces the headers describing the file (its length, notably), and
+        // goes through a res.send() a middleware wrapped, as with Express
         response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        response.setHeader('Content-Length', Buffer.byteLength(body));
-        response.end(body);
+        response.send(body);
       },
       end: () => response.end(),
       // Ending would make a file that failed midway look complete
