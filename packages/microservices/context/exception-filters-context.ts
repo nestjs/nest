@@ -16,6 +16,7 @@ import {
   STATIC_CONTEXT,
   bindRequestContext,
   createContextInjector,
+  findFilterInquirer,
   hasUnconstructedScopedGlobalFilter,
   loadScopedGlobalFilters,
   type Injector,
@@ -96,9 +97,22 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     // The inquirer id is not enough: a static lookup still returns a null
     // instance or an unconstructed prototype for a request-scoped filter.
     const deferredHandler = new DeferredRpcExceptionsHandler(async host => {
+      // Transient filters are looked up under the controller, so they are
+      // loaded under it too.
+      const inquirer = inquirerId
+        ? findFilterInquirer(this.container, module, inquirerId)
+        : undefined;
+      if (inquirerId && !inquirer) {
+        return this.createHandler(
+          new RpcExceptionsHandler(),
+          instance,
+          callback,
+          module,
+        );
+      }
       const requestContextId =
         contextId === STATIC_CONTEXT ? this.bindRpcRequest(host) : contextId;
-      await this.loadFilters(requestContextId);
+      await this.loadFilters(requestContextId, inquirer);
       return this.createHandler(
         new RpcExceptionsHandler(),
         instance,
@@ -125,7 +139,11 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
       .map(wrapper =>
         wrapper.getInstanceByContextId(
           this.getContextId(contextId, wrapper),
-          inquirerId,
+          // Without a controller, a transient filter built for the message is
+          // its own inquirer (see `loadScopedGlobalFilters()`). One with a
+          // static tree keeps the instance it already has.
+          inquirerId ??
+            (wrapper.isDependencyTreeStatic() ? undefined : wrapper.id),
         ),
       )
       .filter(
@@ -161,12 +179,16 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     return exceptionHandler;
   }
 
-  private loadFilters(contextId: ContextId): Promise<void> {
+  private loadFilters(
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+  ): Promise<void> {
     this.contextInjector ??= createContextInjector(this.container);
     return loadScopedGlobalFilters(
       this.contextInjector,
       this.config,
       contextId,
+      inquirer,
     );
   }
 

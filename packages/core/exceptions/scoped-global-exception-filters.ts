@@ -81,15 +81,35 @@ export function bindRequestContext(
 }
 
 /**
- * Instantiates each scoped global filter for `contextId`. Each filter is its
- * own inquirer, which is where a transient instance is stored; request-scoped
- * lookup ignores the inquirer. A wrapper with no host is skipped: failing the
- * load here would replace the exception the filter was meant to handle.
+ * The provider or controller a handler was created for. A transient filter is
+ * stored under its inquirer, so it has to be loaded under the same id that the
+ * handler later looks it up with.
+ */
+export function findFilterInquirer(
+  container: NestContainer,
+  moduleKey: string,
+  inquirerId: string,
+): InstanceWrapper | undefined {
+  const moduleRef = container.getModules().get(moduleKey);
+  return (
+    moduleRef?.getProviderById(inquirerId) ??
+    moduleRef?.getControllerById(inquirerId)
+  );
+}
+
+/**
+ * Instantiates each scoped global filter for `contextId`. A transient instance
+ * is stored under `inquirer`, the id the handler looks it up with; without
+ * one, the filter is its own inquirer, as `Injector#loadPerContext()` does.
+ * Request-scoped lookup ignores the inquirer. A wrapper with no host module is
+ * skipped: failing the load here would replace the exception the filter was
+ * meant to handle.
  */
 export async function loadScopedGlobalFilters(
   injector: Injector,
   config: ApplicationConfig,
   contextId: ContextId,
+  inquirer?: InstanceWrapper,
 ): Promise<void> {
   const wrappers = config.getGlobalRequestFilters() as InstanceWrapper[];
   await Promise.all(
@@ -97,7 +117,12 @@ export async function loadScopedGlobalFilters(
       if (!wrapper.host) {
         return;
       }
-      return injector.loadInjectable(wrapper, wrapper.host, contextId, wrapper);
+      return injector.loadInjectable(
+        wrapper,
+        wrapper.host,
+        contextId,
+        inquirer ?? wrapper,
+      );
     }),
   );
 }

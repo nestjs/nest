@@ -12,6 +12,7 @@ import { ExternalExceptionsHandler } from './external-exceptions-handler.js';
 import {
   bindRequestContext,
   createContextInjector,
+  findFilterInquirer,
   hasUnconstructedScopedGlobalFilter,
   loadScopedGlobalFilters,
 } from './scoped-global-exception-filters.js';
@@ -81,14 +82,19 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
     );
     const deferredHandler = new DeferredExternalExceptionsHandler(
       async host => {
+        // `ExternalContextCreator` passes the entry provider as the inquirer,
+        // and the lookup below reads transient filters under that id.
+        const inquirer = inquirerId
+          ? findFilterInquirer(this.container, module, inquirerId)
+          : undefined;
         const requestContextId =
           contextId === STATIC_CONTEXT
             ? this.contextIdForStaticHost(host, config)
             : contextId;
-        if (!requestContextId) {
+        if (!requestContextId || (inquirerId && !inquirer)) {
           return unscopedHandler;
         }
-        await this.loadFilters(config, requestContextId);
+        await this.loadFilters(config, requestContextId, inquirer);
         return this.createHandler(
           new ExternalExceptionsHandler(),
           instance,
@@ -119,7 +125,11 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       .map(wrapper =>
         wrapper.getInstanceByContextId(
           this.getContextId(contextId, wrapper),
-          inquirerId,
+          // Without a host, a transient filter built for the call is its own
+          // inquirer (see `loadScopedGlobalFilters()`). One with a static tree
+          // keeps the instance it already has.
+          inquirerId ??
+            (wrapper.isDependencyTreeStatic() ? undefined : wrapper.id),
         ),
       )
       .filter(
@@ -158,26 +168,38 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
   private loadFilters(
     config: ApplicationConfig,
     contextId: ContextId,
+    inquirer?: InstanceWrapper,
   ): Promise<void> {
     this.contextInjector ??= createContextInjector(this.container);
-    return loadScopedGlobalFilters(this.contextInjector, config, contextId);
+    return loadScopedGlobalFilters(
+      this.contextInjector,
+      config,
+      contextId,
+      inquirer,
+    );
   }
 
   /**
    * GraphQL calls the same handler with `(parent, args, context, info)`, so
-   * argument 0 is not the request. Only an HTTP or WebSocket host has it there.
-   * No request means the scoped filters cannot be built for this call.
+   * argument 0 is not the request. A WebSocket host has the client socket
+   * there, which lives across messages, so a context id stored on it would be
+   * shared by every call on that connection. Only an HTTP host has a request
+   * per call; without one the scoped filters cannot be built for this call.
    */
   private contextIdForStaticHost(
     host: ArgumentsHost,
     config: ApplicationConfig,
   ): ContextId | undefined {
-    const type = host.getType();
-    if (type !== 'http' && type !== 'ws') {
+    if (host.getType() !== 'http') {
       return undefined;
     }
     const request = host.switchToHttp().getRequest();
-    if (request == null || typeof request !== 'object') {
+    // The context id is stored on the request, which a frozen object rejects.
+    if (
+      request == null ||
+      typeof request !== 'object' ||
+      !Object.isExtensible(request)
+    ) {
       return undefined;
     }
     return bindRequestContext(this.container, config, request);

@@ -1,5 +1,6 @@
 import {
   ArgumentsHost,
+  CanActivate,
   Catch,
   Controller,
   ExceptionFilter,
@@ -11,6 +12,7 @@ import {
   Scope,
   SetMetadata,
   Type,
+  UseGuards,
 } from '@nestjs/common';
 import { ENTRY_PROVIDER_WATERMARK } from '@nestjs/common/internal';
 import { APP_FILTER, ExternalContextCreator, REQUEST } from '@nestjs/core';
@@ -31,6 +33,9 @@ const STRING_PORT = 3895;
 const OBJECT_PORT = 3896;
 const PROMISE_PORT = 3897;
 const TRANSIENT_PORT = 3898;
+const TRANSIENT_STATIC_PORT = 3899;
+const TRANSIENT_SCOPED_PORT = 3900;
+const TRANSIENT_GUARD_PORT = 3901;
 
 interface MessageRequest {
   getData(): unknown;
@@ -96,6 +101,65 @@ class HeaderFilter implements ExceptionFilter {
 
   catch(_exception: unknown, _host: ArgumentsHost) {
     return this.request.headers?.['x-id'];
+  }
+}
+
+@Injectable({ scope: Scope.REQUEST })
+class RequestHeaders {
+  constructor(
+    @Inject(REQUEST)
+    readonly request: { headers?: Record<string, string> },
+  ) {}
+}
+
+@Catch()
+@Injectable({ scope: Scope.TRANSIENT })
+class TransientHeaderFilter implements ExceptionFilter {
+  constructor(private readonly headers: RequestHeaders) {}
+
+  catch() {
+    return `transient:${this.headers.request.headers?.['x-id']}`;
+  }
+}
+
+@Injectable({ scope: Scope.REQUEST })
+class MessageData {
+  constructor(@Inject(REQUEST) readonly request: MessageRequest) {}
+}
+
+@Catch()
+@Injectable({ scope: Scope.TRANSIENT })
+class TransientPayloadFilter implements ExceptionFilter {
+  constructor(private readonly data: MessageData) {}
+
+  catch() {
+    return `transient:${String(this.data.request.getData())}`;
+  }
+}
+
+class PlainService {
+  read(_request?: { headers?: Record<string, string> }) {
+    throw new Error('boom');
+  }
+}
+
+@Injectable({ scope: Scope.REQUEST })
+class ExplodingGuard implements CanActivate {
+  constructor() {
+    throw new Error('guard');
+  }
+
+  canActivate() {
+    return true;
+  }
+}
+
+@Controller()
+@UseGuards(ExplodingGuard)
+class GuardedMessageController {
+  @MessagePattern('fail')
+  fail() {
+    return 'should-not-run';
   }
 }
 
@@ -257,6 +321,83 @@ describe('Request-scoped global filters outside HTTP controllers', () => {
 
       await expect(handler()).rejects.toThrow('boom');
     });
+
+    it('should keep the error when the request cannot be extended', async () => {
+      const handler = handlerFor();
+
+      await expect(
+        handler(Object.freeze({ headers: { 'x-id': 'a' } })),
+      ).rejects.toThrow('boom');
+    });
+
+    it('should keep the default filter for a websocket host', async () => {
+      // Argument 0 of a websocket host is the client socket, which outlives
+      // the call, so it must not carry the context id of one failure.
+      const instance = new EntryProvider();
+      const handler = app
+        .get(ExternalContextCreator)
+        .create(
+          instance,
+          instance.read,
+          'read',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'ws',
+        );
+      const socket = { headers: { 'x-id': 'a' } };
+
+      await expect(handler(socket)).rejects.toThrow('boom');
+      expect(Object.getOwnPropertySymbols(socket)).toEqual([]);
+    });
+  });
+
+  describe('external handler with a transient filter on a request-scoped provider', () => {
+    let app: INestApplication;
+
+    beforeAll(async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [
+          createModule(undefined, TransientHeaderFilter, [
+            EntryProvider,
+            RequestHeaders,
+          ]),
+        ],
+      }).compile();
+      app = moduleRef.createNestApplication();
+      await listenOnLoopback(app);
+    });
+
+    afterAll(async () => {
+      await app?.close();
+    });
+
+    it('should run the transient filter for a handler with no host', async () => {
+      const instance = new PlainService();
+      const handler = app
+        .get(ExternalContextCreator)
+        .create(instance, instance.read, 'read');
+
+      await expect(handler({ headers: { 'x-id': 'c' } })).resolves.toBe(
+        'transient:c',
+      );
+    });
+
+    it('should run the transient filter built for that call', async () => {
+      const instance = new EntryProvider();
+      const handler = app
+        .get(ExternalContextCreator)
+        .create(instance, instance.read, 'read');
+
+      await expect(handler({ headers: { 'x-id': 'a' } })).resolves.toBe(
+        'transient:a',
+      );
+      await expect(handler({ headers: { 'x-id': 'b' } })).resolves.toBe(
+        'transient:b',
+      );
+    });
   });
 
   describe('request-scoped filter that returns a plain value', () => {
@@ -363,6 +504,90 @@ describe('Request-scoped global filters outside HTTP controllers', () => {
       await expect(firstValueFrom(client.send('fail', 'one'))).resolves.toBe(
         'recovered',
       );
+    });
+  });
+
+  describe('transient filter on a request-scoped provider', () => {
+    const start = async (
+      port: number,
+      controller: Type<unknown>,
+      extra: Type<unknown>[] = [],
+    ): Promise<{ microservice: INestMicroservice; client: ClientProxy }> => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [
+          createModule(controller, TransientPayloadFilter, [
+            MessageData,
+            ...extra,
+          ]),
+        ],
+      }).compile();
+      const microservice =
+        moduleRef.createNestMicroservice<MicroserviceOptions>({
+          transport: Transport.TCP,
+          options: { host: '127.0.0.1', port },
+        });
+      await microservice.listen();
+      const client = ClientProxyFactory.create({
+        transport: Transport.TCP,
+        options: { host: '127.0.0.1', port },
+      });
+      await client.connect();
+      return { microservice, client };
+    };
+
+    it('should run it for each message of a handler that throws', async () => {
+      const { microservice, client } = await start(
+        TRANSIENT_STATIC_PORT,
+        StaticMessageController,
+      );
+
+      try {
+        await expect(
+          firstValueFrom(client.send('fail', 'alpha')),
+        ).resolves.toBe('transient:alpha');
+        await expect(firstValueFrom(client.send('fail', 'beta'))).resolves.toBe(
+          'transient:beta',
+        );
+      } finally {
+        await client.close();
+        await microservice.close();
+      }
+    });
+
+    it('should run it when an enhancer of the handler fails', async () => {
+      const { microservice, client } = await start(
+        TRANSIENT_GUARD_PORT,
+        GuardedMessageController,
+      );
+
+      try {
+        await expect(firstValueFrom(client.send('fail', 'one'))).resolves.toBe(
+          'transient:one',
+        );
+      } finally {
+        await client.close();
+        await microservice.close();
+      }
+    });
+
+    it('should run it when a dependency of the handler fails', async () => {
+      const { microservice, client } = await start(
+        TRANSIENT_SCOPED_PORT,
+        ScopedMessageController,
+        [ExplodingDependency],
+      );
+
+      try {
+        await expect(firstValueFrom(client.send('fail', 'one'))).resolves.toBe(
+          'transient:one',
+        );
+        await expect(firstValueFrom(client.send('fail', 'two'))).resolves.toBe(
+          'transient:two',
+        );
+      } finally {
+        await client.close();
+        await microservice.close();
+      }
     });
   });
 });

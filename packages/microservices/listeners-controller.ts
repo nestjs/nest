@@ -326,6 +326,11 @@ export class ListenersController {
         // Enhancers are not loaded when construction throws. A transient
         // filter is stored under this controller, which is the id `create`
         // looks up; without this load the lookup clones a prototype.
+        // As for a controller whose enhancers cannot be instantiated, an
+        // enhancer that fails to load fails the message with that error. The
+        // scoped filters still handle it; if they cannot be loaded either,
+        // `create` leaves it to the filters without a scope.
+        let exception: unknown = err;
         if (contextId && contextId !== STATIC_CONTEXT) {
           try {
             await this.injector.loadEnhancersPerContext(
@@ -334,8 +339,7 @@ export class ListenersController {
               wrapper,
             );
           } catch (loadError) {
-            // Keep `err`. A filter that fails to load must not replace it.
-            void loadError;
+            exception = loadError;
           }
         }
         const exceptionFilter = this.exceptionFiltersContext.create(
@@ -352,7 +356,7 @@ export class ListenersController {
         const host = new ExecutionContextHost(hostArgs);
         host.setType('rpc');
         const returnValue = exceptionFilter.handle(
-          err,
+          exception as Error,
           host,
           reportUnhandledErrors,
         );

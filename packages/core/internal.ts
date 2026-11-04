@@ -58,6 +58,7 @@ export {
   areScopedGlobalFiltersDurable,
   bindRequestContext,
   createContextInjector,
+  findFilterInquirer,
   hasUnconstructedScopedGlobalFilter,
   loadScopedGlobalFilters,
 } from './exceptions/scoped-global-exception-filters.js';
