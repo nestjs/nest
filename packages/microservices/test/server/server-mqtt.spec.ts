@@ -92,14 +92,14 @@ describe('ServerMqtt', () => {
     });
     describe('when "maxConnectionAttempts" is configured', () => {
       let emitter: any;
-      let endSpy: ReturnType<typeof vi.fn>;
+      let endAsyncSpy: ReturnType<typeof vi.fn>;
       let serverWithOptions: ServerMqtt;
       let callbackSpy: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
         emitter = new EventEmitter();
-        endSpy = vi.fn();
-        emitter.end = endSpy;
+        endAsyncSpy = vi.fn().mockResolvedValue(undefined);
+        emitter.endAsync = endAsyncSpy;
         serverWithOptions = new ServerMqtt({
           maxConnectionAttempts: 2,
         } as any);
@@ -114,7 +114,7 @@ describe('ServerMqtt', () => {
         emitter.emit('error', new Error('first failure'));
 
         expect(callbackSpy).not.toHaveBeenCalled();
-        expect(endSpy).not.toHaveBeenCalled();
+        expect(endAsyncSpy).not.toHaveBeenCalled();
       });
 
       it('should close the client and report the failure once the limit is reached', async () => {
@@ -124,7 +124,7 @@ describe('ServerMqtt', () => {
         emitter.emit('error', new Error('first failure'));
         emitter.emit('error', error);
 
-        expect(endSpy).toHaveBeenCalledOnce();
+        expect(endAsyncSpy).toHaveBeenCalledOnce();
         expect(callbackSpy).toHaveBeenCalledExactlyOnceWith(error);
       });
 
@@ -144,16 +144,16 @@ describe('ServerMqtt', () => {
         emitter.emit('error', new Error('second runtime failure'));
         emitter.emit('error', new Error('third runtime failure'));
 
-        expect(endSpy).not.toHaveBeenCalled();
+        expect(endAsyncSpy).not.toHaveBeenCalled();
       });
 
       it('should apply the limit again when the server is restarted', async () => {
         await serverWithOptions.listen(callbackSpy);
         emitter.emit('connect');
-        serverWithOptions.close();
+        await serverWithOptions.close();
 
         const restartEmitter: any = new EventEmitter();
-        restartEmitter.end = vi.fn();
+        restartEmitter.endAsync = vi.fn();
         vi.spyOn(serverWithOptions, 'createMqttClient').mockImplementation(
           () => restartEmitter,
         );
@@ -163,7 +163,7 @@ describe('ServerMqtt', () => {
         restartEmitter.emit('error', new Error('first failure'));
         restartEmitter.emit('error', new Error('second failure'));
 
-        expect(restartEmitter.end).toHaveBeenCalledOnce();
+        expect(restartEmitter.endAsync).toHaveBeenCalledOnce();
         expect(restartCallbackSpy).toHaveBeenCalledOnce();
       });
 
@@ -177,7 +177,7 @@ describe('ServerMqtt', () => {
         emitter.emit('error', new Error('failure'));
 
         expect(callbackSpy).not.toHaveBeenCalled();
-        expect(endSpy).not.toHaveBeenCalled();
+        expect(endAsyncSpy).not.toHaveBeenCalled();
       });
     });
     describe('when "start" throws an exception', () => {
@@ -193,13 +193,62 @@ describe('ServerMqtt', () => {
     });
   });
   describe('close', () => {
-    const mqttClient = { end: vi.fn() };
+    let endAsync: ReturnType<typeof vi.fn>;
+    let mqttClient: { endAsync: ReturnType<typeof vi.fn> };
+
     beforeEach(() => {
+      endAsync = vi.fn().mockResolvedValue(undefined);
+      mqttClient = { endAsync };
       untypedServer.mqttClient = mqttClient;
     });
-    it('should end mqttClient', () => {
-      server.close();
-      expect(mqttClient.end).toHaveBeenCalled();
+
+    it('should end mqttClient', async () => {
+      await server.close();
+      expect(endAsync).toHaveBeenCalledOnce();
+    });
+
+    it('should settle only once the connection is closed', async () => {
+      let endConnection!: () => void;
+      endAsync.mockReturnValue(
+        new Promise<void>(resolve => (endConnection = resolve)),
+      );
+
+      let closed = false;
+      const closing = server.close().then(() => {
+        closed = true;
+      });
+
+      await Promise.resolve();
+      // mqtt ends the connection on a later tick: a close() that does not wait
+      // for it resolves here, with the connection still open
+      expect(closed).toBe(false);
+
+      endConnection();
+      await closing;
+      expect(closed).toBe(true);
+    });
+
+    it('should reset the state so a listener waits for the next listen', async () => {
+      const callback = vi.fn();
+
+      await server.close();
+      server.on('message', callback);
+
+      expect(untypedServer.mqttClient).toBeNull();
+      expect(untypedServer.pendingEventListeners).toEqual([
+        { event: 'message', callback },
+      ]);
+    });
+
+    it('should reset the state when ending the connection fails', async () => {
+      const callback = vi.fn();
+      endAsync.mockRejectedValue(new Error('end failed'));
+      untypedServer.pendingEventListeners = [{ event: 'message', callback }];
+
+      await expect(server.close()).rejects.toThrow('end failed');
+
+      expect(untypedServer.mqttClient).toBeNull();
+      expect(untypedServer.pendingEventListeners).toEqual([]);
     });
   });
   describe('createMqttClient', () => {
