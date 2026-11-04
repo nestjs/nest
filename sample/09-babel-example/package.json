@@ -25,10 +25,10 @@
     "rxjs": "7.8.2"
   },
   "devDependencies": {
-    "@babel/cli": "7.29.7",
-    "@babel/core": "7.29.7",
-    "@babel/plugin-proposal-decorators": "7.29.7",
-    "@babel/preset-env": "7.29.7",
+    "@babel/cli": "8.1.0",
+    "@babel/core": "8.1.0",
+    "@babel/plugin-proposal-decorators": "8.0.2",
+    "@babel/preset-env": "8.0.7",
     "@nestjs/testing": "12.3.2",
     "nodemon": "3.1.14",
     "oxlint": "1.90.0",
