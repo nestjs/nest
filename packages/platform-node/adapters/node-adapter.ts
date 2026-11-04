@@ -354,7 +354,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
       );
     }
     // As with Express' res.render(): the data the handler returns wins over
-    // res.locals, which wins over the engine's defaultContext
+    // res.locals, then app.setLocal() values, then the engine's defaultContext
     const html = await this.views.render(view, {
       ...response.locals,
       ...options,
@@ -492,6 +492,16 @@ export class NodeAdapter extends AbstractHttpAdapter<
 
   public setBaseViewsDir(path: string | string[]) {
     this.views.setBaseViewsDir(path);
+    return this;
+  }
+
+  /**
+   * Sets a value every view rendered with `@Render()` gets, as with
+   * `app.setLocal()` on Express (`app.locals`); `res.locals` and the data the
+   * handler returns win over it.
+   */
+  public setLocal(key: string, value: any) {
+    this.views.setLocal(key, value);
     return this;
   }
 

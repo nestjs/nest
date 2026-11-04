@@ -46,6 +46,16 @@ export interface NestNodeApplication<
    */
   setBaseViewsDir(path: string | string[]): this;
 
+  /**
+   * Sets a value every view rendered with `@Render()` gets, under
+   * `res.locals` and the data the handler returns, as with Express'
+   * `app.locals`.
+   *
+   * @example
+   * app.setLocal('title', 'My Site')
+   */
+  setLocal(key: string, value: any): this;
+
   useBodyParser<ParserType extends NestNodeBodyParserType>(
     parser: ParserType,
     options?: NestNodeBodyParserOptionsFor<ParserType>,

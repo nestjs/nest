@@ -41,7 +41,7 @@ export interface NodeViewOptions {
    */
   viewExt?: string;
   /**
-   * Data available to every template, like Express' `app.locals`.
+   * Data available to every template; `app.setLocal()` values win over it.
    */
   defaultContext?: Record<string, any>;
   /**
@@ -89,6 +89,7 @@ export class ViewRenderer {
   private roots: string[] = [resolve('views')];
   private viewExt?: string;
   private defaultContext: Record<string, any> = {};
+  private readonly locals: Record<string, any> = {};
   private engineOptions: Record<string, any> = {};
   private production = process.env.NODE_ENV === 'production';
   private readonly cache = new Map<string, RenderFn>();
@@ -124,6 +125,14 @@ export class ViewRenderer {
     this.roots = ([] as string[]).concat(path).map(dir => resolve(dir));
   }
 
+  /**
+   * Sets a value every template gets, like Express' `app.locals` (see
+   * `app.setLocal()`), under `res.locals` and the data the handler returns.
+   */
+  public setLocal(key: string, value: any) {
+    this.locals[key] = value;
+  }
+
   public isConfigured() {
     return this.engineName !== undefined;
   }
@@ -137,7 +146,7 @@ export class ViewRenderer {
         this.cache.set(key, renderFn);
       }
     }
-    return renderFn({ ...this.defaultContext, ...data });
+    return renderFn({ ...this.defaultContext, ...this.locals, ...data });
   }
 
   private async createRenderFn(view: string): Promise<RenderFn> {
