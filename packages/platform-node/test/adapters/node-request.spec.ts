@@ -1007,21 +1007,32 @@ describe('NodeResponse', () => {
     );
 
     it.each([
-      { kind: 'a string', body: '<p>Hello</p>', type: 'text/html' },
+      {
+        kind: 'a string',
+        body: '<p>Hello</p>',
+        type: 'text/html',
+        sent: 'text/html; charset=utf-8',
+      },
       {
         kind: 'an object',
         body: { title: 'Oops' },
         type: 'application/problem+json',
+        sent: 'application/problem+json',
       },
-      { kind: 'a Buffer', body: Buffer.from('GIF89a'), type: 'image/gif' },
+      {
+        kind: 'a Buffer',
+        body: Buffer.from('GIF89a'),
+        type: 'image/gif',
+        sent: 'image/gif',
+      },
     ])(
       'should keep a Content-Type set earlier for $kind',
-      async ({ body, type }) => {
+      async ({ body, type, sent }) => {
         const response = await respond((req, res) =>
           res.set('Content-Type', type).send(body),
         );
 
-        expect(response.headers['content-type']).toBe(type);
+        expect(response.headers['content-type']).toBe(sent);
       },
     );
 
@@ -1173,6 +1184,57 @@ describe('NodeResponse', () => {
 
       expect(values).toEqual(['3', ['1', 'two']]);
     });
+
+    it.each(['set', 'header'] as const)(
+      '%s() should add the charset to a Content-Type, as Express does',
+      async method => {
+        const response = await respond((req, res) => {
+          res[method]('Content-Type', 'text/html').end();
+        });
+
+        expect(response.headers['content-type']).toBe(
+          'text/html; charset=utf-8',
+        );
+      },
+    );
+
+    it('should add the charset to a Content-Type given in an object', async () => {
+      const response = await respond((req, res) => {
+        res.set({ 'content-type': 'application/json' }).end();
+      });
+
+      expect(response.headers['content-type']).toBe(
+        'application/json; charset=utf-8',
+      );
+    });
+
+    it.each([
+      ['text/html; charset=latin1', 'text/html; charset=latin1'],
+      ['application/vnd.api+json', 'application/vnd.api+json'],
+      ['image/png', 'image/png'],
+      ['unknown', 'unknown'],
+    ])(
+      'should leave the Content-Type "%s" as "%s"',
+      async (value, contentType) => {
+        const response = await respond((req, res) => {
+          res.set('Content-Type', value).end();
+        });
+
+        expect(response.headers['content-type']).toBe(contentType);
+      },
+    );
+
+    it('should reject an array as the Content-Type, as Express does', async () => {
+      const error = await inspect((req, res) => {
+        try {
+          res.set('Content-Type', ['text/html', 'text/plain']);
+        } catch (err) {
+          return err instanceof TypeError ? err.message : 'wrong error';
+        }
+      });
+
+      expect(error).toBe('Content-Type cannot be set to an Array');
+    });
   });
 
   describe('get()', () => {
@@ -1223,6 +1285,19 @@ describe('NodeResponse', () => {
         const response = await respond((req, res) => res.type(type).end());
 
         expect(response.headers['content-type']).toBe(type);
+      },
+    );
+
+    it.each([
+      ['text/html', 'text/html; charset=utf-8'],
+      ['application/json', 'application/json; charset=utf-8'],
+      ['text/html; charset=latin1', 'text/html; charset=latin1'],
+    ])(
+      'should add the charset to the full MIME type "%s" as Express does',
+      async (type, contentType) => {
+        const response = await respond((req, res) => res.type(type).end());
+
+        expect(response.headers['content-type']).toBe(contentType);
       },
     );
 

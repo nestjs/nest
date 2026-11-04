@@ -69,6 +69,13 @@ describe.each(adapters('express', 'node'))(
       expect(res.text ?? '').toBe('');
     });
 
+    it('should add the charset to a Content-Type set with @Header()', async () => {
+      const res = await request(app.getHttpServer()).get('/html-header');
+
+      expect(res.headers['content-type']).toBe('text/html; charset=utf-8');
+      expect(res.text).toBe('<p>zażółć</p>');
+    });
+
     it.each([
       ['/send-number', '42'],
       ['/send-boolean', 'true'],
