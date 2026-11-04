@@ -130,9 +130,17 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     });
   }
 
-  public close() {
-    this.mqttClient && this.mqttClient.end();
+  public async close() {
+    // Reset first, so that the status update of the client being closed is not
+    // taken for the connection that gave up, and a listener registered right
+    // after close() waits for the next listen() instead of attaching to it
+    const mqttClient = this.mqttClient;
+    this.mqttClient = null;
     this.pendingEventListeners = [];
+    // Awaited, so that a close() the caller awaits really has the connection
+    // closed, as with the other transports: mqtt closes it on a later tick and
+    // the broker still delivers to it until then
+    await mqttClient?.endAsync();
   }
 
   public async createMqttClient(): Promise<MqttClient> {
@@ -343,7 +351,8 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
         return;
       }
       if (++this.connectionAttempts === maxConnectionAttempts) {
-        this.close();
+        // The failure that is reported is the connection one, not a close one
+        this.close().catch(closeErr => this.logger.error(closeErr));
         callback?.(err ?? new Error(CONNECTION_FAILED_MESSAGE));
       }
     });
