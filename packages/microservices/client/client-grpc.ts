@@ -21,18 +21,12 @@ const GRPC_CANCELLED = 'Cancelled';
 
 /**
  * Values `@grpc/grpc-js` reads after the request: metadata, then call
- * options. Nil slots are removed. A nil is not a slot grpc-js skips: one
- * before a `CallOptions` object hides that object, and one in front of the
- * unary-response callback is stored as `CallOptions` and then read as
- * `options.interceptors`.
+ * options. It does not skip a nil value: one before a `CallOptions` object
+ * hides that object, and one in front of the unary-response callback is
+ * taken as the call options and then read as `options.interceptors`.
  */
 function getArgumentsAfterRequest(hookedArgs: any[]): any[] {
-  const rest = hookedArgs.slice(1);
-  const present = rest.filter(value => !isNil(value));
-  if (present.length === 0) {
-    return [rest[0]];
-  }
-  return present;
+  return hookedArgs.slice(1).filter(value => !isNil(value));
 }
 
 // To enable type safety for gRPC. This cant be uncommented by default
@@ -276,12 +270,11 @@ export class ClientGrpcProxy
               observer.complete();
             },
           ];
-          const afterRequest = getArgumentsAfterRequest(
-            this.applyDispatchHook(client, methodName, args),
+          callArgs.unshift(
+            ...getArgumentsAfterRequest(
+              this.applyDispatchHook(client, methodName, args),
+            ),
           );
-          if (afterRequest.length > 1 || !isNil(afterRequest[0])) {
-            callArgs.unshift(...afterRequest);
-          }
           const call = client[methodName](...callArgs);
 
           const upstreamSubscription: Subscription =
