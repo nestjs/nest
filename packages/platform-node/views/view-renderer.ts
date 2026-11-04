@@ -41,7 +41,7 @@ export interface NodeViewOptions {
    */
   viewExt?: string;
   /**
-   * Data available to every template, like Express' `app.locals`.
+   * Data available to every template; `app.setLocal()` values win over it.
    */
   defaultContext?: Record<string, any>;
   /**

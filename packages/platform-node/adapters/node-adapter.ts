@@ -354,7 +354,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
       );
     }
     // As with Express' res.render(): the data the handler returns wins over
-    // res.locals, which wins over the engine's defaultContext
+    // res.locals, then app.setLocal() values, then the engine's defaultContext
     const html = await this.views.render(view, {
       ...response.locals,
       ...options,
