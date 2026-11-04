@@ -2660,6 +2660,18 @@ describe('NodeAdapter', () => {
         expect(res.text).toBe('http 127.0.0.1');
       });
 
+      it('should link each request to its response, as over HTTP/1', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, String(req.res === res)),
+        );
+
+        const res = await h2Request(port, { ':path': '/' });
+
+        expect(res.text).toBe('true');
+      });
+
       it('should read the host name from :authority before the Host header', async () => {
         adapter = new NodeAdapter({ http2: true });
         const port = await startServer();
