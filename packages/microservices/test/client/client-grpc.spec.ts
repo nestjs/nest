@@ -613,6 +613,157 @@ describe('ClientGrpcProxy', () => {
       expect(metadata.get('x-request-id')).toEqual(['trace-1']);
       expect(callback).toBeInstanceOf(Function);
     });
+
+    describe('call options on request stream calls', () => {
+      const options = { deadline: Date.now() + 1000 };
+      const clientStreamMethod = () =>
+        Object.assign(
+          vi.fn(() => ({ write: vi.fn(), end: vi.fn() })),
+          { path, requestStream: true },
+        );
+      const bidiMethod = () =>
+        Object.assign(
+          vi.fn(() => ({
+            on: vi.fn(),
+            write: vi.fn(),
+            end: vi.fn(),
+            cancel: vi.fn(),
+            finished: false,
+          })),
+          { path, requestStream: true, responseStream: true },
+        );
+      const call = (method: ReturnType<typeof vi.fn>, ...args: unknown[]) =>
+        client
+          .createServiceMethod(
+            { call: method },
+            'call',
+          )(...args)
+          .subscribe();
+      // The arguments a client stream call got, without its trailing callback
+      const valuesBeforeCallback = (method: ReturnType<typeof vi.fn>) => {
+        const args = method.mock.calls[0] as unknown[];
+        expect(args[args.length - 1]).toBeInstanceOf(Function);
+        return args.slice(0, -1);
+      };
+
+      it('should keep them when the hook inserts metadata', () => {
+        client.setOnDispatchHook(attachTraceId);
+        const clientStream = clientStreamMethod();
+        const bidi = bidiMethod();
+
+        call(clientStream, new Subject(), options);
+        call(bidi, new Subject(), options);
+
+        for (const [metadata, callOptions] of [
+          valuesBeforeCallback(clientStream),
+          bidi.mock.calls[0] as unknown[],
+        ] as [Metadata, unknown][]) {
+          expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+          expect(callOptions).toBe(options);
+        }
+      });
+
+      it("should keep them after the caller's metadata", () => {
+        const callerMetadata = new Metadata();
+        const clientStream = clientStreamMethod();
+        const bidi = bidiMethod();
+
+        call(clientStream, new Subject(), callerMetadata, options);
+        call(bidi, new Subject(), callerMetadata, options);
+
+        expect(valuesBeforeCallback(clientStream)).toEqual([
+          callerMetadata,
+          options,
+        ]);
+        expect(bidi.mock.calls[0]).toEqual([callerMetadata, options]);
+      });
+
+      it("should keep them after the caller's metadata the hook merges into", () => {
+        client.setOnDispatchHook(attachTraceId);
+        const callerMetadata = new Metadata();
+        callerMetadata.set('x-request-id', 'own-id');
+        const clientStream = clientStreamMethod();
+        const bidi = bidiMethod();
+
+        call(clientStream, new Subject(), callerMetadata, options);
+        call(bidi, new Subject(), callerMetadata, options);
+
+        for (const [metadata, callOptions] of [
+          valuesBeforeCallback(clientStream),
+          bidi.mock.calls[0] as unknown[],
+        ] as [Metadata, unknown][]) {
+          expect(metadata).not.toBe(callerMetadata);
+          expect(metadata.get('x-request-id')).toEqual(['own-id']);
+          expect(metadata.get('tenant')).toEqual(['acme']);
+          expect(callOptions).toBe(options);
+        }
+      });
+
+      it('should keep them in place of the metadata without a hook', () => {
+        const clientStream = clientStreamMethod();
+        const bidi = bidiMethod();
+
+        call(clientStream, new Subject(), options);
+        call(bidi, new Subject(), options);
+
+        expect(valuesBeforeCallback(clientStream)).toEqual([options]);
+        expect(bidi.mock.calls[0]).toEqual([options]);
+      });
+
+      it('should leave out nil values, which grpc-js does not skip', () => {
+        const callerMetadata = new Metadata();
+        for (const missing of [undefined, null]) {
+          const clientStream = clientStreamMethod();
+          const bidi = bidiMethod();
+
+          call(clientStream, new Subject(), missing, options);
+          call(bidi, new Subject(), missing, options);
+
+          expect(valuesBeforeCallback(clientStream)).toEqual([options]);
+          expect(bidi.mock.calls[0]).toEqual([options]);
+        }
+        const clientStream = clientStreamMethod();
+        const bidi = bidiMethod();
+        call(clientStream, new Subject(), callerMetadata, undefined, options);
+        call(bidi, new Subject(), callerMetadata, undefined, options);
+        expect(valuesBeforeCallback(clientStream)).toEqual([
+          callerMetadata,
+          options,
+        ]);
+        expect(bidi.mock.calls[0]).toEqual([callerMetadata, options]);
+
+        const withoutOptions = clientStreamMethod();
+        call(withoutOptions, new Subject(), callerMetadata, undefined);
+        expect(valuesBeforeCallback(withoutOptions)).toEqual([callerMetadata]);
+      });
+
+      it('should pass nothing else when only the upstream is given', () => {
+        const clientStream = clientStreamMethod();
+        const bidi = bidiMethod();
+
+        call(clientStream, new Subject());
+        call(bidi, new Subject());
+
+        expect(valuesBeforeCallback(clientStream)).toEqual([]);
+        expect(bidi.mock.calls[0]).toEqual([]);
+      });
+    });
+
+    it('should keep call options on a response stream call when the hook inserts metadata', () => {
+      client.setOnDispatchHook(attachTraceId);
+      const options = { deadline: Date.now() + 1000 };
+      const serverStream = vi.fn(() => ({ on: vi.fn() }));
+      Object.assign(serverStream, { path, responseStream: true });
+
+      client
+        .createServiceMethod({ list: serverStream }, 'list')({ id: 1 }, options)
+        .subscribe();
+
+      const [data, metadata, callOptions] = serverStream.mock.calls[0] as any[];
+      expect(data).toEqual({ id: 1 });
+      expect(metadata.get('x-request-id')).toEqual(['trace-1']);
+      expect(callOptions).toBe(options);
+    });
   });
 
   describe('createClients', () => {

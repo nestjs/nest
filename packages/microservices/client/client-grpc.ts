@@ -19,6 +19,16 @@ import {
 
 const GRPC_CANCELLED = 'Cancelled';
 
+/**
+ * Values `@grpc/grpc-js` reads after the request: metadata, then call
+ * options. It does not skip a nil value: one before a `CallOptions` object
+ * hides that object, and one in front of the unary-response callback is
+ * taken as the call options and then read as `options.interceptors`.
+ */
+function getArgumentsAfterRequest(hookedArgs: any[]): any[] {
+  return hookedArgs.slice(1).filter(value => !isNil(value));
+}
+
 // To enable type safety for gRPC. This cant be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
 // Otherwise, TypeScript would fail to compile the code.
@@ -181,14 +191,13 @@ export class ClientGrpcProxy
 
         const callArgs = this.applyDispatchHook(client, methodName, args);
         const upstreamSubjectOrData = callArgs[0];
-        const maybeMetadata = callArgs[1];
 
         const isUpstreamSubject =
           upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
 
         const call =
           isRequestStream && isUpstreamSubject
-            ? client![methodName](maybeMetadata)
+            ? client![methodName](...getArgumentsAfterRequest(callArgs))
             : client![methodName](...callArgs);
 
         if (isRequestStream && isUpstreamSubject) {
@@ -261,14 +270,11 @@ export class ClientGrpcProxy
               observer.complete();
             },
           ];
-          const maybeMetadata = this.applyDispatchHook(
-            client,
-            methodName,
-            args,
-          )[1];
-          if (maybeMetadata) {
-            callArgs.unshift(maybeMetadata);
-          }
+          callArgs.unshift(
+            ...getArgumentsAfterRequest(
+              this.applyDispatchHook(client, methodName, args),
+            ),
+          );
           const call = client[methodName](...callArgs);
 
           const upstreamSubscription: Subscription =
