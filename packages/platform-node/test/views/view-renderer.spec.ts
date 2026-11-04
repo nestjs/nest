@@ -2,7 +2,7 @@ import ejs from 'ejs';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import handlebars from 'handlebars';
 import { tmpdir } from 'os';
-import { dirname, join } from 'path';
+import { basename, dirname, join } from 'path';
 import { ViewRenderer } from '../../views/view-renderer.js';
 
 type Callback = (err: unknown, html?: string) => void;
@@ -165,6 +165,63 @@ describe('ViewRenderer', () => {
         strict: true,
         filename: file,
       });
+    });
+
+    it('should run a compile() template with the engine as "this" and the file, as Eta expects', async () => {
+      const file = write('views/index.eta', 'source');
+      const engine = {
+        greeting: 'hello',
+        compile: (source: string) =>
+          function (
+            this: { greeting: string },
+            data: { name: string },
+            options: { filepath: string },
+          ) {
+            return `${this.greeting} ${data.name} ${source} ${options.filepath}`;
+          },
+      };
+      renderer.setEngine({ engine: { eta: engine }, root: views });
+
+      await expect(renderer.render('index', { name: 'a' })).resolves.toBe(
+        `hello a source ${file}`,
+      );
+    });
+
+    it('should use the promise of an engine that ignores the callback, as liquidjs does', async () => {
+      write('views/index.liquid', 'source');
+      const engine = {
+        renderFile: vi.fn(async (file: string) => basename(file)),
+      };
+      renderer.setEngine({ engine: { liquid: engine }, root: views });
+
+      await expect(renderer.render('index')).resolves.toBe('index.liquid');
+    });
+
+    it('should reject when the promise of such an engine rejects', async () => {
+      write('views/index.liquid', 'source');
+      const error = new Error('parse error');
+      const engine = { renderFile: vi.fn(() => Promise.reject(error)) };
+      renderer.setEngine({ engine: { liquid: engine }, root: views });
+
+      await expect(renderer.render('index')).rejects.toBe(error);
+    });
+
+    it('should use the html an engine returns without calling back, as art-template does', async () => {
+      write('views/index.art', 'source');
+      const engine = vi.fn((file: string) => basename(file));
+      renderer.setEngine({ engine: { art: engine }, root: views });
+
+      await expect(renderer.render('index')).resolves.toBe('index.art');
+    });
+
+    it('should wait for the callback of an engine whose promise settles first', async () => {
+      write('views/index.late', 'source');
+      const engine = async (file: string, data: object, callback: Callback) => {
+        setTimeout(() => callback(null, 'late'));
+      };
+      renderer.setEngine({ engine: { late: engine }, root: views });
+
+      await expect(renderer.render('index')).resolves.toBe('late');
     });
 
     it('should call renderFile() with the file, the data and a callback', async () => {
