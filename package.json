@@ -107,8 +107,8 @@
     "@types/node": "26.6.6",
     "@types/supertest": "7.2.1",
     "@types/ws": "8.18.2",
-    "@vitest/coverage-istanbul": "5.0.5",
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-istanbul": "5.1.0",
+    "@vitest/coverage-v8": "5.1.0",
     "amqp-connection-manager": "5.0.1",
     "amqplib": "2.2.1",
     "body-parser": "2.4.0",
@@ -157,7 +157,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.72.1",
     "vite": "8.3.5",
-    "vitest": "5.0.5",
+    "vitest": "5.1.0",
     "ws": "8.22.0"
   },
   "engines": {
