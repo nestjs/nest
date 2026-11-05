@@ -160,8 +160,13 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           // passed to forRoutes(), or RequestMethod.ALL) also serves the
           // requests of a route declared for a specific method, while a
           // specific-method parameterized route covers none of the methods
-          // an all-methods route is mounted on
-          (route.method === item.method || isRequestMethodAll(item.method)) &&
+          // an all-methods route is mounted on. A plain string is only covered
+          // by another one: Express and the node adapter mount it with use(),
+          // which also matches paths below it, while RequestMethod.ALL only
+          // matches its own pattern
+          (route.method === item.method ||
+            (isRequestMethodAll(item.method) &&
+              (route.method as number) !== -1)) &&
           mountPaths.every(path =>
             item.regexes.some(regex => regex.test(path)),
           );

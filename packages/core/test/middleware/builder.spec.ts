@@ -256,6 +256,37 @@ describe('MiddlewareBuilder', () => {
           ]);
         });
 
+        it('should not remove a plain string covered only by a parameterized RequestMethod.ALL route', () => {
+          // RequestMethod.ALL matches "cats/me" but not "cats/me/settings",
+          // while a plain string is mounted with use() and matches both
+          const routes = [
+            { path: '/cats/:id', method: RequestMethod.ALL },
+            { path: '/cats/me', method: -1 as any },
+          ];
+          configProxy.forRoutes(...routes);
+
+          expect(builder.build()[0].forRoutes).toEqual(routes);
+        });
+
+        it('should remove a plain string covered by a parameterized plain string', () => {
+          configProxy.forRoutes('cats/:id', 'cats/me');
+
+          expect(builder.build()[0].forRoutes).toEqual([
+            { path: '/cats/:id', method: -1 },
+          ]);
+        });
+
+        it('should remove a route of a specific method covered by a parameterized RequestMethod.ALL route', () => {
+          configProxy.forRoutes(
+            { path: 'cats/:id', method: RequestMethod.ALL },
+            { path: 'cats/me', method: RequestMethod.GET },
+          );
+
+          expect(builder.build()[0].forRoutes).toEqual([
+            { path: '/cats/:id', method: RequestMethod.ALL },
+          ]);
+        });
+
         it('should not remove an all-methods route covered by a parameterized one of a specific method', () => {
           // The parameterized route only serves GET requests, while the
           // concrete route is mounted for every method: dropping it would
