@@ -903,6 +903,18 @@ describe('NodeResponse', () => {
       expect(response.body).toHaveLength(0);
     });
 
+    it('should leave out the Content-Length when the Transfer-Encoding is set', async () => {
+      const response = await respond((req, res) => {
+        // A "Transfer-Encoding" forbids a "Content-Length", as with send()
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.redirect(target);
+      });
+
+      expect(response.headers['transfer-encoding']).toBe('chunked');
+      expect(response.headers['content-length']).toBeUndefined();
+      expect(response.body.toString()).toBe(`Found. Redirecting to ${encoded}`);
+    });
+
     it.each([
       ['Origin', 'Origin, Accept'],
       ['accept', 'accept'],
