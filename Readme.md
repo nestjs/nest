@@ -23,9 +23,107 @@
 
 ## Description
 
-Nest is a framework for building efficient, scalable <a href="https://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).
+Nest is a TypeScript framework for building backends on [Node.js](https://nodejs.org), from a small API in one file to a large system with many teams. It gives an application modules, dependency injection, and one place each for validation, authentication and error handling, so a project keeps its shape as it grows.
 
-<p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, but also provides compatibility with a wide range of other libraries, like <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, allowing for easy use of the myriad of third-party plugins which are available.</p>
+It runs on [Express](https://github.com/expressjs/express), [Fastify](https://github.com/fastify/fastify) or Node's own `node:http`, and its first-party packages cover most of what a backend needs, so you can start small and add them as you go.
+
+## Quick start
+
+Create a project with the CLI:
+
+```bash
+npx @nestjs/cli new my-api --package-manager npm
+cd my-api
+npm run start:dev
+```
+
+Or start from a single file, with no scaffolding and no build step:
+
+```bash
+npm init -y && npm pkg set type=module
+npm i @nestjs/core @nestjs/common @nestjs/platform-express reflect-metadata rxjs zod
+npm i -D tsx typescript @types/node
+echo '{ "compilerOptions": { "experimentalDecorators": true, "target": "es2023", "module": "nodenext" } }' > tsconfig.json
+```
+
+```typescript
+// main.ts: run it with `npx tsx main.ts`
+import {
+  Body,
+  Controller,
+  Get,
+  Module,
+  Post,
+  StandardSchemaValidationPipe,
+} from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { z } from 'zod';
+
+const createTodoSchema = z.object({ title: z.string().min(1) });
+type CreateTodo = z.infer<typeof createTodoSchema>;
+
+@Controller('todos')
+class TodosController {
+  private readonly todos: (CreateTodo & { id: number })[] = [];
+
+  @Get()
+  findAll() {
+    return this.todos;
+  }
+
+  @Post()
+  create(@Body({ schema: createTodoSchema }) todo: CreateTodo) {
+    const created = { id: this.todos.length + 1, ...todo };
+    this.todos.push(created);
+    return created;
+  }
+}
+
+@Module({ controllers: [TodosController] })
+class AppModule {}
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new StandardSchemaValidationPipe());
+  await app.listen(process.env.PORT ?? 3000);
+}
+
+void bootstrap();
+```
+
+`tsx` emits no decorator metadata, so inject a provider there with `@Inject(TodosService)` in the constructor. Projects from `nest new` compile with metadata, and the parameter's type is enough.
+
+## First-party packages
+
+| What you need | Package |
+| --- | --- |
+| Language models, tools as provider methods, agents, streaming to the browser | [`@nestjs/ai`](https://docs.nestjs.com/ai/overview) |
+| MCP servers | [`@nestjs/mcp`](https://docs.nestjs.com/mcp/overview) |
+| Sign-in, sessions, tokens, two-factor, API keys | [`@nestjs/authentication`](https://docs.nestjs.com/security/authentication) |
+| Permissions | [`@nestjs/authorization`](https://docs.nestjs.com/security/authorization) |
+| Email | [`@nestjs/mail`](https://docs.nestjs.com/application/mail) |
+| Files, S3 included | [`@nestjs/storage`](https://docs.nestjs.com/application/file-storage) |
+| Translations | [`@nestjs/i18n`](https://docs.nestjs.com/application/i18n) |
+| Drizzle | [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle) |
+| Retries, timeouts, circuit breakers | [`@nestjs/resilience`](https://docs.nestjs.com/reliability/resilience) |
+| Idempotency keys | [`@nestjs/idempotency`](https://docs.nestjs.com/reliability/idempotency) |
+| Transactional outbox | [`@nestjs/outbox`](https://docs.nestjs.com/reliability/outbox) |
+| Webhooks, sending and receiving | [`@nestjs/webhooks`](https://docs.nestjs.com/http/webhooks) |
+| Running a job on one instance, locks | [`@nestjs/locks`](https://docs.nestjs.com/reliability/locks) |
+| Processes that take days | [`@nestjs/workflows`](https://docs.nestjs.com/reliability/workflows) |
+| Queues and scheduled jobs | [`@nestjs/bullmq`](https://docs.nestjs.com/application/queues), [`@nestjs/schedule`](https://docs.nestjs.com/application/task-scheduling) |
+| GraphQL, WebSockets, microservices | [GraphQL](https://docs.nestjs.com/graphql/quick-start), [gateways](https://docs.nestjs.com/websockets/gateways), [microservices](https://docs.nestjs.com/microservices/basics) |
+| OpenAPI | [`@nestjs/swagger`](https://docs.nestjs.com/openapi/introduction) |
+
+## Moving to Nest
+
+- [From Express](https://docs.nestjs.com/recipes/express-migration), one route at a time or all at once.
+- [From Fastify](https://docs.nestjs.com/recipes/fastify-migration), keeping your plugins.
+- [As the backend of a Next.js app](https://docs.nestjs.com/recipes/nextjs), moving route handlers across one by one.
+
+## Using a coding agent
+
+The whole documentation is available as markdown, with an index at [docs.nestjs.com/llms.txt](https://docs.nestjs.com/llms.txt). Projects from `nest new` come with an `AGENTS.md` that lists the packages above, since most models were trained before they existed.
 
 ## Philosophy
 
