@@ -50,9 +50,6 @@ export default defineConfig({
     include: ['integration/**/*.spec.ts'],
     exclude: [
       '**/node_modules/**',
-      // Two copies of `graphql` load: "Cannot use GraphQLSchema from another
-      // module or realm".
-      'integration/graphql-code-first/**',
       // The serialized graph gains websocket entrypoints the fixture lacks.
       'integration/inspector/**',
       // `@nestjs/core/repl/native-functions` does not resolve under `exports`.
@@ -63,8 +60,16 @@ export default defineConfig({
         // Transform the @nestjs/* packages that live in node_modules so their
         // `@nestjs/core` imports reach the same TypeScript sources as the
         // tests; loaded natively they get the compiled `.js`, a second copy
-        // of every class (ModuleRef, HttpAdapterHost).
-        inline: [/@nestjs\/(apollo|graphql|mongoose|typeorm)/],
+        // of every class (ModuleRef, HttpAdapterHost). `graphql` and the
+        // packages built on it are transformed too: Vite resolves the
+        // "development" build of `graphql` that a transformed package imports,
+        // and Node the default one, so a schema built by one fails the
+        // `instanceof` checks of the other ("Cannot use GraphQLSchema from
+        // another module or realm").
+        inline: [
+          /@nestjs\/(apollo|graphql|mongoose|typeorm)/,
+          /node_modules\/(graphql|@graphql-tools|@apollo)\//,
+        ],
       },
     },
     testTimeout: 30_000,
