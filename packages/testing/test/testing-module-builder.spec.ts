@@ -185,6 +185,54 @@ describe('TestingModuleBuilder', () => {
       expect(module.get('DATABASE_CONNECTION')).toBe('mock-db');
     });
 
+    it('should support overriding a provider with useValue undefined', async () => {
+      const constructed = vi.fn();
+
+      @Injectable()
+      class Foo {
+        constructor() {
+          constructed();
+        }
+      }
+
+      @ModuleDecorator({ providers: [Foo] })
+      class TestModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestModule],
+      })
+        .overrideProvider(Foo)
+        .useValue(undefined)
+        .compile();
+
+      expect(module.get(Foo)).toBeUndefined();
+      expect(constructed).not.toHaveBeenCalled();
+    });
+
+    it('should support overriding a provider with useValue null', async () => {
+      const constructed = vi.fn();
+
+      @Injectable()
+      class Foo {
+        constructor() {
+          constructed();
+        }
+      }
+
+      @ModuleDecorator({ providers: [Foo] })
+      class TestModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestModule],
+      })
+        .overrideProvider(Foo)
+        .useValue(null)
+        .compile();
+
+      expect(module.get(Foo)).toBeNull();
+      expect(constructed).not.toHaveBeenCalled();
+    });
+
     it('should support overriding a provider with useClass', async () => {
       @ModuleDecorator({
         providers: [{ provide: 'SERVICE', useClass: class OriginalService {} }],

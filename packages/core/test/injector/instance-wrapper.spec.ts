@@ -1214,6 +1214,19 @@ describe('InstanceWrapper', () => {
           'value',
         );
       });
+
+      it('should provide undefined when the value is undefined', () => {
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        wrapper.mergeWith({
+          useValue: undefined,
+          provide: 'token',
+        });
+
+        const host = wrapper.getInstanceByContextId(STATIC_CONTEXT);
+        expect(host.instance).toBeUndefined();
+        expect(host.isResolved).toBe(true);
+        expect(wrapper.metatype).toBeNull();
+      });
     });
 
     describe('when provider is a ClassProvider', () => {
