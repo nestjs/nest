@@ -589,6 +589,113 @@ describe('ServerMqtt', () => {
       expect(getPublisherSpy).not.toHaveBeenCalled();
       expect(error).toBeInstanceOf(InvalidPacketIdException);
     });
+    describe('and the server receives its own reply', () => {
+      // The broker hands the server the reply it published whenever one of its
+      // filters (here "orders/#") also matches the reply topic
+      const replyTopic = 'orders/1/reply';
+      const reply = Buffer.from(
+        JSON.stringify({ id, response: data, isDisposed: true }),
+      );
+
+      it.each([
+        ['a message handler', false],
+        ['an event handler', true],
+      ])('should not dispatch it to %s of "orders/#"', async (_, isEvent) => {
+        const handler = vi.fn().mockResolvedValue(data);
+        server.addHandler('orders/#', handler, isEvent);
+
+        await server.handleMessage(replyTopic, reply, null);
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+      it('should not dispatch it to a shared "orders/#" subscription', async () => {
+        const handler = vi.fn().mockResolvedValue(data);
+        server.addHandler('$share/group/orders/#', handler, false);
+
+        await server.handleMessage(replyTopic, reply, null);
+
+        expect(handler).not.toHaveBeenCalled();
+      });
+      it('should still dispatch a request to "orders/#"', async () => {
+        const handler = vi.fn().mockResolvedValue(data);
+        server.addHandler('orders/#', handler, false);
+
+        await server.handleMessage(
+          'orders/1',
+          Buffer.from(JSON.stringify({ id, pattern: 'orders/1', data })),
+          null,
+        );
+
+        expect(handler).toHaveBeenCalledExactlyOnceWith(
+          data,
+          expect.any(MqttContext),
+        );
+      });
+      it('should still dispatch a request published to a reply topic', async () => {
+        const handler = vi.fn().mockResolvedValue(data);
+        server.addHandler('orders/#', handler, false);
+
+        await server.handleMessage(
+          replyTopic,
+          Buffer.from(JSON.stringify({ id, pattern: replyTopic, data })),
+          null,
+        );
+
+        expect(handler).toHaveBeenCalledTimes(1);
+      });
+      it.each(['orders/+/reply', 'orders/1/reply', '+/+/reply'])(
+        'should dispatch it to a handler on the reply filter "%s"',
+        async filter => {
+          const handler = vi.fn().mockResolvedValue(undefined);
+          server.addHandler(filter, handler, true);
+
+          await server.handleMessage(replyTopic, reply, null);
+
+          expect(handler).toHaveBeenCalledTimes(1);
+        },
+      );
+      it('should dispatch it to a shared subscription on a reply filter', async () => {
+        const handler = vi.fn().mockResolvedValue(undefined);
+        server.addHandler('$share/group/orders/+/reply', handler, true);
+
+        await server.handleMessage(replyTopic, reply, null);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+      });
+      it('should not dispatch it to "users/#" because "orders/+/reply" has a handler', async () => {
+        const users = vi.fn();
+        server.addHandler('users/#', users, false);
+        server.addHandler('orders/+/reply', vi.fn(), true);
+
+        await server.handleMessage('users/1/reply', reply, null);
+
+        expect(users).not.toHaveBeenCalled();
+      });
+      it('should dispatch an event without an id published to a reply topic', async () => {
+        const handler = vi.fn().mockResolvedValue(undefined);
+        server.addHandler('orders/#', handler, true);
+
+        await server.handleMessage(
+          replyTopic,
+          Buffer.from(JSON.stringify({ data })),
+          null,
+        );
+
+        expect(handler).toHaveBeenCalledTimes(1);
+      });
+      it('should not dispatch it to "orders/+" nor to the exact topic of the request', async () => {
+        const plus = vi.fn();
+        const exact = vi.fn();
+        server.addHandler('orders/+', plus, false);
+        server.addHandler('orders/1', exact, false);
+
+        await server.handleMessage(replyTopic, reply, null);
+
+        expect(plus).not.toHaveBeenCalled();
+        expect(exact).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('processing end hook', () => {
