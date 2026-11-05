@@ -549,7 +549,7 @@ export class NodeResponse<
     this.statusCode = statusCode;
     this.setHeader('Location', location);
     appendVary(this, 'Accept');
-    // A "Transfer-Encoding" forbids a "Content-Length", as Express knows
+    // A "Transfer-Encoding" forbids a "Content-Length" (RFC 9112)
     if (!this.hasHeader('Transfer-Encoding')) {
       this.setHeader('Content-Length', Buffer.byteLength(body));
     }
