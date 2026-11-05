@@ -125,3 +125,45 @@ describe('Fastify FileSend', () => {
     await app.close();
   });
 });
+
+describe('Fastify static assets', () => {
+  let app: NestFastifyApplication;
+
+  beforeEach(async () => {
+    const modRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = modRef.createNestApplication(new FastifyAdapter());
+    app.useStaticAssets({
+      root: join(process.cwd(), 'integration/send-files/src'),
+      prefix: '/static/',
+    });
+    await app.init();
+  });
+
+  it('should serve a file', async () => {
+    const { statusCode } = await app.inject({
+      method: 'GET',
+      url: '/static/non-file.ts',
+    });
+    expect(statusCode).toBe(200);
+  });
+
+  /**
+   * The plugin refuses these paths, as plain Fastify does with a 403. The
+   * answer must not be a 500, which is for a server fault.
+   */
+  it.each(['/static/a%00', '/static/%00', '/static/%5Ca.txt'])(
+    'should answer 403 for the path %s that the plugin refuses',
+    async url => {
+      const { statusCode, json } = await app.inject({ method: 'GET', url });
+      expect(statusCode).toBe(403);
+      expect(json()).toEqual({ statusCode: 403, message: 'Forbidden' });
+    },
+  );
+
+  afterEach(async () => {
+    await app.close();
+  });
+});
