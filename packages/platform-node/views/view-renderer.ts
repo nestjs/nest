@@ -1,5 +1,14 @@
 import { readFile, stat } from 'fs/promises';
-import { extname, isAbsolute, join, parse, relative, resolve, sep } from 'path';
+import {
+  basename,
+  extname,
+  isAbsolute,
+  join,
+  parse,
+  relative,
+  resolve,
+  sep,
+} from 'path';
 
 /**
  * Template engine configuration for `app.setViewEngine()`, shaped like the
@@ -152,9 +161,7 @@ export class ViewRenderer {
   private async createRenderFn(view: string): Promise<RenderFn> {
     const { name, module } = await this.getEngine();
     const extension = this.viewExt ?? DEFAULT_EXTENSIONS[name] ?? name;
-    const file = await this.resolveFile(
-      extname(view) ? view : `${view}.${extension}`,
-    );
+    const file = await this.resolveFile(view, extension);
     // Express-style engines take the data and the options in one object.
     // "settings" is where Express puts application settings and where ejs
     // reads its options from ("view options"): it is set last, so data derived
@@ -220,12 +227,18 @@ export class ViewRenderer {
     return this.engine;
   }
 
-  private async resolveFile(view: string): Promise<string> {
-    const { dir, name, ext } = parse(view);
+  private async resolveFile(view: string, extension: string): Promise<string> {
+    const ext = extname(view) || `.${extension}`;
+    const fileName = extname(view) ? view : `${view}${ext}`;
+    const { dir, base } = parse(fileName);
     // "users" is "users.ext", then "users/index.ext", as with Express. Unlike
     // Express, which tries both in each directory in turn, a file in any
-    // directory wins over an index
-    for (const candidate of [view, join(dir, name, `index${ext}`)]) {
+    // directory wins over an index. For "users/", base is only the extension,
+    // so the index is "users/index.ext"
+    for (const candidate of [
+      fileName,
+      join(dir, basename(base, ext), `index${ext}`),
+    ]) {
       for (const root of this.roots) {
         const file = resolve(root, candidate);
         // Never resolve outside the views directories ("../", absolute paths)
