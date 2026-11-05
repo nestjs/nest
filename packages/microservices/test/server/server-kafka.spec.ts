@@ -425,6 +425,13 @@ describe('ServerKafka', () => {
       expect(server.getHandlerByPattern(topic)).toBe(handler);
     });
 
+    it('should return the handler of a string pattern that reads as json', () => {
+      const handler = vi.fn();
+      server.addHandler('true', handler);
+
+      expect(server.getHandlerByPattern('true')).toBe(handler);
+    });
+
     it('should return null when topic does not match a regex pattern', () => {
       const handler = vi.fn();
       server.addHandler(/another\..*/, handler);
