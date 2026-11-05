@@ -916,6 +916,25 @@ describe('Logger', () => {
       );
     });
 
+    it('should not mutate the options object passed to the constructor', () => {
+      const options = { json: true };
+      new ConsoleLogger(options);
+
+      expect(options).toEqual({ json: true });
+    });
+
+    it('should not share log levels between loggers created from one options object', () => {
+      const options = {};
+      const first = new ConsoleLogger(options);
+      const second = new ConsoleLogger(options);
+
+      first.setLogLevels(['error']);
+
+      expect(first.isLevelEnabled('log')).toBe(false);
+      expect(second.isLevelEnabled('log')).toBe(true);
+      expect(options).toEqual({});
+    });
+
     it('should support custom formatter', () => {
       class CustomConsoleLogger extends ConsoleLogger {
         protected formatMessage(
