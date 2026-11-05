@@ -598,6 +598,150 @@ describe('ParseArrayPipe', () => {
             ]);
           }
         });
+
+        describe('and "errorFormat" is "grouped"', () => {
+          it('should keep the field and the message of each invalid item', async () => {
+            class ArrItemWithProp {
+              @IsNumber()
+              number: number;
+            }
+            const pipe = new ParseArrayPipe({
+              items: ArrItemWithProp,
+              stopAtFirstError: false,
+              errorFormat: 'grouped',
+            });
+
+            const error = await pipe
+              .transform(
+                [{ number: 'a' }, { number: 1 }, { number: 'b' }] as any[],
+                {} as ArgumentMetadata,
+              )
+              .catch(err => err);
+
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect(error.getResponse().message).toEqual([
+              '[0] number: number must be a number conforming to the specified constraints',
+              '[2] number: number must be a number conforming to the specified constraints',
+            ]);
+          });
+
+          it('should keep the path of a nested field', async () => {
+            class Address {
+              @IsString()
+              city: string;
+            }
+            class ArrItemObject {
+              @ValidateNested()
+              @Type(() => Address)
+              address: Address;
+            }
+            const pipe = new ParseArrayPipe({
+              items: ArrItemObject,
+              stopAtFirstError: false,
+              errorFormat: 'grouped',
+            });
+
+            const error = await pipe
+              .transform(
+                [{ address: { city: 'Paris' } }, { address: { city: 1 } }],
+                {} as ArgumentMetadata,
+              )
+              .catch(err => err);
+
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect(error.getResponse().message).toEqual([
+              '[1] address.city: city must be a string',
+            ]);
+          });
+
+          it('should list every message of a field', async () => {
+            class ArrItemWithProp {
+              @IsDefined()
+              @IsBoolean()
+              isEnabled: boolean;
+            }
+            const pipe = new ParseArrayPipe({
+              items: ArrItemWithProp,
+              stopAtFirstError: false,
+              errorFormat: 'grouped',
+            });
+
+            const error = await pipe
+              .transform([{}] as any[], {} as ArgumentMetadata)
+              .catch(err => err);
+
+            expect(error.getResponse().message).toEqual([
+              '[0] isEnabled: isEnabled should not be null or undefined',
+              '[0] isEnabled: isEnabled must be a boolean value',
+            ]);
+          });
+
+          it('should not take the note about omitted errors for a path', async () => {
+            class ArrItemWithProp {
+              @IsNumber()
+              number: number;
+
+              @IsString()
+              title: string;
+            }
+            const pipe = new ParseArrayPipe({
+              items: ArrItemWithProp,
+              stopAtFirstError: false,
+              errorFormat: 'grouped',
+              maxErrorMessagesLength: 40,
+            });
+
+            const error = await pipe
+              .transform([{}] as any[], {} as ArgumentMetadata)
+              .catch(err => err);
+
+            const messages: string[] = error.getResponse().message;
+            expect(messages.at(-1)).toBe(
+              '[0] Further validation errors were omitted',
+            );
+          });
+
+          it('should not fail on a message that is not a list of strings', async () => {
+            class ArrItemWithProp {
+              @IsNumber()
+              number: number;
+            }
+            const pipe = new ParseArrayPipe({
+              items: ArrItemWithProp,
+              stopAtFirstError: false,
+              // runs for each item (validation errors) and for the array (strings)
+              exceptionFactory: (errors: any[]) =>
+                new BadRequestException(
+                  typeof errors[0] === 'string'
+                    ? errors
+                    : { message: { number: 'is bad' } },
+                ),
+            });
+
+            const error = await pipe
+              .transform([{ number: 'a' }] as any[], {} as ArgumentMetadata)
+              .catch(err => err);
+
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect(error.getResponse().message).toEqual(['[0] number: is bad']);
+          });
+
+          it('should keep the message of a primitive item', async () => {
+            const pipe = new ParseArrayPipe({
+              items: Number,
+              stopAtFirstError: false,
+              errorFormat: 'grouped',
+            });
+
+            const error = await pipe
+              .transform(['1', 'a'], {} as ArgumentMetadata)
+              .catch(err => err);
+
+            expect(error.getResponse().message).toEqual([
+              '[1] item must be a number',
+            ]);
+          });
+        });
       });
     });
   });
