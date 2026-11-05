@@ -5,7 +5,13 @@ import qs from 'qs';
 import secureJson from 'secure-json-parse';
 import type { Readable, Transform } from 'stream';
 import typeIs from 'type-is';
-import { createBrotliDecompress, createGunzip, createInflate } from 'zlib';
+import * as zlib from 'zlib';
+
+// Only on Node 22.15+ and 23.8+. It is read from the namespace, because a
+// named import would stop this module from loading on older versions.
+const createZstdDecompress = (
+  zlib as { createZstdDecompress?: () => Transform }
+).createZstdDecompress;
 
 /**
  * Options shared by every body parser. They mirror the ones of the
@@ -21,8 +27,9 @@ export interface NodeBodyParserOptions {
    */
   limit?: number | string;
   /**
-   * Whether to decompress `gzip`, `deflate` and `br` bodies. Defaults to
-   * `true`; when `false`, compressed bodies are rejected with a 415.
+   * Whether to decompress `gzip`, `deflate`, `br` and `zstd` bodies (`zstd`
+   * only on Node versions that support it). Defaults to `true`; when
+   * `false`, compressed bodies are rejected with a 415.
    */
   inflate?: boolean;
   /**
@@ -271,21 +278,24 @@ function getContentStream(req: IncomingMessage, inflate: boolean): Readable {
   switch (encoding) {
     case 'gzip':
     case 'x-gzip':
-      stream = createGunzip();
+      stream = zlib.createGunzip();
       break;
     case 'deflate':
-      stream = createInflate();
+      stream = zlib.createInflate();
       break;
     case 'br':
-      stream = createBrotliDecompress();
+      stream = zlib.createBrotliDecompress();
       break;
     default:
-      throw createHttpError(
-        415,
-        `unsupported content encoding "${encoding}"`,
-        'encoding.unsupported',
-        { encoding },
-      );
+      if (encoding !== 'zstd' || !createZstdDecompress) {
+        throw createHttpError(
+          415,
+          `unsupported content encoding "${encoding}"`,
+          'encoding.unsupported',
+          { encoding },
+        );
+      }
+      stream = createZstdDecompress();
   }
   req.pipe(stream);
   return stream;

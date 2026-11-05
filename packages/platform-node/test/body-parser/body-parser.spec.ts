@@ -2,11 +2,17 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { once } from 'events';
 import http, { IncomingMessage, ServerResponse } from 'http';
 import { connect, type AddressInfo } from 'net';
+import * as zlib from 'zlib';
 import { brotliCompressSync, deflateSync, gzipSync } from 'zlib';
 import { UnauthorizedException } from '@nestjs/common';
 import { json, raw, text, urlencoded } from '../../body-parser/body-parser.js';
 
 type Middleware = ReturnType<typeof json>;
+
+// zstd needs Node 22.15+ or 23.8+
+const zstdCompressSync = (
+  zlib as { zstdCompressSync?: (buffer: string) => Buffer }
+).zstdCompressSync;
 
 interface ParsedRequest extends IncomingMessage {
   body?: any;
@@ -449,6 +455,30 @@ describe('body parsers', () => {
       expect(req.body).toEqual({ name: 'nest' });
     });
 
+    it.skipIf(!zstdCompressSync)('should decompress a zstd body', async () => {
+      const { status, req } = await send(json(), {
+        headers: { ...JSON_TYPE, 'content-encoding': 'zstd' },
+        body: zstdCompressSync!('{"name":"nest"}'),
+      });
+
+      expect(status).toBe(200);
+      expect(req.body).toEqual({ name: 'nest' });
+    });
+
+    it.skipIf(!!zstdCompressSync)(
+      'should reject a zstd body with 415 on a Node without zstd',
+      async () => {
+        const { status, error } = await send(json(), {
+          headers: { ...JSON_TYPE, 'content-encoding': 'zstd' },
+          body: 'compressed',
+        });
+
+        expect(status).toBe(415);
+        expectHttpError(error, 415, 'encoding.unsupported');
+        expect(error.encoding).toBe('zstd');
+      },
+    );
+
     it('should read a body with an empty content-encoding as is, as body-parser does', async () => {
       // An empty header is an empty list of codings
       const { status, req } = await send(json(), {
@@ -503,6 +533,19 @@ describe('body parsers', () => {
         expectHttpError(corrupt.error, 400, 'stream.error');
         expect(valid.status).toBe(200);
         expect(valid.req.body).toEqual({ name: 'nest' });
+      },
+    );
+
+    it.skipIf(!zstdCompressSync)(
+      'should reject a corrupt zstd body with 400',
+      async () => {
+        const { status, error } = await send(json(), {
+          headers: { ...JSON_TYPE, 'content-encoding': 'zstd' },
+          body: Buffer.from('not zstd at all'),
+        });
+
+        expect(status).toBe(400);
+        expectHttpError(error, 400, 'stream.error');
       },
     );
   });

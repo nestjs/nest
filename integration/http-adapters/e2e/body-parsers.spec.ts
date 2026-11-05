@@ -1,3 +1,4 @@
+import * as zlib from 'zlib';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { adapters, createApp } from '../src/adapters.js';
@@ -143,6 +144,21 @@ describe.each(adapters('express', 'node'))('Body parsers (%s)', name => {
         statusCode: 413,
         message: 'request entity too large',
       });
+    });
+  });
+
+  // zstd needs Node 22.15+ or 23.8+
+  describe.skipIf(!('zstdCompressSync' in zlib))('content encodings', () => {
+    it('should decompress a zstd body', async () => {
+      app = await createApp(name, BodyParsersModule);
+
+      const res = await post(
+        'application/json',
+        zlib.zstdCompressSync('{"name":"nest"}'),
+      ).set('content-encoding', 'zstd');
+
+      expect(res.status).toBe(201);
+      expect(res.text).toBe('{"name":"nest"}');
     });
   });
 
