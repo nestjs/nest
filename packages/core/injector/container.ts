@@ -43,9 +43,11 @@ export class NestContainer {
 
   constructor(
     private readonly _applicationConfig:
-      ApplicationConfig | undefined = undefined,
+      | ApplicationConfig
+      | undefined = undefined,
     private readonly _contextOptions:
-      NestApplicationContextOptions | undefined = undefined,
+      | NestApplicationContextOptions
+      | undefined = undefined,
   ) {
     const moduleOpaqueKeyFactory =
       this._contextOptions?.moduleIdGeneratorAlgorithm === 'deep-hash'
@@ -122,7 +124,6 @@ export class NestContainer {
       scope,
       insertedModules,
     );
-    insertedModules?.push(moduleRef);
     return {
       moduleRef,
       inserted: true,
@@ -159,6 +160,7 @@ export class NestContainer {
           dynamicMetadata,
         },
         scope,
+        insertedModules,
       ),
       inserted: true,
     };
@@ -173,14 +175,21 @@ export class NestContainer {
     moduleRef.token = token;
     moduleRef.initOnPreview = this.shouldInitOnPreview(type);
     this.modules.set(token, moduleRef);
+    insertedModules?.push(moduleRef);
 
     const updatedScope = ([] as ModuleScope).concat(scope, type);
-    await this.addDynamicMetadata(
-      token,
-      dynamicMetadata!,
-      updatedScope,
-      insertedModules,
-    );
+    try {
+      await this.addDynamicMetadata(
+        token,
+        dynamicMetadata!,
+        updatedScope,
+        insertedModules,
+      );
+    } catch (err) {
+      this.modules.delete(token);
+      this.dynamicModulesMetadata.delete(token);
+      throw err;
+    }
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
       moduleRef.isGlobal = true;
@@ -342,6 +351,7 @@ export class NestContainer {
       this.modules.delete(moduleRef.token);
       this.globalModules.delete(moduleRef);
       this.dynamicModulesMetadata.delete(moduleRef.token);
+      this.modules.forEach(module => module.imports.delete(moduleRef));
       DiscoverableMetaHostCollection.removeInstanceWrappers(this.modules, [
         ...moduleRef.providers.values(),
         ...moduleRef.controllers.values(),

@@ -22,6 +22,7 @@ describe('LazyModuleLoader', () => {
   let dependenciesScanner: DependenciesScanner;
   let instanceLoader: InstanceLoader;
   let modulesContainer: ModulesContainer;
+  let nestContainer: NestContainer;
 
   class NoopLogger {
     log() {}
@@ -30,7 +31,7 @@ describe('LazyModuleLoader', () => {
   }
 
   beforeEach(() => {
-    const nestContainer = new NestContainer();
+    nestContainer = new NestContainer();
     const graphInspector = new GraphInspector(nestContainer);
     dependenciesScanner = new DependenciesScanner(
       nestContainer,
@@ -352,6 +353,108 @@ describe('LazyModuleLoader', () => {
         // Ensure retry module ref is still healthy and in container
         const retryAfter = await lazyModuleLoader.load(() => XModule);
         expect(retryAfter).toBe(retry);
+      });
+
+      it('should roll back an overridden module when its load fails', async () => {
+        let overriddenCalls = 0;
+        const failingProvider = {
+          provide: 'FAILING_OVERRIDE',
+          useFactory: () => {
+            overriddenCalls++;
+            if (overriddenCalls === 1) {
+              throw new Error('Override failed');
+            }
+            return 'override_value';
+          },
+        };
+
+        @Module({})
+        class OriginalModule {}
+
+        @Module({ providers: [failingProvider], exports: [failingProvider] })
+        class OverriddenModule {}
+
+        const overriddenLoader = new LazyModuleLoader(
+          dependenciesScanner,
+          instanceLoader,
+          nestContainer['moduleCompiler'],
+          modulesContainer,
+          [{ moduleToReplace: OriginalModule, newModule: OverriddenModule }],
+        );
+
+        await expect(
+          overriddenLoader.load(() => OriginalModule),
+        ).rejects.toThrow('Override failed');
+
+        const moduleRef = await overriddenLoader.load(() => OriginalModule);
+        expect(moduleRef.get('FAILING_OVERRIDE')).toBe('override_value');
+        expect(overriddenCalls).toBe(2);
+      });
+
+      it('should unlink a failed global module from another module loaded concurrently', async () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+        @Global()
+        @Module({
+          providers: [
+            {
+              provide: 'FAILING_GLOBAL',
+              useFactory: () =>
+                delay(10).then(() =>
+                  Promise.reject(new Error('Global failed')),
+                ),
+            },
+          ],
+          exports: ['FAILING_GLOBAL'],
+        })
+        class FailingGlobalMod {}
+
+        @Module({
+          providers: [
+            {
+              provide: 'OTHER_PROVIDER',
+              useFactory: () => delay(20).then(() => 'other_value'),
+            },
+          ],
+        })
+        class OtherMod {}
+
+        const [globalResult, otherResult] = await Promise.allSettled([
+          lazyModuleLoader.load(() => FailingGlobalMod),
+          lazyModuleLoader.load(() => OtherMod),
+        ]);
+
+        expect(globalResult.status).toBe('rejected');
+        expect(otherResult.status).toBe('fulfilled');
+
+        const { token: otherToken } =
+          await nestContainer['moduleCompiler'].compile(OtherMod);
+        const otherModuleInstance = modulesContainer.get(otherToken)!;
+
+        const { token: globalToken } =
+          await nestContainer['moduleCompiler'].compile(FailingGlobalMod);
+
+        const hasGlobalImport = [...otherModuleInstance.imports].some(
+          imported => imported.token === globalToken,
+        );
+        expect(hasGlobalImport).toBe(false);
+      });
+
+      it('should roll back parent module when an imported dynamic module fails to load', async () => {
+        const failingDynamicModule: Promise<DynamicModule> = Promise.reject(
+          new Error('Dynamic import failed'),
+        );
+
+        @Module({
+          imports: [failingDynamicModule],
+        })
+        class ParentWithFailingDynamicImportModule {}
+
+        await expect(
+          lazyModuleLoader.load(() => ParentWithFailingDynamicImportModule),
+        ).rejects.toThrow('Dynamic import failed');
+
+        expect(modulesContainer.size).toBe(0);
       });
     });
 

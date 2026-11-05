@@ -645,6 +645,7 @@ export class DependenciesScanner {
     moduleToOverride: ModuleDefinition,
     newModule: ModuleDefinition,
     scope: Type<unknown>[],
+    insertedModules?: Module[],
   ): Promise<
     | {
         moduleRef: Module;
@@ -658,6 +659,7 @@ export class DependenciesScanner {
         : moduleToOverride,
       this.isForwardReference(newModule) ? newModule.forwardRef() : newModule,
       scope,
+      insertedModules,
     );
   }
 
