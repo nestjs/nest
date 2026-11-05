@@ -482,6 +482,9 @@ export class NodeRouter {
       if (routeMatch !== undefined) {
         if (err === undefined) {
           if (routeIndex < routeMatch.handlers.length) {
+            if (routeMatch.paramsByHandler !== undefined) {
+              req.params = routeMatch.paramsByHandler[routeIndex];
+            }
             return invoke(routeMatch.handlers[routeIndex++], req, res, next);
           }
           // Every handler passed: on to the other routes matching the path,

@@ -135,6 +135,19 @@ describe('NodeRouter', () => {
       expect(calls).toEqual(['first', 'second']);
     });
 
+    it('should give each handler the params of its own route', () => {
+      const seen: Record<string, string>[] = [];
+      router.get('/a/:id', (req: any, _res: unknown, next: Next) => {
+        seen.push({ ...req.params });
+        next();
+      });
+      router.get('/a/:other', (req: any) => seen.push({ ...req.params }));
+
+      dispatch('GET', '/a/5');
+
+      expect(seen).toEqual([{ id: '5' }, { other: '5' }]);
+    });
+
     it('should call `done` instead of the final handler when given', () => {
       const done = vi.fn();
       const req = createRequest('GET', '/missing');

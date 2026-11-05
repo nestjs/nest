@@ -12,6 +12,11 @@ export type RouteHandler = (
 export interface RouteMatch {
   handlers: RouteHandler[];
   params: Record<string, any>;
+  /**
+   * The params of each handler, when the routes of the handlers name them
+   * differently (`params` are then those of the first handler).
+   */
+  paramsByHandler?: Record<string, any>[];
   /** Registration order of each handler, see {@link RouteTable.lookupRest}. */
   seqs: number[];
 }
@@ -31,6 +36,8 @@ interface RouteRecord {
    * pass control to each other through `next()`, as in Express.
    */
   paramNames: string[][];
+  /** Whether the routes of the handlers name their parameters differently. */
+  hasDistinctNames: boolean;
   /** Whether the last parameter is a trailing wildcard (find-my-way's `*`). */
   hasWildcard: boolean;
   /** Number of "/" in the route path before the wildcard. */
@@ -62,6 +69,7 @@ interface FoundRoute {
   handlers: RouteHandler[];
   seqs: number[];
   params: Record<string, any>;
+  paramsByHandler?: Record<string, any>[];
 }
 
 interface FindMyWayVariant {
@@ -77,6 +85,11 @@ interface FindMyWayVariant {
   hasMixedSegment: boolean;
   /** Ends with "/", see `toFindMyWayPath()`. */
   trailingSlash: boolean;
+}
+
+function hasDistinctNames(paramNames: string[][]): boolean {
+  const first = paramNames[0];
+  return paramNames.some(names => names.some((n, i) => n !== first[i]));
 }
 
 // Route parameters live in an object without a prototype, as with
@@ -517,6 +530,7 @@ export class RouteTable {
         handlers: [],
         seqs: [],
         paramNames: [],
+        hasDistinctNames: false,
         hasWildcard,
         wildcardSlashes,
         wildcardOffset,
@@ -537,6 +551,7 @@ export class RouteTable {
       record.seqs.push(seq);
       record.paramNames.push(paramNames);
       record.pathMatchers.push(pathMatcher);
+      record.hasDistinctNames = hasDistinctNames(record.paramNames);
       return true;
     }
     // A HEAD route takes precedence over the GET routes of the same path,
@@ -551,6 +566,7 @@ export class RouteTable {
     record.seqs = active.map(entry => entry.seq);
     record.paramNames = active.map(entry => entry.paramNames);
     record.pathMatchers = active.map(entry => entry.pathMatcher);
+    record.hasDistinctNames = hasDistinctNames(record.paramNames);
     return true;
   }
 
@@ -661,8 +677,10 @@ export class RouteTable {
       }
       wildcard = path.slice(start, end).split('/').map(decodeSegment);
     }
-    // Every handler sees the parameters under the names its route uses
-    const params = new ParamsObject();
+    // Every handler sees the parameters under the names its route uses: with
+    // the same names for all of them, one object serves every handler
+    let params = new ParamsObject();
+    const paramsByHandler = record.hasDistinctNames ? [params] : undefined;
     // find-my-way matched "/admin/x/" with the variant of "/admin/{*path}"
     // without the "/", path-to-regexp gives the route's own parameters
     const usePathMatchers =
@@ -670,6 +688,10 @@ export class RouteTable {
       path.length > 1 &&
       path.charCodeAt(path.length - 1) === 47; /* / */
     for (let h = 0; h < record.paramNames.length; h++) {
+      if (paramsByHandler !== undefined && h > 0) {
+        params = new ParamsObject();
+        paramsByHandler.push(params);
+      }
       const pathMatcher = usePathMatchers ? record.pathMatchers[h] : undefined;
       if (pathMatcher !== undefined) {
         const result = pathMatcher(path);
@@ -688,7 +710,12 @@ export class RouteTable {
             : values[positionalName(i)];
       }
     }
-    return { handlers: record.handlers, seqs: record.seqs, params };
+    return {
+      handlers: record.handlers,
+      seqs: record.seqs,
+      params: paramsByHandler === undefined ? params : paramsByHandler[0],
+      paramsByHandler,
+    };
   }
 
   // The first of `routes` path-to-regexp matches, in registration order, as

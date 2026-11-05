@@ -563,9 +563,52 @@ describe('RouteTable', () => {
 
       expect(table.lookup('GET', '/users/1')).toEqual({
         handlers: [v1, v2],
-        params: { id: '1', userId: '1' },
+        params: { id: '1' },
+        paramsByHandler: [{ id: '1' }, { userId: '1' }],
         seqs: [0, 1],
       });
+    });
+
+    it('should give each handler only the parameters of its own route', () => {
+      table.add('GET', '/a/:id/b/:name', handler());
+      table.add('GET', '/a/:other/b/:title', handler());
+      table.add('GET', '/a/:id/b/:name', handler());
+
+      expect(table.lookup('GET', '/a/1/b/x')?.paramsByHandler).toEqual([
+        { id: '1', name: 'x' },
+        { other: '1', title: 'x' },
+        { id: '1', name: 'x' },
+      ]);
+    });
+
+    it('should give each handler its own parameters for a HEAD request', () => {
+      table.add('GET', '/a/:id', handler());
+      table.add('GET', '/a/:other', handler());
+
+      expect(table.lookup('HEAD', '/a/1')?.paramsByHandler).toEqual([
+        { id: '1' },
+        { other: '1' },
+      ]);
+    });
+
+    it('should give each handler its own parameters for a path ending with "/"', () => {
+      table.add('GET', '/a/:id{/}', handler());
+      table.add('GET', '/a/:other{/}', handler());
+
+      expect(table.lookup('GET', '/a/1/')?.paramsByHandler).toEqual([
+        { id: '1' },
+        { other: '1' },
+      ]);
+    });
+
+    it('should share one params object when every handler uses the same names', () => {
+      table.add('GET', '/users/:id', handler());
+      table.add('GET', '/users/:id', handler());
+
+      const found = table.lookup('GET', '/users/1');
+
+      expect(found?.paramsByHandler).toBeUndefined();
+      expect(found?.params).toEqual({ id: '1' });
     });
 
     it('should chain wildcard routes that only differ by the wildcard name', () => {
@@ -576,7 +619,8 @@ describe('RouteTable', () => {
 
       expect(table.lookup('GET', '/files/a/b')).toEqual({
         handlers: [v1, v2],
-        params: { path: ['a', 'b'], rest: ['a', 'b'] },
+        params: { path: ['a', 'b'] },
+        paramsByHandler: [{ path: ['a', 'b'] }, { rest: ['a', 'b'] }],
         seqs: [0, 1],
       });
     });
