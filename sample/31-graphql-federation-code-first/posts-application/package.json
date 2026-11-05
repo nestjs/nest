@@ -29,7 +29,7 @@
     "@nestjs/graphql": "14.2.0",
     "@nestjs/platform-express": "12.3.3",
     "graphql": "17.1.0",
-    "graphql-tools": "10.0.7",
+    "graphql-tools": "10.0.8",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.4",
     "rxjs": "7.8.2",
