@@ -1,4 +1,8 @@
-import type { FactoryProvider, InjectionToken } from '@nestjs/common';
+import type {
+  FactoryProvider,
+  InjectionToken,
+  ValueProvider,
+} from '@nestjs/common';
 import {
   Logger,
   type LoggerService,
@@ -24,7 +28,6 @@ import { isDebugMode } from './helpers/is-debug-mode.util.js';
 import {
   isClassProvider,
   isFactoryProvider,
-  isValueProvider,
 } from './helpers/provider-classifier.js';
 import { Module } from './module.js';
 import { SettlementSignal } from './settlement-signal.js';
@@ -574,14 +577,14 @@ export class InstanceWrapper<T = any> {
   }
 
   public mergeWith(provider: Provider) {
-    if (isValueProvider(provider)) {
+    if (Object.hasOwn(provider, 'useValue')) {
       this.metatype = null;
       this.inject = null;
 
       this.scope = Scope.DEFAULT;
 
       this.setInstanceByContextId(STATIC_CONTEXT, {
-        instance: provider.useValue,
+        instance: (provider as ValueProvider).useValue,
         isResolved: true,
         isPending: false,
       });
