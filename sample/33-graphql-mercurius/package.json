@@ -21,8 +21,8 @@
   "dependencies": {
     "@nestjs/common": "12.3.3",
     "@nestjs/core": "12.3.3",
-    "@nestjs/graphql": "14.1.2",
-    "@nestjs/mercurius": "14.1.2",
+    "@nestjs/graphql": "14.2.0",
+    "@nestjs/mercurius": "14.2.0",
     "@nestjs/platform-fastify": "12.3.3",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
