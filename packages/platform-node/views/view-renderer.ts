@@ -1,5 +1,14 @@
 import { readFile, stat } from 'fs/promises';
-import { extname, isAbsolute, join, parse, relative, resolve, sep } from 'path';
+import {
+  basename,
+  extname,
+  isAbsolute,
+  join,
+  parse,
+  relative,
+  resolve,
+  sep,
+} from 'path';
 
 /**
  * Template engine configuration for `app.setViewEngine()`, shaped like the
@@ -200,28 +209,17 @@ export class ViewRenderer {
   }
 
   private async resolveFile(view: string, extension: string): Promise<string> {
-    const hasTrailingSlash = /[/\\]$/.test(view);
-    const cleanView = view.replace(/[/\\]+$/, '');
-    const ext = extname(cleanView) || `.${extension}`;
-
-    let candidates: string[] = [];
-    if (cleanView) {
-      if (hasTrailingSlash) {
-        // A trailing slash names the directory, so only look up <view>/index.<ext>
-        candidates = [join(cleanView, `index${ext}`)];
-      } else {
-        // "users" is "users.ext", then "users/index.ext", as with Express. Unlike
-        // Express, which tries both in each directory in turn, a file in any
-        // directory wins over an index
-        const fileCandidate = extname(cleanView)
-          ? cleanView
-          : `${cleanView}${ext}`;
-        const { dir, name, ext: candidateExt } = parse(fileCandidate);
-        candidates = [fileCandidate, join(dir, name, `index${candidateExt}`)];
-      }
-    }
-
-    for (const candidate of candidates) {
+    const ext = extname(view) || `.${extension}`;
+    const fileName = extname(view) ? view : `${view}${ext}`;
+    const { dir, base } = parse(fileName);
+    // "users" is "users.ext", then "users/index.ext", as with Express. Unlike
+    // Express, which tries both in each directory in turn, a file in any
+    // directory wins over an index. For "users/", base is only the extension,
+    // so the index is "users/index.ext"
+    for (const candidate of [
+      fileName,
+      join(dir, basename(base, ext), `index${ext}`),
+    ]) {
       for (const root of this.roots) {
         const file = resolve(root, candidate);
         // Never resolve outside the views directories ("../", absolute paths)

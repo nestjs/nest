@@ -297,6 +297,15 @@ describe('ViewRenderer', () => {
       );
     });
 
+    it('should resolve a view named with its extension and a trailing slash, as Express does', async () => {
+      write('views/a.ejs', 'a file');
+      write('views/users/index.ejs', 'users index');
+      renderer.setEngine({ engine: { ejs }, root: views });
+
+      await expect(renderer.render('a.ejs/')).resolves.toBe('a file');
+      await expect(renderer.render('users.ejs/')).resolves.toBe('users index');
+    });
+
     it('should not resolve "/" to ".<ext>" at the views root', async () => {
       write('views/.ejs', 'root dot ejs');
       renderer.setEngine({ engine: { ejs }, root: views });
