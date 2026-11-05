@@ -462,6 +462,22 @@ describe('NodeAdapter', () => {
       return request(port, requestOptions);
     };
 
+    it.each([
+      ['an object', { ok: true }, '{"ok":true}'],
+      ['a string', 'hello', 'hello'],
+    ])(
+      'should leave out the Content-Length when the Transfer-Encoding is set, for %s',
+      async (_kind, body, text) => {
+        const res = await replyWith(body, undefined, response =>
+          response.setHeader('Transfer-Encoding', 'chunked'),
+        );
+
+        expect(res.headers['transfer-encoding']).toBe('chunked');
+        expect(res.headers['content-length']).toBeUndefined();
+        expect(res.text).toBe(text);
+      },
+    );
+
     it('should send an object as JSON, with its exact byte length', async () => {
       const body = { name: 'zażółć gęślą jaźń', tags: ['ü', 'ß'] };
       const json = JSON.stringify(body);

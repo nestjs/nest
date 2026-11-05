@@ -897,14 +897,15 @@ export class NodeAdapter extends AbstractHttpAdapter<
       typeof payload === 'string'
         ? Buffer.byteLength(payload)
         : payload.byteLength;
+    // A "Transfer-Encoding" forbids a "Content-Length", as Express knows
+    const length = response.hasHeader('Transfer-Encoding')
+      ? {}
+      : { 'Content-Length': contentLength };
     response.writeHead(
       response.statusCode,
       contentType === undefined
-        ? {
-            'Content-Type': defaultContentType,
-            'Content-Length': contentLength,
-          }
-        : { 'Content-Length': contentLength },
+        ? { 'Content-Type': defaultContentType, ...length }
+        : length,
     );
     return response.end(payload);
   }
