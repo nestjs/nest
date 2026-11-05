@@ -885,6 +885,15 @@ describe('ServerRMQ', () => {
     });
   });
 
+  describe('getHandlerByPattern', () => {
+    it('should find the handler of a string pattern that reads as json', () => {
+      const handler = vi.fn();
+      server.addHandler('1.0', handler);
+
+      expect(server.getHandlerByPattern('1.0')).toBe(handler);
+    });
+  });
+
   describe('matchRmqPattern', () => {
     let matchRmqPattern: (pattern: string, routingKey: string) => boolean;
 

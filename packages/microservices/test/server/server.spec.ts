@@ -486,6 +486,54 @@ describe('Server', () => {
     });
   });
 
+  describe('getHandlerByPattern (string patterns that read as json)', () => {
+    let realServer: TestServer;
+
+    beforeEach(() => {
+      realServer = new TestServer();
+    });
+
+    it.each(['1.0', '1e3', 'true', 'false', 'null', '[1]'])(
+      'should find the handler registered under the string "%s"',
+      jsonLike => {
+        const handler = async () => {};
+        realServer.addHandler(jsonLike, handler);
+
+        expect(realServer.getHandlerByPattern(jsonLike)).toBe(handler);
+      },
+    );
+
+    it('should still find an object pattern sent as json text', () => {
+      const handler = async () => {};
+      realServer.addHandler({ b: 2, a: 1 }, handler);
+
+      expect(realServer.getHandlerByPattern('{"a":1,"b":2}')).toBe(handler);
+      expect(realServer.getHandlerByPattern('{"b":2,"a":1}')).toBe(handler);
+    });
+
+    it('should prefer the handler of the exact string over the parsed one', () => {
+      const parsedHandler = async () => {};
+      const exactHandler = async () => {};
+      realServer.addHandler('x', parsedHandler);
+      realServer.addHandler('"x"', exactHandler);
+
+      expect(realServer.getHandlerByPattern('"x"')).toBe(exactHandler);
+    });
+
+    it('should still find the handler of a number pattern', () => {
+      const handler = async () => {};
+      realServer.addHandler(1, handler);
+
+      expect(realServer.getHandlerByPattern('1')).toBe(handler);
+    });
+
+    it('should return null when no handler matches', () => {
+      realServer.addHandler('1.0', async () => {});
+
+      expect(realServer.getHandlerByPattern('2.0')).toBeNull();
+    });
+  });
+
   describe('handleEvent', () => {
     const context = new BaseRpcContext([]);
     const eventPattern = 'test_event';

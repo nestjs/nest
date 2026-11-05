@@ -193,6 +193,11 @@ export abstract class Server<
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
+    // A string pattern such as '1.0' or 'true' is stored as it is, but parsing
+    // it as json would turn it into another route, so it is tried first.
+    if (this.messageHandlers.has(pattern)) {
+      return this.messageHandlers.get(pattern)!;
+    }
     const route = this.getRouteFromPattern(pattern);
     return this.messageHandlers.has(route)
       ? this.messageHandlers.get(route)!

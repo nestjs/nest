@@ -263,6 +263,17 @@ describe('ServerTCP', () => {
       await server.handleMessage(socket, msg);
       expect(handler).toHaveBeenCalledOnce();
     });
+    it('should call the handler of a string pattern that reads as json', async () => {
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({ '1.0': handler as any });
+      await server.handleMessage(socket, { ...msg, pattern: '1.0' });
+      expect(handler).toHaveBeenCalledOnce();
+      expect(socket.sendMessage).not.toHaveBeenCalledWith({
+        id: msg.id,
+        status: 'error',
+        err: NO_MESSAGE_HANDLER,
+      });
+    });
     it('should expose the packet metadata on the context', async () => {
       const handler = vi.fn();
       const metadata = { traceId: 'trace-1' };
