@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "12.3.3",
+  "version": "12.4.0",
   "description": "The core of NestJS, a TypeScript framework for Node.js backends: modules, dependency injection and the request pipeline, on Express, Fastify or node:http.",
   "keywords": [
     "nestjs",
@@ -50,7 +50,7 @@
     "uid": "2.0.2"
   },
   "devDependencies": {
-    "@nestjs/common": "12.3.3"
+    "@nestjs/common": "12.4.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.0",
