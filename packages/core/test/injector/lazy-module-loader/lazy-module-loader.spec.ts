@@ -456,6 +456,33 @@ describe('LazyModuleLoader', () => {
 
         expect(modulesContainer.size).toBe(0);
       });
+
+      it('should roll back parent and slow sibling when another dynamic import fails to load', async () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+        @Module({})
+        class SlowSiblingModule {}
+
+        const slowPromise: Promise<DynamicModule> = delay(30).then(() => ({
+          module: SlowSiblingModule,
+        }));
+        const failingPromise: Promise<DynamicModule> = Promise.reject(
+          new Error('Dynamic import failed'),
+        );
+
+        @Module({
+          imports: [failingPromise, slowPromise],
+        })
+        class ParentWithMixedDynamicImportsModule {}
+
+        await expect(
+          lazyModuleLoader.load(() => ParentWithMixedDynamicImportsModule),
+        ).rejects.toThrow('Dynamic import failed');
+
+        await delay(50);
+
+        expect(modulesContainer.size).toBe(0);
+      });
     });
 
     describe('singleton sharing and repeated loading (#17428)', () => {

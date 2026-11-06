@@ -178,18 +178,12 @@ export class NestContainer {
     insertedModules?.push(moduleRef);
 
     const updatedScope = ([] as ModuleScope).concat(scope, type);
-    try {
-      await this.addDynamicMetadata(
-        token,
-        dynamicMetadata!,
-        updatedScope,
-        insertedModules,
-      );
-    } catch (err) {
-      this.modules.delete(token);
-      this.dynamicModulesMetadata.delete(token);
-      throw err;
-    }
+    await this.addDynamicMetadata(
+      token,
+      dynamicMetadata!,
+      updatedScope,
+      insertedModules,
+    );
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
       moduleRef.isGlobal = true;
@@ -226,9 +220,15 @@ export class NestContainer {
     if (!modules) {
       return;
     }
-    await Promise.all(
+    const results = await Promise.allSettled(
       modules.map(module => this.addModule(module, scope, insertedModules)),
     );
+    const rejected = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (rejected) {
+      throw rejected.reason;
+    }
   }
 
   public isGlobalModule(
