@@ -482,6 +482,55 @@ describe('NodeRequest', () => {
       expect(value).toBeNull();
     });
   });
+
+  describe('range()', () => {
+    const withRange = (range: string) => ({ headers: { range } });
+
+    it('should parse the ranges of the Range header', async () => {
+      const value = await inspect(
+        req => req.range(1000),
+        withRange('bytes=0-99,-100'),
+      );
+
+      expect(value).toEqual(
+        Object.assign(
+          [
+            { start: 0, end: 99 },
+            { start: 900, end: 999 },
+          ],
+          { type: 'bytes' },
+        ),
+      );
+    });
+
+    it('should merge overlapping ranges with combine', async () => {
+      const value = await inspect(
+        req => req.range(1000, { combine: true }),
+        withRange('bytes=0-99,50-199'),
+      );
+
+      expect(value).toEqual(
+        Object.assign([{ start: 0, end: 199 }], { type: 'bytes' }),
+      );
+    });
+
+    it('should return -1 for an unsatisfiable range and -2 for a malformed one', async () => {
+      const unsatisfiable = await inspect(
+        req => req.range(100),
+        withRange('bytes=200-300'),
+      );
+      const malformed = await inspect(req => req.range(100), withRange('nope'));
+
+      expect(unsatisfiable).toBe(-1);
+      expect(malformed).toBe(-2);
+    });
+
+    it('should return undefined without a Range header', async () => {
+      const value = await inspect(req => req.range(100));
+
+      expect(value).toBeUndefined();
+    });
+  });
 });
 
 describe('NodeResponse', () => {

@@ -6,6 +6,7 @@ import { parse as parseQueryString } from 'fast-querystring';
 import { contentType as lookupContentType } from 'mime-types';
 import onFinished from 'on-finished';
 import { isAbsolute } from 'path';
+import parseRange from 'range-parser';
 import send from 'send';
 import typeIs from 'type-is';
 import { getRoutingPath } from '../router/utils.js';
@@ -239,6 +240,24 @@ export class NodeRequest extends IncomingMessage {
    */
   is(...types: (string | string[])[]): string | false | null {
     return typeIs(this, types.flat());
+  }
+
+  /**
+   * Parses the `Range` header for a resource of `size` bytes, like Express'
+   * `req.range()`: returns the ranges (with the unit as `type`), `-1` when
+   * none is satisfiable, `-2` when the header is malformed, and `undefined`
+   * without a `Range` header. `combine: true` merges overlapping and
+   * adjacent ranges.
+   */
+  range(
+    size: number,
+    options?: parseRange.Options,
+  ): parseRange.Ranges | parseRange.Result | undefined {
+    const range = this.headers.range;
+    if (!range) {
+      return undefined;
+    }
+    return parseRange(size, range, options);
   }
 }
 
