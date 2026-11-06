@@ -1,11 +1,18 @@
-import { mixin, Optional, Scope, SetMetadata, type Type } from '@nestjs/common';
+import {
+  Logger,
+  mixin,
+  Optional,
+  Scope,
+  SetMetadata,
+  type Type,
+} from '@nestjs/common';
+import type { MockInstance } from 'vitest';
 import {
   ENTRY_PROVIDER_WATERMARK,
   PARAMTYPES_METADATA,
 } from '@nestjs/common/constants.js';
 import { Inject } from '../../../common/decorators/core/inject.decorator.js';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
-import { MissingDecoratorMetadataException } from '../../errors/exceptions/missing-decorator-metadata.exception.js';
 import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception.js';
 import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
@@ -325,6 +332,16 @@ describe('Injector', () => {
   describe('getClassDependencies', () => {
     class Dependency {}
 
+    let warn: MockInstance;
+
+    beforeEach(() => {
+      warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      warn.mockRestore();
+    });
+
     const dependenciesOf = (metatype: Type<any>) =>
       injector.getClassDependencies(
         new InstanceWrapper({ name: metatype.name, metatype }),
@@ -344,18 +361,28 @@ describe('Injector', () => {
     };
 
     describe('when a decorated class has no decorator metadata', () => {
-      it('should throw for a dependency nothing names', () => {
+      it('should warn about a dependency nothing names', () => {
         class Target {
           constructor(public dependency: Dependency) {}
         }
         withoutMetadata(Target);
 
-        expect(() => dependenciesOf(Target)).toThrow(
-          MissingDecoratorMetadataException,
+        expect(dependenciesOf(Target)[0]).toEqual([]);
+        expect(warn).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(/The Target .* argument at index \[0\]/),
         );
-        expect(() => dependenciesOf(Target)).toThrow(
-          /the Target: .* argument at index \[0\]/,
-        );
+      });
+
+      it('should warn once per class', () => {
+        class Target {
+          constructor(public dependency: Dependency) {}
+        }
+        withoutMetadata(Target);
+
+        dependenciesOf(Target);
+        dependenciesOf(Target);
+
+        expect(warn).toHaveBeenCalledOnce();
       });
 
       it('should name the first parameter that @Inject() does not cover', () => {
@@ -367,46 +394,57 @@ describe('Injector', () => {
         }
         withoutMetadata(Target, Inject(Dependency));
 
-        expect(() => dependenciesOf(Target)).toThrow(/index \[1\]/);
+        dependenciesOf(Target);
+
+        expect(warn).toHaveBeenCalledExactlyOnceWith(
+          expect.stringContaining('index [1]'),
+        );
       });
 
-      it('should not throw when @Inject() covers every parameter', () => {
+      it('should not warn when @Inject() covers every parameter', () => {
         class Target {
           constructor(public dependency: Dependency) {}
         }
         withoutMetadata(Target, Inject(Dependency));
 
         expect(dependenciesOf(Target)[0]).toEqual([Dependency]);
+        expect(warn).not.toHaveBeenCalled();
       });
 
-      it('should not throw for an @Optional() parameter', () => {
+      it('should not warn about an @Optional() parameter', () => {
         class Target {
           constructor(public dependency?: Dependency) {}
         }
         withoutMetadata(Target, Optional());
 
-        expect(() => dependenciesOf(Target)).not.toThrow();
+        dependenciesOf(Target);
+
+        expect(warn).not.toHaveBeenCalled();
       });
 
-      it('should not throw for a parameter with a default value', () => {
+      it('should not warn about a parameter with a default value', () => {
         class Target {
           constructor(public dependency = new Dependency()) {}
         }
         withoutMetadata(Target);
 
-        expect(() => dependenciesOf(Target)).not.toThrow();
+        dependenciesOf(Target);
+
+        expect(warn).not.toHaveBeenCalled();
       });
     });
 
-    it('should not throw for an undecorated class', () => {
+    it('should not warn about an undecorated class', () => {
       class Target {
         constructor(public dependency: Dependency) {}
       }
 
-      expect(() => dependenciesOf(Target)).not.toThrow();
+      dependenciesOf(Target);
+
+      expect(warn).not.toHaveBeenCalled();
     });
 
-    it('should not throw for an undecorated class whose parent is decorated', () => {
+    it('should not warn about an undecorated class whose parent is decorated', () => {
       @Injectable()
       class Parent {}
       class Target extends Parent {
@@ -415,15 +453,19 @@ describe('Injector', () => {
         }
       }
 
-      expect(() => dependenciesOf(Target)).not.toThrow();
+      dependenciesOf(Target);
+
+      expect(warn).not.toHaveBeenCalled();
     });
 
-    it('should not throw for an undecorated class passed to mixin()', () => {
+    it('should not warn about an undecorated class passed to mixin()', () => {
       class Target {
         constructor(public options?: unknown) {}
       }
 
-      expect(() => dependenciesOf(mixin(Target))).not.toThrow();
+      dependenciesOf(mixin(Target));
+
+      expect(warn).not.toHaveBeenCalled();
     });
 
     it('should read the parameter types of a class with decorator metadata', () => {
@@ -433,6 +475,7 @@ describe('Injector', () => {
       }
 
       expect(dependenciesOf(Target)[0]).toEqual([Dependency]);
+      expect(warn).not.toHaveBeenCalled();
     });
   });
 

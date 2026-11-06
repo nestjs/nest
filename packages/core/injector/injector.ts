@@ -26,9 +26,9 @@ import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
 import { CircularDependencyException } from '../errors/exceptions/index.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
-import { MissingDecoratorMetadataException } from '../errors/exceptions/missing-decorator-metadata.exception.js';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
+import { MISSING_DECORATOR_METADATA_MESSAGE } from '../errors/messages.js';
 import { Barrier } from '../helpers/barrier.js';
 import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator.js';
 import { STATIC_CONTEXT } from './constants.js';
@@ -111,6 +111,7 @@ class HostSettlementRef {
 
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
+  private readonly classesWithoutMetadata = new WeakSet<object>();
   private readonly instanceDecorator: (target: unknown) => unknown = (
     target: unknown,
   ) => target;
@@ -517,7 +518,7 @@ export class Injector {
     const ctorRef = wrapper.metatype as Type<any>;
     const dependencies = this.reflectConstructorParams(ctorRef);
     const optionalDependenciesIds = this.reflectOptionalParams(ctorRef);
-    this.assertDecoratorMetadata(
+    this.warnOnMissingDecoratorMetadata(
       ctorRef,
       dependencies,
       optionalDependenciesIds,
@@ -529,17 +530,19 @@ export class Injector {
   /**
    * A decorated class that takes constructor parameters has parameter types
    * only if its compiler emits decorator metadata, and tsx and esbuild don't.
-   * Without them, a dependency nothing names would be `undefined` until the
-   * first request that uses it, so this fails while the application starts.
-   * An undecorated class has no metadata either way, so it isn't checked.
+   * Without them, a dependency nothing names is `undefined` until the first
+   * request that uses it, so this says so while the application starts. It
+   * doesn't throw, as a class may tolerate that. An undecorated class has no
+   * metadata either way, so it isn't checked.
    */
-  private assertDecoratorMetadata(
+  private warnOnMissingDecoratorMetadata(
     type: Type<unknown>,
     dependencies: InjectorDependency[],
     optionalDependenciesIds: number[],
   ) {
     if (
       type.length === 0 ||
+      this.classesWithoutMetadata.has(type) ||
       Reflect.hasMetadata(PARAMTYPES_METADATA, type) ||
       Reflect.getOwnMetadataKeys(type).length === 0
     ) {
@@ -550,7 +553,9 @@ export class Injector {
         dependencies[index] === undefined &&
         !optionalDependenciesIds.includes(index)
       ) {
-        throw new MissingDecoratorMetadataException(type.name, index);
+        this.classesWithoutMetadata.add(type);
+        this.logger.warn(MISSING_DECORATOR_METADATA_MESSAGE(type.name, index));
+        return;
       }
     }
   }

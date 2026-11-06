@@ -143,7 +143,7 @@ For more common dependency resolution issues, see: https://docs.nestjs.com/faq/c
 export const MISSING_DECORATOR_METADATA_MESSAGE = (
   type: string | symbol,
   index: number,
-) => `Nest can't resolve dependencies of the ${type.toString()}: it has no decorator metadata, so nothing says what to inject as the argument at index [${index}].
+) => `The ${type.toString()} has no decorator metadata, so nothing says what to inject as the argument at index [${index}], and it will be undefined.
 
 Potential solutions:
 - Name the dependency with @Inject(), which needs no metadata:
