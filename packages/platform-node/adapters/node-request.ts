@@ -549,7 +549,10 @@ export class NodeResponse<
     this.statusCode = statusCode;
     this.setHeader('Location', location);
     appendVary(this, 'Accept');
-    this.setHeader('Content-Length', Buffer.byteLength(body));
+    // A "Transfer-Encoding" forbids a "Content-Length" (RFC 9112)
+    if (!this.hasHeader('Transfer-Encoding')) {
+      this.setHeader('Content-Length', Buffer.byteLength(body));
+    }
     this.end(this.req.method === 'HEAD' ? undefined : body);
   }
 }

@@ -903,6 +903,31 @@ describe('NodeResponse', () => {
       expect(response.body).toHaveLength(0);
     });
 
+    it('should leave out the Content-Length when the Transfer-Encoding is set', async () => {
+      const response = await respond((req, res) => {
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.redirect(target);
+      });
+
+      expect(response.headers['transfer-encoding']).toBe('chunked');
+      expect(response.headers['content-length']).toBeUndefined();
+      expect(response.body.toString()).toBe(`Found. Redirecting to ${encoded}`);
+    });
+
+    it('should leave out the Content-Length of an empty body too', async () => {
+      const response = await respond(
+        (req, res) => {
+          res.setHeader('Transfer-Encoding', 'chunked');
+          res.redirect(target);
+        },
+        { headers: { accept: 'application/json' } },
+      );
+
+      expect(response.headers['transfer-encoding']).toBe('chunked');
+      expect(response.headers['content-length']).toBeUndefined();
+      expect(response.body).toHaveLength(0);
+    });
+
     it.each([
       ['Origin', 'Origin, Accept'],
       ['accept', 'accept'],
