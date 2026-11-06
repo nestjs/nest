@@ -26,6 +26,7 @@ import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
 import { CircularDependencyException } from '../errors/exceptions/index.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { MissingDecoratorMetadataException } from '../errors/exceptions/missing-decorator-metadata.exception.js';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
 import { Barrier } from '../helpers/barrier.js';
@@ -514,10 +515,44 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
   ): [InjectorDependency[], number[]] {
     const ctorRef = wrapper.metatype as Type<any>;
-    return [
-      this.reflectConstructorParams(ctorRef),
-      this.reflectOptionalParams(ctorRef),
-    ];
+    const dependencies = this.reflectConstructorParams(ctorRef);
+    const optionalDependenciesIds = this.reflectOptionalParams(ctorRef);
+    this.assertDecoratorMetadata(
+      ctorRef,
+      dependencies,
+      optionalDependenciesIds,
+    );
+
+    return [dependencies, optionalDependenciesIds];
+  }
+
+  /**
+   * A decorated class that takes constructor parameters has parameter types
+   * only if its compiler emits decorator metadata, and tsx and esbuild don't.
+   * Without them, a dependency nothing names would be `undefined` until the
+   * first request that uses it, so this fails while the application starts.
+   * An undecorated class has no metadata either way, so it isn't checked.
+   */
+  private assertDecoratorMetadata(
+    type: Type<unknown>,
+    dependencies: InjectorDependency[],
+    optionalDependenciesIds: number[],
+  ) {
+    if (
+      type.length === 0 ||
+      Reflect.hasMetadata(PARAMTYPES_METADATA, type) ||
+      Reflect.getOwnMetadataKeys(type).length === 0
+    ) {
+      return;
+    }
+    for (let index = 0; index < type.length; index++) {
+      if (
+        dependencies[index] === undefined &&
+        !optionalDependenciesIds.includes(index)
+      ) {
+        throw new MissingDecoratorMetadataException(type.name, index);
+      }
+    }
   }
 
   public getFactoryProviderDependencies<T>(
