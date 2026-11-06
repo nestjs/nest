@@ -23,9 +23,71 @@
 
 ## Description
 
-Nest is a framework for building efficient, scalable <a href="https://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).
+Nest is a TypeScript framework for building backends on [Node.js](https://nodejs.org), from a small API in one file to a large system with many teams. It gives an application modules, dependency injection, and one place each for validation, authentication and error handling, so a project keeps its shape as it grows.
 
-<p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, but also provides compatibility with a wide range of other libraries, like <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, allowing for easy use of the myriad of third-party plugins which are available.</p>
+It runs on [Express](https://github.com/expressjs/express), [Fastify](https://github.com/fastify/fastify) or Node's own `node:http`, and its first-party packages cover most of what a backend needs, so you can start small and add them as you go.
+
+## Quick start
+
+```bash
+npx @nestjs/cli new my-api --package-manager npm
+cd my-api
+npm run start:dev
+```
+
+An application can also be a single file. This can replace `src/main.ts`, and `npx tsx src/main.ts` runs it with no build step:
+
+```typescript
+import { Controller, Get, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
+@Controller()
+class AppController {
+  @Get()
+  hello() {
+    return 'Hello, Nest!';
+  }
+}
+
+@Module({ controllers: [AppController] })
+class AppModule {}
+
+const app = await NestFactory.create(AppModule);
+await app.listen(3000);
+```
+
+## First-party packages
+
+| What you need | Package |
+| --- | --- |
+| Language models, tools as provider methods, agents, streaming to the browser | [`@nestjs/ai`](https://docs.nestjs.com/ai/overview) |
+| MCP servers | [`@nestjs/mcp`](https://docs.nestjs.com/mcp/overview) |
+| Sign-in, sessions, tokens, two-factor, API keys | [`@nestjs/authentication`](https://docs.nestjs.com/security/authentication) |
+| Permissions | [`@nestjs/authorization`](https://docs.nestjs.com/security/authorization) |
+| Email | [`@nestjs/mail`](https://docs.nestjs.com/application/mail) |
+| Files, S3 included | [`@nestjs/storage`](https://docs.nestjs.com/application/file-storage) |
+| Translations | [`@nestjs/i18n`](https://docs.nestjs.com/application/i18n) |
+| Databases | [`@nestjs/typeorm`](https://docs.nestjs.com/data/typeorm), [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle), [`@nestjs/mongoose`](https://docs.nestjs.com/data/mongodb), [`@nestjs/sequelize`](https://docs.nestjs.com/data/sequelize) |
+| Retries, timeouts, circuit breakers | [`@nestjs/resilience`](https://docs.nestjs.com/reliability/resilience) |
+| Idempotency keys | [`@nestjs/idempotency`](https://docs.nestjs.com/reliability/idempotency) |
+| Transactional outbox | [`@nestjs/outbox`](https://docs.nestjs.com/reliability/outbox) |
+| Webhooks, sending and receiving | [`@nestjs/webhooks`](https://docs.nestjs.com/http/webhooks) |
+| Running a job on one instance, locks | [`@nestjs/locks`](https://docs.nestjs.com/reliability/locks) |
+| Processes that take days | [`@nestjs/workflows`](https://docs.nestjs.com/reliability/workflows) |
+| Queues and scheduled jobs | [`@nestjs/bullmq`](https://docs.nestjs.com/application/queues), [`@nestjs/schedule`](https://docs.nestjs.com/application/task-scheduling) |
+| GraphQL, WebSockets, microservices | [GraphQL](https://docs.nestjs.com/graphql/quick-start), [gateways](https://docs.nestjs.com/websockets/gateways), [microservices](https://docs.nestjs.com/microservices/basics) |
+| OpenAPI | [`@nestjs/swagger`](https://docs.nestjs.com/openapi/introduction) |
+| Configuration, caching, rate limiting, health checks | [`@nestjs/config`](https://docs.nestjs.com/application/configuration), [`@nestjs/cache-manager`](https://docs.nestjs.com/data/caching), [`@nestjs/throttler`](https://docs.nestjs.com/security/rate-limiting), [`@nestjs/terminus`](https://docs.nestjs.com/reliability/terminus) |
+
+## Moving to Nest
+
+- [From Express](https://docs.nestjs.com/recipes/express-migration), one route at a time or all at once.
+- [From Fastify](https://docs.nestjs.com/recipes/fastify-migration), keeping your plugins.
+- [As the backend of a Next.js app](https://docs.nestjs.com/recipes/nextjs), moving route handlers across one by one.
+
+## Using a coding agent
+
+The whole documentation is available as markdown, with an index at [docs.nestjs.com/llms.txt](https://docs.nestjs.com/llms.txt). Projects from `nest new` come with an `AGENTS.md` that lists the packages above, since most models were trained before they existed.
 
 ## Philosophy
 
