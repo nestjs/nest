@@ -140,6 +140,20 @@ export class ParseArrayPipe implements PipeTransform {
                 message = response.message.map(
                   (item: string) => `[${i}] ${item}`,
                 );
+              } else if (
+                response.message &&
+                typeof response.message === 'object'
+              ) {
+                // "grouped" error format: the messages of each property path
+                message = Object.entries<unknown>(response.message).flatMap(
+                  ([path, messages]) => {
+                    // "..." says that errors were left out, it is not a path
+                    const prefix = path === '...' ? '' : `${path}: `;
+                    return [messages]
+                      .flat()
+                      .map(item => `[${i}] ${prefix}${item}`);
+                  },
+                );
               } else {
                 message = `[${i}] ${response.message}`;
               }
