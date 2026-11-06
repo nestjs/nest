@@ -34,6 +34,7 @@
     "access": "public"
   },
   "dependencies": {
+    "path-to-regexp": "8.4.2",
     "tslib": "2.9.1",
     "ws": "8.22.0"
   },

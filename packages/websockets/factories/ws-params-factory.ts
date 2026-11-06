@@ -1,3 +1,4 @@
+import { WS_PATH_PARAMS } from '../constants.js';
 import { WsParamtype } from '../enums/ws-paramtype.enum.js';
 import { isFunction, isNil, isObject } from '@nestjs/common/internal';
 
@@ -34,6 +35,17 @@ export class WsParamsFactory {
         return data ? getPayloadProperty(args[1], data) : args[1];
       case WsParamtype.ACK: {
         return args.find(arg => isFunction(arg));
+      }
+      case WsParamtype.PARAM: {
+        const client = args[0] as
+          { [WS_PATH_PARAMS]?: Record<PropertyKey, unknown> } | undefined;
+        const pathParams = client?.[WS_PATH_PARAMS];
+
+        if (!pathParams) {
+          return data ? undefined : {};
+        }
+
+        return data ? pathParams[data] : pathParams;
       }
       default:
         return null;
