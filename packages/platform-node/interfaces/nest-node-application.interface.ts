@@ -2,6 +2,11 @@ import type { HttpServer, INestApplication } from '@nestjs/common';
 import type { CorsOptions, CorsOptionsDelegate } from '@nestjs/common/internal';
 import type { Server as CoreHttpServer } from 'http';
 import type { Server as CoreHttpsServer } from 'https';
+import type {
+  Chain as LightMyRequestChain,
+  InjectOptions,
+  Response as LightMyRequestResponse,
+} from 'light-my-request';
 import type { NodeRequest, NodeResponse } from '../adapters/node-request.js';
 import type { NodeRouter } from '../router/node-router.js';
 import type {
@@ -60,4 +65,12 @@ export interface NestNodeApplication<
     parser: ParserType,
     options?: NestNodeBodyParserOptionsFor<ParserType>,
   ): this;
+
+  /**
+   * Injects a fake request with light-my-request, as `inject()` of the
+   * Fastify adapter does. The application has to be initialized, it does not
+   * have to listen.
+   */
+  inject(): LightMyRequestChain;
+  inject(opts: InjectOptions | string): Promise<LightMyRequestResponse>;
 }

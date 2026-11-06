@@ -31,6 +31,11 @@ import cors from 'cors';
 import encodeUrl from 'encodeurl';
 import * as http from 'http';
 import * as https from 'https';
+import lightMyRequest, {
+  type Chain as LightMyRequestChain,
+  type InjectOptions,
+  type Response as LightMyRequestResponse,
+} from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
 import { Duplex, finished, Writable } from 'stream';
@@ -138,6 +143,8 @@ export class NodeAdapter extends AbstractHttpAdapter<
   private readonly openConnections = new Set<Duplex>();
   private readonly registeredPrefixes = new Set<string>();
   private readonly views = new ViewRenderer();
+  // By prototype of a light-my-request request or response (see inject())
+  private readonly injectedPrototypes = new WeakMap<object, object>();
   private isShuttingDown = false;
   private onRequestHook?: (
     req: NodeRequest,
@@ -462,6 +469,29 @@ export class NodeAdapter extends AbstractHttpAdapter<
   ): http.Server;
   public listen(port: any, ...args: any[]): http.Server {
     return this.httpServer.listen(port, ...args);
+  }
+
+  /**
+   * Injects a fake request into the application with light-my-request, as
+   * the FastifyAdapter does, so it is answered without a socket or a
+   * listening server (`app.init()` is enough).
+   */
+  public inject(): LightMyRequestChain;
+  public inject(opts: InjectOptions | string): Promise<LightMyRequestResponse>;
+  public inject(
+    opts?: InjectOptions | string,
+  ): LightMyRequestChain | Promise<LightMyRequestResponse> {
+    const dispatch = (req: http.IncomingMessage, res: http.ServerResponse) => {
+      // light-my-request overrides stream methods on the prototypes of its
+      // request and response, which the router would replace with those of
+      // NodeRequest and NodeResponse
+      this.setInjectedPrototype(req, this.requestClass.prototype);
+      this.setInjectedPrototype(res, NodeResponse.prototype);
+      // Where res.sendFile() finds the error handlers (see initHttpServer())
+      (req.socket as any).server ??= this.httpServer;
+      this.handleRequest(req as NodeRequest, res as NodeResponse);
+    };
+    return lightMyRequest(dispatch, opts!);
   }
 
   public beforeClose() {
@@ -832,6 +862,18 @@ export class NodeAdapter extends AbstractHttpAdapter<
     } catch (err) {
       doneOnce(err || new Error('Request hook failed'));
     }
+  }
+
+  private setInjectedPrototype(target: object, base: object) {
+    const own = Object.getPrototypeOf(target);
+    let prototype = this.injectedPrototypes.get(own);
+    if (!prototype) {
+      const { constructor: _, ...methods } =
+        Object.getOwnPropertyDescriptors(own);
+      prototype = Object.create(base, methods) as object;
+      this.injectedPrototypes.set(own, prototype);
+    }
+    Object.setPrototypeOf(target, prototype);
   }
 
   private finalHandler(err: any, req: NodeRequest, res: NodeResponse) {
