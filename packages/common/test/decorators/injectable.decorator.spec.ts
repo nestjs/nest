@@ -60,4 +60,21 @@ describe('mixin', () => {
     expect(constructorParams[0]).toEqual(Number);
     expect(constructorParams[1]).toEqual(String);
   });
+
+  it('should not hide the design:paramtypes metadata of a parent class', () => {
+    class Child extends Test {}
+    const type = mixin(Child);
+    const constructorParams = Reflect.getMetadata('design:paramtypes', type);
+
+    expect(constructorParams).toEqual([Number, String]);
+  });
+
+  it('should declare no parameter types for an undecorated class', () => {
+    class Undecorated {
+      constructor(public options?: unknown) {}
+    }
+    const type = mixin(Undecorated);
+
+    expect(Reflect.getMetadata('design:paramtypes', type)).toEqual([]);
+  });
 });

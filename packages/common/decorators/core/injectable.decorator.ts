@@ -1,6 +1,7 @@
 import { uid } from 'uid';
 import {
   INJECTABLE_WATERMARK,
+  PARAMTYPES_METADATA,
   SCOPE_OPTIONS_METADATA,
 } from '../../constants.js';
 import { ScopeOptions } from '../../interfaces/scope-options.interface.js';
@@ -58,5 +59,11 @@ export function mixin<T>(mixinClass: Type<T>) {
     value: uid(21),
   });
   Injectable()(mixinClass);
+  // Decorated here, at runtime, so a compiler that emits decorator metadata may
+  // have had no decorator to emit parameter types for. The injector can't take
+  // that for a compiler that emits none.
+  if (!Reflect.hasMetadata(PARAMTYPES_METADATA, mixinClass)) {
+    Reflect.defineMetadata(PARAMTYPES_METADATA, [], mixinClass);
+  }
   return mixinClass;
 }

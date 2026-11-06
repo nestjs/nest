@@ -140,6 +140,18 @@ For more common dependency resolution issues, see: https://docs.nestjs.com/faq/c
   return message;
 };
 
+export const MISSING_DECORATOR_METADATA_MESSAGE = (
+  type: string | symbol,
+  index: number,
+) => `The ${type.toString()} has no decorator metadata, so nothing says what to inject as the argument at index [${index}], and it will be undefined.
+
+Potential solutions:
+- Name the dependency with @Inject(), which needs no metadata:
+  constructor(@Inject(SomeService) private readonly someService: SomeService) {}
+- Or run the application with a compiler that emits the metadata, such as the Nest CLI, tsc or SWC, with "emitDecoratorMetadata" enabled in tsconfig.json. tsx and esbuild don't emit it.
+
+For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`;
+
 export const INVALID_MIDDLEWARE_MESSAGE = (
   text: TemplateStringsArray,
   name: string,
