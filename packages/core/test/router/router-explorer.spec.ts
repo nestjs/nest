@@ -75,6 +75,7 @@ describe('RouterExplorer', () => {
       container,
       applicationConfig,
       null!,
+      injector,
     );
     routerBuilder = new RouterExplorer(
       new MetadataScanner(),

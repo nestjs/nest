@@ -50,6 +50,7 @@ export class RoutesResolver implements Resolver {
       container,
       applicationConfig,
       httpAdapterRef,
+      injector,
     );
     this.routePathFactory = new RoutePathFactory(this.applicationConfig);
 
