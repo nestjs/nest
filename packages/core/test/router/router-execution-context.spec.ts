@@ -699,6 +699,140 @@ describe('RouterExecutionContext', () => {
     });
   });
   describe('createHandleResponseFn', () => {
+    describe('when a route handler produced a stream', () => {
+      const response = {};
+      const request = { method: 'GET', socket: new PassThrough() };
+      const stream = async () => {
+        const reply = vi.spyOn(adapter, 'reply').mockReturnValue(undefined);
+        const handler = contextCreator.createHandleResponseFn(
+          (() => undefined) as any,
+          false,
+        ) as HandlerResponseBasicFn;
+        return { reply, handler };
+      };
+      async function* generator() {
+        yield 'chunk';
+      }
+
+      afterEach(async () => {
+        const [, body] =
+          (adapter.reply as unknown as ReturnType<typeof vi.fn>).mock
+            .calls[0] ?? [];
+        if (body instanceof StreamableFile) {
+          body.getStream().destroy();
+        }
+      });
+
+      it('should stream what the interceptors hand back', async () => {
+        const { reply, handler } = await stream();
+        const apply = vi.spyOn(contextCreator['responseController'], 'apply');
+
+        await handler(generator(), response, request);
+
+        expect(reply.mock.calls[0][1]).toBeInstanceOf(StreamableFile);
+        expect(apply).not.toHaveBeenCalled();
+      });
+
+      it("should stream the handler's stream if an interceptor turned it into something else", async () => {
+        const { reply, handler } = await stream();
+        const body = generator();
+
+        await handler({ data: body }, response, request, undefined, [body]);
+
+        expect(reply.mock.calls[0][1]).toBeInstanceOf(StreamableFile);
+      });
+
+      it('should stream the last one if there are more', async () => {
+        const { handler } = await stream();
+        const first = generator();
+        const last = generator();
+        const send = vi.spyOn(contextCreator['responseController'], 'stream');
+
+        await handler({}, response, request, undefined, [first, last]);
+
+        expect(send.mock.calls[0][0]).toBe(last);
+      });
+
+      it('should hand over what an interceptor made of it', async () => {
+        const { handler } = await stream();
+        const send = vi.spyOn(contextCreator['responseController'], 'stream');
+        const wrapped = { data: {} };
+
+        await handler(wrapped, response, request, undefined, [generator()]);
+
+        expect(send.mock.calls[0][3]!.replacement).toBe(wrapped);
+      });
+
+      it('should have no replacement for the stream it sends as it is', async () => {
+        const { handler } = await stream();
+        const send = vi.spyOn(contextCreator['responseController'], 'stream');
+        const body = generator();
+
+        await handler(body, response, request, undefined, [body]);
+
+        expect(send.mock.calls[0][3]!.replacement).toBeUndefined();
+      });
+
+      it('should send what an interceptor made of a stream it read', async () => {
+        const { reply, handler } = await stream();
+        const body = new Response('body');
+        await body.text();
+
+        await handler({ read: true }, response, request, undefined, [body]);
+
+        expect(reply.mock.calls[0][1]).toEqual({ read: true });
+      });
+
+      it('should send a file an interceptor replaced it with', async () => {
+        const { reply, handler } = await stream();
+        const file = new StreamableFile(Buffer.from('file'));
+
+        await handler(file, response, request, undefined, [generator()]);
+
+        expect(reply.mock.calls[0][1]).toBe(file);
+      });
+
+      it('should not look at it when the handler sends the response', async () => {
+        const reply = vi.spyOn(adapter, 'reply').mockReturnValue(undefined);
+        const handler = contextCreator.createHandleResponseFn(
+          (() => undefined) as any,
+          true,
+        ) as HandlerResponseBasicFn;
+        const onStart = vi.fn();
+
+        await handler(
+          (async function* () {
+            onStart();
+            yield 'chunk';
+          })(),
+          response,
+          request,
+        );
+
+        expect(reply).not.toHaveBeenCalled();
+        expect(onStart).not.toHaveBeenCalled();
+      });
+
+      it('should cancel the stream when an interceptor fails', async () => {
+        const { handler } = await stream();
+        const onCancel = vi.fn();
+        const body = new ReadableStream({ cancel: onCancel });
+        const failure = new Error('rejected');
+
+        await expect(
+          handler(
+            throwError(() => failure),
+            response,
+            request,
+            undefined,
+            [body],
+          ),
+        ).rejects.toBe(failure);
+
+        await vi.waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
+      });
+    });
+
     describe('when "renderTemplate" is defined', () => {
       beforeEach(() => {
         vi.spyOn(adapter, 'render').mockImplementation(

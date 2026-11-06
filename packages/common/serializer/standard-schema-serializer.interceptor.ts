@@ -8,6 +8,7 @@ import {
   ExecutionContext,
   NestInterceptor,
 } from '../interfaces/index.js';
+import { isStreamingBody } from '../utils/is-streaming-body.util.js';
 import { isObject } from '../utils/shared.utils.js';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
 import { StandardSchemaSerializerContextOptions } from './standard-schema-serializer.interfaces.js';
@@ -76,7 +77,7 @@ export class StandardSchemaSerializerInterceptor implements NestInterceptor {
   }
 
   /**
-   * Serializes responses that are non-null objects nor streamable files.
+   * Serializes responses that are non-null objects nor streams.
    */
   serialize(
     response: PlainLiteralObject | Array<PlainLiteralObject>,
@@ -86,7 +87,12 @@ export class StandardSchemaSerializerInterceptor implements NestInterceptor {
     | PlainLiteralObject
     | Array<PlainLiteralObject>
     | Promise<PlainLiteralObject | Array<PlainLiteralObject>> {
-    if (!schema || !isObject(response) || response instanceof StreamableFile) {
+    if (
+      !schema ||
+      !isObject(response) ||
+      response instanceof StreamableFile ||
+      isStreamingBody(response)
+    ) {
       return response;
     }
 

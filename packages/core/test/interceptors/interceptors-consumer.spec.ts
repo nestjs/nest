@@ -275,6 +275,22 @@ describe('InterceptorsConsumer', () => {
 
         expect(stream.destroyed).toBe(true);
       });
+
+      it('should cancel a web Response it drops', async () => {
+        const cancel = vi.fn();
+        let resolveNext!: (response: Response) => void;
+        const next = () =>
+          new Promise<Response>(resolve => (resolveNext = resolve));
+
+        const sub = consumer
+          .transformDeferred(next)
+          .subscribe({ error: () => {} });
+        sub.unsubscribe();
+        resolveNext(new Response(new ReadableStream({ cancel })));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(cancel).toHaveBeenCalledTimes(1);
+      });
     });
   });
   describe('deferred promise conversion', () => {

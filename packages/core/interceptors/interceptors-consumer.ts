@@ -2,7 +2,7 @@ import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
 import { Observable, defer, from, isObservable } from 'rxjs';
 import { mergeAll } from 'rxjs/operators';
-import { destroyStreamableFile } from '../helpers/destroy-streamable-file.js';
+import { destroyUnsentBody } from '../helpers/destroy-unsent-body.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import type { CallHandler, ContextType } from '@nestjs/common';
 import { type Controller, isEmptyArray } from '@nestjs/common/internal';
@@ -63,9 +63,9 @@ export class InterceptorsConsumer {
             // before the async handler resolved. Do not subscribe the producer
             // Observable after the consumer has already gone away — subscribing
             // only to unsubscribe in the same tick would start producer side
-            // effects just to immediately abort them. A StreamableFile, though,
-            // already holds what its stream reads from (e.g. an open file).
-            destroyStreamableFile(res);
+            // effects just to immediately abort them. A StreamableFile or another
+            // stream, though, already holds what it reads from (e.g. an open file).
+            destroyUnsentBody(res);
             return;
           }
           // "isObservable()" also recognises Observables created by another copy

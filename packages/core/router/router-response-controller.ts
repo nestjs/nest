@@ -7,10 +7,13 @@ import {
   RequestMethod,
   type MessageEvent,
   SSE_ABORT_CONTROLLER,
+  StreamableFile,
 } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
 import { catchError, concatMap, map, tap } from 'rxjs/operators';
+import { Readable } from 'stream';
+import type { AbstractHttpAdapter } from '../adapters/http-adapter.js';
 import { MESSAGES } from '../constants.js';
 import { BaseExceptionFilter } from '../exceptions/base-exception-filter.js';
 import {
@@ -19,6 +22,18 @@ import {
   WritableHeaderStream,
   SseStream,
 } from './sse-stream.js';
+import {
+  cancelStreamingBody,
+  getWebResponseHeaders,
+  inferContentType,
+  isStreamingBodyConsumed,
+  isWebResponse,
+  openStreamingBody,
+  type StreamingBody,
+  type StreamingBodyIterator,
+  toReadable,
+  toResponseChunk,
+} from './streaming-body.js';
 import { isNil, isObject, isString } from '@nestjs/common/internal';
 
 /**
@@ -86,6 +101,142 @@ export class RouterResponseController {
     httpStatusCode?: number,
   ) {
     return this.applicationRef.reply(response, result, httpStatusCode);
+  }
+
+  /**
+   * Sends a web `Response`, a `ReadableStream` or an async iterable as it is
+   * produced, through the adapter's `StreamableFile` path, which gives each of
+   * them backpressure, and stops the stream when the client goes away.
+   *
+   * The headers wait for the first chunk, as exception filters can no longer
+   * answer once they are sent. A `Response` is the whole answer: its status and
+   * headers win over those set before it (by `@HttpCode()`, `@Header()` or a
+   * middleware), which it otherwise leaves in place.
+   *
+   * @param options.replacement What an interceptor turned `body` into, to send
+   * if the body turns out to have nothing to send: it may have read it already.
+   */
+  public async stream<TResponse = any, TRequest = any>(
+    body: StreamingBody,
+    response: TResponse,
+    request: TRequest,
+    options: { statusCode?: number; replacement?: unknown } = {},
+  ) {
+    const webResponse = isWebResponse(body) ? body : undefined;
+    const source = webResponse ? webResponse.body : (body as ReadableStream);
+    if (isStreamingBodyConsumed(body)) {
+      throw new TypeError(
+        'The route handler returned a body that has been read already, so it cannot be sent.',
+      );
+    }
+    const statusCode = webResponse?.status ?? options.statusCode;
+    const reply = (replyBody?: unknown) =>
+      this.applicationRef.reply(response, replyBody, statusCode);
+
+    if (isNil(source)) {
+      this.setWebResponseHeaders(response, webResponse);
+      return reply();
+    }
+    const rawRequest = (request as any).raw ?? request;
+    // A HEAD response has no body, so a handler's generator is not even started.
+    // Fastify gets an empty stream rather than an empty body, which would reset
+    // the Content-Length of the Response to 0.
+    if (rawRequest.method === 'HEAD') {
+      void cancelStreamingBody(body);
+      this.setWebResponseHeaders(response, webResponse);
+      return reply(new StreamableFile(Readable.from([])));
+    }
+
+    const iterator = openStreamingBody(source);
+    const first = await this.readFirst(
+      iterator,
+      rawRequest,
+      (response as any).raw ?? response,
+    );
+    if (!first) {
+      void iterator.return().catch(() => undefined);
+      return;
+    }
+    if (first.done) {
+      if (!isNil(options.replacement)) {
+        return this.applicationRef.reply(
+          response,
+          options.replacement,
+          options.statusCode,
+        );
+      }
+      this.setWebResponseHeaders(response, webResponse);
+      return reply();
+    }
+
+    let firstChunk: string | Uint8Array;
+    try {
+      firstChunk = toResponseChunk(first.value);
+      this.setWebResponseHeaders(response, webResponse);
+    } catch (err) {
+      void iterator.return().catch(() => undefined);
+      throw err;
+    }
+
+    const stream = toReadable(iterator, firstChunk);
+    // Logged here rather than by the file, as not every adapter reports a
+    // failure to it, and a write to a client that left is not one to log.
+    stream.on('error', err => {
+      if (!(err instanceof IntrinsicException)) {
+        this.logger.error(err);
+      }
+    });
+    const file = new StreamableFile(stream, {
+      type: webResponse ? undefined : inferContentType(first.value),
+    }).setErrorLogger(() => undefined);
+    try {
+      return await reply(file);
+    } catch (err) {
+      stream.destroy();
+      throw err;
+    }
+  }
+
+  /**
+   * Resolves to the first result of the body, or to nothing if the client goes
+   * away first: that result may take a while, and may be paid for.
+   */
+  private readFirst(
+    iterator: StreamingBodyIterator,
+    request: IncomingMessage,
+    response: unknown,
+  ): Promise<IteratorResult<unknown> | undefined> {
+    const disconnectSource = pickCloseSource(request.socket, response);
+    if (disconnectSource?.destroyed) {
+      return Promise.resolve(undefined);
+    }
+    return new Promise((resolve, reject) => {
+      const onClose = () => resolve(undefined);
+      disconnectSource?.once('close', onClose);
+      iterator
+        .next()
+        .then(resolve, reject)
+        .finally(() => disconnectSource?.removeListener('close', onClose));
+    });
+  }
+
+  private setWebResponseHeaders<TResponse = unknown>(
+    response: TResponse,
+    webResponse: Response | undefined,
+  ) {
+    if (!webResponse) {
+      return;
+    }
+    for (const [name, value] of getWebResponseHeaders(webResponse)) {
+      this.applicationRef.setHeader(response, name, value);
+    }
+    for (const cookie of webResponse.headers.getSetCookie()) {
+      (this.applicationRef as AbstractHttpAdapter).appendHeader(
+        response,
+        'Set-Cookie',
+        cookie,
+      );
+    }
   }
 
   public async redirect<TInput = any, TResponse = any>(

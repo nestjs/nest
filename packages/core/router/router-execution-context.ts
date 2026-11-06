@@ -39,13 +39,14 @@ import {
   Subject,
 } from 'rxjs';
 import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import type { Readable } from 'stream';
 import {
   FORBIDDEN_MESSAGE,
   GuardsConsumer,
   GuardsContextCreator,
 } from '../guards/index.js';
 import { ContextUtils } from '../helpers/context-utils.js';
-import { destroyStreamableFile } from '../helpers/destroy-streamable-file.js';
+import { destroyUnsentBody } from '../helpers/destroy-unsent-body.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import {
   HandleResponseFn,
@@ -67,6 +68,11 @@ import {
   RouterResponseController,
 } from './router-response-controller.js';
 import { HeaderStream } from './sse-stream.js';
+import {
+  isStreamingBody,
+  isStreamingBodyConsumed,
+  type StreamingBody,
+} from './streaming-body.js';
 
 export interface ParamProperties {
   index: number;
@@ -80,6 +86,8 @@ export interface ParamProperties {
   ) => any;
   schema?: StandardSchemaV1;
 }
+
+type HandlerStream = StreamableFile | StreamingBody;
 
 const isThenable = (value: unknown): value is PromiseLike<unknown> =>
   value !== null &&
@@ -173,7 +181,7 @@ export class RouterExecutionContext {
         res: TResponse,
         next: Function,
         handlerObservable$?: Subject<void>,
-        handlerFiles: StreamableFile[] = [],
+        handlerStreams: HandlerStream[] = [],
       ) =>
       async () => {
         try {
@@ -189,13 +197,10 @@ export class RouterExecutionContext {
         if (!handlerObservable$) {
           return result;
         }
-        this.notifyIfObservable(result, handlerObservable$);
+        this.observeHandlerResult(result, handlerObservable$, handlerStreams);
         return isObservable(result)
           ? result.pipe(
-              tap(
-                value =>
-                  value instanceof StreamableFile && handlerFiles.push(value),
-              ),
+              tap(value => this.trackHandlerStream(value, handlerStreams)),
             )
           : result;
       };
@@ -226,15 +231,15 @@ export class RouterExecutionContext {
         isSseHandler || isEmptyArray(interceptors)
           ? undefined
           : new ReplaySubject<void>(1);
-      // The files the handler's own Observable emits: an interceptor may
-      // still hold one when the client goes away.
-      const handlerFiles: StreamableFile[] = [];
+      // The streams the handler produced: an interceptor may still hold one
+      // when the client goes away, or turn one into a value it cannot be sent as.
+      const handlerStreams: HandlerStream[] = [];
       const resultOrDeferred = this.interceptorsConsumer.intercept(
         interceptors,
         [req, res, next],
         instance,
         callback,
-        handler(args, req, res, next, handlerObservable$, handlerFiles),
+        handler(args, req, res, next, handlerObservable$, handlerStreams),
         contextType,
       );
       const result = isSseHandler ? resultOrDeferred : await resultOrDeferred;
@@ -243,7 +248,7 @@ export class RouterExecutionContext {
         res,
         req,
         handlerObservable$,
-        handlerFiles,
+        handlerStreams,
       );
     };
   }
@@ -593,7 +598,7 @@ export class RouterExecutionContext {
       res: TResponse,
       req?: unknown,
       handlerObservable$?: Observable<unknown>,
-      handlerFiles: StreamableFile[] = [],
+      handlerStreams: HandlerStream[] = [],
     ) => {
       let disconnected = false;
       if (isObservable(result)) {
@@ -613,6 +618,8 @@ export class RouterExecutionContext {
         // rejects with an `EmptyError` if nothing was emitted yet. Any other
         // error still goes to the exception filters.
         if (!disconnected || !(err instanceof EmptyError)) {
+          // An interceptor failed with a stream of the handler still in hand
+          handlerStreams.forEach(destroyUnsentBody);
           throw err;
         }
       }
@@ -621,15 +628,21 @@ export class RouterExecutionContext {
         // StreamableFile would otherwise hold what it reads from (e.g. an
         // open file) for good, also one the handler emitted that an
         // interceptor held when the chain was torn down.
-        [result, ...handlerFiles].forEach(destroyStreamableFile);
+        [result, ...handlerStreams].forEach(destroyUnsentBody);
         return res;
       }
       if (!isResponseHandled) {
+        const streamingBody = this.pickStreamingBody(result, handlerStreams);
         try {
-          await this.responseController.apply(result, res, httpStatusCode);
+          await (streamingBody
+            ? this.responseController.stream(streamingBody, res, req, {
+                statusCode: httpStatusCode,
+                replacement: streamingBody === result ? undefined : result,
+              })
+            : this.responseController.apply(result, res, httpStatusCode));
         } catch (err) {
           // Not sent either, e.g. for a header value Node.js rejects
-          destroyStreamableFile(result);
+          destroyUnsentBody(result);
           throw err;
         }
       }
@@ -637,9 +650,43 @@ export class RouterExecutionContext {
     };
   }
 
-  private notifyIfObservable(
+  /**
+   * The stream to send, if any. A stream cannot go out as what an interceptor
+   * made of it (`{ data: stream }`, or `{}` once serialized), so the handler's
+   * is sent instead, unless the interceptor read it to build its own result, or
+   * replaced it with a file.
+   */
+  private pickStreamingBody(
+    result: unknown,
+    handlerStreams: HandlerStream[],
+  ): StreamingBody | undefined {
+    if (isStreamingBody(result)) {
+      return result;
+    }
+    if (result instanceof StreamableFile) {
+      return undefined;
+    }
+    const handlerBody = handlerStreams.findLast(isStreamingBody);
+    return handlerBody && !isStreamingBodyConsumed(handlerBody)
+      ? handlerBody
+      : undefined;
+  }
+
+  private trackHandlerStream(value: unknown, handlerStreams: HandlerStream[]) {
+    if (value instanceof StreamableFile) {
+      handlerStreams.push(value);
+    } else if (isStreamingBody(value)) {
+      handlerStreams.push(value);
+      // As with a StreamableFile: an 'error' emitted while an interceptor
+      // awaits, before anything listens, would bring the process down.
+      (value as Readable).on?.('error', () => undefined);
+    }
+  }
+
+  private observeHandlerResult(
     result: unknown,
     handlerObservable$: Subject<void>,
+    handlerStreams: HandlerStream[],
   ) {
     if (isObservable(result)) {
       handlerObservable$.next();
@@ -648,9 +695,17 @@ export class RouterExecutionContext {
       // thenable (e.g. a lazy query builder) could repeat its side effects.
       // This extra reaction leaves the handler's own promise chain untouched.
       result.then(
-        value => isObservable(value) && handlerObservable$.next(),
+        value => {
+          if (isObservable(value)) {
+            handlerObservable$.next();
+          } else {
+            this.trackHandlerStream(value, handlerStreams);
+          }
+        },
         () => undefined,
       );
+    } else {
+      this.trackHandlerStream(result, handlerStreams);
     }
   }
 
