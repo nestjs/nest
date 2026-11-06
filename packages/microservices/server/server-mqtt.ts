@@ -176,6 +176,9 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     originalPacket?: Record<string, any>,
   ): Promise<any> {
     const rawPacket = this.parseMessage(buffer.toString());
+    if (this.isOwnReply(channel, rawPacket)) {
+      return;
+    }
     const packet = await this.deserializer.deserialize(rawPacket, { channel });
     const mqttContext = new MqttContext([channel, originalPacket!]);
     if (isUndefined((packet as IncomingRequest).id)) {
@@ -204,6 +207,26 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       async () =>
         this.transformToObservable(await handler(packet.data, mqttContext)),
       publish,
+    );
+  }
+
+  /**
+   * A filter that ends in "#" also matches the topic this server replies on
+   * ("orders/1/reply"), so the broker hands the server its own replies. Those
+   * are skipped unless a handler's filter targets reply topics.
+   */
+  private isOwnReply(topic: string, packet: Record<string, any>) {
+    const replySuffix = this.getReplyPattern('');
+    return (
+      topic.endsWith(replySuffix) &&
+      !isUndefined(packet?.id) &&
+      isUndefined(packet?.pattern) &&
+      ![...this.messageHandlers.keys()].some(key => {
+        const filter = this.removeHandlerKeySharedPrefix(key);
+        return (
+          filter.endsWith(replySuffix) && this.matchMqttPattern(filter, topic)
+        );
+      })
     );
   }
 
