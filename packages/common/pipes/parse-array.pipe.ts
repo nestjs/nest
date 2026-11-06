@@ -133,33 +133,7 @@ export class ParseArrayPipe implements PipeTransform {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
-            let message: string[] | string;
-            if (err.getResponse) {
-              const response = err.getResponse();
-              if (Array.isArray(response.message)) {
-                message = response.message.map(
-                  (item: string) => `[${i}] ${item}`,
-                );
-              } else if (
-                response.message &&
-                typeof response.message === 'object'
-              ) {
-                // "grouped" error format: the messages of each property path
-                message = Object.entries<unknown>(response.message).flatMap(
-                  ([path, messages]) => {
-                    // "..." says that errors were left out, it is not a path
-                    const prefix = path === '...' ? '' : `${path}: `;
-                    return [messages]
-                      .flat()
-                      .map(item => `[${i}] ${prefix}${item}`);
-                  },
-                );
-              } else {
-                message = `[${i}] ${response.message}`;
-              }
-            } else {
-              message = err;
-            }
+            const message = this.getItemErrorMessages(err, i);
             // Appended in place, since `concat()` would copy all the errors so
             // far for each invalid item, and one at a time, since one item can
             // have more errors than `push(...message)` takes arguments.
@@ -184,16 +158,50 @@ export class ParseArrayPipe implements PipeTransform {
         const items: unknown[] = [];
         for (let i = 0; i < targetArray.length; i++) {
           // As with `map()`, the holes of a sparse array are not validated.
-          items.push(
-            i in targetArray
-              ? await toClassInstance(targetArray[i], i)
-              : undefined,
-          );
+          if (!(i in targetArray)) {
+            items.push(undefined);
+            continue;
+          }
+          try {
+            items.push(await toClassInstance(targetArray[i], i));
+          } catch (err) {
+            // The error of a primitive already names its item (see
+            // `validatePrimitive`), the one of a class item does not, so it
+            // is named here, as in the branch that collects every error
+            throw isExpectedTypePrimitive
+              ? err
+              : this.exceptionFactory(this.getItemErrorMessages(err, i) as any);
+          }
         }
         value = items;
       }
     }
     return value;
+  }
+
+  /**
+   * The message(s) of the error of one item, each prefixed with the index of
+   * the item, so that a response says which item to look at.
+   */
+  protected getItemErrorMessages(err: any, index: number): string[] | string {
+    if (!err.getResponse) {
+      return err;
+    }
+    const response = err.getResponse();
+    if (Array.isArray(response.message)) {
+      return response.message.map((item: string) => `[${index}] ${item}`);
+    }
+    if (response.message && typeof response.message === 'object') {
+      // "grouped" error format: the messages of each property path
+      return Object.entries<unknown>(response.message).flatMap(
+        ([path, messages]) => {
+          // "..." says that errors were left out, it is not a path
+          const prefix = path === '...' ? '' : `${path}: `;
+          return [messages].flat().map(item => `[${index}] ${prefix}${item}`);
+        },
+      );
+    }
+    return `[${index}] ${response.message}`;
   }
 
   protected isExpectedTypePrimitive(): boolean {

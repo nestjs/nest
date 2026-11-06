@@ -292,7 +292,9 @@ describe('ParseArrayPipe', () => {
           await expect(
             target.transform(value, {} as ArgumentMetadata),
           ).rejects.toMatchObject({
-            response: { message: ['Validation failed (object is expected)'] },
+            response: {
+              message: ['[0] Validation failed (object is expected)'],
+            },
           });
         }
         const items = await target.transform(
@@ -325,6 +327,52 @@ describe('ParseArrayPipe', () => {
           target.transform([{ number: 1 }, {}, {}, {}], {} as ArgumentMetadata),
         ).rejects.toThrow(BadRequestException);
         expect(transform).toHaveBeenCalledTimes(2);
+      });
+      it('should name the item that failed when items is a class', async () => {
+        class ArrItemWithProp {
+          @IsNumber()
+          number: number;
+        }
+        target = new ParseArrayPipe({ items: ArrItemWithProp });
+
+        const first = await target
+          .transform([{ number: 'a' }, { number: 1 }], {} as ArgumentMetadata)
+          .catch(err => err);
+        expect(first).toBeInstanceOf(BadRequestException);
+        expect(first.getResponse().message).toEqual([
+          '[0] number must be a number conforming to the specified constraints',
+        ]);
+
+        // The item to look at, not the first one: a long array says which
+        const third = await target
+          .transform(
+            [{ number: 1 }, { number: 2 }, { number: 'a' }],
+            {} as ArgumentMetadata,
+          )
+          .catch(err => err);
+        expect(third).toBeInstanceOf(BadRequestException);
+        expect(third.getResponse().message).toEqual([
+          '[2] number must be a number conforming to the specified constraints',
+        ]);
+      });
+      it('should name the item of a grouped error as well', async () => {
+        class ArrItemWithProp {
+          @IsNumber()
+          number: number;
+        }
+        target = new ParseArrayPipe({
+          items: ArrItemWithProp,
+          errorFormat: 'grouped',
+        });
+
+        const error = await target
+          .transform([{ number: 1 }, { number: 'a' }], {} as ArgumentMetadata)
+          .catch(err => err);
+
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.getResponse().message).toEqual([
+          '[1] number: number must be a number conforming to the specified constraints',
+        ]);
       });
       it('should validate one item after the other', async () => {
         class ArrItem {}
