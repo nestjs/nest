@@ -104,7 +104,7 @@ void bootstrap();
 | Email | [`@nestjs/mail`](https://docs.nestjs.com/application/mail) |
 | Files, S3 included | [`@nestjs/storage`](https://docs.nestjs.com/application/file-storage) |
 | Translations | [`@nestjs/i18n`](https://docs.nestjs.com/application/i18n) |
-| Drizzle | [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle) |
+| Databases | [`@nestjs/typeorm`](https://docs.nestjs.com/data/typeorm), [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle), [`@nestjs/mongoose`](https://docs.nestjs.com/data/mongodb), [`@nestjs/sequelize`](https://docs.nestjs.com/data/sequelize) |
 | Retries, timeouts, circuit breakers | [`@nestjs/resilience`](https://docs.nestjs.com/reliability/resilience) |
 | Idempotency keys | [`@nestjs/idempotency`](https://docs.nestjs.com/reliability/idempotency) |
 | Transactional outbox | [`@nestjs/outbox`](https://docs.nestjs.com/reliability/outbox) |
@@ -114,6 +114,7 @@ void bootstrap();
 | Queues and scheduled jobs | [`@nestjs/bullmq`](https://docs.nestjs.com/application/queues), [`@nestjs/schedule`](https://docs.nestjs.com/application/task-scheduling) |
 | GraphQL, WebSockets, microservices | [GraphQL](https://docs.nestjs.com/graphql/quick-start), [gateways](https://docs.nestjs.com/websockets/gateways), [microservices](https://docs.nestjs.com/microservices/basics) |
 | OpenAPI | [`@nestjs/swagger`](https://docs.nestjs.com/openapi/introduction) |
+| Configuration, caching, rate limiting, health checks | [`@nestjs/config`](https://docs.nestjs.com/application/configuration), [`@nestjs/cache-manager`](https://docs.nestjs.com/data/caching), [`@nestjs/throttler`](https://docs.nestjs.com/security/rate-limiting), [`@nestjs/terminus`](https://docs.nestjs.com/reliability/terminus) |
 
 ## Moving to Nest
 
