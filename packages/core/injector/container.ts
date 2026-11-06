@@ -93,6 +93,7 @@ export class NestContainer {
   public async addModule(
     metatype: ModuleMetatype,
     scope: ModuleScope,
+    insertedModules?: Module[],
   ): Promise<
     | {
         moduleRef: Module;
@@ -114,15 +115,17 @@ export class NestContainer {
       };
     }
 
+    const moduleRef = await this.setModule(
+      {
+        token,
+        type,
+        dynamicMetadata,
+      },
+      scope,
+      insertedModules,
+    );
     return {
-      moduleRef: await this.setModule(
-        {
-          token,
-          type,
-          dynamicMetadata,
-        },
-        scope,
-      ),
+      moduleRef,
       inserted: true,
     };
   }
@@ -131,6 +134,7 @@ export class NestContainer {
     metatypeToReplace: ModuleMetatype,
     newMetatype: ModuleMetatype,
     scope: ModuleScope,
+    insertedModules?: Module[],
   ): Promise<
     | {
         moduleRef: Module;
@@ -156,6 +160,7 @@ export class NestContainer {
           dynamicMetadata,
         },
         scope,
+        insertedModules,
       ),
       inserted: true,
     };
@@ -164,14 +169,21 @@ export class NestContainer {
   private async setModule(
     { token, dynamicMetadata, type }: ModuleFactory,
     scope: ModuleScope,
+    insertedModules?: Module[],
   ): Promise<Module> {
     const moduleRef = new Module(type, this);
     moduleRef.token = token;
     moduleRef.initOnPreview = this.shouldInitOnPreview(type);
     this.modules.set(token, moduleRef);
+    insertedModules?.push(moduleRef);
 
     const updatedScope = ([] as ModuleScope).concat(scope, type);
-    await this.addDynamicMetadata(token, dynamicMetadata!, updatedScope);
+    await this.addDynamicMetadata(
+      token,
+      dynamicMetadata!,
+      updatedScope,
+      insertedModules,
+    );
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
       moduleRef.isGlobal = true;
@@ -189,6 +201,7 @@ export class NestContainer {
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
     scope: Type<any>[],
+    insertedModules?: Module[],
   ) {
     if (!dynamicModuleMetadata) {
       return;
@@ -196,14 +209,26 @@ export class NestContainer {
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
     const { imports } = dynamicModuleMetadata;
-    await this.addDynamicModules(imports!, scope);
+    await this.addDynamicModules(imports!, scope, insertedModules);
   }
 
-  public async addDynamicModules(modules: any[], scope: Type<any>[]) {
+  public async addDynamicModules(
+    modules: any[],
+    scope: Type<any>[],
+    insertedModules?: Module[],
+  ) {
     if (!modules) {
       return;
     }
-    await Promise.all(modules.map(module => this.addModule(module, scope)));
+    const results = await Promise.allSettled(
+      modules.map(module => this.addModule(module, scope, insertedModules)),
+    );
+    const rejected = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (rejected) {
+      throw rejected.reason;
+    }
   }
 
   public isGlobalModule(
@@ -316,6 +341,22 @@ export class NestContainer {
 
   public clear() {
     this.modules.clear();
+  }
+
+  public removeModules(modules: Iterable<Module>) {
+    for (const moduleRef of modules) {
+      if (this.modules.get(moduleRef.token) !== moduleRef) {
+        continue;
+      }
+      this.modules.delete(moduleRef.token);
+      this.globalModules.delete(moduleRef);
+      this.dynamicModulesMetadata.delete(moduleRef.token);
+      this.modules.forEach(module => module.imports.delete(moduleRef));
+      DiscoverableMetaHostCollection.removeInstanceWrappers(this.modules, [
+        ...moduleRef.providers.values(),
+        ...moduleRef.controllers.values(),
+      ]);
+    }
   }
 
   public replace(toReplace: any, options: { scope: any[] | null }) {
