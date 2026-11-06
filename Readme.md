@@ -5,7 +5,7 @@
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="https://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+  <p align="center">A progressive <a href="https://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications, from a small API in one file to enterprise-grade systems.</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://github.com/nestjs/nest/blob/master/LICENSE" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -23,7 +23,7 @@
 
 ## Description
 
-Nest is a TypeScript framework for building backends on [Node.js](https://nodejs.org), from a small API in one file to a large system with many teams. It gives an application modules, dependency injection, and one place each for validation, authentication and error handling, so a project keeps its shape as it grows.
+Nest is a TypeScript framework for building backends on [Node.js](https://nodejs.org), from a small API in one file to an enterprise-grade system with many teams. It gives an application modules, dependency injection, and one place each for validation, authentication and error handling, so a project keeps its shape as it grows.
 
 It runs on [Express](https://github.com/expressjs/express), [Fastify](https://github.com/fastify/fastify) or Node's own `node:http`, and its first-party packages cover most of what a backend needs, so you can start small and add them as you go.
 
