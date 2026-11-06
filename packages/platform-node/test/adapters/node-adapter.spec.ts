@@ -306,6 +306,23 @@ describe('NodeAdapter', () => {
     });
   });
 
+  describe('inject', () => {
+    it('should reset a response that fails once its headers are sent', async () => {
+      // No error handler answers it, so finalHandler() destroys the socket, as
+      // a client of a listening server sees the connection close
+      adapter.initHttpServer({});
+      adapter.get('/', (req: NodeRequest, res: NodeResponse, next: Next) => {
+        res.writeHead(200);
+        res.write('partial');
+        next(new Error('broken'));
+      });
+
+      await expect(adapter.inject('/')).rejects.toMatchObject({
+        code: 'LIGHT_ECONNRESET',
+      });
+    });
+  });
+
   describe('trustProxy and querystringParser options', () => {
     it('should give the requests of the server the behavior they set', async () => {
       adapter = new NodeAdapter({

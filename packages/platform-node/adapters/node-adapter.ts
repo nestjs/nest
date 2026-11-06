@@ -23,6 +23,7 @@ import {
   isObject,
   isString,
   isUndefined,
+  loadPackageSync,
   stripEndSlash,
 } from '@nestjs/common/internal';
 import { AbstractHttpAdapter } from '@nestjs/core';
@@ -31,11 +32,12 @@ import cors from 'cors';
 import encodeUrl from 'encodeurl';
 import * as http from 'http';
 import * as https from 'https';
-import lightMyRequest, {
-  type Chain as LightMyRequestChain,
-  type InjectOptions,
-  type Response as LightMyRequestResponse,
+import type {
+  Chain as LightMyRequestChain,
+  InjectOptions,
+  Response as LightMyRequestResponse,
 } from 'light-my-request';
+import { createRequire } from 'module';
 import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
 import { Duplex, finished, Writable } from 'stream';
@@ -481,17 +483,28 @@ export class NodeAdapter extends AbstractHttpAdapter<
   public inject(
     opts?: InjectOptions | string,
   ): LightMyRequestChain | Promise<LightMyRequestResponse> {
+    // Loaded on first use, as it mostly serves tests. Bundlers such as esbuild
+    // cannot follow createRequire(), so applications bundling a call to
+    // inject() have to mark light-my-request as external.
+    const lightMyRequest = loadPackageSync(
+      'light-my-request',
+      NodeAdapter.name,
+      () => createRequire(import.meta.url)('light-my-request'),
+    );
     const dispatch = (req: http.IncomingMessage, res: http.ServerResponse) => {
       // light-my-request overrides stream methods on the prototypes of its
       // request and response, which the router would replace with those of
       // NodeRequest and NodeResponse
       this.setInjectedPrototype(req, this.requestClass.prototype);
       this.setInjectedPrototype(res, NodeResponse.prototype);
+      const socket = req.socket as any;
       // Where res.sendFile() finds the error handlers (see initHttpServer())
-      (req.socket as any).server ??= this.httpServer;
+      socket.server ??= this.httpServer;
+      // finalHandler() destroys the socket of a response it cannot finish
+      socket.destroy ??= (error?: Error) => res.destroy(error);
       this.handleRequest(req as NodeRequest, res as NodeResponse);
     };
-    return lightMyRequest(dispatch, opts!);
+    return lightMyRequest(dispatch, opts);
   }
 
   public beforeClose() {
