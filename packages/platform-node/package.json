@@ -31,7 +31,7 @@
     "cookie": "0.7.2",
     "cookie-signature": "1.2.2",
     "cors": "2.8.6",
-    "encodeurl": "2.0.1",
+    "encodeurl": "3.0.0",
     "fast-querystring": "1.1.2",
     "find-my-way": "9.10.0",
     "mime-types": "3.0.2",
