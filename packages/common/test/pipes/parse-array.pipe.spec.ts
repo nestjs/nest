@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
@@ -7,8 +7,13 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
+  ValidationError,
 } from 'class-validator';
-import { BadRequestException } from '../../exceptions/index.js';
+import {
+  BadRequestException,
+  HttpException,
+  UnprocessableEntityException,
+} from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface.js';
 import { ParseArrayPipe } from '../../pipes/parse-array.pipe.js';
 
@@ -420,6 +425,75 @@ describe('ParseArrayPipe', () => {
           1,
           undefined,
           3,
+        ]);
+      });
+      it('should call a custom exceptionFactory once, with the errors of the inner pipe', async () => {
+        class ArrItemWithProp {
+          @IsNumber()
+          number: number;
+        }
+        const received: ValidationError[][] = [];
+        const exceptionFactory = (errors: ValidationError[]) => {
+          received.push(errors);
+          return new BadRequestException(
+            errors.map(item => Object.values(item.constraints ?? {})[0]),
+          );
+        };
+        target = new ParseArrayPipe({
+          items: ArrItemWithProp,
+          exceptionFactory,
+        });
+
+        const error = await target
+          .transform([{ number: 1 }, { number: 'a' }], {} as ArgumentMetadata)
+          .catch(err => err);
+
+        // The options are spread into the inner pipe, so the factory belongs
+        // to that pipe and must not be called a second time from here
+        expect(received).toHaveLength(1);
+        expect(received[0]).toHaveLength(1);
+        expect(received[0][0]).toBeInstanceOf(ValidationError);
+        expect(received[0][0].property).toEqual('number');
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.getResponse().message).toEqual([
+          'number must be a number conforming to the specified constraints',
+        ]);
+      });
+      it('should rethrow an error that is not an HttpException as it is', async () => {
+        class ArrItemWithProp {
+          @Transform(() => {
+            throw new Error('transform failed');
+          })
+          @IsNumber()
+          number: number;
+        }
+        target = new ParseArrayPipe({ items: ArrItemWithProp });
+
+        const error = await target
+          .transform([{ number: 1 }], {} as ArgumentMetadata)
+          .catch(err => err);
+
+        expect(error).toBeInstanceOf(Error);
+        expect(error).not.toBeInstanceOf(HttpException);
+        expect(error.message).toEqual('transform failed');
+      });
+      it('should apply errorHttpStatusCode together with the index prefix', async () => {
+        class ArrItemWithProp {
+          @IsNumber()
+          number: number;
+        }
+        target = new ParseArrayPipe({
+          items: ArrItemWithProp,
+          errorHttpStatusCode: 422,
+        });
+
+        const error = await target
+          .transform([{ number: 1 }, { number: 'a' }], {} as ArgumentMetadata)
+          .catch(err => err);
+
+        expect(error).toBeInstanceOf(UnprocessableEntityException);
+        expect(error.getResponse().message).toEqual([
+          '[1] number must be a number conforming to the specified constraints',
         ]);
       });
       describe('when "stopAtFirstError" is explicitly turned off', () => {

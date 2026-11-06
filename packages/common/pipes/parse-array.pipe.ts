@@ -1,6 +1,7 @@
 import { Injectable } from '../decorators/core/injectable.decorator.js';
 import { Optional } from '../decorators/core/optional.decorator.js';
 import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException } from '../exceptions/http.exception.js';
 import { Type } from '../interfaces/index.js';
 import {
   ArgumentMetadata,
@@ -167,10 +168,21 @@ export class ParseArrayPipe implements PipeTransform {
           } catch (err) {
             // The error of a primitive already names its item (see
             // `validatePrimitive`), the one of a class item does not, so it
-            // is named here, as in the branch that collects every error
-            throw isExpectedTypePrimitive
-              ? err
-              : this.exceptionFactory(this.getItemErrorMessages(err, i) as any);
+            // is named here, as in the branch that collects every error.
+            // The options are spread into the inner `ValidationPipe`, so a
+            // custom factory has already run there and calling it again would
+            // hand it the messages or its own exception, while an error that
+            // is not an `HttpException` is not ours to rewrap.
+            if (
+              isExpectedTypePrimitive ||
+              this.options.exceptionFactory ||
+              !(err instanceof HttpException)
+            ) {
+              throw err;
+            }
+            throw this.exceptionFactory(
+              this.getItemErrorMessages(err, i) as any,
+            );
           }
         }
         value = items;
