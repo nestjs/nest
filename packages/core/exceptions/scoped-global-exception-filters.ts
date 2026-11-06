@@ -1,0 +1,130 @@
+import { ApplicationConfig } from '../application-config.js';
+import { ContextIdFactory } from '../helpers/context-id-factory.js';
+import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import {
+  type ContextId,
+  type InstanceWrapper,
+} from '../injector/instance-wrapper.js';
+import { REQUEST_CONTEXT_ID } from '../router/request/request-constants.js';
+
+/**
+ * Same injector options the microservice and HTTP stacks use, so a filter
+ * loaded outside a controller is decorated like one loaded with its host.
+ */
+export function createContextInjector(container: NestContainer): Injector {
+  return new Injector({
+    preview: container.contextOptions?.preview ?? false,
+    instanceDecorator: container.contextOptions?.instrument?.instanceDecorator,
+  });
+}
+
+/**
+ * A request-scoped filter, or a transient one whose own dependencies are not
+ * static, has no constructed instance on the static context. A transient
+ * filter whose tree is static was already constructed for each host it is
+ * enhancing, so a handler that passes that host as the inquirer finds it. A
+ * handler without an inquirer only gets such a filter when another one needs
+ * the filters to be built for the call, as they are then all built for it.
+ */
+export function hasUnconstructedScopedGlobalFilter(
+  config: ApplicationConfig,
+): boolean {
+  return config
+    .getGlobalRequestFilters()
+    .some(wrapper => !wrapper.isDependencyTreeStatic());
+}
+
+/**
+ * A handler that is not built for one controller has only the scoped global
+ * filters as its request-scoped tree, so they decide whether the context is
+ * durable. See `InstanceWrapper#isDependencyTreeDurable()`.
+ */
+export function areScopedGlobalFiltersDurable(
+  config: ApplicationConfig,
+): boolean {
+  const requestScopedWrappers = config
+    .getGlobalRequestFilters()
+    .filter(wrapper => !wrapper.isDependencyTreeStatic());
+  return (
+    requestScopedWrappers.length > 0 &&
+    requestScopedWrappers.every(wrapper => wrapper.isDependencyTreeDurable())
+  );
+}
+
+/**
+ * Attaches `request` to a context id the way a controller handler does, and
+ * reuses the id already stored on it. A second call for the same request must
+ * not register a second provider.
+ */
+export function bindRequestContext(
+  container: NestContainer,
+  config: ApplicationConfig,
+  request: object,
+): ContextId {
+  const contextId = ContextIdFactory.getByRequest(
+    request as Record<string, unknown>,
+  );
+  const withContextId = request as Record<symbol, ContextId | undefined>;
+  if (!withContextId[REQUEST_CONTEXT_ID]) {
+    Object.defineProperty(request, REQUEST_CONTEXT_ID, {
+      value: contextId,
+      enumerable: false,
+      writable: false,
+      configurable: false,
+    });
+
+    const requestProviderValue = areScopedGlobalFiltersDurable(config)
+      ? contextId.payload
+      : Object.assign(request, contextId.payload);
+    container.registerRequestProvider(requestProviderValue, contextId);
+  }
+  return contextId;
+}
+
+/**
+ * The provider or controller a handler was created for. A transient filter is
+ * stored under its inquirer, so it has to be loaded under the same id that the
+ * handler later looks it up with.
+ */
+export function findFilterInquirer(
+  container: NestContainer,
+  moduleKey: string,
+  inquirerId: string,
+): InstanceWrapper | undefined {
+  const moduleRef = container.getModules().get(moduleKey);
+  return (
+    moduleRef?.getProviderById(inquirerId) ??
+    moduleRef?.getControllerById(inquirerId)
+  );
+}
+
+/**
+ * Instantiates each scoped global filter for `contextId`. A transient instance
+ * is stored under `inquirer`, the id the handler looks it up with; without
+ * one, the filter is its own inquirer, as `Injector#loadPerContext()` does.
+ * Request-scoped lookup ignores the inquirer. A wrapper with no host module is
+ * skipped: failing the load here would replace the exception the filter was
+ * meant to handle.
+ */
+export async function loadScopedGlobalFilters(
+  injector: Injector,
+  config: ApplicationConfig,
+  contextId: ContextId,
+  inquirer?: InstanceWrapper,
+): Promise<void> {
+  const wrappers = config.getGlobalRequestFilters() as InstanceWrapper[];
+  await Promise.all(
+    wrappers.map(wrapper => {
+      if (!wrapper.host) {
+        return;
+      }
+      return injector.loadInjectable(
+        wrapper,
+        wrapper.host,
+        contextId,
+        inquirer ?? wrapper,
+      );
+    }),
+  );
+}

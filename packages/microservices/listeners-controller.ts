@@ -21,7 +21,6 @@ import {
 } from './context/rpc-metadata-constants.js';
 import { BaseRpcContext } from './ctx-host/base-rpc.context.js';
 import { Transport } from './enums/index.js';
-import { RpcExceptionsHandler } from './exceptions/rpc-exceptions-handler.js';
 import {
   MessageHandler,
   PatternMetadata,
@@ -34,7 +33,11 @@ import {
 } from './listener-metadata-explorer.js';
 import { ServerGrpc } from './server/index.js';
 import { Server } from './server/server.js';
-import { type Controller, isUndefined } from '@nestjs/common/internal';
+import {
+  type Controller,
+  isFunction,
+  isUndefined,
+} from '@nestjs/common/internal';
 import {
   ContextIdFactory,
   type NestContainer,
@@ -272,15 +275,11 @@ export class ListenersController {
     const { instance } = wrapper;
 
     const isTreeDurable = wrapper.isDependencyTreeDurable();
-    // Kept per controller and pattern, not per handler function: controllers
-    // that inherit the handler from a base class can declare different filters
-    let exceptionFilter: RpcExceptionsHandler | undefined;
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
       const originalArgs = [...args];
+      let contextId: ContextId | undefined;
       try {
-        let contextId: ContextId;
-
         let [dataOrContextHost] = args;
         if (dataOrContextHost instanceof RequestContextHost) {
           contextId = this.getContextId(dataOrContextHost, isTreeDurable);
@@ -323,15 +322,56 @@ export class ListenersController {
         }
         return returnValue;
       } catch (err) {
-        exceptionFilter ??= this.exceptionFiltersContext.create(
-          instance,
-          instance[methodKey],
-          moduleKey,
-        );
-        const host = new ExecutionContextHost(args);
+        // The context id is known once the request was registered, including
+        // when `loadPerContext` then fails. Caching the handler would keep the
+        // first message's filters for every later failure. A leading
+        // `RequestContextHost` is shifted off `args` before this catch, so the
+        // host is built from the arguments the handler itself would see.
+        // Enhancers are not loaded when construction throws. A transient
+        // filter is stored under this controller, which is the id `create`
+        // looks up; without this load the lookup clones a prototype. Only the
+        // filters are loaded: another enhancer that fails here must not
+        // replace the error that stopped the message.
+        let exception: unknown = err;
+        let filtersContextId =
+          contextId && contextId !== STATIC_CONTEXT ? contextId : undefined;
+        if (filtersContextId) {
+          try {
+            await this.injector.loadEnhancersPerContext(
+              wrapper,
+              filtersContextId,
+              wrapper,
+              this.getExceptionFilterEnhancers(wrapper),
+            );
+          } catch (loadError) {
+            // As for a scoped global filter that cannot be instantiated
+            // outside a controller, the message fails with that error, left
+            // to the filters without a scope.
+            exception = loadError;
+            filtersContextId = undefined;
+          }
+        }
+        const exceptionFilter = filtersContextId
+          ? this.exceptionFiltersContext.create(
+              instance,
+              instance[methodKey],
+              moduleKey,
+              filtersContextId,
+              wrapper.id,
+            )
+          : this.exceptionFiltersContext.create(
+              instance,
+              instance[methodKey],
+              moduleKey,
+            );
+        const hostArgs =
+          originalArgs[0] instanceof RequestContextHost
+            ? originalArgs.slice(1)
+            : originalArgs;
+        const host = new ExecutionContextHost(hostArgs);
         host.setType('rpc');
         const returnValue = exceptionFilter.handle(
-          err,
+          exception as Error,
           host,
           reportUnhandledErrors,
         );
@@ -367,6 +407,23 @@ export class ListenersController {
       this.container.registerRequestProvider(requestProviderValue, contextId);
     }
     return contextId;
+  }
+
+  /**
+   * A scoped global filter is one of the controller's enhancers, whatever its
+   * provider, and a filter class bound with `@UseFilters()` has a `catch`.
+   */
+  private getExceptionFilterEnhancers(
+    wrapper: InstanceWrapper,
+  ): InstanceWrapper[] {
+    const globalRequestFilters = new Set<InstanceWrapper>(
+      this.container.applicationConfig?.getGlobalRequestFilters() ?? [],
+    );
+    return (wrapper.getEnhancersMetadata() ?? []).filter(
+      enhancer =>
+        globalRequestFilters.has(enhancer) ||
+        isFunction(enhancer.metatype?.prototype?.catch),
+    );
   }
 
   public transformToObservable<T>(
