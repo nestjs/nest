@@ -29,69 +29,32 @@ It runs on [Express](https://github.com/expressjs/express), [Fastify](https://gi
 
 ## Quick start
 
-Create a project with the CLI:
-
 ```bash
 npx @nestjs/cli new my-api --package-manager npm
 cd my-api
 npm run start:dev
 ```
 
-Or start from a single file, with no scaffolding and no build step:
-
-```bash
-npm init -y && npm pkg set type=module
-npm i @nestjs/core @nestjs/common @nestjs/platform-express reflect-metadata rxjs zod
-npm i -D tsx typescript @types/node
-echo '{ "compilerOptions": { "experimentalDecorators": true, "target": "es2023", "module": "nodenext" } }' > tsconfig.json
-```
+An application can also be a single file. This can replace `src/main.ts`, and `npx tsx src/main.ts` runs it with no build step:
 
 ```typescript
-// main.ts: run it with `npx tsx main.ts`
-import {
-  Body,
-  Controller,
-  Get,
-  Module,
-  Post,
-  StandardSchemaValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { z } from 'zod';
 
-const createTodoSchema = z.object({ title: z.string().min(1) });
-type CreateTodo = z.infer<typeof createTodoSchema>;
-
-@Controller('todos')
-class TodosController {
-  private readonly todos: (CreateTodo & { id: number })[] = [];
-
+@Controller()
+class AppController {
   @Get()
-  findAll() {
-    return this.todos;
-  }
-
-  @Post()
-  create(@Body({ schema: createTodoSchema }) todo: CreateTodo) {
-    const created = { id: this.todos.length + 1, ...todo };
-    this.todos.push(created);
-    return created;
+  hello() {
+    return 'Hello, Nest!';
   }
 }
 
-@Module({ controllers: [TodosController] })
+@Module({ controllers: [AppController] })
 class AppModule {}
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new StandardSchemaValidationPipe());
-  await app.listen(process.env.PORT ?? 3000);
-}
-
-void bootstrap();
+const app = await NestFactory.create(AppModule);
+await app.listen(3000);
 ```
-
-`tsx` emits no decorator metadata, so inject a provider there with `@Inject(TodosService)` in the constructor. Projects from `nest new` compile with metadata, and the parameter's type is enough.
 
 ## First-party packages
 
