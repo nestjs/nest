@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'http';
+import { type IncomingMessage, METHODS, type ServerResponse } from 'http';
 import { match } from 'path-to-regexp';
 import { NodeRequest, NodeResponse } from '../adapters/node-request.js';
 import {
@@ -376,7 +376,17 @@ export class NodeRouter {
       this.skips = undefined;
       this.stack.push(last);
     }
-    last.table.add(method, path, handler);
+    // Express' req.route, which code that reports by route reads; as with
+    // Express' app.all(), a route for every method lists each of them
+    const methods = method === null ? METHODS : [method];
+    const route = {
+      path,
+      methods: Object.fromEntries(methods.map(m => [m.toLowerCase(), true])),
+    };
+    last.table.add(method, path, (req: NodeRequest, res, next) => {
+      req.route = route;
+      return handler(req, res, next);
+    });
     return this;
   }
 

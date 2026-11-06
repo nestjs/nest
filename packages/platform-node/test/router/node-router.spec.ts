@@ -160,6 +160,35 @@ describe('NodeRouter', () => {
   });
 
   describe('routes', () => {
+    it('should set the route being run on the request, as Express does', () => {
+      const seen: unknown[] = [];
+      router.use((req: NodeRequest, _res: unknown, next: Next) => {
+        seen.push(req.route);
+        next();
+      });
+      router.get(
+        '/users/:id',
+        (req: NodeRequest, _res: unknown, next: Next) => {
+          seen.push(req.route);
+          next();
+        },
+      );
+      router.all('/users/:userId', (req: NodeRequest) => {
+        seen.push(req.route);
+      });
+
+      dispatch('GET', '/users/42');
+
+      expect(seen).toEqual([
+        undefined,
+        { path: '/users/:id', methods: { get: true } },
+        expect.objectContaining({
+          path: '/users/:userId',
+          methods: expect.objectContaining({ get: true, delete: true }),
+        }),
+      ]);
+    });
+
     it('should set the route parameters on the request', () => {
       let params: unknown;
       router.get('/users/:id', (req: NodeRequest) => {
