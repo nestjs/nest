@@ -1,7 +1,15 @@
 {
   "name": "@nestjs/platform-express",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@platform-express)",
+  "description": "Run NestJS on Express: the HTTP adapter with Express middleware, file uploads through Multer, static assets and view engines.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "express",
+    "http-adapter",
+    "multer",
+    "file-upload"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",

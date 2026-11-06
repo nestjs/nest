@@ -1,7 +1,15 @@
 {
   "name": "@nestjs/platform-ws",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@platform-ws)",
+  "description": "ws adapter for NestJS gateways: plain WebSockets, with no Socket.IO protocol on top.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "ws",
+    "websocket",
+    "websockets",
+    "realtime"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",

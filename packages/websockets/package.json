@@ -1,7 +1,17 @@
 {
   "name": "@nestjs/websockets",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
+  "description": "WebSockets for NestJS: gateways with message handlers, guards, pipes and interceptors, on Socket.IO or ws.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "websockets",
+    "websocket",
+    "gateway",
+    "realtime",
+    "socket.io",
+    "ws"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",

@@ -1,7 +1,16 @@
 {
   "name": "@nestjs/platform-node",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@platform-node)",
+  "description": "Run NestJS directly on node:http, with no framework underneath: the fastest NestJS HTTP adapter.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "node",
+    "node-http",
+    "http",
+    "http-adapter",
+    "performance"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",

@@ -1,7 +1,16 @@
 {
   "name": "@nestjs/common",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@common)",
+  "description": "Decorators, pipes, exceptions and utilities for NestJS applications: @Controller(), @Injectable(), @Body(), ValidationPipe, HttpException and more.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "framework",
+    "typescript",
+    "decorators",
+    "validation",
+    "backend"
+  ],
   "author": "Kamil Mysliwiec",
   "homepage": "https://nestjs.com",
   "funding": {

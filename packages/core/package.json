@@ -1,7 +1,20 @@
 {
   "name": "@nestjs/core",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@core)",
+  "description": "The core of NestJS, a TypeScript framework for Node.js backends: modules, dependency injection and the request pipeline, on Express, Fastify or node:http.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "framework",
+    "web-framework",
+    "typescript",
+    "node",
+    "nodejs",
+    "backend",
+    "api",
+    "rest-api",
+    "dependency-injection"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",
