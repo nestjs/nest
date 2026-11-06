@@ -104,6 +104,12 @@ export class NodeRequest extends IncomingMessage {
    */
   declare params: Record<string, any>;
   /**
+   * The route being run, as with Express' `req.route`: its path as
+   * registered (`/users/:id`) and its methods (`{ get: true }`). Unset
+   * before the request reaches a route.
+   */
+  declare route?: { path: string; methods: Record<string, boolean> };
+  /**
    * Parsed request body, set by the body parsers.
    */
   declare body: any;
