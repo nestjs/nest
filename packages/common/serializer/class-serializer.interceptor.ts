@@ -10,6 +10,7 @@ import {
   NestInterceptor,
 } from '../interfaces/index.js';
 import { loadPackage } from '../utils/load-package.util.js';
+import { isStreamingBody } from '../utils/is-streaming-body.util.js';
 import { isObject } from '../utils/shared.utils.js';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
 import { ClassSerializerContextOptions } from './class-serializer.interfaces.js';
@@ -80,13 +81,17 @@ export class ClassSerializerInterceptor implements NestInterceptor {
   }
 
   /**
-   * Serializes responses that are non-null objects nor streamable files.
+   * Serializes responses that are non-null objects nor streams.
    */
   serialize(
     response: PlainLiteralObject | Array<PlainLiteralObject>,
     options: ClassSerializerContextOptions,
   ): PlainLiteralObject | Array<PlainLiteralObject> {
-    if (!isObject(response) || response instanceof StreamableFile) {
+    if (
+      !isObject(response) ||
+      response instanceof StreamableFile ||
+      isStreamingBody(response)
+    ) {
       return response;
     }
 

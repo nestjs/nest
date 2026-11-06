@@ -214,6 +214,32 @@ describe('StandardSchemaSerializerInterceptor', () => {
       });
     });
 
+    describe('when response is a stream', () => {
+      it.each<[string, () => unknown]>([
+        ['a Response', () => new Response('test')],
+        ['a ReadableStream', () => new ReadableStream()],
+        ['an async generator', () => (async function* () {})()],
+      ])('should return %s unchanged', async (_, create) => {
+        const schema = createSchema(() => ({
+          issues: [{ message: 'should not be called' }],
+        }));
+        interceptor = new StandardSchemaSerializerInterceptor(mockReflector, {
+          schema,
+        });
+        const stream = create();
+        (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+          of(stream),
+        );
+
+        const result$ = interceptor.intercept(
+          mockExecutionContext,
+          mockCallHandler,
+        );
+
+        expect(await lastValueFrom(result$)).toBe(stream);
+      });
+    });
+
     describe('when response is a StreamableFile', () => {
       it('should return the streamable file unchanged', async () => {
         const schema = createSchema(() => ({

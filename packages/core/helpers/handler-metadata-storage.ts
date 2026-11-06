@@ -2,6 +2,7 @@ import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
 import { ContextId } from '../injector/instance-wrapper.js';
 import { HeaderStream } from '../router/sse-stream.js';
+import type { StreamingBody } from '../router/streaming-body.js';
 import { ParamProperties } from './context-utils.js';
 import type { StreamableFile, Type } from '@nestjs/common';
 
@@ -14,7 +15,7 @@ export type HandlerResponseBasicFn = <TResult, TResponse>(
   res: TResponse,
   req?: any,
   handlerObservable$?: Observable<unknown>,
-  handlerFiles?: StreamableFile[],
+  handlerStreams?: (StreamableFile | StreamingBody)[],
 ) => any;
 
 export type HandleSseResponseFn = <

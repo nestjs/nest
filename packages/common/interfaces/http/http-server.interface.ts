@@ -368,7 +368,8 @@ export interface HttpServer<
    *   and `Content-Length` from `body.getHeaders()` unless already present,
    *   pipe `body.getStream()` into the response, route stream errors to
    *   `body.errorHandler(err, response)` and log write errors through
-   *   `body.errorLogger(err)`.
+   *   `body.errorLogger(err)`. A web `Response`, a `ReadableStream` or an async
+   *   iterable that a handler returns also reaches the adapter as one of these.
    * - `body` is an object or array: serialize as JSON.
    * - anything else: send `String(body)`.
    *

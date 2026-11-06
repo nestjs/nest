@@ -1,6 +1,7 @@
 import * as classTransformer from 'class-transformer';
 import { Exclude, Expose } from 'class-transformer';
 import { firstValueFrom, of } from 'rxjs';
+import { Readable } from 'stream';
 import { StreamableFile } from '../../file-stream/index.js';
 import { CallHandler, ExecutionContext } from '../../interfaces/index.js';
 import { ClassSerializerInterceptor } from '../../serializer/class-serializer.interceptor.js';
@@ -283,6 +284,19 @@ describe('ClassSerializerInterceptor', () => {
       const result = interceptor.serialize(streamableFile as any, {});
 
       expect(result).toBe(streamableFile);
+      expect(mockTransformerPackage.classToPlain).not.toHaveBeenCalled();
+    });
+
+    it.each<[string, () => unknown]>([
+      ['a Response', () => new Response('test')],
+      ['a ReadableStream', () => new ReadableStream()],
+      ['a Readable', () => Readable.from(['test'])],
+      ['an async generator', () => (async function* () {})()],
+    ])('should return %s unchanged', (_, create) => {
+      const stream = create();
+      const result = interceptor.serialize(stream as any, {});
+
+      expect(result).toBe(stream);
       expect(mockTransformerPackage.classToPlain).not.toHaveBeenCalled();
     });
 

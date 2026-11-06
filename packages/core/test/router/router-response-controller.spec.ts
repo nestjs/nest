@@ -19,6 +19,7 @@ import {
   type MessageEvent,
   RequestMethod,
   SSE_ABORT_CONTROLLER,
+  StreamableFile,
 } from '../../../common/index.js';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
 import { RouterResponseController } from '../../router/router-response-controller.js';
@@ -82,6 +83,386 @@ describe('RouterResponseController', () => {
           expect(response.json).toHaveBeenCalledWith(value);
         });
       });
+    });
+  });
+
+  describe('stream', () => {
+    let reply: ReturnType<typeof vi.fn>;
+    let setHeader: ReturnType<typeof vi.fn>;
+    let appendHeader: ReturnType<typeof vi.fn>;
+    const response = {};
+    const request = { method: 'GET', socket: new PassThrough() };
+
+    beforeEach(() => {
+      reply = vi.spyOn(adapter, 'reply').mockReturnValue(undefined) as any;
+      setHeader = vi.spyOn(adapter, 'setHeader') as any;
+      appendHeader = vi.spyOn(adapter, 'appendHeader') as any;
+    });
+
+    const repliedFile = (): StreamableFile => reply.mock.calls[0][1];
+
+    async function* generator(...values: unknown[]) {
+      yield* values;
+    }
+
+    it('should reply with a file of the body, and the status of the handler', async () => {
+      await routerResponseController.stream(
+        generator('a', 'b'),
+        response,
+        request,
+        { statusCode: 203 },
+      );
+
+      expect(reply).toHaveBeenCalledWith(
+        response,
+        expect.any(StreamableFile),
+        203,
+      );
+      const chunks: unknown[] = [];
+      for await (const chunk of repliedFile().getStream()) {
+        chunks.push(chunk);
+      }
+      expect(chunks).toEqual(['a', 'b']);
+    });
+
+    it.each<[string, unknown, string]>([
+      ['strings', 'a', 'text/plain; charset=utf-8'],
+      ['binary data', new Uint8Array(1), 'application/octet-stream'],
+      ['objects', { a: 1 }, 'application/x-ndjson'],
+    ])('should pick the Content-Type of %s', async (_, chunk, type) => {
+      await routerResponseController.stream(
+        generator(chunk),
+        response,
+        request,
+      );
+
+      expect(repliedFile().getHeaders().type).toBe(type);
+      repliedFile().getStream().destroy();
+    });
+
+    it('should use the status and headers of a Response', async () => {
+      const headers = new Headers({ 'x-custom': 'yes' });
+      headers.append('set-cookie', 'a=1');
+      headers.append('set-cookie', 'b=2');
+
+      await routerResponseController.stream(
+        new Response('body', { status: 202, headers }),
+        response,
+        request,
+        { statusCode: 200 },
+      );
+
+      expect(reply).toHaveBeenCalledWith(
+        response,
+        expect.any(StreamableFile),
+        202,
+      );
+      expect(setHeader).toHaveBeenCalledWith(response, 'x-custom', 'yes');
+      expect(setHeader).not.toHaveBeenCalledWith(
+        response,
+        'set-cookie',
+        expect.anything(),
+      );
+      expect(appendHeader.mock.calls).toEqual([
+        [response, 'Set-Cookie', 'a=1'],
+        [response, 'Set-Cookie', 'b=2'],
+      ]);
+      repliedFile().getStream().destroy();
+    });
+
+    it('should reply with no body for a null body', async () => {
+      await routerResponseController.stream(
+        new Response(null, { status: 204, headers: { 'x-custom': 'yes' } }),
+        response,
+        request,
+      );
+
+      expect(reply).toHaveBeenCalledWith(response, undefined, 204);
+      expect(setHeader).toHaveBeenCalledWith(response, 'x-custom', 'yes');
+    });
+
+    it('should reply with no body for a body with nothing to send', async () => {
+      await routerResponseController.stream(generator(), response, request, {
+        statusCode: 200,
+      });
+
+      expect(reply).toHaveBeenCalledWith(response, undefined, 200);
+    });
+
+    it('should prefer a replacement to a body with nothing to send', async () => {
+      const replacement = { collected: [] };
+
+      await routerResponseController.stream(
+        new Response(new ReadableStream({ start: c => c.close() }), {
+          status: 202,
+          headers: { 'x-custom': 'yes' },
+        }),
+        response,
+        request,
+        { statusCode: 200, replacement },
+      );
+
+      expect(reply).toHaveBeenCalledWith(response, replacement, 200);
+      expect(setHeader).not.toHaveBeenCalled();
+    });
+
+    it('should not use a replacement while the body has something to send', async () => {
+      await routerResponseController.stream(generator('a'), response, request, {
+        replacement: { data: {} },
+      });
+
+      expect(repliedFile()).toBeInstanceOf(StreamableFile);
+      repliedFile().getStream().destroy();
+    });
+
+    it('should reject and reply nothing for a body that was read', async () => {
+      const body = new Response('body');
+      await body.text();
+
+      await expect(
+        routerResponseController.stream(body, response, request),
+      ).rejects.toThrow('has been read already');
+      expect(reply).not.toHaveBeenCalled();
+    });
+
+    it('should reject and set nothing when the body fails before the first chunk', async () => {
+      const failure = new BadRequestException();
+
+      await expect(
+        routerResponseController.stream(
+          new Response(new ReadableStream({ start: c => c.error(failure) }), {
+            headers: { 'x-custom': 'yes' },
+          }),
+          response,
+          request,
+        ),
+      ).rejects.toBe(failure);
+      expect(reply).not.toHaveBeenCalled();
+      expect(setHeader).not.toHaveBeenCalled();
+    });
+
+    it('should reject and stop the body when the first chunk cannot be serialized', async () => {
+      const onFinally = vi.fn();
+
+      await expect(
+        routerResponseController.stream(
+          (async function* () {
+            try {
+              yield 1n;
+            } finally {
+              onFinally();
+            }
+          })(),
+          response,
+          request,
+        ),
+      ).rejects.toThrow(TypeError);
+      expect(reply).not.toHaveBeenCalled();
+      await vi.waitFor(() => expect(onFinally).toHaveBeenCalledTimes(1));
+    });
+
+    it('should stop the body and reject when the adapter refuses a header', async () => {
+      const failure = new Error('Invalid character in header content');
+      setHeader.mockImplementation(() => {
+        throw failure;
+      });
+      const onCancel = vi.fn();
+
+      await expect(
+        routerResponseController.stream(
+          new Response(
+            new ReadableStream({
+              start: controller => controller.enqueue(new Uint8Array(1)),
+              cancel: onCancel,
+            }),
+            { headers: { 'x-custom': 'yes' } },
+          ),
+          response,
+          request,
+        ),
+      ).rejects.toBe(failure);
+      expect(reply).not.toHaveBeenCalled();
+      expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stop the body and reject when the adapter cannot reply', async () => {
+      const failure = new Error('Invalid character in header content');
+      reply.mockImplementation(() => {
+        throw failure;
+      });
+      const onFinally = vi.fn();
+
+      await expect(
+        routerResponseController.stream(
+          (async function* () {
+            try {
+              yield 'a';
+              yield 'b';
+            } finally {
+              onFinally();
+            }
+          })(),
+          response,
+          request,
+        ),
+      ).rejects.toBe(failure);
+      await vi.waitFor(() => expect(onFinally).toHaveBeenCalledTimes(1));
+    });
+
+    describe('for HEAD', () => {
+      const head = { method: 'HEAD', socket: new PassThrough() };
+
+      it('should reply with an empty file, without starting the body', async () => {
+        const onStart = vi.fn();
+
+        await routerResponseController.stream(
+          (async function* () {
+            onStart();
+            yield 'a';
+          })(),
+          response,
+          head,
+          { statusCode: 200 },
+        );
+
+        expect(reply).toHaveBeenCalledWith(
+          response,
+          expect.any(StreamableFile),
+          200,
+        );
+        expect(onStart).not.toHaveBeenCalled();
+        const chunks: unknown[] = [];
+        for await (const chunk of repliedFile().getStream()) {
+          chunks.push(chunk);
+        }
+        expect(chunks).toEqual([]);
+      });
+
+      it('should cancel the body of a Response, and send its headers', async () => {
+        const onCancel = vi.fn();
+
+        await routerResponseController.stream(
+          new Response(new ReadableStream({ cancel: onCancel }), {
+            headers: { 'content-length': '5' },
+          }),
+          response,
+          head,
+        );
+
+        expect(setHeader).toHaveBeenCalledWith(response, 'content-length', '5');
+        await vi.waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
+      });
+
+      it('should read the method of the request a platform wraps', async () => {
+        const onStart = vi.fn();
+
+        await routerResponseController.stream(
+          (async function* () {
+            onStart();
+            yield 'a';
+          })(),
+          response,
+          { raw: head },
+        );
+
+        expect(onStart).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when the client goes away', () => {
+      it('should stop waiting for the first chunk, and reply nothing', async () => {
+        const socket = new PassThrough();
+        const onCancel = vi.fn();
+        const sending = routerResponseController.stream(
+          new ReadableStream({
+            pull: () => new Promise<void>(() => undefined),
+            cancel: onCancel,
+          }),
+          response,
+          { method: 'GET', socket },
+        );
+
+        socket.destroy();
+        await sending;
+
+        expect(reply).not.toHaveBeenCalled();
+        expect(onCancel).toHaveBeenCalledTimes(1);
+      });
+
+      it('should not start a body for a client that already left', async () => {
+        const socket = new PassThrough();
+        socket.destroy();
+        const onStart = vi.fn();
+
+        await routerResponseController.stream(
+          (async function* () {
+            onStart();
+            yield 'a';
+          })(),
+          response,
+          { method: 'GET', socket },
+        );
+
+        expect(onStart).not.toHaveBeenCalled();
+        expect(reply).not.toHaveBeenCalled();
+      });
+
+      it('should stop listening once the first chunk is there', async () => {
+        const socket = new PassThrough();
+
+        await routerResponseController.stream(generator('a'), response, {
+          method: 'GET',
+          socket,
+        });
+
+        expect(socket.listenerCount('close')).toBeLessThanOrEqual(
+          new PassThrough().listenerCount('close'),
+        );
+        repliedFile().getStream().destroy();
+      });
+    });
+
+    it('should log a failure after the first chunk once', async () => {
+      const logged = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => undefined);
+      const failure = new Error('upstream failed');
+
+      await routerResponseController.stream(
+        (async function* () {
+          yield 'a';
+          throw failure;
+        })(),
+        response,
+        request,
+      );
+      const stream = repliedFile().getStream();
+      stream.on('data', () => undefined);
+      await new Promise(resolve => stream.once('close', resolve));
+
+      expect(logged.mock.calls).toEqual([[failure]]);
+      repliedFile().errorLogger(failure);
+      expect(logged).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not log an IntrinsicException', async () => {
+      const logged = vi
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => undefined);
+
+      await routerResponseController.stream(
+        (async function* () {
+          yield 'a';
+          throw new IntrinsicException('expected');
+        })(),
+        response,
+        request,
+      );
+      const stream = repliedFile().getStream();
+      stream.on('data', () => undefined);
+      await new Promise(resolve => stream.once('close', resolve));
+
+      expect(logged).not.toHaveBeenCalled();
     });
   });
 
