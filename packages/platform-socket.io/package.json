@@ -1,7 +1,15 @@
 {
   "name": "@nestjs/platform-socket.io",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@platform-socket.io)",
+  "description": "Socket.IO adapter for NestJS gateways: realtime WebSocket apps with rooms, namespaces and reconnection.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "socket.io",
+    "socketio",
+    "websockets",
+    "realtime"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",

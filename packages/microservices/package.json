@@ -1,7 +1,18 @@
 {
   "name": "@nestjs/microservices",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
+  "description": "Microservices for NestJS: message and event handlers over Kafka, RabbitMQ, NATS, Redis, MQTT, gRPC or TCP.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "microservices",
+    "kafka",
+    "rabbitmq",
+    "nats",
+    "redis",
+    "mqtt",
+    "grpc"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",

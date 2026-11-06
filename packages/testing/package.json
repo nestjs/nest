@@ -1,7 +1,16 @@
 {
   "name": "@nestjs/testing",
   "version": "12.3.3",
-  "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
+  "description": "Testing for NestJS: build a test module, replace providers with mocks, and run end-to-end tests against a real application.",
+  "keywords": [
+    "nestjs",
+    "nest",
+    "testing",
+    "test",
+    "unit-testing",
+    "e2e",
+    "mocks"
+  ],
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "type": "module",
