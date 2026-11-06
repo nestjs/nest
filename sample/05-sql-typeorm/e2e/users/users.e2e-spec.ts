@@ -15,8 +15,7 @@ describe('UsersController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
+          type: 'sqljs',
           entities: [User],
           synchronize: true,
         }),
