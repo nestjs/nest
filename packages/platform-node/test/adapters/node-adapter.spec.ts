@@ -2503,6 +2503,7 @@ describe('NodeAdapter', () => {
 
       expect(result).toBeInstanceOf(BadRequestException);
       expect(result.message).toBe(error.message);
+      expect(result.cause).toBe(error);
     });
 
     it('should map an http-errors error to an HttpException with its status', () => {
