@@ -938,6 +938,29 @@ describe('ValidationPipe', () => {
           ).toBeUndefined();
         });
       });
+      describe('when the input is an untyped object', () => {
+        it('should strip prototype-pollution keys', async () => {
+          target = new ValidationPipe();
+          const bodyMetadata = {
+            type: 'body',
+            metatype: Object,
+            data: '',
+          } as ArgumentMetadata;
+          // JSON.parse creates `__proto__`/`constructor` as own enumerable keys
+          const payload = JSON.parse(
+            '{"name":"x","__proto__":{"polluted":"yes"},"constructor":{"prototype":{"polluted":"yes"}}}',
+          );
+
+          const result: any = await target.transform(payload, bodyMetadata);
+
+          const ownKeys = Object.getOwnPropertyNames(result);
+          expect(ownKeys).not.toContain('__proto__');
+          expect(ownKeys).not.toContain('constructor');
+          expect(ownKeys).not.toContain('prototype');
+          expect(result.name).toBe('x');
+          expect(({} as any).polluted).toBeUndefined();
+        });
+      });
       describe('otherwise', () => {
         it('should not reject', async () => {
           target = new ValidationPipe();

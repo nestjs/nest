@@ -155,6 +155,15 @@ export class ValidationPipe implements PipeTransform {
 
     const metatype = metadata.metatype;
     if (!metatype || !this.toValidate(metadata)) {
+      // Prototype-pollution keys are stripped from class-validated inputs
+      // further down, but an untyped input (`@Body() body: any`, a plain
+      // `@Query()`/`@Param()` object, a native metatype) skips that path and
+      // still reaches the handler, where a later merge/clone/assign could
+      // write onto `Object.prototype`. Strip them here too for object inputs;
+      // primitives are returned unchanged.
+      if (value !== null && typeof value === 'object') {
+        this.stripProtoKeys(value);
+      }
       return this.isTransformEnabled
         ? this.transformPrimitive(value, metadata)
         : value;
