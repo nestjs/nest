@@ -198,7 +198,10 @@ export class ClientGrpcProxy
         const call =
           isRequestStream && isUpstreamSubject
             ? client![methodName](...getArgumentsAfterRequest(callArgs))
-            : client![methodName](...callArgs);
+            : client![methodName](
+                ...callArgs.slice(0, 1),
+                ...getArgumentsAfterRequest(callArgs),
+              );
 
         if (isRequestStream && isUpstreamSubject) {
           upstreamSubscription = upstreamSubjectOrData.subscribe(
@@ -296,7 +299,8 @@ export class ClientGrpcProxy
       return new Observable(observer => {
         const callArgs = this.applyDispatchHook(client, methodName, args);
         const call = client[methodName](
-          ...callArgs,
+          ...callArgs.slice(0, 1),
+          ...getArgumentsAfterRequest(callArgs),
           (error: any, data: any) => {
             if (error) {
               return observer.error(this.serializeError(error));
