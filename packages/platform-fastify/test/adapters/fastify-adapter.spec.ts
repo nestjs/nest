@@ -246,6 +246,7 @@ describe('FastifyAdapter', () => {
       expect(result).toBeInstanceOf(HttpException);
       expect(result.message).toBe(error.message);
       expect(result.getStatus()).toBe(415);
+      expect(result.cause).toBe(error);
     });
 
     it('should not map FastifyError without user status code (500 by default)', () => {
