@@ -1229,8 +1229,16 @@ describe('Middleware (FastifyAdapter)', () => {
       }
     }
 
+    @Controller()
+    class RootController {
+      @Get()
+      root() {
+        return HANDLER_RETURN_VALUE;
+      }
+    }
+
     @Module({
-      controllers: [UsersController],
+      controllers: [UsersController, RootController],
     })
     class AbsoluteFormModule implements NestModule {
       configure(consumer: MiddlewareConsumer) {
@@ -1308,6 +1316,18 @@ describe('Middleware (FastifyAdapter)', () => {
       const response = await sendRawRequest(`HTTP://127.0.0.1:${port}//USERS/`);
       expect(response.statusCode).toBe(200);
       expect(response.body).toBe(MIDDLEWARE_RETURN_VALUE);
+    });
+
+    it('answers an absolute-form request target whose query precedes a "/" with the not-found handler', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest(`http://127.0.0.1:${port}?a/users`);
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body)).toEqual({
+        message: `Cannot GET http://127.0.0.1:${port}?a/users`,
+        error: 'Not Found',
+        statusCode: 404,
+      });
     });
 
     it('does not run the route without its middleware for a request target starting with "*"', async () => {

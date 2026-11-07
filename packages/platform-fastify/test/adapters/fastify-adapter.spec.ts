@@ -1095,16 +1095,18 @@ describe('FastifyAdapter', () => {
       await fastifyAdapter.close();
     });
 
-    it.each(['/users', 'http://localhost/users', 'HTTPS://localhost/users'])(
-      'should run the middleware and the route for "%s"',
-      async target => {
-        const res = await injectRequestTarget('GET', target);
+    it.each([
+      '/users',
+      'http://localhost/users',
+      'HTTPS://localhost/users',
+      'http://localhost/users?a=/b',
+    ])('should run the middleware and the route for "%s"', async target => {
+      const res = await injectRequestTarget('GET', target);
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body).toBe('found');
-        expect(middleware).toHaveBeenCalledOnce();
-      },
-    );
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('found');
+      expect(middleware).toHaveBeenCalledOnce();
+    });
 
     it.each(['*users', 'users', '*', 'ftp://localhost/users'])(
       'should pass a request for "%s" to the not-found handler',
@@ -1117,6 +1119,35 @@ describe('FastifyAdapter', () => {
         expect(middleware).not.toHaveBeenCalled();
       },
     );
+
+    // "find-my-way" < 9.9.0 routes these as "/users", later versions as "/"
+    it.each([
+      'http://localhost?a/users',
+      'https://localhost??a/users',
+      'http://user@localhost?/users',
+    ])(
+      'should pass a request for "%s", whose query precedes a "/", to the not-found handler',
+      async target => {
+        fastifyAdapter.get('/', handler);
+
+        const res = await injectRequestTarget('GET', target);
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body).toBe('not found');
+        expect(handler).not.toHaveBeenCalled();
+        expect(middleware).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should route an absolute-form request target with a query and no path as "/"', async () => {
+      fastifyAdapter.get('/', handler);
+
+      const res = await injectRequestTarget('GET', 'http://localhost?a=b');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('found');
+      expect(middleware).not.toHaveBeenCalled();
+    });
 
     it('should pass "OPTIONS *" to the not-found handler rather than to the "OPTIONS /" route', async () => {
       const res = await injectRequestTarget('OPTIONS', '*');

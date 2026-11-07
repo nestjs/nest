@@ -1729,8 +1729,9 @@ export class FastifyAdapter<
 
   /**
    * Mirrors the absolute-form request target handling of "find-my-way".
-   * Returns the path of an absolute-form target ("http://host/path" -> "/path")
-   * and leaves any other request target untouched.
+   * Returns the path of an absolute-form target ("http://host/path" -> "/path",
+   * "http://host?a=b" -> "/?a=b") and leaves any other request target
+   * untouched.
    */
   private getPathFromRequestTarget(url: string): string {
     if (url.charCodeAt(0) === 47 /* '/' */) {
@@ -1749,6 +1750,15 @@ export class FastifyAdapter<
     if (pathStart === authorityStart || !URL.canParse(url)) {
       // Malformed target: the router rejects it before any middleware runs
       return url;
+    }
+    const queryStart = url.indexOf('?', authorityStart);
+    if (queryStart !== -1 && (pathStart === -1 || queryStart < pathStart)) {
+      // The query ends the authority, so a "/" in it does not start the path
+      // ("http://host?a/users" -> "/?a/users"). "find-my-way" < 9.9.0, which
+      // the router of a Fastify instance passed to the adapter may still be,
+      // routes such a target as "/users". It is left untouched, so that it
+      // is answered by the not-found handler (see `isRoutableRequestTarget()`).
+      return pathStart === -1 ? `/${url.slice(queryStart)}` : url;
     }
     return pathStart === -1 ? '/' : url.slice(pathStart);
   }
