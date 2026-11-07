@@ -478,6 +478,18 @@ describe('NodeAdapter', () => {
       },
     );
 
+    it('should leave out the Content-Length of a stream that has one, when the Transfer-Encoding is set', async () => {
+      const res = await replyWith(
+        new StreamableFile(Readable.from(['hello world']), { length: 11 }),
+        undefined,
+        response => response.setHeader('Transfer-Encoding', 'chunked'),
+      );
+
+      expect(res.headers['transfer-encoding']).toBe('chunked');
+      expect(res.headers['content-length']).toBeUndefined();
+      expect(res.text).toBe('hello world');
+    });
+
     it('should send an object as JSON, with its exact byte length', async () => {
       const body = { name: 'zażółć gęślą jaźń', tags: ['ü', 'ß'] };
       const json = JSON.stringify(body);

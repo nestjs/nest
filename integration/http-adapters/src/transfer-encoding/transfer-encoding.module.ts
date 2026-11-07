@@ -1,4 +1,13 @@
-import { Controller, Get, Header, Module } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Module,
+  StreamableFile,
+} from '@nestjs/common';
+import { Readable } from 'stream';
+
+const STREAM = 'hello world';
 
 @Controller('chunked')
 export class ChunkedController {
@@ -12,6 +21,15 @@ export class ChunkedController {
   @Header('Transfer-Encoding', 'chunked')
   text() {
     return 'plain';
+  }
+
+  @Get('stream')
+  @Header('Transfer-Encoding', 'chunked')
+  stream() {
+    return new StreamableFile(Readable.from([STREAM]), {
+      length: STREAM.length,
+      type: 'text/plain; charset=utf-8',
+    });
   }
 }
 

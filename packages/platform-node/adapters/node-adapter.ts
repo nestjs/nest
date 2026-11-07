@@ -961,7 +961,11 @@ export class NodeAdapter extends AbstractHttpAdapter<
       'Content-Disposition',
       headers.disposition,
     );
-    this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
+    // A "Transfer-Encoding" forbids a "Content-Length" (RFC 9112), as with the
+    // other writers of the header (see endWithBody() and writeBody())
+    if (!response.hasHeader('Transfer-Encoding')) {
+      this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
+    }
   }
 }
 

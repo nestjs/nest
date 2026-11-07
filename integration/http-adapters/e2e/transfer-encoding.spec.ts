@@ -37,3 +37,27 @@ describe.each(adapters('express', 'node'))(
     });
   },
 );
+
+// The node adapter writes the headers of a StreamableFile itself (see
+// NodeAdapter#applyStreamHeaders), so it is the one that must leave out the
+// Content-Length a Transfer-Encoding forbids (RFC 9112).
+describe('A stream reply with a Transfer-Encoding (node)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    app = await createApp('node', TransferEncodingModule);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('should leave out the Content-Length of a stream that has one', async () => {
+    const res = await request(app.getHttpServer()).get('/chunked/stream');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['transfer-encoding']).toBe('chunked');
+    expect(res.headers['content-length']).toBeUndefined();
+    expect(res.text).toBe('hello world');
+  });
+});
