@@ -393,6 +393,62 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       });
     });
 
+    it('should report the fileSize limit on the exception', async () => {
+      const res = await expectParity(http =>
+        http.post('/report-limit').attach('f', text('12345'), txt('big.txt')),
+      );
+      expect(res.body).toEqual({
+        statusCode: 413,
+        error: 'Payload Too Large',
+        message: 'File too large',
+        limit: 4,
+      });
+    });
+
+    it('should report a fileSize limit returned by a limits function', async () => {
+      const res = await expectParity(http =>
+        http
+          .post('/report-limit-files')
+          .attach('f', text('1234'), txt('big.txt')),
+      );
+      expect(res.body).toEqual({
+        statusCode: 413,
+        error: 'Payload Too Large',
+        message: 'File too large',
+        limit: 3,
+      });
+    });
+
+    it('should report the fileSize limit of a module-level limit', async () => {
+      const withDefaults = {} as Record<AdapterName, INestApplication>;
+      const booted: { app: INestApplication; dir: string }[] = [];
+      for (const adapterName of adapterNames) {
+        const result = await boot(adapterName, { limits: { fileSize: 2 } });
+        booted.push(result);
+        withDefaults[adapterName] = result.app;
+      }
+      try {
+        const res = await expectParity(
+          http =>
+            http
+              .post('/report-limit-defaults')
+              .attach('f', text('123'), txt('a.txt')),
+          withDefaults,
+        );
+        expect(res.body).toEqual({
+          statusCode: 413,
+          error: 'Payload Too Large',
+          message: 'File too large',
+          limit: 2,
+        });
+      } finally {
+        for (const { app, dir } of booted) {
+          await app.close();
+          removeDirs(dir);
+        }
+      }
+    });
+
     it('should reject too many files', async () => {
       const res = await expectParity(http =>
         http
@@ -778,6 +834,21 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
         statusCode: 413,
         error: 'Payload Too Large',
         message: 'File too large',
+      });
+    });
+
+    it('should report the fileSize limit on the exception', async () => {
+      const res = await expectParity(http =>
+        http.post('/report-limit-stream').attach('upload', text('0123456789'), {
+          filename: 'small.bin',
+          contentType: 'application/octet-stream',
+        }),
+      );
+      expect(res.body).toEqual({
+        statusCode: 413,
+        error: 'Payload Too Large',
+        message: 'File too large',
+        limit: 4,
       });
     });
 

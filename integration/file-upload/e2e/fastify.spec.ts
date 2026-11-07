@@ -27,6 +27,7 @@ import { Agent } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import request from 'supertest';
+import { hashStream, ReportLimitInterceptor } from '../src/upload.module.js';
 import { createApp, txt } from './utils.js';
 
 const uploadDir = mkdtempSync(join(tmpdir(), 'nest-upload-custom-'));
@@ -60,6 +61,18 @@ class FastifyUploadController {
   @UseInterceptors(FileInterceptor('doc'))
   pluginLimits(@UploadedFile() file: any) {
     return { size: file.size };
+  }
+
+  @Post('plugin-limits-report')
+  @UseInterceptors(ReportLimitInterceptor, FileInterceptor('doc'))
+  pluginLimitsReport(@UploadedFile() file: any) {
+    return { size: file.size };
+  }
+
+  @Post('plugin-limits-stream-report')
+  @UseInterceptors(ReportLimitInterceptor, FileStreamInterceptor('upload'))
+  async pluginLimitsStreamReport(@UploadedFile() file: any) {
+    return hashStream(file.stream);
   }
 
   // As with `fileSize: config.get(...)` for a setting that is not set.
@@ -189,6 +202,25 @@ describe('File upload (Fastify)', () => {
         .post('/plugin-limits')
         .attach('doc', Buffer.from('123456789'), txt('big.txt'))
         .expect(413);
+    });
+
+    it('should report the plugin limit on the exception', async () => {
+      const expected = {
+        statusCode: 413,
+        error: 'Payload Too Large',
+        message: 'File too large',
+        limit: 8,
+      };
+      const buffered = await http()
+        .post('/plugin-limits-report')
+        .attach('doc', Buffer.from('123456789'), txt('big.txt'))
+        .expect(413);
+      expect(buffered.body).toEqual(expected);
+      const streamed = await http()
+        .post('/plugin-limits-stream-report')
+        .attach('upload', Buffer.from('123456789'), txt('big.txt'))
+        .expect(413);
+      expect(streamed.body).toEqual(expected);
     });
 
     it('should apply the plugin limits the route leaves undefined', async () => {

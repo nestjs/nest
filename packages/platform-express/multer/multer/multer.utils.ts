@@ -77,9 +77,43 @@ export function applyDefaultLimits<T extends MulterOptions>(options: T): T {
     ...options,
     limits:
       typeof limits === 'function'
-        ? (req: any) => withDefaultLimits(limits(req))
+        ? (req: any) => {
+            const resolved = withDefaultLimits(limits(req));
+            if (req !== null && typeof req === 'object') {
+              requestLimits.set(req, resolved);
+            }
+            return resolved;
+          }
         : withDefaultLimits(limits),
   };
+}
+
+/**
+ * The limits a function-valued `limits` returned for each request, recorded
+ * by `applyDefaultLimits()` so that `fileSizeLimit()` reads the value multer
+ * enforced rather than calling the function a second time.
+ */
+const requestLimits = new WeakMap<object, MulterLimits>();
+
+/**
+ * The `limits.fileSize` multer enforced for `req`, in bytes, or `undefined`
+ * when no finite limit applied. `options` are the ones returned by
+ * `applyDefaultLimits()`.
+ */
+export function fileSizeLimit(
+  options: MulterOptions,
+  req: any,
+): number | undefined {
+  const limits =
+    typeof options.limits === 'function'
+      ? req !== null && typeof req === 'object'
+        ? requestLimits.get(req)
+        : undefined
+      : options.limits;
+  const fileSize = limits?.fileSize;
+  return typeof fileSize === 'number' && Number.isFinite(fileSize)
+    ? fileSize
+    : undefined;
 }
 
 function withDefaultLimits(
@@ -130,10 +164,17 @@ function storedFiles(req: any): any[] {
   return Array.isArray(files) ? files : Object.values(files ?? {}).flat();
 }
 
-// Multer may add in a 'field' property to the error
-// https://github.com/expressjs/multer/blob/aa42bea6ac7d0cb8fcb279b15a7278cda805dc63/lib/multer-error.js#L19
+/**
+ * Multer may add in a 'field' property to the error
+ * https://github.com/expressjs/multer/blob/aa42bea6ac7d0cb8fcb279b15a7278cda805dc63/lib/multer-error.js#L19
+ *
+ * @param fileSizeLimit the `limits.fileSize` that applied to the request, in
+ * bytes (see `fileSizeLimit()`), set as `limit` on the exception for a file
+ * that is too large.
+ */
 export function transformException(
   error: (Error & { field?: string; code?: string }) | undefined,
+  fileSizeLimit?: number,
 ) {
   if (!error || error instanceof HttpException) {
     return error;
@@ -145,7 +186,9 @@ export function transformException(
     : error.message;
   switch (exception) {
     case multerExceptions.LIMIT_FILE_SIZE:
-      return new PayloadTooLargeException(error.message);
+      return new PayloadTooLargeException(error.message, {
+        limit: fileSizeLimit,
+      });
     case multerExceptions.LIMIT_FILE_COUNT:
     case multerExceptions.LIMIT_FIELD_KEY:
     case multerExceptions.LIMIT_FIELD_VALUE:

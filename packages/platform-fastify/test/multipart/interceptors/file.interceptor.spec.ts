@@ -90,6 +90,32 @@ describe('FileInterceptor', () => {
       );
     });
 
+    it('should set the route fileSize limit on the 413', async () => {
+      const target = new (FileInterceptor('avatar', {
+        limits: { fileSize: 4 },
+      }))();
+      const req = createFakeRequest([
+        { ...file('avatar'), truncated: true, bytesRead: 4 },
+      ]);
+      await expect(
+        target.intercept(createContext(req), handler),
+      ).rejects.toEqual(
+        new PayloadTooLargeException('File too large', { limit: 4 }),
+      );
+    });
+
+    it('should set the plugin fileSize limit on the 413 when the route sets none', async () => {
+      const target = new (FileInterceptor('avatar'))();
+      const req = createFakeRequest([
+        { ...file('avatar'), truncated: true, bytesRead: 8 },
+      ]);
+      const error = await target
+        .intercept(createContext(req), handler)
+        .catch(e => e);
+      expect(error).toBeInstanceOf(PayloadTooLargeException);
+      expect(error.limit).toBe(8);
+    });
+
     it('should reject a truncated file with a 413', async () => {
       const target = new (FileInterceptor('avatar'))();
       const req = createFakeRequest([{ ...file('avatar'), truncated: true }]);

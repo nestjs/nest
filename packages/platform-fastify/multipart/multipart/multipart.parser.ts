@@ -34,7 +34,7 @@ export interface UploadSpec {
   strategy: FileStrategy;
 }
 
-type BusboyFileStream = Readable & { truncated?: boolean };
+type BusboyFileStream = Readable & { truncated?: boolean; bytesRead?: number };
 
 /**
  * The parts of `@fastify/multipart`'s API this package relies on. Declared
@@ -441,6 +441,22 @@ function appendTextField(
  * order, or `undefined` for a part without a file name (an empty file
  * input), which multer ignores.
  */
+/**
+ * The `fileSize` limit a truncated file exceeded, in bytes. Without a route
+ * limit, it is the one `@fastify/multipart` defaults to (its registered
+ * `limits.fileSize`, or the Fastify `bodyLimit`), which is not known here;
+ * `@fastify/busboy` sets `bytesRead` to the limit when it truncates a file.
+ */
+function fileSizeLimit(
+  stream: BusboyFileStream,
+  limits: MultipartLimits | undefined,
+): number | undefined {
+  const fileSize = limits?.fileSize ?? stream.bytesRead;
+  return typeof fileSize === 'number' && Number.isFinite(fileSize)
+    ? fileSize
+    : undefined;
+}
+
 function readFilePart(
   part: MultipartPart,
   limits: MultipartLimits | undefined,
@@ -528,7 +544,11 @@ export async function processMultipart(
       stored.push(file);
       // busboy truncates the file instead of failing; multer rejects it.
       if (stream.truncated) {
-        throw new MultipartError('LIMIT_FILE_SIZE', part.fieldname);
+        throw new MultipartError(
+          'LIMIT_FILE_SIZE',
+          part.fieldname,
+          fileSizeLimit(stream, limits),
+        );
       }
     }
   } catch (err) {
@@ -610,7 +630,9 @@ export async function processStream(
       // as the chunk at hand goes before the part reaches this loop.
       const rejectFile = () =>
         stream.destroy(
-          new PayloadTooLargeException(multerExceptions.LIMIT_FILE_SIZE),
+          new PayloadTooLargeException(multerExceptions.LIMIT_FILE_SIZE, {
+            limit: fileSizeLimit(stream, limits),
+          }),
         );
       if (stream.truncated) {
         rejectFile();

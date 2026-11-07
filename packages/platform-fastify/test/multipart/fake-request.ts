@@ -8,6 +8,8 @@ export interface FakePart {
   value?: string;
   content?: string;
   truncated?: boolean;
+  /** What `@fastify/busboy` sets `bytesRead` to: the limit, once truncated. */
+  bytesRead?: number;
   fieldnameTruncated?: boolean;
   valueTruncated?: boolean;
   /**
@@ -82,6 +84,7 @@ export function createFakeRequest(
           );
           const file = Object.assign(createFileStream(part, abortError), {
             truncated: !!part.truncated,
+            bytesRead: part.bytesRead,
           });
           // @fastify/multipart always listens for file stream errors.
           file.on('error', () => undefined);

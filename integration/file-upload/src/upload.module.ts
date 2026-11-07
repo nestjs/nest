@@ -1,12 +1,17 @@
 import {
   BadRequestException,
   Body,
+  type CallHandler,
   Controller,
+  type ExecutionContext,
   FileTypeValidator,
+  Injectable,
   MaxFileSizeValidator,
   Module,
+  type NestInterceptor,
   ParseFilePipe,
   ParseIntPipe,
+  PayloadTooLargeException,
   Post,
   UploadedFile,
   UploadedFiles,
@@ -14,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import multer from 'multer';
+import { catchError, type Observable, throwError } from 'rxjs';
 import type { Readable } from 'stream';
 import type { UploadApi } from './upload-api.js';
 
@@ -55,6 +61,28 @@ export async function hashStream(stream: Readable) {
     size += chunk.length;
   }
   return { hash: hash.digest('hex'), size };
+}
+
+/**
+ * Adds the `limit` a `PayloadTooLargeException` carries to the response body,
+ * as an application would to tell the client how large a file may be.
+ */
+@Injectable()
+export class ReportLimitInterceptor implements NestInterceptor {
+  intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
+    return next.handle().pipe(
+      catchError(err =>
+        throwError(() =>
+          err instanceof PayloadTooLargeException
+            ? new PayloadTooLargeException({
+                ...(err.getResponse() as object),
+                limit: err.limit,
+              })
+            : err,
+        ),
+      ),
+    );
+  }
 }
 
 /** Where the `engine-disk` route stores its files. */
@@ -277,6 +305,44 @@ export function createUploadModule(
         : api.FileInterceptor('upload', { limits: { fileSize: 4 } }),
     )
     async hashSmall(@UploadedFile() file: any, @Body() body: any) {
+      return describeUpload(file, body);
+    }
+
+    @Post('report-limit')
+    @UseInterceptors(
+      ReportLimitInterceptor,
+      api.FileInterceptor('f', { limits: { fileSize: 4 } }),
+    )
+    reportLimit(@UploadedFile() file: any) {
+      return describeFile(file);
+    }
+
+    @Post('report-limit-files')
+    @UseInterceptors(
+      ReportLimitInterceptor,
+      api.AnyFilesInterceptor({ limits: () => ({ fileSize: 3 }) }),
+    )
+    reportLimitFiles(@UploadedFiles() files: any) {
+      return describeFiles(files);
+    }
+
+    @Post('report-limit-defaults')
+    @UseInterceptors(
+      ReportLimitInterceptor,
+      api.AnyFilesInterceptor({ limits: { files: 1 } }),
+    )
+    reportLimitDefaults(@UploadedFiles() files: any) {
+      return describeFiles(files);
+    }
+
+    @Post('report-limit-stream')
+    @UseInterceptors(
+      ReportLimitInterceptor,
+      api.FileStreamInterceptor
+        ? api.FileStreamInterceptor('upload', { limits: { fileSize: 4 } })
+        : api.FileInterceptor('upload', { limits: { fileSize: 4 } }),
+    )
+    async reportLimitStream(@UploadedFile() file: any, @Body() body: any) {
       return describeUpload(file, body);
     }
   }

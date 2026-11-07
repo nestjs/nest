@@ -11,6 +11,7 @@ import {
 } from '../../../multer/multer/multer.constants.js';
 import {
   applyDefaultLimits,
+  fileSizeLimit,
   mergeMulterOptions,
   removeFilesOnPipeRejection,
   transformException,
@@ -131,6 +132,39 @@ describe('applyDefaultLimits', () => {
     expect(
       (applyDefaultLimits({ limits: () => undefined! }).limits as Function)({}),
     ).toEqual(defaults);
+  });
+
+  describe('fileSizeLimit', () => {
+    it('should read a fileSize limit set as an object', () => {
+      const options = applyDefaultLimits({ limits: { fileSize: 10 } });
+      expect(fileSizeLimit(options, {})).toBe(10);
+    });
+
+    it('should be undefined when no finite fileSize limit is set', () => {
+      expect(fileSizeLimit(applyDefaultLimits({}), {})).toBeUndefined();
+      expect(
+        fileSizeLimit(
+          applyDefaultLimits({ limits: { fileSize: Infinity } }),
+          {},
+        ),
+      ).toBeUndefined();
+    });
+
+    it('should read the limit a function returned for the request', () => {
+      const limits = vi.fn((req: { size: number }) => ({ fileSize: req.size }));
+      const options = applyDefaultLimits({ limits });
+      const [a, b] = [{ size: 10 }, { size: 20 }];
+      (options.limits as Function)(a);
+      (options.limits as Function)(b);
+      expect(fileSizeLimit(options, a)).toBe(10);
+      expect(fileSizeLimit(options, b)).toBe(20);
+      expect(limits).toHaveBeenCalledTimes(2);
+    });
+
+    it('should be undefined for a request the function was not called for', () => {
+      const options = applyDefaultLimits({ limits: () => ({ fileSize: 10 }) });
+      expect(fileSizeLimit(options, {})).toBeUndefined();
+    });
   });
 
   describe('with multer', () => {
@@ -293,6 +327,14 @@ describe('transformException', () => {
         expect(transformException(err as any)).toBeInstanceOf(
           PayloadTooLargeException,
         );
+      });
+      it('should set the given file size limit as "limit"', () => {
+        const err = { message: multerExceptions.LIMIT_FILE_SIZE };
+        expect(transformException(err as any, 1024)).toHaveProperty(
+          'limit',
+          1024,
+        );
+        expect(transformException(err as any)).not.toHaveProperty('limit');
       });
     });
     describe('and is multer exception but not a LIMIT_FILE_SIZE', () => {

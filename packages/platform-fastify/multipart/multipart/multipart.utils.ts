@@ -60,7 +60,9 @@ export function transformException(
   }
   if (error instanceof MultipartError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return new PayloadTooLargeException(error.message);
+      return new PayloadTooLargeException(error.message, {
+        limit: error.limit,
+      });
     }
     return new BadRequestException(
       error.field ? `${error.message} - ${error.field}` : error.message,
