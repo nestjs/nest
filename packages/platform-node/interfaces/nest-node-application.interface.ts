@@ -2,6 +2,7 @@ import type { HttpServer, INestApplication } from '@nestjs/common';
 import type { CorsOptions, CorsOptionsDelegate } from '@nestjs/common/internal';
 import type { Server as CoreHttpServer } from 'http';
 import type { Server as CoreHttpsServer } from 'https';
+import type { Http2SecureServer, Http2Server } from 'http2';
 import type { NodeRequest, NodeResponse } from '../adapters/node-request.js';
 import type { NodeRouter } from '../router/node-router.js';
 import type {
@@ -19,7 +20,9 @@ import type { NodeViewOptions } from '../views/view-renderer.js';
  * @publicApi
  */
 export interface NestNodeApplication<
-  TServer extends CoreHttpServer | CoreHttpsServer = CoreHttpServer,
+  TServer extends
+    CoreHttpServer | CoreHttpsServer | Http2Server | Http2SecureServer =
+    CoreHttpServer,
 > extends INestApplication<TServer> {
   getHttpAdapter(): HttpServer<NodeRequest, NodeResponse, NodeRouter>;
 

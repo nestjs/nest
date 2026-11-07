@@ -102,4 +102,9 @@ export interface HttpsOptions {
    * from OpenSSL Options.
    */
   secureOptions?: number;
+  /**
+   * Also serves HTTP/1 clients from an HTTP/2 server. Ignored by HTTP/1
+   * servers.
+   */
+  allowHTTP1?: boolean;
 }

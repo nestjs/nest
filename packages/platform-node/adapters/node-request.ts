@@ -9,7 +9,7 @@ import { isAbsolute } from 'path';
 import send from 'send';
 import typeIs from 'type-is';
 import { getRoutingPath } from '../router/utils.js';
-import { getHostname } from './utils/hostname.util.js';
+import { getHost, getHostname } from './utils/hostname.util.js';
 
 const QUERY = Symbol('query');
 const LOCALS = Symbol('locals');
@@ -166,11 +166,12 @@ export class NodeRequest extends IncomingMessage {
   }
 
   /**
-   * Host name from the `Host` header, without the port (from
-   * `X-Forwarded-Host` for a trusted proxy, see the `trustProxy` option).
+   * Host name from the `Host` header (`:authority` over HTTP/2), without the
+   * port (from `X-Forwarded-Host` for a trusted proxy, see the `trustProxy`
+   * option).
    */
   get hostname(): string | undefined {
-    return getHostname(this.headers.host);
+    return getHostname(getHost(this.headers));
   }
 
   /**

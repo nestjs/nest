@@ -4,7 +4,7 @@ import type {
   NodeTrustProxy,
 } from '../interfaces/node-adapter-options.interface.js';
 import { NodeRequest } from './node-request.js';
-import { getHostname } from './utils/hostname.util.js';
+import { getHost, getHostname } from './utils/hostname.util.js';
 
 type TrustFunction = (address: string, hop: number) => boolean;
 
@@ -121,7 +121,7 @@ export function createRequestClass(
         return getHostname(
           header && isFromTrustedProxy(this)
             ? firstValue(header)
-            : this.headers.host,
+            : getHost(this.headers),
         );
       }
 

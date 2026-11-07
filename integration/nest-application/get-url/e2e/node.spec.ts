@@ -60,4 +60,21 @@ describe('Get URL (Node Application)', () => {
     expect(await app.getUrl()).toEqual(`https://127.0.0.1:${port}`);
     await app.close();
   });
+  it('should return an https url when the adapter serves http2 over tls', async () => {
+    const app = testModule.createNestApplication(
+      new NodeAdapter({ http2: true }),
+      { httpsOptions: readTlsOptions() },
+    );
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`https://127.0.0.1:${port}`);
+    await app.close();
+  });
+  it('should return an http url when the adapter serves http2 in clear text', async () => {
+    const app = testModule.createNestApplication(
+      new NodeAdapter({ http2: true }),
+    );
+    await app.listen(port, '127.0.0.1');
+    expect(await app.getUrl()).toEqual(`http://127.0.0.1:${port}`);
+    await app.close();
+  });
 });

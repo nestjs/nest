@@ -18,6 +18,25 @@ export type NodeTrustProxy =
  */
 export interface NodeAdapterOptions {
   /**
+   * Serves HTTP/2, as with Fastify's option of the same name; `false` by
+   * default. With `httpsOptions`, over TLS (`http2.createSecureServer()`),
+   * where `allowHTTP1: true` also serves HTTP/1 clients (and WebSocket
+   * upgrades); without, in clear text (h2c, `http2.createServer()`), which
+   * HTTP/1 clients cannot reach.
+   *
+   * HTTP/2 requests and responses are the `http2` module's, with the members
+   * of `NodeRequest` and `NodeResponse` (but not instances of them). A body
+   * sent without a `Content-Length` header, which HTTP/2 allows, is read by
+   * the body parsers, but not by `req.is()` and multer, which go by headers.
+   */
+  http2?: boolean;
+  /**
+   * Milliseconds after which an idle HTTP/2 session is closed (letting its
+   * open streams finish), as with Fastify's option of the same name; `72000`
+   * by default, `0` for none. Node.js sets no such timeout itself.
+   */
+  http2SessionTimeout?: number;
+  /**
    * Longest (decoded) route parameter a route matches; `100` by default, as
    * with Fastify's `maxParamLength`. A request whose parameter is longer falls
    * through to another matching route (a sibling wildcard, for instance), if

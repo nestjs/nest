@@ -241,13 +241,19 @@ function createTypeMatcher(
     const mediaTypes = new Set(types.map(t => t.toLowerCase()));
     return req => mediaTypes.has(getMediaType(req));
   }
-  return req => typeIs(req, types) !== false;
+  // By the header: typeIs(req) answers null ("no body") for an HTTP/2 body
+  // sent without a length, which hasBody() lets through
+  return req => typeIs.is(req.headers['content-type'] ?? '', types) !== false;
 }
 
 function hasBody(req: IncomingMessage) {
   return (
     req.headers['transfer-encoding'] !== undefined ||
-    req.headers['content-length'] !== undefined
+    req.headers['content-length'] !== undefined ||
+    // HTTP/2 has no chunked encoding: a body of unknown length comes without
+    // either header, and only a stream that ended with its headers has none
+    (req as { stream?: { endAfterHeaders?: boolean } }).stream
+      ?.endAfterHeaders === false
   );
 }
 
@@ -394,6 +400,11 @@ function createReader(
     const onEnd = () => {
       if (finished) {
         return;
+      }
+      // An HTTP/2 stream cut off mid-body still ends, after "close", with the
+      // request marked aborted (and complete, which onClose() reads)
+      if ((req as { aborted?: boolean }).aborted) {
+        return fail(aborted());
       }
       cleanup();
       if (stream === req && length !== undefined && received !== length) {

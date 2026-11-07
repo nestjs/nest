@@ -19,6 +19,7 @@ import {
   NodeResponse,
   NodeRouter,
 } from '@nestjs/platform-node';
+import { AsyncLocalStorage } from 'async_hooks';
 import { once } from 'events';
 import {
   mkdirSync,
@@ -28,6 +29,7 @@ import {
   writeFileSync,
 } from 'fs';
 import * as http from 'http';
+import * as http2 from 'http2';
 import createHttpError from 'http-errors';
 import * as https from 'https';
 import type { AddressInfo } from 'net';
@@ -118,7 +120,8 @@ describe('NodeAdapter', () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
-    adapter.getHttpServer()?.closeAllConnections();
+    // Not on an HTTP/2 server
+    adapter.getHttpServer()?.closeAllConnections?.();
     await adapter.close();
   });
 
@@ -2691,6 +2694,372 @@ describe('NodeAdapter', () => {
         res.end('done');
         expect((await response).text).toBe('done');
         await closing;
+      });
+    });
+
+    describe('http2', () => {
+      const h2Request = (
+        port: number,
+        headers: http2.OutgoingHttpHeaders,
+        body?: string,
+        secure = false,
+      ) =>
+        new Promise<{
+          headers: http2.IncomingHttpHeaders;
+          text: string;
+        }>((resolve, reject) => {
+          const client = secure
+            ? http2.connect(`https://localhost:${port}`, { ca: cert })
+            : http2.connect(`http://127.0.0.1:${port}`);
+          client.on('error', reject);
+          const req = client.request(headers);
+          let text = '';
+          let responseHeaders: http2.IncomingHttpHeaders = {};
+          req.setEncoding('utf8');
+          req.on('response', received => (responseHeaders = received));
+          req.on('data', chunk => (text += chunk));
+          req.on('error', reject);
+          req.on('end', () => {
+            client.close();
+            resolve({ headers: responseHeaders, text });
+          });
+          req.end(body);
+        });
+
+      it('should serve h2c requests with the http2 option', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, `${req.protocol} ${req.hostname}`),
+        );
+
+        const res = await h2Request(port, { ':path': '/' });
+
+        expect(res.headers[':status']).toBe(200);
+        expect(res.text).toBe('http 127.0.0.1');
+      });
+
+      it('should link each request to its response, as over HTTP/1', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, String(req.res === res)),
+        );
+
+        const res = await h2Request(port, { ':path': '/' });
+
+        expect(res.text).toBe('true');
+      });
+
+      it('should read the host name from :authority before the Host header', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, req.hostname),
+        );
+
+        const res = await h2Request(port, {
+          ':path': '/',
+          ':authority': 'a.example.com',
+          host: 'b.example.com',
+        });
+
+        expect(res.text).toBe('a.example.com');
+      });
+
+      it('should read the X-Forwarded-* headers of a trusted proxy', async () => {
+        adapter = new NodeAdapter({ http2: true, trustProxy: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, { ip: req.ip, protocol: req.protocol }),
+        );
+
+        const res = await h2Request(port, {
+          ':path': '/',
+          'x-forwarded-for': '203.0.113.7',
+          'x-forwarded-proto': 'https',
+        });
+
+        expect(JSON.parse(res.text)).toEqual({
+          ip: '203.0.113.7',
+          protocol: 'https',
+        });
+      });
+
+      it('should reset the stream for an error after the headers were sent', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse, next: Next) => {
+          res.write('abc');
+          next(new Error('Failed midway'));
+        });
+        vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+
+        // The client must not take the response for a complete one
+        await expect(h2Request(port, { ':path': '/' })).rejects.toMatchObject({
+          code: 'ERR_HTTP2_STREAM_ERROR',
+        });
+      });
+
+      it('should reset the stream of a StreamableFile that fails midway', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) => {
+          const source = new PassThrough();
+          adapter.reply(res, new StreamableFile(source));
+          source.write('abc');
+          setTimeout(() => source.destroy(new Error('Read failed')), 10);
+        });
+        vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+
+        await expect(h2Request(port, { ':path': '/' })).rejects.toMatchObject({
+          code: 'ERR_HTTP2_STREAM_ERROR',
+        });
+      });
+
+      it('should close an idle session after http2SessionTimeout', async () => {
+        adapter = new NodeAdapter({ http2: true, http2SessionTimeout: 100 });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, 'ok'),
+        );
+        const client = http2.connect(`http://127.0.0.1:${port}`);
+        client.on('error', () => {});
+
+        try {
+          const req = client.request({ ':path': '/' });
+          req.resume();
+          await once(req, 'end');
+          const idleSince = Date.now();
+          await once(client, 'goaway');
+
+          expect(Date.now() - idleSince).toBeGreaterThanOrEqual(90);
+        } finally {
+          client.destroy();
+        }
+      });
+
+      it('should not parse a body cut off mid-way', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        adapter.registerParserMiddleware();
+        const port = await startServer();
+        const handler = vi.fn();
+        const received = new Promise<unknown>(resolve => {
+          adapter.post('/', (req: NodeRequest) => {
+            handler(req.body);
+            resolve(undefined);
+          });
+          adapter.use((err: any, req: unknown, res: unknown, next: Next) => {
+            resolve(err);
+            next(err);
+          });
+        });
+        const client = http2.connect(`http://127.0.0.1:${port}`);
+        client.on('error', () => {});
+
+        try {
+          const req = client.request({
+            ':method': 'POST',
+            ':path': '/',
+            'content-type': 'application/x-www-form-urlencoded',
+          });
+          req.on('error', () => {});
+          req.write('items=1&items=2');
+          await new Promise(resolve => setTimeout(resolve, 50));
+          // The connection drops before the rest of the body
+          client.destroy();
+
+          expect(await received).toMatchObject({ type: 'request.aborted' });
+          expect(handler).not.toHaveBeenCalled();
+        } finally {
+          client.destroy();
+        }
+      });
+
+      it('should match the parser type by the header for a body without a length', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        adapter.useBodyParser('text', false, { type: 'text/*' });
+        adapter.registerParserMiddleware();
+        const port = await startServer();
+        adapter.post('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, { body: req.body }),
+        );
+
+        const res = await h2Request(
+          port,
+          {
+            ':method': 'POST',
+            ':path': '/',
+            'content-type': 'application/json',
+          },
+          '{"a":1}',
+        );
+
+        expect(JSON.parse(res.text)).toEqual({ body: { a: 1 } });
+      });
+
+      it('should not answer a StreamableFile error once the client is gone', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        let response!: NodeResponse;
+        const handled = new Promise<void>(resolve =>
+          adapter.get('/', (req: NodeRequest, res: NodeResponse) => {
+            response = res;
+            resolve();
+          }),
+        );
+        const logError = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+        const client = http2.connect(`http://127.0.0.1:${port}`);
+        client.on('error', () => {});
+
+        try {
+          const req = client.request({ ':path': '/' });
+          req.on('error', () => {});
+          await handled;
+          req.close(http2.constants.NGHTTP2_CANCEL);
+          await once(response, 'close');
+          // A stream that failed while the handler awaited, after the
+          // client went away
+          const source = new PassThrough().on('error', () => {});
+          source.destroy(new Error('Read failed'));
+          await new Promise(resolve => source.once('close', resolve));
+          adapter.reply(response, new StreamableFile(source));
+
+          expect(response.destroyed).toBe(true);
+          expect(logError).not.toHaveBeenCalled();
+        } finally {
+          client.destroy();
+        }
+      });
+
+      it('should keep req.ip and req.protocol for the response hook', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const info = new Promise<unknown>(resolve =>
+          adapter.setOnResponseHook((req: NodeRequest) =>
+            resolve({ ip: req.ip, protocol: req.protocol }),
+          ),
+        );
+        const port = await startServer({ httpsOptions: { key, cert } });
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, 'ok'),
+        );
+
+        await h2Request(port, { ':path': '/' }, undefined, true);
+
+        expect(await info).toEqual({ ip: '127.0.0.1', protocol: 'https' });
+      });
+
+      it('should hand res.sendFile() errors to the error handlers', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          res.sendFile(join(tmpdir(), 'nest-node-http2-missing.txt')),
+        );
+
+        const res = await h2Request(port, { ':path': '/' });
+
+        expect(res.headers[':status']).toBe(404);
+      });
+
+      it('should parse a request body over HTTP/2', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        adapter.registerParserMiddleware();
+        const port = await startServer();
+        adapter.post('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, { received: req.body }),
+        );
+
+        const res = await h2Request(
+          port,
+          {
+            ':method': 'POST',
+            ':path': '/',
+            'content-type': 'application/json',
+            'content-length': '7',
+          },
+          '{"a":1}',
+        );
+
+        expect(res.headers[':status']).toBe(200);
+        expect(JSON.parse(res.text)).toEqual({ received: { a: 1 } });
+      });
+
+      it('should answer 503 and send GOAWAY instead of a connection header once shutting down', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer({ return503OnClosing: true });
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, 'ok'),
+        );
+        const client = http2.connect(`http://127.0.0.1:${port}`);
+        const goaway = once(client, 'goaway');
+
+        try {
+          adapter.beforeClose();
+          const req = client.request({ ':path': '/' });
+          req.resume();
+          const [headers] = await once(req, 'response');
+          await goaway;
+
+          expect(headers[':status']).toBe(503);
+          expect(headers.connection).toBeUndefined();
+        } finally {
+          client.destroy();
+        }
+      });
+
+      it('should run the response hook in the async context of the request hook for a request with a body', async () => {
+        const storage = new AsyncLocalStorage<string>();
+        adapter = new NodeAdapter({ http2: true });
+        adapter.registerParserMiddleware();
+        adapter.setOnRequestHook((_req, _res, done) =>
+          storage.run('hook', done),
+        );
+        const store = new Promise<string | undefined>(resolve =>
+          adapter.setOnResponseHook(() => resolve(storage.getStore())),
+        );
+        const port = await startServer();
+        adapter.post('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, req.body),
+        );
+
+        await h2Request(
+          port,
+          {
+            ':method': 'POST',
+            ':path': '/',
+            'content-type': 'application/json',
+          },
+          '{"a":1}',
+        );
+
+        // The stream closes once the body is read, in the session's context
+        expect(await store).toBe('hook');
+      });
+
+      it('should serve HTTP/2 and, with allowHTTP1, HTTP/1 over TLS', async () => {
+        adapter = new NodeAdapter({ http2: true });
+        const port = await startServer({
+          httpsOptions: { key, cert, allowHTTP1: true },
+        });
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, `${req.protocol} ${req.hostname}`),
+        );
+
+        const h2 = await h2Request(port, { ':path': '/' }, undefined, true);
+        const h1 = await new Promise<string>((resolve, reject) =>
+          https
+            .get({ host: 'localhost', port, ca: cert, agent: false }, res => {
+              let text = '';
+              res.on('data', chunk => (text += chunk));
+              res.on('end', () => resolve(text));
+            })
+            .on('error', reject),
+        );
+
+        expect(h2.text).toBe('https localhost');
+        expect(h1).toBe('https localhost');
       });
     });
 

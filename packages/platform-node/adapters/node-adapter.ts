@@ -30,6 +30,7 @@ import { LegacyRouteConverter } from '@nestjs/core/internal';
 import cors from 'cors';
 import encodeUrl from 'encodeurl';
 import * as http from 'http';
+import * as http2 from 'http2';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
@@ -56,6 +57,7 @@ import {
   ROUTE_ERROR_HANDLER,
   toBytes,
 } from './node-request.js';
+import { createHttp2RequestClass, NodeHttp2Response } from './node-http2.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 
 type StreamableHandlerResponse = Parameters<StreamableFile['errorHandler']>[1];
@@ -109,6 +111,11 @@ function getBodyParserOptions<T extends object>(rawBody: boolean, options?: T) {
   return rawBody ? { ...options, verify: rawBodyVerifier } : options || {};
 }
 
+// The stream of a request over HTTP/2 (see the `http2` option)
+function getHttp2Stream(req: NodeRequest) {
+  return (req as unknown as http2.Http2ServerRequest).stream;
+}
+
 function setFinalHeaders(res: NodeResponse) {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Content-Security-Policy', "default-src 'none'");
@@ -136,6 +143,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
   declare protected instance: NodeRouter;
   private readonly logger = new Logger(NodeAdapter.name);
   private readonly openConnections = new Set<Duplex>();
+  private readonly http2Sessions = new Set<http2.ServerHttp2Session>();
   private readonly registeredPrefixes = new Set<string>();
   private readonly views = new ViewRenderer();
   private isShuttingDown = false;
@@ -151,6 +159,8 @@ export class NodeAdapter extends AbstractHttpAdapter<
 
   // The class of the requests of the server (see createRequestClass())
   private readonly requestClass: typeof NodeRequest;
+  private readonly isHttp2: boolean;
+  private readonly http2SessionTimeout: number;
 
   /**
    * @param routerOrOptions The adapter's options, or the `NodeRouter` to use
@@ -161,6 +171,8 @@ export class NodeAdapter extends AbstractHttpAdapter<
     const options =
       routerOrOptions instanceof NodeRouter ? {} : (routerOrOptions ?? {});
     this.requestClass = createRequestClass(options);
+    this.isHttp2 = !!options.http2;
+    this.http2SessionTimeout = options.http2SessionTimeout ?? 72_000;
     const router =
       routerOrOptions instanceof NodeRouter
         ? routerOrOptions
@@ -471,6 +483,12 @@ export class NodeAdapter extends AbstractHttpAdapter<
   public close() {
     this.isShuttingDown = true;
     this.closeOpenConnections();
+    // Before Node.js 24, an HTTP/2 server waits for its sessions to close,
+    // which clients keep open between requests. As close() does for idle
+    // keep-alive connections, this lets the open streams finish
+    for (const session of this.http2Sessions) {
+      session.close();
+    }
 
     if (!this.httpServer) {
       return undefined;
@@ -560,12 +578,17 @@ export class NodeAdapter extends AbstractHttpAdapter<
     const listener = (req: NodeRequest, res: NodeResponse) =>
       this.handleRequest(req, res);
 
-    this.httpServer = options?.httpsOptions
-      ? https.createServer(
-          { ...options.httpsOptions, ...serverOptions } as https.ServerOptions,
-          listener as http.RequestListener,
-        )
-      : http.createServer(serverOptions, listener);
+    this.httpServer = this.isHttp2
+      ? this.createHttp2Server(options, serverOptions, listener)
+      : options?.httpsOptions
+        ? https.createServer(
+            {
+              ...options.httpsOptions,
+              ...serverOptions,
+            } as https.ServerOptions,
+            listener as http.RequestListener,
+          )
+        : http.createServer(serverOptions, listener);
     // Where res.sendFile() hands its errors (see ROUTE_ERROR_HANDLER); a
     // directory answers like an unmatched route, as with Express
     (this.httpServer as any)[ROUTE_ERROR_HANDLER] = (
@@ -589,7 +612,13 @@ export class NodeAdapter extends AbstractHttpAdapter<
     if (options?.return503OnClosing) {
       this.use((req: NodeRequest, res: NodeResponse, next: Function) => {
         if (this.isShuttingDown) {
-          res.setHeader('Connection', 'close');
+          // A connection-specific header, which HTTP/2 forbids: a GOAWAY
+          // frame tells the client not to send more requests instead
+          if (req.httpVersionMajor < 2) {
+            res.setHeader('Connection', 'close');
+          } else {
+            getHttp2Stream(req).session?.close();
+          }
           res.setHeader('Content-Type', 'text/plain; charset=utf-8');
           res.statusCode = 503;
           res.end('Service Unavailable');
@@ -836,7 +865,13 @@ export class NodeAdapter extends AbstractHttpAdapter<
 
   private finalHandler(err: any, req: NodeRequest, res: NodeResponse) {
     if (res.headersSent) {
-      req.socket.destroy();
+      // Over HTTP/2, destroying the socket ends the stream as if the response
+      // were complete: it is reset with an error instead
+      if (req.httpVersionMajor >= 2) {
+        getHttp2Stream(req).close(http2.constants.NGHTTP2_INTERNAL_ERROR);
+      } else {
+        req.socket.destroy();
+      }
       return;
     }
     if (err !== undefined) {
@@ -865,6 +900,35 @@ export class NodeAdapter extends AbstractHttpAdapter<
 
   private normalizePrefix(prefix?: string): string {
     return stripEndSlash(addLeadingSlash(prefix));
+  }
+
+  private createHttp2Server(
+    options: NestApplicationOptions,
+    serverOptions: http.ServerOptions,
+    listener: (req: NodeRequest, res: NodeResponse) => void,
+  ) {
+    const http2Options = {
+      ...serverOptions,
+      Http1IncomingMessage: serverOptions.IncomingMessage,
+      Http1ServerResponse: serverOptions.ServerResponse,
+      Http2ServerRequest: createHttp2RequestClass(this.requestClass),
+      Http2ServerResponse: NodeHttp2Response,
+    };
+    const server = options?.httpsOptions
+      ? http2.createSecureServer(
+          { ...options.httpsOptions, ...http2Options } as any,
+          listener as any,
+        )
+      : http2.createServer(http2Options as any, listener as any);
+    server.on('session', session => {
+      this.http2Sessions.add(session);
+      session.once('close', () => this.http2Sessions.delete(session));
+      // As an idle keep-alive connection over HTTP/1
+      session.setTimeout(this.http2SessionTimeout, () => session.close());
+    });
+    // Typed as an HTTP/1 server, which an HTTP/2 server stands in for except
+    // for a few methods (e.g. closeAllConnections())
+    return server as unknown as http.Server;
   }
 
   private trackOpenConnections() {

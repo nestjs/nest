@@ -7,10 +7,15 @@ import {
   writeFileSync,
 } from 'fs';
 import * as http from 'http';
+import * as http2 from 'http2';
 import * as https from 'https';
 import type { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import {
+  createHttp2RequestClass,
+  NodeHttp2Response,
+} from '../../adapters/node-http2.js';
 import {
   endWithoutBody,
   NodeRequest,
@@ -36,7 +41,31 @@ const tlsFixtures = new URL(
   import.meta.url,
 );
 
-let server: http.Server | https.Server | undefined;
+const http2ServerClasses = {
+  Http2ServerRequest: createHttp2RequestClass(NodeRequest),
+  Http2ServerResponse: NodeHttp2Response,
+};
+
+/**
+ * The HTTP versions every test runs over: the NodeAdapter serves HTTP/2 with
+ * the members of NodeRequest and NodeResponse (see "node-http2.ts").
+ */
+const httpVersions = ['HTTP/1.1', 'HTTP/2'] as const;
+
+type HttpVersion = (typeof httpVersions)[number];
+
+let overHttp2 = false;
+
+function useHttpVersion(httpVersion: HttpVersion) {
+  beforeAll(() => {
+    overHttp2 = httpVersion === 'HTTP/2';
+  });
+  afterAll(() => {
+    overHttp2 = false;
+  });
+}
+
+let server: http.Server | https.Server | http2.Http2Server | undefined;
 let handlerError: unknown;
 
 afterEach(async () => {
@@ -46,7 +75,10 @@ afterEach(async () => {
   }
   const closing = server;
   server = undefined;
-  closing.closeAllConnections();
+  // An HTTP/2 server has none: each request closes its own session
+  if ('closeAllConnections' in closing) {
+    closing.closeAllConnections();
+  }
   await new Promise(resolve => closing.close(resolve));
 });
 
@@ -63,7 +95,7 @@ function guard(handler: Handler) {
   };
 }
 
-async function start(created: http.Server | https.Server) {
+async function start(created: NonNullable<typeof server>) {
   server = created;
   await new Promise<void>(resolve => created.listen(0, '127.0.0.1', resolve));
   return (created.address() as AddressInfo).port;
@@ -71,24 +103,70 @@ async function start(created: http.Server | https.Server) {
 
 function listen(handler: Handler, options: http.ServerOptions = {}) {
   return start(
-    http.createServer({ ...options, ...serverClasses }, guard(handler)),
+    overHttp2
+      ? http2.createServer(http2ServerClasses, guard(handler) as any)
+      : http.createServer({ ...options, ...serverClasses }, guard(handler)),
   );
 }
 
 function listenSecurely(handler: Handler) {
+  const tlsOptions = {
+    key: readFileSync(new URL('privkey.pem', tlsFixtures)),
+    cert: readFileSync(new URL('ca.cert.pem', tlsFixtures)),
+  };
   return start(
-    https.createServer(
-      {
-        key: readFileSync(new URL('privkey.pem', tlsFixtures)),
-        cert: readFileSync(new URL('ca.cert.pem', tlsFixtures)),
-        ...serverClasses,
-      } as https.ServerOptions,
-      guard(handler) as http.RequestListener,
-    ),
+    overHttp2
+      ? http2.createSecureServer(
+          { ...tlsOptions, ...http2ServerClasses },
+          guard(handler) as any,
+        )
+      : https.createServer(
+          { ...tlsOptions, ...serverClasses } as https.ServerOptions,
+          guard(handler) as http.RequestListener,
+        ),
   );
 }
 
+function sendOverHttp2(port: number, options: https.RequestOptions) {
+  return new Promise<ClientResponse>((resolve, reject) => {
+    const scheme = options.protocol === 'https:' ? 'https' : 'http';
+    const session = http2.connect(`${scheme}://127.0.0.1:${port}`, {
+      rejectUnauthorized: options.rejectUnauthorized,
+    });
+    session.on('error', reject);
+    const { host, ...headers } = (options.headers ??
+      {}) as http.OutgoingHttpHeaders;
+    const stream = session.request({
+      ...headers,
+      ':method': options.method ?? 'GET',
+      ':path': options.path ?? '/',
+      ...(host !== undefined && { ':authority': host }),
+    });
+    stream.on('response', ({ ':status': statusCode, ...responseHeaders }) => {
+      const chunks: Buffer[] = [];
+      stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+      stream.on('end', () =>
+        resolve({
+          statusCode: statusCode!,
+          headers: responseHeaders,
+          body: Buffer.concat(chunks),
+        }),
+      );
+    });
+    stream.on('error', reject);
+    // Rejects (as with a reset HTTP/1 connection) if no response came
+    stream.on('close', () => {
+      session.close();
+      reject(new Error(`Stream closed with code ${stream.rstCode}`));
+    });
+    stream.end();
+  });
+}
+
 function send(port: number, options: https.RequestOptions) {
+  if (overHttp2) {
+    return sendOverHttp2(port, options);
+  }
   return new Promise<ClientResponse>((resolve, reject) => {
     const onResponse = (response: http.IncomingMessage) => {
       const chunks: Buffer[] = [];
@@ -158,7 +236,9 @@ async function inspect<T>(
   return result.value;
 }
 
-describe('NodeRequest', () => {
+describe.each(httpVersions)('NodeRequest over %s', httpVersion => {
+  useHttpVersion(httpVersion);
+
   describe('query', () => {
     it('should parse the query string of the URL', async () => {
       const query = await inspect(req => req.query, {
@@ -241,13 +321,17 @@ describe('NodeRequest', () => {
       );
     });
 
-    it('should be the path of an absolute-form request target', async () => {
-      const path = await inspect(req => req.path, {
-        path: 'http://example.com/admin?x=1',
-      });
+    // HTTP/2 sends the scheme and host apart from the path
+    it.skipIf(httpVersion === 'HTTP/2')(
+      'should be the path of an absolute-form request target',
+      async () => {
+        const path = await inspect(req => req.path, {
+          path: 'http://example.com/admin?x=1',
+        });
 
-      expect(path).toBe('/admin');
-    });
+        expect(path).toBe('/admin');
+      },
+    );
 
     it('should not throw for a malformed URL', async () => {
       const path = await inspect(req => req.path, { path: '/%E0%A4%A?x=1' });
@@ -290,15 +374,19 @@ describe('NodeRequest', () => {
       );
     });
 
-    it('should be undefined without a Host header', async () => {
-      const hostname = await inspect(
-        req => req.hostname,
-        { setHost: false },
-        { requireHostHeader: false },
-      );
+    // Node's HTTP/2 client always sends the :authority of the session
+    it.skipIf(httpVersion === 'HTTP/2')(
+      'should be undefined without a Host header',
+      async () => {
+        const hostname = await inspect(
+          req => req.hostname,
+          { setHost: false },
+          { requireHostHeader: false },
+        );
 
-      expect(hostname).toBeUndefined();
-    });
+        expect(hostname).toBeUndefined();
+      },
+    );
   });
 
   describe('ip', () => {
@@ -484,7 +572,9 @@ describe('NodeRequest', () => {
   });
 });
 
-describe('NodeResponse', () => {
+describe.each(httpVersions)('NodeResponse over %s', httpVersion => {
+  useHttpVersion(httpVersion);
+
   describe('locals', () => {
     it('should be an empty object without a prototype', async () => {
       const [locals, prototype] = await inspect((req, res) => [
@@ -1406,7 +1496,9 @@ describe('NodeResponse', () => {
   });
 });
 
-describe('endWithoutBody', () => {
+describe.each(httpVersions)('endWithoutBody over %s', httpVersion => {
+  useHttpVersion(httpVersion);
+
   it.each([200, 201, 404])(
     'should leave a %i response untouched',
     async statusCode => {
