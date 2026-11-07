@@ -451,6 +451,7 @@ describe('FastifyAdapter', () => {
       '/users',
       'http://localhost/users',
       'https://localhost/users',
+      'http://localhost/users?a=/b',
     ]) {
       it(`should run the middleware and the route for "${target}"`, async () => {
         const res = await injectRequestTarget('GET', target);
@@ -463,6 +464,24 @@ describe('FastifyAdapter', () => {
 
     for (const target of ['*users', 'users', '*', 'ftp://localhost/users']) {
       it(`should pass a request for "${target}" to the not-found handler`, async () => {
+        const res = await injectRequestTarget('GET', target);
+
+        expect(res.statusCode).to.equal(404);
+        expect(res.body).to.equal('not found');
+        expect(handler.called).to.be.false;
+        expect(middleware.called).to.be.false;
+      });
+    }
+
+    // "find-my-way" < 9.9.0 routes these as "/users", later versions as "/"
+    for (const target of [
+      'http://localhost?a/users',
+      'https://localhost??a/users',
+      'http://user@localhost?/users',
+    ]) {
+      it(`should pass a request for "${target}", whose query precedes a "/", to the not-found handler`, async () => {
+        fastifyAdapter.get('/', handler);
+
         const res = await injectRequestTarget('GET', target);
 
         expect(res.statusCode).to.equal(404);

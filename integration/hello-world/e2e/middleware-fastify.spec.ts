@@ -1296,6 +1296,18 @@ describe('Middleware (FastifyAdapter)', () => {
       expect(response.body).to.equal(MIDDLEWARE_RETURN_VALUE);
     });
 
+    it('answers an absolute-form request target whose query precedes a "/" with the not-found handler', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest(`http://127.0.0.1:${port}?a/users`);
+      expect(response.statusCode).to.equal(404);
+      expect(JSON.parse(response.body)).to.deep.equal({
+        message: `Cannot GET http://127.0.0.1:${port}?a/users`,
+        error: 'Not Found',
+        statusCode: 404,
+      });
+    });
+
     it('does not run the route without its middleware for a request target starting with "*"', async () => {
       await createApp(new FastifyAdapter());
 
