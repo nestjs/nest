@@ -42,6 +42,21 @@ export class AppController {
     return this.appService.getFileThatFailsMidway();
   }
 
+  @Get('file/not/exist/error-handler')
+  getNonExistantFileWithErrorHandler(): StreamableFile {
+    return this.appService.getFileThatDoesNotExistWithErrorHandler();
+  }
+
+  @Get('file/not/exist/error-logger')
+  getNonExistantFileWithErrorLogger(): StreamableFile {
+    return this.appService.getFileThatDoesNotExistWithErrorLogger();
+  }
+
+  @Get('file/fails/midway/error-logger')
+  getFileThatFailsMidwayWithErrorLogger(): StreamableFile {
+    return this.appService.getFileThatFailsMidwayWithErrorLogger();
+  }
+
   @Get('/file/slow')
   getSlowFile(): StreamableFile {
     return this.appService.getSlowStream();
