@@ -1,4 +1,8 @@
-import { Logger, RequestMethod } from '@nestjs/common';
+import {
+  Logger,
+  type NestApplicationOptions,
+  RequestMethod,
+} from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
 import * as microservicesPackage from '@nestjs/microservices';
 import { MicroserviceOptions } from '@nestjs/microservices';
@@ -501,6 +505,88 @@ describe('NestApplication', () => {
       instance.useWebSocketAdapter(adapter);
 
       expect((instance as any).config.getIoAdapter()).toBe(adapter);
+    });
+  });
+  describe('enableCors', () => {
+    const permissiveCorsWarning = /CORS was enabled without options/;
+
+    function createInstance(options: NestApplicationOptions = {}) {
+      const noopHttpAdapter = new NoopHttpAdapter({});
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      container.setHttpAdapter(noopHttpAdapter);
+      const instance = new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        options,
+      );
+      return {
+        instance,
+        warnSpy: vi.spyOn((instance as any).logger, 'warn'),
+        enableCorsSpy: vi.spyOn(noopHttpAdapter, 'enableCors'),
+      };
+    }
+
+    it('should warn once about the permissive default policy when called without options', () => {
+      const { instance, warnSpy, enableCorsSpy } = createInstance();
+
+      instance.enableCors();
+      instance.enableCors();
+      instance.enableCors(true);
+
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(permissiveCorsWarning);
+      expect(enableCorsSpy).toHaveBeenCalledTimes(3);
+      expect(enableCorsSpy).toHaveBeenLastCalledWith(true);
+    });
+
+    it('should warn once when the "cors: true" application option is applied', () => {
+      const { instance, warnSpy, enableCorsSpy } = createInstance({
+        cors: true,
+      });
+
+      instance.applyOptions();
+
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(permissiveCorsWarning);
+      expect(enableCorsSpy).toHaveBeenCalledExactlyOnceWith(undefined);
+    });
+
+    it('should not warn when CORS options are passed', () => {
+      const { instance, warnSpy, enableCorsSpy } = createInstance();
+      const corsOptions = { origin: 'https://example.com' };
+
+      instance.enableCors(corsOptions);
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(enableCorsSpy).toHaveBeenCalledExactlyOnceWith(corsOptions);
+    });
+
+    it('should not warn when a CORS options delegate is passed', () => {
+      const { instance, warnSpy, enableCorsSpy } = createInstance();
+      const corsOptionsDelegate = (req: unknown, callback: Function) =>
+        callback(null, { origin: 'https://example.com' });
+
+      instance.enableCors(corsOptionsDelegate);
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(enableCorsSpy).toHaveBeenCalledExactlyOnceWith(
+        corsOptionsDelegate,
+      );
+    });
+
+    it('should not warn when the "cors" application option holds options', () => {
+      const corsOptions = { origin: 'https://example.com' };
+      const { instance, warnSpy, enableCorsSpy } = createInstance({
+        cors: corsOptions,
+      });
+
+      instance.applyOptions();
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(enableCorsSpy).toHaveBeenCalledExactlyOnceWith(corsOptions);
     });
   });
   describe('enableCsrfProtection', () => {
