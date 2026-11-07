@@ -33,7 +33,7 @@
     "nodemon": "3.1.14",
     "oxlint": "1.91.0",
     "prettier": "3.9.10",
-    "supertest": "7.3.1",
+    "supertest": "7.3.2",
     "vitest": "5.1.0"
   },
   "type": "module"
