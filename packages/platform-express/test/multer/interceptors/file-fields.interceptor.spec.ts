@@ -1,4 +1,8 @@
-import { BadRequestException, CallHandler } from '@nestjs/common';
+import {
+  BadRequestException,
+  CallHandler,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
 import { lastValueFrom, of, throwError } from 'rxjs';
@@ -59,6 +63,45 @@ describe('FileFieldsInterceptor', () => {
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
         error => expect(error).not.toBeUndefined(),
       );
+    });
+    it('should set the fileSize limit on a file too large exception', async () => {
+      const target = new (FileFieldsInterceptor([{ name: 'file' }], {
+        limits: { fileSize: 10 },
+      }))();
+      const err = { code: 'LIMIT_FILE_SIZE', message: 'File too large' };
+      (target as any).multer = {
+        fields: () => (_req, _res, next) => next(err),
+      };
+
+      const error = await (
+        target.intercept(new ExecutionContextHost([{}]), handler) as any
+      ).catch(e => e);
+
+      expect(error).toBeInstanceOf(PayloadTooLargeException);
+      expect(error.limit).toBe(10);
+    });
+    it('should set the fileSize limit a limits function returned for the request', async () => {
+      const target = new (FileFieldsInterceptor([{ name: 'file' }], {
+        limits: (req: any) => ({ fileSize: req.maxSize }),
+      }))();
+      const err = { code: 'LIMIT_FILE_SIZE', message: 'File too large' };
+      // multer calls the limits function once per request.
+      (target as any).multer = {
+        fields: () => (req, _res, next) => {
+          (target as any).options.limits(req);
+          next(err);
+        },
+      };
+
+      const error = await (
+        target.intercept(
+          new ExecutionContextHost([{ maxSize: 7 }]),
+          handler,
+        ) as any
+      ).catch(e => e);
+
+      expect(error).toBeInstanceOf(PayloadTooLargeException);
+      expect(error.limit).toBe(7);
     });
     it('should remove the stored files when the pipes reject the request', async () => {
       const file = { fieldname: 'file' };

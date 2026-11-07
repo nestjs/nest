@@ -79,6 +79,17 @@ describe('transformException', () => {
     },
   );
 
+  it('should set the limit a LIMIT_FILE_SIZE MultipartError carries', () => {
+    const result = transformException(
+      new MultipartError('LIMIT_FILE_SIZE', 'f', 1024),
+    );
+    expect(result).toBeInstanceOf(PayloadTooLargeException);
+    expect(result).toHaveProperty('limit', 1024);
+    expect(
+      transformException(new MultipartError('LIMIT_FILE_SIZE')),
+    ).not.toHaveProperty('limit');
+  });
+
   it('should append the field name when the error carries one', () => {
     const result = transformException(
       fastifyError('FST_REQ_FILE_TOO_LARGE', 'x', {

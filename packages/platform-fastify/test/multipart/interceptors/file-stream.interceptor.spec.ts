@@ -68,7 +68,9 @@ describe('FileStreamInterceptor', () => {
       for await (const _ of req.file.stream) {
         // consume
       }
-    }).rejects.toEqual(new PayloadTooLargeException('File too large'));
+    }).rejects.toEqual(
+      new PayloadTooLargeException('File too large', { limit: 4 }),
+    );
   });
 
   it('should fail the stream once the file goes over fileSize', async () => {
@@ -83,7 +85,25 @@ describe('FileStreamInterceptor', () => {
       for await (const _ of req.file.stream) {
         // consume
       }
-    }).rejects.toEqual(new PayloadTooLargeException('File too large'));
+    }).rejects.toEqual(
+      new PayloadTooLargeException('File too large', { limit: 4 }),
+    );
+  });
+
+  it('should set the plugin fileSize limit on the error when the route sets none', async () => {
+    const target = new (FileStreamInterceptor('upload'))();
+    const req = createFakeRequest([
+      { ...file('upload', '01234567'), truncated: true, bytesRead: 8 },
+    ]);
+    await target.intercept(createContext(req, createReply()), handler);
+
+    await expect(async () => {
+      for await (const _ of req.file.stream) {
+        // consume
+      }
+    }).rejects.toEqual(
+      new PayloadTooLargeException('File too large', { limit: 8 }),
+    );
   });
 
   it('should apply the field name limits to the fields before the file', async () => {
