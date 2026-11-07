@@ -70,6 +70,7 @@ export class NestApplication
   private httpServer: any;
   private isListening = false;
   private isWsModuleRegistered = false;
+  private isPermissiveCorsWarningEmitted = false;
   private readonly enabledSecurityFeatures = new Set<string>();
   private securityHook?: HttpSecurityHook;
 
@@ -404,6 +405,13 @@ export class NestApplication
   }
 
   public enableCors(options?: any): void {
+    const hasCustomOptions = isObject(options) || isFunction(options);
+    if (!hasCustomOptions && !this.isPermissiveCorsWarningEmitted) {
+      this.isPermissiveCorsWarningEmitted = true;
+      this.logger.warn(
+        'CORS was enabled without options (app.enableCors() or the "cors: true" application option), so requests from any origin are allowed. If this API should only be called from known origins, restrict them with the "origin" option, e.g. app.enableCors({ origin: "https://example.com" }).',
+      );
+    }
     this.httpAdapter.enableCors(options);
   }
 
