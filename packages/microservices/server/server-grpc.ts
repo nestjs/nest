@@ -67,7 +67,13 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   // Of the request stream, which only a call that streams requests has
   pause?: Function;
   resume?: Function;
+  writableHighWaterMark?: number;
   cancelled?: boolean;
+}
+
+// Holds the place of a promise emitted on a response stream until it settles
+class PendingResponse {
+  settled?: { value: unknown } | { error: unknown };
 }
 
 // Calls on which the server is emitting a response error. The call is also
@@ -455,6 +461,7 @@ export class ServerGrpc extends Server<never, never> {
    * This function will ensure that backpressure is managed while writing values
    * that come from an observable to a GRPC call. On a bidirectional call, the
    * requests stop being read while the client is not reading the responses.
+   * The value a promise resolves to is written in the order it was emitted.
    *
    * @param source The observable we want to write out to the GRPC call.
    * @param call The GRPC call we want to write to.
@@ -472,7 +479,9 @@ export class ServerGrpc extends Server<never, never> {
         // settle this promise has fired before we could listen for it.
         return resolve();
       }
-      const valuesWaitingToBeDrained: T[] = [];
+      const valuesWaitingToBeDrained: unknown[] = [];
+      // Read through an index, as removing each value would move the rest
+      let nextIndex = 0;
       let shouldErrorAfterDraining = false;
       let error: any;
       let shouldResolveAfterDraining = false;
@@ -495,24 +504,66 @@ export class ServerGrpc extends Server<never, never> {
       // being careful that errors and writes must be emitted _before_ this call is ended
       subscription.add(() => call.end());
 
-      const drain = () => {
-        writing = true;
-        let written = 0;
-        while (writing && written < valuesWaitingToBeDrained.length) {
-          // The first time `call.write` returns false, we need to stop.
-          // It wrote the value, but it won't write anything else.
-          writing = call.write(valuesWaitingToBeDrained[written++]);
-        }
-        // Removed at once, as shifting them one by one is quadratic
-        valuesWaitingToBeDrained.splice(0, written);
-        if (!writing) {
-          // We can't write anymore so we need to wait for the drain event
+      const writeWaitingValues = () => {
+        if (subscription.closed) {
           return;
         }
-        if (requestsPaused) {
+        let responseError: unknown;
+        while (writing && nextIndex < valuesWaitingToBeDrained.length) {
+          let value = valuesWaitingToBeDrained[nextIndex];
+          if (value instanceof PendingResponse) {
+            const { settled } = value;
+            if (!settled) {
+              break;
+            }
+            if ('error' in settled) {
+              responseError = settled.error;
+              break;
+            }
+            value = settled.value;
+            if (value === null) {
+              responseError = this.createNullResponseError();
+              break;
+            }
+          }
+          nextIndex++;
+          // The first time `call.write` returns false, we need to stop.
+          // It wrote the value, but it won't write anything else.
+          writing = call.write(value);
+        }
+        if (nextIndex === valuesWaitingToBeDrained.length) {
+          valuesWaitingToBeDrained.length = 0;
+          nextIndex = 0;
+        } else if (nextIndex > valuesWaitingToBeDrained.length / 2) {
+          // Releases the written values of a queue that never empties
+          valuesWaitingToBeDrained.splice(0, nextIndex);
+          nextIndex = 0;
+        }
+        if (responseError) {
+          emitResponseError(call, responseError);
+          subscription.unsubscribe();
+          return resolve();
+        }
+        if (!writing) {
+          // We can't write anymore so we need to wait for the drain event
+          if (!requestsPaused && call.pause) {
+            call.pause();
+            requestsPaused = true;
+          }
+          return;
+        }
+        if (
+          requestsPaused &&
+          valuesWaitingToBeDrained.length - nextIndex <
+            (call.writableHighWaterMark ?? Infinity)
+        ) {
           // The client has read the responses, so read its requests again
           requestsPaused = false;
           call.resume?.();
+        }
+        if (valuesWaitingToBeDrained.length > 0) {
+          // A promise ahead of the values waiting here has not settled
+          return;
         }
 
         if (shouldResolveAfterDraining) {
@@ -525,8 +576,28 @@ export class ServerGrpc extends Server<never, never> {
         }
       };
 
+      const drain = () => {
+        writing = true;
+        writeWaitingValues();
+      };
       call.on('drain', drain);
       subscription.add(() => call.off('drain', drain));
+
+      // Settled as soon as possible: a rejection queued behind a pending
+      // promise would otherwise be reported as unhandled
+      const holdPlace = (promise: Promise<unknown>) => {
+        const pending = new PendingResponse();
+        promise
+          .then(
+            value => ({ value }),
+            err => ({ error: this.toInternalError(err) }),
+          )
+          .then(settled => {
+            pending.settled = settled;
+            writeWaitingValues();
+          });
+        return pending;
+      };
 
       // The call is an object mode stream, whose "write" throws on null where
       // nothing catches it, so null takes the error path instead
@@ -541,7 +612,9 @@ export class ServerGrpc extends Server<never, never> {
       subscription.add(
         values$.subscribe({
           next(value) {
-            if (writing) {
+            if (value instanceof Promise) {
+              valuesWaitingToBeDrained.push(holdPlace(value));
+            } else if (writing && valuesWaitingToBeDrained.length === 0) {
               writing = call.write(value);
               if (!writing && call.pause) {
                 // The responses to the requests read meanwhile would all be
@@ -553,7 +626,18 @@ export class ServerGrpc extends Server<never, never> {
               // If we can't write, that's because we need to
               // wait for the drain event before we can write again
               // buffer the value and wait for the drain event
+              // (or for a promise queued ahead of it to settle)
               valuesWaitingToBeDrained.push(value);
+            }
+            if (
+              !requestsPaused &&
+              call.pause &&
+              valuesWaitingToBeDrained.length - nextIndex >=
+                (call.writableHighWaterMark ?? Infinity)
+            ) {
+              // As many responses wait here as the call itself would buffer
+              call.pause();
+              requestsPaused = true;
             }
           },
           error(err) {
