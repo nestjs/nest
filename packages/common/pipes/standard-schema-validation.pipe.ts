@@ -121,6 +121,14 @@ export class StandardSchemaValidationPipe implements PipeTransform {
   async transform<T = any>(value: T, metadata: ArgumentMetadata): Promise<T> {
     const schema = metadata.schema;
     if (!schema || !this.toValidate(metadata)) {
+      // Untyped inputs skip the schema-validation path below, so strip here too
+      if (
+        metadata.type !== 'custom' &&
+        value !== null &&
+        typeof value === 'object'
+      ) {
+        this.stripProtoKeys(value);
+      }
       return value;
     }
 

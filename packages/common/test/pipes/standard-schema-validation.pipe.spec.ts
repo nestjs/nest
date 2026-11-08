@@ -33,6 +33,39 @@ describe('StandardSchemaValidationPipe', () => {
         } as ArgumentMetadata);
         expect(result).toBe(value);
       });
+
+      it('should strip prototype-pollution keys from object values', async () => {
+        const value = JSON.parse(
+          '{"name":"x","__proto__":{"polluted":true},"constructor":{"prototype":{"polluted":true}}}',
+        );
+        const result: any = await pipe.transform(value, {
+          type: 'body',
+        } as ArgumentMetadata);
+        const ownKeys = Object.getOwnPropertyNames(result);
+        expect(ownKeys).not.toContain('__proto__');
+        expect(ownKeys).not.toContain('constructor');
+        expect(result.name).toBe('x');
+      });
+
+      it('should strip prototype-pollution keys from array items', async () => {
+        const value = JSON.parse('[{"ok":true,"__proto__":{"polluted":true}}]');
+        const result: any = await pipe.transform(value, {
+          type: 'query',
+        } as ArgumentMetadata);
+        expect(Object.getOwnPropertyNames(result[0])).not.toContain(
+          '__proto__',
+        );
+        expect(result[0].ok).toBe(true);
+      });
+
+      it('should leave custom decorator values untouched', async () => {
+        const value = JSON.parse('{"__proto__":{"polluted":true}}');
+        const result: any = await pipe.transform(value, {
+          type: 'custom',
+        } as ArgumentMetadata);
+        expect(result).toBe(value);
+        expect(Object.getOwnPropertyNames(result)).toContain('__proto__');
+      });
     });
 
     describe('when schema validation succeeds', () => {
