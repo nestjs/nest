@@ -86,7 +86,7 @@ export class InstanceWrapper<T = any> {
   public readonly token: InjectionToken;
   public readonly async?: boolean;
   public readonly host?: Module;
-  public readonly isAlias: boolean = false;
+  public isAlias: boolean = false;
   public readonly subtype?: EnhancerSubtype;
   public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function | null;
@@ -603,6 +603,7 @@ export class InstanceWrapper<T = any> {
       this.inject = provider.inject || [];
       this.resetStaticInstance();
     }
+    this.isAlias = false;
     this.resetDependencyTreeState();
   }
 

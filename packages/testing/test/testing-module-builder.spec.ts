@@ -332,6 +332,45 @@ describe('TestingModuleBuilder', () => {
       expect(module.get('SERVICE')).toBe('mock-service');
     });
 
+    it('should run the lifecycle hooks of the class that overrides a useExisting provider', async () => {
+      const onModuleInitStub = vi.fn();
+      const onModuleDestroyStub = vi.fn();
+
+      class OriginalService {}
+
+      class MockService {
+        onModuleInit() {
+          onModuleInitStub();
+        }
+
+        onModuleDestroy() {
+          onModuleDestroyStub();
+        }
+      }
+
+      @ModuleDecorator({
+        providers: [
+          OriginalService,
+          { provide: 'SERVICE', useExisting: OriginalService },
+        ],
+      })
+      class TestModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestModule],
+      })
+        .overrideProvider('SERVICE')
+        .useClass(MockService)
+        .compile();
+
+      await module.init();
+      await module.close();
+
+      expect(module.get('SERVICE')).toBeInstanceOf(MockService);
+      expect(onModuleInitStub).toHaveBeenCalledOnce();
+      expect(onModuleDestroyStub).toHaveBeenCalledOnce();
+    });
+
     describe('when a class is both a provider and a guard', () => {
       class AuthGuard {
         canActivate() {
