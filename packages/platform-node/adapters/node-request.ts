@@ -1,7 +1,13 @@
 import { serialize as serializeCookie } from 'cookie';
 import { sign as signCookie } from 'cookie-signature';
 import encodeUrl from 'encodeurl';
-import { IncomingMessage, ServerResponse, STATUS_CODES } from 'http';
+import {
+  IncomingMessage,
+  type OutgoingHttpHeader,
+  type OutgoingHttpHeaders,
+  ServerResponse,
+  STATUS_CODES,
+} from 'http';
 import { parse as parseQueryString } from 'fast-querystring';
 import { contentType as lookupContentType } from 'mime-types';
 import onFinished from 'on-finished';
@@ -25,6 +31,15 @@ const LOCALS = Symbol('locals');
  * @internal
  */
 export const ROUTE_ERROR_HANDLER = Symbol('nestjs.node.routeErrorHandler');
+
+/**
+ * Set to `true` by the `NodeAdapter` on its HTTP server once the application
+ * shuts down: from then on, responses close their connection (see
+ * {@link NodeResponse.writeHead}).
+ *
+ * @internal
+ */
+export const SHUTTING_DOWN = Symbol('nestjs.node.shuttingDown');
 
 /**
  * What `req.app` returns: middleware written for Express reads settings from
@@ -276,6 +291,24 @@ export class NodeResponse<
 
   set locals(value: Record<string, any>) {
     this[LOCALS] = value;
+  }
+
+  /**
+   * Writes the status line and the headers, as `ServerResponse` does. Once
+   * the application shuts down, with `Connection: close`: a kept-alive
+   * connection would otherwise idle until `keepAliveTimeout`, which closing
+   * the server waits for, and the client would reuse a connection about to
+   * be closed.
+   */
+  writeHead(
+    statusCode: number,
+    reasonOrHeaders?: string | OutgoingHttpHeaders | OutgoingHttpHeader[],
+    headers?: OutgoingHttpHeaders | OutgoingHttpHeader[],
+  ): this {
+    if ((this.socket as { server?: any } | null)?.server?.[SHUTTING_DOWN]) {
+      this.shouldKeepAlive = false;
+    }
+    return super.writeHead(statusCode, reasonOrHeaders as string, headers);
   }
 
   /**

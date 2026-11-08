@@ -54,6 +54,7 @@ import {
   NodeRequest,
   NodeResponse,
   ROUTE_ERROR_HANDLER,
+  SHUTTING_DOWN,
   toBytes,
 } from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
@@ -139,6 +140,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
   private readonly registeredPrefixes = new Set<string>();
   private readonly views = new ViewRenderer();
   private isShuttingDown = false;
+  private return503OnClosing = false;
   private onRequestHook?: (
     req: NodeRequest,
     res: NodeResponse,
@@ -465,11 +467,11 @@ export class NodeAdapter extends AbstractHttpAdapter<
   }
 
   public beforeClose() {
-    this.isShuttingDown = true;
+    this.markShuttingDown();
   }
 
   public close() {
-    this.isShuttingDown = true;
+    this.markShuttingDown();
     this.closeOpenConnections();
 
     if (!this.httpServer) {
@@ -583,6 +585,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
         res,
       );
 
+    this.return503OnClosing = !!options?.return503OnClosing;
     // The first layer of the router: NestApplication calls initHttpServer()
     // before any middleware is registered, so requests are turned away while
     // the shutdown hooks run (beforeClose()) before Nest middleware runs
@@ -865,6 +868,16 @@ export class NodeAdapter extends AbstractHttpAdapter<
 
   private normalizePrefix(prefix?: string): string {
     return stripEndSlash(addLeadingSlash(prefix));
+  }
+
+  // From now on, responses close their connection (see
+  // NodeResponse.writeHead()), unless return503OnClosing is to answer the
+  // requests that reuse it
+  private markShuttingDown() {
+    this.isShuttingDown = true;
+    if (this.httpServer && !this.return503OnClosing) {
+      (this.httpServer as any)[SHUTTING_DOWN] = true;
+    }
   }
 
   private trackOpenConnections() {
