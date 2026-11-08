@@ -421,6 +421,34 @@ describe('ExpressAdapter', () => {
         expect(response.setHeader).not.toHaveBeenCalled();
       });
 
+      it('should set the Content-Length of the file', () => {
+        const response = createStreamResponse();
+
+        expressAdapter.reply(
+          response,
+          new StreamableFile(Buffer.from('hello world'), { length: 11 }),
+        );
+
+        expect(response.setHeader).toHaveBeenCalledWith('Content-Length', 11);
+      });
+
+      it('should leave out the Content-Length when the Transfer-Encoding is set', () => {
+        const response = createStreamResponse();
+        response.getHeader.mockImplementation(name =>
+          name === 'Transfer-Encoding' ? 'chunked' : undefined,
+        );
+
+        expressAdapter.reply(
+          response,
+          new StreamableFile(Buffer.from('hello world'), { length: 11 }),
+        );
+
+        expect(response.setHeader).not.toHaveBeenCalledWith(
+          'Content-Length',
+          expect.anything(),
+        );
+      });
+
       it('should not destroy a source that has ended', async () => {
         const source = new PassThrough({ autoDestroy: false });
         const response = createStreamResponse();

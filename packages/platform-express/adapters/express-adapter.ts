@@ -763,7 +763,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       'Content-Disposition',
       headers.disposition,
     );
-    this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
+    // A "Transfer-Encoding" forbids a "Content-Length" (RFC 9112)
+    if (response.getHeader('Transfer-Encoding') === undefined) {
+      this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
+    }
   }
 }
 

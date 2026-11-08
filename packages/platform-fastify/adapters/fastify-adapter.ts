@@ -780,8 +780,10 @@ export class FastifyAdapter<
       ) {
         fastifyReply.header('Content-Disposition', streamHeaders.disposition);
       }
+      // A "Transfer-Encoding" forbids a "Content-Length" (RFC 9112)
       if (
         fastifyReply.getHeader('Content-Length') === undefined &&
+        fastifyReply.getHeader('Transfer-Encoding') === undefined &&
         streamHeaders.length !== undefined
       ) {
         fastifyReply.header('Content-Length', streamHeaders.length);
