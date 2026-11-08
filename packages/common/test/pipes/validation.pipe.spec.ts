@@ -7,7 +7,9 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Validate,
   ValidateNested,
+  ValidatorConstraint,
 } from 'class-validator';
 import { HttpStatus } from '../../enums/index.js';
 import { UnprocessableEntityException } from '../../exceptions/index.js';
@@ -1196,6 +1198,31 @@ describe('ValidationPipe', () => {
       const testObj = { prop1: 'value1', prop2: 'value2' };
       const result = await target.transform(testObj, metadata);
       expect(result).toBe(testObj);
+    });
+  });
+
+  describe('when another pipe is created during the validation', () => {
+    it('should return the value', async () => {
+      @ValidatorConstraint({ async: true })
+      class CreatesPipe {
+        async validate() {
+          // e.g. a request-scoped pipe, created for another request
+          new ValidationPipe();
+          return true;
+        }
+      }
+      class TestDto {
+        @IsString()
+        @Validate(CreatesPipe)
+        prop: string;
+      }
+      target = new ValidationPipe({ whitelist: true });
+
+      const result = await target.transform(
+        { prop: 'value' },
+        { type: 'body', metatype: TestDto },
+      );
+      expect(result).toEqual({ prop: 'value' });
     });
   });
 
