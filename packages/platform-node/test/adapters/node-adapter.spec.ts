@@ -2771,6 +2771,53 @@ describe('NodeAdapter', () => {
         expect(res.text).toBe('ok');
       });
     });
+
+    describe('kept-alive connections while shutting down', () => {
+      it('should close the connection of a response sent once shutting down', async () => {
+        const port = await startServer();
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+          adapter.reply(res, 'ok'),
+        );
+        const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+
+        try {
+          const before = await request(port, { agent });
+          adapter.beforeClose();
+          const during = await request(port, { agent });
+
+          expect(before.headers.connection).toBe('keep-alive');
+          expect(during.status).toBe(200);
+          expect(during.text).toBe('ok');
+          expect(during.headers.connection).toBe('close');
+        } finally {
+          agent.destroy();
+        }
+      });
+
+      it('should close once the requests in flight are answered, without waiting for their connections to time out', async () => {
+        const port = await startServer();
+        // Far longer than the test may take
+        adapter.getHttpServer().keepAliveTimeout = 60_000;
+        let pending!: (res: NodeResponse) => void;
+        const received = new Promise<NodeResponse>(
+          resolve => (pending = resolve),
+        );
+        adapter.get('/', (req: NodeRequest, res: NodeResponse) => pending(res));
+        const agent = new http.Agent({ keepAlive: true });
+
+        try {
+          const response = request(port, { agent });
+          const res = await received;
+          const closing = adapter.close();
+          res.end('done');
+
+          expect((await response).headers.connection).toBe('close');
+          await closing;
+        } finally {
+          agent.destroy();
+        }
+      });
+    });
   });
 
   describe('listen / close', () => {
