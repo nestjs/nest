@@ -760,7 +760,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
     // URIError
     // when a path parameter has an invalid percent-encoding (e.g. "%FF")
     if (error instanceof SyntaxError || error instanceof URIError) {
-      return new BadRequestException(error.message);
+      return new BadRequestException(error.message, { cause: error });
     }
     // As with Express and Fastify: http-errors-style client errors (those of
     // the body parsers, such as a body that is too large, and of many Express

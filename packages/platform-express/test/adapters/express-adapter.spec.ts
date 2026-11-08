@@ -569,12 +569,14 @@ describe('ExpressAdapter', () => {
       const error = new URIError();
       const result = expressAdapter.mapException(error) as BadRequestException;
       expect(result).toBeInstanceOf(BadRequestException);
+      expect(result.cause).toBe(error);
     });
 
     it('should map SyntaxError with status code to BadRequestException', () => {
       const error = new SyntaxError();
       const result = expressAdapter.mapException(error) as BadRequestException;
       expect(result).toBeInstanceOf(BadRequestException);
+      expect(result.cause).toBe(error);
     });
 
     it('should return error if it is not handler Error', () => {

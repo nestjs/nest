@@ -1410,7 +1410,9 @@ export class FastifyAdapter<
     // A 5xx FastifyError (e.g. FST_ERR_HANDLER_TIMEOUT) is a server fault: it
     // stays unmapped, so the built-in filter logs it, like an http-errors one.
     if (this.isHttpFastifyError(error) && error.statusCode < 500) {
-      return new HttpException(error.message, error.statusCode);
+      return new HttpException(error.message, error.statusCode, {
+        cause: error,
+      });
     }
     // http-errors (used by Express middleware such as body-parser) carry a
     // numeric statusCode and an expose flag. Without this case, errors like
