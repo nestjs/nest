@@ -765,7 +765,7 @@ describe('ClientGrpcProxy', () => {
       expect(callOptions).toBe(options);
     });
 
-    it('should leave out nil metadata on unary and response stream calls, which grpc-js does not skip', async () => {
+    it('should leave out nil metadata and call options on unary and response stream calls, which grpc-js does not skip', async () => {
       const options = { deadline: Date.now() + 1000 };
       const serverStream = vi.fn(() => ({ on: vi.fn() }));
       Object.assign(serverStream, { path, responseStream: true });
@@ -777,12 +777,15 @@ describe('ClientGrpcProxy', () => {
         await lastValueFrom(find({ id: 1 }, missing));
         list({ id: 1 }, missing, options).subscribe();
       }
+      const callerMetadata = new Metadata();
+      await lastValueFrom(find({ id: 1 }, callerMetadata, undefined));
 
       expect(unary.mock.calls.map(args => args.slice(0, -1))).toEqual([
         [{ id: 1 }, options],
         [{ id: 1 }],
         [{ id: 1 }, options],
         [{ id: 1 }],
+        [{ id: 1 }, callerMetadata],
       ]);
       expect(serverStream.mock.calls).toEqual([
         [{ id: 1 }, options],
