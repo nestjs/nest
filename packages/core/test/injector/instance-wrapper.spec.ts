@@ -1202,6 +1202,13 @@ describe('InstanceWrapper', () => {
   });
 
   describe('mergeWith', () => {
+    it('should no longer be an alias once merged with a provider', () => {
+      const wrapper = new InstanceWrapper({ isAlias: true });
+      wrapper.mergeWith({ useClass: TestClass, provide: 'token' });
+
+      expect(wrapper.isAlias).toBe(false);
+    });
+
     describe('when provider is a ValueProvider', () => {
       it('should provide the given value in the STATIC_CONTEXT', () => {
         const wrapper = new InstanceWrapper();
