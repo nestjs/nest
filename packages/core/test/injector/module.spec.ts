@@ -541,6 +541,41 @@ describe('Module', () => {
           UnknownElementException,
         );
       });
+      it('should leave the options object it is given untouched', () => {
+        const find = vi.spyOn(customModuleRef, 'find').mockReturnValue('value');
+        const options = Object.freeze({ strict: false });
+
+        expect(customModuleRef.get('token', options)).toBe('value');
+        expect(find).toHaveBeenCalledWith('token', {
+          strict: false,
+          each: false,
+        });
+        expect(options).toEqual({ strict: false });
+      });
+    });
+    describe('resolve', () => {
+      it('should leave the options object it is given untouched', async () => {
+        const resolvePerContext = vi
+          .spyOn(customModuleRef, 'resolvePerContext')
+          .mockResolvedValue('value');
+        const options = Object.freeze({ each: true });
+        const contextId = { id: 1 };
+
+        const result = await customModuleRef.resolve(
+          'token',
+          contextId,
+          options,
+        );
+
+        expect(result).toBe('value');
+        expect(resolvePerContext).toHaveBeenCalledWith(
+          'token',
+          moduleRef,
+          contextId,
+          { strict: true, each: true },
+        );
+        expect(options).toEqual({ each: true });
+      });
     });
   });
   describe('validateExportedProvider', () => {
