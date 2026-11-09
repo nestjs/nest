@@ -2416,6 +2416,24 @@ describe('ServerGrpc', () => {
     });
   });
 
+  describe('createClient', () => {
+    it('should not write the message size limits into the given "channelOptions"', async () => {
+      const channelOptions = { 'grpc.primary_user_agent': 'app' };
+      const limited = new ServerGrpc({
+        protoPath: join(import.meta.dirname, './test.proto'),
+        package: 'test',
+        url: 'localhost:0',
+        channelOptions,
+        maxReceiveMessageLength: 1024,
+      });
+
+      const grpcServer = await limited.createClient();
+      grpcServer.forceShutdown();
+
+      expect(channelOptions).toEqual({ 'grpc.primary_user_agent': 'app' });
+    });
+  });
+
   describe('close', () => {
     it('should call "forceShutdown" by default', async () => {
       const grpcClient = {

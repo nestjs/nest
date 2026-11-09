@@ -867,10 +867,10 @@ export class ServerGrpc extends Server<never, never> {
 
   public async createClient() {
     await this.loadGrpcPackage();
-    const channelOptions: ChannelOptions =
-      this.options && this.options.channelOptions
-        ? this.options.channelOptions
-        : {};
+    // A copy, so the limits below never reach an object the caller may share
+    const channelOptions: ChannelOptions = {
+      ...this.options?.channelOptions,
+    };
     if (this.options && this.options.maxSendMessageLength) {
       channelOptions['grpc.max_send_message_length'] =
         this.options.maxSendMessageLength;
