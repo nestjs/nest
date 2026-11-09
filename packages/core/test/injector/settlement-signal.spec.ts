@@ -5,6 +5,38 @@ describe('SettlementSignal', () => {
     return { id, settlementSignal: new SettlementSignal() };
   }
 
+  describe('refs', () => {
+    const refsOf = (host: ReturnType<typeof createHost>) =>
+      (host.settlementSignal as any)._refs as Map<string, unknown>;
+
+    it('should be released when the signal completes', () => {
+      const first = createHost('first');
+      first.settlementSignal.insertRef(createHost('second'));
+
+      first.settlementSignal.complete();
+
+      expect(refsOf(first).size).toBe(0);
+    });
+
+    it('should be released when the signal fails', () => {
+      const first = createHost('first');
+      first.settlementSignal.insertRef(createHost('second'));
+
+      first.settlementSignal.error(new Error('failed'));
+
+      expect(refsOf(first).size).toBe(0);
+    });
+
+    it('should not be recorded once the signal has settled', () => {
+      const first = createHost('first');
+      first.settlementSignal.complete();
+
+      first.settlementSignal.insertRef(createHost('second'));
+
+      expect(refsOf(first).size).toBe(0);
+    });
+  });
+
   describe('isCycle', () => {
     it('should return true when the host directly depends on the wrapper', () => {
       const first = createHost('first');

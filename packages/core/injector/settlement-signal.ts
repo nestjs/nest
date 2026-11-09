@@ -27,7 +27,7 @@ export class SettlementSignal {
    * Resolves the promise returned by `asPromise`.
    */
   public complete() {
-    this.completed = true;
+    this.markSettled();
     this.settleFn();
   }
 
@@ -36,7 +36,7 @@ export class SettlementSignal {
    * @param err Error to reject the promise returned by `asPromise` with.
    */
   public error(err: unknown) {
-    this.completed = true;
+    this.markSettled();
     this.settleFn(err);
   }
 
@@ -53,7 +53,9 @@ export class SettlementSignal {
    * @param ref Wrapper to insert.
    */
   public insertRef(ref: SettlementSignalRef) {
-    this._refs.set(ref.id, ref);
+    if (!this.completed) {
+      this._refs.set(ref.id, ref);
+    }
   }
 
   /**
@@ -65,6 +67,16 @@ export class SettlementSignal {
    */
   public isCycle(wrapperId: string) {
     return this.waitsOn(wrapperId, new Set());
+  }
+
+  /**
+   * A settled signal is no longer part of any cycle, while its refs can reach
+   * the instances of a single request and the wrapper keeps its latest signal
+   * for the lifetime of the application.
+   */
+  private markSettled() {
+    this.completed = true;
+    this._refs.clear();
   }
 
   private waitsOn(wrapperId: string, visited: Set<SettlementSignal>): boolean {
