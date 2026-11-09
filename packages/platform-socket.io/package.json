@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-socket.io",
-  "version": "12.4.1",
+  "version": "12.4.2",
   "description": "Socket.IO adapter for NestJS gateways: realtime WebSocket apps with rooms, namespaces and reconnection.",
   "keywords": [
     "nestjs",

@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/testing",
-  "version": "12.4.1",
+  "version": "12.4.2",
   "description": "Testing for NestJS: build a test module, replace providers with mocks, and run end-to-end tests against a real application.",
   "keywords": [
     "nestjs",

@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-fastify",
-  "version": "12.4.1",
+  "version": "12.4.2",
   "description": "Run NestJS on Fastify: the HTTP adapter with Fastify's plugins, JSON schemas and serialization.",
   "keywords": [
     "nestjs",

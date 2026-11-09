@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-node",
-  "version": "12.4.1",
+  "version": "12.4.2",
   "description": "Run NestJS directly on node:http, with no framework underneath: the fastest NestJS HTTP adapter.",
   "keywords": [
     "nestjs",
@@ -56,8 +56,8 @@
     "type-is": "2.1.0"
   },
   "devDependencies": {
-    "@nestjs/common": "12.4.1",
-    "@nestjs/core": "12.4.1"
+    "@nestjs/common": "12.4.2",
+    "@nestjs/core": "12.4.2"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.0",

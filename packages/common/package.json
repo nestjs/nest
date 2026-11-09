@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/common",
-  "version": "12.4.1",
+  "version": "12.4.2",
   "description": "Decorators, pipes, exceptions and utilities for NestJS applications: @Controller(), @Injectable(), @Body(), ValidationPipe, HttpException and more.",
   "keywords": [
     "nestjs",
