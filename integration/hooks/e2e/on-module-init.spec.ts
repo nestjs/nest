@@ -1,4 +1,4 @@
-import { Injectable, Module, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Module, OnModuleInit } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 @Injectable()
 class TestInjectable implements OnModuleInit {
@@ -200,5 +200,42 @@ describe('OnModuleInit', () => {
     expect(parent.onModuleInit.mock.invocationCallOrder[0]).toBeLessThan(
       composition.onModuleInit.mock.invocationCallOrder[0],
     );
+  });
+
+  it('should call onModuleInit of a property dependency first', async () => {
+    const calls: string[] = [];
+
+    @Injectable()
+    class DatabaseService implements OnModuleInit {
+      async onModuleInit() {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        calls.push('database');
+      }
+    }
+
+    @Injectable()
+    class UsersService implements OnModuleInit {
+      @Inject(DatabaseService)
+      private readonly db: DatabaseService;
+
+      onModuleInit() {
+        calls.push('users');
+      }
+    }
+
+    @Module({
+      providers: [UsersService, DatabaseService],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    expect(calls).toEqual(['database', 'users']);
   });
 });
