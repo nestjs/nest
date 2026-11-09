@@ -1215,8 +1215,16 @@ describe('Middleware (FastifyAdapter)', () => {
       }
     }
 
+    @Controller()
+    class RootController {
+      @Get()
+      root() {
+        return HANDLER_RETURN_VALUE;
+      }
+    }
+
     @Module({
-      controllers: [UsersController],
+      controllers: [UsersController, RootController],
     })
     class AbsoluteFormModule implements NestModule {
       configure(consumer: MiddlewareConsumer) {

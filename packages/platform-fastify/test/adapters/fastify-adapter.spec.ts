@@ -491,6 +491,16 @@ describe('FastifyAdapter', () => {
       });
     }
 
+    it('should route an absolute-form request target with a query and no path as "/"', async () => {
+      fastifyAdapter.get('/', handler);
+
+      const res = await injectRequestTarget('GET', 'http://localhost?a=b');
+
+      expect(res.statusCode).to.equal(200);
+      expect(res.body).to.equal('found');
+      expect(middleware.called).to.be.false;
+    });
+
     it('should pass "OPTIONS *" to the not-found handler rather than to the "OPTIONS /" route', async () => {
       const res = await injectRequestTarget('OPTIONS', '*');
 

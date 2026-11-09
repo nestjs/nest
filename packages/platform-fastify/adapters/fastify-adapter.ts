@@ -1282,9 +1282,10 @@ export class FastifyAdapter<
     if (queryStart !== -1 && (pathStart === -1 || queryStart < pathStart)) {
       // The query ends the authority, so a "/" in it does not start the path,
       // as in "find-my-way" 9.9.0 and later ("http://host?a/users" is "/").
-      // Earlier versions, including the one this package depends on, route
-      // such a target as "/users". It is left untouched, so that it is
-      // answered by the not-found handler (see `isRoutableRequestTarget()`).
+      // Earlier versions, which the router of a Fastify instance passed to
+      // the adapter may still be, route such a target as "/users". It is left
+      // untouched, so that it is answered by the not-found handler (see
+      // `isRoutableRequestTarget()`).
       return pathStart === -1 ? `/${url.slice(queryStart)}` : url;
     }
     return pathStart === -1 ? '/' : url.slice(pathStart);
