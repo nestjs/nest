@@ -39,7 +39,7 @@
     "@types/node": "26.6.6",
     "@types/supertest": "7.2.1",
     "@types/ws": "8.5.13",
-    "oxlint": "1.91.0",
+    "oxlint": "1.93.0",
     "prettier": "3.9.10",
     "supertest": "7.3.2",
     "ts-loader": "9.6.2",
