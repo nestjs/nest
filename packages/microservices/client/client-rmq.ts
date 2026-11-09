@@ -401,6 +401,13 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         this.connectionPromise.catch(() => {});
       }
 
+      // A reply to the direct reply-to queue goes only to the channel that
+      // sent the request, and that channel is gone with the connection: the
+      // pending requests would wait forever.
+      if (client === this.client && this.replyQueue === REPLY_QUEUE) {
+        this.handleClose();
+      }
+
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
       this.logger.error(err);
     });
