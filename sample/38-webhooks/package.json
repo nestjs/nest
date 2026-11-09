@@ -16,7 +16,7 @@
     "migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@nestjs/common": "12.4.1",
+    "@nestjs/common": "12.4.2",
     "@nestjs/core": "12.4.1",
     "@nestjs/drizzle": "0.0.2",
     "@nestjs/outbox": "0.1.4",
