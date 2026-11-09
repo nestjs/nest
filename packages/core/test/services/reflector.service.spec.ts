@@ -289,6 +289,26 @@ describe('Reflector', () => {
       expect(reflector.getAllAndMerge(key, [Test1, Test2])).toEqual([42, 99]);
     });
 
+    it('should concat an array that follows a single value', () => {
+      Reflect.defineMetadata(key, 'value1', Test1);
+      Reflect.defineMetadata(key, ['value2', 'value3'], Test2);
+      expect(reflector.getAllAndMerge(key, [Test1, Test2])).toEqual([
+        'value1',
+        'value2',
+        'value3',
+      ]);
+    });
+
+    it('should concat an array that follows an object', () => {
+      const value = { test: 'value' };
+      Reflect.defineMetadata(key, value, Test1);
+      Reflect.defineMetadata(key, ['value2'], Test2);
+      expect(reflector.getAllAndMerge(key, [Test1, Test2])).toEqual([
+        value,
+        'value2',
+      ]);
+    });
+
     it('should return empty array when all metadata is undefined', () => {
       const result = reflector.getAllAndMerge(key, [Test1, Test2]);
       expect(result).toEqual([]);
