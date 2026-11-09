@@ -157,10 +157,15 @@ export function getRoutingPath(url: string): string {
 export function getRawPrefixEnd(url: string, routingPrefix: string): number {
   let start = 0;
   if (url.charCodeAt(0) !== 47 /* / */) {
-    // Absolute-form target: skip "scheme://authority"
+    // Absolute-form target: skip "scheme://authority", which ends at the
+    // path or at the query (as in getPathFromAbsoluteUrl())
     const schemeEnd = url.indexOf('://');
     const pathStart = schemeEnd === -1 ? -1 : url.indexOf('/', schemeEnd + 3);
+    const queryStart = schemeEnd === -1 ? -1 : url.indexOf('?', schemeEnd + 3);
     start = pathStart === -1 ? url.length : pathStart;
+    if (queryStart !== -1 && queryStart < start) {
+      start = queryStart;
+    }
   }
   let slashes = 0;
   for (let i = 0; i < routingPrefix.length; i++) {

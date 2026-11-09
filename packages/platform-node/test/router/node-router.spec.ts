@@ -323,6 +323,19 @@ describe('NodeRouter', () => {
       expect(url).toBe('/');
     });
 
+    it('should keep the query of an absolute-form target without a path', () => {
+      const urls: string[] = [];
+      router.use('/{*path}', (req: NodeRequest, _res: unknown, next: Next) => {
+        urls.push(req.url!);
+        next();
+      });
+
+      dispatch('GET', 'http://example.com?a=/users');
+      dispatch('GET', 'http://example.com?a=b');
+
+      expect(urls).toEqual(['/?a=/users', '/?a=b']);
+    });
+
     it('should match the mount path segment by segment', () => {
       const middleware = vi.fn();
       router.use('/static', middleware);
