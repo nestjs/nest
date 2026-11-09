@@ -121,4 +121,10 @@ describe('getRawPrefixEnd', () => {
     const url = 'http://example.com/static/app.js';
     expect(url.slice(getRawPrefixEnd(url, '/static'))).toBe('/app.js');
   });
+
+  it('should end the host of an absolute-form target at its query', () => {
+    // Routed as "/", like "http://example.com/?a=/users"
+    const url = 'http://example.com?a=/users';
+    expect(url.slice(getRawPrefixEnd(url, ''))).toBe('?a=/users');
+  });
 });
