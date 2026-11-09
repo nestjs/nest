@@ -592,6 +592,18 @@ describe('ClientRMQ', function () {
         expect(publishStub.mock.calls[0][0]).toEqual(exchange);
       });
     });
+    it('should publish with the routing key the server binds when wildcards is true', () => {
+      untypedClient['options']['wildcards'] = true;
+      // The server binds its queue with the normalized pattern (sorted keys)
+      client['publish'](
+        { pattern: { role: 'user', cmd: 'create' }, data: 'data' },
+        () => {},
+      );
+
+      expect(publishStub.mock.calls[0][1]).toEqual(
+        '{"cmd":"create","role":"user"}',
+      );
+    });
 
     it('should send buffer from stringified message', () => {
       client['publish'](msg, () => {
@@ -1064,6 +1076,19 @@ describe('ClientRMQ', function () {
 
       expect(publishStub).toHaveBeenCalled();
       expect(publishStub.mock.calls[0][0]).toEqual(exchange);
+    });
+    it('should publish with the routing key the server binds when wildcards is true', async () => {
+      untypedClient['options']['wildcards'] = true;
+      publishStub.mockImplementation((a, b, c, d, f) => f());
+      // The server binds its queue with the normalized pattern (sorted keys)
+      await client['dispatchEvent']({
+        pattern: { role: 'user', cmd: 'create' },
+        data: 'data',
+      });
+
+      expect(publishStub.mock.calls[0][1]).toEqual(
+        '{"cmd":"create","role":"user"}',
+      );
     });
     it('should throw error', async () => {
       sendToQueueStub.mockImplementation((a, b, c, d) => d(new Error()));
