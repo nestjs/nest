@@ -590,6 +590,79 @@ describe('ServerKafka', () => {
       expect(handler).toHaveBeenCalled();
     });
 
+    describe('when the server receives its own reply on a regex-matched topic', () => {
+      // What ServerKafka#sendMessage publishes to the reply topic
+      const replyPayload: EachMessagePayload = {
+        topic: replyTopic,
+        partition: 0,
+        message: Object.assign({}, eventMessage, {
+          headers: {
+            [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+            [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1),
+          },
+        }),
+        heartbeat,
+        pause,
+      };
+
+      it.each([
+        ['a message handler', false],
+        ['an event handler', true],
+      ])(
+        'should not dispatch it to %s of a regex that matches the request topic',
+        async (_, isEvent) => {
+          const handler = vi.fn();
+          server.addHandler(/^test\..+$/, handler, isEvent);
+
+          await server.handleMessage(replyPayload);
+          expect(handler).not.toHaveBeenCalled();
+        },
+      );
+
+      it('should still dispatch a request published to a reply topic', async () => {
+        const handler = vi.fn();
+        server.addHandler(/^test\..+$/, handler);
+
+        await server.handleMessage({
+          ...replyPayload,
+          message: Object.assign({}, eventMessage, {
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopic),
+            },
+          }),
+        });
+        expect(handler).toHaveBeenCalled();
+      });
+
+      it('should still call a regex handler that targets reply topics', async () => {
+        const handler = vi.fn();
+        server.addHandler(/\.reply$/, handler, true);
+
+        await server.handleMessage(replyPayload);
+        expect(handler).toHaveBeenCalled();
+      });
+
+      it('should still call the handler registered for the reply topic', async () => {
+        const regexHandler = vi.fn();
+        const handler = vi.fn();
+        server.addHandler(/^test\..+$/, regexHandler, true);
+        server.addHandler(replyTopic, handler, true);
+
+        await server.handleMessage(replyPayload);
+        expect(handler).toHaveBeenCalled();
+        expect(regexHandler).not.toHaveBeenCalled();
+      });
+
+      it('should still call a regex handler for a message without a correlation id', async () => {
+        const handler = vi.fn();
+        server.addHandler(/^test\..+$/, handler, true);
+
+        await server.handleMessage({ ...eventPayload, topic: replyTopic });
+        expect(handler).toHaveBeenCalled();
+      });
+    });
+
     describe('when the reply topic is not a valid topic name', () => {
       const withReplyTopic = (
         replyTopicHeader: string,
