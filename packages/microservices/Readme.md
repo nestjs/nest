@@ -30,12 +30,12 @@ It runs on [Express](https://github.com/expressjs/express), [Fastify](https://gi
 ## Quick start
 
 ```bash
-npx @nestjs/cli new my-api --package-manager npm
+npx @nestjs/cli new my-api
 cd my-api
 npm run start:dev
 ```
 
-An application can also be a single file. This can replace `src/main.ts`, and `npx tsx src/main.ts` runs it with no build step:
+Add `--minimal` to start from a single file. An application can be this small, and `npx tsx src/main.ts` runs it with no build step:
 
 ```typescript
 import { Controller, Get, Module } from '@nestjs/common';
