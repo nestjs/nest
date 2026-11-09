@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-express",
-  "version": "12.4.0",
+  "version": "12.4.1",
   "description": "Run NestJS on Express: the HTTP adapter with Express middleware, file uploads through Multer, static assets and view engines.",
   "keywords": [
     "nestjs",
@@ -41,8 +41,8 @@
     "tslib": "2.9.1"
   },
   "devDependencies": {
-    "@nestjs/common": "12.4.0",
-    "@nestjs/core": "12.4.0"
+    "@nestjs/common": "12.4.1",
+    "@nestjs/core": "12.4.1"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.0",

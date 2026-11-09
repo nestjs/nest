@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-ws",
-  "version": "12.4.0",
+  "version": "12.4.1",
   "description": "ws adapter for NestJS gateways: plain WebSockets, with no Socket.IO protocol on top.",
   "keywords": [
     "nestjs",
