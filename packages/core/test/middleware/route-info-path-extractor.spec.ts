@@ -1,4 +1,9 @@
-import { RequestMethod, VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
+import {
+  RequestMethod,
+  VERSION_NEUTRAL,
+  type VersioningOptions,
+  VersioningType,
+} from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
 import { mapToExcludeRoute } from '@nestjs/core/middleware/utils.js';
 import { RouteInfoPathExtractor } from './../../middleware/route-info-path-extractor.js';
@@ -65,7 +70,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).toEqual(['/api$', '/api/*', '/foo']);
+      ).toEqual(['/api$', '/api/*', '/foo', '/v:nestUriVersion/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -175,7 +180,7 @@ describe('RouteInfoPathExtractor', () => {
         ).toEqual(['/cats']);
       });
 
-      it(`should add the default version segment to the routes excluded from the global prefix`, () => {
+      it(`should cover the routes excluded from the global prefix under any version for a wildcard`, () => {
         withDefaultVersion('1');
         Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
         Reflect.set(
@@ -189,7 +194,7 @@ describe('RouteInfoPathExtractor', () => {
             path: '*',
             method: RequestMethod.ALL,
           }),
-        ).toEqual(['/api$', '/api/*', '/foo', '/v1/foo']);
+        ).toEqual(['/api$', '/api/*', '/foo', '/v:nestUriVersion/foo']);
         expect(
           routeInfoPathExtractor.extractPathsFrom({
             path: 'bar',
@@ -227,6 +232,81 @@ describe('RouteInfoPathExtractor', () => {
           version: ['1', VERSION_NEUTRAL],
         }),
       ).toEqual(['/api$', '/api/*']);
+    });
+
+    describe('when a route is excluded from the global prefix', () => {
+      const withExcludedRoute = (
+        versioning: VersioningOptions = { type: VersioningType.URI },
+      ) => {
+        appConfig.enableVersioning(versioning);
+        routeInfoPathExtractor = new RouteInfoPathExtractor(appConfig);
+        Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+        Reflect.set(
+          routeInfoPathExtractor,
+          'excludedGlobalPrefixRoutes',
+          mapToExcludeRoute(['foo']),
+        );
+      };
+
+      it(`should use the version prefix for the path of any version`, () => {
+        withExcludedRoute({ type: VersioningType.URI, prefix: 'ver' });
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: '*',
+            method: RequestMethod.ALL,
+          }),
+        ).toEqual(['/api$', '/api/*', '/foo', '/ver:nestUriVersion/foo']);
+
+        withExcludedRoute({ type: VersioningType.URI, prefix: false });
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: '*',
+            method: RequestMethod.ALL,
+          }),
+        ).toEqual(['/api$', '/api/*', '/foo', '/:nestUriVersion/foo']);
+      });
+
+      it(`should cover any version for a VERSION_NEUTRAL wildcard`, () => {
+        withExcludedRoute();
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: '*',
+            method: RequestMethod.ALL,
+            version: ['1', VERSION_NEUTRAL],
+          }),
+        ).toEqual(['/api$', '/api/*', '/foo', '/v:nestUriVersion/foo']);
+      });
+
+      it(`should only cover the versions of a wildcard limited to them`, () => {
+        withExcludedRoute({ type: VersioningType.URI, defaultVersion: '1' });
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: '*',
+            method: RequestMethod.ALL,
+            version: ['2', '3'],
+          }),
+        ).toEqual([
+          '/api/v2$',
+          '/api/v2/*',
+          '/api/v3$',
+          '/api/v3/*',
+          '/v2/foo',
+          '/v3/foo',
+        ]);
+      });
+
+      it(`should not cover any version without URI versioning`, () => {
+        withExcludedRoute({
+          type: VersioningType.HEADER,
+          header: 'x-version',
+        });
+        expect(
+          routeInfoPathExtractor.extractPathsFrom({
+            path: '*',
+            method: RequestMethod.ALL,
+          }),
+        ).toEqual(['/api$', '/api/*', '/foo']);
+      });
     });
   });
 

@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "12.3.3",
     "@nestjs/core": "12.3.3",
-    "@nestjs/mongoose": "12.0.0",
+    "@nestjs/mongoose": "12.0.1",
     "@nestjs/platform-express": "12.3.3",
     "mongoose": "9.12.0",
     "reflect-metadata": "0.2.2",
@@ -38,7 +38,7 @@
     "mongodb-memory-server": "^11.0.1",
     "oxlint": "1.91.0",
     "prettier": "3.9.10",
-    "supertest": "7.3.1",
+    "supertest": "7.3.2",
     "ts-loader": "9.6.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",

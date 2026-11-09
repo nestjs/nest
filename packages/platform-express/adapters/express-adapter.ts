@@ -690,7 +690,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       // URIError is thrown by Express when given a path parameter with an invalid percentage
       // encoding, e.g. '%FF' (#8915)
       case error instanceof SyntaxError || error instanceof URIError:
-        return new BadRequestException(error.message);
+        return new BadRequestException(error.message, { cause: error });
       // http-errors (used by body-parser, Express itself, etc.) carry a numeric statusCode
       // and an expose flag. Without this case, errors like PayloadTooLargeError reach custom
       // exception filters as a raw http-errors instance rather than an HttpException, so a
@@ -763,7 +763,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       'Content-Disposition',
       headers.disposition,
     );
-    this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
+    // A "Transfer-Encoding" forbids a "Content-Length" (RFC 9112)
+    if (response.getHeader('Transfer-Encoding') === undefined) {
+      this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
+    }
   }
 }
 

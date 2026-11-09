@@ -23,6 +23,7 @@ import {
   isObject,
   isString,
   isUndefined,
+  loadPackageSync,
   stripEndSlash,
 } from '@nestjs/common/internal';
 import { AbstractHttpAdapter } from '@nestjs/core';
@@ -31,6 +32,12 @@ import cors from 'cors';
 import encodeUrl from 'encodeurl';
 import * as http from 'http';
 import * as https from 'https';
+import type {
+  Chain as LightMyRequestChain,
+  InjectOptions,
+  Response as LightMyRequestResponse,
+} from 'light-my-request';
+import { createRequire } from 'module';
 import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
 import { Duplex, finished, Writable } from 'stream';
@@ -54,6 +61,7 @@ import {
   NodeRequest,
   NodeResponse,
   ROUTE_ERROR_HANDLER,
+  SHUTTING_DOWN,
   toBytes,
 } from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
@@ -138,7 +146,10 @@ export class NodeAdapter extends AbstractHttpAdapter<
   private readonly openConnections = new Set<Duplex>();
   private readonly registeredPrefixes = new Set<string>();
   private readonly views = new ViewRenderer();
+  // By prototype of a light-my-request request or response (see inject())
+  private readonly injectedPrototypes = new WeakMap<object, object>();
   private isShuttingDown = false;
+  private return503OnClosing = false;
   private onRequestHook?: (
     req: NodeRequest,
     res: NodeResponse,
@@ -464,12 +475,46 @@ export class NodeAdapter extends AbstractHttpAdapter<
     return this.httpServer.listen(port, ...args);
   }
 
+  /**
+   * Injects a fake request into the application with light-my-request, as
+   * the FastifyAdapter does, so it is answered without a socket or a
+   * listening server (`app.init()` is enough).
+   */
+  public inject(): LightMyRequestChain;
+  public inject(opts: InjectOptions | string): Promise<LightMyRequestResponse>;
+  public inject(
+    opts?: InjectOptions | string,
+  ): LightMyRequestChain | Promise<LightMyRequestResponse> {
+    // Loaded on first use, as it mostly serves tests. Bundlers such as esbuild
+    // cannot follow createRequire(), so applications bundling a call to
+    // inject() have to mark light-my-request as external.
+    const lightMyRequest = loadPackageSync(
+      'light-my-request',
+      NodeAdapter.name,
+      () => createRequire(import.meta.url)('light-my-request'),
+    );
+    const dispatch = (req: http.IncomingMessage, res: http.ServerResponse) => {
+      // light-my-request overrides stream methods on the prototypes of its
+      // request and response, which the router would replace with those of
+      // NodeRequest and NodeResponse
+      this.setInjectedPrototype(req, this.requestClass.prototype);
+      this.setInjectedPrototype(res, NodeResponse.prototype);
+      const socket = req.socket as any;
+      // Where res.sendFile() finds the error handlers (see initHttpServer())
+      socket.server ??= this.httpServer;
+      // finalHandler() destroys the socket of a response it cannot finish
+      socket.destroy ??= (error?: Error) => res.destroy(error);
+      this.handleRequest(req as NodeRequest, res as NodeResponse);
+    };
+    return lightMyRequest(dispatch, opts);
+  }
+
   public beforeClose() {
-    this.isShuttingDown = true;
+    this.markShuttingDown();
   }
 
   public close() {
-    this.isShuttingDown = true;
+    this.markShuttingDown();
     this.closeOpenConnections();
 
     if (!this.httpServer) {
@@ -583,6 +628,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
         res,
       );
 
+    this.return503OnClosing = !!options?.return503OnClosing;
     // The first layer of the router: NestApplication calls initHttpServer()
     // before any middleware is registered, so requests are turned away while
     // the shutdown hooks run (beforeClose()) before Nest middleware runs
@@ -760,7 +806,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
     // URIError
     // when a path parameter has an invalid percent-encoding (e.g. "%FF")
     if (error instanceof SyntaxError || error instanceof URIError) {
-      return new BadRequestException(error.message);
+      return new BadRequestException(error.message, { cause: error });
     }
     // As with Express and Fastify: http-errors-style client errors (those of
     // the body parsers, such as a body that is too large, and of many Express
@@ -834,6 +880,18 @@ export class NodeAdapter extends AbstractHttpAdapter<
     }
   }
 
+  private setInjectedPrototype(target: object, base: object) {
+    const own = Object.getPrototypeOf(target);
+    let prototype = this.injectedPrototypes.get(own);
+    if (!prototype) {
+      const { constructor: _, ...methods } =
+        Object.getOwnPropertyDescriptors(own);
+      prototype = Object.create(base, methods) as object;
+      this.injectedPrototypes.set(own, prototype);
+    }
+    Object.setPrototypeOf(target, prototype);
+  }
+
   private finalHandler(err: any, req: NodeRequest, res: NodeResponse) {
     if (res.headersSent) {
       req.socket.destroy();
@@ -865,6 +923,16 @@ export class NodeAdapter extends AbstractHttpAdapter<
 
   private normalizePrefix(prefix?: string): string {
     return stripEndSlash(addLeadingSlash(prefix));
+  }
+
+  // From now on, responses close their connection (see
+  // NodeResponse.writeHead()), unless return503OnClosing is to answer the
+  // requests that reuse it
+  private markShuttingDown() {
+    this.isShuttingDown = true;
+    if (this.httpServer && !this.return503OnClosing) {
+      (this.httpServer as any)[SHUTTING_DOWN] = true;
+    }
   }
 
   private trackOpenConnections() {

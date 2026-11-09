@@ -179,4 +179,29 @@ describe('Graceful Shutdown (Node)', () => {
     releaseShutdownHook();
     await closePromise;
   });
+
+  it('should close the kept-alive connection of a request in flight once it is answered', async () => {
+    app = await NestFactory.create(AppModule, new NodeAdapter(), {
+      logger: false,
+    });
+    await app.listen(0, '127.0.0.1');
+    const server = app.getHttpServer();
+    // close() would wait this long for the connection to idle out
+    server.keepAliveTimeout = 60_000;
+    const { port } = server.address() as net.AddressInfo;
+    const agent = new http.Agent({ keepAlive: true });
+
+    try {
+      const response = requestSlow(port, agent);
+      await new Promise(r => setTimeout(r, 100));
+      const closePromise = app.close();
+
+      const res = await response;
+      expect(res.statusCode).toBe(200);
+      expect(res.headers.connection).toBe('close');
+      await closePromise;
+    } finally {
+      agent.destroy();
+    }
+  });
 });

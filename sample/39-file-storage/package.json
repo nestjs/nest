@@ -22,7 +22,7 @@
     "@nestjs/config": "12.1.0",
     "@nestjs/core": "12.3.3",
     "@nestjs/platform-express": "12.3.3",
-    "@nestjs/storage": "0.0.4",
+    "@nestjs/storage": "0.0.5",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },
@@ -35,7 +35,7 @@
     "@types/supertest": "7.2.1",
     "oxlint": "1.91.0",
     "prettier": "3.9.10",
-    "supertest": "7.3.1",
+    "supertest": "7.3.2",
     "ts-loader": "9.6.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",

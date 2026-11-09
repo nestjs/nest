@@ -40,7 +40,6 @@ import {
   loadPackage,
   loadPackageSync,
   isFunction,
-  isString,
 } from '@nestjs/common/internal';
 import { createRequire } from 'module';
 
@@ -550,9 +549,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       };
 
       if (this.options.wildcards || this.options.exchangeType === 'fanout') {
-        const stringifiedPattern = isString(message.pattern)
-          ? message.pattern
-          : JSON.stringify(message.pattern);
+        const stringifiedPattern = this.normalizePattern(message.pattern);
 
         // The exchange is the same as the queue when wildcards are enabled
         // and the exchange is not explicitly set
@@ -608,9 +605,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
             // The exchange is the same as the queue when wildcards are enabled
             // and the exchange is not explicitly set
             this.getOptionsProp(this.options, 'exchange', this.queue),
-            isString(packet.pattern)
-              ? packet.pattern
-              : JSON.stringify(packet.pattern),
+            this.normalizePattern(packet.pattern),
             content,
             sendOptions,
             errorCallback,

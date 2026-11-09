@@ -1939,6 +1939,468 @@ describe('ServerGrpc', () => {
     });
   });
 
+  describe('when a response stream emits a promise', () => {
+    // What an interceptor `map(async data => data)` emits. Writing the
+    // promise itself is not the response.
+    function createCall() {
+      return {
+        request: {},
+        metadata: {},
+        write: vi.fn(() => true),
+        end: vi.fn(),
+        on: vi.fn(),
+        off: vi.fn(),
+        emit: vi.fn(),
+      };
+    }
+
+    it('should write resolved values in emission order', async () => {
+      const call = createCall();
+      let resolveSlow: (value: { n: number }) => void = () => undefined;
+      const slow = new Promise<{ n: number }>(resolve => {
+        resolveSlow = resolve;
+      });
+
+      const result = server.createStreamServiceMethod(() =>
+        of(slow, Promise.resolve({ n: 2 }), { n: 3 }),
+      )(call, vi.fn());
+      await new Promise(resolve => setImmediate(resolve));
+      expect(call.write).not.toHaveBeenCalled();
+
+      resolveSlow({ n: 1 });
+      await result;
+
+      expect(call.write.mock.calls).toEqual([
+        [{ n: 1 }],
+        [{ n: 2 }],
+        [{ n: 3 }],
+      ]);
+      expect(call.end).toHaveBeenCalled();
+      expect(call.emit).not.toHaveBeenCalled();
+    });
+
+    it('should write a plain value in the turn it is emitted when no promise is pending', async () => {
+      const call = createCall();
+      const subject = new Subject<{ n: number }>();
+
+      const result = server.createStreamServiceMethod(() => subject)(
+        call,
+        vi.fn(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      subject.next({ n: 1 });
+
+      expect(call.write).toHaveBeenCalledExactlyOnceWith({ n: 1 });
+      subject.complete();
+      await result;
+    });
+
+    it('should fail a later rejection without leaving it unhandled', async () => {
+      const call = createCall();
+      let resolveSlow: (value: { n: number }) => void = () => undefined;
+      const slow = new Promise<{ n: number }>(resolve => {
+        resolveSlow = resolve;
+      });
+      const loggerErrorSpy = vi
+        .spyOn((server as any).logger, 'error')
+        .mockImplementation(() => {});
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => {
+        unhandled.push(reason);
+      };
+      process.on('unhandledRejection', onUnhandled);
+
+      try {
+        const result = server.createStreamServiceMethod(() =>
+          of(slow, Promise.reject(new Error('queued rejection'))),
+        )(call, vi.fn());
+        await new Promise(resolve => setImmediate(resolve));
+        expect(unhandled).toEqual([]);
+
+        resolveSlow({ n: 1 });
+        await result;
+        await new Promise(resolve => setImmediate(resolve));
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
+
+      expect(call.write.mock.calls).toEqual([[{ n: 1 }]]);
+      expect(call.emit).toHaveBeenCalledExactlyOnceWith('error', internalError);
+      expect(loggerErrorSpy).toHaveBeenCalled();
+      expect(unhandled).toEqual([]);
+    });
+
+    it('should fail the call when a response promise rejects', async () => {
+      const call = createCall();
+      const error = new Error('enrich failed');
+      const loggerErrorSpy = vi
+        .spyOn((server as any).logger, 'error')
+        .mockImplementation(() => {});
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => {
+        unhandled.push(reason);
+      };
+      process.on('unhandledRejection', onUnhandled);
+
+      try {
+        await server.createStreamServiceMethod(() =>
+          of({ n: 1 }).pipe(
+            map(async () => {
+              throw error;
+            }),
+          ),
+        )(call, vi.fn());
+        await new Promise(resolve => setImmediate(resolve));
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
+
+      expect(call.write).not.toHaveBeenCalled();
+      expect(call.emit).toHaveBeenCalledExactlyOnceWith('error', internalError);
+      expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+      expect(unhandled).toEqual([]);
+    });
+
+    it('should fail when a response promise resolves to null', async () => {
+      const call = createCall();
+
+      await server.createStreamServiceMethod(() => of(Promise.resolve(null)))(
+        call,
+        vi.fn(),
+      );
+
+      expect(call.write).not.toHaveBeenCalled();
+      expect(call.emit).toHaveBeenCalledExactlyOnceWith('error', {
+        code: GrpcStatus.INTERNAL,
+        details: 'The handler emitted a null response',
+      });
+    });
+
+    it('should not write a value that resolves after the client cancels', async () => {
+      const call = Object.assign(new EventEmitter(), {
+        request: {},
+        metadata: {},
+        write: vi.fn(() => true),
+        end: vi.fn(),
+      });
+      let resolveSlow: (value: { n: number }) => void = () => undefined;
+      const slow = new Promise<{ n: number }>(resolve => {
+        resolveSlow = resolve;
+      });
+
+      const result = server.createStreamServiceMethod(() => of(slow))(
+        call,
+        vi.fn(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      call.emit('cancelled');
+      resolveSlow({ n: 1 });
+      await result;
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(call.write).not.toHaveBeenCalled();
+    });
+
+    it('should write every value waiting behind a pending promise', async () => {
+      const call = createCall();
+      let resolveSlow: (value: { n: number }) => void = () => undefined;
+      const slow = new Promise<{ n: number }>(resolve => {
+        resolveSlow = resolve;
+      });
+      const values = Array.from({ length: 5000 }, (_, n) => ({ n: n + 1 }));
+
+      const result = server.createStreamServiceMethod(() =>
+        of(slow, ...values),
+      )(call, vi.fn());
+      await new Promise(resolve => setImmediate(resolve));
+      expect(call.write).not.toHaveBeenCalled();
+
+      resolveSlow({ n: 0 });
+      await result;
+
+      expect(call.write).toHaveBeenCalledTimes(5001);
+      expect(call.write).toHaveBeenNthCalledWith(1, { n: 0 });
+      expect(call.write).toHaveBeenLastCalledWith({ n: 5000 });
+      expect(call.end).toHaveBeenCalled();
+      expect(call.emit).not.toHaveBeenCalled();
+    });
+
+    it('should fail the call after the messages before an error are written', async () => {
+      const call = createCall();
+      const error = { code: GrpcStatus.NOT_FOUND, details: 'Not found' };
+
+      await server.createStreamServiceMethod(() =>
+        concat(
+          of(Promise.resolve({ n: 1 }), { n: 2 }),
+          throwError(() => error),
+        ),
+      )(call, vi.fn());
+
+      expect(call.write.mock.calls).toEqual([[{ n: 1 }], [{ n: 2 }]]);
+      expect(call.emit).toHaveBeenCalledExactlyOnceWith('error', error);
+    });
+
+    describe('when the queue is spliced', () => {
+      // Patched by hand, as vi.spyOn() calls splice() itself
+      const splice = Array.prototype.splice;
+      let moved: number;
+      let removed: unknown[];
+
+      beforeEach(() => {
+        moved = 0;
+        removed = [];
+        Array.prototype.splice = function (
+          this: unknown[],
+          start: number,
+          deleteCount: number,
+        ) {
+          moved += Math.max(this.length - start - deleteCount, 0);
+          const items = splice.call(this, start, deleteCount);
+          removed.push(...items);
+          return items;
+        };
+      });
+      afterEach(() => {
+        Array.prototype.splice = splice;
+      });
+
+      it('should write promises that settle one by one in linear time', async () => {
+        // Removing each one would move the values queued behind it, which
+        // takes time quadratic in the number of promises
+        const values = Array.from({ length: 2000 }, (_, n) => ({ n }));
+        const call = createCall();
+
+        await server.createStreamServiceMethod(() =>
+          of(...values).pipe(map(async value => value)),
+        )(call, vi.fn());
+        Array.prototype.splice = splice;
+
+        expect(call.write).toHaveBeenCalledTimes(2000);
+        expect(moved).toBeLessThan(2 * values.length);
+      });
+
+      it('should release the written values of a queue that never empties', async () => {
+        const call = createCall();
+        const subject = new Subject<Promise<{ n: number }>>();
+        const result = server.createStreamServiceMethod(() => subject)(
+          call,
+          vi.fn(),
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        let settlePrevious = () => {};
+        for (let n = 0; n < 100; n++) {
+          let settle = () => {};
+          subject.next(new Promise(resolve => (settle = () => resolve({ n }))));
+          settlePrevious();
+          settlePrevious = settle;
+          await new Promise(resolve => setImmediate(resolve));
+        }
+        const released = removed.filter(
+          item => item instanceof Object && 'settled' in item,
+        ).length;
+        Array.prototype.splice = splice;
+        subject.complete();
+        settlePrevious();
+        await result;
+
+        expect(call.write).toHaveBeenCalledTimes(100);
+        expect(released).toBeGreaterThanOrEqual(50);
+      });
+    });
+
+    it('should stop reading requests once as many responses wait as the call buffers', async () => {
+      const call = {
+        ...createCall(),
+        writableHighWaterMark: 3,
+        pause: vi.fn(),
+        resume: vi.fn(),
+      };
+      const settles: Array<() => void> = [];
+      const deferred = (n: number) =>
+        new Promise(resolve => settles.push(() => resolve({ n })));
+      const subject = new Subject<unknown>();
+
+      const result = server.createRequestStreamMethod(() => subject, true)(
+        call,
+        vi.fn(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      subject.next(deferred(1));
+      subject.next(deferred(2));
+      settles[0]();
+      await new Promise(resolve => setImmediate(resolve));
+      // The written response does not count
+      subject.next(deferred(3));
+      expect(call.pause).not.toHaveBeenCalled();
+      subject.next(deferred(4));
+      expect(call.pause).toHaveBeenCalledOnce();
+      const [, drain] = call.on.mock.calls.find(
+        ([event]: [string]) => event === 'drain',
+      )!;
+      drain();
+      expect(call.resume).not.toHaveBeenCalled();
+
+      settles.slice(1).forEach(settle => settle());
+      subject.complete();
+      await result;
+
+      expect(call.write.mock.calls).toEqual([
+        [{ n: 1 }],
+        [{ n: 2 }],
+        [{ n: 3 }],
+        [{ n: 4 }],
+      ]);
+      expect(call.resume).toHaveBeenCalledOnce();
+    });
+
+    it('should stop reading requests when a settled promise fills the call', async () => {
+      const call = {
+        ...createCall(),
+        write: vi.fn().mockReturnValueOnce(false).mockReturnValue(true),
+        pause: vi.fn(),
+        resume: vi.fn(),
+      };
+
+      const result = server.createRequestStreamMethod(
+        () => of(Promise.resolve({ n: 1 }), Promise.resolve({ n: 2 })),
+        true,
+      )(call, vi.fn());
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(call.write.mock.calls).toEqual([[{ n: 1 }]]);
+      expect(call.pause).toHaveBeenCalledOnce();
+      expect(call.end).not.toHaveBeenCalled();
+
+      const [, drain] = call.on.mock.calls.find(
+        ([event]: [string]) => event === 'drain',
+      )!;
+      drain();
+      await result;
+
+      expect(call.write.mock.calls).toEqual([[{ n: 1 }], [{ n: 2 }]]);
+      expect(call.resume).toHaveBeenCalledOnce();
+      expect(call.end).toHaveBeenCalled();
+    });
+
+    it('should write a promise that settles after the call drains', async () => {
+      const call = {
+        ...createCall(),
+        write: vi.fn().mockReturnValueOnce(false).mockReturnValue(true),
+      };
+      let resolveSlow: (value: { n: number }) => void = () => undefined;
+      const slow = new Promise<{ n: number }>(resolve => {
+        resolveSlow = resolve;
+      });
+
+      const result = server.createStreamServiceMethod(() => of({ n: 0 }, slow))(
+        call,
+        vi.fn(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      const [, drain] = call.on.mock.calls.find(
+        ([event]: [string]) => event === 'drain',
+      )!;
+      drain();
+      expect(call.write.mock.calls).toEqual([[{ n: 0 }]]);
+
+      resolveSlow({ n: 1 });
+      await result;
+
+      expect(call.write.mock.calls).toEqual([[{ n: 0 }], [{ n: 1 }]]);
+      expect(call.end).toHaveBeenCalled();
+    });
+
+    it('should read requests again after the call drains while a promise is pending', async () => {
+      // The pending response may wait for a later request
+      const call = {
+        ...createCall(),
+        write: vi.fn().mockReturnValueOnce(false).mockReturnValue(true),
+        writableHighWaterMark: 16,
+        pause: vi.fn(),
+        resume: vi.fn(),
+      };
+      let resolveSlow: (value: { n: number }) => void = () => undefined;
+      const slow = new Promise<{ n: number }>(resolve => {
+        resolveSlow = resolve;
+      });
+      const subject = new Subject<unknown>();
+
+      const result = server.createRequestStreamMethod(() => subject, true)(
+        call,
+        vi.fn(),
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      subject.next({ n: 0 });
+      expect(call.pause).toHaveBeenCalledOnce();
+      subject.next(slow);
+      const [, drain] = call.on.mock.calls.find(
+        ([event]: [string]) => event === 'drain',
+      )!;
+      drain();
+      expect(call.resume).toHaveBeenCalledOnce();
+
+      resolveSlow({ n: 1 });
+      subject.complete();
+      await result;
+
+      expect(call.write.mock.calls).toEqual([[{ n: 0 }], [{ n: 1 }]]);
+      expect(call.end).toHaveBeenCalled();
+    });
+
+    it('should log a rejection that settles after the client cancels', async () => {
+      const call = Object.assign(new EventEmitter(), {
+        request: {},
+        metadata: {},
+        write: vi.fn(() => true),
+        end: vi.fn(),
+      });
+      const error = new Error('late rejection');
+      let rejectSlow: (err: Error) => void = () => undefined;
+      const slow = new Promise<never>((_, reject) => {
+        rejectSlow = reject;
+      });
+      const loggerErrorSpy = vi
+        .spyOn((server as any).logger, 'error')
+        .mockImplementation(() => {});
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => {
+        unhandled.push(reason);
+      };
+      process.on('unhandledRejection', onUnhandled);
+
+      try {
+        const result = server.createStreamServiceMethod(() => of(slow))(
+          call,
+          vi.fn(),
+        );
+        await new Promise(resolve => setImmediate(resolve));
+        call.emit('cancelled');
+        rejectSlow(error);
+        await result;
+        await new Promise(resolve => setImmediate(resolve));
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
+
+      expect(call.write).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+      expect(unhandled).toEqual([]);
+    });
+
+    it('should write a bidirectional response promise in order', async () => {
+      const call = createCall();
+
+      await server.createRequestStreamMethod(
+        () => of(Promise.resolve({ n: 4 }), { n: 5 }),
+        true,
+      )(call, vi.fn());
+
+      expect(call.write.mock.calls).toEqual([[{ n: 4 }], [{ n: 5 }]]);
+      expect(call.emit).not.toHaveBeenCalled();
+    });
+  });
+
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {

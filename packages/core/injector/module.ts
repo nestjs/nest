@@ -622,8 +622,11 @@ export class Module {
         typeOrToken: Type<TInput> | string | symbol,
         options: ModuleRefGetOrResolveOpts = {},
       ): TResult | Array<TResult> {
-        options.strict ??= true;
-        options.each ??= false;
+        options = {
+          ...options,
+          strict: options.strict ?? true,
+          each: options.each ?? false,
+        };
 
         return this.find<TInput, TResult>(
           typeOrToken,
@@ -641,8 +644,11 @@ export class Module {
         contextId = createContextId(),
         options: ModuleRefGetOrResolveOpts = {},
       ): Promise<TResult | Array<TResult>> {
-        options.strict ??= true;
-        options.each ??= false;
+        options = {
+          ...options,
+          strict: options.strict ?? true,
+          each: options.each ?? false,
+        };
 
         return this.resolvePerContext<TInput, TResult>(
           typeOrToken,

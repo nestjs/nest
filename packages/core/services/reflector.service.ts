@@ -221,13 +221,13 @@ export class Reflector {
       if (Array.isArray(a)) {
         return a.concat(b);
       }
-      if (isObject(a) && isObject(b)) {
+      if (isObject(a) && isObject(b) && !Array.isArray(b)) {
         return {
           ...a,
           ...b,
         };
       }
-      return [a, b];
+      return [a].concat(b);
     });
   }
 

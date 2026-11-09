@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package asyncmap;
+
+service AsyncMap {
+  rpc Unary (Item) returns (Item);
+  rpc ServerStream (Count) returns (stream Item);
+  rpc Echo (stream Item) returns (stream Item);
+}
+
+message Count {
+  int32 n = 1;
+  string label = 2;
+  bool reject = 3;
+}
+
+message Item {
+  int32 n = 1;
+  string label = 2;
+}

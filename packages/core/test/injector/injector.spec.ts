@@ -104,6 +104,26 @@ describe('Injector', () => {
       expect(isResolved).toBe(true);
     });
 
+    it('should set the hierarchy level above the property dependencies', async () => {
+      @Injectable()
+      class PropertyHost {
+        @Inject(DependencyOne) property: DependencyOne;
+      }
+      const host = new InstanceWrapper({
+        name: 'PropertyHost',
+        token: 'PropertyHost',
+        metatype: PropertyHost,
+        instance: Object.create(PropertyHost.prototype),
+        isResolved: false,
+      });
+      moduleDeps.providers.set('PropertyHost', host);
+
+      await injector.loadInstance(host, moduleDeps.providers, moduleDeps);
+
+      expect(depOne.hierarchyLevel).toBe(1);
+      expect(host.hierarchyLevel).toBe(2);
+    });
+
     it('should throw RuntimeException when type is not stored in collection', async () => {
       await expect(
         injector.loadInstance({} as any, moduleDeps.providers, moduleDeps),

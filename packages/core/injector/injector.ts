@@ -257,7 +257,14 @@ export class Injector {
         );
         this.applyProperties(instance, properties);
 
-        wrapper.hierarchyLevel = depth + 1;
+        // Count property dependencies too, so their hooks run first
+        const propertiesDepth = Math.max(
+          0,
+          ...(wrapper.getPropertiesMetadata() ?? []).map(
+            property => property.wrapper.hierarchyLevel,
+          ),
+        );
+        wrapper.hierarchyLevel = Math.max(depth, propertiesDepth) + 1;
         wrapper.initTime = this.getNowTimestamp() - t0;
         settlementSignal.complete();
       };

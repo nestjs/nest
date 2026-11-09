@@ -269,6 +269,35 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     return null;
   }
 
+  /**
+   * A regex pattern also matches the topic this server replies on
+   * ("orders.created.reply"), so the server consumes its own replies. Those
+   * are skipped unless the regex that matches them targets reply topics only.
+   */
+  private isOwnReply(
+    topic: string,
+    correlationId: unknown,
+    replyTopic: unknown,
+  ) {
+    const replySuffix = '.reply';
+    if (
+      !topic.endsWith(replySuffix) ||
+      isNil(correlationId) ||
+      !isNil(replyTopic) ||
+      super.getHandlerByPattern(topic)
+    ) {
+      return false;
+    }
+    const patterns = [...this.messageHandlers.keys()] as (string | RegExp)[];
+    const pattern = patterns.find(
+      key => key instanceof RegExp && this.isPatternMatch(key, topic),
+    );
+    return (
+      pattern instanceof RegExp &&
+      this.isPatternMatch(pattern, topic.slice(0, -replySuffix.length))
+    );
+  }
+
   private isPatternMatch(pattern: RegExp, route: string): boolean {
     pattern.lastIndex = 0;
     const isMatch = pattern.test(route);
@@ -304,7 +333,8 @@ export class ServerKafka extends Server<never, KafkaStatus> {
    * with, an error included, is published to the reply topic. Any other
    * message is handled as an event (see `handleEvent`), also when its
    * handler is a `@MessagePattern()` one, so that such handlers can consume
-   * topics written by producers that do not add these headers.
+   * topics written by producers that do not add these headers. The server's
+   * own replies that a regex pattern matches are skipped (see `isOwnReply`).
    */
   public async handleMessage(payload: EachMessagePayload) {
     const channel = payload.topic;
@@ -326,6 +356,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     const correlationId = headers[KafkaHeaders.CORRELATION_ID];
     const replyTopic = headers[KafkaHeaders.REPLY_TOPIC];
     const replyPartition = headers[KafkaHeaders.REPLY_PARTITION];
+    if (this.isOwnReply(channel, correlationId, replyTopic)) {
+      return;
+    }
 
     const packet = await this.deserializer.deserialize(rawMessage, { channel });
     const kafkaContext = new KafkaContext([

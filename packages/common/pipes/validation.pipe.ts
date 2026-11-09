@@ -68,6 +68,12 @@ const OMITTED_ERRORS_MESSAGE = 'Further validation errors were omitted';
 
 let classValidator: any = {} as any;
 let classTransformer: any = {} as any;
+// The packages of the pipe created last, which may still be loading.
+// "transform()" resolves them into the variables above, so that a pipe
+// created while a value is validated (e.g. a request-scoped one) doesn't put
+// promises in place of the packages that validation uses.
+let pendingClassValidator: any;
+let pendingClassTransformer: any;
 
 /**
  * @see [Validation](https://docs.nestjs.com/techniques/validation)
@@ -118,8 +124,14 @@ export class ValidationPipe implements PipeTransform {
       maxErrorMessagesLength ?? DEFAULT_MAX_ERROR_MESSAGES_LENGTH;
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
-    classValidator = this.loadValidator(validatorPackage);
-    classTransformer = this.loadTransformer(transformerPackage);
+    pendingClassValidator = this.loadValidator(validatorPackage);
+    pendingClassTransformer = this.loadTransformer(transformerPackage);
+    if (!(pendingClassValidator instanceof Promise)) {
+      classValidator = pendingClassValidator;
+    }
+    if (!(pendingClassTransformer instanceof Promise)) {
+      classTransformer = pendingClassTransformer;
+    }
   }
 
   protected loadValidator(
@@ -160,8 +172,8 @@ export class ValidationPipe implements PipeTransform {
         : value;
     }
 
-    classValidator = (await classValidator) as ValidatorPackage;
-    classTransformer = (await classTransformer) as TransformerPackage;
+    classValidator = (await pendingClassValidator) as ValidatorPackage;
+    classTransformer = (await pendingClassTransformer) as TransformerPackage;
 
     const originalValue = value;
     value = this.toEmptyIfNil(value, metatype);

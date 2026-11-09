@@ -14,6 +14,9 @@ import {
   stripEndSlash,
 } from '@nestjs/common/internal';
 
+// Named so that it does not clash with a parameter of an excluded route
+const URI_VERSION_PARAM = 'nestUriVersion';
+
 export class RouteInfoPathExtractor {
   private readonly routePathFactory: RoutePathFactory;
   private readonly prefixPath: string;
@@ -55,18 +58,19 @@ export class RouteInfoPathExtractor {
             ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
             : [addLeadingSlash(path)];
 
-      return Array.isArray(this.excludedGlobalPrefixRoutes)
-        ? [
-            ...entries,
-            ...this.excludedGlobalPrefixRoutes
-              .flatMap(route => this.getPathsOfExcludedRoute(route))
-              .flatMap(excludedPath =>
-                versionPaths.length > 0
-                  ? versionPaths.map(v => v + excludedPath)
-                  : [excludedPath],
-              ),
-          ]
-        : entries;
+      if (!Array.isArray(this.excludedGlobalPrefixRoutes)) {
+        return entries;
+      }
+      const excludedVersionPaths =
+        this.getVersionPathsOfExcludedRoutes(wildcardVersionPaths);
+      return [
+        ...entries,
+        ...this.excludedGlobalPrefixRoutes
+          .flatMap(route => this.getPathsOfExcludedRoute(route))
+          .flatMap(excludedPath =>
+            excludedVersionPaths.map(v => v + excludedPath),
+          ),
+      ];
     }
 
     return this.extractNonWildcardPathsFrom({ path, method, version });
@@ -159,6 +163,28 @@ export class RouteInfoPathExtractor {
         path,
       })),
     );
+  }
+
+  /**
+   * Returns the version paths to mount the routes excluded from the global
+   * prefix under for a wildcard. A wildcard limited to some versions covers
+   * those, while any other one covers the routes of every version under the
+   * prefix, so it has to cover them out of it too. The versions controllers
+   * declare are not known when middleware is registered, hence the parameter.
+   */
+  private getVersionPathsOfExcludedRoutes(
+    wildcardVersionPaths: string[],
+  ): string[] {
+    if (wildcardVersionPaths.length > 0) {
+      return wildcardVersionPaths;
+    }
+    if (this.versioningConfig?.type !== VersioningType.URI) {
+      return [''];
+    }
+    const versionPrefix = this.routePathFactory.getVersionPrefix(
+      this.versioningConfig,
+    );
+    return ['', addLeadingSlash(`${versionPrefix}:${URI_VERSION_PARAM}`)];
   }
 
   /**

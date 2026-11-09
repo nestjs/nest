@@ -221,6 +221,23 @@ describe('FastifyAdapter', () => {
       },
     );
 
+    it('should leave out the Content-Length of a StreamableFile when the Transfer-Encoding is set', async () => {
+      fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+        reply.header('Transfer-Encoding', 'chunked');
+        fastifyAdapter.reply(
+          reply,
+          new StreamableFile(Buffer.from('hello world'), { length: 11 }),
+        );
+      });
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+      expect(res.headers['transfer-encoding']).toBe('chunked');
+      expect(res.headers['content-length']).toBeUndefined();
+      expect(res.body).toBe('hello world');
+      await fastifyAdapter.close();
+    });
+
     it('should destroy the stream of a StreamableFile once the reply was sent', () => {
       // e.g. by Fastify's `handlerTimeout`: send() then drops the stream
       const reply = { ...createReply(), sent: true };
@@ -246,6 +263,7 @@ describe('FastifyAdapter', () => {
       expect(result).toBeInstanceOf(HttpException);
       expect(result.message).toBe(error.message);
       expect(result.getStatus()).toBe(415);
+      expect(result.cause).toBe(error);
     });
 
     it('should not map FastifyError without user status code (500 by default)', () => {
