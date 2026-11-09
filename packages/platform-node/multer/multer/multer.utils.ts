@@ -143,9 +143,12 @@ export function transformException(
   const exception = isMulterExceptionCode(error.code)
     ? multerExceptions[error.code]
     : error.message;
+  // Keep the original error as the cause, so that an exception filter can
+  // read its code and field
+  const options = { cause: error };
   switch (exception) {
     case multerExceptions.LIMIT_FILE_SIZE:
-      return new PayloadTooLargeException(error.message);
+      return new PayloadTooLargeException(error.message, options);
     case multerExceptions.LIMIT_FILE_COUNT:
     case multerExceptions.LIMIT_FIELD_KEY:
     case multerExceptions.LIMIT_FIELD_VALUE:
@@ -157,15 +160,18 @@ export function transformException(
     case multerExceptions.LIMIT_PART_COUNT:
     case multerExceptions.MISSING_FIELD_NAME:
       if (error.field) {
-        return new BadRequestException(`${error.message} - ${error.field}`);
+        return new BadRequestException(
+          `${error.message} - ${error.field}`,
+          options,
+        );
       }
-      return new BadRequestException(error.message);
+      return new BadRequestException(error.message, options);
     case busboyExceptions.MULTIPART_BOUNDARY_NOT_FOUND:
-      return new BadRequestException(error.message);
+      return new BadRequestException(error.message, options);
     case busboyExceptions.MULTIPART_MALFORMED_PART_HEADER:
     case busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FORM:
     case busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FILE:
-      return new BadRequestException(`Multipart: ${error.message}`);
+      return new BadRequestException(`Multipart: ${error.message}`, options);
   }
   // multer accepts any `multipart/*` request, but busboy only parses
   // `multipart/form-data`. The client's content type is left out of the
@@ -173,6 +179,7 @@ export function transformException(
   if (error.message?.startsWith(busboyExceptions.UNSUPPORTED_CONTENT_TYPE)) {
     return new UnsupportedMediaTypeException(
       busboyExceptions.UNSUPPORTED_CONTENT_TYPE,
+      options,
     );
   }
   return error;
