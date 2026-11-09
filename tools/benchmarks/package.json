@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/autocannon": "^7.12.7",
-    "autocannon": "^8.0.0",
+    "autocannon": "^9.0.0",
     "typescript": "^5.9.3"
   }
 }
