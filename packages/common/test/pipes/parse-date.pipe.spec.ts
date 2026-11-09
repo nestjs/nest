@@ -84,6 +84,32 @@ describe('ParseDatePipe', () => {
       it('should throw an error', () => {
         expect(() => target.transform('123abc')).toThrow(BadRequestException);
       });
+
+      it('should throw for a day past the end of its month', () => {
+        for (const value of [
+          '2024-02-30',
+          '2023-02-29',
+          '2024-04-31',
+          '2100-02-29',
+          '2024-02-30T10:00:00Z',
+          '2024-06-31T10:00:00+09:00',
+          '+002024-02-30',
+        ]) {
+          expect(() => target.transform(value)).toThrow(BadRequestException);
+        }
+      });
+
+      it('should accept the last day of each month', () => {
+        for (const value of [
+          '2024-02-29',
+          '2000-02-29',
+          '2023-02-28',
+          '2024-04-30',
+          '2024-12-31T23:59:59Z',
+        ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
     });
     describe('when empty value', () => {
       it('should throw an error', () => {
