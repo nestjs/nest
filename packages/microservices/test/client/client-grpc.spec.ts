@@ -794,6 +794,41 @@ describe('ClientGrpcProxy', () => {
     });
   });
 
+  describe('createClientByServiceName', () => {
+    it('should not write the message size limits into the given "channelOptions"', () => {
+      const shared = { channelOptions: { 'grpc.primary_user_agent': 'app' } };
+      const protoPath = join(import.meta.dirname, './test.proto');
+      const limited = new ClientGrpcProxy({
+        ...shared,
+        protoPath,
+        package: 'test',
+        maxReceiveMessageLength: 1024,
+      });
+      const unlimited = new ClientGrpcProxy({
+        ...shared,
+        protoPath,
+        package: 'test',
+      });
+      const grpcClient = vi.fn();
+      (limited as any).grpcClients = [{ test: grpcClient }];
+      (unlimited as any).grpcClients = [{ test: grpcClient }];
+
+      limited.createClientByServiceName('test');
+      unlimited.createClientByServiceName('test');
+
+      expect(shared.channelOptions).toEqual({
+        'grpc.primary_user_agent': 'app',
+      });
+      expect(grpcClient.mock.calls[0][2]).toEqual({
+        'grpc.primary_user_agent': 'app',
+        'grpc.max_receive_message_length': 1024,
+      });
+      expect(grpcClient.mock.calls[1][2]).toEqual({
+        'grpc.primary_user_agent': 'app',
+      });
+    });
+  });
+
   describe('createClients', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
