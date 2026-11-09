@@ -6,7 +6,11 @@ import {
   Module,
   Post,
   RequestMethod,
+  VERSION_NEUTRAL,
+  type VersioningOptions,
+  VersioningType,
 } from '@nestjs/common';
+import type { RouteInfo } from '@nestjs/common/internal';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -222,6 +226,104 @@ describe.each([
       await request(app.getHttpServer())
         .get('/reports/1')
         .expect(200, MIDDLEWARE_VALUE);
+    });
+  },
+);
+
+@Controller({ path: 'admin', version: '2' })
+class VersionedAdminController {
+  @Get('secret')
+  getSecret() {
+    return RETURN_VALUE;
+  }
+
+  @Get('items/:version')
+  findItem() {
+    return RETURN_VALUE;
+  }
+}
+
+describe.each([
+  ['Express', () => undefined],
+  ['Fastify', () => new FastifyAdapter()],
+])(
+  'Middleware - wildcard on versioned routes excluded from the global prefix (%s)',
+  (_, createAdapter) => {
+    let app: INestApplication;
+
+    const createApp = async (
+      versioning: VersioningOptions,
+      route: string | RouteInfo = '*',
+    ) => {
+      @Module({
+        controllers: [VersionedAdminController],
+      })
+      class VersionedAdminModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
+            .forRoutes(route);
+        }
+      }
+
+      app = (
+        await Test.createTestingModule({
+          imports: [VersionedAdminModule],
+        }).compile()
+      ).createNestApplication(createAdapter());
+      app.setGlobalPrefix('api', {
+        exclude: ['admin/secret', 'admin/items/:version'],
+      });
+      app.enableVersioning(versioning);
+      await listenOnLoopback(app);
+    };
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it.each<[string, VersioningOptions, string]>([
+      [
+        'a default version',
+        { type: VersioningType.URI, defaultVersion: '1' },
+        '/v2/admin/secret',
+      ],
+      ['no default version', { type: VersioningType.URI }, '/v2/admin/secret'],
+      [
+        'a neutral default version',
+        { type: VersioningType.URI, defaultVersion: VERSION_NEUTRAL },
+        '/v2/admin/secret',
+      ],
+      [
+        'a custom version prefix',
+        { type: VersioningType.URI, defaultVersion: '1', prefix: 'ver' },
+        '/ver2/admin/secret',
+      ],
+      [
+        'no version prefix',
+        { type: VersioningType.URI, defaultVersion: '1', prefix: false },
+        '/2/admin/secret',
+      ],
+    ])(`forRoutes('*') should run with %s`, async (_, versioning, url) => {
+      await createApp(versioning);
+      await request(app.getHttpServer()).get(url).expect(200, MIDDLEWARE_VALUE);
+    });
+
+    it(`forRoutes('*') should run on an excluded route with a "version" parameter`, async () => {
+      await createApp({ type: VersioningType.URI, defaultVersion: '1' });
+      await request(app.getHttpServer())
+        .get('/v2/admin/items/1')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+
+    it(`forRoutes({ path: '*', version: '1' }) should not run for another version`, async () => {
+      await createApp(
+        { type: VersioningType.URI, defaultVersion: '1' },
+        { path: '*', method: RequestMethod.ALL, version: '1' },
+      );
+      await request(app.getHttpServer())
+        .get('/v2/admin/secret')
+        .expect(200, RETURN_VALUE);
     });
   },
 );
