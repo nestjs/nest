@@ -57,9 +57,9 @@ describe('UsersController', () => {
   });
 
   describe('create()', () => {
-    it('should create a user', () => {
+    it('should create a user', async () => {
       usersController.create(createUserDto);
-      expect(usersController.create(createUserDto)).resolves.toEqual({
+      await expect(usersController.create(createUserDto)).resolves.toEqual({
         id: '1',
         ...createUserDto,
       });
@@ -75,8 +75,8 @@ describe('UsersController', () => {
   });
 
   describe('findOne()', () => {
-    it('should find a user', () => {
-      expect(usersController.findOne(1)).resolves.toEqual({
+    it('should find a user', async () => {
+      await expect(usersController.findOne(1)).resolves.toEqual({
         firstName: 'firstName #1',
         lastName: 'lastName #1',
         id: 1,

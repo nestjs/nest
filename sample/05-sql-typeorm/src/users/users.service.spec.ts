@@ -50,13 +50,13 @@ describe('UserService', () => {
   });
 
   describe('create()', () => {
-    it('should successfully insert a user', () => {
+    it('should successfully insert a user', async () => {
       const oneUser = {
         firstName: 'firstName #1',
         lastName: 'lastName #1',
       };
 
-      expect(
+      await expect(
         service.create({
           firstName: 'firstName #1',
           lastName: 'lastName #1',
@@ -73,9 +73,9 @@ describe('UserService', () => {
   });
 
   describe('findOne()', () => {
-    it('should get a single user', () => {
+    it('should get a single user', async () => {
       const repoSpy = vi.spyOn(repository, 'findOneBy');
-      expect(service.findOne(1)).resolves.toEqual(oneUser);
+      await expect(service.findOne(1)).resolves.toEqual(oneUser);
       expect(repoSpy).toHaveBeenCalledWith({ id: 1 });
     });
   });
