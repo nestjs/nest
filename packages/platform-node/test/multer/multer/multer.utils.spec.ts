@@ -330,9 +330,9 @@ describe('transformException', () => {
         const err = {
           message: busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FORM,
         };
-        expect(transformException(err as any)).toBeInstanceOf(
-          BadRequestException,
-        );
+        const result = transformException(err as any);
+        expect(result).toBeInstanceOf(BadRequestException);
+        expect(result!.cause).toBe(err);
       });
 
       it('should return "UnsupportedMediaTypeException" for an unsupported content type', () => {
@@ -342,6 +342,7 @@ describe('transformException', () => {
         const result = transformException(err);
         expect(result).toBeInstanceOf(UnsupportedMediaTypeException);
         expect(result!.message).toBe('Unsupported content type');
+        expect(result!.cause).toBe(err);
       });
 
       it('should map the error multer raises for a non form-data multipart request', async () => {
@@ -365,12 +366,13 @@ describe('transformException', () => {
         const result = transformException(err);
         expect(result).toBeInstanceOf(BadRequestException);
         expect(result!.message).toBe(`${err.message} - photo`);
+        expect(result!.cause).toBe(err);
       });
       it('should return "PayloadTooLargeException" for LIMIT_FILE_SIZE', () => {
         const err = new multer.MulterError('LIMIT_FILE_SIZE', 'avatar');
-        expect(transformException(err)).toBeInstanceOf(
-          PayloadTooLargeException,
-        );
+        const result = transformException(err);
+        expect(result).toBeInstanceOf(PayloadTooLargeException);
+        expect(result!.cause).toBe(err);
       });
       it('should map by code even when the message differs', () => {
         const err = {
