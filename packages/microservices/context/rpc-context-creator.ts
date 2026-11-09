@@ -19,6 +19,7 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
 import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
+import { ContextId } from '@nestjs/core/injector/instance-wrapper';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
@@ -57,7 +58,11 @@ type RpcParamProperties = ParamProperties & { metatype?: any };
 export interface RpcHandlerMetadata {
   argsLength: number;
   paramtypes: any[];
-  getParamsMetadata: (moduleKey: string) => RpcParamProperties[];
+  getParamsMetadata: (
+    moduleKey: string,
+    contextId?: ContextId,
+    inquirerId?: string,
+  ) => RpcParamProperties[];
 }
 
 export class RpcContextCreator {
@@ -123,7 +128,7 @@ export class RpcContextCreator {
       inquirerId,
     );
 
-    const paramsMetadata = getParamsMetadata(moduleKey);
+    const paramsMetadata = getParamsMetadata(moduleKey, contextId, inquirerId);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
@@ -231,13 +236,19 @@ export class RpcContextCreator {
       instance,
       instance[methodName],
     );
-    const getParamsMetadata = (moduleKey: string) =>
+    const getParamsMetadata = (
+      moduleKey: string,
+      contextId = STATIC_CONTEXT,
+      inquirerId?: string,
+    ) =>
       this.exchangeKeysForValues(
         keys,
         metadata,
         moduleKey,
         this.rpcParamsFactory,
         contextFactory,
+        contextId,
+        inquirerId,
       );
 
     const handlerMetadata: RpcHandlerMetadata = {
@@ -255,13 +266,18 @@ export class RpcContextCreator {
     moduleContext: string,
     paramsFactory: RpcParamsFactory,
     contextFactory: (args: unknown[]) => ExecutionContextHost,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
-      const pipes =
-        this.pipesContextCreator.createConcreteContext(pipesCollection);
+      const pipes = this.pipesContextCreator.createConcreteContext(
+        pipesCollection,
+        contextId,
+        inquirerId,
+      );
       const type = this.contextUtils.mapParamType(key);
 
       if (key.includes(CUSTOM_ROUTE_ARGS_METADATA)) {

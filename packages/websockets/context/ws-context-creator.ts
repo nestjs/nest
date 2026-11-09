@@ -18,6 +18,7 @@ import {
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
+import { ContextId } from '@nestjs/core/injector/instance-wrapper';
 import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
 import {
   InterceptorsConsumer,
@@ -35,7 +36,11 @@ type WsParamProperties = ParamProperties & { metatype?: any };
 export interface WsHandlerMetadata {
   argsLength: number;
   paramtypes: any[];
-  getParamsMetadata: (moduleKey: string) => WsParamProperties[];
+  getParamsMetadata: (
+    moduleKey: string,
+    contextId?: ContextId,
+    inquirerId?: string,
+  ) => WsParamProperties[];
 }
 
 export class WsContextCreator {
@@ -98,7 +103,7 @@ export class WsContextCreator {
       inquirerId,
     );
 
-    const paramsMetadata = getParamsMetadata(moduleKey);
+    const paramsMetadata = getParamsMetadata(moduleKey, contextId, inquirerId);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
@@ -198,13 +203,19 @@ export class WsContextCreator {
       instance,
       instance[methodName],
     );
-    const getParamsMetadata = (moduleKey: string) =>
+    const getParamsMetadata = (
+      moduleKey: string,
+      contextId = STATIC_CONTEXT,
+      inquirerId?: string,
+    ) =>
       this.exchangeKeysForValues(
         keys,
         metadata,
         moduleKey,
         this.wsParamsFactory,
         contextFactory,
+        contextId,
+        inquirerId,
       );
 
     const handlerMetadata: WsHandlerMetadata = {
@@ -222,13 +233,18 @@ export class WsContextCreator {
     moduleContext: string,
     paramsFactory: WsParamsFactory,
     contextFactory: (args: unknown[]) => ExecutionContextHost,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
-      const pipes =
-        this.pipesContextCreator.createConcreteContext(pipesCollection);
+      const pipes = this.pipesContextCreator.createConcreteContext(
+        pipesCollection,
+        contextId,
+        inquirerId,
+      );
       const type = this.contextUtils.mapParamType(key);
 
       if (key.includes(CUSTOM_ROUTE_ARGS_METADATA)) {
