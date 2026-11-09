@@ -495,9 +495,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       };
 
       if (this.options.wildcards || this.options.exchangeType === 'fanout') {
-        const stringifiedPattern = isString(message.pattern)
-          ? message.pattern
-          : JSON.stringify(message.pattern);
+        const stringifiedPattern = this.normalizePattern(message.pattern);
 
         // The exchange is the same as the queue when wildcards are enabled
         // and the exchange is not explicitly set
@@ -550,9 +548,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         err ? reject(err as Error) : resolve();
 
       if (this.options.wildcards || this.options.exchangeType === 'fanout') {
-        const routingKey = isString(packet.pattern)
-          ? packet.pattern
-          : JSON.stringify(packet.pattern);
+        const routingKey = this.normalizePattern(packet.pattern);
         this.assertShortStrings(sendOptions, routingKey);
         return this.channel!.publish(
           // The exchange is the same as the queue when wildcards are enabled

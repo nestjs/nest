@@ -381,6 +381,18 @@ describe('ClientRMQ', function () {
         expect(publishStub.getCall(0).args[0]).to.be.eql(exchange);
       });
     });
+    it('should publish with the routing key the server binds when wildcards is true', () => {
+      untypedClient['options']['wildcards'] = true;
+      // The server binds its queue with the normalized pattern (sorted keys)
+      client['publish'](
+        { pattern: { role: 'user', cmd: 'create' }, data: 'data' },
+        () => {},
+      );
+
+      expect(publishStub.firstCall.args[1]).to.equal(
+        '{"cmd":"create","role":"user"}',
+      );
+    });
 
     it('should send buffer from stringified message', () => {
       client['publish'](msg, () => {
@@ -897,6 +909,19 @@ describe('ClientRMQ', function () {
 
       expect(publishStub.called).to.be.true;
       expect(publishStub.getCall(0).args[0]).to.be.eql(exchange);
+    });
+    it('should publish with the routing key the server binds when wildcards is true', async () => {
+      untypedClient['options']['wildcards'] = true;
+      publishStub.callsFake((a, b, c, d, f) => f());
+      // The server binds its queue with the normalized pattern (sorted keys)
+      await client['dispatchEvent']({
+        pattern: { role: 'user', cmd: 'create' },
+        data: 'data',
+      });
+
+      expect(publishStub.firstCall.args[1]).to.equal(
+        '{"cmd":"create","role":"user"}',
+      );
     });
     it('should throw error', async () => {
       sendToQueueStub.callsFake((a, b, c, d) => d(new Error()));
