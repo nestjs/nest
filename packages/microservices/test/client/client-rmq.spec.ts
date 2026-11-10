@@ -402,13 +402,14 @@ describe('ClientRMQ', function () {
     let responseEmitter: EventEmitter;
     let emitSpy: ReturnType<typeof vi.spyOn>;
     let onMessage: (msg: unknown) => void;
+    let consumingChannel: { consume: ReturnType<typeof vi.fn> };
 
     beforeEach(async () => {
       rmqClient = new ClientRMQ({});
       responseEmitter = new EventEmitter();
       emitSpy = vi.spyOn(responseEmitter, 'emit');
       Object.assign(rmqClient, { responseEmitter });
-      const consumingChannel = {
+      consumingChannel = {
         consume: vi.fn().mockImplementation((_, callback) => {
           onMessage = callback;
         }),
@@ -427,6 +428,19 @@ describe('ClientRMQ', function () {
       expect(emitSpy).toHaveBeenCalledTimes(1);
       expect(emitSpy).toHaveBeenCalledWith(msg.properties.correlationId, msg);
       expect(listener).toHaveBeenCalledWith(msg);
+    });
+
+    it('should not throw when the broker cancels the consumer', () => {
+      expect(() => onMessage(null)).not.toThrow();
+      expect(emitSpy).not.toHaveBeenCalled();
+    });
+
+    it('should consume the reply queue again after a cancel', () => {
+      expect(consumingChannel.consume).toHaveBeenCalledTimes(1);
+
+      onMessage(null);
+
+      expect(consumingChannel.consume).toHaveBeenCalledTimes(2);
     });
 
     it('should ignore a message no request waits for', () => {
