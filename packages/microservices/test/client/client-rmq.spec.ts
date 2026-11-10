@@ -1006,4 +1006,48 @@ describe('ClientRMQ', function () {
       });
     });
   });
+
+  describe('when the connection is lost', () => {
+    let manager: EventEmitter & { close: sinon.SinonStub };
+
+    const connectClient = async (options = {}) => {
+      client = new ClientRMQ(options);
+      manager = Object.assign(new EventEmitter(), {
+        close: sinon.stub().resolves(),
+      });
+      sinon.stub(client, 'createClient').returns(manager);
+      sinon.stub(client, 'createChannel').resolves();
+      sinon.stub(client['logger'], 'log');
+      sinon.stub(client['logger'], 'error');
+      const connectPromise = client.connect();
+      manager.emit('connect');
+      await connectPromise;
+    };
+
+    it('should fail the pending requests waiting on the direct reply-to queue', async () => {
+      await connectClient();
+      const callback = sinon.spy();
+      client['routingMap'].set('id', callback);
+
+      manager.emit('disconnect', { err: new Error('broker shutdown') });
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.have.keys('err');
+      expect(callback.firstCall.args[0].err.message).to.equal(
+        'Connection closed',
+      );
+      expect(client['routingMap'].size).to.equal(0);
+    });
+
+    it('should keep the pending requests waiting on a named reply queue', async () => {
+      await connectClient({ replyQueue: 'replies' });
+      const callback = sinon.spy();
+      client['routingMap'].set('id', callback);
+
+      manager.emit('disconnect', { err: new Error('broker shutdown') });
+
+      expect(callback.called).to.be.false;
+      expect(client['routingMap'].size).to.equal(1);
+    });
+  });
 });
