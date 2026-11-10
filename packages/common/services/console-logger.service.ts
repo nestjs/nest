@@ -105,7 +105,7 @@ export interface ConsoleLoggerOptions {
    * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    * @default 5
    */
-  depth?: number;
+  depth?: number | null;
   /**
    * If true, object's non-enumerable symbols and properties are included in the formatted result.
    * WeakMap and WeakSet entries are also included as well as user defined prototype properties
@@ -759,7 +759,9 @@ export class ConsoleLogger implements LoggerService {
     }
 
     const inspectOptions: InspectOptions = {
-      depth: this.options.depth ?? DEFAULT_DEPTH,
+      // `null` means no limit, as in `util.inspect`.
+      depth:
+        this.options.depth === undefined ? DEFAULT_DEPTH : this.options.depth,
       sorted: this.options.sorted,
       showHidden: this.options.showHidden,
       compact: this.options.compact ?? (this.options.json ? true : false),

@@ -916,6 +916,31 @@ describe('Logger', () => {
       );
     });
 
+    it('should print every level when depth is null', () => {
+      const consoleLogger = new ConsoleLogger({
+        colors: false,
+        depth: null,
+      });
+
+      consoleLogger.log({
+        a: { b: { c: { d: { e: { f: { g: 'leaf' } } } } } },
+      });
+
+      expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toContain("g: 'leaf'");
+    });
+
+    it('should stop at 5 levels when depth is not set', () => {
+      const consoleLogger = new ConsoleLogger({ colors: false });
+
+      consoleLogger.log({
+        a: { b: { c: { d: { e: { f: { g: 'leaf' } } } } } },
+      });
+
+      expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('f: [Object]');
+    });
+
     it('should not mutate the options object passed to the constructor', () => {
       const options = { json: true };
       new ConsoleLogger(options);
