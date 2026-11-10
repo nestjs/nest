@@ -1272,4 +1272,46 @@ describe('ClientRMQ', function () {
       expect(callback).not.toHaveBeenCalled();
     });
   });
+
+  describe('when the connection is lost', () => {
+    let manager: EventEmitter & { close: ReturnType<typeof vi.fn> };
+
+    const connectClient = async (options = {}) => {
+      client = new ClientRMQ(options);
+      manager = Object.assign(new EventEmitter(), {
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      vi.spyOn(client, 'createClient').mockReturnValue(manager as any);
+      vi.spyOn(client, 'createChannel').mockResolvedValue(undefined);
+      vi.spyOn(client['logger'], 'log').mockImplementation(() => {});
+      vi.spyOn(client['logger'], 'error').mockImplementation(() => {});
+      const connectPromise = client.connect();
+      manager.emit('connect');
+      await connectPromise;
+    };
+
+    it('should fail the pending requests waiting on the direct reply-to queue', async () => {
+      await connectClient();
+      const callback = vi.fn();
+      client['routingMap'].set('id', callback);
+
+      manager.emit('disconnect', { err: new Error('broker shutdown') });
+
+      expect(callback).toHaveBeenCalledWith({
+        err: new Error('Connection closed'),
+      });
+      expect(client['routingMap'].size).toBe(0);
+    });
+
+    it('should keep the pending requests waiting on a named reply queue', async () => {
+      await connectClient({ replyQueue: 'replies' });
+      const callback = vi.fn();
+      client['routingMap'].set('id', callback);
+
+      manager.emit('disconnect', { err: new Error('broker shutdown') });
+
+      expect(callback).not.toHaveBeenCalled();
+      expect(client['routingMap'].size).toBe(1);
+    });
+  });
 });
