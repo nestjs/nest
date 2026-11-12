@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { pathToRegexp } from 'path-to-regexp';
 import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
+import { mapToExcludeRoute } from '../../middleware/utils';
 import { RoutePathFactory } from '../../router/route-path-factory';
 
 describe('RoutePathFactory', () => {
@@ -223,6 +224,35 @@ describe('RoutePathFactory', () => {
           globalPrefix: '/api',
         }),
       ).to.deep.equal(['/ctrlPath']);
+      sinon.restore();
+    });
+
+    it('should test each path against the exclusions with the version it is built for', () => {
+      const createWithExclusion = (exclusion: string) => {
+        sinon.restore();
+        sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
+          exclude: mapToExcludeRoute([exclusion]),
+        });
+        return routePathFactory.create(
+          {
+            ctrlPath: 'v1/metrics',
+            methodPath: '/',
+            globalPrefix: '/api',
+            controllerVersion: [VERSION_NEUTRAL, '1'],
+            versioningOptions: { type: VersioningType.URI },
+          },
+          RequestMethod.GET,
+        );
+      };
+      // The version-neutral path has no "/v1" segment to strip
+      expect(createWithExclusion('metrics')).to.deep.equal([
+        '/api/v1/metrics',
+        '/api/v1/v1/metrics',
+      ]);
+      expect(createWithExclusion('v1/metrics')).to.deep.equal([
+        '/v1/metrics',
+        '/v1/v1/metrics',
+      ]);
       sinon.restore();
     });
   });

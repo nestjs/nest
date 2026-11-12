@@ -22,47 +22,56 @@ export class RoutePathFactory {
     metadata: RoutePathMetadata,
     requestMethod?: RequestMethod,
   ): string[] {
-    let paths = [''];
-
+    // Each path is built and tested against the global prefix exclusions with
+    // the one version it is built for: the version-neutral path of a
+    // [VERSION_NEUTRAL, '1'] route has no "/v1" to strip, even when its own
+    // path starts with "v1"
     const versionOrVersions = this.getVersion(metadata);
+    let versionedPaths: { path: string; version?: VersionValue }[] = [
+      { path: '' },
+    ];
     if (
       versionOrVersions &&
       metadata.versioningOptions?.type === VersioningType.URI
     ) {
       const versionPrefix = this.getVersionPrefix(metadata.versioningOptions);
-
-      if (Array.isArray(versionOrVersions)) {
-        paths = flatten(
-          paths.map(path =>
-            versionOrVersions.map(version =>
-              // Version Neutral - Do not include version in URL
-              version === VERSION_NEUTRAL
-                ? path
-                : `${path}/${versionPrefix}${version}`,
-            ),
-          ),
-        );
-      } else {
+      const versions: Array<string | typeof VERSION_NEUTRAL> = Array.isArray(
+        versionOrVersions,
+      )
+        ? versionOrVersions
+        : [versionOrVersions as string | typeof VERSION_NEUTRAL];
+      versionedPaths = versions.map(version => ({
         // Version Neutral - Do not include version in URL
-        if (versionOrVersions !== VERSION_NEUTRAL) {
-          paths = paths.map(
-            path => `${path}/${versionPrefix}${versionOrVersions}`,
-          );
-        }
-      }
+        path:
+          version === VERSION_NEUTRAL
+            ? ''
+            : `/${versionPrefix}${String(version)}`,
+        version,
+      }));
     }
 
-    paths = this.appendToAllIfDefined(paths, metadata.modulePath);
-    paths = this.appendToAllIfDefined(paths, metadata.ctrlPath);
-    paths = this.appendToAllIfDefined(paths, metadata.methodPath);
-
-    if (metadata.globalPrefix) {
-      paths = paths.map(path => {
+    const paths = versionedPaths.flatMap(({ path, version }) => {
+      let pathsOfVersion = this.appendToAllIfDefined(
+        [path],
+        metadata.modulePath,
+      );
+      pathsOfVersion = this.appendToAllIfDefined(
+        pathsOfVersion,
+        metadata.ctrlPath,
+      );
+      pathsOfVersion = this.appendToAllIfDefined(
+        pathsOfVersion,
+        metadata.methodPath,
+      );
+      if (!metadata.globalPrefix) {
+        return pathsOfVersion;
+      }
+      return pathsOfVersion.map(path => {
         if (
           this.isExcludedFromGlobalPrefix(
             path,
             requestMethod,
-            versionOrVersions,
+            version,
             metadata.versioningOptions,
           )
         ) {
@@ -70,7 +79,7 @@ export class RoutePathFactory {
         }
         return stripEndSlash(metadata.globalPrefix || '') + path;
       });
-    }
+    });
 
     return paths
       .map(path => addLeadingSlash(path || '/'))
