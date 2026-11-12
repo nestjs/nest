@@ -7,6 +7,8 @@ import {
   type OutgoingHttpHeaders,
   ServerResponse,
   STATUS_CODES,
+  validateHeaderName,
+  validateHeaderValue,
 } from 'http';
 import { parse as parseQueryString } from 'fast-querystring';
 import { contentType as lookupContentType } from 'mime-types';
@@ -502,7 +504,8 @@ export class NodeResponse<
    * Streams a file, like Express' `res.sendFile()` (both build on the `send`
    * package): `Content-Type` from the extension, `Content-Length`,
    * `Last-Modified`, `ETag`, ranges and conditional requests (304). `path` is
-   * absolute, or relative to `options.root`.
+   * absolute, or relative to `options.root`. Throws when the path, or a header
+   * of `options.headers`, is not valid.
    *
    * `callback(err)` is called once the transfer is done or failed (check
    * `res.headersSent` before responding). Without one, a failure goes to the
@@ -531,6 +534,18 @@ export class NodeResponse<
       throw new TypeError(
         'path must be absolute or specify root to res.sendFile',
       );
+    }
+    if (opts.headers) {
+      // They are set once the file is found, after the route handler
+      // returned, where nothing would catch what setHeader() throws for an
+      // invalid one: they are checked here, and copied, so that what is set
+      // is what was checked
+      const headers = { ...opts.headers };
+      for (const name of Object.keys(headers)) {
+        validateHeaderName(name);
+        validateHeaderValue(name, headers[name] as string);
+      }
+      opts.headers = headers;
     }
     opts.etag ??= true;
     const req = this.req;

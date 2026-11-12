@@ -755,6 +755,42 @@ describe('NodeResponse', () => {
       expect((error as Error).message).toMatch(message);
     });
 
+    // They are set once the file is found, where a throw would be uncaught
+    it.each([
+      [
+        'a value outside Latin-1',
+        { 'X-Name': '报告.json' },
+        'ERR_INVALID_CHAR',
+      ],
+      ['a line break in a value', { 'X-Name': 'a\r\nb' }, 'ERR_INVALID_CHAR'],
+      ['no value', { 'X-Name': undefined }, 'ERR_HTTP_INVALID_HEADER_VALUE'],
+      ['an invalid name', { 'X Name': 'a' }, 'ERR_INVALID_HTTP_TOKEN'],
+    ])('should throw for headers with %s', async (_, headers, code) => {
+      const error = await inspect((req, res) => {
+        try {
+          res.sendFile(join(dir, 'a.txt'), { headers: headers as any });
+        } catch (err) {
+          return err;
+        }
+      });
+
+      expect(error).toBeInstanceOf(TypeError);
+      expect((error as any).code).toBe(code);
+    });
+
+    it('should set the headers as they were checked', async () => {
+      const response = await respond((req, res) => {
+        const headers: Record<string, string> = { 'X-Name': 'report.json' };
+        res.sendFile(join(dir, 'a.txt'), { headers });
+        headers['X-Name'] = '报告.json';
+        headers['X-Other'] = 'a\r\nb';
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['x-name']).toBe('report.json');
+      expect(response.headers['x-other']).toBeUndefined();
+    });
+
     it('should call the callback once the file is sent, and with the error when it is missing', async () => {
       const outcomes: unknown[] = [];
       const port = await listen((req, res) => {
