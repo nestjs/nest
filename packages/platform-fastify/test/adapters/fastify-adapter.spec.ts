@@ -1,3 +1,4 @@
+import middie from '@fastify/middie';
 import {
   Logger,
   RequestMethod,
@@ -318,6 +319,78 @@ describe('FastifyAdapter', () => {
         await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
 
         expect(middleware.calledOnce).to.be.true;
+      });
+
+      // The application registers middie itself, in place of `init()`
+      describe('and "skipMiddie"', () => {
+        beforeEach(async () => {
+          await adapter.close();
+          adapter = new FastifyAdapter({ skipMiddie: true });
+        });
+
+        for (const url of ['/queues/jobs', '/queues/nested/nested']) {
+          it(`should run the middleware on "${url}"`, async () => {
+            await adapter.register(middie);
+            await adapter.register(plugin, { prefix: '/queues' });
+            const register = await adapter.createMiddlewareFactory(
+              RequestMethod.ALL,
+            );
+            register('/queues/{*path}', middleware);
+
+            const res = await adapter.inject({ method: 'GET', url });
+
+            expect(res.statusCode).to.equal(200);
+            expect(middleware.calledOnce).to.be.true;
+          });
+        }
+
+        it('should only run the middleware for its path, and strip it from "req.url"', async () => {
+          await adapter.register(middie);
+          await adapter.register(plugin, { prefix: '/queues' });
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.ALL,
+          );
+          register('/queues/jobs', middleware);
+
+          await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+          expect(middleware.called).to.be.false;
+
+          await adapter.inject({
+            method: 'GET',
+            url: '/queues/jobs?done=true',
+          });
+          expect(middleware.calledOnce).to.be.true;
+          expect(urls).to.deep.equal({
+            url: '/?done=true',
+            originalUrl: '/queues/jobs?done=true',
+          });
+        });
+
+        it('should run the middleware once on a plugin registered without await', async () => {
+          await adapter.register(middie);
+          adapter.register(plugin, { prefix: '/queues' });
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.ALL,
+          );
+          register('/queues/{*path}', middleware);
+
+          await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+
+          expect(middleware.calledOnce).to.be.true;
+        });
+
+        it('should run the middleware once on a plugin registered before middie', async () => {
+          await adapter.register(plugin, { prefix: '/queues' });
+          await adapter.register(middie);
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.ALL,
+          );
+          register('/queues/{*path}', middleware);
+
+          await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+
+          expect(middleware.calledOnce).to.be.true;
+        });
       });
     });
   });

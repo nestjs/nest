@@ -171,7 +171,7 @@ export class FastifyAdapter<
   private isMiddieRegistered: boolean;
   private pendingMiddlewares: Array<{ args: any[] }> = [];
   // The encapsulated contexts created since middie was registered (see
-  // `registerMiddie()`)
+  // `registerMiddie()`), or since the adapter was created with `skipMiddie`
   private readonly middieContexts: TInstance[] = [];
   private versioningOptions?: VersioningOptions;
   // Exceptions thrown by the extractor of custom versioning, by raw request
@@ -291,6 +291,10 @@ export class FastifyAdapter<
 
     if ((instanceOrOptions as FastifyAdapterBaseOptions)?.skipMiddie) {
       this.isMiddieRegistered = true;
+      // The application registers middie itself, at a time the adapter does
+      // not know, so `registerMiddie()` never runs: the contexts are tracked
+      // from the start instead (see `createMiddlewareFactory()`).
+      this.trackMiddieContexts();
     }
 
     this.instance.addHook('onRequest', (request, reply, done) => {
@@ -928,7 +932,12 @@ export class FastifyAdapter<
         // It is registered there without its path, which middie would prefix
         // with the one of the context.
         for (const context of this.middieContexts) {
-          context.use(createMiddleware(true));
+          // With `skipMiddie`, a context may be older than middie. It then
+          // has no "use()" of its own and shares the middleware of the root,
+          // which must not get this one a second time.
+          if (Object.prototype.hasOwnProperty.call(context, 'use')) {
+            context.use(createMiddleware(true));
+          }
         }
       } catch (e) {
         if (e instanceof TypeError) {
@@ -1150,6 +1159,10 @@ export class FastifyAdapter<
     // plugin registered there with an awaited `register()` gets a context
     // without the Nest middleware `app.init()` registers later, so
     // `createMiddlewareFactory()` adds it to the contexts tracked here.
+    this.trackMiddieContexts();
+  }
+
+  private trackMiddieContexts() {
     this.instance.addHook('onRegister', instance => {
       this.middieContexts.push(instance as TInstance);
     });
