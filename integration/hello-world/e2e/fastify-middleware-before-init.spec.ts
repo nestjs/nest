@@ -1,3 +1,4 @@
+import middie from '@fastify/middie';
 import {
   Controller,
   Get,
@@ -152,6 +153,19 @@ describe('Middleware before init (FastifyAdapter)', () => {
         (
           await Test.createTestingModule({ imports: [TestModule] }).compile()
         ).createNestApplication<NestFastifyApplication>(new FastifyAdapter()),
+    ],
+    [
+      'NestFactory.create() with "skipMiddie"',
+      async () => {
+        // The application registers middie itself, in place of the adapter
+        const app = await NestFactory.create<NestFastifyApplication>(
+          TestModule,
+          new FastifyAdapter({ skipMiddie: true }),
+          { logger: false },
+        );
+        await app.register(middie);
+        return app;
+      },
     ],
   ])(
     'should apply module middleware to a plugin registered before init (%s)',

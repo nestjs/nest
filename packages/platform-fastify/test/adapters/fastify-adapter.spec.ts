@@ -5,6 +5,7 @@ import {
   FASTIFY_ROUTE_SCHEMA_METADATA,
 } from '../../constants.js';
 import { createError } from '@fastify/error';
+import middie from '@fastify/middie';
 import createHttpError from 'http-errors';
 import {
   HttpException,
@@ -946,6 +947,79 @@ describe('FastifyAdapter', () => {
         await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
 
         expect(middleware).toHaveBeenCalledOnce();
+      });
+
+      // The application registers middie itself, in place of `init()`
+      describe('and "skipMiddie"', () => {
+        beforeEach(async () => {
+          await adapter.close();
+          adapter = new FastifyAdapter({ skipMiddie: true });
+        });
+
+        it.each(['/queues/jobs', '/queues/nested/nested'])(
+          'should run the middleware on "%s"',
+          async url => {
+            await adapter.register(middie);
+            await adapter.register(plugin, { prefix: '/queues' });
+            const register = await adapter.createMiddlewareFactory(
+              RequestMethod.ALL,
+            );
+            register('/queues/{*path}', middleware);
+
+            const res = await adapter.inject({ method: 'GET', url });
+
+            expect(res.statusCode).toBe(200);
+            expect(middleware).toHaveBeenCalledOnce();
+          },
+        );
+
+        it('should only run the middleware for its path, and strip it from "req.url"', async () => {
+          await adapter.register(middie);
+          await adapter.register(plugin, { prefix: '/queues' });
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.ALL,
+          );
+          register('/queues/jobs', middleware);
+
+          await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+          expect(middleware).not.toHaveBeenCalled();
+
+          await adapter.inject({
+            method: 'GET',
+            url: '/queues/jobs?done=true',
+          });
+          expect(middleware).toHaveBeenCalledOnce();
+          expect(urls).toEqual({
+            url: '/?done=true',
+            originalUrl: '/queues/jobs?done=true',
+          });
+        });
+
+        it('should run the middleware once on a plugin registered without await', async () => {
+          await adapter.register(middie);
+          adapter.register(plugin, { prefix: '/queues' });
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.ALL,
+          );
+          register('/queues/{*path}', middleware);
+
+          await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+
+          expect(middleware).toHaveBeenCalledOnce();
+        });
+
+        it('should run the middleware once on a plugin registered before middie', async () => {
+          await adapter.register(plugin, { prefix: '/queues' });
+          await adapter.register(middie);
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.ALL,
+          );
+          register('/queues/{*path}', middleware);
+
+          await adapter.inject({ method: 'GET', url: '/queues/nested/nested' });
+
+          expect(middleware).toHaveBeenCalledOnce();
+        });
       });
     });
   });
