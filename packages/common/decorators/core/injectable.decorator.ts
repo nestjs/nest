@@ -58,7 +58,11 @@ export function mixin<T>(mixinClass: Type<T>) {
   Object.defineProperty(mixinClass, 'name', {
     value: uid(21),
   });
-  Injectable()(mixinClass);
+  // The class may declare a scope, on itself or on a class it extends, and
+  // `@Injectable()` with no options would replace it with none
+  Injectable(Reflect.getMetadata(SCOPE_OPTIONS_METADATA, mixinClass))(
+    mixinClass,
+  );
   // Decorated here, at runtime, so a compiler that emits decorator metadata may
   // have had no decorator to emit parameter types for. The injector can't take
   // that for a compiler that emits none.
