@@ -1736,6 +1736,54 @@ describe('FastifyAdapter', () => {
       expect(methods).toEqual([fastifyAdapter.getInstance().supportedMethods]);
     });
 
+    it('should serve the methods Fastify does not support by default', async () => {
+      fastifyAdapter.all('/all', () => 'all');
+
+      for (const method of [
+        'SEARCH',
+        'PROPFIND',
+        'PROPPATCH',
+        'MKCOL',
+        'COPY',
+        'MOVE',
+        'LOCK',
+        'UNLOCK',
+      ]) {
+        expect((await send(method)).body).toBe('all');
+      }
+    });
+
+    it('should serve a method whose first route is registered afterwards', async () => {
+      fastifyAdapter.all('/all/*', () => 'all');
+      fastifyAdapter.search('/*', () => 'search');
+
+      const search = (url: string) =>
+        fastifyAdapter.inject({ method: 'SEARCH' as 'GET', url });
+      expect((await search('/all/1')).body).toBe('all');
+      expect((await search('/other/1')).body).toBe('search');
+    });
+
+    // As when the SEARCH route comes first: an @All() route already serves
+    // SEARCH on its path
+    it.each([
+      ['after', () => fastifyAdapter.all('/dup', () => 'all')],
+      ['before', () => fastifyAdapter.search('/dup', () => 'search')],
+    ])(
+      'should reject a SEARCH route for the path of a route for every method registered %s it',
+      (order, registerFirst) => {
+        const registerSecond =
+          order === 'after'
+            ? () => fastifyAdapter.search('/dup', () => 'search')
+            : () => fastifyAdapter.all('/dup', () => 'all');
+
+        registerFirst();
+
+        expect(registerSecond).toThrow(
+          expect.objectContaining({ code: 'FST_ERR_DUPLICATED_ROUTE' }),
+        );
+      },
+    );
+
     it('should only route requests for the version of the handler', async () => {
       registerVersion('1');
 

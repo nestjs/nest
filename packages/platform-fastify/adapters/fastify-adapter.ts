@@ -83,6 +83,19 @@ import {
 } from '../interfaces/index.js';
 const { safeDecodeURI } = urlSanitizer;
 
+// The HTTP methods Nest routes requests for (see `RequestMethod`) that a
+// Fastify instance does not support until they are added to it.
+const NON_DEFAULT_HTTP_METHODS = [
+  'SEARCH',
+  'PROPFIND',
+  'PROPPATCH',
+  'MKCOL',
+  'COPY',
+  'MOVE',
+  'LOCK',
+  'UNLOCK',
+];
+
 const MISSING_MULTIPART_PACKAGE_MESSAGE =
   'The "@fastify/multipart" package is missing. Please, make sure to install it (npm i @fastify/multipart) ' +
   'to use the file upload interceptors from "@nestjs/platform-fastify/multipart".';
@@ -762,6 +775,11 @@ export class FastifyAdapter<
   }
 
   public all(...args: any[]) {
+    // Fastify registers the route for the methods the instance supports at
+    // this point. The ones it lacks by default are added first, rather than
+    // with the first route for them (see `injectRouteOptions()`), so that the
+    // route serves them as well, whether it is registered before or after.
+    NON_DEFAULT_HTTP_METHODS.forEach(method => this.addHttpMethod(method));
     // Routes registered by Nest ("path, handler") get the route options
     // (e.g. the version), with the same methods as "fastify.all()".
     if (args.length === 2 && isFunction(args[1])) {
@@ -1758,11 +1776,8 @@ export class FastifyAdapter<
       handler: this.requireNonEmptyParams(args[0], handlerRef),
     };
 
-    if (
-      isString(routerMethodKey) &&
-      !this.instance.supportedMethods.includes(routerMethodKey)
-    ) {
-      this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
+    if (isString(routerMethodKey)) {
+      this.addHttpMethod(routerMethodKey);
     }
 
     if (isVersioned || hasConstraints || hasConfig || hasSchema) {
@@ -1793,6 +1808,12 @@ export class FastifyAdapter<
       }
     }
     return this.instance.route(routeToInject);
+  }
+
+  private addHttpMethod(method: string) {
+    if (!this.instance.supportedMethods.includes(method)) {
+      this.instance.addHttpMethod(method, { hasBody: true });
+    }
   }
 
   /**
