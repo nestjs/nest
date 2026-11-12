@@ -20,6 +20,7 @@ import {
   HEADERS_METADATA,
   HTTP_CODE_METADATA,
   isEmptyArray,
+  isPlainObject,
   isString,
   REDIRECT_METADATA,
   RENDER_METADATA,
@@ -39,6 +40,7 @@ import {
   Subject,
 } from 'rxjs';
 import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { finished, Stream, type Writable } from 'stream';
 import {
   FORBIDDEN_MESSAGE,
   GuardsConsumer,
@@ -238,7 +240,8 @@ export class RouterExecutionContext {
           ? undefined
           : new ReplaySubject<void>(1);
       // The streams the handler produced: an interceptor may still hold one
-      // when the client goes away, or turn one into a value it cannot be sent as.
+      // when the client goes away, wrap one in a value it cannot be sent as,
+      // or replace one with something else.
       const handlerStreams: HandlerStream[] = [];
       const resultOrDeferred = this.interceptorsConsumer.intercept(
         interceptors,
@@ -648,16 +651,26 @@ export class RouterExecutionContext {
       }
       if (!isResponseHandled) {
         const streamingBody = this.pickStreamingBody(result, handlerStreams);
+        // A stream of the handler that an interceptor replaced (e.g. with an
+        // empty 304, or a stream of its own) is not sent either. What is sent
+        // in its place may still read from it, so it is released once the
+        // response is over.
+        this.releaseOnceResponseIsOver(
+          handlerStreams.filter(
+            stream => stream !== result && stream !== streamingBody,
+          ),
+          req,
+          res,
+        );
         try {
           await (streamingBody
             ? this.responseController.stream(streamingBody, res, req, {
                 statusCode: httpStatusCode,
-                replacement: streamingBody === result ? undefined : result,
               })
             : this.responseController.apply(result, res, httpStatusCode));
         } catch (err) {
           // Not sent either, e.g. for a header value Node.js rejects
-          destroyUnsentBody(result);
+          [result, streamingBody, ...handlerStreams].forEach(destroyUnsentBody);
           throw err;
         }
       }
@@ -666,10 +679,12 @@ export class RouterExecutionContext {
   }
 
   /**
-   * The stream to send, if any. A stream cannot go out as what an interceptor
-   * made of it (`{ data: stream }`, or `{}` once serialized), so the handler's
-   * is sent instead, unless the interceptor read it to build its own result, or
-   * replaced it with a file.
+   * The stream to send, if any: the one the interceptors handed back, or the
+   * one in the plain object they wrapped it in (`{ data: stream }`), which
+   * cannot go out that way, unless they read it to build their own result. It
+   * is never the handler's own in place of what they returned: they may have
+   * replaced it with a stream that leaves something out, or with something
+   * that is not a stream (a notice, nothing at all), which is sent as it is.
    */
   private pickStreamingBody(
     result: unknown,
@@ -678,13 +693,50 @@ export class RouterExecutionContext {
     if (isStreamingBody(result)) {
       return result;
     }
-    if (result instanceof StreamableFile) {
+    // Only for a handler that streams: other routes serialize such an object
+    if (!isPlainObject(result) || !handlerStreams.some(isStreamingBody)) {
       return undefined;
     }
-    const handlerBody = handlerStreams.findLast(isStreamingBody);
-    return handlerBody && !isStreamingBodyConsumed(handlerBody)
-      ? handlerBody
+    const wrappedBody = Object.values(result).find(isStreamingBody);
+    return wrappedBody && !isStreamingBodyConsumed(wrappedBody)
+      ? wrappedBody
       : undefined;
+  }
+
+  /**
+   * Releases streams that are not sent once the response is over: sent, or
+   * its connection closed. The connection is watched as well, since a
+   * pipelined response that still waits for its turn never learns that it is
+   * gone.
+   */
+  private releaseOnceResponseIsOver(
+    streams: HandlerStream[],
+    req: any,
+    res: any,
+  ) {
+    if (isEmptyArray(streams)) {
+      return;
+    }
+    const response = res?.raw ?? res;
+    const connection = pickCloseSource((req?.raw ?? req)?.socket, response);
+    let isReleased = false;
+    let stopWaitingForClose: (() => void) | undefined;
+    const release = () => {
+      if (isReleased) {
+        return;
+      }
+      isReleased = true;
+      stopWaitingForClose?.();
+      streams.forEach(destroyUnsentBody);
+    };
+    if (connection?.destroyed) {
+      return release();
+    }
+    stopWaitingForClose = connection && onceClosed(connection, release);
+    // `finished()` throws for anything but a stream
+    if (response instanceof Stream) {
+      finished(response as Writable, release);
+    }
   }
 
   private trackHandlerStream(value: unknown, handlerStreams: HandlerStream[]) {

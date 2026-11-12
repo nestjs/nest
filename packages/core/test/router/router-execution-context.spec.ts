@@ -3,13 +3,14 @@ import { EventEmitter } from 'events';
 import {
   concatMap,
   lastValueFrom,
+  map,
   Observable,
   of,
   ReplaySubject,
   Subject,
   throwError,
 } from 'rxjs';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable, Writable } from 'stream';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
 import { Sse } from '../../../common/decorators/http/sse.decorator.js';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
@@ -733,45 +734,50 @@ describe('RouterExecutionContext', () => {
         expect(apply).not.toHaveBeenCalled();
       });
 
-      it("should stream the handler's stream if an interceptor turned it into something else", async () => {
+      it('should stream the stream an interceptor wrapped', async () => {
         const { reply, handler } = await stream();
         const body = generator();
+        const send = vi.spyOn(contextCreator['responseController'], 'stream');
 
         await handler({ data: body }, response, request, undefined, [body]);
 
+        expect(send.mock.calls[0][0]).toBe(body);
         expect(reply.mock.calls[0][1]).toBeInstanceOf(StreamableFile);
       });
 
-      it('should stream the last one if there are more', async () => {
+      it('should stream the one an interceptor replaced it with, not its own, if another wrapped that', async () => {
         const { handler } = await stream();
-        const first = generator();
-        const last = generator();
+        const replaced = generator();
         const send = vi.spyOn(contextCreator['responseController'], 'stream');
 
-        await handler({}, response, request, undefined, [first, last]);
+        await handler({ data: replaced }, response, request, undefined, [
+          generator(),
+        ]);
 
-        expect(send.mock.calls[0][0]).toBe(last);
+        expect(send.mock.calls[0][0]).toBe(replaced);
       });
 
-      it('should hand over what an interceptor made of it', async () => {
-        const { handler } = await stream();
-        const send = vi.spyOn(contextCreator['responseController'], 'stream');
-        const wrapped = { data: {} };
+      it.each([
+        ['an object', { message: 'Paid plans only' }],
+        ['an empty object', {}],
+        ['an array', []],
+        ['a string', 'Paid plans only'],
+        ['null', null],
+        ['nothing', undefined],
+        ['a class instance that wraps it', new (class Page {})()],
+        ['an object that wraps it deeper', { result: { data: {} } }],
+      ])(
+        'should send %s an interceptor replaced it with',
+        async (_, notice) => {
+          const { reply, handler } = await stream();
+          const send = vi.spyOn(contextCreator['responseController'], 'stream');
 
-        await handler(wrapped, response, request, undefined, [generator()]);
+          await handler(notice, response, request, undefined, [generator()]);
 
-        expect(send.mock.calls[0][3]!.replacement).toBe(wrapped);
-      });
-
-      it('should have no replacement for the stream it sends as it is', async () => {
-        const { handler } = await stream();
-        const send = vi.spyOn(contextCreator['responseController'], 'stream');
-        const body = generator();
-
-        await handler(body, response, request, undefined, [body]);
-
-        expect(send.mock.calls[0][3]!.replacement).toBeUndefined();
-      });
+          expect(send).not.toHaveBeenCalled();
+          expect(reply.mock.calls[0][1]).toBe(notice);
+        },
+      );
 
       it('should send what an interceptor made of a stream it read', async () => {
         const { reply, handler } = await stream();
@@ -781,6 +787,15 @@ describe('RouterExecutionContext', () => {
         await handler({ read: true }, response, request, undefined, [body]);
 
         expect(reply.mock.calls[0][1]).toEqual({ read: true });
+      });
+
+      it('should not look for a stream in what a handler that does not stream returned', async () => {
+        const { reply, handler } = await stream();
+        const wrapped = { data: generator() };
+
+        await handler(wrapped, response, request);
+
+        expect(reply.mock.calls[0][1]).toBe(wrapped);
       });
 
       it('should send a file an interceptor replaced it with', async () => {
@@ -1318,6 +1333,165 @@ describe('RouterExecutionContext', () => {
           error,
         );
         expect(stream.destroyed).toBe(true);
+      });
+
+      it('should destroy the stream of the file an interceptor replaced', async () => {
+        const handler = contextCreator.createHandleResponseFn(
+          (() => undefined) as any,
+          false,
+        ) as HandlerResponseBasicFn;
+        const error = new TypeError('Invalid character in header content');
+        vi.spyOn(adapter, 'reply').mockImplementation(() => {
+          throw error;
+        });
+        const stream = new PassThrough();
+
+        await expect(
+          handler('replaced', {}, {}, undefined, [new StreamableFile(stream)]),
+        ).rejects.toBe(error);
+        expect(stream.destroyed).toBe(true);
+      });
+    });
+
+    describe('when an interceptor replaced a stream of the handler', () => {
+      let handler: HandlerResponseBasicFn;
+      let request: { socket: EventEmitter & { destroyed?: boolean } };
+      let response: Writable;
+      let stream: PassThrough;
+
+      beforeEach(() => {
+        handler = contextCreator.createHandleResponseFn(
+          (() => undefined) as any,
+          false,
+        ) as HandlerResponseBasicFn;
+        vi.spyOn(adapter, 'reply').mockReturnValue(undefined);
+        request = { socket: new EventEmitter() };
+        response = new Writable({ write: (chunk, encoding, done) => done() });
+        stream = new PassThrough();
+      });
+
+      // e.g. an empty 304 for a client that has the file already
+      const reply = () =>
+        handler(undefined, response, request, undefined, [
+          new StreamableFile(stream),
+        ]);
+
+      it('should destroy its stream once the response is over', async () => {
+        await reply();
+        // What is sent instead may still read from it
+        expect(stream.destroyed).toBe(false);
+
+        response.end();
+        await vi.waitFor(() => expect(stream.destroyed).toBe(true));
+        expect(request.socket.listenerCount('close')).toBe(0);
+      });
+
+      it('should destroy its stream once the raw response is over', async () => {
+        await handler(
+          undefined,
+          { raw: response },
+          { raw: request },
+          undefined,
+          [new StreamableFile(stream)],
+        );
+
+        response.end();
+        await vi.waitFor(() => expect(stream.destroyed).toBe(true));
+      });
+
+      it('should destroy its stream if the connection closes before the response is sent', async () => {
+        await reply();
+
+        request.socket.emit('close');
+        expect(stream.destroyed).toBe(true);
+      });
+
+      it('should destroy its stream if the connection is closed already', async () => {
+        request.socket.destroyed = true;
+
+        await reply();
+        expect(stream.destroyed).toBe(true);
+      });
+
+      it('should cancel a stream replaced with something that is not one', async () => {
+        const onCancel = vi.fn();
+
+        await handler({ replaced: true }, response, request, undefined, [
+          new ReadableStream({ cancel: onCancel }),
+        ]);
+        expect(onCancel).not.toHaveBeenCalled();
+
+        response.end();
+        await vi.waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
+      });
+
+      it('should cancel a stream replaced with a file', async () => {
+        const onCancel = vi.fn();
+        const file = new StreamableFile(Buffer.from('file'));
+
+        await handler(file, response, request, undefined, [
+          new ReadableStream({ cancel: onCancel }),
+        ]);
+
+        response.end();
+        await vi.waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
+      });
+
+      it('should leave the stream of the file it sends alone', async () => {
+        const file = new StreamableFile(stream);
+        await handler(file, response, request, undefined, [file]);
+
+        response.end();
+        await new Promise(resolve => setImmediate(resolve));
+        expect(stream.destroyed).toBe(false);
+      });
+
+      it('should leave the stream it sends alone, also wrapped', async () => {
+        vi.spyOn(
+          contextCreator['responseController'],
+          'stream',
+        ).mockReturnValue(Promise.resolve());
+        const body = Readable.from(['chunk']);
+
+        await handler({ data: body }, response, request, undefined, [body]);
+
+        response.end();
+        await new Promise(resolve => setImmediate(resolve));
+        expect(body.destroyed).toBe(false);
+      });
+
+      it('should destroy the stream of the file the route handler returned', async () => {
+        vi.spyOn(contextCreator, 'getMetadata').mockReturnValue({
+          argsLength: 0,
+          fnHandleResponse: handler,
+          isSseHandler: false,
+          paramtypes: [],
+          getParamsMetadata: vi.fn().mockReturnValue([]),
+          httpStatusCode: 200,
+          hasCustomHeaders: false,
+          responseHeaders: [],
+        } as any);
+        vi.spyOn(contextCreator, 'createGuardsFn').mockReturnValue(null as any);
+        vi.spyOn(contextCreator, 'createPipesFn').mockReturnValue(null as any);
+        vi.spyOn(
+          (contextCreator as any).interceptorsContextCreator,
+          'create',
+        ).mockReturnValue([
+          { intercept: (_, next) => next.handle().pipe(map(() => undefined)) },
+        ]);
+        const proxy = contextCreator.create(
+          {} as any,
+          { apply: () => new StreamableFile(stream) } as any,
+          '',
+          '',
+          0,
+        );
+
+        await proxy(request, response, vi.fn());
+        expect(stream.destroyed).toBe(false);
+
+        response.end();
+        await vi.waitFor(() => expect(stream.destroyed).toBe(true));
       });
     });
 

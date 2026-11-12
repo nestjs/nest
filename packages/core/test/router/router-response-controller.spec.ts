@@ -192,30 +192,23 @@ describe('RouterResponseController', () => {
       expect(reply).toHaveBeenCalledWith(response, undefined, 200);
     });
 
-    it('should prefer a replacement to a body with nothing to send', async () => {
-      const replacement = { collected: [] };
-
+    it('should keep the status and headers of a Response with nothing to send', async () => {
       await routerResponseController.stream(
         new Response(new ReadableStream({ start: c => c.close() }), {
-          status: 202,
-          headers: { 'x-custom': 'yes' },
+          status: 401,
+          headers: { 'www-authenticate': 'Bearer' },
         }),
         response,
         request,
-        { statusCode: 200, replacement },
+        { statusCode: 200 },
       );
 
-      expect(reply).toHaveBeenCalledWith(response, replacement, 200);
-      expect(setHeader).not.toHaveBeenCalled();
-    });
-
-    it('should not use a replacement while the body has something to send', async () => {
-      await routerResponseController.stream(generator('a'), response, request, {
-        replacement: { data: {} },
-      });
-
-      expect(repliedFile()).toBeInstanceOf(StreamableFile);
-      repliedFile().getStream().destroy();
+      expect(reply).toHaveBeenCalledWith(response, undefined, 401);
+      expect(setHeader).toHaveBeenCalledWith(
+        response,
+        'www-authenticate',
+        'Bearer',
+      );
     });
 
     it('should reject and reply nothing for a body that was read', async () => {

@@ -669,8 +669,6 @@ describe.each(adapters('express', 'fastify', 'node'))(
         ['wrapped/promised-response', 'promised'],
         ['wrapped/observable-response', 'observed'],
         ['wrapped/node-stream', 'from a node stream'],
-        ['plain-serialized/generator', 'from a generator'],
-        ['plain-serialized/response', 'from a response'],
         ['class-serialized/generator', 'from a generator'],
         ['class-serialized/response', 'from a response'],
         ['class-serialized/node-stream', 'from a node stream'],
@@ -699,6 +697,35 @@ describe.each(adapters('express', 'fastify', 'node'))(
         expect((await send('/intercepted/piped')).text).toBe('PIPED');
       });
 
+      it('should send the stream an interceptor replaced it with, also when another wrapped that', async () => {
+        expect((await send('/intercepted/wrapped/piped')).text).toBe('PIPED');
+      });
+
+      it('should send what an interceptor replaced the stream with, and stop the stream', async () => {
+        const res = await send('/intercepted/replaced');
+
+        expect(res.text).toBe('{"replaced":true}');
+        await vi.waitFor(() => expect(streaming.stopped).toBe(1));
+      });
+
+      // Nothing tells `{}` from what an interceptor meant to send instead
+      it.each(['generator', 'response'])(
+        'should send what an interceptor serialized a %s into',
+        async source => {
+          const res = await send(`/intercepted/plain-serialized/${source}`);
+
+          expect(res.text).toBe('{}');
+        },
+      );
+
+      it("should stop the handler's stream after a HEAD request for the one an interceptor made of it", async () => {
+        const res = await send('/intercepted/piped/quiet', { method: 'HEAD' });
+
+        expect(res.status).toBe(200);
+        expect(streaming.started).toBe(1);
+        await vi.waitFor(() => expect(streaming.stopped).toBe(1));
+      });
+
       it('should send what an interceptor made of a stream it read', async () => {
         expect((await send('/intercepted/collected/generator')).text).toBe(
           '{"collected":"from a generator"}',
@@ -725,10 +752,28 @@ describe.each(adapters('express', 'fastify', 'node'))(
         await vi.waitFor(() => expect(streaming.stopped).toBe(1));
       });
 
-      it('should send what an interceptor made of an empty stream', async () => {
-        expect((await send('/intercepted/wrapped/empty')).text).toBe(
-          '{"data":{}}',
+      it('should send what an interceptor made of an empty stream it read', async () => {
+        expect((await send('/intercepted/collected/empty')).text).toBe(
+          '{"collected":""}',
         );
+      });
+
+      it.each(['wrapped/empty', 'wrapped/empty-node-stream'])(
+        'should send the empty stream of %s as it is',
+        async path => {
+          const res = await send(`/intercepted/${path}`);
+
+          expect(res.status).toBe(200);
+          expect(res.text).toBe('');
+        },
+      );
+
+      it('should keep the status and headers of an empty Response an interceptor wrapped', async () => {
+        const res = await send('/intercepted/wrapped/empty-response');
+
+        expect(res.status).toBe(401);
+        expect(res.headers['www-authenticate']).toBe('Bearer');
+        expect(res.text).toBe('');
       });
 
       it('should call return() on the stream of a wrapped body when the client leaves', async () => {

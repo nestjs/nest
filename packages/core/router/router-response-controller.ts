@@ -160,15 +160,12 @@ export class RouterResponseController {
    * answer once they are sent. A `Response` is the whole answer: its status and
    * headers win over those set before it (by `@HttpCode()`, `@Header()` or a
    * middleware), which it otherwise leaves in place.
-   *
-   * @param options.replacement What an interceptor turned `body` into, to send
-   * if the body turns out to have nothing to send: it may have read it already.
    */
   public async stream<TResponse = any, TRequest = any>(
     body: StreamingBody,
     response: TResponse,
     request: TRequest,
-    options: { statusCode?: number; replacement?: unknown } = {},
+    options: { statusCode?: number } = {},
   ) {
     const webResponse = isWebResponse(body) ? body : undefined;
     const source = webResponse ? webResponse.body : (body as ReadableStream);
@@ -206,13 +203,6 @@ export class RouterResponseController {
       return;
     }
     if (first.done) {
-      if (!isNil(options.replacement)) {
-        return this.applicationRef.reply(
-          response,
-          options.replacement,
-          options.statusCode,
-        );
-      }
       this.setWebResponseHeaders(response, webResponse);
       return reply();
     }

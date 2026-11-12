@@ -209,6 +209,12 @@ class FileMakingInterceptor implements NestInterceptor {
   }
 }
 
+class ReplacingInterceptor implements NestInterceptor {
+  intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
+    return next.handle().pipe(map(() => ({ replaced: true })));
+  }
+}
+
 class DelayingInterceptor implements NestInterceptor {
   intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(delay(20));
@@ -795,6 +801,30 @@ export class InterceptedController {
     yield 'piped';
   }
 
+  @Get('wrapped/piped')
+  @UseInterceptors(WrappingInterceptor, PipingInterceptor)
+  async *wrappedPiped() {
+    yield 'piped';
+  }
+
+  @Get('piped/quiet')
+  @UseInterceptors(PipingInterceptor)
+  pipedQuiet() {
+    return quietWebStream();
+  }
+
+  @Get('replaced')
+  @UseInterceptors(ReplacingInterceptor)
+  replaced() {
+    return quietWebStream(['from the handler']);
+  }
+
+  @Get('collected/empty')
+  @UseInterceptors(CollectingInterceptor)
+  async *collectedEmpty() {
+    // Nothing to collect
+  }
+
   @Get('collected/generator')
   @UseInterceptors(CollectingInterceptor)
   async *collectedGenerator() {
@@ -823,7 +853,23 @@ export class InterceptedController {
   @Get('wrapped/empty')
   @UseInterceptors(WrappingInterceptor)
   async *wrappedEmpty() {
-    // Nothing to send, which looks the same as having been read
+    // Nothing to send
+  }
+
+  // A Readable keeps its state, and what it reads from, in plain properties
+  @Get('wrapped/empty-node-stream')
+  @UseInterceptors(WrappingInterceptor)
+  wrappedEmptyNodeStream() {
+    return Object.assign(Readable.from([]), { path: '/srv/private/file' });
+  }
+
+  @Get('wrapped/empty-response')
+  @UseInterceptors(WrappingInterceptor)
+  wrappedEmptyResponse() {
+    return new Response(new ReadableStream({ start: c => c.close() }), {
+      status: 401,
+      headers: { 'www-authenticate': 'Bearer' },
+    });
   }
 
   @Get('wrapped/endless')
