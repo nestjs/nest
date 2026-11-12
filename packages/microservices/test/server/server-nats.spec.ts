@@ -219,6 +219,55 @@ describe('ServerNats', () => {
         () => getPublisherSpy as any,
       );
     });
+    describe('when the message is a reply of a Nest server', () => {
+      // The requester names the subject a reply is published on, which can
+      // be the subject of a handler
+      const deliver = async (packet: Record<string, unknown>) => {
+        const handler = vi.fn();
+        untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+        const data = JSON.stringify(packet);
+        await server.handleMessage(channel, {
+          data,
+          subject: channel,
+          respond: vi.fn(),
+          json: () => JSON.parse(data),
+        });
+        return handler;
+      };
+
+      it.each([
+        { response: 'active', isDisposed: true, id: 'account-4' },
+        { response: 'active', id: 'account-4' },
+        { isDisposed: true, id: 'account-4' },
+        { err: 'failed', isDisposed: true, id: 'account-4' },
+        { err: NO_MESSAGE_HANDLER, status: 'error', id: 4 },
+      ])(
+        'should not dispatch %j to the handler of the subject',
+        async packet => {
+          const handler = await deliver(packet);
+
+          expect(handler).not.toHaveBeenCalled();
+          expect(getPublisherSpy).not.toHaveBeenCalled();
+        },
+      );
+      it('should dispatch an event whose data looks like a reply', async () => {
+        const handler = await deliver({
+          pattern: channel,
+          data: { response: 'active', isDisposed: true, id: 'account-4' },
+        });
+
+        expect(handler).toHaveBeenCalledWith(
+          { response: 'active', isDisposed: true, id: 'account-4' },
+          expect.any(NatsContext),
+        );
+      });
+      it('should dispatch a message with more keys than a reply', async () => {
+        const external = { response: 'active', id: 'account-4', extra: true };
+        const handler = await deliver(external);
+
+        expect(handler).toHaveBeenCalledWith(external, expect.any(NatsContext));
+      });
+    });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = vi.spyOn(server, 'handleEvent');
       const data = JSON.stringify({ id: 10 });
