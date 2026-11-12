@@ -12,7 +12,7 @@ import { GuardsConsumer, GuardsContextCreator } from '../guards';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
-import { ContextId } from '../injector/instance-wrapper';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { ModulesContainer } from '../injector/modules-container';
 import {
   InterceptorsConsumer,
@@ -108,7 +108,13 @@ export class ExternalContextCreator {
     contextType: TContext = 'http' as TContext,
   ) {
     const classRef = getClassRef(instance);
-    const moduleKey = this.getContextModuleKey(classRef);
+    // Several modules may provide the class, each with its own host and its
+    // own enhancers, so the module that holds this host comes first. The
+    // lookup by class is left for a host that cannot be identified (e.g., a
+    // contextual instance passed without an inquirer id).
+    const moduleKey =
+      this.getHostModuleKey(instance, classRef, inquirerId) ||
+      this.getContextModuleKey(classRef);
     // Transient enhancers are created per host, so those of a static entry
     // provider can only be found with that provider as the inquirer.
     inquirerId ??= this.modulesContainer
@@ -264,6 +270,35 @@ export class ExternalContextCreator {
       }
     }
     return emptyModuleKey;
+  }
+
+  /**
+   * Returns the key of the module whose providers hold the host under its
+   * class: the provider with the given inquirer id or, without one, the
+   * provider of the given instance. A factory or value provider of another
+   * module may return the same instance, so a provider that Nest created
+   * from its class wins.
+   */
+  private getHostModuleKey(
+    instance: object,
+    classRef: Function,
+    inquirerId?: string,
+  ): string {
+    const isHost = (
+      wrapper: InstanceWrapper | undefined,
+    ): wrapper is InstanceWrapper =>
+      !!wrapper &&
+      (inquirerId
+        ? wrapper.id === inquirerId
+        : !wrapper.isAlias && wrapper.instance === instance);
+
+    for (const [key, moduleRef] of this.modulesContainer.entries()) {
+      const wrapper = moduleRef.providers.get(classRef);
+      if (isHost(wrapper) && !wrapper.isNotMetatype) {
+        return key;
+      }
+    }
+    return '';
   }
 
   public exchangeKeysForValues<TMetadata = any>(

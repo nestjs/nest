@@ -1,8 +1,10 @@
 import {
   CanActivate,
   ForbiddenException,
+  Inject,
   INestApplication,
   Injectable,
+  Module,
   Provider,
   Scope,
   SetMetadata,
@@ -12,7 +14,7 @@ import { ENTRY_PROVIDER_WATERMARK } from '@nestjs/common/constants';
 import { APP_GUARD, ContextIdFactory, ModulesContainer } from '@nestjs/core';
 import { ExternalContextCreator } from '@nestjs/core/helpers/external-context-creator';
 import { Injector } from '@nestjs/core/injector/injector';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { expect } from 'chai';
 import { io } from 'socket.io-client';
@@ -28,6 +30,13 @@ class DenyGuard implements CanActivate {
 class RequestScopedDenyGuard implements CanActivate {
   canActivate() {
     return false;
+  }
+}
+
+@Injectable({ scope: Scope.REQUEST })
+class RequestScopedAllowGuard implements CanActivate {
+  canActivate() {
+    return true;
   }
 }
 
@@ -56,6 +65,41 @@ class PayrollResolver {
     return 'payroll';
   }
 }
+
+const IS_ALLOWED = 'IS_ALLOWED';
+
+@Injectable()
+class ConfiguredGuard implements CanActivate {
+  constructor(@Inject(IS_ALLOWED) private readonly isAllowed: boolean) {}
+
+  canActivate() {
+    return this.isAllowed;
+  }
+}
+
+@SetMetadata(ENTRY_PROVIDER_WATERMARK, true)
+class OrdersResolver {
+  @UseGuards(ConfiguredGuard)
+  orders() {
+    return 'orders';
+  }
+}
+
+@Module({
+  providers: [OrdersResolver, { provide: IS_ALLOWED, useValue: true }],
+})
+class PartnerModule {}
+
+@Module({
+  providers: [OrdersResolver, { provide: IS_ALLOWED, useValue: false }],
+})
+class AdminModule {}
+
+const rejectionOf = async (promise: Promise<unknown>) =>
+  promise.then(
+    () => undefined,
+    (err: unknown) => err,
+  );
 
 describe('Class providers that host handlers', () => {
   describe('when a gateway is registered with "useClass"', () => {
@@ -146,6 +190,66 @@ describe('Class providers that host handlers', () => {
       }
       expect(error).to.be.instanceOf(ForbiddenException);
       await moduleRef.close();
+    });
+  });
+
+  describe('when two modules provide the class of a resolver', () => {
+    let moduleRef: TestingModule;
+
+    afterEach(async () => {
+      await moduleRef.close();
+    });
+
+    const compile = async (providers: Provider[] = []) => {
+      moduleRef = await Test.createTestingModule({
+        imports: [PartnerModule, AdminModule],
+        providers,
+      }).compile();
+      const adminModule = [...moduleRef.get(ModulesContainer).values()].find(
+        ({ metatype }) => metatype === AdminModule,
+      )!;
+      return {
+        adminModule,
+        wrapper: adminModule.providers.get(OrdersResolver)!,
+      };
+    };
+
+    it('should run the guards of the module of the host', async () => {
+      const { wrapper } = await compile();
+      const resolver = wrapper.instance as OrdersResolver;
+      const handler = moduleRef
+        .get(ExternalContextCreator)
+        .create(resolver, resolver.orders, 'orders');
+
+      expect(await rejectionOf(handler())).to.be.instanceOf(ForbiddenException);
+    });
+
+    it('should run the guards of the module of the host when it is request-scoped', async () => {
+      const { adminModule, wrapper } = await compile([
+        { provide: APP_GUARD, useClass: RequestScopedAllowGuard },
+      ]);
+      expect(wrapper.isDependencyTreeStatic()).to.be.false;
+      const contextId = ContextIdFactory.create();
+      moduleRef.registerRequestByContextId({}, contextId);
+      const resolver = await new Injector().loadPerContext(
+        wrapper.instance as OrdersResolver,
+        adminModule,
+        adminModule.providers,
+        contextId,
+      );
+      const handler = moduleRef
+        .get(ExternalContextCreator)
+        .create(
+          resolver,
+          resolver.orders,
+          'orders',
+          undefined,
+          undefined,
+          contextId,
+          wrapper.id,
+        );
+
+      expect(await rejectionOf(handler())).to.be.instanceOf(ForbiddenException);
     });
   });
 });

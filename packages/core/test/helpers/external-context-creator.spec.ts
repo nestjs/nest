@@ -126,6 +126,112 @@ describe('ExternalContextCreator', () => {
         ).to.be.true;
       });
     });
+    describe('when several modules provide the class of the host', () => {
+      class Resolver {}
+
+      let wrapper: InstanceWrapper;
+
+      beforeEach(() => {
+        const modules = new ModulesContainer();
+        const otherModuleRef = new Module(class {}, new NestContainer());
+        otherModuleRef.addProvider(Resolver);
+        otherModuleRef.providers.get(Resolver)!.instance = new Resolver();
+        modules.set('other', otherModuleRef);
+
+        const moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider(Resolver);
+        wrapper = moduleRef.providers.get(Resolver)!;
+        wrapper.instance = new Resolver();
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should find the module of the host by its instance', () => {
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(
+          (guardsContextCreator.create as sinon.SinonStub).calledWith(
+            wrapper.instance,
+            callback,
+            'key',
+            STATIC_CONTEXT,
+            undefined,
+          ),
+        ).to.be.true;
+      });
+
+      it('should find the module of the host by the inquirer id', () => {
+        const instance = new Resolver();
+        const contextId = { id: 2 };
+        contextCreator.create(
+          instance,
+          callback,
+          '',
+          '',
+          null!,
+          contextId,
+          wrapper.id,
+        );
+
+        expect(
+          (guardsContextCreator.create as sinon.SinonStub).calledWith(
+            instance,
+            callback,
+            'key',
+            contextId,
+            wrapper.id,
+          ),
+        ).to.be.true;
+      });
+
+      it('should find the first module that provides the class when the host cannot be identified', () => {
+        const instance = new Resolver();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(
+          (guardsContextCreator.create as sinon.SinonStub).calledWith(
+            instance,
+            callback,
+            'other',
+            STATIC_CONTEXT,
+            undefined,
+          ),
+        ).to.be.true;
+      });
+    });
+    describe('when a factory provider of another module returns the host', () => {
+      class Resolver {}
+
+      it('should find the module that provides the host under its class', () => {
+        const modules = new ModulesContainer();
+        const moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider(Resolver);
+        const wrapper: InstanceWrapper = moduleRef.providers.get(Resolver)!;
+        wrapper.instance = new Resolver();
+
+        const otherModuleRef = new Module(class {}, new NestContainer());
+        otherModuleRef.addProvider({
+          provide: Resolver,
+          useFactory: () => wrapper.instance,
+        });
+        otherModuleRef.providers.get(Resolver)!.instance = wrapper.instance;
+        modules.set('other', otherModuleRef);
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(
+          (guardsContextCreator.create as sinon.SinonStub).calledWith(
+            wrapper.instance,
+            callback,
+            'key',
+            STATIC_CONTEXT,
+            undefined,
+          ),
+        ).to.be.true;
+      });
+    });
     describe('returns proxy function', () => {
       let proxyContext;
       let instance;
