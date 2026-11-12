@@ -9,6 +9,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import createHttpError from 'http-errors';
 import { PassThrough, Readable, Writable } from 'stream';
+import request from 'supertest';
 
 describe('ExpressAdapter', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -561,6 +562,61 @@ describe('ExpressAdapter', () => {
           expect(response.writableEnded).toBe(false);
         });
       });
+    });
+  });
+
+  describe('render', () => {
+    // Renders "<view>:<variables>" without a template on disk
+    class InlineView {
+      readonly path: string;
+      constructor(readonly name: string) {
+        this.path = name;
+      }
+      render(
+        options: Record<string, unknown>,
+        callback: (err: Error | null, html?: string) => void,
+      ) {
+        const { name, user } = options;
+        callback(null, `${this.name}:${JSON.stringify({ name, user })}`);
+      }
+    }
+
+    beforeEach(() => {
+      expressAdapter.getInstance().set('view', InlineView);
+    });
+
+    it('should render the variables the handler returned with res.locals', async () => {
+      const viewModel = { name: 'Corner Shop' };
+      expressAdapter.getInstance().get('/', (_req, res) => {
+        res.locals.user = 'alice';
+        expressAdapter.render(res, 'index', viewModel);
+      });
+
+      await request(expressAdapter.getInstance())
+        .get('/')
+        .expect(200, 'index:{"name":"Corner Shop","user":"alice"}');
+    });
+
+    it('should not add the res.locals of the request to the returned value', async () => {
+      // e.g. a view model the controller keeps between requests
+      const viewModel = { name: 'Corner Shop' };
+      expressAdapter.getInstance().get('/', (_req, res) => {
+        res.locals.user = 'alice';
+        expressAdapter.render(res, 'index', viewModel);
+      });
+
+      await request(expressAdapter.getInstance()).get('/').expect(200);
+
+      expect(viewModel).toEqual({ name: 'Corner Shop' });
+      expect(JSON.stringify(viewModel)).toBe('{"name":"Corner Shop"}');
+    });
+
+    it('should pass on a value that is not an object as it is', () => {
+      const response = { render: vi.fn() };
+
+      expressAdapter.render(response, 'index', undefined);
+
+      expect(response.render).toHaveBeenCalledWith('index', undefined);
     });
   });
 
