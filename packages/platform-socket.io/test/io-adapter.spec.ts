@@ -66,6 +66,87 @@ describe('IoAdapter', () => {
       expect(counts.running).to.equal(1000);
     });
 
+    describe('when messages wait for their turn', () => {
+      const connectedSocket = () => {
+        const socket = new EventEmitter() as any;
+        socket.connected = true;
+        socket.disconnect = sinon.spy(() => {
+          socket.connected = false;
+          socket.emit('disconnect', 'server namespace disconnect');
+        });
+        return socket;
+      };
+      const bindPendingHandler = (adapter: IoAdapter, socket: any) => {
+        const callback = sinon.spy(() => new Promise<never>(() => undefined));
+        adapter.bindMessageHandlers(
+          socket,
+          [
+            {
+              message: 'test-event',
+              methodName: 'handleTestEvent',
+              callback,
+              isAckHandledManually: false,
+            },
+          ],
+          (data: any) => from(data),
+        );
+        return callback;
+      };
+
+      it('should disconnect a client with more than "maxWaitingMessages" messages of an event waiting', () => {
+        const socket = connectedSocket();
+        const adapter = new IoAdapter(undefined, {
+          maxConcurrentMessages: 1,
+          maxWaitingMessages: 2,
+        });
+        const logWarn = sinon.stub(adapter['logger'], 'warn');
+        const callback = bindPendingHandler(adapter, socket);
+
+        for (let i = 0; i < 3; i++) {
+          socket.emit('test-event', i);
+        }
+        expect(socket.disconnect.called).to.be.false;
+
+        socket.emit('test-event', 3);
+        expect(socket.disconnect.calledWith(true)).to.be.true;
+        expect(logWarn.calledOnce).to.be.true;
+        expect(callback.calledOnce).to.be.true;
+      });
+
+      it('should let 10000 messages of an event wait by default', () => {
+        const socket = connectedSocket();
+        bindPendingHandler(adapter, socket);
+        sinon.stub(adapter['logger'], 'warn');
+
+        for (let i = 0; i < 1000 + 10000; i++) {
+          socket.emit('test-event', i);
+        }
+        expect(socket.disconnect.called).to.be.false;
+
+        socket.emit('test-event', 'one too many');
+        expect(socket.disconnect.calledOnce).to.be.true;
+      });
+
+      it('should not let a throwing disconnect hook escape', () => {
+        const socket = connectedSocket();
+        const error = new Error('disconnect hook blew up');
+        socket.disconnect = sinon.spy(() => {
+          throw error;
+        });
+        const adapter = new IoAdapter(undefined, {
+          maxConcurrentMessages: 1,
+          maxWaitingMessages: 0,
+        });
+        sinon.stub(adapter['logger'], 'warn');
+        const logError = sinon.stub(adapter['logger'], 'error');
+        bindPendingHandler(adapter, socket);
+
+        socket.emit('test-event', 0);
+        expect(() => socket.emit('test-event', 1)).not.to.throw();
+        expect(logError.calledWith(error)).to.be.true;
+      });
+    });
+
     it('should register only one disconnect listener regardless of call count', () => {
       const addListenerSpy = sinon.spy();
       const fakeSocket = {
