@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
+import { EventEmitter } from 'events';
 import express from 'express';
 import createHttpError from 'http-errors';
 import { PassThrough, Readable, Writable } from 'stream';
@@ -393,6 +394,29 @@ describe('ExpressAdapter', () => {
         await vi.waitFor(() => expect(source.destroyed).toBe(true));
         expect(errorHandler).not.toHaveBeenCalled();
         expect(errorLogger).not.toHaveBeenCalled();
+      });
+
+      it('should destroy the source streams of pipelined responses when the connection closes', async () => {
+        // Responses queued behind an unread one on the same connection: they
+        // have no socket of their own, and may never be closed themselves
+        const connection = Object.assign(new EventEmitter(), {
+          destroyed: false,
+        });
+        const sources = Array.from({ length: 3 }, () => new PassThrough());
+        for (const source of sources) {
+          const response = Object.assign(createStreamResponse(), {
+            req: { method: 'GET', socket: connection },
+          });
+          expressAdapter.reply(response, new StreamableFile(source));
+          source.write('partial');
+        }
+        expect(connection.listenerCount('close')).toBe(1);
+
+        connection.emit('close');
+
+        await vi.waitFor(() =>
+          expect(sources.every(source => source.destroyed)).toBe(true),
+        );
       });
 
       it('should destroy the source stream when the client disconnected before the reply', async () => {

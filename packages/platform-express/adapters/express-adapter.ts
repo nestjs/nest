@@ -16,7 +16,7 @@ import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
-import { Duplex, finished, Writable } from 'stream';
+import { Duplex, Writable } from 'stream';
 import {
   NestExpressBodyParserOptionsFor,
   NestExpressBodyParserType,
@@ -24,6 +24,7 @@ import {
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
+import { onResponseClose } from './utils/on-response-close.util.js';
 import {
   type CorsOptions,
   type CorsOptionsDelegate,
@@ -183,8 +184,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         this.handleStreamError(body, err, response);
       });
       // pipe() leaves the source open when the client disconnects early,
-      // also before reply() runs ("close" has already fired by then)
-      finished(response, () => {
+      // also before reply() runs ("close" has already fired by then), or
+      // while the response waits behind others pipelined on the connection
+      onResponseClose(response, () => {
         if (!stream.readableEnded) {
           stream.destroy();
         }
