@@ -115,6 +115,11 @@ export class NestMicroservice
   }
 
   public async registerModules(): Promise<any> {
+    // A gateway with its own port is listening as soon as it is registered,
+    // which is before the lifecycle hooks have run. Its clients are turned
+    // away until the hooks below have completed.
+    // Optional calls, as an older "@nestjs/websockets" may not implement them
+    this.socketModule?.rejectClients?.();
     this.socketModule &&
       this.socketModule.register(
         this.container,
@@ -134,6 +139,7 @@ export class NestMicroservice
       await this.callInitHook();
       await this.callBootstrapHook();
     }
+    this.socketModule?.acceptClients?.();
   }
 
   public registerListeners() {

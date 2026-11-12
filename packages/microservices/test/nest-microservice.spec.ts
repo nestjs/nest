@@ -44,6 +44,40 @@ describe('NestMicroservice', () => {
     sinon.restore();
   });
 
+  describe('registerModules', () => {
+    it('should make the gateways turn clients away until the lifecycle hooks have completed', async () => {
+      const instance = new NestMicroservice(
+        mockContainer,
+        { transport: Transport.TCP },
+        mockGraphInspector,
+        mockAppConfig,
+      );
+      const calls: string[] = [];
+      (instance as any).socketModule = {
+        rejectClients: () => calls.push('rejectClients'),
+        register: () => calls.push('register'),
+        acceptClients: () => calls.push('acceptClients'),
+      };
+      sinon.stub((instance as any).microservicesModule, 'setupClients');
+      sinon.stub(instance, 'registerListeners');
+      sinon
+        .stub(instance as any, 'callInitHook')
+        .callsFake(async () => void calls.push('callInitHook'));
+      sinon
+        .stub(instance as any, 'callBootstrapHook')
+        .callsFake(async () => void calls.push('callBootstrapHook'));
+
+      await instance.registerModules();
+      expect(calls).to.deep.equal([
+        'rejectClients',
+        'register',
+        'callInitHook',
+        'callBootstrapHook',
+        'acceptClients',
+      ]);
+    });
+  });
+
   it('should use ServerFactory if no strategy is provided', () => {
     const instance = new NestMicroservice(
       mockContainer,

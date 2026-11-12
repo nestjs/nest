@@ -35,6 +35,7 @@ export class SocketModule<
   private isAdapterInitialized: boolean;
   private httpServer: THttpServer | undefined;
   private appOptions: TAppOptions;
+  private isAcceptingClients = true;
 
   public register(
     container: NestContainer,
@@ -59,6 +60,7 @@ export class SocketModule<
       contextCreator,
       graphInspector,
       this.appOptions,
+      () => this.isAcceptingClients,
     );
     const modules = container.getModules();
     modules.forEach(({ providers }, moduleName: string) =>
@@ -93,6 +95,23 @@ export class SocketModule<
       moduleName,
       wrapper.id,
     );
+  }
+
+  /**
+   * Makes the gateways turn away the clients that connect to them, until
+   * "acceptClients()" is called. The servers of the gateways are created, and
+   * those with their own port are listening, as soon as the gateways are
+   * registered. The application calls this before it registers them, and
+   * "acceptClients()" once its lifecycle hooks ("onModuleInit",
+   * "onApplicationBootstrap") have completed, so that no client is served by
+   * providers that are not initialized yet.
+   */
+  public rejectClients() {
+    this.isAcceptingClients = false;
+  }
+
+  public acceptClients() {
+    this.isAcceptingClients = true;
   }
 
   public async close(): Promise<any> {

@@ -144,6 +144,69 @@ describe('NestApplication', () => {
       expect(httpAdapterSpy.init.calledOnce).to.be.true;
     });
   });
+  describe('init', () => {
+    const createInstance = () => {
+      const noopHttpAdapter = new NoopHttpAdapter({});
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      container.setHttpAdapter(noopHttpAdapter);
+      return new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+    };
+
+    it('should make the gateways turn clients away until the lifecycle hooks have completed', async () => {
+      const instance = createInstance();
+      const calls: string[] = [];
+      (instance as any).socketModule = {
+        rejectClients: () => calls.push('rejectClients'),
+        register: () => calls.push('register'),
+        acceptClients: () => calls.push('acceptClients'),
+      };
+      sinon
+        .stub(instance as any, 'callInitHook')
+        .callsFake(async () => void calls.push('callInitHook'));
+      sinon
+        .stub(instance as any, 'callBootstrapHook')
+        .callsFake(async () => void calls.push('callBootstrapHook'));
+
+      await instance.init();
+      expect(calls).to.deep.equal([
+        'rejectClients',
+        'register',
+        'callInitHook',
+        'callBootstrapHook',
+        'acceptClients',
+      ]);
+    });
+
+    it('should keep turning clients away when a lifecycle hook fails', async () => {
+      const instance = createInstance();
+      const socketModule = {
+        rejectClients: sinon.spy(),
+        register: sinon.spy(),
+        acceptClients: sinon.spy(),
+      };
+      (instance as any).socketModule = socketModule;
+      sinon
+        .stub(instance as any, 'callInitHook')
+        .rejects(new Error('onModuleInit failed'));
+
+      let error: unknown;
+      try {
+        await instance.init();
+      } catch (err) {
+        error = err;
+      }
+      expect((error as Error)?.message).to.equal('onModuleInit failed');
+      expect(socketModule.rejectClients.calledOnce).to.be.true;
+      expect(socketModule.acceptClients.called).to.be.false;
+    });
+  });
   describe('use', () => {
     it('should decorate function middleware before passing it to the http adapter', () => {
       const useSpy = sinon.stub();

@@ -419,6 +419,30 @@ describe('WebSocketsController', () => {
     it('should call "on" method of client object with expected arguments', () => {
       expect(onSpy.called).to.be.true;
     });
+    it('should close a client instead of handling it until clients are accepted', () => {
+      const closeClientStub = sinon.stub(
+        config.getIoAdapter() as NoopAdapter,
+        'closeClient',
+      );
+      const earlyClient = { on: sinon.spy() };
+      let isAcceptingClients = false;
+      untypedInstance.isAcceptingClients = () => isAcceptingClients;
+
+      fn(earlyClient);
+      expect(closeClientStub.calledWith(earlyClient)).to.be.true;
+      expect(earlyClient.on.called).to.be.false;
+      expect(nextSpy.calledWith([earlyClient])).to.be.false;
+      expect(subscribeMessages.calledWith(handlers, earlyClient, gateway)).to.be
+        .false;
+
+      isAcceptingClients = true;
+      fn(earlyClient);
+      expect(closeClientStub.calledOnce).to.be.true;
+      expect(nextSpy.calledWith([earlyClient])).to.be.true;
+      expect(subscribeMessages.calledWith(handlers, earlyClient, gateway)).to.be
+        .true;
+      closeClientStub.restore();
+    });
   });
   describe('subscribeInitEvent', () => {
     const gateway = new Test();

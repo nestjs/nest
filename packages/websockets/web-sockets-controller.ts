@@ -41,6 +41,7 @@ export class WebSocketsController {
     private readonly contextCreator: WsContextCreator,
     private readonly graphInspector: GraphInspector,
     private readonly appOptions: NestApplicationContextOptions = {},
+    private readonly isAcceptingClients: () => boolean = () => true,
   ) {}
 
   public connectGatewayToServer(
@@ -148,6 +149,14 @@ export class WebSocketsController {
     const adapter = this.config.getIoAdapter();
     return (...args: unknown[]) => {
       const [client] = args;
+      if (!this.isAcceptingClients()) {
+        // The lifecycle hooks of the application are still running, so the
+        // providers that the gateway, its enhancers and its handlers depend on
+        // may not be initialized yet. The client is dropped before any of
+        // them runs, as if the server was not listening yet.
+        adapter.closeClient?.(client);
+        return;
+      }
       connection.next(args);
       context.subscribeMessages(subscribersMap, client, instance);
 

@@ -166,6 +166,11 @@ export class NestApplication
     if (!this.socketModule) {
       return;
     }
+    // A gateway with its own port is listening as soon as it is registered,
+    // which is before the lifecycle hooks have run. Its clients are turned
+    // away until "init()" lets them in.
+    // Optional call, as an older "@nestjs/websockets" may not implement it
+    this.socketModule.rejectClients?.();
     this.socketModule.register(
       this.container,
       this.config,
@@ -193,6 +198,7 @@ export class NestApplication
     await this.callInitHook();
     await this.registerRouterHooks();
     await this.callBootstrapHook();
+    this.socketModule?.acceptClients?.();
 
     this.isInitialized = true;
     this.logger.log(MESSAGES.APPLICATION_READY);
