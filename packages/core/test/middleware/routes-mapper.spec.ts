@@ -8,6 +8,7 @@ import {
 import { RequestMethod } from '../../../common/enums/request-method.enum.js';
 import { MiddlewareConfiguration } from '../../../common/interfaces/index.js';
 import { ApplicationConfig } from '../../application-config.js';
+import { InvalidMiddlewareConfigurationException } from '../../errors/exceptions/invalid-middleware-configuration.exception.js';
 import { NestContainer } from '../../injector/container.js';
 import { Module } from '../../injector/module.js';
 import { RoutesMapper } from '../../middleware/routes-mapper.js';
@@ -56,6 +57,50 @@ describe('RoutesMapper', () => {
       { path: '/test/another', method: RequestMethod.DELETE },
       { path: '/test/versioned', method: RequestMethod.GET, version: '1' },
     ]);
+  });
+
+  it('should throw when a class passed to forRoutes() is not a controller', () => {
+    class BaseRoute {
+      @Get()
+      public getTest() {}
+    }
+    @Controller('child')
+    class ChildRoute extends BaseRoute {}
+
+    expect(() => mapper.mapRouteToRouteInfo(BaseRoute)).toThrow(
+      InvalidMiddlewareConfigurationException,
+    );
+    expect(() => mapper.mapRouteToRouteInfo(BaseRoute)).toThrow(
+      /"BaseRoute" passed to forRoutes\(\) or exclude\(\) is not a controller/,
+    );
+    expect(mapper.mapRouteToRouteInfo(ChildRoute)).toEqual([
+      { path: '/child/', method: RequestMethod.GET },
+    ]);
+  });
+
+  it('should throw when a route is not a { path, method } object', () => {
+    const circular: any = { path: 'test', method: 'GET' };
+    circular.self = circular;
+    const invalidRoutes: any[] = [
+      {},
+      { path: 'test' },
+      { method: RequestMethod.GET },
+      { path: 'test', method: 'GET' },
+      { path: 'test', method: 99 },
+      [{ path: 'test', method: RequestMethod.GET }],
+      circular,
+    ];
+    for (const route of invalidRoutes) {
+      expect(() => mapper.mapRouteToRouteInfo(route)).toThrow(
+        InvalidMiddlewareConfigurationException,
+      );
+    }
+    expect(
+      mapper.mapRouteToRouteInfo({ path: 'a', method: -1 as any }),
+    ).toEqual([{ path: '/a', method: -1 }]);
+    expect(
+      mapper.mapRouteToRouteInfo({ path: 'a', method: RequestMethod.ALL }),
+    ).toEqual([{ path: '/a', method: RequestMethod.ALL }]);
   });
 
   describe('when joining a controller path', () => {
