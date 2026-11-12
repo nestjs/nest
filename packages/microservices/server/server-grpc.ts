@@ -593,7 +593,10 @@ export class ServerGrpc extends Server<never, never> {
             const res = this.transformToObservable(await handler);
             if (isResponseStream) {
               await this.writeObservableToGrpc(res, call);
-            } else {
+            } else if (!call.cancelled) {
+              // Unless the client is already gone: the "cancelled" event that
+              // would end the subscription has then fired before it could be
+              // listened for.
               const response = await lastValueFrom(
                 res.pipe(
                   // Ahead of "takeUntil", which completes the stream when the
