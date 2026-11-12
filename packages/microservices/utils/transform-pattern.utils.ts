@@ -7,6 +7,28 @@ const DEFAULT_MAX_KEY_LENGTH = 256;
 const DEFAULT_MAX_VALUE_LENGTH = 4096;
 const DEFAULT_MAX_TOTAL_KEYS = 100;
 const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+// Any UTF-16 code unit outside ASCII, surrogates included
+const NON_ASCII = /[\u0080-\uffff]/;
+
+/**
+ * Sorts the keys of an object of a pattern. localeCompare can take a long
+ * time to compare keys of some other characters, e.g. many combining marks
+ * on one letter, and a client chooses the keys. So only keys of ASCII
+ * characters are compared with it, and any other key goes after them, in
+ * code unit order. Routes of patterns whose keys are all ASCII are the same
+ * as when every key was compared with localeCompare.
+ */
+function sortKeys(keys: string[]): string[] {
+  const asciiKeys: string[] = [];
+  const otherKeys: string[] = [];
+  for (const key of keys) {
+    (NON_ASCII.test(key) ? otherKeys : asciiKeys).push(key);
+  }
+  return [
+    ...asciiKeys.sort((a, b) => ('' + a).localeCompare(b)),
+    ...otherKeys.sort(),
+  ];
+}
 
 interface PatternLimits {
   maxDepth: number;
@@ -203,7 +225,7 @@ function buildRoute(
     return inspection.marker;
   }
 
-  const sortedKeys = inspection.keys.sort((a, b) => ('' + a).localeCompare(b));
+  const sortedKeys = sortKeys(inspection.keys);
 
   const parts = sortedKeys.map(key => {
     const value = pattern[key];

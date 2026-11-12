@@ -264,3 +264,51 @@ describe('exceedsPatternLimits', () => {
     );
   });
 });
+
+describe('transformPatternToRoute key order', () => {
+  it('should keep the order of keys of ASCII characters', () => {
+    const keys = ['userid', 'userZip', 'B', 'a', 'service_id', 'serviceName'];
+    const pattern = Object.fromEntries(keys.map((key, i) => [key, i]));
+    const route = keys
+      .slice()
+      .sort((x, y) => x.localeCompare(y))
+      .map(key => `"${key}":${keys.indexOf(key)}`)
+      .join(',');
+
+    expect(transformPatternToRoute(pattern)).toBe(`{${route}}`);
+  });
+
+  it('should put keys of other characters after them, in code unit order', () => {
+    expect(transformPatternToRoute({ ä: 1, z: 2, é: 3, a: 4 })).toBe(
+      '{"a":4,"z":2,"ä":1,"é":3}',
+    );
+  });
+
+  it('should not compare keys of other characters with localeCompare', () => {
+    // Combining marks on one letter make each comparison slow
+    const marks = '\u0344'.repeat(60) + '\u0F71'.repeat(191);
+    // So does a letter with no mark of its own whose decomposition has two
+    const decomposing = '\uFB2C'.repeat(100);
+    const pattern = Object.fromEntries([
+      ...['aaaaa', 'aaaaA', 'aaaAa', 'aaAaa'].map(prefix => [
+        prefix + marks,
+        0,
+      ]),
+      [decomposing + 'a', 0],
+      [decomposing + 'b', 0],
+      ['cmd', 'x'],
+      ['id', 1],
+    ]);
+    const localeCompare = vi.spyOn(String.prototype, 'localeCompare');
+
+    transformPatternToRoute(pattern);
+
+    const isAscii = (value: unknown) => !/[\u0080-\uffff]/.test(String(value));
+    expect(localeCompare).toHaveBeenCalled();
+    expect(localeCompare.mock.calls.every(([other]) => isAscii(other))).toBe(
+      true,
+    );
+    expect(localeCompare.mock.contexts.every(isAscii)).toBe(true);
+    localeCompare.mockRestore();
+  });
+});
