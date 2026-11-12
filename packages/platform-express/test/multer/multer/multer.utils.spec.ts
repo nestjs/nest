@@ -6,6 +6,7 @@ import {
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import { EventEmitter } from 'events';
 import * as multer from 'multer';
 import {
   busboyExceptions,
@@ -473,6 +474,54 @@ describe('removeFilesOnPipeRejection', () => {
     await new Promise(resolve => setImmediate(resolve));
 
     expect(storage._removeFile.called).to.be.false;
+  });
+
+  describe('when the request was pipelined on a connection', () => {
+    // The response of a request that waits behind others pipelined on the
+    // connection: it has no socket of its own, and may never close itself
+    const createConnection = () =>
+      Object.assign(new EventEmitter(), { destroyed: false });
+    const createPipelinedExchange = (connection: EventEmitter) => {
+      const file = { fieldname: 'doc', path: '/uploads/a' };
+      const req = { file, socket: connection };
+      const res = Object.assign(createResponse(), { req });
+      markRejectedByPipes(req);
+      return { file, req, res };
+    };
+    const removed = async (storage: ReturnType<typeof createStorage>) => {
+      for (let i = 0; i < 10 && !storage._removeFile.called; i++) {
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    };
+
+    it('should remove the files when the connection closes before the response is sent', async () => {
+      const storage = createStorage();
+      const connection = createConnection();
+      const { file, req, res } = createPipelinedExchange(connection);
+
+      await fail(storage, req, res);
+      expect(storage._removeFile.called).to.be.false;
+      connection.emit('close');
+
+      await removed(storage);
+      expect(storage._removeFile.calledOnce).to.be.true;
+      expect(storage._removeFile.calledWith(req, file, sinon.match.func)).to.be
+        .true;
+    });
+
+    it('should remove the files once when the response is sent before the connection closes', async () => {
+      const storage = createStorage();
+      const connection = createConnection();
+      const { req, res } = createPipelinedExchange(connection);
+
+      await fail(storage, req, res);
+      res.end();
+      await removed(storage);
+      connection.emit('close');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(storage._removeFile.calledOnce).to.be.true;
+    });
   });
 });
 
