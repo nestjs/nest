@@ -132,6 +132,14 @@ export class RpcContextCreator {
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
+    // Optional call, as an older "@nestjs/core" may not implement it
+    this.contextUtils.warnOnMissingParamtypes?.(
+      instance,
+      methodName,
+      paramtypes,
+      pipes,
+      paramsOptions,
+    );
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
     const fnCanActivate = this.createGuardsFn(

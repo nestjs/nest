@@ -6,8 +6,9 @@ import {
   Res,
 } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { ParseIntPipe } from '@nestjs/common/pipes';
+import { Logger, ParseIntPipe, ValidationPipe } from '@nestjs/common';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { registerClassRef } from '../../helpers/class-ref-registry';
 import { ContextUtils } from '../../helpers/context-utils';
@@ -116,6 +117,119 @@ describe('ContextUtils', () => {
       expect(
         contextUtils.reflectCallbackParamtypes(new Host(), 'mixedIn'),
       ).to.deep.equal([Object, MixinDto]);
+    });
+  });
+  describe('warnOnMissingParamtypes', () => {
+    const paramWith = (type: number | string, ...pipes: any[]) => [
+      {
+        index: 0,
+        type,
+        data: undefined as any,
+        pipes,
+        extractValue: (() => {}) as any,
+      },
+    ];
+    const bodyWith = (...pipes: any[]) =>
+      paramWith(RouteParamtypes.BODY, ...pipes);
+
+    let instance: { create(body: unknown): void };
+    let warn: sinon.SinonStub;
+
+    beforeEach(() => {
+      // A handler is warned about once, so each test declares its own
+      class TestController {
+        public create(body: unknown) {}
+      }
+      instance = new TestController();
+      warn = sinon.stub(Logger.prototype, 'warn');
+    });
+
+    afterEach(() => {
+      warn.restore();
+    });
+
+    it('should warn when a ValidationPipe is bound to the handler', () => {
+      contextUtils.warnOnMissingParamtypes(
+        instance,
+        'create',
+        undefined,
+        [new ValidationPipe()],
+        bodyWith(),
+      );
+      expect(warn.calledOnce).to.be.true;
+      expect(warn.firstCall.args[0]).to.contain(
+        'The TestController.create() handler has no decorator metadata',
+      );
+    });
+
+    it('should warn when a ValidationPipe is bound to a parameter', () => {
+      contextUtils.warnOnMissingParamtypes(
+        instance,
+        'create',
+        undefined,
+        [],
+        bodyWith(new ValidationPipe()),
+      );
+      expect(warn.calledOnce).to.be.true;
+    });
+
+    it('should warn once per handler', () => {
+      const hosts = [instance, new (instance.constructor as any)()];
+      for (const host of hosts) {
+        new ContextUtils().warnOnMissingParamtypes(
+          host,
+          'create',
+          undefined,
+          [new ValidationPipe()],
+          bodyWith(),
+        );
+      }
+      expect(warn.calledOnce).to.be.true;
+    });
+
+    it('should not warn when the handler has parameter types', () => {
+      contextUtils.warnOnMissingParamtypes(
+        instance,
+        'create',
+        [Object],
+        [new ValidationPipe()],
+        bodyWith(),
+      );
+      expect(warn.called).to.be.false;
+    });
+
+    it('should not warn when no ValidationPipe is bound', () => {
+      contextUtils.warnOnMissingParamtypes(
+        instance,
+        'create',
+        undefined,
+        [{ transform: (value: unknown) => value }],
+        bodyWith(new ParseIntPipe()),
+      );
+      expect(warn.called).to.be.false;
+    });
+
+    it('should not warn when the ValidationPipe of the parameter has an expected type', () => {
+      class Dto {}
+      contextUtils.warnOnMissingParamtypes(
+        instance,
+        'create',
+        undefined,
+        [new ValidationPipe()],
+        bodyWith(new ValidationPipe({ expectedType: Dto })),
+      );
+      expect(warn.called).to.be.false;
+    });
+
+    it('should not warn for the parameters of a custom decorator', () => {
+      contextUtils.warnOnMissingParamtypes(
+        instance,
+        'create',
+        undefined,
+        [new ValidationPipe()],
+        paramWith(`custom${CUSTOM_ROUTE_ARGS_METADATA}`),
+      );
+      expect(warn.called).to.be.false;
     });
   });
   describe('getArgumentsLength', () => {

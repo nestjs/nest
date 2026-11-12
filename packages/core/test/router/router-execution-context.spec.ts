@@ -16,10 +16,20 @@ import { PassThrough, Writable } from 'stream';
 import {
   HttpException,
   HttpStatus,
+  Logger,
+  RequestMethod,
   RouteParamMetadata,
   StreamableFile,
+  ValidationPipe,
 } from '../../../common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  PARAMTYPES_METADATA,
+} from '../../../common/constants';
+import {
+  Body,
+  Req,
+} from '../../../common/decorators/http/route-params.decorator';
 import { Sse } from '../../../common/decorators/http/sse.decorator';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -88,6 +98,52 @@ describe('RouterExecutionContext', () => {
     );
   });
   describe('create', () => {
+    describe('when the handler has no parameter types', () => {
+      it('should warn once that a ValidationPipe cannot validate its parameters', () => {
+        class TypelessController {
+          public create(@Body() body: object, @Req() req: object) {}
+        }
+        // What a compiler that emits no decorator metadata leaves
+        Reflect.deleteMetadata(
+          PARAMTYPES_METADATA,
+          TypelessController.prototype,
+          'create',
+        );
+        const applicationConfig = new ApplicationConfig();
+        applicationConfig.addGlobalPipe(new ValidationPipe());
+        contextCreator = new RouterExecutionContext(
+          factory,
+          new PipesContextCreator(new NestContainer(), applicationConfig),
+          consumer,
+          new GuardsContextCreator(new NestContainer()),
+          guardsConsumer,
+          new InterceptorsContextCreator(new NestContainer()),
+          interceptorsConsumer,
+          adapter,
+        );
+        const warn = sinon.stub(Logger.prototype, 'warn');
+
+        try {
+          const instance = new TypelessController();
+          for (let i = 0; i < 2; i++) {
+            contextCreator.create(
+              instance,
+              instance.create,
+              'create',
+              '',
+              RequestMethod.POST,
+            );
+          }
+          expect(warn.calledOnce).to.be.true;
+          expect(warn.firstCall.args[0]).to.contain(
+            'TypelessController.create()',
+          );
+        } finally {
+          warn.restore();
+        }
+      });
+    });
+
     it('should pass an unresolved Promise<Observable> to the SSE response handler', async () => {
       const result = Promise.resolve(of('test'));
       const fnHandleResponse = sinon.stub().resolves();

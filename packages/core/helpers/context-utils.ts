@@ -1,4 +1,4 @@
-import { ParamData } from '@nestjs/common';
+import { Logger, ParamData } from '@nestjs/common';
 import {
   PARAMTYPES_METADATA,
   RESPONSE_PASSTHROUGH_METADATA,
@@ -9,9 +9,15 @@ import {
   PipeTransform,
   Type,
 } from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
+import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
+import { MISSING_HANDLER_METADATA_MESSAGE } from '../errors/messages';
 import { getClassRef, getParamsHost } from './class-ref-registry';
 import { ExecutionContextHost } from './execution-context-host';
+
+// Handlers already warned about (see `warnOnMissingParamtypes()`). Shared, as
+// each context creator has its own `ContextUtils`.
+const handlersWithoutParamtypes = new WeakSet<Function>();
 
 export interface ParamProperties<T = any, IExtractor extends Function = any> {
   index: number;
@@ -96,6 +102,61 @@ export class ContextUtils {
       ...param,
       metatype: paramtypes[param.index],
     }));
+  }
+
+  /**
+   * A handler has parameter types only if its compiler emits decorator
+   * metadata, and tsx and esbuild don't. Without them a `ValidationPipe` has
+   * nothing to validate a parameter against and passes it on as it came, so
+   * this says so once per handler, when the handler is set up. It doesn't
+   * throw, as the handler may not rely on the pipe. A parameter whose
+   * `ValidationPipe` was given an `expectedType` needs no metadata, so it isn't
+   * reported, and neither is a custom decorator's, which `ValidationPipe`
+   * skips by default.
+   *
+   * @param pipes pipes bound to the handler (global, class and method ones)
+   * @param paramsProperties parameters the pipes are applied to
+   */
+  public warnOnMissingParamtypes(
+    instance: Controller,
+    methodName: string,
+    paramtypes: unknown[] | undefined,
+    pipes: PipeTransform[],
+    paramsProperties: ParamProperties[],
+  ) {
+    const handler = instance[methodName];
+    if (
+      paramtypes ||
+      !isFunction(handler) ||
+      handlersWithoutParamtypes.has(handler)
+    ) {
+      return;
+    }
+    const isLeftUnvalidated = ({
+      type,
+      pipes: paramPipes,
+    }: ParamProperties) => {
+      if (isString(type)) {
+        return false;
+      }
+      const validationPipes = pipes
+        .concat(paramPipes ?? [])
+        .filter(
+          (pipe): pipe is ValidationPipe => pipe instanceof ValidationPipe,
+        );
+      // `expectedType` is protected: read it the way `transform()` does
+      return (
+        validationPipes.length > 0 &&
+        !validationPipes.some(pipe => pipe['expectedType'])
+      );
+    };
+    if (!paramsProperties.some(isLeftUnvalidated)) {
+      return;
+    }
+    handlersWithoutParamtypes.add(handler);
+    new Logger(ContextUtils.name).warn(
+      MISSING_HANDLER_METADATA_MESSAGE(getClassRef(instance).name, methodName),
+    );
   }
 
   public getCustomFactory(

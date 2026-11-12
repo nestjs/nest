@@ -140,6 +140,16 @@ For more common dependency resolution issues, see: https://docs.nestjs.com/faq/c
   return message;
 };
 
+export const MISSING_HANDLER_METADATA_MESSAGE = (
+  type: string,
+  methodName: string,
+) => `The ${type}.${methodName}() handler has no decorator metadata, so nothing tells ValidationPipe the types of its parameters, and it passes them on without validating them.
+
+Potential solutions:
+- Name the type for the pipe of the parameter, which needs no metadata:
+  @Body(new ValidationPipe({ expectedType: SomeDto })) body: SomeDto
+- Or run the application with a compiler that emits the metadata, such as the Nest CLI, tsc or SWC, with "emitDecoratorMetadata" enabled in tsconfig.json. tsx and esbuild don't emit it.`;
+
 export const INVALID_MIDDLEWARE_MESSAGE = (
   text: TemplateStringsArray,
   name: string,
