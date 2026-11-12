@@ -283,7 +283,7 @@ describe('ClientTCP', () => {
   });
 
   describe('maxBufferSize', () => {
-    const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4;
+    const DEFAULT_MAX_BUFFER_SIZE = 16 * 1024 * 1024;
 
     describe('when maxBufferSize is not provided', () => {
       it('should use default maxBufferSize', () => {

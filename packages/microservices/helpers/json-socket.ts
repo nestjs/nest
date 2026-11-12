@@ -8,7 +8,11 @@ import { MaxSendBufferSizeExceededException } from '../errors/max-send-buffer-si
 import { TcpEventsMap } from '../events/tcp.events';
 import { TcpSocket } from './tcp-socket';
 
-const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
+// In characters, which a string holds in 1 or 2 bytes each. A complete packet
+// is parsed in one go, and the value parsed can take far more memory than its
+// text, e.g. about 40 bytes per character for '[{"a":0},{"a":0},...]'. 16Mi
+// matches what KafkaParser accepts for a Kafka message.
+const DEFAULT_MAX_BUFFER_SIZE = 16 * 1024 * 1024;
 const DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT = 30_000;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024; // 128 MBs in bytes
 const DEFAULT_DRAIN_TIMEOUT = 30_000;
