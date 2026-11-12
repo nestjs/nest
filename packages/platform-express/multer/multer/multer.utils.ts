@@ -3,6 +3,7 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { finished } from 'stream';
 import {
@@ -13,6 +14,27 @@ import {
 import { MulterOptions } from '../interfaces/multer-options.interface';
 
 type MulterLimits = NonNullable<MulterOptions['limits']>;
+
+/**
+ * Merges the module-level (global) multer options with the options of a
+ * route's interceptor (local), which win.
+ *
+ * A local option set to `null` or `undefined` (e.g. an optional
+ * configuration value that is not set) keeps the global value, as if it were
+ * not set.
+ */
+export function mergeMulterOptions(
+  options: MulterOptions = {},
+  localOptions: MulterOptions = {},
+): MulterOptions {
+  return { ...options, ...withoutNil(localOptions) };
+}
+
+function withoutNil<T extends object>(options: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(options).filter(([, value]) => !isNil(value)),
+  ) as Partial<T>;
+}
 
 /**
  * Sets `parts`, which multer leaves at `Infinity`, to `DEFAULT_PARTS_LIMIT`

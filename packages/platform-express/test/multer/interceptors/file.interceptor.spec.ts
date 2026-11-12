@@ -88,4 +88,13 @@ describe('FileInterceptor', () => {
       parts: 1000,
     });
   });
+  it('should keep the module limits a route sets to undefined', () => {
+    const target = new (FileInterceptor('file', { limits: undefined }))({
+      limits: { fileSize: 1024 },
+    });
+    expect((target as any).multer.limits).to.deep.equal({
+      fileSize: 1024,
+      parts: 1000,
+    });
+  });
 });

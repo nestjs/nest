@@ -11,6 +11,7 @@ import {
 } from '../../../multer/multer/multer.constants';
 import {
   applyDefaultLimits,
+  mergeMulterOptions,
   removeFilesOnPipeRejection,
   transformException,
 } from '../../../multer/multer/multer.utils';
@@ -19,6 +20,34 @@ import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes';
 import { lastValueFrom, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { Readable, Writable } from 'stream';
+
+describe('mergeMulterOptions', () => {
+  it('should let local options override global options', () => {
+    const merged = mergeMulterOptions(
+      { dest: '/global', limits: { fileSize: 1024 } },
+      { dest: '/local', limits: { files: 2 } },
+    );
+    expect(merged).to.deep.equal({ dest: '/local', limits: { files: 2 } });
+  });
+  it('should keep the global options the route sets to null or undefined', () => {
+    const fileFilter = sinon.spy();
+    const storage = (multer as any).memoryStorage();
+    const limits = { fileSize: 1024 };
+    const merged = mergeMulterOptions(
+      { limits, fileFilter, storage },
+      { limits: undefined, fileFilter: undefined, storage: null },
+    );
+    expect(merged).to.deep.equal({ limits, fileFilter, storage });
+  });
+  it('should accept missing options', () => {
+    expect(mergeMulterOptions(undefined, { dest: '/local' })).to.deep.equal({
+      dest: '/local',
+    });
+    expect(mergeMulterOptions({ dest: '/global' }, undefined)).to.deep.equal({
+      dest: '/global',
+    });
+  });
+});
 
 describe('applyDefaultLimits', () => {
   const defaults = { parts: 1000 };

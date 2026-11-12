@@ -17,6 +17,7 @@ import {
 } from '../interfaces/multer-options.interface';
 import {
   applyDefaultLimits,
+  mergeMulterOptions,
   removeFilesOnPipeRejection,
   transformException,
 } from '../multer/multer.utils';
@@ -41,10 +42,7 @@ export function FileFieldsInterceptor(
       options: MulterModuleOptions = {},
     ) {
       this.multer = (multer as any)(
-        applyDefaultLimits({
-          ...options,
-          ...localOptions,
-        }),
+        applyDefaultLimits(mergeMulterOptions(options, localOptions)),
       );
     }
 
