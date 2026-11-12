@@ -19,6 +19,10 @@ export const multerExceptions = {
   // A multer 2.4 code that platform-express's table lacks. Raised here for
   // field names that would pollute a prototype, which multer accepts.
   INVALID_FIELD_NAME: 'Invalid field name',
+  // Not a multer code: multer never parses the text fields it receives.
+  // Raised when the fields `@fastify/multipart` parsed as JSON go over
+  // `limits.jsonFieldsSize`.
+  LIMIT_JSON_FIELDS_SIZE: 'JSON field values too large',
 } as const;
 
 export type MultipartErrorCode = keyof typeof multerExceptions;
@@ -36,6 +40,13 @@ export const DEFAULT_FIELD_NAME_LIMITS = {
   fieldNestingDepth: 32,
   fieldArrayIndexLimit: 1000,
 } as const;
+
+/**
+ * Default of `limits.jsonFieldsSize`, the total size of the text fields
+ * `@fastify/multipart` parses as JSON in one request: 1 MiB, the Fastify
+ * `bodyLimit` that applies to a JSON request body by default.
+ */
+export const DEFAULT_JSON_FIELDS_SIZE = 1024 * 1024;
 
 /**
  * The messages platform-express reports for busboy 1.x parser errors

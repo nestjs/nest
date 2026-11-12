@@ -6,6 +6,7 @@ import {
   createFakeRequest,
   field,
   file,
+  jsonField,
 } from '../fake-request.js';
 
 describe('NoFilesInterceptor', () => {
@@ -44,6 +45,101 @@ describe('NoFilesInterceptor', () => {
     await target.intercept(createContext(req), handler);
     expect(req.body.tags).toEqual(['a', 'b']);
     expect(req.body.user.ids).toEqual(['7']);
+  });
+
+  describe('fields @fastify/multipart parsed as JSON', () => {
+    const parse = async (parts: any[], options?: any) => {
+      const target = new (NoFilesInterceptor(options))();
+      const req = createFakeRequest(parts);
+      await target.intercept(createContext(req), handler);
+      return req.body;
+    };
+    const text = (size: number) => ({ s: 'x'.repeat(size - 8) });
+
+    it('should keep them as the plugin parsed them', async () => {
+      expect(
+        await parse([jsonField('meta', { a: [1, 2] }), field('name', 'Ada')]),
+      ).toEqual({ meta: { a: [1, 2] }, name: 'Ada' });
+    });
+
+    it('should limit their total size to 1 MiB by default', async () => {
+      expect(
+        Object.keys(
+          await parse([
+            jsonField('a', text(512 * 1024)),
+            jsonField('b', text(512 * 1024)),
+          ]),
+        ),
+      ).toEqual(['a', 'b']);
+      await expect(
+        parse([
+          jsonField('a', text(512 * 1024)),
+          jsonField('b', text(512 * 1024 + 1)),
+        ]),
+      ).rejects.toEqual(
+        new BadRequestException('JSON field values too large - b'),
+      );
+    });
+
+    it('should apply the jsonFieldsSize limit that is set', async () => {
+      const limits = { jsonFieldsSize: 14 };
+      expect(
+        await parse([jsonField('a', { b: 1 }), jsonField('c', { d: 2 })], {
+          limits,
+        }),
+      ).toEqual({ a: { b: 1 }, c: { d: 2 } });
+      await expect(
+        parse([jsonField('a', { b: 1 }), jsonField('c', { d: 22 })], {
+          limits,
+        }),
+      ).rejects.toEqual(
+        new BadRequestException('JSON field values too large - c'),
+      );
+      expect(
+        Object.keys(
+          await parse([jsonField('a', text(2 * 1024 * 1024))], {
+            limits: { jsonFieldsSize: Infinity },
+          }),
+        ),
+      ).toEqual(['a']);
+    });
+
+    it('should not count text fields', async () => {
+      expect(
+        await parse([field('a', 'x'.repeat(100))], {
+          limits: { jsonFieldsSize: 10 },
+        }),
+      ).toEqual({ a: 'x'.repeat(100) });
+    });
+
+    it('should reject a value nested too deep to be measured', async () => {
+      let value: any = {};
+      for (let i = 0; i < 100_000; i++) {
+        value = { a: value };
+      }
+      await expect(parse([jsonField('deep', value)])).rejects.toEqual(
+        new BadRequestException('JSON field values too large - deep'),
+      );
+    });
+
+    it('should nest a field under a JSON null as under any other value', async () => {
+      expect(await parse([jsonField('b', null), field('b[c]', 'x')])).toEqual({
+        b: { '': null, c: 'x' },
+      });
+    });
+
+    it('should not read the members a JSON object inherits', async () => {
+      const body = await parse([
+        jsonField('a', { b: 1 }),
+        field('a[toString]', 'x'),
+        field('a[hasOwnProperty][c]', 'y'),
+      ]);
+      expect(body.a).toEqual({
+        b: 1,
+        toString: 'x',
+        hasOwnProperty: { c: 'y' },
+      });
+    });
   });
 
   it('should reject any file', async () => {

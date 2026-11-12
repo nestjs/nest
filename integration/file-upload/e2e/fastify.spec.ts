@@ -208,6 +208,21 @@ describe('File upload (Fastify)', () => {
       }
     });
 
+    it('should hand over JSON fields parsed, up to jsonFieldsSize in all', async () => {
+      const json = { contentType: 'application/json' };
+      const ok = await http()
+        .post('/fields')
+        .field('meta', '{"a":[1,2]}', json as any);
+      expect(ok.body).toEqual({ body: { meta: { a: [1, 2] } } });
+      const big = JSON.stringify({ s: 'x'.repeat(600 * 1024) });
+      const res = await http()
+        .post('/fields')
+        .field('a', big, json as any)
+        .field('b', big, json as any);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('JSON field values too large - b');
+    });
+
     const upload = (i: number) => ({
       filename: `f${i}.bin`,
       contentType: 'application/octet-stream',

@@ -5,7 +5,10 @@ export interface FakePart {
   type: 'file' | 'field';
   fieldname: string;
   filename?: string;
-  value?: string;
+  /** A string, or what @fastify/multipart parsed out of a JSON field. */
+  value?: unknown;
+  /** Of a field: `application/json` for one the plugin parsed as JSON. */
+  mimetype?: string;
   content?: string;
   truncated?: boolean;
   fieldnameTruncated?: boolean;
@@ -69,7 +72,7 @@ export function createFakeRequest(
               type: 'field',
               fieldname: part.fieldname,
               value: part.value,
-              mimetype: 'text/plain',
+              mimetype: part.mimetype ?? 'text/plain',
               encoding: '7bit',
               fieldnameTruncated: !!part.fieldnameTruncated,
               valueTruncated: !!part.valueTruncated,
@@ -122,4 +125,12 @@ export const field = (fieldname: string, value: string): FakePart => ({
   type: 'field',
   fieldname,
   value,
+});
+
+/** A field sent as `application/json`, which @fastify/multipart parses. */
+export const jsonField = (fieldname: string, value: unknown): FakePart => ({
+  type: 'field',
+  fieldname,
+  value,
+  mimetype: 'application/json',
 });

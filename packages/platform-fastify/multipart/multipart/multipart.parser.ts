@@ -17,6 +17,7 @@ import { appendField, closeArrayGaps } from './append-field.util.js';
 import {
   busboyExceptions,
   DEFAULT_FIELD_NAME_LIMITS,
+  DEFAULT_JSON_FIELDS_SIZE,
   MISSING_PLUGIN_MESSAGE,
   multerExceptions,
 } from './multipart.constants.js';
@@ -428,12 +429,52 @@ function checkFieldNameShape(
 }
 
 /**
+ * What is left of `limits.jsonFieldsSize` for the rest of a request.
+ */
+interface FieldBudget {
+  jsonFieldsSize: number;
+}
+
+function createFieldBudget(limits: MultipartLimits | undefined): FieldBudget {
+  return {
+    jsonFieldsSize: limits?.jsonFieldsSize ?? DEFAULT_JSON_FIELDS_SIZE,
+  };
+}
+
+/**
+ * `@fastify/multipart` replaces the value of a text field sent as
+ * `application/json` with what `JSON.parse()` makes of it (and reports that
+ * very mimetype). Such a value takes many times the memory of the text
+ * `fieldSize` bounds, for as long as the request lasts, so the total size of
+ * these fields in one request is bounded by `limits.jsonFieldsSize`. The
+ * plugin does not expose the text it parsed, so the size is that of the
+ * value serialized again.
+ */
+function checkJsonFieldSize(part: MultipartPart, budget: FieldBudget) {
+  if (part.mimetype !== 'application/json') {
+    return;
+  }
+  let size: number;
+  try {
+    size = Buffer.byteLength(JSON.stringify(part.value) ?? '');
+  } catch {
+    // Nested deeper than the call stack allows to serialize
+    throw new MultipartError('LIMIT_JSON_FIELDS_SIZE', part.fieldname);
+  }
+  budget.jsonFieldsSize -= size;
+  if (budget.jsonFieldsSize < 0) {
+    throw new MultipartError('LIMIT_JSON_FIELDS_SIZE', part.fieldname);
+  }
+}
+
+/**
  * Adds a text field to `body`, with multer's checks, in multer's order.
  */
 function appendTextField(
   body: object,
   part: MultipartPart,
   limits: MultipartLimits | undefined,
+  budget: FieldBudget,
 ) {
   const rawName = decodeFieldName(part);
   if (part.fieldnameTruncated) {
@@ -444,6 +485,7 @@ function appendTextField(
   }
   checkFieldNameSize(rawName, limits);
   checkFieldNameShape(part.fieldname, limits);
+  checkJsonFieldSize(part, budget);
   if (!appendField(body, part.fieldname, part.value)) {
     throw new MultipartError('INVALID_FIELD_NAME', part.fieldname);
   }
@@ -500,6 +542,7 @@ export async function processMultipart(
 
   try {
     const limits = resolveLimits(req, options);
+    const budget = createFieldBudget(limits);
     const iterator = req
       .parts(toBusboyConfig(limits, options))
       [Symbol.asyncIterator]();
@@ -511,7 +554,7 @@ export async function processMultipart(
     ) {
       const part = result.value;
       if (part.type === 'field') {
-        appendTextField(body, part, limits);
+        appendTextField(body, part, limits, budget);
         continue;
       }
       const stream = readFilePart(part, limits);
@@ -597,6 +640,7 @@ export async function processStream(
 
   try {
     const limits = resolveLimits(req, options);
+    const budget = createFieldBudget(limits);
     const iterator = req
       .parts(toBusboyConfig(limits, options))
       [Symbol.asyncIterator]();
@@ -607,7 +651,7 @@ export async function processStream(
     ) {
       const part = result.value;
       if (part.type === 'field') {
-        appendTextField(body, part, limits);
+        appendTextField(body, part, limits, budget);
         continue;
       }
       const stream = readFilePart(part, limits);
@@ -634,6 +678,11 @@ export async function processStream(
       } else {
         stream.once('limit', rejectFile);
       }
+      // Nothing reads the parts after this file, but `@fastify/multipart`
+      // would go on parsing (text fields as JSON, too) and keeping them until
+      // the request is over: the request is detached from the parser once
+      // the file ends, and the rest of the body is discarded later on.
+      stream.once('end', () => req.raw.unpipe());
       const file: MultipartFileStream = { ...incoming, stream };
       setOnRequest(req, 'file', file);
       closeArrayGaps(body);

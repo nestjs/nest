@@ -56,6 +56,15 @@ describe('FileStreamInterceptor', () => {
     req.file.stream.resume();
   });
 
+  it('should stop parsing once the file has been read', async () => {
+    const target = new (FileStreamInterceptor('upload'))();
+    const req = createFakeRequest([file('upload', 'streamed')]);
+    await target.intercept(createContext(req, createReply()), handler);
+    expect(req.raw.unpipe).not.toHaveBeenCalled();
+    req.file.stream.resume();
+    await vi.waitFor(() => expect(req.raw.unpipe).toHaveBeenCalled());
+  });
+
   it('should leave req.files undefined', async () => {
     const target = new (FileStreamInterceptor('upload'))();
     const req = createFakeRequest([file('upload')]);

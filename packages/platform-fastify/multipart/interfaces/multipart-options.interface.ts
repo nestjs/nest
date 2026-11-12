@@ -66,6 +66,16 @@ export interface MultipartLimits {
    * to the options `@fastify/multipart` was registered with.
    */
   fieldArrayIndexLimit?: number;
+  /**
+   * Max total size in bytes, as JSON text, of the text fields of one request
+   * that are sent as `application/json` (Default: 1 MiB, the Fastify
+   * `bodyLimit` default). `@fastify/multipart` hands such fields over parsed,
+   * which can take many times the memory of their text; multer hands them
+   * over as text, so this limit only exists on Fastify. Set it to `Infinity`
+   * to lift the limit. Like `fieldNameSize`, it does not fall back to the
+   * options `@fastify/multipart` was registered with.
+   */
+  jsonFieldsSize?: number;
 }
 
 /**

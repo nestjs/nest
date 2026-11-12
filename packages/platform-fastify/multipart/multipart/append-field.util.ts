@@ -66,10 +66,20 @@ function valueType(value: unknown) {
   if (Array.isArray(value)) {
     return 'array';
   }
-  if (typeof value === 'object') {
+  // `null` is a value `@fastify/multipart` may hand over for a JSON field.
+  if (typeof value === 'object' && value !== null) {
     return 'object';
   }
   return 'scalar';
+}
+
+/**
+ * The value `ctx` holds under `key` itself. The containers built here have
+ * no prototype, but a JSON field's value (see `appendField`) has one, whose
+ * members are not values of the body.
+ */
+function ownValue(ctx: any, key: string | number) {
+  return Object.hasOwn(ctx, key) ? ctx[key] : undefined;
 }
 
 function setLastValue(
@@ -89,7 +99,7 @@ function setLastValue(
       return setLastValue(
         current,
         { type: 'object', key: '', last: true },
-        current[''],
+        ownValue(current, ''),
         value,
       );
     case 'scalar':
@@ -136,7 +146,8 @@ function setValue(ctx: any, step: PathStep, current: any, value: unknown): any {
  * Appends a text field to `store` using multer's bracket notation.
  * Returns `false` for names it cannot apply: names that would pollute a
  * prototype (leaving `store` untouched) and appends to an array that already
- * has the maximum length.
+ * has the maximum length. `value` is a string, as with multer, or what
+ * `@fastify/multipart` parsed out of a field sent as `application/json`.
  */
 export function appendField(
   store: object,
@@ -149,7 +160,7 @@ export function appendField(
   }
   try {
     steps.reduce(
-      (ctx, step) => setValue(ctx, step, ctx[step.key], value),
+      (ctx, step) => setValue(ctx, step, ownValue(ctx, step.key), value),
       store as any,
     );
   } catch (err) {
