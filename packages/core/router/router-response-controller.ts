@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { SSE_ABORT_CONTROLLER } from '@nestjs/common/decorators/http/sse-signal.decorator';
 import { isObject, isString } from '@nestjs/common/utils/shared.utils';
-import { IncomingMessage } from 'http';
+import { IncomingMessage, STATUS_CODES } from 'http';
 import {
   EMPTY,
   lastValueFrom,
@@ -519,9 +519,15 @@ export class RouterResponseController {
                 // BaseExceptionFilter's rules apply here: the client is only
                 // sent the message of an HTTP error, unless it must not be
                 // exposed, and any error but an IntrinsicException is logged.
+                // An HttpException that wraps an Error, as in
+                // `new UnauthorizedException(err)`, has the message of that
+                // Error, which must not reach the client either: the event
+                // carries the standard message of the status instead.
                 const data =
                   err instanceof HttpException
-                    ? err.message
+                    ? err.getResponse() instanceof Error
+                      ? (STATUS_CODES[err.getStatus()] ?? 'Error')
+                      : err.message
                     : this.exceptionFilter.isHttpError(err)
                       ? this.exceptionFilter.getHttpErrorMessage(err)
                       : MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
