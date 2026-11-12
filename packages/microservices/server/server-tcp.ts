@@ -70,9 +70,13 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
 
   constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
-    this.port = this.getOptionsProp(options, 'port', TCP_DEFAULT_PORT);
-    this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
-    this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
+    // Present but empty, e.g. "host: process.env.HOST" with the variable
+    // unset, means the default as well. Listening with no host would accept
+    // connections on every interface rather than on localhost.
+    this.port = this.getOptionsProp(options, 'port') ?? TCP_DEFAULT_PORT;
+    this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+    this.socketClass =
+      this.getOptionsProp(options, 'socketClass') ?? JsonSocket;
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
     this.maxBufferSize = this.getOptionsProp(options, 'maxBufferSize');
     this.incompleteMessageTimeout = this.getOptionsProp(

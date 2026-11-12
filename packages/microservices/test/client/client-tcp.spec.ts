@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { TLSSocket } from 'tls';
 import { ClientTCP } from '../../client/client-tcp';
 import { TcpEventsMap } from '../../events/tcp.events';
+import { JsonSocket } from '../../helpers/json-socket';
 import { TcpSocket } from '../../helpers/tcp-socket';
 
 describe('ClientTCP', () => {
@@ -11,6 +12,26 @@ describe('ClientTCP', () => {
   let untypedClient: any;
   let socket: any;
   let createSocketStub: sinon.SinonStub;
+
+  describe('when "host", "port" or "socketClass" is empty', () => {
+    [undefined, null, ''].forEach(host => {
+      it(`should connect to localhost when "host" is ${JSON.stringify(host)}`, () => {
+        const client = new ClientTCP({ host: host as string }) as any;
+        expect(client.host).to.equal('localhost');
+      });
+    });
+    [undefined, null].forEach(value => {
+      it(`should use the default port and JsonSocket for ${JSON.stringify(value)}`, () => {
+        const client = new ClientTCP({
+          port: value as unknown as number,
+          socketClass: value as any,
+        }) as any;
+
+        expect(client.port).to.equal(3000);
+        expect(client.socketClass).to.equal(JsonSocket);
+      });
+    });
+  });
 
   beforeEach(() => {
     client = new ClientTCP({});

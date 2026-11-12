@@ -114,6 +114,11 @@ export interface GrpcOptions {
 export interface TcpOptions {
   transport?: Transport.TCP;
   options?: {
+    /**
+     * The host to listen on (default: 'localhost'). An empty value
+     * (undefined, null or '') means 'localhost' as well. Set it to '0.0.0.0'
+     * or '::' to accept connections on every interface.
+     */
     host?: string;
     port?: number;
     retryAttempts?: number;

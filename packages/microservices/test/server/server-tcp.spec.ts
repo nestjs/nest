@@ -23,6 +23,7 @@ import { RpcContextCreator } from '../../context/rpc-context-creator';
 import { RpcProxy } from '../../context/rpc-proxy';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
+import { JsonSocket } from '../../helpers/json-socket';
 import { TcpSocket } from '../../helpers/tcp-socket';
 import { ServerTCP } from '../../server/server-tcp';
 import { objectToMap } from './utils/object-to-map';
@@ -156,6 +157,37 @@ describe('ServerTCP', () => {
     const serverMock = { listen: sinon.spy(), once: sinon.spy() };
     beforeEach(() => {
       untypedServer.server = serverMock;
+    });
+    afterEach(() => {
+      serverMock.listen.resetHistory();
+    });
+    [undefined, null, ''].forEach(host => {
+      it(`should listen on localhost when "host" is ${JSON.stringify(host)}`, () => {
+        server = new ServerTCP({ host: host as string });
+        untypedServer = server as any;
+        untypedServer.server = serverMock;
+
+        server.listen(() => {});
+
+        expect(
+          serverMock.listen.calledWith(3000, 'localhost', sinon.match.func),
+        ).to.be.true;
+      });
+    });
+    it('should listen on the default port when "port" is undefined or null', () => {
+      for (const port of [undefined, null]) {
+        expect(
+          (new ServerTCP({ port: port as unknown as number }) as any).port,
+        ).to.equal(3000);
+      }
+      // 0 picks a random port
+      expect((new ServerTCP({ port: 0 }) as any).port).to.equal(0);
+    });
+    it('should use JsonSocket when "socketClass" is undefined', () => {
+      server = new ServerTCP({ socketClass: undefined });
+      expect(server['getSocketInstance'](new NetSocket())).to.be.instanceOf(
+        JsonSocket,
+      );
     });
     it('should call native listen method with expected arguments', () => {
       const callback = () => {};
