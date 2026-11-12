@@ -18,7 +18,13 @@ export class KafkaParser {
 
   constructor(config?: KafkaParserConfig) {
     this.keepBinary = (config && config.keepBinary) || false;
-    this.maxMessageSize = config?.maxMessageSize ?? DEFAULT_MAX_MESSAGE_SIZE;
+    // Not a number (e.g. NaN from "Number(process.env.UNSET)") gets the
+    // default as well: "messageSize > NaN" is never true
+    const maxMessageSize = config?.maxMessageSize;
+    this.maxMessageSize =
+      isNil(maxMessageSize) || isNaN(maxMessageSize)
+        ? DEFAULT_MAX_MESSAGE_SIZE
+        : maxMessageSize;
   }
 
   public parse<T = any>(data: any): T {

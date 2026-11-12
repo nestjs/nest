@@ -40,6 +40,63 @@ describe('JsonSocket maxBufferSize', () => {
     });
   });
 
+  describe('limits that are not a number', () => {
+    // e.g. "Number(process.env.MAX_BUFFER_SIZE)" with the variable unset
+    [NaN, '16mb' as unknown as number].forEach(maxBufferSize => {
+      it(`should use the default maxBufferSize for ${maxBufferSize}`, () => {
+        const socket = new JsonSocket(new Socket(), { maxBufferSize });
+        expect(socket['maxBufferSize']).to.equal(DEFAULT_MAX_BUFFER_SIZE);
+      });
+    });
+
+    it('should reject data beyond the default maxBufferSize', () => {
+      const netSocket = new Socket();
+      const errors: unknown[] = [];
+      netSocket.on('error', error => errors.push(error));
+      const socket = new JsonSocket(netSocket, { maxBufferSize: NaN });
+
+      // Not a content length, so it is only bounded by "maxBufferSize"
+      socket['onData'](Buffer.from('1'.repeat(DEFAULT_MAX_BUFFER_SIZE + 1)));
+
+      expect(errors).to.deep.equal([
+        new MaxPacketLengthExceededException(DEFAULT_MAX_BUFFER_SIZE + 1)
+          .message,
+      ]);
+    });
+
+    it('should use the defaults of the other limits', () => {
+      const defaults = new JsonSocket(new Socket());
+      const socket = new JsonSocket(new Socket(), {
+        incompleteMessageTimeout: NaN,
+        maxSendBufferSize: NaN,
+        drainTimeout: NaN,
+      });
+
+      for (const option of [
+        'incompleteMessageTimeout',
+        'maxSendBufferSize',
+        'drainTimeout',
+      ]) {
+        expect(socket[option]).to.be.greaterThan(0);
+        expect(socket[option]).to.equal(defaults[option]);
+      }
+    });
+
+    it('should keep 0 and Infinity', () => {
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: Infinity,
+        incompleteMessageTimeout: 0,
+        maxSendBufferSize: 0,
+        drainTimeout: 0,
+      });
+
+      expect(socket['maxBufferSize']).to.equal(Infinity);
+      expect(socket['incompleteMessageTimeout']).to.equal(0);
+      expect(socket['maxSendBufferSize']).to.equal(0);
+      expect(socket['drainTimeout']).to.equal(0);
+    });
+  });
+
   describe('custom maxBufferSize', () => {
     it('should use custom maxBufferSize when provided', () => {
       const customSize = 1000;

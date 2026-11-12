@@ -192,6 +192,18 @@ describe('KafkaParser', () => {
       );
     });
 
+    [NaN, Number(undefined), '16mb' as unknown as number].forEach(
+      maxMessageSize => {
+        it(`should limit the message size to 16 MiB when "maxMessageSize" is ${maxMessageSize}`, () => {
+          kafkaParser = new KafkaParser({ maxMessageSize });
+          const value = { length: 16 * 1024 * 1024 + 1 };
+          expect(() => kafkaParser.parse({ value })).to.throw(
+            MaxPacketLengthExceededException,
+          );
+        });
+      },
+    );
+
     it('should decode the headers the transport routes replies with as text', () => {
       expect(
         kafkaParser.parse({
