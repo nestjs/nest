@@ -868,17 +868,43 @@ describe('ValidationPipe', () => {
             {},
             { transform: true },
             { forbidUnknownValues: true },
+            { whitelist: true },
+            { whitelist: true, transform: true },
             { whitelist: true, forbidNonWhitelisted: true },
           ]) {
             target = new ValidationPipe(options);
-            await expect(
-              target.transform(Buffer.alloc(0), optionalMetadata),
-            ).rejects.toMatchObject(rejection);
+            for (const binary of [Buffer.alloc(0), Buffer.from('{}')]) {
+              await expect(
+                target.transform(binary, optionalMetadata),
+              ).rejects.toMatchObject(rejection);
+            }
           }
-          target = new ValidationPipe();
+        });
+        it('should validate the rules of the class for a binary value', async () => {
+          target = new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+          });
           await expect(
-            target.transform(Buffer.from('{}'), optionalMetadata),
-          ).rejects.toMatchObject(rejection);
+            target.transform(Buffer.from('abc'), metadata),
+          ).rejects.toMatchObject({
+            response: {
+              message: ['prop1 must be a string', 'prop2 must be a string'],
+            },
+          });
+        });
+        it('should return a binary value as it is for a class without rules', async () => {
+          const binary = Buffer.from('abc');
+          for (const options of [{ whitelist: true }, { transform: true }]) {
+            target = new ValidationPipe(options);
+            expect(
+              await target.transform(binary, {
+                ...optionalMetadata,
+                metatype: TestModelNoValidation,
+              }),
+            ).toEqual(binary);
+          }
+          expect(binary.toString()).toBe('abc');
         });
         it('should throw an error for an empty array when non-whitelisted properties are forbidden', async () => {
           target = new ValidationPipe({

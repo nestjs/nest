@@ -191,6 +191,10 @@ export class ValidationPipe implements PipeTransform {
 
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
+    // class-transformer copies a binary value as it is, and class-validator
+    // would then look for the properties of the class among its bytes (and,
+    // with "whitelist", fail to delete them), so it gets a stand-in too.
+    const isStandIn = isPrimitive || this.isBinary(value);
     this.stripProtoKeys(value);
     let entity = classTransformer.plainToInstance(
       metatype,
@@ -201,12 +205,12 @@ export class ValidationPipe implements PipeTransform {
     const originalEntity = entity;
     const isCtorNotEqual = entity.constructor !== metatype;
 
-    if (isCtorNotEqual && !isPrimitive) {
+    if (isCtorNotEqual && !isStandIn) {
       entity.constructor = metatype;
     } else if (isCtorNotEqual) {
-      // when "entity" is a primitive value, we have to temporarily
-      // replace the entity to perform the validation against the original
-      // metatype defined inside the handler
+      // when "entity" is a primitive or a binary value, we have to
+      // temporarily replace the entity to perform the validation against the
+      // original metatype defined inside the handler
       entity = { constructor: metatype };
     }
 
@@ -228,7 +232,7 @@ export class ValidationPipe implements PipeTransform {
         ...this.validatorOptions.validationError,
       },
     });
-    if (isCtorNotEqual && !isPrimitive) {
+    if (isCtorNotEqual && !isStandIn) {
       // Left on the value, the stand-in would go wherever the value is
       // copied (e.g. `{ ...dto }`), and class-transformer would then take
       // the copy for an instance of the class.
@@ -242,13 +246,12 @@ export class ValidationPipe implements PipeTransform {
     }
     if (
       isCtorNotEqual &&
-      (isPrimitive || Array.isArray(value) || this.isBinary(value)) &&
+      (isStandIn || Array.isArray(value)) &&
       (await this.hasValidationRules(metatype))
     ) {
-      // An array, a primitive or a binary value (which class-transformer
-      // copies as it is) is never an instance of the class: the validation
-      // above has only seen a stand-in without any property set, which
-      // passes when none of them is required.
+      // An array, a primitive or a binary value is never an instance of the
+      // class: the validation above has only seen a stand-in without any
+      // property set, which passes when none of them is required.
       throw await this.exceptionFactory([
         {
           property: metadata.data || metadata.type,
@@ -264,8 +267,8 @@ export class ValidationPipe implements PipeTransform {
       // @see [https://github.com/nestjs/nest/issues/14430](https://github.com/nestjs/nest/issues/14430)
       return originalValue;
     }
-    if (isPrimitive) {
-      // if the value is a primitive value and the validation process has been successfully completed
+    if (isStandIn) {
+      // if the value is a primitive (or binary) value and the validation process has been successfully completed
       // we have to revert the original value passed through the pipe
       entity = originalEntity;
     }
