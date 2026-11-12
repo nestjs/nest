@@ -693,7 +693,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       // SyntaxError is thrown by Express body-parser when given invalid JSON (#422, #430)
       // URIError is thrown by Express when given a path parameter with an invalid percentage
       // encoding, e.g. '%FF' (#8915)
-      case error instanceof SyntaxError || error instanceof URIError:
+      // Both set a 400 status. One without it comes from server code (e.g. a view, or a
+      // middleware passed to "app.use()"), and its message may hold internal details (a
+      // template engine adds the path and lines of the view). It stays unmapped, so the
+      // built-in filter answers it with a generic 500 and logs it.
+      case (error instanceof SyntaxError || error instanceof URIError) &&
+        (error as { status?: unknown }).status === HttpStatus.BAD_REQUEST:
         return new BadRequestException(error.message, { cause: error });
       // http-errors (used by body-parser, Express itself, etc.) carry a numeric statusCode
       // and an expose flag. Without this case, errors like PayloadTooLargeError reach custom

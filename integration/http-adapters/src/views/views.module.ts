@@ -1,4 +1,4 @@
-import { Controller, Get, Module, Render } from '@nestjs/common';
+import { Controller, Get, Module, Param, Query, Render } from '@nestjs/common';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
@@ -18,7 +18,8 @@ export const partialsEngine = {
   ) {
     const render = async () => {
       const views: string = [].concat(options.settings.views)[0];
-      let html = await readFile(file, 'utf8');
+      const source = await readFile(file, 'utf8');
+      let html = source;
       for (const [, name] of html.matchAll(/\{\{> (\w+)\}\}/g)) {
         const partial = await readFile(
           join(views, 'partials', `${name}.tpl`),
@@ -26,9 +27,20 @@ export const partialsEngine = {
         );
         html = html.replace(`{{> ${name}}}`, partial);
       }
-      return html.replace(/\{\{(\w+)\}\}/g, (_, key) =>
-        String(options[key] ?? ''),
-      );
+      try {
+        return html
+          .replace(/\{\{!.*?\}\}\n?/g, '')
+          .replace(/\{\{decode (\w+)\}\}/g, (_, key) =>
+            decodeURIComponent(String(options[key] ?? '')),
+          )
+          .replace(/\{\{(\w+)\}\}/g, (_, key) => String(options[key] ?? ''));
+      } catch (err) {
+        // Like ejs, which adds the path and lines of the view to the
+        // message of what a view throws
+        (err as Error).message =
+          `${file}\n${source}\n${(err as Error).message}`;
+        throw err;
+      }
     };
     render().then(html => callback(null, html), callback);
   },
@@ -52,6 +64,18 @@ export class ViewsController {
   @Render('section')
   section() {
     return { message: 'Hello' };
+  }
+
+  @Get('decode')
+  @Render('decode')
+  decode(@Query('next') next: string) {
+    return { next };
+  }
+
+  @Get('pages/:name')
+  @Render('index')
+  named(@Param('name') name: string) {
+    return { message: name, year: 2026 };
   }
 }
 

@@ -622,17 +622,44 @@ describe('ExpressAdapter', () => {
 
   describe('mapException', () => {
     it('should map URIError with status code to BadRequestException', () => {
-      const error = new URIError();
+      // What the router throws for a malformed parameter
+      const error = Object.assign(new URIError("Failed to decode param '%'"), {
+        status: 400,
+      });
+      const result = expressAdapter.mapException(error) as BadRequestException;
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect(result.getResponse()).toEqual(
+        expect.objectContaining({ message: "Failed to decode param '%'" }),
+      );
+      expect(result.cause).toBe(error);
+    });
+
+    it('should map SyntaxError with status code to BadRequestException', () => {
+      // What body-parser throws for malformed JSON
+      const error = createHttpError(400, new SyntaxError('Unexpected token'));
       const result = expressAdapter.mapException(error) as BadRequestException;
       expect(result).toBeInstanceOf(BadRequestException);
       expect(result.cause).toBe(error);
     });
 
-    it('should map SyntaxError with status code to BadRequestException', () => {
-      const error = new SyntaxError();
-      const result = expressAdapter.mapException(error) as BadRequestException;
-      expect(result).toBeInstanceOf(BadRequestException);
-      expect(result.cause).toBe(error);
+    it.each([
+      // e.g. a view that decodes a query param, as a template engine reports it
+      [
+        'URIError',
+        new URIError(
+          'views/login.ejs:3\n 1| <%# internal note %>\n\nURI malformed',
+        ),
+      ],
+      ['SyntaxError', new SyntaxError('views/login.ejs:5\n\nUnexpected token')],
+    ])('should not map a %s without a status code', (_, error) => {
+      expect(expressAdapter.mapException(error)).toBe(error);
+    });
+
+    it('should not map a SyntaxError of another status code', () => {
+      const error = Object.assign(new SyntaxError('internal detail'), {
+        status: 500,
+      });
+      expect(expressAdapter.mapException(error)).toBe(error);
     });
 
     it('should return error if it is not handler Error', () => {

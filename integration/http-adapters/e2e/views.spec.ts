@@ -62,6 +62,34 @@ describe.each(adapters('express', 'node'))('@Render() (%s)', name => {
     expect(res.status).toBe(200);
     expect(res.text).toBe('<h1>Hello section</h1>');
   });
+
+  it('should render a view that decodes the data it is given', async () => {
+    const res = await request(app.getHttpServer()).get(
+      '/decode?next=%252Fhome',
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('<a href="/home">Continue</a>\n');
+  });
+
+  it('should answer a view that fails with a URIError as a server error', async () => {
+    const res = await request(app.getHttpServer()).get('/decode?next=%25');
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({
+      statusCode: 500,
+      message: 'Internal server error',
+    });
+  });
+
+  it('should still answer a path param it cannot decode with 400', async () => {
+    const res = await request(app.getHttpServer()).get('/pages/%E0%A4%A');
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(
+      expect.objectContaining({ statusCode: 400, error: 'Bad Request' }),
+    );
+  });
 });
 
 // app.setLocal() sets the application-wide locals (Express' app.locals),
