@@ -1819,6 +1819,58 @@ describe('Injector', () => {
         { id: 2 },
       );
     });
+
+    describe('when a dependency is optional', () => {
+      const error = new Error('Test error');
+      const inject = [{ token: 'Dependency', optional: true }];
+
+      let moduleRef: Module;
+      let wrapper: InstanceWrapper;
+      let callback: MockInstance;
+
+      beforeEach(async () => {
+        const container = new NestContainer();
+        ({ moduleRef } = (await container.addModule(class TestModule {}, []))!);
+        wrapper = new InstanceWrapper({ name: 'Host', inject });
+        callback = vi.fn();
+      });
+
+      // e.g., a request-scoped provider whose constructor throws for the request
+      const addFailingDependency = () =>
+        moduleRef.addProvider({
+          provide: 'Dependency',
+          scope: Scope.REQUEST,
+          useFactory: () => {
+            throw error;
+          },
+        });
+
+      it('should pass "undefined" when it is missing', async () => {
+        await injector.resolveConstructorParams(
+          wrapper,
+          moduleRef,
+          inject,
+          callback as any,
+          { contextId: { id: 2 } },
+        );
+        expect(callback).toHaveBeenCalledWith([undefined], 0);
+      });
+
+      it('should rethrow when it is found but fails to load for a context', async () => {
+        addFailingDependency();
+
+        await expect(
+          injector.resolveConstructorParams(
+            wrapper,
+            moduleRef,
+            inject,
+            callback as any,
+            { contextId: { id: 2 } },
+          ),
+        ).rejects.toBe(error);
+        expect(callback).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('resolveProperties', () => {
@@ -1862,6 +1914,53 @@ describe('Injector', () => {
 
       expect(loadPropertiesMetadataSpy).not.toHaveBeenCalled();
       expect(resolveSingleParamSpy).toHaveBeenCalledTimes(2);
+    });
+
+    describe('when a property is optional', () => {
+      const error = new Error('Test error');
+
+      class Host {
+        @Optional() @Inject('Dependency') key: unknown;
+      }
+
+      let moduleRef: Module;
+      let wrapper: InstanceWrapper;
+
+      beforeEach(async () => {
+        const container = new NestContainer();
+        ({ moduleRef } = (await container.addModule(class TestModule {}, []))!);
+        wrapper = new InstanceWrapper({ name: 'Host', metatype: Host });
+      });
+
+      // e.g., a request-scoped provider whose constructor throws for the request
+      const addFailingDependency = () =>
+        moduleRef.addProvider({
+          provide: 'Dependency',
+          scope: Scope.REQUEST,
+          useFactory: () => {
+            throw error;
+          },
+        });
+
+      it('should leave it "undefined" when it is missing', async () => {
+        const [property] = await injector.resolveProperties(
+          wrapper,
+          moduleRef,
+          undefined,
+          { contextId: { id: 2 } },
+        );
+        expect(property.instance).toBeUndefined();
+      });
+
+      it('should rethrow when it is found but fails to load for a context', async () => {
+        addFailingDependency();
+
+        await expect(
+          injector.resolveProperties(wrapper, moduleRef, undefined, {
+            contextId: { id: 2 },
+          }),
+        ).rejects.toBe(error);
+      });
     });
   });
 

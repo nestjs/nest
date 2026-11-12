@@ -445,6 +445,7 @@ export class Injector {
     let isResolved = true;
     let depth = 0;
     const resolveParam = async (param: unknown, index: number) => {
+      let isFound = false;
       try {
         if (this.isInquirer(param, parentInquirer)) {
           /*
@@ -473,6 +474,7 @@ export class Injector {
           nestedResolutionContext,
           index,
         );
+        isFound = true;
 
         /*
          * Ensure that all instance wrappers are resolved at this point before we continue.
@@ -516,7 +518,10 @@ export class Injector {
         paramBarrier.signal();
 
         const isOptional = optionalDependenciesIds.includes(index);
-        if (!isOptional) {
+        if (
+          !isOptional ||
+          this.isLoadOfFoundDependency(isFound, resolutionContext)
+        ) {
           throw err;
         }
         return undefined;
@@ -1004,6 +1009,7 @@ export class Injector {
     const propertyBarrier = new Barrier(properties.length);
     const instances = await Promise.all(
       properties.map(async (item: PropertyDependency) => {
+        let isFound = false;
         try {
           const dependencyContext = {
             key: item.key,
@@ -1030,6 +1036,7 @@ export class Injector {
             nestedResolutionContext,
             item.key,
           );
+          isFound = true;
 
           /*
            * Ensure that all instance wrappers are resolved at this point before we continue.
@@ -1068,7 +1075,10 @@ export class Injector {
            */
           propertyBarrier.signal();
 
-          if (!item.isOptional) {
+          if (
+            !item.isOptional ||
+            this.isLoadOfFoundDependency(isFound, resolutionContext)
+          ) {
             throw err;
           }
           return undefined;
@@ -1404,6 +1414,22 @@ export class Injector {
     }
     wrapper.removeInstanceByContextId(contextId, inquirerId);
     return wrapper.getInstanceByContextId(contextId, inquirerId);
+  }
+
+  /**
+   * Whether an error of an optional dependency comes from loading one that
+   * exists (e.g., its constructor threw), rather than from looking it up.
+   * `@Optional()` only covers a missing provider, so such an error fails the
+   * consumer, as it does when the dependencies come from recorded metadata
+   * (see `loadCtorMetadata`). This is limited to the instances built for a
+   * context, so that an application that starts with a failing optional
+   * transient provider still starts.
+   */
+  private isLoadOfFoundDependency(
+    isFound: boolean,
+    resolutionContext: ResolutionContext,
+  ) {
+    return isFound && resolutionContext.contextId !== STATIC_CONTEXT;
   }
 
   /**
