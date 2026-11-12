@@ -517,7 +517,9 @@ describe('WsAdapter', () => {
         const [reply] = await once(client, 'data');
         const socket = await upgraded;
 
-        expect(reply.toString()).to.match(/^HTTP\/1\.1 400\r\n/);
+        expect(reply.toString()).to.equal(
+          'HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n',
+        );
         // what a client resetting the connection would raise
         expect(() =>
           socket.emit('error', new Error('read ECONNRESET')),
@@ -677,6 +679,172 @@ describe('WsAdapter', () => {
         expect(socket.destroy.called).to.be.false;
 
         await adapter.dispose();
+      });
+    });
+  });
+
+  describe('upgrade hooks', () => {
+    const getFreePort = async () => {
+      const probe = createServer();
+      await new Promise<void>(resolve => probe.listen(0, '127.0.0.1', resolve));
+      const { port } = probe.address() as AddressInfo;
+      await new Promise(resolve => probe.close(resolve));
+      return port;
+    };
+    // How the handshake of a client ended: 'open', or the status it got, or
+    // 'closed' when the server cut the connection
+    const connect = (url: string, protocols?: string[]) =>
+      new Promise<'open' | 'closed' | number>(resolve => {
+        const client = new WebSocket(url, protocols);
+        client.once('open', () => {
+          resolve('open');
+          client.terminate();
+        });
+        client.once('unexpected-response', (_, response) => {
+          resolve(response.statusCode!);
+          response.resume();
+          client.terminate();
+        });
+        client.once('error', () => resolve('closed'));
+      });
+    let adapter: WsAdapter;
+    let logError: sinon.SinonStub;
+    let cleanUp: Array<() => Promise<unknown>>;
+
+    beforeEach(() => {
+      adapter = new WsAdapter();
+      logError = sinon.stub(adapter['logger'], 'error');
+      cleanUp = [];
+    });
+    afterEach(async () => {
+      for (const step of cleanUp.reverse()) {
+        await step();
+      }
+      await adapter.dispose();
+    });
+
+    // A port of its own, where ws creates the HTTP server and listens for
+    // upgrades itself, or the HTTP server of the application
+    const layouts = {
+      'on a port of its own': async (options: Record<string, any>) => {
+        const server = adapter.create(await getFreePort(), options);
+        cleanUp.push(() => adapter.close(server));
+        await once(server, 'listening');
+        return { server, url: `ws://127.0.0.1:${server.address().port}` };
+      },
+      'on the HTTP server': async (options: Record<string, any>) => {
+        const httpServer = createServer();
+        adapter = new WsAdapter(httpServer);
+        logError = sinon.stub(adapter['logger'], 'error');
+        const server = adapter.create(0, { ...options, path: '/live' });
+        await new Promise<void>(resolve =>
+          httpServer.listen(0, '127.0.0.1', resolve),
+        );
+        cleanUp.push(
+          () => adapter.close(server),
+          () => new Promise(resolve => httpServer.close(resolve)),
+        );
+        const { port } = httpServer.address() as AddressInfo;
+        return { server, url: `ws://127.0.0.1:${port}/live` };
+      },
+    };
+
+    for (const [layout, listen] of Object.entries(layouts)) {
+      describe(layout, () => {
+        it('should refuse a client with 500 when "verifyClient" throws', async () => {
+          const error = new Error('token of another length');
+          const { url } = await listen({
+            verifyClient: () => {
+              throw error;
+            },
+          });
+
+          expect(await connect(url)).to.equal(500);
+          expect(logError.calledWith(error)).to.be.true;
+        });
+
+        it('should refuse a client with 500 when the promise of "verifyClient" rejects', async () => {
+          const error = new Error('token store unreachable');
+          const { url } = await listen({
+            verifyClient: (_: unknown, _callback: () => void) =>
+              Promise.reject(error),
+          });
+
+          expect(await connect(url)).to.equal(500);
+          expect(logError.calledWith(error)).to.be.true;
+        });
+
+        it('should wait for the promise of a "verifyClient" without a callback', async () => {
+          const verdicts = [false, true];
+          const { url } = await listen({
+            verifyClient: async () => verdicts.shift(),
+          });
+
+          expect(await connect(url)).to.equal(401);
+          expect(await connect(url)).to.equal('open');
+        });
+
+        it('should still accept a client "verifyClient" calls back for', async () => {
+          const { url } = await listen({
+            verifyClient: (_: unknown, callback: (verified: boolean) => void) =>
+              setImmediate(() => callback(true)),
+          });
+
+          expect(await connect(url)).to.equal('open');
+        });
+
+        it('should cut off a client, and not hand it to the gateway, when "handleProtocols" throws', async () => {
+          const error = new Error('unknown protocol');
+          const { server, url } = await listen({
+            handleProtocols: () => {
+              throw error;
+            },
+          });
+          const onConnection = sinon.spy();
+          adapter.bindClientConnect(server, onConnection);
+
+          expect(await connect(url, ['chat'])).to.equal('closed');
+          expect(logError.calledWith(error)).to.be.true;
+          expect(onConnection.called).to.be.false;
+        });
+
+        it('should still hand a client to the gateway when "handleProtocols" picks a protocol', async () => {
+          const { server, url } = await listen({
+            handleProtocols: (protocols: Set<string>) =>
+              protocols.values().next().value,
+          });
+          const onConnection = sinon.spy();
+          adapter.bindClientConnect(server, onConnection);
+
+          expect(await connect(url, ['chat'])).to.equal('open');
+          expect(onConnection.calledOnce).to.be.true;
+        });
+      });
+    }
+
+    describe('on the HTTP server', () => {
+      it('should answer 500 without telling the client what failed', async () => {
+        const { server, url } = await layouts['on the HTTP server']({});
+        const error = new Error('internal detail');
+        server.on('headers', () => {
+          throw error;
+        });
+
+        expect(await connect(url)).to.equal(500);
+        expect(logError.calledWith(error)).to.be.true;
+      });
+
+      it('should close a client whose connection failed to be handled', async () => {
+        const { server, url } = await layouts['on the HTTP server']({});
+        const error = new Error('connection hook blew up');
+        server.on('connection', () => {
+          throw error;
+        });
+
+        const client = new WebSocket(url);
+        const [code] = await once(client, 'close');
+        expect(code).to.equal(1006);
+        expect(logError.calledWith(error)).to.be.true;
       });
     });
   });
