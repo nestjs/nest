@@ -292,9 +292,9 @@ export function isMiddlewareRouteExcluded(
   if (excludedRoutes.length <= 0) {
     return false;
   }
-  const { ignoreTrailingSlash, removesTrailingSlash } =
+  const { ignoreTrailingSlash, removesTrailingSlash, useSemicolonDelimiter } =
     typeof matchingOptions === 'boolean'
-      ? { ignoreTrailingSlash: matchingOptions, removesTrailingSlash: false }
+      ? { ignoreTrailingSlash: matchingOptions }
       : matchingOptions;
   const reqMethod = httpAdapter.getRequestMethod!(req);
   const originalUrl = httpAdapter.getRequestUrl!(req);
@@ -306,7 +306,12 @@ export function isMiddlewareRouteExcluded(
   if (!originalUrl?.startsWith('/') || originalUrl.includes('#')) {
     return false;
   }
-  const queryParamsIndex = originalUrl.indexOf('?');
+  // A router that ends the path at ";" as it does at "?" serves
+  // "/users/42;/avatar" with "users/:id", so that request must not match an
+  // exclusion of "users/:id/avatar"
+  const queryParamsIndex = useSemicolonDelimiter
+    ? originalUrl.search(/[?;]/)
+    : originalUrl.indexOf('?');
   const pathname =
     queryParamsIndex >= 0
       ? originalUrl.slice(0, queryParamsIndex)

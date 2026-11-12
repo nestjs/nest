@@ -244,6 +244,48 @@ describe('Exclude middleware (fastify) - request targets', () => {
   });
 });
 
+for (const [name, options] of [
+  // Not in the type of "routerOptions", but read by find-my-way
+  [
+    '"routerOptions"',
+    { routerOptions: { useSemicolonDelimiter: true } as any },
+  ],
+  ['the top-level option', { useSemicolonDelimiter: true }],
+] as const) {
+  describe(`Exclude middleware (fastify) - path ending at a semicolon (${name})`, () => {
+    let app: INestApplication;
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [RequestTargetModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(options),
+      );
+
+      await app.listen(0, '127.0.0.1');
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it(`should not exclude "/profiles/1;/avatar", which the router serves with "/profiles/:id"`, () => {
+      return request(app.getHttpServer())
+        .get('/profiles/1;/avatar')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+
+    it(`should exclude "/profiles/1/avatar;size=1", which the router serves with "/profiles/:id/avatar"`, () => {
+      return request(app.getHttpServer())
+        .get('/profiles/1/avatar;size=1')
+        .expect(200, RETURN_VALUE);
+    });
+  });
+}
+
 describe('Exclude middleware (fastify) - route matching', () => {
   let app: INestApplication;
 

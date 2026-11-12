@@ -41,6 +41,7 @@ describe('FastifyAdapter', () => {
           ignoreTrailingSlash: false,
           removesTrailingSlash: true,
           maxParamLength: 100,
+          useSemicolonDelimiter: false,
         },
       },
       {
@@ -54,6 +55,7 @@ describe('FastifyAdapter', () => {
           ignoreTrailingSlash: true,
           removesTrailingSlash: true,
           maxParamLength: 100,
+          useSemicolonDelimiter: false,
         },
       },
       {
@@ -68,6 +70,7 @@ describe('FastifyAdapter', () => {
           ignoreTrailingSlash: true,
           removesTrailingSlash: true,
           maxParamLength: 100,
+          useSemicolonDelimiter: false,
         },
       },
       {
@@ -78,6 +81,7 @@ describe('FastifyAdapter', () => {
           ignoreTrailingSlash: false,
           removesTrailingSlash: true,
           maxParamLength: 100,
+          useSemicolonDelimiter: false,
         },
       },
       {
@@ -91,6 +95,7 @@ describe('FastifyAdapter', () => {
           ignoreTrailingSlash: true,
           removesTrailingSlash: true,
           maxParamLength: 100,
+          useSemicolonDelimiter: false,
         },
       },
       {
@@ -105,6 +110,7 @@ describe('FastifyAdapter', () => {
           ignoreTrailingSlash: false,
           removesTrailingSlash: true,
           maxParamLength: 200,
+          useSemicolonDelimiter: false,
         },
       },
       {
@@ -116,6 +122,34 @@ describe('FastifyAdapter', () => {
           ignoreTrailingSlash: false,
           removesTrailingSlash: true,
           maxParamLength: 50,
+          useSemicolonDelimiter: false,
+        },
+      },
+      {
+        source: 'the "useSemicolonDelimiter" router option',
+        createAdapter: () =>
+          new FastifyAdapter({
+            // Not in the type of "routerOptions", but read by find-my-way
+            routerOptions: { useSemicolonDelimiter: true } as any,
+          }),
+        expected: {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          removesTrailingSlash: true,
+          maxParamLength: 100,
+          useSemicolonDelimiter: true,
+        },
+      },
+      {
+        source: 'the top-level "useSemicolonDelimiter" of an instance',
+        createAdapter: () =>
+          new FastifyAdapter(fastify({ useSemicolonDelimiter: true })),
+        expected: {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          removesTrailingSlash: true,
+          maxParamLength: 100,
+          useSemicolonDelimiter: true,
         },
       },
     ]) {

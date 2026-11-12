@@ -320,6 +320,33 @@ describe('middleware utils', () => {
           .true;
       });
     });
+    describe('when the router ends the path at a semicolon', () => {
+      const isExcluded = (url: string, useSemicolonDelimiter: boolean) => {
+        (adapter.getRequestUrl as sinon.SinonStub).callsFake(() => url);
+        const options = {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          useSemicolonDelimiter,
+        };
+        return isMiddlewareRouteExcluded(
+          {},
+          mapToExcludeRoute(['cats/:id/avatar'], options),
+          adapter,
+          options,
+        );
+      };
+
+      it('should match the path up to the semicolon', () => {
+        expect(isExcluded('/cats/1;/avatar', true)).to.be.false;
+        expect(isExcluded('/cats/1/avatar;size=1', true)).to.be.true;
+        expect(isExcluded('/cats/1/avatar?a=1;b', true)).to.be.true;
+      });
+
+      it('should take the semicolon as a path character otherwise', () => {
+        expect(isExcluded('/cats/1;/avatar', false)).to.be.true;
+        expect(isExcluded('/cats/1/avatar;size=1', false)).to.be.false;
+      });
+    });
     describe('when the router limits the length of a parameter', () => {
       const isExcluded = (exclusion: string, url: string) => {
         (adapter.getRequestUrl as sinon.SinonStub).callsFake(() => url);

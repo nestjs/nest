@@ -1167,6 +1167,7 @@ export class FastifyAdapter<
     ignoreTrailingSlash: boolean;
     removesTrailingSlash: boolean;
     maxParamLength: number;
+    useSemicolonDelimiter: boolean;
   } {
     const initialConfig = this.instance.initialConfig as FastifyServerOptions;
     // Absent when a Fastify instance created without it is passed in
@@ -1183,6 +1184,11 @@ export class FastifyAdapter<
       // find-my-way trims the slash before it looks for a route
       removesTrailingSlash: true,
       maxParamLength: this.getMaxParamLength(initialConfig),
+      // Read as "sanitizeUrl()" reads it
+      useSemicolonDelimiter: !!(
+        routerOptions.useSemicolonDelimiter ||
+        initialConfig.useSemicolonDelimiter
+      ),
     };
   }
 

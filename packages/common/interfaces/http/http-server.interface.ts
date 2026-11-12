@@ -45,6 +45,11 @@ export interface RouteMatchingOptions {
    * Wildcards are not limited. Not set when parameters are not limited.
    */
   maxParamLength?: number;
+  /**
+   * Whether the path ends at a `;` as it does at the `?`, so that
+   * `/users;a=1` is served by the `/users` route. Defaults to `false`.
+   */
+  useSemicolonDelimiter?: boolean;
 }
 
 export interface HttpServer<
