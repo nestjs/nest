@@ -1265,6 +1265,141 @@ data: test
       });
     });
 
+    describe('when the socket is no longer read from', () => {
+      // Node.js does not notice that a client has left while it is not reading
+      // from its socket, so "close" never comes on its own
+      let clock: sinon.SinonFakeTimers;
+
+      const openStream = async (
+        socket: { paused: boolean },
+        {
+          result = NEVER,
+          httpVersionMajor = 1,
+        }: {
+          result?: Observable<unknown> | Promise<Observable<unknown>>;
+          httpVersionMajor?: number;
+        } = {},
+      ) => {
+        const chunks: string[] = [];
+        const response = new Writable({
+          write(chunk, _encoding, cb) {
+            chunks.push(chunk.toString());
+            cb();
+          },
+        });
+        const request = Object.assign(attachSocket(new PassThrough()), {
+          httpVersionMajor,
+        });
+        Object.assign(request.socket, { isPaused: () => socket.paused });
+        const lifecycle = routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        // The headers are committed on the next macrotask
+        await clock.tickAsync(0);
+        return { chunks, request, lifecycle };
+      };
+
+      const nextProbe = async () => {
+        await clock.tickAsync(5_000);
+        await new Promise(resolve => setImmediate(resolve));
+      };
+
+      beforeEach(() => {
+        clock = sinon.useFakeTimers({
+          toFake: [
+            'setTimeout',
+            'clearTimeout',
+            'setInterval',
+            'clearInterval',
+          ],
+        });
+      });
+
+      afterEach(() => {
+        clock.restore();
+      });
+
+      it('should write a comment from time to time, to find out whether the client is still there', async () => {
+        const socket = { paused: true };
+        const { chunks, request, lifecycle } = await openStream(socket);
+
+        await nextProbe();
+        expect(chunks).to.deep.equal(['\n', ': \n\n']);
+        await nextProbe();
+        expect(chunks).to.deep.equal(['\n', ': \n\n', ': \n\n']);
+
+        socket.paused = false;
+        await nextProbe();
+        expect(chunks).to.have.lengthOf(3);
+
+        request.socket.emit('close');
+        await lifecycle;
+        request.destroy();
+      });
+
+      it('should write nothing to a socket that is read from', async () => {
+        const { chunks, request, lifecycle } = await openStream({
+          paused: false,
+        });
+
+        await nextProbe();
+        expect(chunks).to.deep.equal(['\n']);
+
+        request.socket.emit('close');
+        await lifecycle;
+        request.destroy();
+      });
+
+      it('should write nothing before the headers are sent, while a filter can still answer', async () => {
+        let resolveResult!: (result: Observable<unknown>) => void;
+        const { chunks, request, lifecycle } = await openStream(
+          { paused: true },
+          { result: new Promise(resolve => (resolveResult = resolve)) },
+        );
+
+        await nextProbe();
+        expect(chunks).to.deep.equal([]);
+
+        resolveResult(NEVER);
+        await clock.tickAsync(0);
+        await new Promise(resolve => setImmediate(resolve));
+        expect(chunks).to.deep.equal(['\n']);
+
+        request.socket.emit('close');
+        await lifecycle;
+        request.destroy();
+      });
+
+      it('should write nothing under HTTP/2, where the socket is that of the whole session', async () => {
+        const { chunks, request, lifecycle } = await openStream(
+          { paused: true },
+          { httpVersionMajor: 2 },
+        );
+
+        await nextProbe();
+        expect(chunks).to.deep.equal(['\n']);
+
+        request.socket.emit('close');
+        await lifecycle;
+        request.destroy();
+      });
+
+      it('should stop once the stream is over', async () => {
+        const { chunks, request, lifecycle } = await openStream({
+          paused: true,
+        });
+
+        request.socket.emit('close');
+        await lifecycle;
+        expect(clock.countTimers()).to.equal(0);
+        await nextProbe();
+        expect(chunks).to.deep.equal(['\n']);
+        request.destroy();
+      });
+    });
+
     describe('when there is an error after headers are committed', () => {
       let loggerErrorStub: sinon.SinonStub;
 

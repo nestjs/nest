@@ -36,6 +36,14 @@ import {
 const DEFAULT_MAX_PENDING_DATA_LENGTH = 4 * 1024 * 1024;
 
 /**
+ * How often, in milliseconds, an SSE connection that Node.js has stopped
+ * reading from is written to, to find out whether its client is still there
+ * (see `sse()`). A client that left is noticed by the second write at the
+ * latest: the first one may still be accepted, and answered with a reset.
+ */
+const PAUSED_SOCKET_PROBE_INTERVAL = 5_000;
+
+/**
  * The surface the router listens on to learn that the client is gone.
  */
 interface CloseSource {
@@ -364,8 +372,30 @@ export class RouterResponseController {
       let stopWaitingForClose: (() => void) | undefined;
       const finalize = () => {
         stopWaitingForClose?.();
+        clearInterval(pausedSocketProbe);
         abortController.abort();
       };
+
+      // A socket that is neither read from nor written to does not learn that
+      // the client has left, so "close" never comes. Node.js stops reading
+      // from an HTTP/1 connection while the answers to pipelined requests pile
+      // up behind this response, and while nobody reads the rest of the
+      // request body. A producer that stays quiet would then be kept for good,
+      // so a comment, which clients ignore, is written from time to time: the
+      // write fails once the client is gone, which closes the socket. A stream
+      // that is backed up has a write pending already, and nothing is written
+      // before the headers are, while an exception filter can still answer.
+      const pausedSocketProbe = setInterval(() => {
+        if (
+          (request.httpVersionMajor ?? 1) === 1 &&
+          request.socket?.isPaused?.() &&
+          stream.headersCommitted &&
+          !stream.writableNeedDrain
+        ) {
+          stream.writeMessage({ comment: '' }, () => undefined);
+        }
+      }, PAUSED_SOCKET_PROBE_INTERVAL);
+      pausedSocketProbe.unref?.();
 
       // Unsubscribing runs the teardown of the producer, which is application
       // code, and it is also run outside the handler's promise chain (from a
