@@ -44,6 +44,18 @@ describe('FileStreamInterceptor', () => {
     expect(Buffer.concat(chunks).toString()).toBe('streamed');
   });
 
+  it('should close the gaps that array indexes leave in req.body', async () => {
+    const target = new (FileStreamInterceptor('upload'))();
+    const req = createFakeRequest([
+      field('tags[3]', 'b'),
+      field('tags[1]', 'a'),
+      file('upload'),
+    ]);
+    await target.intercept(createContext(req, createReply()), handler);
+    expect(req.body.tags).toEqual(['a', 'b']);
+    req.file.stream.resume();
+  });
+
   it('should leave req.files undefined', async () => {
     const target = new (FileStreamInterceptor('upload'))();
     const req = createFakeRequest([file('upload')]);

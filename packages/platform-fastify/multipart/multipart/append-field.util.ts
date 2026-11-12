@@ -160,3 +160,32 @@ export function appendField(
   }
   return true;
 }
+
+/**
+ * Closes the gaps in the arrays of a multipart body once it is parsed, as
+ * `qs` does for a urlencoded body. A field name picks the index its value is
+ * stored at (`tags[1000]`), which leaves the indexes before it empty: the
+ * array is longer than the number of values sent, and what copies it skips
+ * the empty slots (class-transformer does, for `ValidationPipe`), so the
+ * array that was validated would not be the one the route handler gets.
+ * The order of the values is kept.
+ */
+export function closeArrayGaps(store: object): void {
+  // Not recursive, as `fieldNestingDepth` may be lifted.
+  const pending: object[] = [store];
+  while (pending.length > 0) {
+    const container = pending.pop()!;
+    // The values rather than the indexes up to `length`, so that the work
+    // depends on the number of values: `fieldArrayIndexLimit` may be lifted.
+    const values = Object.values(container);
+    if (Array.isArray(container) && values.length < container.length) {
+      values.forEach((value, index) => (container[index] = value));
+      container.length = values.length;
+    }
+    for (const value of values) {
+      if (typeof value === 'object' && value !== null) {
+        pending.push(value);
+      }
+    }
+  }
+}

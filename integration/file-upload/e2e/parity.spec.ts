@@ -497,7 +497,7 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       const ok = await expectParity(http =>
         http.post('/name-limits').field('a[2]', 'x'),
       );
-      expect(ok.body).toEqual({ body: { a: [null, null, 'x'] } });
+      expect(ok.body).toEqual({ body: { a: ['x'] } });
       for (const name of ['a[3]', 'a[b][3]', 'a[3][]']) {
         const res = await expectParity(http =>
           http.post('/name-limits').field(name, 'x'),
@@ -508,6 +508,20 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
           message: `Field name array index too large - ${name}`,
         });
       }
+    });
+
+    it('should close the gaps that array indexes leave in arrays', async () => {
+      const res = await expectParity(http =>
+        http
+          .post('/none')
+          .field('tags[3]', 'b')
+          .field('tags[1]', 'a')
+          .field('user[ids][1000]', '7'),
+      );
+      expect(res.body.body).toEqual({
+        tags: ['a', 'b'],
+        user: { ids: ['7'] },
+      });
     });
 
     it('should limit field name nesting and array indexes by default', async () => {

@@ -1,4 +1,7 @@
-import { appendField } from '../../../multipart/multipart/append-field.util.js';
+import {
+  appendField,
+  closeArrayGaps,
+} from '../../../multipart/multipart/append-field.util.js';
 
 describe('appendField', () => {
   const build = (entries: [string, string][]) => {
@@ -89,4 +92,20 @@ describe('appendField', () => {
       expect(({} as any).x).toBeUndefined();
     },
   );
+});
+
+describe('closeArrayGaps', () => {
+  it('should close the gaps of nested arrays and keep the order of the values', () => {
+    const store = Object.create(null);
+    appendField(store, 'outer[2][list][5]', 'z');
+    appendField(store, 'outer[0]', 'first');
+    appendField(store, 'dense[]', 'a');
+    appendField(store, 'dense[]', 'b');
+    closeArrayGaps(store);
+    expect(JSON.parse(JSON.stringify(store))).toEqual({
+      outer: ['first', { list: ['z'] }],
+      dense: ['a', 'b'],
+    });
+    expect(store.outer).toHaveLength(2);
+  });
 });

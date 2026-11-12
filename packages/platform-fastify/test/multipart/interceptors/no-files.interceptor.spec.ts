@@ -34,6 +34,18 @@ describe('NoFilesInterceptor', () => {
     expect(req.files).toBeUndefined();
   });
 
+  it('should close the gaps that array indexes leave in req.body', async () => {
+    const target = new (NoFilesInterceptor())();
+    const req = createFakeRequest([
+      field('tags[3]', 'b'),
+      field('tags[1]', 'a'),
+      field('user[ids][1000]', '7'),
+    ]);
+    await target.intercept(createContext(req), handler);
+    expect(req.body.tags).toEqual(['a', 'b']);
+    expect(req.body.user.ids).toEqual(['7']);
+  });
+
   it('should reject any file', async () => {
     const target = new (NoFilesInterceptor())();
     const req = createFakeRequest([file('avatar')]);
@@ -116,9 +128,7 @@ describe('NoFilesInterceptor', () => {
     const target = new (NoFilesInterceptor({
       limits: { fieldArrayIndexLimit: 2 },
     }))();
-    expect(await intercept(target, 'a[2]')).toEqual({
-      a: [undefined, undefined, 'x'],
-    });
+    expect(await intercept(target, 'a[2]')).toEqual({ a: ['x'] });
     for (const name of ['a[3]', 'a[b][3]', 'a[3][b]', 'a[0][3]', 'a[3][]']) {
       await expect(intercept(target, name)).rejects.toEqual(
         new BadRequestException(`Field name array index too large - ${name}`),
@@ -166,7 +176,7 @@ describe('NoFilesInterceptor', () => {
 
   it('should limit array indexes to 1000 by default', async () => {
     const target = new (NoFilesInterceptor())();
-    expect((await intercept(target, 'a[1000]')).a).toHaveLength(1001);
+    expect((await intercept(target, 'a[1000]')).a).toEqual(['x']);
     await expect(intercept(target, 'a[1001]')).rejects.toEqual(
       new BadRequestException('Field name array index too large - a[1001]'),
     );
@@ -181,7 +191,7 @@ describe('NoFilesInterceptor', () => {
 
   it('should lift the default field name limits when set to Infinity', async () => {
     const name = 'a' + '[b]'.repeat(33) + '[1001]';
-    const expected = nest(33, new Array(1001).concat('x'));
+    const expected = nest(33, ['x']);
     for (const limits of [
       { fieldNestingDepth: Infinity, fieldArrayIndexLimit: Infinity },
       () => ({ fieldNestingDepth: Infinity, fieldArrayIndexLimit: Infinity }),

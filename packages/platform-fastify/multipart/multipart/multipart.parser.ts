@@ -13,7 +13,7 @@ import type {
 } from '../interfaces/index.js';
 import { diskStorage } from '../storage/disk.storage.js';
 import { memoryStorage } from '../storage/memory.storage.js';
-import { appendField } from './append-field.util.js';
+import { appendField, closeArrayGaps } from './append-field.util.js';
 import {
   busboyExceptions,
   DEFAULT_FIELD_NAME_LIMITS,
@@ -470,6 +470,8 @@ function readFilePart(
 /**
  * Parses the multipart body with multer's semantics and populates
  * `req.body` and `req.file` / `req.files`, and returns the stored files.
+ * Unlike multer, the gaps that array indexes in field names leave in the
+ * arrays of `req.body` are closed (see `closeArrayGaps()`).
  * Requests that are not multipart are passed through untouched, as multer
  * does.
  */
@@ -544,6 +546,7 @@ export async function processMultipart(
         throw new MultipartError('LIMIT_FILE_SIZE', part.fieldname);
       }
     }
+    closeArrayGaps(body);
   } catch (err) {
     await removeFiles(storage, req, stored);
     await drainRequest(req.raw);
@@ -574,7 +577,8 @@ export async function processMultipart(
  * Parses up to and including the first file in `fieldName`, then stops and
  * hands that file's stream to the route handler (`req.file.stream`). Text
  * fields sent before the file are in `req.body`; anything after it is not
- * parsed.
+ * parsed. As in `processMultipart()`, the gaps in the arrays of `req.body`
+ * are closed.
  */
 export async function processStream(
   request: FastifyRequest,
@@ -632,9 +636,11 @@ export async function processStream(
       }
       const file: MultipartFileStream = { ...incoming, stream };
       setOnRequest(req, 'file', file);
+      closeArrayGaps(body);
       // The iterator is left suspended: the handler now owns the stream.
       return;
     }
+    closeArrayGaps(body);
   } catch (err) {
     await drainRequest(req.raw);
     throw transformException(err);
