@@ -130,6 +130,19 @@ class ReportsController {
   }
 }
 
+@Controller('thumbnails')
+class ThumbnailsController {
+  @Get(':id.png')
+  thumbnail() {
+    return RETURN_VALUE;
+  }
+
+  @Get(':id')
+  findOne() {
+    return RETURN_VALUE;
+  }
+}
+
 @Controller('docs')
 class DocsController {
   @Get(':page')
@@ -149,18 +162,26 @@ class DocsController {
     FilesController,
     ReportsController,
     DocsController,
+    ThumbnailsController,
   ],
 })
 class RouteMatchingModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
-      .exclude('users/login', 'files/public', 'reports', 'docs/:page')
+      .exclude(
+        'users/login',
+        'files/public',
+        'reports',
+        'docs/:page',
+        'thumbnails/:id.png',
+      )
       .forRoutes(
         UsersController,
         FilesController,
         ReportsController,
         DocsController,
+        ThumbnailsController,
       );
   }
 }
@@ -355,6 +376,18 @@ describe('Exclude middleware (fastify) - route matching', () => {
       return request(app.getHttpServer())
         .get('/users/LOGIN')
         .expect(200, RETURN_VALUE);
+    });
+
+    it(`should exclude "/thumbnails/7.png" endpoint`, () => {
+      return request(app.getHttpServer())
+        .get('/thumbnails/7.png')
+        .expect(200, RETURN_VALUE);
+    });
+
+    it(`should not exclude "/thumbnails/7.PNG", which the router serves with "/thumbnails/:id"`, () => {
+      return request(app.getHttpServer())
+        .get('/thumbnails/7.PNG')
+        .expect(200, MIDDLEWARE_VALUE);
     });
   });
 

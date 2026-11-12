@@ -46,7 +46,11 @@ describe('middleware utils', () => {
     describe('when route matching options are given', () => {
       const matches = (
         path: string,
-        options: { caseSensitive: boolean; ignoreTrailingSlash: boolean },
+        options: {
+          caseSensitive: boolean;
+          ignoreTrailingSlash: boolean;
+          caseSensitiveParamSuffix?: boolean;
+        },
         url: string,
       ) => mapToExcludeRoute([path], options)[0].pathRegex.test(url);
 
@@ -84,6 +88,54 @@ describe('middleware utils', () => {
         expect(matches('users/login/', loose, '/users/login')).toBe(true);
         expect(matches('users/login/', loose, '/users/login/')).toBe(true);
         expect(matches('users/login/', loose, '/users/login//')).toBe(false);
+      });
+      it('should match the text after a parameter as written when a case-insensitive router does', () => {
+        const options = {
+          caseSensitive: false,
+          ignoreTrailingSlash: false,
+          caseSensitiveParamSuffix: true,
+        };
+        expect(matches('reports/:id.png', options, '/reports/7.png')).toBe(
+          true,
+        );
+        expect(matches('reports/:id.png', options, '/reports/7.PNG')).toBe(
+          false,
+        );
+        expect(matches('docs/:slug-preview', options, '/docs/a-PREVIEW')).toBe(
+          false,
+        );
+        expect(matches('sitemap-:n.xml', options, '/sitemap-1.XML')).toBe(
+          false,
+        );
+        expect(matches('files/:name{.:ext}z', options, '/files/a.bZ')).toBe(
+          false,
+        );
+        expect(matches('files/:name{.:ext}z', options, '/files/az')).toBe(true);
+        // Matched as written as a whole, so a case variant of the static
+        // part runs the middleware too
+        expect(matches('reports/:id.png', options, '/REPORTS/7.png')).toBe(
+          false,
+        );
+      });
+      it('should keep matching the other paths case-insensitively', () => {
+        const options = {
+          caseSensitive: false,
+          ignoreTrailingSlash: false,
+          caseSensitiveParamSuffix: true,
+        };
+        expect(matches('users/login', options, '/users/LOGIN')).toBe(true);
+        expect(matches('users/:id/avatar', options, '/USERS/1/Avatar')).toBe(
+          true,
+        );
+        expect(matches('user-:id', options, '/USER-1')).toBe(true);
+        expect(matches('files/{*path}', options, '/FILES/a.PNG')).toBe(true);
+        expect(
+          matches(
+            'reports/:id.png',
+            { ...options, caseSensitiveParamSuffix: false },
+            '/reports/7.PNG',
+          ),
+        ).toBe(true);
       });
       it('should keep matching the root path', () => {
         const strict = { caseSensitive: true, ignoreTrailingSlash: false };

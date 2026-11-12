@@ -5,7 +5,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { iterate } from 'iterare';
-import { pathToRegexp } from 'path-to-regexp';
+import { type Token, parse, pathToRegexp } from 'path-to-regexp';
 import { uid } from 'uid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
@@ -72,14 +72,51 @@ function compileExcludedPath(
   }
   // Routes are registered without a trailing slash, so "users/login/" must
   // match the requests the router serves with the "users/login" route
-  const routePath = path.length > 1 ? path.replace(/\/+$/, '') : path;
+  const routePath =
+    addLeadingSlash(path.length > 1 ? path.replace(/\/+$/, '') : path) || '/';
+  // A case-insensitive router that still compares the text after a
+  // parameter as written serves "/reports/7.PNG" with another route than
+  // "reports/:id.png", so such a path only matches as it is written
+  const sensitive =
+    matchingOptions.caseSensitive ||
+    (!!matchingOptions.caseSensitiveParamSuffix &&
+      hasCasedTextAfterParam(parse(routePath).tokens));
   return toExcludedPathMatcher(
-    pathToRegexp(addLeadingSlash(routePath) || '/', {
-      sensitive: matchingOptions.caseSensitive,
+    pathToRegexp(routePath, {
+      sensitive,
       trailing: matchingOptions.ignoreTrailingSlash,
     }),
     matchingOptions.maxParamLength,
   );
+}
+
+/**
+ * Tells whether a parameter (or wildcard) of the path is followed by letters
+ * in its segment, such as ".png" in ":id.png" or "-details" in ":id-details".
+ */
+function hasCasedTextAfterParam(tokens: Token[]): boolean {
+  let isAfterParam = false;
+  const hasCasedText = (token: Token): boolean => {
+    if (token.type === 'group') {
+      // The group is optional, so what follows it may also follow what
+      // precedes it
+      const wasAfterParam = isAfterParam;
+      const isCased = token.tokens.some(hasCasedText);
+      isAfterParam ||= wasAfterParam;
+      return isCased;
+    }
+    if (token.type !== 'text') {
+      isAfterParam = true;
+      return false;
+    }
+    const [text, ...nextSegments] = token.value.split('/');
+    const isCased = isAfterParam && text.toLowerCase() !== text.toUpperCase();
+    if (nextSegments.length > 0) {
+      isAfterParam = false;
+    }
+    return isCased;
+  };
+  return tokens.some(hasCasedText);
 }
 
 const EXACT_ROUTE_MATCHING: RouteMatchingOptions = {

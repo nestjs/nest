@@ -674,6 +674,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 100,
           useSemicolonDelimiter: false,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -688,6 +689,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 100,
           useSemicolonDelimiter: false,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -703,6 +705,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 100,
           useSemicolonDelimiter: false,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -714,6 +717,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 100,
           useSemicolonDelimiter: false,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -728,6 +732,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 100,
           useSemicolonDelimiter: false,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -743,6 +748,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 200,
           useSemicolonDelimiter: false,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -755,6 +761,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 50,
           useSemicolonDelimiter: false,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -769,6 +776,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 100,
           useSemicolonDelimiter: true,
+          caseSensitiveParamSuffix: true,
         },
       },
       {
@@ -781,6 +789,7 @@ describe('FastifyAdapter', () => {
           removesTrailingSlash: true,
           maxParamLength: 100,
           useSemicolonDelimiter: true,
+          caseSensitiveParamSuffix: true,
         },
       },
     ])('should follow $source', ({ createAdapter, expected }) => {

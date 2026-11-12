@@ -1567,6 +1567,7 @@ export class FastifyAdapter<
     removesTrailingSlash: boolean;
     maxParamLength: number;
     useSemicolonDelimiter: boolean;
+    caseSensitiveParamSuffix: boolean;
   } {
     const initialConfig = this.instance.initialConfig as FastifyServerOptions;
     // Absent when a Fastify instance created without it is passed in
@@ -1588,6 +1589,9 @@ export class FastifyAdapter<
         routerOptions.useSemicolonDelimiter ||
         initialConfig.useSemicolonDelimiter
       ),
+      // find-my-way lower-cases the static parts of a path only, and matches
+      // a parameter with the text after it in its segment as written
+      caseSensitiveParamSuffix: true,
     };
   }
 
