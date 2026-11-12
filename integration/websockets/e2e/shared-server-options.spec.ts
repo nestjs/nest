@@ -54,4 +54,16 @@ describe('Gateways sharing a server (WsAdapter)', () => {
 
     expect(outcome).toBe(401);
   });
+
+  it('should not start when the gateway declared first sets no "verifyClient" and a later one does', async () => {
+    const testingModule = await Test.createTestingModule({
+      providers: [OtherGateway, CheckedGateway],
+    }).compile();
+    app = testingModule.createNestApplication({ logger: false });
+    app.useWebSocketAdapter(new WsAdapter(app));
+
+    await expect(app.init()).rejects.toThrow(
+      'The gateway CheckedGateway sets "verifyClient", but shares the server on port 0',
+    );
+  });
 });

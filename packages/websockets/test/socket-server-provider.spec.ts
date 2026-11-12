@@ -151,5 +151,84 @@ describe('SocketServerProvider', () => {
         ).not.toBe(host);
       });
     });
+
+    describe('when a gateway joins a server created for another one', () => {
+      let logError: ReturnType<typeof vi.spyOn>;
+      let logWarn: ReturnType<typeof vi.spyOn>;
+      beforeEach(() => {
+        logError = vi
+          .spyOn(instance['logger'], 'error')
+          .mockImplementation(() => undefined);
+        logWarn = vi
+          .spyOn(instance['logger'], 'warn')
+          .mockImplementation(() => undefined);
+      });
+
+      it.each(['verifyClient', 'allowRequest'])(
+        'should refuse a gateway whose "%s" the server would not run',
+        key => {
+          instance.scanForSocketServer({ path }, port, 'OpenGateway');
+
+          expect(() =>
+            instance.scanForSocketServer(
+              { path, [key]: () => false },
+              port,
+              'CheckedGateway',
+            ),
+          ).toThrow(
+            `The gateway CheckedGateway sets "${key}", but shares the server on port ${port} and the path "${path}" with a gateway declared before it, and the server runs no "${key}" of that gateway.`,
+          );
+          expect(logError).toHaveBeenCalledTimes(1);
+        },
+      );
+
+      it('should refuse a gateway on a namespace with another "allowRequest"', () => {
+        instance.scanForSocketServer(
+          { path, namespace: 'a', allowRequest: () => true },
+          port,
+        );
+
+        expect(() =>
+          instance.scanForSocketServer(
+            { path, namespace: 'b', allowRequest: () => false },
+            port,
+          ),
+        ).toThrow(/runs the "allowRequest" of that gateway/);
+      });
+
+      it('should accept a gateway with the same connection check, or none', () => {
+        const verifyClient = () => true;
+        instance.scanForSocketServer({ path, verifyClient }, port);
+
+        instance.scanForSocketServer({ path, verifyClient }, port);
+        instance.scanForSocketServer({ path }, port);
+
+        expect(logError).not.toHaveBeenCalled();
+        expect(logWarn).not.toHaveBeenCalled();
+      });
+
+      it('should report other options the gateway would lose', () => {
+        instance.scanForSocketServer(
+          { path, namespace: 'a', cors: { origin: '*' } },
+          port,
+        );
+
+        instance.scanForSocketServer(
+          { path, namespace: 'b', cors: { origin: '*' } },
+          port,
+        );
+        expect(logWarn).not.toHaveBeenCalled();
+
+        instance.scanForSocketServer(
+          { path, namespace: 'c', cors: { origin: 'x' }, transports: [] },
+          port,
+          'ChatGateway',
+        );
+        expect(logWarn).toHaveBeenCalledTimes(1);
+        expect(logWarn.mock.calls[0][0]).toMatch(
+          /^The gateway ChatGateway shares .* not applied: "cors", "transports"\.$/,
+        );
+      });
+    });
   });
 });
