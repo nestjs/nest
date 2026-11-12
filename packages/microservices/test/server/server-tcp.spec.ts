@@ -499,6 +499,81 @@ describe('ServerTCP', () => {
       expect(stream.subscribed).toBe(false);
     });
 
+    describe('and the packet has no id', () => {
+      const event = { pattern: msg.pattern, data: msg.data };
+
+      it.each(['close', 'error'])(
+        'should end the stream of a message handler on "%s"',
+        async disconnectEvent => {
+          const { stream, observable } = createStream();
+          const endHook = vi.fn();
+          untypedServer.onProcessingEndHook = endHook;
+          untypedServer.messageHandlers = objectToMap({
+            [msg.pattern]: async () => observable,
+          });
+
+          await server.handleMessage(socket as any, event);
+          expect(stream.subscribed).toBe(true);
+          expect(endHook).not.toHaveBeenCalled();
+
+          socket.emit(disconnectEvent, new Error('read ECONNRESET'));
+
+          expect(stream.tornDown).toBe(true);
+          expect(endHook).toHaveBeenCalledOnce();
+        },
+      );
+      it('should not subscribe to the stream of a message handler once the peer has gone', async () => {
+        const { stream, observable } = createStream();
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: async () => observable,
+        });
+
+        socket.emit('close');
+        await server.handleMessage(socket as any, event);
+
+        expect(stream.subscribed).toBe(false);
+      });
+      it('should not reply with what a message handler returns', async () => {
+        const endHook = vi.fn();
+        untypedServer.onProcessingEndHook = endHook;
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: async () => of('first', 'second'),
+        });
+
+        await server.handleMessage(socket as any, event);
+        await flush();
+
+        expect(socket.sendMessage).not.toHaveBeenCalled();
+        expect(endHook).toHaveBeenCalledOnce();
+      });
+      it('should leave the stream of an event handler running', async () => {
+        const { stream, observable } = createStream();
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: Object.assign(async () => observable, {
+            isEventHandler: true,
+          }),
+        });
+
+        await server.handleMessage(socket as any, event);
+        expect(stream.subscribed).toBe(true);
+
+        socket.emit('close');
+
+        expect(stream.tornDown).toBe(false);
+      });
+      it('should look the handler up only once', async () => {
+        const handler = Object.assign(vi.fn(), { isEventHandler: true });
+        untypedServer.messageHandlers = objectToMap({ [msg.pattern]: handler });
+        const getHandlerByPattern = vi.spyOn(server, 'getHandlerByPattern');
+
+        await server.handleMessage(socket as any, event);
+        await server.handleMessage(socket as any, { pattern: 'unknown' });
+
+        expect(handler).toHaveBeenCalledOnce();
+        expect(getHandlerByPattern).toHaveBeenCalledTimes(2);
+      });
+    });
+
     describe('and the handler has an interceptor', () => {
       let interceptorWork: ReturnType<typeof vi.fn>;
 
