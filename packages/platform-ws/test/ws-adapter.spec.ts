@@ -317,6 +317,94 @@ describe('WsAdapter', () => {
         expect(client.pause).toHaveBeenCalledTimes(2);
       });
 
+      describe('while it does not read from a client', () => {
+        // one message at a time, and its handler never replies or completes
+        const bindSilentHandler = (client: any) => {
+          const replies: Subject<string>[] = [];
+          bindHandler(
+            new WsAdapter(undefined, { maxConcurrentMessages: 1 }),
+            client,
+            () => {
+              const reply$ = new Subject<string>();
+              replies.push(reply$);
+              return reply$;
+            },
+          );
+          return replies;
+        };
+        const pingableClient = () => {
+          const client = pausableClient();
+          client.ping = vi.fn();
+          return client;
+        };
+
+        beforeEach(() => {
+          vi.useFakeTimers();
+        });
+        afterEach(() => {
+          vi.useRealTimers();
+        });
+
+        it('should ping it every 5 seconds, to find out whether it is still there', () => {
+          const client = pingableClient();
+          const replies = bindSilentHandler(client);
+
+          client.emit('message', frame({ event: 'event' }));
+          vi.advanceTimersByTime(10_000);
+          expect(client.ping).not.toHaveBeenCalled();
+
+          client.emit('message', frame({ event: 'event' }));
+          expect(client.pause).toHaveBeenCalledTimes(1);
+          vi.advanceTimersByTime(10_000);
+          expect(client.ping).toHaveBeenCalledTimes(2);
+
+          // reading resumes
+          replies[0].complete();
+          expect(client.resume).toHaveBeenCalledTimes(1);
+          vi.advanceTimersByTime(10_000);
+          expect(client.ping).toHaveBeenCalledTimes(2);
+          expect(vi.getTimerCount()).toBe(0);
+        });
+
+        it('should not ping a client that has data queued for it', () => {
+          const client = pingableClient();
+          bindSilentHandler(client);
+          client.emit('message', frame({ event: 'event' }));
+          client.emit('message', frame({ event: 'event' }));
+
+          client.bufferedAmount = 1;
+          vi.advanceTimersByTime(5_000);
+          expect(client.ping).not.toHaveBeenCalled();
+
+          client.bufferedAmount = 0;
+          vi.advanceTimersByTime(5_000);
+          expect(client.ping).toHaveBeenCalledTimes(1);
+        });
+
+        it('should stop pinging a client that is closing', () => {
+          const client = pingableClient();
+          bindSilentHandler(client);
+          client.emit('message', frame({ event: 'event' }));
+          client.emit('message', frame({ event: 'event' }));
+
+          client.readyState = 2; // CLOSING_STATE
+          vi.advanceTimersByTime(10_000);
+          expect(client.ping).not.toHaveBeenCalled();
+          expect(vi.getTimerCount()).toBe(0);
+        });
+
+        it('should stop pinging a client that has closed', () => {
+          const client = pingableClient();
+          bindSilentHandler(client);
+          client.emit('message', frame({ event: 'event' }));
+          client.emit('message', frame({ event: 'event' }));
+          expect(vi.getTimerCount()).toBe(1);
+
+          client.emit('close');
+          expect(vi.getTimerCount()).toBe(0);
+        });
+      });
+
       it('should close a client once more than "maxSendBufferSize" bytes are queued for it', () => {
         const client = pausableClient();
         const adapter = new WsAdapter(undefined, { maxSendBufferSize: 1024 });
