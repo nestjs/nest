@@ -37,6 +37,11 @@ export class AppController {
     return this.appService.getFileThatDoesNotExist();
   }
 
+  @Get('file/not/exist/malformed-type')
+  getNonExistantFileWithMalformedType(): StreamableFile {
+    return this.appService.getFileThatDoesNotExistWithMalformedType();
+  }
+
   @Get('file/fails/midway')
   getFileThatFailsMidway(): StreamableFile {
     return this.appService.getFileThatFailsMidway();

@@ -180,7 +180,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {
-        body.errorHandler(err, response);
+        this.handleStreamError(body, err, response);
       });
       // pipe() leaves the source open when the client disconnects early,
       // also before reply() runs ("close" has already fired by then)
@@ -760,6 +760,31 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     if (value !== undefined && response.getHeader(name) === undefined) {
       const headerValue = Array.isArray(value) ? value.join(',') : value;
       response.setHeader(name, headerValue);
+    }
+  }
+
+  /**
+   * Runs the error handler of a StreamableFile whose stream failed after its
+   * headers were applied, from an "error" listener, where nothing catches
+   * what the handler throws.
+   */
+  private handleStreamError(
+    streamable: StreamableFile,
+    err: Error,
+    response: any,
+  ) {
+    // The answer is not the file. res.send() also parses the Content-Type it
+    // finds to add a charset, and throws on a malformed one (e.g. "image/").
+    if (!response.headersSent) {
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    }
+    try {
+      streamable.errorHandler(err, response);
+    } catch (handlerError) {
+      this.logger.error(handlerError);
+      if (!response.writableEnded) {
+        response.destroy();
+      }
     }
   }
 
