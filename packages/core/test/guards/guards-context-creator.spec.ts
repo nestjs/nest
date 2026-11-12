@@ -1,9 +1,9 @@
-import { UseGuards } from '@nestjs/common';
+import { Scope, UseGuards } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { ContextId, InstanceWrapper } from '../../injector/instance-wrapper';
 
 class Guard {}
 
@@ -144,6 +144,43 @@ describe('GuardsContextCreator', () => {
           .stub(guardsContextCreator, 'getInstanceByMetatype')
           .callsFake(() => null!);
         expect(guardsContextCreator.getGuardInstance(Guard)).to.be.eql(null);
+      });
+      it('should not pick the instance of a transient guard from a durable sub-tree', () => {
+        const database = new InstanceWrapper({
+          scope: Scope.REQUEST,
+          durable: true,
+        });
+        const wrapper = new InstanceWrapper({
+          token: Guard,
+          metatype: Guard,
+          scope: Scope.TRANSIENT,
+        });
+        wrapper.addCtorMetadata(0, database);
+        sinon
+          .stub(guardsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper);
+
+        const tenant: ContextId = { id: 1 };
+        const contextId: ContextId = {
+          id: 2,
+          getParent: ({ isTreeDurable }) =>
+            isTreeDurable ? tenant : contextId,
+        };
+        const guard = { canActivate: () => true };
+        wrapper.setInstanceByContextId(
+          tenant,
+          { instance: { canActivate: () => false } },
+          'inquirer',
+        );
+        wrapper.setInstanceByContextId(
+          contextId,
+          { instance: guard },
+          'inquirer',
+        );
+
+        expect(
+          guardsContextCreator.getGuardInstance(Guard, contextId, 'inquirer'),
+        ).to.equal(guard);
       });
     });
   });

@@ -1370,7 +1370,12 @@ export class Injector {
     return contextId.getParent
       ? contextId.getParent({
           token: instanceWrapper.token,
-          isTreeDurable: instanceWrapper.isDependencyTreeDurable(),
+          // A transient instance belongs to the consumer it was created for,
+          // which is not necessarily durable, so it is never shared through
+          // a durable sub-tree
+          isTreeDurable:
+            !instanceWrapper.isTransient &&
+            instanceWrapper.isDependencyTreeDurable(),
         })
       : contextId;
   }

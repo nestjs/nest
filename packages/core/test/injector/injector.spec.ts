@@ -12,7 +12,7 @@ import { Injectable } from '../../../common/decorators/core/injectable.decorator
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { NestContainer } from '../../injector/container';
 import { Injector, PropertyDependency } from '../../injector/injector';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { ContextId, InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
 import { SettlementSignal } from '../../injector/settlement-signal';
 
@@ -987,6 +987,86 @@ describe('Injector', () => {
       );
       expect(instance).to.be.instanceOf(TestClass);
       expect(instance).to.equal(wrapper.instance);
+    });
+
+    describe('when a transient provider depends on a durable one', () => {
+      @Injectable({ scope: Scope.REQUEST, durable: true })
+      class TenantDatabase {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class ProfileLoader {
+        constructor(
+          @Inject(TenantDatabase) public readonly database: TenantDatabase,
+        ) {}
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class CurrentUser {
+        constructor(
+          @Inject(ProfileLoader) public readonly loader: ProfileLoader,
+        ) {}
+      }
+
+      @Injectable()
+      class TenantSettings {
+        constructor(
+          @Inject(ProfileLoader) public readonly loader: ProfileLoader,
+        ) {}
+      }
+
+      const tenant: ContextId = { id: 1 };
+      const createContextId = () => {
+        const contextId: ContextId = {
+          id: Math.random(),
+          getParent: ({ isTreeDurable }) =>
+            isTreeDurable ? tenant : contextId,
+        };
+        return contextId;
+      };
+
+      let moduleRef: Module;
+      const load = <T>(type: Type<T>): Promise<T> =>
+        injector.loadPerContext(
+          Object.create(type.prototype),
+          moduleRef,
+          moduleRef.providers,
+          createContextId(),
+        );
+
+      beforeEach(async () => {
+        const container = new NestContainer();
+        ({ moduleRef } = (await container.addModule(class TestModule {}, []))!);
+        [TenantDatabase, ProfileLoader, CurrentUser, TenantSettings].forEach(
+          provider => moduleRef.addProvider(provider),
+        );
+      });
+
+      it('should create it for every instance of a consumer that is not durable', async () => {
+        const first = await load(CurrentUser);
+        const second = await load(CurrentUser);
+
+        expect(second).to.not.equal(first);
+        expect(second.loader).to.be.instanceOf(ProfileLoader);
+        expect(second.loader).to.not.equal(first.loader);
+        expect(second.loader.database).to.equal(first.loader.database);
+      });
+
+      it('should create it once for a durable consumer', async () => {
+        const first = await load(TenantSettings);
+        const second = await load(TenantSettings);
+
+        expect(second).to.equal(first);
+        expect(second.loader).to.be.instanceOf(ProfileLoader);
+        expect(second.loader.database).to.be.instanceOf(TenantDatabase);
+      });
+
+      it('should create it for every context that it is resolved in', async () => {
+        const first = await load(ProfileLoader);
+        const second = await load(ProfileLoader);
+
+        expect(second).to.not.equal(first);
+        expect(second.database).to.equal(first.database);
+      });
     });
   });
 
