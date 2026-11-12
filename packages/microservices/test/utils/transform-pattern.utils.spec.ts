@@ -1,5 +1,8 @@
 import { MsPattern } from '../../interfaces/index.js';
-import { transformPatternToRoute } from '../../utils/transform-pattern.utils.js';
+import {
+  exceedsPatternLimits,
+  transformPatternToRoute,
+} from '../../utils/transform-pattern.utils.js';
 
 function equalTest<R>(testPatterns: MsPattern[], expectedResults: R[]) {
   testPatterns.forEach((testPattern: MsPattern, index: number) => {
@@ -156,5 +159,108 @@ describe('transformPatternToRoute', () => {
         `{"${longestKey}":"value"}`,
       );
     });
+  });
+
+  describe('when gets an array with more items than max keys', () => {
+    it('should return special string without listing its items', () => {
+      const items = Array(21).fill(0);
+      const objectKeys = vi.spyOn(Object, 'keys');
+
+      expect(transformPatternToRoute({ cmd: items })).toBe(
+        '{"cmd":[TOO_MANY_KEYS]}',
+      );
+      expect(objectKeys).not.toHaveBeenCalledWith(items);
+      objectKeys.mockRestore();
+    });
+    it('should return correct route for an array of max keys', () => {
+      expect(transformPatternToRoute({ cmd: [1, 2] })).toBe(
+        '{"cmd":{"0":1,"1":2}}',
+      );
+    });
+  });
+
+  describe('when gets a string value exceeding max value length', () => {
+    const longestValue = 'v'.repeat(4096);
+
+    it('should return special string indicating the limit was reached', () => {
+      expect(transformPatternToRoute({ cmd: `${longestValue}v` })).toBe(
+        '{"cmd":[VALUE_TOO_LONG]}',
+      );
+    });
+    it('should return correct route for a value of max value length', () => {
+      expect(transformPatternToRoute({ cmd: longestValue })).toBe(
+        `{"cmd":"${longestValue}"}`,
+      );
+    });
+  });
+
+  describe('when the whole pattern has more keys than max total keys', () => {
+    // Each object is within the limits, but there are 5 + 5 * 20 keys
+    const objectOfKeys = (count: number) =>
+      Object.fromEntries(
+        Array.from({ length: count }, (_, i) => [`key${i}`, i]),
+      );
+    const patternOfKeys = (objects: number, keysEach: number) =>
+      Object.fromEntries(
+        Array.from({ length: objects }, (_, i) => [
+          `object${i}`,
+          objectOfKeys(keysEach),
+        ]),
+      );
+
+    it('should return special string indicating the limit was reached', () => {
+      expect(transformPatternToRoute(patternOfKeys(5, 20))).toBe(
+        '[TOO_MANY_KEYS]',
+      );
+    });
+    it('should return correct route for a pattern of max total keys', () => {
+      const route = transformPatternToRoute(patternOfKeys(5, 19));
+      expect(route).toMatch(/^\{"object0":\{"key0":0,"key1":1,"key10":10,/);
+      expect(route).not.toContain('[');
+    });
+  });
+});
+
+describe('exceedsPatternLimits', () => {
+  it('should return false for a pattern within the limits', () => {
+    for (const pattern of [
+      'sum',
+      42,
+      { cmd: 'sum' },
+      { cmd: { role: 'user', ids: [1, 2] } },
+      { cmd: 'v'.repeat(4096) },
+    ]) {
+      expect(exceedsPatternLimits(pattern)).toBe(false);
+    }
+  });
+  it('should not apply the value length limit to a string pattern', () => {
+    expect(exceedsPatternLimits('v'.repeat(5000))).toBe(false);
+  });
+  it.each([
+    ['too deep', { a: { b: { c: { d: { e: { f: { g: 1 } } } } } } }],
+    [
+      'too many keys',
+      Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`k${i}`, i])),
+    ],
+    ['a key too long', { cmd: { ['k'.repeat(257)]: 1 } }],
+    ['a value too long', { cmd: 'v'.repeat(4097) }],
+    ['an array too long', { cmd: Array(10_000).fill({}) }],
+    [
+      'too many keys in total',
+      Object.fromEntries(
+        Array.from({ length: 6 }, (_, i) => [
+          `o${i}`,
+          Object.fromEntries(
+            Array.from({ length: 20 }, (_, j) => [`k${j}`, j]),
+          ),
+        ]),
+      ),
+    ],
+  ])('should return true for a pattern with %s', (_, pattern) => {
+    expect(exceedsPatternLimits(pattern)).toBe(true);
+    // Its route says so as well
+    expect(transformPatternToRoute(pattern as MsPattern)).toMatch(
+      /\[(MAX_DEPTH_REACHED|TOO_MANY_KEYS|KEY_TOO_LONG|VALUE_TOO_LONG)\]/,
+    );
   });
 });

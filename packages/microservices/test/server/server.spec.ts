@@ -168,6 +168,48 @@ describe('Server', () => {
     });
   });
 
+  describe('getPatternAsString', () => {
+    it('should return the json text of a pattern within the limits', () => {
+      expect(untypedServer.getPatternAsString({ cmd: 'sum' })).toBe(
+        '{"cmd":"sum"}',
+      );
+      expect(untypedServer.getPatternAsString('sum')).toBe('sum');
+    });
+    it('should return the route of a pattern over the limits without serializing it', () => {
+      const wideArray = Array(100_000).fill({});
+      const stringify = vi.spyOn(JSON, 'stringify');
+
+      expect(untypedServer.getPatternAsString(wideArray)).toBe(
+        '[TOO_MANY_KEYS]',
+      );
+      expect(
+        untypedServer.getPatternAsString({ cmd: '\\"'.repeat(10_000) }),
+      ).toBe('{"cmd":[VALUE_TOO_LONG]}');
+      expect(stringify).not.toHaveBeenCalled();
+    });
+    it('should find the handler of a pattern within the limits', () => {
+      const handler = vi.fn();
+      untypedServer.messageHandlers = new Map([['{"a":1,"b":2}', handler]]);
+
+      expect(
+        server.getHandlerByPattern(
+          untypedServer.getPatternAsString({ b: 2, a: 1 }),
+        ),
+      ).toBe(handler);
+    });
+  });
+
+  describe('getRouteFromPattern with a long json text', () => {
+    it('should not parse it', () => {
+      const text = JSON.stringify(Array(600_000).fill(0));
+      expect(text.length).toBeGreaterThan(1024 * 1024);
+      const parse = vi.spyOn(JSON, 'parse');
+
+      expect(untypedServer.getRouteFromPattern(text)).toBe(text);
+      expect(parse).not.toHaveBeenCalled();
+    });
+  });
+
   describe('send', () => {
     let stream$: Observable<string>;
     let sendSpy: ReturnType<typeof vi.fn>;
