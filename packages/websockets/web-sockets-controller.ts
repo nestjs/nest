@@ -50,7 +50,7 @@ export class WebSocketsController {
     instanceWrapperId: string,
   ) {
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};
-    const port = Reflect.getMetadata(PORT_METADATA, metatype) || 0;
+    const port = Reflect.getMetadata(PORT_METADATA, metatype) ?? 0;
 
     if (!Number.isInteger(port)) {
       throw new InvalidSocketPortException(port, metatype);

@@ -87,6 +87,22 @@ describe('WebSocketsController', () => {
         ),
       ).throws(InvalidSocketPortException);
     });
+    for (const invalidPort of [NaN, 3.5]) {
+      it(`should throw "InvalidSocketPortException" when port is ${invalidPort}`, () => {
+        @WebSocketGateway(invalidPort, { verifyClient: () => false })
+        class InvalidPortGateway {}
+
+        expect(() =>
+          instance.connectGatewayToServer(
+            new InvalidPortGateway(),
+            InvalidPortGateway,
+            'moduleKey',
+            'instanceWrapperId',
+          ),
+        ).throws(InvalidSocketPortException);
+        expect(subscribeToServerEvents.called).to.be.false;
+      });
+    }
     it('should call "subscribeToServerEvents" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
       instance.connectGatewayToServer(

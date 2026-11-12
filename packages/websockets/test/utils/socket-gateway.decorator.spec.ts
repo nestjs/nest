@@ -39,4 +39,34 @@ describe('@WebSocketGateway', () => {
     expect(port).to.be.eql(0);
     expect(namespace).to.be.eql('/');
   });
+
+  const verifyClient = () => false;
+
+  for (const [description, invalidPort] of [
+    ['NaN', NaN],
+    ['a string', '8080'],
+    ['a fraction', 3.5],
+  ] as const) {
+    it(`should keep the options next to a port that is ${description}`, () => {
+      @WebSocketGateway(invalidPort as number, { verifyClient })
+      class InvalidPortGateway {}
+
+      expect(Reflect.getMetadata('port', InvalidPortGateway)).to.be.eql(
+        invalidPort,
+      );
+      expect(
+        Reflect.getMetadata(GATEWAY_OPTIONS, InvalidPortGateway),
+      ).to.deep.equal({ verifyClient });
+    });
+  }
+
+  it('should keep the options next to an undefined port', () => {
+    @WebSocketGateway(undefined, { verifyClient })
+    class UndefinedPortGateway {}
+
+    expect(Reflect.getMetadata('port', UndefinedPortGateway)).to.equal(0);
+    expect(
+      Reflect.getMetadata(GATEWAY_OPTIONS, UndefinedPortGateway),
+    ).to.deep.equal({ verifyClient });
+  });
 });
