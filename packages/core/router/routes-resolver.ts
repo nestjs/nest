@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   HttpException,
+  HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -187,7 +188,12 @@ export class RoutesResolver implements Resolver {
       // SyntaxError is thrown by Express body-parser when given invalid JSON (#422, #430)
       // URIError is thrown by Express when given a path parameter with an invalid percentage
       // encoding, e.g. '%FF' (#8915)
-      case err instanceof SyntaxError || err instanceof URIError:
+      // Both set a 400 status. One without it comes from server code (e.g. a view, or a
+      // middleware passed to "app.use()"), and its message may hold internal details (a
+      // template engine adds the path and lines of the view). It stays unmapped, so the
+      // built-in filter answers it with a generic 500 and logs it.
+      case (err instanceof SyntaxError || err instanceof URIError) &&
+        (err as { status?: unknown }).status === HttpStatus.BAD_REQUEST:
         return new BadRequestException(err.message);
       case this.isHttpFastifyError(err):
         return new HttpException(err.message, err.statusCode);

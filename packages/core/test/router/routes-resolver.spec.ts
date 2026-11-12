@@ -19,6 +19,7 @@ import { SerializedGraph } from '../../inspector/serialized-graph';
 import { RoutesResolver } from '../../router/routes-resolver';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 import { createError as createFastifyError } from '@fastify/error';
+import * as createHttpError from 'http-errors';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -323,17 +324,44 @@ describe('RoutesResolver', () => {
   describe('mapExternalExceptions', () => {
     describe('when exception prototype is', () => {
       describe('SyntaxError', () => {
-        it('should map to BadRequestException', () => {
-          const err = new SyntaxError();
+        it('should map one with a 400 status to BadRequestException', () => {
+          // What body-parser throws for malformed JSON
+          const err = createHttpError(400, new SyntaxError('Unexpected token'));
           const outputErr = routesResolver.mapExternalException(err);
           expect(outputErr).to.be.instanceof(BadRequestException);
+          expect(outputErr.message).to.equal('Unexpected token');
+        });
+        it('should not map one without a status code', () => {
+          // e.g. a view, as a template engine reports it
+          const err = new SyntaxError('views/login.ejs:5\n\nUnexpected token');
+          expect(routesResolver.mapExternalException(err)).to.equal(err);
+        });
+        it('should not map one of another status code', () => {
+          const err = Object.assign(new SyntaxError('internal detail'), {
+            status: 500,
+          });
+          expect(routesResolver.mapExternalException(err)).to.equal(err);
         });
       });
       describe('URIError', () => {
-        it('should map to BadRequestException', () => {
-          const err = new URIError();
+        it('should map one with a 400 status to BadRequestException', () => {
+          // What the router throws for a malformed parameter
+          const err = Object.assign(
+            new URIError("Failed to decode param '%'"),
+            { status: 400 },
+          );
           const outputErr = routesResolver.mapExternalException(err);
           expect(outputErr).to.be.instanceof(BadRequestException);
+          expect(outputErr.getResponse()).to.include({
+            message: "Failed to decode param '%'",
+          });
+        });
+        it('should not map one without a status code', () => {
+          // e.g. a view that decodes a query param
+          const err = new URIError(
+            'views/login.ejs:3\n 1| <%# internal note %>\n\nURI malformed',
+          );
+          expect(routesResolver.mapExternalException(err)).to.equal(err);
         });
       });
       describe('FastifyError', () => {
