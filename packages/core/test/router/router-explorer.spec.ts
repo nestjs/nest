@@ -450,6 +450,44 @@ describe('RouterExplorer', () => {
       expect(handler).not.toHaveBeenCalled();
     });
 
+    describe('when the host has an optional group', () => {
+      it.each([
+        ['www.acme.example.com', { tenant: 'acme' }],
+        ['acme.example.com', { tenant: 'acme' }],
+      ])(
+        'should keep the matched params of "%s"',
+        (hostname, expectedHosts) => {
+          const filter = (routerBuilder as any).applyHostFilter(
+            '{www.}:tenant.example.com',
+            handler,
+          );
+          const req: Record<string, any> = { hostname };
+          filter(req, 'res');
+
+          expect(handler).toHaveBeenCalledWith(req, 'res', undefined);
+          expect(req.hosts).toEqual(expectedHosts);
+        },
+      );
+
+      it('should leave out an optional param that is absent', () => {
+        const filter = (routerBuilder as any).applyHostFilter(
+          '{:region.}:tenant.example.com',
+          handler,
+        );
+        const withRegion: Record<string, any> = {
+          hostname: 'eu.acme.example.com',
+        };
+        const withoutRegion: Record<string, any> = {
+          hostname: 'acme.example.com',
+        };
+        filter(withRegion, 'res');
+        filter(withoutRegion, 'res');
+
+        expect(withRegion.hosts).toEqual({ region: 'eu', tenant: 'acme' });
+        expect(withoutRegion.hosts).toEqual({ tenant: 'acme' });
+      });
+    });
+
     describe('when the adapter cannot pass the request on', () => {
       const req = { hostname: 'example.org', method: 'GET', url: '/host?a=1' };
 

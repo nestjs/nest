@@ -387,7 +387,15 @@ export class RouterExplorer {
         const match = hostname.match(exp.regexp);
         if (match) {
           if (exp.keys.length > 0) {
-            exp.keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
+            // A host with an optional group ("{www.}:tenant.example.com") is
+            // compiled to one alternative per variant, each with its own
+            // groups for the same keys. Those of the variants that did not
+            // match are undefined, and must not overwrite the matched value.
+            exp.keys.forEach((key, i) => {
+              if (match[i + 1] !== undefined) {
+                req.hosts[key.name] = match[i + 1];
+              }
+            });
           } else if (exp.regexp && match.groups) {
             for (const groupName in match.groups) {
               req.hosts[groupName] = match.groups[groupName];
