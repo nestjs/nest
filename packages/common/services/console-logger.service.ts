@@ -3,6 +3,7 @@ import { Injectable, Optional } from '../decorators/core/index.js';
 import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util.js';
 import {
   isFunction,
+  isObject,
   isPlainObject,
   isString,
   isUndefined,
@@ -787,10 +788,39 @@ export class ConsoleLogger implements LoggerService {
    */
   protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
     const replacer = this.stringifyReplacer.bind(this);
-    // Objects on the path from the root to the value being serialized.
+    // Objects on the path from the root to the value being serialized, and
+    // what `JSON.stringify` was given in place of each of them.
     const ancestors: unknown[] = [];
+    const holders: unknown[] = [];
     // Approximate length of the output so far (array indices aren't written).
     let length = 0;
+
+    // `JSON.stringify` calls the `toJSON()` of a value before the replacer,
+    // so past the limit the replacer could only drop its result: for a
+    // `Buffer`, an array of one number per byte, built again for every
+    // reference to it. Such values are handed over behind a `toJSON()` that
+    // checks the limit first, in a shallow copy of the object holding them.
+    const hasToJSON = (item: unknown) =>
+      isObject(item) && isFunction((item as { toJSON?: unknown }).toJSON);
+    const deferToJSON = (item: unknown) =>
+      hasToJSON(item)
+        ? {
+            toJSON: (key: string) =>
+              length > MAX_JSON_LENGTH
+                ? '[Truncated]'
+                : (item as { toJSON(key: string): unknown }).toJSON(key),
+          }
+        : item;
+    const toHolder = (value: object): object => {
+      if (Array.isArray(value)) {
+        return value.some(hasToJSON) ? value.map(deferToJSON) : value;
+      }
+      const record = value as Record<string, unknown>;
+      const keys = Object.keys(record);
+      return keys.some(key => hasToJSON(record[key]))
+        ? Object.fromEntries(keys.map(key => [key, deferToJSON(record[key])]))
+        : value;
+    };
 
     try {
       return JSON.stringify(
@@ -818,17 +848,17 @@ export class ConsoleLogger implements LoggerService {
           }
           // `this` is the object holding `key`, so everything above it on the
           // stack belongs to an already-finished sibling branch.
-          while (
-            ancestors.length > 0 &&
-            ancestors[ancestors.length - 1] !== this
-          ) {
+          while (holders.length > 0 && holders[holders.length - 1] !== this) {
+            holders.pop();
             ancestors.pop();
           }
           if (ancestors.includes(value)) {
             return '[Circular]';
           }
+          const holder = toHolder(value);
           ancestors.push(value);
-          return value;
+          holders.push(holder);
+          return holder;
         },
       );
     } catch {

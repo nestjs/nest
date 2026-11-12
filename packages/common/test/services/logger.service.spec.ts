@@ -1293,6 +1293,24 @@ describe('Logger', () => {
         expect(json.message).toEqual([1, { list: '[Circular]' }]);
       });
 
+      it('should replace circular references next to values with a toJSON()', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const list: any[] = [new Date(0)];
+        list.push({ at: new Date(1), list, data: Buffer.from([1]) });
+
+        expect(() => logger.log(list)).not.toThrow();
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toEqual([
+          '1970-01-01T00:00:00.000Z',
+          {
+            at: '1970-01-01T00:00:00.001Z',
+            list: '[Circular]',
+            data: { type: 'Buffer', data: [1] },
+          },
+        ]);
+      });
+
       it('should keep repeated (non-circular) references intact', () => {
         const logger = new ConsoleLogger({ json: true });
         const shared = { a: 1 };
@@ -1378,6 +1396,43 @@ describe('Logger', () => {
         expect(json.params.copies).toHaveLength(1_000);
         expect(json.params.copies[0]).toEqual(tags);
         expect(json.params.copies[999]).toBe('[Truncated]');
+      });
+
+      it('should not call toJSON() on the values past the limit', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const toJSON = vi.fn(() => 'x'.repeat(100_000));
+        const items = new Array(1_000).fill({ toJSON });
+
+        logger.log('message', { items });
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params.items).toHaveLength(1_000);
+        expect(json.params.items[0]).toBe('x'.repeat(100_000));
+        expect(json.params.items[999]).toBe('[Truncated]');
+        expect(toJSON).toHaveBeenCalledWith('0');
+        expect(toJSON.mock.calls.length).toBeLessThanOrEqual(11);
+      });
+
+      it('should not convert a Buffer for each reference past the limit', () => {
+        const logger = new ConsoleLogger({ json: true });
+        // A Buffer is written as an array of one number per byte.
+        const attachment = Buffer.alloc(100_000, 1);
+        const attachments = new Array(100).fill(attachment);
+        const toJSON = vi.spyOn(Buffer.prototype, 'toJSON');
+        let calls: number;
+
+        try {
+          logger.log('message', { attachments });
+        } finally {
+          calls = toJSON.mock.calls.length;
+          toJSON.mockRestore();
+        }
+
+        expect(calls).toBeLessThanOrEqual(10);
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.params.attachments).toHaveLength(100);
+        expect(json.params.attachments[0]).toEqual(attachment.toJSON());
+        expect(json.params.attachments[99]).toBe('[Truncated]');
       });
 
       it('should write a long record in full when nothing is repeated', () => {
