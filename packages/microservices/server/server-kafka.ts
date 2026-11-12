@@ -406,6 +406,11 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     context: KafkaContext,
   ): Promise<RecordMetadata[]> {
     const outgoingMessage = await this.serializer.serialize(message.response);
+    // The headers of a reply can come from the request (as with a handler
+    // that returns what it received), and a reply topic among them would make
+    // the reply read as a request to whoever consumes it
+    delete outgoingMessage.headers?.[KafkaHeaders.REPLY_TOPIC];
+    delete outgoingMessage.headers?.[KafkaHeaders.REPLY_PARTITION];
     this.assignReplyPartition(replyPartition, outgoingMessage);
     this.assignCorrelationIdHeader(correlationId, outgoingMessage);
     this.assignErrorHeader(message, outgoingMessage);

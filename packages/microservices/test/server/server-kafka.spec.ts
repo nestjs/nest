@@ -805,6 +805,33 @@ describe('ServerKafka', () => {
         }),
       ).to.be.true;
     });
+    it('should not send the headers that ask for a reply', async () => {
+      // As a handler that returns what it received replies
+      await server.sendMessage(
+        {
+          id: correlationId,
+          response: {
+            value: messageValue,
+            headers: {
+              [KafkaHeaders.REPLY_TOPIC]: 'other.topic',
+              [KafkaHeaders.REPLY_PARTITION]: '3',
+              'x-origin': 'request',
+            },
+          },
+        },
+        replyTopic,
+        replyPartition,
+        correlationId,
+        context,
+      );
+
+      const [reply] = sendSpy.firstCall.args[0].messages;
+      expect(reply.headers).to.deep.equal({
+        'x-origin': 'request',
+        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+      });
+      expect(reply.partition).to.equal(parseFloat(replyPartition));
+    });
     it('should send message without reply partition', async () => {
       await server.sendMessage(
         {

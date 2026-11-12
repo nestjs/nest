@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Producer } from 'kafkajs';
-import { Observable } from 'rxjs';
+import { lastValueFrom, Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientKafka } from '../../client/client-kafka';
 import { NO_MESSAGE_HANDLER } from '../../constants';
@@ -757,6 +757,34 @@ describe('ClientKafka', () => {
       const err$ = client.emitBatch(null, null!);
       expect(err$).to.be.instanceOf(Observable);
     });
+
+    it('should not send the headers that ask for a reply', async () => {
+      sinon.stub(client, 'connect').resolves({} as Producer);
+      const send = sinon.stub().resolves([]);
+      sinon.stub(client as any, 'producer').value({ send });
+
+      await lastValueFrom(
+        client.emitBatch(topic, {
+          messages: [
+            { value: 'a' },
+            {
+              value: 'b',
+              headers: {
+                [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+                [KafkaHeaders.REPLY_TOPIC]: 'other.topic',
+                [KafkaHeaders.REPLY_PARTITION]: '0',
+              },
+            },
+          ],
+        }),
+      );
+
+      const [first, second] = send.firstCall.args[0].messages;
+      expect(first.headers).to.deep.equal({});
+      expect(second.headers).to.deep.equal({
+        [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+      });
+    });
   });
 
   describe('dispatchEvent', () => {
@@ -800,6 +828,32 @@ describe('ClientKafka', () => {
       client['dispatchEvent'](eventMessage).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
+    });
+
+    it('should not send the headers that ask for a reply', async () => {
+      sinon.stub(client as any, '_producer').value({
+        send: sendSpy,
+      });
+      // As a gateway forwards it, with a "value" of the sender's choosing
+      const forwarded = {
+        value: { item: 'book' },
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+          [KafkaHeaders.REPLY_TOPIC]: 'other.topic',
+          [KafkaHeaders.REPLY_PARTITION]: '0',
+          'x-origin': 'gateway',
+        },
+      };
+
+      await client['dispatchEvent']({ pattern: topic, data: forwarded });
+
+      const sentMessage = sendSpy.firstCall.args[0].messages[0];
+      // ServerKafka handles a message without a reply topic as an event
+      expect(sentMessage.headers).to.deep.equal({
+        [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+        'x-origin': 'gateway',
+      });
+      expect(forwarded.headers).to.have.property(KafkaHeaders.REPLY_TOPIC);
     });
   });
 
