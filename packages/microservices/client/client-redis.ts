@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isNumber, isString } from '@nestjs/common/utils/shared.utils';
 import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants';
 import {
   RedisEvents,
@@ -147,9 +148,15 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
       if (!this.wasInitialConnectionSuccessful) {
         this.wasInitialConnectionSuccessful = true;
+        const handleResponse = this.createResponseCallback();
         this.subClient.on(
           this.options.returnBuffers ? 'messageBuffer' : 'message',
-          this.createResponseCallback(),
+          // ioredis does not handle the promise, so a rejection would crash
+          // the process
+          (channel: string, buffer: string) =>
+            handleResponse(channel, buffer).catch(err =>
+              this.logger.error(err),
+            ),
         );
       }
     });
@@ -264,8 +271,13 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
           this.logger.debug(
             'You have to parse your buffer on your own to get id from it, because it is not in json format',
           );
+        // Whoever can publish on the reply channel chooses the id. Request
+        // ids are strings, and an object can throw when converted to one
+        // (`{"toString":1}`), so only a string or a number is printed.
+        const printableId =
+          isString(id) || isNumber(id) ? id : `(${typeof id})`;
         this.logger.debug(
-          'No matching callback found for Redis response packet with id: ' + id,
+          `No matching callback found for Redis response packet with id: ${printableId}`,
         );
         return;
       }

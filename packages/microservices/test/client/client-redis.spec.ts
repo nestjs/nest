@@ -179,6 +179,48 @@ describe('ClientRedis', () => {
         expect(callback.called).to.be.false;
       });
     });
+    describe('response that no request waits for', () => {
+      let redisClient: ClientRedis;
+      let logDebug: sinon.SinonStub;
+      let pendingCallback: sinon.SinonSpy;
+      let subscription: ReturnType<ClientRedis['createResponseCallback']>;
+
+      beforeEach(() => {
+        redisClient = new ClientRedis({});
+        logDebug = sinon.stub(Reflect.get(redisClient, 'logger'), 'debug');
+        pendingCallback = sinon.spy();
+        Reflect.get(redisClient, 'routingMap').set('1', pendingCallback);
+        subscription = redisClient.createResponseCallback();
+      });
+
+      it('should log its id and drop it', async () => {
+        await subscription('channel', JSON.stringify({ id: '2' }));
+
+        expect(
+          logDebug.calledWith(
+            'No matching callback found for Redis response packet with id: 2',
+          ),
+        ).to.be.true;
+        expect(pendingCallback.called).to.be.false;
+      });
+
+      [
+        ['an object that cannot be converted to a string', '{"toString":1}'],
+        ['a list of such objects', '[{"toString":1}]'],
+      ].forEach(([description, id]) => {
+        it(`should drop it when its id is ${description}`, async () => {
+          // Whoever publishes on the reply channel chooses the id
+          expect(await subscription('channel', `{"id":${id}}`)).to.be.undefined;
+
+          expect(
+            logDebug.calledWith(
+              'No matching callback found for Redis response packet with id: (object)',
+            ),
+          ).to.be.true;
+          expect(pendingCallback.called).to.be.false;
+        });
+      });
+    });
     describe('custom binary format (not json)', () => {
       it('should use buffer directly without parsing it as json', async () => {
         const clientWithBuffers = new ClientRedis({ returnBuffers: true });
@@ -367,6 +409,27 @@ describe('ClientRedis', () => {
       };
       client.registerReadyListener(emitter as any);
       expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.READY);
+    });
+    it('should log an error that the response listener rejects with', async () => {
+      // ioredis does not handle the promise its listeners return
+      const onSpy = sinon.spy();
+      const client = new ClientRedis({});
+      const untypedClient = client as any;
+      const error = new Error('callback failed');
+      sinon
+        .stub(client, 'createResponseCallback')
+        .returns(() => Promise.reject(error));
+      const logError = sinon.stub(untypedClient.logger, 'error');
+      const emitter = { status: 'ready', on: onSpy };
+      untypedClient.pubClient = { status: 'ready' };
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      onSpy.getCall(0).args[1]();
+      const listener = onSpy.getCall(1).args[1];
+
+      expect(await listener('channel', '{}')).to.be.undefined;
+      expect(logError.calledWith(error)).to.be.true;
     });
     it('should register "message" event when returnBuffers is not set', () => {
       const onSpy = sinon.spy();
