@@ -1046,6 +1046,53 @@ describe('WsAdapter', () => {
       expect(await response.text()).toBe('Upgrade Required');
     });
 
+    describe('when gateways share the port', () => {
+      let logError: ReturnType<typeof vi.spyOn>;
+      let logWarn: ReturnType<typeof vi.spyOn>;
+      beforeEach(() => {
+        logError = vi
+          .spyOn(adapter['logger'], 'error')
+          .mockImplementation(() => undefined);
+        logWarn = vi
+          .spyOn(adapter['logger'], 'warn')
+          .mockImplementation(() => undefined);
+      });
+
+      it('should refuse a gateway that sets another host than the port listens on', () => {
+        adapter.create(port, { path: '/a', host: '127.0.0.1' });
+
+        expect(() =>
+          adapter.create(port, { path: '/b', host: '0.0.0.0' }),
+        ).toThrow(
+          /sets the host "0.0.0.0", but shares port \d+ with gateways that listen on the host "127.0.0.1"/,
+        );
+        expect(logError).toHaveBeenCalledTimes(1);
+      });
+
+      it('should refuse a gateway that sets a host on a port that listens on every address', () => {
+        adapter.create(port, { path: '/a' });
+
+        expect(() =>
+          adapter.create(port, { path: '/b', host: '127.0.0.1' }),
+        ).toThrow(/listen on every address/);
+      });
+
+      it('should warn about a gateway without a host on a port that listens on one host only', () => {
+        adapter.create(port, { path: '/a', host: '127.0.0.1' });
+
+        expect(() => adapter.create(port, { path: '/b' })).not.toThrow();
+        expect(logWarn).toHaveBeenCalledTimes(1);
+      });
+
+      it('should accept gateways that set the same host', () => {
+        adapter.create(port, { path: '/a', host: '127.0.0.1' });
+        adapter.create(port, { path: '/b', host: '127.0.0.1' });
+
+        expect(logError).not.toHaveBeenCalled();
+        expect(logWarn).not.toHaveBeenCalled();
+      });
+    });
+
     it('should listen on the host from the options', async () => {
       adapter.create(port, { path: '/chat', host: '127.0.0.1' });
       const httpServer = adapter['httpServersRegistry'].get(port);

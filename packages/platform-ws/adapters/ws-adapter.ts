@@ -130,6 +130,12 @@ export class WsAdapter extends AbstractWsAdapter {
     HttpServerRegistryKey,
     UpgradeListener
   >();
+  // The "host" each port opened here listens on: that of the gateway the port
+  // was opened for, which every other gateway on the port shares
+  private readonly hostsRegistry = new Map<
+    HttpServerRegistryKey,
+    string | undefined
+  >();
   protected messageParser: WsMessageParser = defaultMessageParser;
   protected readonly maxConcurrentMessages: number;
   protected readonly maxSendBufferSize: number;
@@ -212,9 +218,14 @@ export class WsAdapter extends AbstractWsAdapter {
       // sharing a single HTTP/S server running on different port
       // than a regular HTTP application
       const httpServer = this.ensureHttpServerExists(port);
-      // ws listens with "host" and "backlog" only on a server it creates
-      // itself, and the one below has none (noServer)
-      httpServer?.listen(port, wsOptions.host, wsOptions.backlog);
+      if (httpServer) {
+        // ws listens with "host" and "backlog" only on a server it creates
+        // itself, and the one below has none (noServer)
+        httpServer.listen(port, wsOptions.host, wsOptions.backlog);
+        this.hostsRegistry.set(port, wsOptions.host);
+      } else {
+        this.ensureSameHost(port, path, wsOptions.host);
+      }
 
       const wsServer = this.bindErrorHandler(
         new WebSocketServer({
@@ -310,6 +321,30 @@ export class WsAdapter extends AbstractWsAdapter {
       }
       callback(client, request, ...rest);
     });
+  }
+
+  /**
+   * Gateways with a port of their own and different paths share one server,
+   * which listens on the "host" of the gateway it was opened for. A gateway
+   * that joins it with another "host" would be served on addresses its own
+   * "host" was meant to keep it off, so the application does not start.
+   */
+  private ensureSameHost(port: number, path: string, host?: string) {
+    const listeningHost = this.hostsRegistry.get(port);
+    if (host === listeningHost) {
+      return;
+    }
+    if (isNil(host)) {
+      this.logger.warn(
+        `The gateway with the path "${path}" sets no "host", but shares port ${port} with gateways that listen on the host "${listeningHost}" only, so it does too.`,
+      );
+      return;
+    }
+    const error = new Error(
+      `The gateway with the path "${path}" sets the host "${host}", but shares port ${port} with gateways that listen on ${isNil(listeningHost) ? 'every address' : `the host "${listeningHost}"`}. Set the same "host" on every gateway of a port, or give the gateway a port of its own.`,
+    );
+    this.logger.error(error);
+    throw error;
   }
 
   public bindMessageHandlers(
@@ -532,6 +567,7 @@ export class WsAdapter extends AbstractWsAdapter {
     this.httpServersRegistry.clear();
     this.wsServersRegistry.clear();
     this.upgradeListenersRegistry.clear();
+    this.hostsRegistry.clear();
   }
 
   public setMessageParser(parser: WsMessageParser) {
