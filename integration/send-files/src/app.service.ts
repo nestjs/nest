@@ -45,6 +45,13 @@ export class AppService {
     return new StreamableFile(createReadStream('does-not-exist.txt'));
   }
 
+  getObjectModeFileWithNonBytes(): StreamableFile {
+    // e.g. a stream of values instead of their serialized bytes
+    return new StreamableFile(Readable.from([{ id: 1 }])).setErrorLogger(
+      () => {},
+    );
+  }
+
   getFileThatDoesNotExistWithMalformedType(): StreamableFile {
     // e.g. a type built from a file name that has no extension
     return new StreamableFile(createReadStream('does-not-exist'), {

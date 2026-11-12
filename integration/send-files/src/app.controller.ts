@@ -37,6 +37,11 @@ export class AppController {
     return this.appService.getFileThatDoesNotExist();
   }
 
+  @Get('file/object-mode/non-bytes')
+  getObjectModeFileWithNonBytes(): StreamableFile {
+    return this.appService.getObjectModeFileWithNonBytes();
+  }
+
   @Get('file/not/exist/malformed-type')
   getNonExistantFileWithMalformedType(): StreamableFile {
     return this.appService.getFileThatDoesNotExistWithMalformedType();

@@ -17,7 +17,7 @@ import * as http from 'http';
 import { inject } from 'light-my-request';
 import { AddressInfo } from 'net';
 import * as sinon from 'sinon';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
 
 describe('FastifyAdapter', () => {
@@ -648,6 +648,192 @@ describe('FastifyAdapter', () => {
       expect(sources.every(source => source.destroyed)).to.be.true;
     });
 
+    // Over a socket: the response of `inject()` is not a ServerResponse
+    const request = async () => {
+      if (!fastifyAdapter.getHttpServer().listening) {
+        await fastifyAdapter
+          .getInstance()
+          .listen({ port: 0, host: '127.0.0.1' });
+      }
+      const { port } = fastifyAdapter.getHttpServer().address() as AddressInfo;
+      return new Promise<{
+        clientRequest: http.ClientRequest;
+        response: http.IncomingMessage;
+      }>((resolve, reject) => {
+        const clientRequest = http
+          .get({ host: '127.0.0.1', port, path: '/' }, response =>
+            resolve({ clientRequest, response }),
+          )
+          .on('error', reject);
+      });
+    };
+    const readBody = (response: http.IncomingMessage) =>
+      new Promise<string>((resolve, reject) => {
+        let body = '';
+        response.setEncoding('utf8');
+        response.on('data', chunk => (body += chunk));
+        response.on('end', () => resolve(body));
+        response.on('error', reject);
+      });
+
+    describe('for a StreamableFile in object mode', () => {
+      let file: StreamableFile;
+      let write: sinon.SinonSpy;
+      let errorLogger: sinon.SinonStub;
+
+      beforeEach(() => {
+        errorLogger = sinon.stub();
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          write = sinon.spy(reply.raw, 'write');
+          fastifyAdapter.reply(reply, file);
+        });
+      });
+
+      afterEach(() => fastifyAdapter.close());
+
+      const serve = (source: Readable) => {
+        file = new StreamableFile(source).setErrorLogger(errorLogger);
+        return request();
+      };
+      const waitForClose = async (response: http.IncomingMessage) => {
+        response.on('error', () => {});
+        response.resume();
+        if (!response.closed) {
+          await new Promise(resolve => response.once('close', resolve));
+        }
+      };
+      const expectChunkError = () => {
+        expect(errorLogger.calledOnce).to.be.true;
+        const [err] = errorLogger.firstCall.args;
+        expect(err).to.be.instanceOf(TypeError);
+        expect(err.message).to.contain(
+          'A StreamableFile can only send string and Uint8Array chunks',
+        );
+      };
+      const wroteChunk = (chunk: unknown) =>
+        write.getCalls().some(call => call.args[0] === chunk);
+
+      it('should send the strings and bytes it emits', async () => {
+        const { response } = await serve(
+          Readable.from([
+            '',
+            'first ',
+            Buffer.from('second '),
+            new Uint8Array([116, 104, 105, 114, 100]),
+          ]),
+        );
+
+        expect(response.statusCode).to.equal(200);
+        expect(await readBody(response)).to.equal('first second third');
+        expect(write.firstCall.args[0]).to.equal('');
+      });
+
+      it('should end the response for a source that has already ended', async () => {
+        const source = Readable.from([]);
+        source.resume();
+        await new Promise(resolve => source.once('end', resolve));
+
+        const { response } = await serve(source);
+
+        expect(response.statusCode).to.equal(200);
+        expect(await readBody(response)).to.equal('');
+      });
+
+      (
+        [
+          ['an object', { id: 1 }],
+          ['an array', ['a', 'b']],
+          ['a number', 42],
+        ] as const
+      ).forEach(([name, chunk]) => {
+        it(`should fail the stream on ${name} without writing it`, async () => {
+          // The chunk first, last and in between
+          const sources = [
+            () => Readable.from([chunk]),
+            () => Readable.from(['first', chunk]),
+            () => Readable.from(['first', chunk, 'last']),
+          ];
+          for (const createSource of sources) {
+            errorLogger.resetHistory();
+            const source = createSource();
+
+            const { response } = await serve(source);
+            await waitForClose(response);
+
+            expect(response.complete && response.statusCode === 200).to.be
+              .false;
+            expectChunkError();
+            expect(wroteChunk(chunk)).to.be.false;
+            expect(source.destroyed).to.be.true;
+          }
+        });
+      });
+
+      it('should answer 400 for such a chunk before any data', async () => {
+        const { response } = await serve(Readable.from([{ id: 1 }]));
+
+        expect(response.statusCode).to.equal(400);
+        await readBody(response);
+        expectChunkError();
+        // Answered with the standard body of the status by the built-in
+        // exception filter, as an "http-errors" error that is not exposed
+        const [err] = errorLogger.firstCall.args;
+        expect(err).to.include({ status: 400, statusCode: 400, expose: false });
+      });
+
+      it('should log what the error logger of the file throws for such a chunk', async () => {
+        const loggerError = new Error('logger failed');
+        errorLogger.throws(loggerError);
+        const logger = sinon.stub((fastifyAdapter as any).logger, 'error');
+
+        const { response } = await serve(Readable.from([{ id: 1 }]));
+
+        expect(response.statusCode).to.equal(400);
+        await readBody(response);
+        expect(logger.calledWith(loggerError)).to.be.true;
+      });
+
+      it('should abort the response for such a chunk after some data', async () => {
+        const source = new PassThrough({ objectMode: true });
+        source.write('first');
+
+        const { response } = await serve(source);
+        await new Promise(resolve => response.once('data', resolve));
+        source.write({ id: 1 });
+        await waitForClose(response);
+
+        expect(response.complete).to.be.false;
+        expectChunkError();
+        expect(source.destroyed).to.be.true;
+      });
+
+      it('should abort the response when the source fails after some data', async () => {
+        const source = new PassThrough({ objectMode: true });
+        source.write('first');
+
+        const { response } = await serve(source);
+        await new Promise(resolve => response.once('data', resolve));
+        source.destroy(new Error('EIO'));
+        await waitForClose(response);
+
+        expect(response.complete).to.be.false;
+      });
+
+      it('should destroy the source when the client goes away', async () => {
+        const source = new PassThrough({ objectMode: true });
+        source.write('first');
+
+        const { clientRequest, response } = await serve(source);
+        await new Promise(resolve => response.once('data', resolve));
+        clientRequest.destroy();
+
+        for (let i = 0; i < 100 && !source.destroyed; i++) {
+          await new Promise(resolve => setTimeout(resolve, 5));
+        }
+        expect(source.destroyed).to.be.true;
+      });
+    });
+
     // e.g. the response middleware gets, and the exception filters of its
     // errors
     describe('for a StreamableFile on a raw response', () => {
@@ -668,33 +854,6 @@ describe('FastifyAdapter', () => {
       });
 
       afterEach(() => fastifyAdapter.close());
-
-      const request = async () => {
-        await fastifyAdapter
-          .getInstance()
-          .listen({ port: 0, host: '127.0.0.1' });
-        const { port } = fastifyAdapter
-          .getHttpServer()
-          .address() as AddressInfo;
-        return new Promise<{
-          clientRequest: http.ClientRequest;
-          response: http.IncomingMessage;
-        }>((resolve, reject) => {
-          const clientRequest = http
-            .get({ host: '127.0.0.1', port, path: '/' }, response =>
-              resolve({ clientRequest, response }),
-            )
-            .on('error', reject);
-        });
-      };
-      const readBody = (response: http.IncomingMessage) =>
-        new Promise<string>((resolve, reject) => {
-          let body = '';
-          response.setEncoding('utf8');
-          response.on('data', chunk => (body += chunk));
-          response.on('end', () => resolve(body));
-          response.on('error', reject);
-        });
 
       it('should answer a stream that fails before any data with the error handler of the instance', async () => {
         const error = new Error('ENOENT');

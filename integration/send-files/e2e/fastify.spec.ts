@@ -81,6 +81,18 @@ describe('Fastify FileSend', () => {
         expect(payload).to.equal(readmeString);
       });
   });
+  it('should answer 400 for a file in object mode that emits something else than bytes', async () => {
+    const { statusCode, payload } = await app.inject({
+      method: 'GET',
+      url: '/file/object-mode/non-bytes',
+    });
+
+    expect(statusCode).to.equal(400);
+    expect(JSON.parse(payload)).to.deep.equal({
+      statusCode: 400,
+      message: 'Bad Request',
+    });
+  });
   it('should answer with JSON if the file does not exist and its type is malformed', async () => {
     const { statusCode, headers, payload } = await app.inject({
       method: 'GET',
