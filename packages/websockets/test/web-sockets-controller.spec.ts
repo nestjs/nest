@@ -1252,6 +1252,107 @@ describe('WebSocketsController', () => {
         );
       });
     });
+
+    describe('when the client disconnects while the gateway is being resolved', () => {
+      let calls: string[];
+      let gateway: { handleConnection(): unknown; handleDisconnect(): unknown };
+      let gatewayWrapper: any;
+      let resolveGateway: () => void;
+      let rejectGateway: (err: Error) => void;
+      let client: object;
+
+      const createHandler = (
+        methodName: 'handleConnection' | 'handleDisconnect',
+      ) =>
+        instance.createRequestScopedEventHandler(
+          gatewayWrapper,
+          { providers: new Map() } as Module,
+          'moduleKey',
+          methodName,
+          {},
+        );
+      const nextTick = () => new Promise(resolve => setImmediate(resolve));
+
+      beforeEach(() => {
+        calls = [];
+        gateway = {
+          handleConnection: () => calls.push('handleConnection'),
+          handleDisconnect: () => calls.push('handleDisconnect'),
+        };
+        gatewayWrapper = {
+          id: 'gateway-wrapper',
+          isDependencyTreeStatic: () => false,
+          instance: gateway,
+          isDependencyTreeDurable: () => false,
+        };
+        client = {};
+        vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+          () => undefined,
+        );
+        // As the injector can, hand the instance to the load of the
+        // disconnect handler before the one that was already pending
+        vi.spyOn(injector, 'loadPerContext')
+          .mockImplementationOnce(
+            () =>
+              new Promise<any>((resolve, reject) => {
+                resolveGateway = () => resolve(gateway);
+                rejectGateway = reject;
+              }),
+          )
+          .mockImplementation(async () => gateway as any);
+      });
+
+      it('should call the disconnect hook after the connection hook', async () => {
+        const results = [
+          createHandler('handleConnection'),
+          createHandler('handleDisconnect'),
+        ].map(handler => handler(client));
+        await nextTick();
+        expect(calls).toEqual([]);
+
+        resolveGateway();
+        await Promise.all(results);
+
+        expect(calls).toEqual(['handleConnection', 'handleDisconnect']);
+        expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
+      });
+
+      it('should not wait for an asynchronous connection hook to finish', async () => {
+        gateway.handleConnection = () => {
+          calls.push('handleConnection');
+          return new Promise(() => undefined);
+        };
+        void createHandler('handleConnection')(client);
+        const disconnected = createHandler('handleDisconnect')(client);
+
+        resolveGateway();
+        await disconnected;
+
+        expect(calls).toEqual(['handleConnection', 'handleDisconnect']);
+      });
+
+      it('should call the disconnect hook when the gateway fails to resolve for the connection hook', async () => {
+        vi.spyOn(injector, 'loadEnhancersPerContext').mockResolvedValue(
+          undefined,
+        );
+        const exceptionFilter = { handle: vi.fn() };
+        vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+          exceptionFilter as any,
+        );
+        const error = new Error('session lookup failed');
+        const connected = createHandler('handleConnection')(client);
+        const disconnected = createHandler('handleDisconnect')(client);
+
+        rejectGateway(error);
+        await Promise.all([connected, disconnected]);
+
+        expect(exceptionFilter.handle).toHaveBeenCalledWith(
+          error,
+          expect.anything(),
+        );
+        expect(calls).toEqual(['handleDisconnect']);
+      });
+    });
   });
   describe('createStaticEventHandler', () => {
     let exceptionFilter: { handle: ReturnType<typeof vi.fn> };

@@ -53,6 +53,12 @@ export class WebSocketsController {
     new MetadataScanner(),
   );
   private readonly pendingDisconnects = new WeakMap<ContextId, number>();
+  // For each gateway resolved per connection, a promise per client that
+  // settles once its connection hook has been called
+  private readonly connectionHookCalls = new WeakMap<
+    InstanceWrapper<NestGateway>,
+    WeakMap<object, Promise<void>>
+  >();
 
   constructor(
     private readonly socketServerProvider: SocketServerProvider,
@@ -486,11 +492,13 @@ export class WebSocketsController {
       ? this.areGlobalScopedEnhancersDurable()
       : instanceWrapper.isDependencyTreeDurable();
     const targetCallback = instance[methodName];
+    const connectionHookCalls = this.getConnectionHookCalls(instanceWrapper);
 
     return async (...args: unknown[]) => {
       const [client] = args;
       let contextId: ContextId | undefined;
       let isResolved = false;
+      let markConnectionHookAsCalled: (() => void) | undefined;
 
       try {
         contextId = this.getContextId(
@@ -501,6 +509,20 @@ export class WebSocketsController {
           this.pendingDisconnects.set(
             contextId,
             (this.pendingDisconnects.get(contextId) ?? 0) + 1,
+          );
+          // The client can leave while the gateway is still being resolved
+          // for its connection hook. Nothing else orders the two handlers, and
+          // the injector could hand the pending instance to this one first.
+          const connectionHookCall = connectionHookCalls.get(client as object);
+          if (connectionHookCall) {
+            await connectionHookCall;
+          }
+        } else {
+          connectionHookCalls.set(
+            client as object,
+            new Promise<void>(resolve => {
+              markConnectionHookAsCalled = resolve;
+            }),
           );
         }
         const contextInstance = isStatic
@@ -517,7 +539,11 @@ export class WebSocketsController {
         }
         const scopedMethod = contextInstance[methodName] as
           ((...methodArgs: unknown[]) => unknown) | undefined;
-        return await scopedMethod?.apply(contextInstance, args);
+        const result = scopedMethod?.apply(contextInstance, args);
+        // Not waited for, as a default-scoped gateway does not wait for its
+        // connection hook to finish before it handles the disconnect either
+        markConnectionHookAsCalled?.();
+        return await result;
       } catch (err) {
         if (!targetCallback) {
           // The gateway failed to resolve and has no hook whose exception
@@ -555,6 +581,8 @@ export class WebSocketsController {
         );
         this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
       } finally {
+        // The hook threw, or is not going to be called at all
+        markConnectionHookAsCalled?.();
         if (methodName === 'handleDisconnect' && contextId) {
           this.cleanupRequestScopedContext(
             instanceWrapper,
@@ -564,6 +592,17 @@ export class WebSocketsController {
         }
       }
     };
+  }
+
+  private getConnectionHookCalls(
+    instanceWrapper: InstanceWrapper<NestGateway>,
+  ): WeakMap<object, Promise<void>> {
+    let connectionHookCalls = this.connectionHookCalls.get(instanceWrapper);
+    if (!connectionHookCalls) {
+      connectionHookCalls = new WeakMap();
+      this.connectionHookCalls.set(instanceWrapper, connectionHookCalls);
+    }
+    return connectionHookCalls;
   }
 
   private logResolutionError(
