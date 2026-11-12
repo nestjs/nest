@@ -4,7 +4,7 @@ import {
   PayloadTooLargeException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
-import { isPlainObject } from '@nestjs/common/internal';
+import { isNil, isPlainObject } from '@nestjs/common/internal';
 import * as coreInternal from '@nestjs/core/internal';
 import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { finished } from 'stream';
@@ -49,14 +49,21 @@ function isRejectedByPipes(req: any): boolean {
  * `limits` may also be a function of the request (multer >= 2.4.0), which
  * can't be merged key-by-key. In that case (or when only one side defines
  * `limits`) the local value wins outright, matching the pre-merge behaviour.
+ *
+ * A local option or limit set to `null` or `undefined` (e.g. an optional
+ * configuration value that is not set) keeps the global value, as if it were
+ * not set: to lift a global limit, a route sets it to `Infinity`.
  */
 export function mergeMulterOptions(
   options: MulterModuleOptions = {},
   localOptions: MulterOptions = {},
 ): MulterModuleOptions {
-  const merged: MulterModuleOptions = { ...options, ...localOptions };
+  const merged: MulterModuleOptions = {
+    ...options,
+    ...withoutNil(localOptions),
+  };
   if (isPlainObject(options.limits) && isPlainObject(localOptions.limits)) {
-    merged.limits = { ...options.limits, ...localOptions.limits };
+    merged.limits = { ...options.limits, ...withoutNil(localOptions.limits) };
   }
   // `dest` and `storage` both say where files go, and multer prefers
   // `storage`, so a global storage engine would shadow a local `dest`.
@@ -64,6 +71,12 @@ export function mergeMulterOptions(
     delete merged.storage;
   }
   return merged;
+}
+
+function withoutNil<T extends object>(options: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(options).filter(([, value]) => !isNil(value)),
+  ) as Partial<T>;
 }
 
 /**

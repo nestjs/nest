@@ -79,6 +79,39 @@ describe('mergeMulterOptions', () => {
     );
     expect(merged.limits).toEqual({ fileSize: 2048 });
   });
+  it('should keep the global limits the route sets to null or undefined', () => {
+    const merged = mergeMulterOptions(
+      { limits: { fileSize: 1024, files: 2, parts: 10 } },
+      { limits: { fileSize: undefined, files: null!, fields: 3 } },
+    );
+    expect(merged.limits).toEqual({
+      fileSize: 1024,
+      files: 2,
+      parts: 10,
+      fields: 3,
+    });
+  });
+  it('should keep the global options the route sets to null or undefined', () => {
+    const fileFilter = vi.fn();
+    const storage = multer.memoryStorage();
+    const limits = { fileSize: 1024 };
+    const merged = mergeMulterOptions(
+      { limits, fileFilter, storage },
+      { limits: undefined, fileFilter: undefined, storage: null },
+    );
+    expect(merged).toEqual({ limits, fileFilter, storage });
+    const limitsFn = () => limits;
+    expect(
+      mergeMulterOptions({ limits: limitsFn }, { limits: null! }).limits,
+    ).toBe(limitsFn);
+  });
+  it('should let a route lift a global limit with Infinity', () => {
+    const merged = mergeMulterOptions(
+      { limits: { fileSize: 1024 } },
+      { limits: { fileSize: Infinity } },
+    );
+    expect(merged.limits).toEqual({ fileSize: Infinity });
+  });
 });
 
 describe('applyDefaultLimits', () => {

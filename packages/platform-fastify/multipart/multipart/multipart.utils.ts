@@ -3,7 +3,7 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
-import { isPlainObject } from '@nestjs/common/internal';
+import { isNil, isPlainObject } from '@nestjs/common/internal';
 import type {
   MultipartModuleOptions,
   MultipartOptions,
@@ -20,15 +20,19 @@ import { MultipartError } from './multipart.error.js';
  * Merges module-level (global) options with interceptor-level (local)
  * options, with the same rule as platform-express's `mergeMulterOptions`:
  * `limits` is merged key-by-key when both sides define it as an object, and
- * the local value wins outright otherwise.
+ * the local value wins outright otherwise. A local option or limit set to
+ * `null` or `undefined` keeps the global value, as if it were not set.
  */
 export function mergeMultipartOptions(
   options: MultipartModuleOptions = {},
   localOptions: MultipartOptions = {},
 ): MultipartModuleOptions {
-  const merged: MultipartModuleOptions = { ...options, ...localOptions };
+  const merged: MultipartModuleOptions = {
+    ...options,
+    ...withoutNil(localOptions),
+  };
   if (isPlainObject(options.limits) && isPlainObject(localOptions.limits)) {
-    merged.limits = { ...options.limits, ...localOptions.limits };
+    merged.limits = { ...options.limits, ...withoutNil(localOptions.limits) };
   }
   // `dest` and `storage` both say where files go, and `resolveStorage()`
   // prefers `storage`, so a global storage engine would shadow a local `dest`.
@@ -36,6 +40,12 @@ export function mergeMultipartOptions(
     delete merged.storage;
   }
   return merged;
+}
+
+function withoutNil<T extends object>(options: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(options).filter(([, value]) => !isNil(value)),
+  ) as Partial<T>;
 }
 
 /**

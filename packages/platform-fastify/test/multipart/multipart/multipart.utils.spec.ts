@@ -47,6 +47,30 @@ describe('mergeMultipartOptions', () => {
   it('should work without options', () => {
     expect(mergeMultipartOptions()).toEqual({});
   });
+
+  it('should keep the global limits the route sets to null or undefined', () => {
+    const merged = mergeMultipartOptions(
+      { limits: { fileSize: 1024, files: 2, parts: 10 } },
+      { limits: { fileSize: undefined, files: null!, fields: 3 } },
+    );
+    expect(merged.limits).toEqual({
+      fileSize: 1024,
+      files: 2,
+      parts: 10,
+      fields: 3,
+    });
+  });
+
+  it('should keep the global options the route sets to null or undefined', () => {
+    const fileFilter = vi.fn();
+    const storage = memoryStorage();
+    const limits = { fileSize: 1024 };
+    const merged = mergeMultipartOptions(
+      { limits, fileFilter, storage },
+      { limits: undefined, fileFilter: undefined, storage: null! },
+    );
+    expect(merged).toEqual({ limits, fileFilter, storage });
+  });
 });
 
 describe('transformException', () => {
