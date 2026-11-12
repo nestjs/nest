@@ -369,7 +369,7 @@ export class RouterResponseController {
       // so a handler that ties its resources to the signal releases them once,
       // regardless of how the stream ended. `abort()` is idempotent, so paths
       // that already aborted on disconnect are unaffected.
-      let stopWaitingForClose: (() => void) | undefined;
+      let stopWaitingForClose: (() => void) | undefined = undefined;
       const finalize = () => {
         stopWaitingForClose?.();
         clearInterval(pausedSocketProbe);

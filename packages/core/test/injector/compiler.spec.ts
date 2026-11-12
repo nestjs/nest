@@ -48,7 +48,7 @@ describe('ModuleCompiler', () => {
 
     it('should not remember a reference that resolves to nothing yet', () => {
       class CatsModule {}
-      let resolved: typeof CatsModule | undefined;
+      let resolved: typeof CatsModule | undefined = undefined;
       const reference = { forwardRef: () => resolved };
 
       expect(compiler.resolveForwardReference(reference)).to.be.undefined;

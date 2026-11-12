@@ -7,6 +7,7 @@ import {
 describe('withoutArrayGaps', () => {
   it('should return the items in order, without the gaps', () => {
     const array = ['a', 'b', 'c'];
+    // eslint-disable-next-line @typescript-eslint/no-array-delete -- makes the gap under test
     delete array[1];
     expect(withoutArrayGaps(array)).to.deep.equal(['a', 'c']);
     expect(array).to.have.lengthOf(3);

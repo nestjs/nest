@@ -243,7 +243,9 @@ export class IoAdapter extends AbstractWsAdapter {
       // would fail on the engine it does not have, so only the adapters of
       // its namespaces are closed, e.g. to disconnect from a shared store
       await Promise.allSettled(
-        [...server._nsps.values()].map(namespace => namespace.adapter.close()),
+        [...server._nsps.values()].map(namespace =>
+          Promise.resolve(namespace.adapter.close()),
+        ),
       );
       return;
     }

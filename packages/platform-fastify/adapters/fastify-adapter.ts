@@ -1590,7 +1590,7 @@ export class FastifyAdapter<
       return undefined;
     }
     return (request: TRequest) => {
-      const rawUrl = this.getRequestOriginalUrl(request.raw as TRawRequest);
+      const rawUrl = this.getRequestOriginalUrl(request.raw);
       const queryParamsIndex = rawUrl.indexOf('?');
       const pathname =
         queryParamsIndex >= 0 ? rawUrl.slice(0, queryParamsIndex) : rawUrl;

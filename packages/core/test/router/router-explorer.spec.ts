@@ -293,7 +293,7 @@ describe('RouterExplorer', () => {
         ['www.acme.example.com', { tenant: 'acme' }],
         ['acme.example.com', { tenant: 'acme' }],
       ].forEach(([hostname, expectedHosts]) => {
-        it(`should keep the matched params of "${hostname}"`, () => {
+        it(`should keep the matched params of "${String(hostname)}"`, () => {
           const filter = (routerBuilder as any).applyHostFilter(
             '{www.}:tenant.example.com',
             handler,

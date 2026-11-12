@@ -39,7 +39,7 @@ export class RoutePathFactory {
         versionOrVersions,
       )
         ? versionOrVersions
-        : [versionOrVersions as string | typeof VERSION_NEUTRAL];
+        : [versionOrVersions];
       versionedPaths = versions.map(version => ({
         // Version Neutral - Do not include version in URL
         path:

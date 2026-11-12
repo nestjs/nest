@@ -501,11 +501,7 @@ describe('ListenersController', () => {
       ): MessageHandler => {
         const [proxy, ...rest] = proxies;
         const handler: MessageHandler = async (...args: unknown[]) =>
-          instance.forkJoinHandlersIfAttached(
-            proxy(...args) as Promise<unknown>,
-            args,
-            handler,
-          );
+          instance.forkJoinHandlersIfAttached(proxy(...args), args, handler);
         if (rest.length > 0) {
           handler.next = createProxyChain(rest);
         }

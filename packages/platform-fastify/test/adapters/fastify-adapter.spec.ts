@@ -1307,6 +1307,7 @@ describe('FastifyAdapter', () => {
       await adapter.close();
       adapter = new FastifyAdapter({ skipMiddie: true });
       await adapter.register(middie);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed for sinon's overloads under ts-node
       const use = sinon.spy(adapter.getInstance() as any, 'use');
       const errorHandler = (
         _err: unknown,

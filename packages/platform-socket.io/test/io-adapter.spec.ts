@@ -455,7 +455,7 @@ describe('IoAdapter', () => {
         public createIOServer(port: number | undefined, options?: any) {
           const server = super.createIOServer(port, options);
           server.use((_, next) => next());
-          (server as any).setUp = true;
+          server.setUp = true;
           return server;
         }
       })();

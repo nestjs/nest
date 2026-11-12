@@ -67,7 +67,7 @@ export function describeEnhancer(value: unknown): string {
     return 'an array';
   }
   if (isObject(value)) {
-    const name = (value as object).constructor?.name;
+    const name = value.constructor?.name;
     return name && name !== 'Object' ? `an instance of ${name}` : 'an object';
   }
   return String(value);

@@ -95,14 +95,12 @@ describe('applyDefaultLimits', () => {
     const { limits } = applyDefaultLimits({
       limits: ((req: { size: number }) => ({ fileSize: req.size })) as any,
     });
-    expect((limits as any)({ size: 10 })).to.deep.equal({
+    expect(limits({ size: 10 })).to.deep.equal({
       fileSize: 10,
       ...defaults,
     });
     expect(
-      (applyDefaultLimits({ limits: (() => undefined) as any }).limits as any)(
-        {},
-      ),
+      applyDefaultLimits({ limits: (() => undefined) as any }).limits({}),
     ).to.deep.equal(defaults);
   });
 
@@ -152,7 +150,7 @@ describe('applyDefaultLimits', () => {
           cb(null, true);
           cb(null, false);
         },
-      }).fileFilter!({}, file, callback);
+      }).fileFilter({}, file, callback);
       expect(callback.calledOnce).to.be.true;
       expect(callback.calledWith(null, true)).to.be.true;
     });
@@ -163,7 +161,7 @@ describe('applyDefaultLimits', () => {
         fileFilter: (_req, _file, cb) => cb(null, true),
       });
       expect(() =>
-        fileFilter!({}, file, () => {
+        fileFilter({}, file, () => {
           throw error;
         }),
       ).to.throw(error);

@@ -623,7 +623,7 @@ export class RouterExecutionContext {
     const response = res?.raw ?? res;
     const connection = pickCloseSource((req?.raw ?? req)?.socket, response);
     let isReleased = false;
-    let stopWaitingForClose: (() => void) | undefined;
+    let stopWaitingForClose: (() => void) | undefined = undefined;
     const release = () => {
       if (isReleased) {
         return;
