@@ -406,8 +406,16 @@ export class WsAdapter extends AbstractWsAdapter {
             break;
           }
         }
+        // Another upgrade listener on the same server (e.g. GraphQL
+        // subscriptions) may own this path, so the socket is closed only when
+        // no other listener can claim it. Node removes its own listeners from
+        // the socket before emitting "upgrade", so a connection reset on a
+        // socket that nobody claims would raise an unhandled "error" event.
         if (!isRequestDelegated) {
-          socket.destroy();
+          socket.on(ERROR_EVENT, () => socket.destroy());
+          if (httpServer.listenerCount('upgrade') <= 1) {
+            socket.destroy();
+          }
         }
       } catch (err) {
         // Node hands the socket over without listeners of its own, and end()

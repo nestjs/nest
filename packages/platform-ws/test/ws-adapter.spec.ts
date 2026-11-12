@@ -13,7 +13,7 @@ import {
   toArray,
   type Observable,
 } from 'rxjs';
-import { WebSocket } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { WsAdapter } from '../adapters/ws-adapter.js';
 import { WsProxy } from '../../websockets/context/ws-proxy.js';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler.js';
@@ -570,6 +570,61 @@ describe('WsAdapter', () => {
         }
       } finally {
         client.destroy();
+        await adapter.dispose();
+        await new Promise(resolve => httpServer.close(resolve));
+      }
+    });
+
+    it('should leave an upgrade request for another path to the other upgrade listeners', async () => {
+      const httpServer = createServer();
+      const adapter = new WsAdapter(httpServer);
+      adapter.create(0, { path: '/live' });
+      // e.g. GraphQL subscriptions served by "graphql-ws" on the same server
+      const otherServer = new WebSocketServer({ noServer: true });
+      httpServer.on('upgrade', (request, socket, head) => {
+        if (request.url === '/graphql') {
+          otherServer.handleUpgrade(request, socket, head, ws =>
+            otherServer.emit('connection', ws, request),
+          );
+        }
+      });
+      await new Promise<void>(resolve =>
+        httpServer.listen(0, '127.0.0.1', resolve),
+      );
+      const { port } = httpServer.address() as AddressInfo;
+
+      const client = new WebSocket(`ws://127.0.0.1:${port}/graphql`);
+      try {
+        await expect(
+          Promise.race([
+            once(client, 'open'),
+            once(client, 'error').then(([err]) => Promise.reject(err)),
+          ]),
+        ).resolves.toBeDefined();
+      } finally {
+        client.terminate();
+        otherServer.clients.forEach(ws => ws.terminate());
+        await adapter.dispose();
+        await new Promise(resolve => httpServer.close(resolve));
+      }
+    });
+
+    it('should close the socket of an upgrade request for another path when no other listener can claim it', async () => {
+      const httpServer = createServer();
+      const adapter = new WsAdapter(httpServer);
+      adapter.create(0, { path: '/live' });
+      await new Promise<void>(resolve =>
+        httpServer.listen(0, '127.0.0.1', resolve),
+      );
+      const { port } = httpServer.address() as AddressInfo;
+
+      const client = new WebSocket(`ws://127.0.0.1:${port}/unknown`);
+      const closed = new Promise(resolve => client.on('close', resolve));
+      const failed = new Promise(resolve => client.on('error', resolve));
+      try {
+        expect(await failed).toMatchObject({ code: 'ECONNRESET' });
+        await closed;
+      } finally {
         await adapter.dispose();
         await new Promise(resolve => httpServer.close(resolve));
       }
