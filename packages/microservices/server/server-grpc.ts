@@ -733,25 +733,33 @@ export class ServerGrpc extends Server<never, never> {
         this.transportId,
         { ...call, operationId: methodHandler.name } as any,
         async () => {
+          const fail = (err: unknown) => {
+            if (isResponseStream) {
+              call.emit('error', err);
+            } else {
+              callback(err, null);
+            }
+          };
           try {
             let handlerStream: Observable<any>;
-            if (isResponseStream) {
+            try {
               handlerStream = this.transformToObservable(
-                await methodHandler(call),
+                isResponseStream
+                  ? await methodHandler(call)
+                  : await methodHandler(call, callback),
               );
-            } else {
-              handlerStream = this.transformToObservable(
-                await methodHandler(call, callback),
-              );
+            } catch (err) {
+              // grpc-js ignores the promise returned here, so a rejection (an
+              // exception filter that throws) would go unhandled. The error
+              // has not been through the exception filters, so it is logged
+              // rather than sent to the client, as for the other kinds of call.
+              return fail(this.toInternalError(err));
             }
-            await lastValueFrom(handlerStream, { defaultValue: undefined });
-          } catch (err) {
-            // grpc-js ignores the promise returned here, so a rejection would
-            // go unhandled and the client would never learn about the error.
-            if (isResponseStream) {
-              call.emit('error', toSendableError(err));
-            } else {
-              callback(toSendableError(err), null);
+            try {
+              await lastValueFrom(handlerStream, { defaultValue: undefined });
+            } catch (err) {
+              // The error the exception filters answered with
+              fail(toSendableError(err));
             }
           } finally {
             this.onProcessingEndHook?.(this.transportId, call.request);

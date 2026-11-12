@@ -1267,15 +1267,55 @@ describe('ServerGrpc', () => {
         emit: sinon.spy(),
       });
 
-      it('should run the end hook once and emit the error on the call when the handler rejects', async () => {
+      it('should run the end hook once and fail the call with a logged internal error when the handler rejects', async () => {
         const call = createCall();
+        const loggerError = sinon.stub(untypedServer.logger, 'error');
 
         const result = await server.createStreamCallMethod(async () => {
           throw error;
         }, true)(call as any, sinon.spy());
 
         expect(result).to.be.undefined;
+        expect(call.emit.calledOnce).to.be.true;
+        expect(call.emit.firstCall.args).to.deep.equal([
+          'error',
+          internalError,
+        ]);
+        expect(loggerError.calledOnceWithExactly(error)).to.be.true;
+        expect(endHook.calledOnceWithExactly(server.transportId, call.request))
+          .to.be.true;
+      });
+
+      it('should pass a logged internal error to the callback when a request stream handler rejects', async () => {
+        const call = createCall();
+        const callback = sinon.spy();
+        const loggerError = sinon.stub(untypedServer.logger, 'error');
+
+        const result = await server.createStreamCallMethod(async () => {
+          throw error;
+        }, false)(call as any, callback);
+
+        expect(result).to.be.undefined;
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args).to.deep.equal([internalError, null]);
+        expect(loggerError.calledOnceWithExactly(error)).to.be.true;
+        expect(call.emit.called).to.be.false;
+        expect(endHook.calledOnceWithExactly(server.transportId, call.request))
+          .to.be.true;
+      });
+
+      it('should emit the error of the handler stream on the call as it is', async () => {
+        const call = createCall();
+        const loggerError = sinon.stub(untypedServer.logger, 'error');
+
+        const result = await server.createStreamCallMethod(
+          async () => throwError(() => error),
+          true,
+        )(call as any, sinon.spy());
+
+        expect(result).to.be.undefined;
         expect(call.emit.calledOnceWithExactly('error', error)).to.be.true;
+        expect(loggerError.called).to.be.false;
         expect(endHook.calledOnceWithExactly(server.transportId, call.request))
           .to.be.true;
       });
