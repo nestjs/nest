@@ -1321,6 +1321,139 @@ describe('NodeAdapter', () => {
         expect(source.readableEnded).toBe(true);
         expect(source.destroyed).toBe(false);
       });
+
+      describe('when the source is in object mode', () => {
+        const createStreamResponse = () =>
+          Object.assign(new PassThrough(), {
+            getHeader: vi.fn(),
+            setHeader: vi.fn(),
+            hasHeader: vi.fn(() => false),
+          });
+
+        it('should send the strings and bytes it emits', async () => {
+          const source = Readable.from([
+            'first ',
+            Buffer.from('second '),
+            new Uint8Array([116, 104, 105, 114, 100]),
+          ]);
+
+          const res = await replyWith(new StreamableFile(source));
+
+          expect(res.status).toBe(200);
+          expect(res.text).toBe('first second third');
+        });
+
+        it('should write an empty first chunk, which sends the headers early', async () => {
+          let write!: ReturnType<typeof vi.spyOn>;
+
+          const res = await replyWith(
+            new StreamableFile(Readable.from(['', 'later'])),
+            undefined,
+            response => {
+              write = vi.spyOn(response, 'write');
+            },
+          );
+
+          expect(res.text).toBe('later');
+          expect(write.mock.calls.map(([chunk]) => chunk)).toEqual([
+            '',
+            'later',
+          ]);
+        });
+
+        it.each([
+          ['an object', { id: 1 }],
+          ['an array', ['a', 'b']],
+          ['a number', 42],
+        ])(
+          'should fail the stream on %s without writing it',
+          async (_, chunk) => {
+            const errorHandler = vi.fn();
+            const response = createStreamResponse();
+            const write = vi.spyOn(response, 'write');
+            response.resume();
+            // The chunk first, last (the source may have ended before it
+            // is written) and in between
+            const sources = [
+              Readable.from([chunk]),
+              Readable.from(['first', chunk]),
+              Readable.from(['first', chunk, 'last']),
+            ];
+
+            for (const source of sources) {
+              const file = new StreamableFile(source).setErrorHandler(
+                errorHandler,
+              );
+              adapter.reply(response as any, file);
+            }
+
+            await vi.waitFor(() =>
+              expect(errorHandler).toHaveBeenCalledTimes(sources.length),
+            );
+            expect(errorHandler).toHaveBeenCalledWith(
+              expect.objectContaining({
+                name: 'TypeError',
+                message: expect.stringContaining(
+                  'A StreamableFile can only send string and Uint8Array chunks',
+                ),
+              }),
+              expect.anything(),
+            );
+            expect(write).not.toHaveBeenCalledWith(chunk, expect.anything());
+            expect(write).not.toHaveBeenCalledWith(chunk);
+            for (const source of sources) {
+              expect(source.destroyed).toBe(true);
+              expect(source.readableEnded).toBe(false);
+            }
+          },
+        );
+
+        it('should answer 400 for such a chunk before any data', async () => {
+          const file = new StreamableFile(
+            Readable.from([{ id: 1 }]),
+          ).setErrorLogger(() => {});
+
+          const res = await replyWith(file);
+
+          expect(res.status).toBe(400);
+          expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
+          expect(res.text).toBe('Bad Request');
+        });
+
+        it('should abort the response for such a chunk after some data', async () => {
+          adapter.get('/', (req: NodeRequest, res: NodeResponse) =>
+            adapter.reply(
+              res,
+              new StreamableFile(
+                Readable.from(['first', ['a', 'b']]),
+              ).setErrorLogger(() => {}),
+            ),
+          );
+
+          // A truncated body must not look complete to the client
+          const complete = await new Promise<boolean>(resolve => {
+            http
+              .get({ host: '127.0.0.1', port, path: '/' }, res => {
+                res.resume();
+                res.on('close', () => resolve(res.complete));
+              })
+              .on('error', () => resolve(false));
+          });
+
+          expect(complete).toBe(false);
+        });
+
+        it('should end the response for a source that has already ended', async () => {
+          const source = Readable.from([]);
+          source.resume();
+          await new Promise(resolve => source.once('end', resolve));
+
+          const res = await replyWith(new StreamableFile(source));
+
+          expect(res.status).toBe(200);
+          expect(res.text).toBe('');
+        });
+      });
     });
   });
 
