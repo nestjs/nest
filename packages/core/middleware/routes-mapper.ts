@@ -3,18 +3,24 @@ import {
   PATH_METADATA,
   VERSION_METADATA,
 } from '@nestjs/common/constants';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { RouteInfo, Type, VersionValue } from '@nestjs/common/interfaces';
 import {
   addLeadingSlash,
+  isFunction,
+  isObject,
   isString,
   isUndefined,
   stripEndSlash,
 } from '@nestjs/common/utils/shared.utils';
+import { inspect } from 'util';
 import { ApplicationConfig } from '../application-config';
+import { InvalidMiddlewareConfigurationException } from '../errors/exceptions/invalid-middleware-configuration.exception';
 import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { MetadataScanner } from '../metadata-scanner';
 import { PathsExplorer, RouteDefinition } from '../router/paths-explorer';
+import { isRequestMethodAll } from '../router/utils';
 
 export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;
@@ -36,11 +42,18 @@ export class RoutesMapper {
     if (this.isRouteInfo(routePathOrPaths, controllerOrRoute)) {
       return this.getRouteInfoFromObject(controllerOrRoute);
     }
+    if (isUndefined(routePathOrPaths)) {
+      // Neither a controller nor a { path, method } object (e.g. a class
+      // without @Controller()): the middleware would be bound to a route no
+      // request matches, without a word
+      throw new InvalidMiddlewareConfigurationException(
+        isFunction(controllerOrRoute)
+          ? `"${controllerOrRoute.name}" passed to forRoutes() or exclude() is not a controller (is the @Controller() decorator missing?).`
+          : `${inspect(controllerOrRoute, { depth: 2 })} passed to forRoutes() or exclude() is not a { path, method } object where method is a RequestMethod.`,
+      );
+    }
 
-    return this.getRouteInfoFromController(
-      controllerOrRoute,
-      routePathOrPaths!,
-    );
+    return this.getRouteInfoFromController(controllerOrRoute, routePathOrPaths);
   }
 
   /**
@@ -145,7 +158,16 @@ export class RoutesMapper {
     path: string | string[] | undefined,
     objectOrClass: Function | RouteInfo,
   ): objectOrClass is RouteInfo {
-    return isUndefined(path);
+    if (!isUndefined(path) || !isObject(objectOrClass)) {
+      return false;
+    }
+    const { path: routePath, method } = objectOrClass as RouteInfo;
+    return (
+      isString(routePath) &&
+      typeof method === 'number' &&
+      // -1 is the "every method" of a route passed as a plain string
+      (!isUndefined(RequestMethod[method]) || isRequestMethodAll(method))
+    );
   }
 
   private normalizeGlobalPath(path: string): string {
