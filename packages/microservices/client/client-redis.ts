@@ -344,9 +344,8 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         } catch (err) {
           // The broker can acknowledge the subscription later, so this runs
           // outside the outer catch and has to undo its own work. Only the
-          // bookkeeping though: a concurrent request on this pattern may still
-          // be waiting for its own subscribe reply, so the broker subscription
-          // is left to self-heal, as in #17671.
+          // bookkeeping though, as in #17822: the next request on this
+          // pattern subscribes again.
           undoBookkeeping();
           callback({ err });
         }
@@ -363,6 +362,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         this.pendingSubscriptions.add(responseChannel);
         this.subClient.subscribe(responseChannel, (err: any) => {
           if (err) {
+            undoBookkeeping();
             return callback({ err });
           }
           if (!isCounted) {

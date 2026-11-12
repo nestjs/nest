@@ -104,6 +104,10 @@ describe('ClientRedis', () => {
         expect(callback.calledOnceWith({ err: error })).to.be.true;
         expect(publishSpy.called).to.be.false;
         expect(client['routingMap'].size).to.equal(0);
+        expect(client['subscriptionsCount'].get(`${pattern}.reply`)).to.equal(
+          0,
+        );
+        expect(client['pendingSubscriptions'].size).to.equal(0);
       });
     });
     describe('when the subscription is not confirmed yet', () => {
