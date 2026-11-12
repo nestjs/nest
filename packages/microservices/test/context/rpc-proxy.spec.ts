@@ -2,6 +2,8 @@ import { Logger } from '@nestjs/common';
 import type { MockInstance } from 'vitest';
 import { EMPTY, lastValueFrom, of, throwError, toArray } from 'rxjs';
 import { RpcProxy } from '../../context/rpc-proxy.js';
+import { BaseRpcExceptionFilter } from '../../exceptions/base-rpc-exception-filter.js';
+import { KafkaRetriableException } from '../../exceptions/kafka-retriable-exception.js';
 import { RpcException } from '../../exceptions/rpc-exception.js';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
 
@@ -70,6 +72,91 @@ describe('RpcProxy', () => {
       );
 
       await expect(lastValueFrom(await proxy(null))).rejects.toBe(error);
+    });
+  });
+
+  describe('when a filter fails while handling the error of a stream', () => {
+    const filterError = new Error('filter failed');
+    let loggerErrorSpy: MockInstance;
+
+    beforeEach(() => {
+      loggerErrorSpy = vi
+        .spyOn((BaseRpcExceptionFilter as any).logger, 'error')
+        .mockImplementation(() => {});
+    });
+    afterEach(() => {
+      loggerErrorSpy.mockRestore();
+    });
+
+    const failWith = (func: () => unknown) =>
+      handler.setCustomFilters([
+        { exceptionMetatypes: [RpcException], func: func as any },
+      ]);
+    const createStreamProxy = () =>
+      routerProxy.create(
+        async () => throwError(() => new RpcException('test')),
+        handler,
+      );
+
+    it.each([
+      [
+        'throws',
+        () => {
+          throw filterError;
+        },
+      ],
+      [
+        'rejects',
+        async () => {
+          throw filterError;
+        },
+      ],
+    ])(
+      'should answer as an unknown error and log it when the filter %s',
+      async (_, filter) => {
+        failWith(filter);
+
+        await expect(
+          lastValueFrom(await createStreamProxy()(null)),
+        ).rejects.toEqual({
+          status: 'error',
+          message: 'Internal server error',
+        });
+        expect(loggerErrorSpy).toHaveBeenCalledWith(filterError);
+      },
+    );
+
+    it.each(['throws', 'rejects'])(
+      'should pass on an exception that returns itself from "getError" when the filter %s',
+      async how => {
+        const retriable = new KafkaRetriableException('retry me');
+        failWith(
+          how === 'throws'
+            ? () => {
+                throw retriable;
+              }
+            : async () => {
+                throw retriable;
+              },
+        );
+
+        await expect(
+          lastValueFrom(await createStreamProxy()(null)),
+        ).rejects.toBe(retriable);
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should still reject the handler promise when the filter fails for a handler that rejects', async () => {
+      // The transport answers it and logs the failure (see "handleRequest")
+      failWith(() => {
+        throw filterError;
+      });
+      const proxy = routerProxy.create(async () => {
+        throw new RpcException('test');
+      }, handler);
+
+      await expect(proxy(null)).rejects.toBe(filterError);
     });
   });
 

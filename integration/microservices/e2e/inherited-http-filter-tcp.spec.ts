@@ -1,18 +1,22 @@
 import {
   ArgumentsHost,
   BadRequestException,
+  CallHandler,
   CanActivate,
   Catch,
   Controller,
   ExceptionFilter,
+  ExecutionContext,
   HttpException,
   HttpStatus,
   INestApplication,
   Injectable,
   Module,
+  NestInterceptor,
   PipeTransform,
   UseFilters,
   UseGuards,
+  UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
 import { BaseExceptionFilter, HttpAdapterHost } from '@nestjs/core';
@@ -26,7 +30,7 @@ import {
 } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import * as net from 'net';
-import { firstValueFrom, throwError, timeout } from 'rxjs';
+import { defer, firstValueFrom, throwError, timeout } from 'rxjs';
 
 // The two catch-everything filters of the exception filters chapter. On RPC,
 // getResponse() is the TcpContext, so replying through the adapter throws.
@@ -81,6 +85,15 @@ class BoomPipe implements PipeTransform {
   }
 }
 
+// With an interceptor bound, the handler runs inside the response stream, so
+// its error reaches the filters from there rather than from its promise
+@Injectable()
+class PassThroughInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler) {
+    return next.handle();
+  }
+}
+
 @Controller()
 class Svc {
   @MessagePattern('ok')
@@ -129,6 +142,17 @@ class Svc {
   @MessagePattern('rpc-filter')
   rpcFilter() {
     throw new RpcException('kept');
+  }
+
+  @UseInterceptors(PassThroughInterceptor)
+  @MessagePattern('intercepted')
+  intercepted() {
+    throw new Error('intercepted boom');
+  }
+
+  @MessagePattern('stream')
+  stream() {
+    return defer(() => throwError(() => new Error('stream boom')));
   }
 }
 
@@ -191,6 +215,8 @@ describe('Inherited HTTP exception filter (TCP)', () => {
     await expect(call('rpc')).rejects.toEqual(UNKNOWN_ERROR);
     await expect(call('guard')).rejects.toEqual(UNKNOWN_ERROR);
     await expect(call('pipe')).rejects.toEqual(UNKNOWN_ERROR);
+    await expect(call('intercepted')).rejects.toEqual(UNKNOWN_ERROR);
+    await expect(call('stream')).rejects.toEqual(UNKNOWN_ERROR);
     await expect(call('rpc-filter')).rejects.toEqual({
       status: 'error',
       message: 'kept',
