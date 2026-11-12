@@ -25,7 +25,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
-import { delay, from, map, type Observable, of, tap } from 'rxjs';
+import { createReadStream } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { delay, from, map, Observable, of, tap } from 'rxjs';
 import { Readable } from 'stream';
 
 const encoder = new TextEncoder();
@@ -52,6 +55,9 @@ export const streaming = {
 };
 
 const requestStore = new AsyncLocalStorage<{ id: string }>();
+
+// What a handler that streams a file named by the client may be asked for
+const missingFile = join(tmpdir(), `nest-streaming-missing-${process.pid}`);
 
 function webStream(chunks: (string | Uint8Array)[], failure?: Error) {
   const pending = [...chunks];
@@ -667,6 +673,34 @@ export class NodeStreamController {
     const stream = new Readable({ read() {} });
     setTimeout(() => stream.destroy(new NotFoundException('gone')), 5);
     return stream;
+  }
+
+  @Get('missing-file')
+  missingFile() {
+    return createReadStream(missingFile);
+  }
+
+  @Get('missing-file/observed')
+  observedMissingFile() {
+    // Completes once the stream has failed
+    return new Observable(subscriber => {
+      subscriber.next(createReadStream(missingFile));
+      const timer = setTimeout(() => subscriber.complete(), 20);
+      return () => clearTimeout(timer);
+    });
+  }
+
+  @Get('missing-file/promised-observable')
+  @UseInterceptors(DelayingInterceptor)
+  async promisedObservableMissingFile() {
+    return of(createReadStream(missingFile));
+  }
+
+  @Get('missing-file/gated')
+  async gatedMissingFile() {
+    streaming.started++;
+    await streaming.gate;
+    return createReadStream(missingFile);
   }
 }
 

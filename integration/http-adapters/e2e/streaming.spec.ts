@@ -595,6 +595,48 @@ describe.each(adapters('express', 'fastify', 'node'))(
 
         expect(res.status).toBe(404);
       });
+
+      describe('that cannot open the file it reads', () => {
+        it('should go through the exception filters', async () => {
+          expect((await send('/node-stream/missing-file')).status).toBe(500);
+        });
+
+        it.each([
+          ['an Observable that completes later', 'observed'],
+          [
+            'an Observable the handler resolves to, while an interceptor awaits',
+            'promised-observable',
+          ],
+        ])('should go through them for one of %s', async (_, path) => {
+          const res = await send(`/node-stream/missing-file/${path}`);
+
+          expect(res.status).toBe(500);
+        });
+
+        it.each(['missing-file', 'missing-file/promised-observable'])(
+          'should answer HEAD for %s and keep serving',
+          async path => {
+            const res = await send(`/node-stream/${path}`, { method: 'HEAD' });
+            // The failure is reported once the stream has been stopped
+            await new Promise(resolve => setTimeout(resolve, 20));
+
+            expect(res.status).toBe(200);
+            expect((await send('/node-stream/missing-file')).status).toBe(500);
+          },
+        );
+
+        it('should keep serving when the client leaves before the handler returns it', async () => {
+          const req = get(`${baseUrl}/node-stream/missing-file/gated`);
+          req.on('error', () => undefined);
+          await vi.waitFor(() => expect(streaming.started).toBe(1));
+          req.destroy();
+          await new Promise(resolve => setTimeout(resolve, 20));
+          streaming.openGate();
+          await new Promise(resolve => setTimeout(resolve, 20));
+
+          expect((await send('/node-stream/missing-file')).status).toBe(500);
+        });
+      });
     });
 
     describe('with interceptors', () => {

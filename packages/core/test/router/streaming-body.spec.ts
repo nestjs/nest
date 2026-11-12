@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { of, Subject } from 'rxjs';
 import { Readable } from 'stream';
 import { isStreamingBody as isStreamingBodyInCommon } from '../../../common/utils/is-streaming-body.util.js';
@@ -8,6 +9,7 @@ import {
   isStreamingBody,
   isStreamingBodyConsumed,
   isWebResponse,
+  listenForStreamError,
   openStreamingBody,
   toReadable,
   toResponseChunk,
@@ -133,6 +135,30 @@ describe('streaming body', () => {
     });
   });
 
+  describe('listenForStreamError', () => {
+    it('should listen for the error of a Readable, once', async () => {
+      const error = new Error('ENOENT');
+      const stream = new Readable({ read() {} });
+
+      listenForStreamError(stream);
+      listenForStreamError(stream);
+      expect(stream.listenerCount('error')).toBe(1);
+      stream.destroy(error);
+      await flush();
+
+      // Still reported to whatever reads it
+      await expect(stream.toArray()).rejects.toBe(error);
+    });
+
+    it('should leave what is not a stream alone', () => {
+      const emitter = new EventEmitter();
+
+      listenForStreamError(emitter);
+
+      expect(emitter.listenerCount('error')).toBe(0);
+    });
+  });
+
   describe('openStreamingBody', () => {
     it('should cancel a ReadableStream while a read is in progress', async () => {
       const onCancel = vi.fn();
@@ -154,6 +180,22 @@ describe('streaming body', () => {
       void iterator.return();
 
       expect(stream.destroyed).toBe(true);
+    });
+
+    it('should listen for the error of a Readable it stops before reading it', async () => {
+      // As `fs.createReadStream()` does for a file that does not exist: the
+      // failure to open it is reported once it is destroyed
+      const error = new Error('ENOENT');
+      const stream = new Readable({
+        construct: callback => setImmediate(callback, error),
+        read() {},
+      });
+
+      await openStreamingBody(stream).return();
+      expect(stream.listenerCount('error')).toBe(1);
+      await flush();
+
+      expect(stream.errored).toBe(error);
     });
 
     it('should call return() of an async generator', async () => {

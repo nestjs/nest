@@ -39,7 +39,6 @@ import {
   Subject,
 } from 'rxjs';
 import { switchMap, takeUntil, tap } from 'rxjs/operators';
-import type { Readable } from 'stream';
 import {
   FORBIDDEN_MESSAGE,
   GuardsConsumer,
@@ -71,6 +70,7 @@ import { HeaderStream } from './sse-stream.js';
 import {
   isStreamingBody,
   isStreamingBodyConsumed,
+  listenForStreamError,
   type StreamingBody,
 } from './streaming-body.js';
 
@@ -197,12 +197,17 @@ export class RouterExecutionContext {
         if (!handlerObservable$) {
           return result;
         }
-        this.observeHandlerResult(result, handlerObservable$, handlerStreams);
-        return isObservable(result)
-          ? result.pipe(
-              tap(value => this.trackHandlerStream(value, handlerStreams)),
+        // Settled here, so that an Observable a promise resolves to is tapped
+        // like one the handler returns as it is. The `then()` of a thenable
+        // (e.g. a lazy query builder) is still called once, as its value is
+        // returned in its place.
+        const value = isThenable(result) ? await result : result;
+        this.observeHandlerResult(value, handlerObservable$, handlerStreams);
+        return isObservable(value)
+          ? value.pipe(
+              tap(emitted => this.trackHandlerStream(emitted, handlerStreams)),
             )
-          : result;
+          : value;
       };
 
     return async <TRequest, TResponse>(
@@ -609,7 +614,16 @@ export class RouterExecutionContext {
           switchMap(() => this.fromClientDisconnect(req, res)),
           tap(() => (disconnected = true)),
         );
-        result = result.pipe(takeUntil(disconnect$)) as TResult;
+        result = result.pipe(
+          // What it emits waits for it to complete. Without interceptors, it
+          // is the handler's own Observable, whose streams are tracked here.
+          tap(value =>
+            handlerObservable$
+              ? listenForStreamError(value)
+              : this.trackHandlerStream(value, handlerStreams),
+          ),
+          takeUntil(disconnect$),
+        ) as TResult;
       }
       try {
         result = await this.responseController.transformToResult(result);
@@ -677,9 +691,9 @@ export class RouterExecutionContext {
       handlerStreams.push(value);
     } else if (isStreamingBody(value)) {
       handlerStreams.push(value);
-      // As with a StreamableFile: an 'error' emitted while an interceptor
-      // awaits, before anything listens, would bring the process down.
-      (value as Readable).on?.('error', () => undefined);
+      // An 'error' emitted while an interceptor awaits, before anything
+      // listens, would bring the process down.
+      listenForStreamError(value);
     }
   }
 
@@ -690,20 +704,6 @@ export class RouterExecutionContext {
   ) {
     if (isObservable(result)) {
       handlerObservable$.next();
-    } else if (result instanceof Promise) {
-      // Only native promises are observed: calling `then()` on an arbitrary
-      // thenable (e.g. a lazy query builder) could repeat its side effects.
-      // This extra reaction leaves the handler's own promise chain untouched.
-      result.then(
-        value => {
-          if (isObservable(value)) {
-            handlerObservable$.next();
-          } else {
-            this.trackHandlerStream(value, handlerStreams);
-          }
-        },
-        () => undefined,
-      );
     } else {
       this.trackHandlerStream(result, handlerStreams);
     }

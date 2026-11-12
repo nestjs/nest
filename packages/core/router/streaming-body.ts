@@ -66,6 +66,27 @@ export function isStreamingBodyConsumed(body: StreamingBody): boolean {
   );
 }
 
+const ignoreError = () => undefined;
+
+/**
+ * Listens for the 'error' of a Node.js stream that the router holds before it
+ * reads it, as a `StreamableFile` does for its own. A stream that fails in the
+ * meantime, or once it is stopped unread (e.g. `fs.createReadStream()` of a
+ * file that does not exist), would otherwise emit an 'error' that nothing
+ * listens for, which ends the process. Whatever reads it still gets the error.
+ */
+export function listenForStreamError(value: unknown): void {
+  const emitter = value as Partial<Readable>;
+  if (
+    isStreamingBody(value) &&
+    isFunction(emitter.on) &&
+    isFunction(emitter.listeners) &&
+    !emitter.listeners('error').includes(ignoreError)
+  ) {
+    emitter.on('error', ignoreError);
+  }
+}
+
 /**
  * Opens the body for reading. Neither the async iterator of a `ReadableStream`
  * nor that of a `Readable` stops the stream until the read in progress settles,
@@ -80,6 +101,9 @@ export function openStreamingBody(source: BodySource): StreamingBodyIterator {
   return {
     next: async () => iterator.next(),
     return: async () => {
+      // Its iterator only listens once it is read, and a stream that is still
+      // opening what it reads from reports a failure after it is destroyed.
+      listenForStreamError(source);
       (source as Readable).destroy?.();
       return iterator.return?.();
     },
