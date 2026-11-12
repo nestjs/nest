@@ -288,6 +288,91 @@ describe('NodeRouter', () => {
     });
   });
 
+  describe("next('router')", () => {
+    it('should leave the router, as Express does', () => {
+      const calls: string[] = [];
+      router.use((req: NodeRequest, _res: unknown, next: Next) => {
+        calls.push('check');
+        next(req.headers['x-auth'] ? undefined : 'router');
+      });
+      router.get('/admin', () => calls.push('route'));
+      router.use((_req: unknown, _res: unknown, next: Next) => {
+        calls.push('after');
+        next();
+      });
+      router.use((_err: unknown, _req: unknown, _res: unknown, next: Next) => {
+        calls.push('error handler');
+        next();
+      });
+
+      dispatch('GET', '/admin');
+
+      expect(calls).toEqual(['check']);
+      expect(finalHandler).toHaveBeenCalledOnce();
+      expect(finalHandler.mock.calls[0][0]).toBeUndefined();
+    });
+
+    it('should leave the router from a route-bound middleware', () => {
+      const route = vi.fn();
+      router.useExact('GET', '/admin/:id', (_req, _res, next: Next) =>
+        next('router'),
+      );
+      router.get('/admin/:id', route);
+      router.get('/{*any}', route);
+
+      dispatch('GET', '/admin/1');
+
+      expect(route).not.toHaveBeenCalled();
+      expect(finalHandler).toHaveBeenCalledOnce();
+      expect(finalHandler.mock.calls[0][0]).toBeUndefined();
+    });
+
+    it('should leave the router from a route handler, skipping the other routes of the path', () => {
+      const calls: string[] = [];
+      router.get('/admin', (_req: unknown, _res: unknown, next: Next) => {
+        calls.push('first');
+        next('router');
+      });
+      router.get('/admin', () => calls.push('same path'));
+      router.get('/:any', () => calls.push('other route'));
+      router.use(() => calls.push('after'));
+
+      dispatch('GET', '/admin');
+
+      expect(calls).toEqual(['first']);
+      expect(finalHandler).toHaveBeenCalledOnce();
+      expect(finalHandler.mock.calls[0][0]).toBeUndefined();
+    });
+
+    it('should hand the request back to the parent of a mounted router, with its URL restored', () => {
+      const calls: string[] = [];
+      const admin = new NodeRouter(finalHandler);
+      admin.use('/users', (_req: unknown, _res: unknown, next: Next) =>
+        next('router'),
+      );
+      admin.get('/users/:id', () => calls.push('route'));
+      router.use('/admin', admin);
+      router.use((req: NodeRequest) => {
+        calls.push(`parent "${req.baseUrl}" ${req.url}`);
+      });
+
+      dispatch('GET', '/admin/users/42?page=1');
+
+      expect(calls).toEqual(['parent "" /admin/users/42?page=1']);
+      expect(finalHandler).not.toHaveBeenCalled();
+    });
+
+    it("should still go on with the next layer on next('route')", () => {
+      const route = vi.fn();
+      router.use((_req: unknown, _res: unknown, next: Next) => next('route'));
+      router.get('/users', route);
+
+      dispatch('GET', '/users');
+
+      expect(route).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('use() mounts', () => {
     it('should strip the mount path from the URL while the middleware runs', () => {
       let seen: Record<string, string> | undefined;

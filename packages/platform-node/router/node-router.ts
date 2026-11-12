@@ -474,9 +474,13 @@ export class NodeRouter {
     const parentBaseUrl = req.baseUrl;
 
     const next: NextFunction = (err?: any) => {
+      // As with Express, next('router') leaves the router: nothing left on
+      // its stack runs (other routes and error handlers included), and a
+      // mounted router hands the request back to its parent
+      const leavesRouter = err === 'router';
       // As with Express, a falsy value is no error: callbacks commonly
       // pass on their "null" error ("cb(err => next(err))")
-      if (!err || err === 'route' || err === 'router') {
+      if (!err || err === 'route' || leavesRouter) {
         err = undefined;
       }
       if (removed) {
@@ -487,6 +491,11 @@ export class NodeRouter {
         req.url = removed + req.url;
         req.baseUrl = parentBaseUrl;
         removed = '';
+      }
+      if (leavesRouter) {
+        routeMatch = undefined;
+        restEntries = undefined;
+        index = stack.length;
       }
       // Continue with the next handler registered for the matched route
       if (routeMatch !== undefined) {

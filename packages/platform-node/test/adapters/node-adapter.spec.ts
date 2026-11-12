@@ -2274,6 +2274,29 @@ describe('NodeAdapter', () => {
       );
     });
 
+    it("should not run the route when the middleware calls next('router'), as Express does", async () => {
+      const route = vi.fn((req: NodeRequest, res: NodeResponse) =>
+        res.end('route'),
+      );
+      adapter.createMiddlewareFactory(RequestMethod.GET)(
+        '/admin',
+        (req: NodeRequest, res: NodeResponse, next: Next) =>
+          next(req.headers['x-auth'] ? undefined : 'router'),
+      );
+      adapter.get('/admin', route);
+
+      const denied = await request(port, { path: '/admin' });
+      expect(denied.status).toBe(404);
+      expect(denied.text).toBe('Cannot GET /admin');
+      expect(route).not.toHaveBeenCalled();
+
+      const allowed = await request(port, {
+        path: '/admin',
+        headers: { 'x-auth': '1' },
+      });
+      expect(allowed.text).toBe('route');
+    });
+
     it('should throw a TypeError for an invalid path', () => {
       const printError = vi
         .spyOn(LegacyRouteConverter, 'printError')
