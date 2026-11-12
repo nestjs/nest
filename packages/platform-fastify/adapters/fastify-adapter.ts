@@ -63,6 +63,7 @@ import {
 import { AbstractHttpAdapter } from '@nestjs/core';
 import { LegacyRouteConverter } from '@nestjs/core/internal';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
+import { onResponseClose } from './utils/on-response-close.util.js';
 const { kErrorHandler, kReplySerializer, kRouteContext } = fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
@@ -889,6 +890,15 @@ export class FastifyAdapter<
       ) {
         stream.destroy();
         body = Readable.from([]);
+      } else if (fastifyReply.raw && isFunction(stream?.destroy)) {
+        // Fastify destroys the stream once the response has closed. The
+        // response of a pipelined request that waits behind others on the
+        // connection may never close, even when the connection does.
+        onResponseClose(fastifyReply.raw, () => {
+          if (!stream.readableEnded) {
+            stream.destroy();
+          }
+        });
       }
     }
     // Fastify passes an Error payload to the error handler instead of
