@@ -15,9 +15,11 @@ import { contentType as lookupContentType } from 'mime-types';
 import onFinished from 'on-finished';
 import { isAbsolute } from 'path';
 import send from 'send';
+import type { Readable } from 'stream';
 import typeIs from 'type-is';
 import { getRoutingPath } from '../router/utils.js';
 import { getHostname } from './utils/hostname.util.js';
+import { onResponseClose } from './utils/on-response-close.util.js';
 
 const QUERY = Symbol('query');
 const LOCALS = Symbol('locals');
@@ -673,8 +675,15 @@ function transferFile(
   file.on('file', () => {
     streaming = false;
   });
-  file.on('stream', () => {
+  file.on('stream', (stream: Readable) => {
     streaming = true;
+    // send destroys the stream once the response is finished, which the
+    // response of a pipelined request waiting behind others may never be
+    onResponseClose(res, () => {
+      if (!stream.readableEnded) {
+        stream.destroy();
+      }
+    });
   });
   onFinished(res, (err: any) => {
     if (err && err.code === 'ECONNRESET') {

@@ -40,7 +40,7 @@ import type {
 import { createRequire } from 'module';
 import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
-import { Duplex, finished, Readable, Transform, Writable } from 'stream';
+import { Duplex, Readable, Transform, Writable } from 'stream';
 import { types } from 'util';
 import type {
   NestNodeBodyParserOptionsFor,
@@ -70,6 +70,7 @@ import {
   toBytes,
 } from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
+import { onResponseClose } from './utils/on-response-close.util.js';
 
 type StreamableHandlerResponse = Parameters<StreamableFile['errorHandler']>[1];
 
@@ -268,8 +269,9 @@ export class NodeAdapter extends AbstractHttpAdapter<
       stream.once('error', err => {
         this.handleStreamError(body, err, response);
       });
-      // pipe() leaves the source open when the client disconnects early
-      finished(response, () => {
+      // pipe() leaves the source open when the client disconnects early, or
+      // while the response waits behind others pipelined on the connection
+      onResponseClose(response, () => {
         if (!stream.readableEnded) {
           stream.destroy();
         }

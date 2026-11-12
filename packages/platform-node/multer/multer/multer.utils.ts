@@ -15,6 +15,7 @@ import {
   multerExceptions,
   busboyExceptions,
 } from './multer.constants.js';
+import { onResponseClose } from '../../adapters/utils/on-response-close.util.js';
 import { MulterModuleOptions } from '../interfaces/index.js';
 import {
   MulterLimits,
@@ -310,7 +311,9 @@ export function removeFilesOnPipeRejection<T>(
 ): MonoTypeOperatorFunction<T> {
   return catchError(err => {
     if (isRejectedByPipes(req)) {
-      finished(res, () => {
+      // Also when the connection closes while the response waits behind
+      // others pipelined on it, which finished() alone may not report
+      onResponseClose(res, () => {
         for (const file of storedFiles(req)) {
           try {
             storage._removeFile(req, file, () => undefined);

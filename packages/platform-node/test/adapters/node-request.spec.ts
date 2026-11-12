@@ -1,7 +1,9 @@
+import { EventEmitter, once } from 'events';
 import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  type ReadStream,
   rmSync,
   utimesSync,
   writeFileSync,
@@ -654,6 +656,8 @@ describe('NodeResponse', () => {
       mkdirSync(join(dir, 'sub'));
       writeFileSync(join(dir, 'a.txt'), text);
       writeFileSync(join(dir, '.secret'), 'secret');
+      // More than the response buffers and the file stream reads at once
+      writeFileSync(join(dir, 'large.bin'), Buffer.alloc(256 * 1024));
       const date = new Date('2026-01-01T00:00:00Z');
       utimesSync(join(dir, 'a.txt'), date, date);
     });
@@ -809,6 +813,28 @@ describe('NodeResponse', () => {
       expect(sent.body.toString()).toBe(text);
       expect(missing.statusCode).toBe(410);
       expect(outcomes).toEqual(['sent', 404]);
+    });
+
+    it('should destroy the file stream when the connection of a pipelined request closes', async () => {
+      // A response queued behind an unread one on the same connection: it
+      // has no socket of its own, and may never be closed itself
+      const connection = Object.assign(new EventEmitter(), {
+        destroyed: false,
+      });
+      const req = new NodeRequest(connection as any);
+      req.method = 'GET';
+      req.url = '/large.bin';
+      const res = new NodeResponse(req);
+      const piped = once(res, 'pipe') as Promise<[ReadStream]>;
+
+      res.sendFile(join(dir, 'large.bin'));
+      const [file] = await piped;
+      await new Promise(resolve => setImmediate(resolve));
+      expect(file.destroyed).toBe(false);
+      connection.emit('close');
+
+      await vi.waitFor(() => expect(file.destroyed).toBe(true));
+      expect(file.readableEnded).toBe(false);
     });
 
     it('should take the callback as the second argument', async () => {

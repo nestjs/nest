@@ -20,6 +20,7 @@ import {
 } from '../../../multer/multer/multer.utils.js';
 import { MulterOptions } from '../../../multer/interfaces/multer-options.interface.js';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
+import { EventEmitter } from 'events';
 import { lastValueFrom, throwError } from 'rxjs';
 import { PassThrough, Readable, Writable } from 'stream';
 
@@ -647,6 +648,29 @@ describe('removeFilesOnPipeRejection', () => {
         file,
         expect.any(Function),
       ),
+    );
+  });
+
+  it('should remove the files when the connection of a pipelined request closes', async () => {
+    // A response queued behind an unread one on the same connection: it has
+    // no socket of its own, and may never be closed itself
+    const connection = Object.assign(new EventEmitter(), { destroyed: false });
+    const storage = createStorage();
+    const file = { fieldname: 'doc', path: '/uploads/a' };
+    const req = { file };
+    const res = Object.assign(createResponse(), {
+      req: { socket: connection },
+    });
+    markRejectedByPipes(req);
+
+    await expect(fail(storage, req, res)).rejects.toBe(error);
+    expect(storage._removeFile).not.toHaveBeenCalled();
+    connection.emit('close');
+
+    expect(storage._removeFile).toHaveBeenCalledWith(
+      req,
+      file,
+      expect.any(Function),
     );
   });
 
