@@ -19,6 +19,10 @@ const DEFAULT_MESSAGE_RECEIVE_TIMEOUT = 300_000;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024; // 128 MBs in bytes
 const DEFAULT_DRAIN_TIMEOUT = 30_000;
 const MAX_CONTENT_LENGTH_SIZE = 32; // in characters, a string length never has more than 16 digits
+// An upper bound on what a string takes for each read appended to it, besides
+// its characters, and how many reads are appended before it is flattened
+const APPENDED_READ_OVERHEAD = 64; // in bytes
+const MIN_READS_BEFORE_FLATTENING = 1024;
 
 /**
  * A limit that is missing, or that is not a number (e.g. NaN from
@@ -62,6 +66,7 @@ export class JsonSocket extends TcpSocket {
    * after that can no longer be split into packets reliably.
    */
   private hasFramingError = false;
+  private readsSinceFlattened = 0;
 
   constructor(socket: any, options?: JsonSocketOptions) {
     super(socket);
@@ -137,14 +142,41 @@ export class JsonSocket extends TcpSocket {
       ? this.stringDecoder.write(dataRaw)
       : dataRaw;
     this.buffer += data;
+    this.readsSinceFlattened++;
 
     try {
       this.processBuffer();
+      this.flattenBufferIfFragmented();
     } catch (err) {
       this.discardAfterFramingError();
       throw err;
     } finally {
       this.refreshIncompleteMessageTimer();
+    }
+  }
+
+  /**
+   * Appending to a string does not copy it: the engine keeps each appended
+   * read as a piece of its own, at up to 32 bytes or so on top of its
+   * characters, until the string is read. Nothing reads the buffer while the
+   * rest of a packet is awaited, so a packet arriving a few bytes per read
+   * would take many times the 1 or 2 bytes per character "maxBufferSize"
+   * stands for. Once the reads may weigh as much as the characters, the
+   * buffer is copied into a single string. Each copy is paid for by the reads
+   * since the previous one, and reads of an ordinary size never cause one.
+   */
+  private flattenBufferIfFragmented() {
+    if (
+      this.readsSinceFlattened < MIN_READS_BEFORE_FLATTENING ||
+      this.readsSinceFlattened * APPENDED_READ_OVERHEAD < this.buffer.length
+    ) {
+      return;
+    }
+    this.readsSinceFlattened = 0;
+    if (this.buffer.length > 0) {
+      // Unlike UTF-8, UTF-16 also keeps a surrogate whose other half has not
+      // been read yet
+      this.buffer = Buffer.from(this.buffer, 'utf16le').toString('utf16le');
     }
   }
 

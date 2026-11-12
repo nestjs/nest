@@ -67,6 +67,66 @@ describe('JsonSocket', () => {
     });
   });
 
+  describe('handleData – packets arriving in many small reads', () => {
+    let bufferFrom: ReturnType<typeof vi.spyOn>;
+    const countFlattenings = () =>
+      bufferFrom.mock.calls.filter(([, encoding]) => encoding === 'utf16le')
+        .length;
+
+    beforeEach(() => {
+      jsonSocket = new JsonSocket(socketStub, {
+        incompleteMessageTimeout: 0,
+        messageReceiveTimeout: 0,
+      });
+      bufferFrom = vi.spyOn(Buffer, 'from');
+    });
+    afterEach(() => {
+      bufferFrom.mockRestore();
+    });
+
+    it('flattens the buffer of a packet that arrives a character per read', () => {
+      // Each appended read would otherwise stay a piece of its own until the
+      // packet is complete
+      const body = JSON.stringify('x'.repeat(5000));
+      (jsonSocket as any).handleData(`${body.length}#`);
+      for (const character of body) {
+        (jsonSocket as any).handleData(character);
+      }
+
+      expect(countFlattenings()).toBeGreaterThan(0);
+      expect(countFlattenings()).toBeLessThan(10);
+      expect(received).toEqual(['x'.repeat(5000)]);
+    });
+
+    it('does not flatten the buffer for reads of an ordinary size', () => {
+      const body = JSON.stringify('x'.repeat(2048 * 1024));
+      (jsonSocket as any).handleData(`${body.length}#`);
+      for (let i = 0; i < body.length; i += 1024) {
+        (jsonSocket as any).handleData(body.substring(i, i + 1024));
+      }
+
+      expect(countFlattenings()).toBe(0);
+      expect(received).toEqual(['x'.repeat(2048 * 1024)]);
+    });
+
+    it('keeps a surrogate pair that is split across reads intact', () => {
+      const text = 'a'.repeat(1021) + '😀';
+      const body = JSON.stringify(text);
+      (jsonSocket as any).handleData(`${body.length}#`);
+      for (const character of body.substring(0, 1022)) {
+        (jsonSocket as any).handleData(character);
+      }
+      expect(countFlattenings()).toBe(0);
+      // The 1024th read ends between the halves of the pair, and the buffer
+      // is flattened right after it
+      (jsonSocket as any).handleData('\uD83D');
+      expect(countFlattenings()).toBe(1);
+      (jsonSocket as any).handleData('\uDE00"');
+
+      expect(received).toEqual([text]);
+    });
+  });
+
   describe('handleData – pipelined messages (stack-overflow regression)', () => {
     it('processes many small pipelined frames without a stack overflow', () => {
       /**
