@@ -14,6 +14,7 @@ import {
   multerExceptions,
   busboyExceptions,
 } from './multer.constants.js';
+import { onResponseClose } from '../../adapters/utils/on-response-close.util.js';
 import { MulterModuleOptions } from '../interfaces/index.js';
 import {
   MulterLimits,
@@ -252,7 +253,9 @@ function onResponseFinished(res: any, callback: () => void): () => void {
  * Removes the files multer stored for `req` when the route's pipes reject
  * the request (e.g. `ParseFilePipe`): the route handler never sees them, and
  * nothing else would remove them. They are removed once the response has
- * been sent, as an exception filter may still use (or remove) them.
+ * been sent, as an exception filter may still use (or remove) them, or once
+ * the connection of the request has closed: the response of a pipelined
+ * request that waits behind others may never report that itself.
  */
 export function removeFilesOnPipeRejection<T>(
   storage: any,
@@ -261,7 +264,7 @@ export function removeFilesOnPipeRejection<T>(
 ): MonoTypeOperatorFunction<T> {
   return catchError(err => {
     if (isRejectedByPipes(req)) {
-      finished(res, () => {
+      onResponseClose(res, () => {
         for (const file of storedFiles(req)) {
           try {
             storage._removeFile(req, file, () => undefined);

@@ -4,6 +4,7 @@ import {
   PayloadTooLargeException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
+import { EventEmitter } from 'events';
 import multer from 'multer';
 import {
   busboyExceptions,
@@ -570,6 +571,52 @@ describe('removeFilesOnPipeRejection', () => {
         expect.any(Function),
       ),
     );
+  });
+
+  describe('when the request was pipelined on a connection', () => {
+    // The response of a request that waits behind others pipelined on the
+    // connection: it has no socket of its own, and may never close itself
+    const createConnection = () =>
+      Object.assign(new EventEmitter(), { destroyed: false });
+    const createPipelinedExchange = (connection: EventEmitter) => {
+      const file = { fieldname: 'doc', path: '/uploads/a' };
+      const req = { file, socket: connection };
+      const res = Object.assign(createResponse(), { req });
+      markRejectedByPipes(req);
+      return { file, req, res };
+    };
+
+    it('should remove the files when the connection closes before the response is sent', async () => {
+      const storage = createStorage();
+      const connection = createConnection();
+      const { file, req, res } = createPipelinedExchange(connection);
+
+      await expect(fail(storage, req, res)).rejects.toBe(error);
+      expect(storage._removeFile).not.toHaveBeenCalled();
+      connection.emit('close');
+
+      await vi.waitFor(() =>
+        expect(storage._removeFile).toHaveBeenCalledExactlyOnceWith(
+          req,
+          file,
+          expect.any(Function),
+        ),
+      );
+    });
+
+    it('should remove the files once when the response is sent before the connection closes', async () => {
+      const storage = createStorage();
+      const connection = createConnection();
+      const { req, res } = createPipelinedExchange(connection);
+
+      await expect(fail(storage, req, res)).rejects.toBe(error);
+      res.end();
+      await vi.waitFor(() => expect(storage._removeFile).toHaveBeenCalled());
+      connection.emit('close');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(storage._removeFile).toHaveBeenCalledOnce();
+    });
   });
 
   it('should keep the files when the route handler failed', async () => {
