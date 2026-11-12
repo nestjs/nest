@@ -42,7 +42,7 @@ import {
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
-import { kRouteContext } from 'fastify/lib/symbols';
+import { kErrorHandler, kRouteContext } from 'fastify/lib/symbols';
 import * as http from 'http';
 import * as http2 from 'http2';
 import * as https from 'https';
@@ -508,19 +508,7 @@ export class FastifyAdapter<
     statusCode?: number,
   ) {
     const fastifyReply: TReply = this.isNativeResponse(response)
-      ? new Reply(
-          response,
-          {
-            [kRouteContext]: {
-              preSerialization: null,
-              preValidation: [],
-              preHandler: [],
-              onSend: [],
-              onError: [],
-            },
-          },
-          {},
-        )
+      ? this.createReplyForRawResponse(response)
       : response;
 
     if (statusCode) {
@@ -1010,6 +998,31 @@ export class FastifyAdapter<
     prefix = '/',
   ) {
     return this.instance.register(factory, { prefix });
+  }
+
+  /**
+   * A reply around a raw response, e.g. the one middleware and the exception
+   * filters of its errors get. When a stream it sends fails or the client goes
+   * away, Fastify reads the request, server and logger of the reply, and runs
+   * its error handler if no data was sent yet: these are those of the instance.
+   */
+  private createReplyForRawResponse(response: TRawResponse): TReply {
+    const instance = this.instance as TInstance & Record<symbol, unknown>;
+    const request = {
+      raw: (response as { req?: unknown }).req ?? {},
+      server: instance,
+      log: instance.log,
+      [kRouteContext]: {
+        preSerialization: null,
+        preValidation: [],
+        preHandler: [],
+        onSend: [],
+        onError: [],
+        server: instance,
+        errorHandler: instance[kErrorHandler],
+      },
+    };
+    return new Reply(response, request, instance.log);
   }
 
   private isNativeResponse(
