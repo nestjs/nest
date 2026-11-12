@@ -20,6 +20,13 @@ export interface WebSocketAdapter<
   create(port: number, options?: TOptions): TServer;
   bindClientConnect(server: TServer, callback: Function): any;
   bindClientDisconnect?(client: TClient, callback: Function): any;
+  /**
+   * Drops a client that connected while the lifecycle hooks of the application
+   * ("onModuleInit", "onApplicationBootstrap") were still running. Nothing was
+   * bound to it, so that it is not served by providers that are not
+   * initialized yet.
+   */
+  closeClient?(client: TClient): any;
   bindMessageHandlers(
     client: TClient,
     handlers: WsMessageHandler[],

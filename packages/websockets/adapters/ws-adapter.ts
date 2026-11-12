@@ -49,6 +49,26 @@ export abstract class AbstractWsAdapter<
     client.on(DISCONNECT_EVENT, callback);
   }
 
+  /**
+   * Drops a client that connected while the lifecycle hooks of the application
+   * ("onModuleInit", "onApplicationBootstrap") were still running. Neither the
+   * connection hook of the gateway nor its message handlers were bound to this
+   * client, so it is expected to connect again.
+   */
+  public closeClient(client: TClient) {
+    const target = client as any;
+    if (isFunction(target.terminate)) {
+      // ws: there is no closing handshake to wait for
+      target.terminate();
+    } else if (isFunction(target.conn?.close)) {
+      // socket.io: closing the underlying connection, unlike "disconnect()",
+      // lets the client reconnect by itself
+      target.conn.close();
+    } else if (isFunction(target.close)) {
+      target.close();
+    }
+  }
+
   public async close(server: TServer) {
     const isCallable = server && isFunction(server.close);
     isCallable && (await new Promise(resolve => server.close(resolve)));

@@ -69,6 +69,7 @@ export class WebSocketsController {
     private readonly exceptionFiltersContext: ExceptionFiltersContext,
     private readonly graphInspector: GraphInspector,
     private readonly appOptions: NestApplicationContextOptions = {},
+    private readonly isAcceptingClients: () => boolean = () => true,
   ) {}
 
   public connectGatewayToServer(
@@ -276,6 +277,14 @@ export class WebSocketsController {
     const adapter = this.config.getIoAdapter();
     return (...args: unknown[]) => {
       const [client] = args;
+      if (!this.isAcceptingClients()) {
+        // The lifecycle hooks of the application are still running, so the
+        // providers that the gateway, its enhancers and its handlers depend on
+        // may not be initialized yet. The client is dropped before any of
+        // them runs, as if the server was not listening yet.
+        adapter.closeClient?.(client);
+        return;
+      }
       // Bound before the connection hooks run, since socket.io emits the
       // disconnect synchronously when one of them calls client.disconnect().
       // Such a disconnect is held back until every gateway sharing this

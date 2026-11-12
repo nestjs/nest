@@ -228,6 +228,63 @@ describe('NestApplication', () => {
       expect((noopHttpAdapter as any).init).toHaveBeenCalledOnce();
     });
   });
+  describe('init', () => {
+    const createInstance = () => {
+      const noopHttpAdapter = new NoopHttpAdapter({});
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      container.setHttpAdapter(noopHttpAdapter);
+      return new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+    };
+
+    it('should make the gateways turn clients away until the lifecycle hooks have completed', async () => {
+      const instance = createInstance();
+      const calls: string[] = [];
+      (instance as any).socketModule = {
+        rejectClients: () => calls.push('rejectClients'),
+        register: () => calls.push('register'),
+        acceptClients: () => calls.push('acceptClients'),
+      };
+      vi.spyOn(instance as any, 'callInitHook').mockImplementation(
+        async () => void calls.push('callInitHook'),
+      );
+      vi.spyOn(instance as any, 'callBootstrapHook').mockImplementation(
+        async () => void calls.push('callBootstrapHook'),
+      );
+
+      await instance.init();
+      expect(calls).toEqual([
+        'rejectClients',
+        'register',
+        'callInitHook',
+        'callBootstrapHook',
+        'acceptClients',
+      ]);
+    });
+
+    it('should keep turning clients away when a lifecycle hook fails', async () => {
+      const instance = createInstance();
+      const socketModule = {
+        rejectClients: vi.fn(),
+        register: vi.fn(),
+        acceptClients: vi.fn(),
+      };
+      (instance as any).socketModule = socketModule;
+      vi.spyOn(instance as any, 'callInitHook').mockRejectedValue(
+        new Error('onModuleInit failed'),
+      );
+
+      await expect(instance.init()).rejects.toThrow('onModuleInit failed');
+      expect(socketModule.rejectClients).toHaveBeenCalledOnce();
+      expect(socketModule.acceptClients).not.toHaveBeenCalled();
+    });
+  });
   describe('close', () => {
     it('should reset the listening state', async () => {
       const server = createServer();

@@ -170,6 +170,31 @@ describe('NestMicroservice', () => {
       expect(socketModule.register).not.toHaveBeenCalled();
     });
 
+    it('should make the gateways turn clients away until the lifecycle hooks have completed', async () => {
+      const { instance } = createInstance();
+      const calls: string[] = [];
+      (instance as any).socketModule = {
+        rejectClients: () => calls.push('rejectClients'),
+        register: () => calls.push('register'),
+        acceptClients: () => calls.push('acceptClients'),
+      };
+      vi.spyOn(instance as any, 'callInitHook').mockImplementation(
+        async () => void calls.push('callInitHook'),
+      );
+      vi.spyOn(instance as any, 'callBootstrapHook').mockImplementation(
+        async () => void calls.push('callBootstrapHook'),
+      );
+
+      await instance.registerModules();
+      expect(calls).toEqual([
+        'rejectClients',
+        'register',
+        'callInitHook',
+        'callBootstrapHook',
+        'acceptClients',
+      ]);
+    });
+
     it('should assign the clients, register the listeners and call the lifecycle hooks', async () => {
       const { instance } = createInstance();
       const microservicesModule = (instance as any).microservicesModule;
