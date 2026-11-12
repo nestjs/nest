@@ -172,6 +172,59 @@ describe('ServerNats', () => {
       getPublisherSpy = sinon.spy();
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
     });
+    describe('when the message is a reply of a Nest server', () => {
+      // The requester names the subject a reply is published on, which can
+      // be the subject of a handler
+      const deliver = async (packet: Record<string, unknown>) => {
+        const handler = sinon.spy();
+        untypedServer.messageHandlers = objectToMap({ [channel]: handler });
+        const natsMsg: NatsMsg = {
+          data: JSONCodec().encode(packet),
+          subject: channel,
+          sid: +id,
+          respond: sinon.spy(),
+        };
+        await server.handleMessage(channel, natsMsg);
+        return handler;
+      };
+
+      [
+        { response: 'active', isDisposed: true, id: 'account-4' },
+        { response: 'active', id: 'account-4' },
+        { isDisposed: true, id: 'account-4' },
+        { err: 'failed', isDisposed: true, id: 'account-4' },
+        { err: NO_MESSAGE_HANDLER, status: 'error', id: 4 },
+      ].forEach(packet => {
+        it(`should not dispatch ${JSON.stringify(packet)} to the handler of the subject`, async () => {
+          const handler = await deliver(packet);
+
+          expect(handler.called).to.be.false;
+          expect(getPublisherSpy.called).to.be.false;
+        });
+      });
+      it('should dispatch an event whose data looks like a reply', async () => {
+        const handler = await deliver({
+          pattern: channel,
+          data: { response: 'active', isDisposed: true, id: 'account-4' },
+        });
+
+        expect(handler.calledOnce).to.be.true;
+        expect(handler.firstCall.args[0]).to.deep.equal({
+          response: 'active',
+          isDisposed: true,
+          id: 'account-4',
+        });
+        expect(handler.firstCall.args[1]).to.be.instanceOf(NatsContext);
+      });
+      it('should dispatch a message with more keys than a reply', async () => {
+        const external = { response: 'active', id: 'account-4', extra: true };
+        const handler = await deliver(external);
+
+        expect(handler.calledOnce).to.be.true;
+        expect(handler.firstCall.args[0]).to.deep.equal(external);
+        expect(handler.firstCall.args[1]).to.be.instanceOf(NatsContext);
+      });
+    });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       const data = JSONCodec().encode({ id: 10 });

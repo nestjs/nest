@@ -153,6 +153,15 @@ export class ServerNats<
       channel,
       replyTo,
     });
+    if (this.isReply(message)) {
+      // The requester names the subject its reply is published on, so a
+      // reply of a Nest server, this one included, can arrive on the subject
+      // of a handler. It is not a message for that handler.
+      this.logger.debug?.(
+        `Skipped a reply of a Nest server that was published on "${callerSubject}"`,
+      );
+      return;
+    }
     if (isUndefined((message as IncomingRequest).id)) {
       return this.handleEvent(channel, message, natsCtx);
     }
@@ -193,6 +202,24 @@ export class ServerNats<
       );
       response$ && this.send(response$, publish);
     });
+  }
+
+  /**
+   * Whether the packet is a reply of a Nest server, which the default
+   * deserializer leaves as it is: a packet with an id that carries a
+   * response, an error or the end of the response stream instead of a
+   * pattern and data.
+   */
+  private isReply(packet: Record<string, any>) {
+    return (
+      isObject(packet) &&
+      !isUndefined(packet.id) &&
+      isUndefined(packet.pattern) &&
+      isUndefined(packet.data) &&
+      (!isUndefined(packet.response) ||
+        !isUndefined(packet.err) ||
+        !isUndefined(packet.isDisposed))
+    );
   }
 
   /**
