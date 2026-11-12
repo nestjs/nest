@@ -436,9 +436,15 @@ export class WsAdapter extends AbstractWsAdapter {
             // socket nothing has been written to by then is one that nobody
             // claimed. The HTTP server's timeouts no longer apply after
             // "upgrade", so it would otherwise stay open until the client
-            // hangs up. engine.io handles the same case this way.
+            // hangs up. engine.io handles the same case this way. The count
+            // covers the whole connection, so on a keep-alive connection it
+            // already includes the responses to earlier requests.
+            const writtenBeforeUpgrade = (socket as Socket).bytesWritten;
             setTimeout(() => {
-              if (socket.writable && (socket as Socket).bytesWritten <= 0) {
+              if (
+                socket.writable &&
+                (socket as Socket).bytesWritten <= writtenBeforeUpgrade
+              ) {
                 socket.destroy();
               }
             }, this.unclaimedUpgradeTimeout).unref();

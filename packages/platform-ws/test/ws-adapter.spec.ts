@@ -631,6 +631,8 @@ describe('WsAdapter', () => {
     });
 
     describe('when another upgrade listener is present', () => {
+      // bytesWritten is what the connection has already been sent, for example
+      // the responses to earlier requests on a keep-alive connection
       const upgrade = (
         bytesWritten: number,
         options?: { unclaimedUpgradeTimeout?: number },
@@ -691,7 +693,29 @@ describe('WsAdapter', () => {
       });
 
       it('should keep the socket of an upgrade request that another listener answered', async () => {
-        const { adapter, socket } = upgrade(129);
+        const { adapter, socket } = upgrade(0);
+        // the other listener's handshake response
+        socket.bytesWritten += 129;
+
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+
+        await adapter.dispose();
+      });
+
+      it('should close an unclaimed socket that arrives with bytes already written', async () => {
+        // a keep-alive connection that answered a plain request first
+        const { adapter, socket } = upgrade(124);
+
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+
+        await adapter.dispose();
+      });
+
+      it('should keep an answered socket that arrives with bytes already written', async () => {
+        const { adapter, socket } = upgrade(124);
+        socket.bytesWritten += 129;
 
         vi.advanceTimersByTime(1000);
         expect(socket.destroy).not.toHaveBeenCalled();
