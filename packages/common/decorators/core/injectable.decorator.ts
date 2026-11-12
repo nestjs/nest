@@ -54,6 +54,10 @@ export function mixin<T>(mixinClass: Type<T>) {
   Object.defineProperty(mixinClass, 'name', {
     value: uid(21),
   });
-  Injectable()(mixinClass);
+  // The class may declare a scope, on itself or on a class it extends, and
+  // `@Injectable()` with no options would replace it with none
+  Injectable(Reflect.getMetadata(SCOPE_OPTIONS_METADATA, mixinClass))(
+    mixinClass,
+  );
   return mixinClass;
 }

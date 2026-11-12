@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { SCOPE_OPTIONS_METADATA, INJECTABLE_WATERMARK } from '../../constants';
-import { Injectable, mixin } from '../../index';
+import { Injectable, mixin, Scope } from '../../index';
 
 describe('@Injectable', () => {
   const options = {};
@@ -57,5 +57,38 @@ describe('mixin', () => {
 
     expect(constructorParams[0]).to.be.eql(Number);
     expect(constructorParams[1]).to.be.eql(String);
+  });
+
+  it('should mark the metatype as injectable', () => {
+    class Undecorated {}
+    const type = mixin(Undecorated);
+
+    expect(Reflect.getMetadata(INJECTABLE_WATERMARK, type)).to.equal(true);
+    expect(Reflect.getMetadata(SCOPE_OPTIONS_METADATA, type)).to.be.undefined;
+  });
+
+  it('should keep the scope options of the metatype', () => {
+    const options = { scope: Scope.REQUEST, durable: true };
+
+    @Injectable(options)
+    class RequestScoped {}
+    const type = mixin(RequestScoped);
+
+    expect(Reflect.getMetadata(SCOPE_OPTIONS_METADATA, type)).to.deep.equal(
+      options,
+    );
+  });
+
+  it('should not hide the scope options of a parent class', () => {
+    const options = { scope: Scope.TRANSIENT };
+
+    @Injectable(options)
+    class Transient {}
+    class Child extends Transient {}
+    const type = mixin(Child);
+
+    expect(Reflect.getMetadata(SCOPE_OPTIONS_METADATA, type)).to.deep.equal(
+      options,
+    );
   });
 });
