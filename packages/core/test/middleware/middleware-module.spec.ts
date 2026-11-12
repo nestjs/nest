@@ -1,4 +1,4 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable, Scope, UseFilters } from '@nestjs/common';
 import { RouteInfoPathExtractor } from '@nestjs/core/middleware/route-info-path-extractor';
 import * as chai from 'chai';
 import { expect } from 'chai';
@@ -351,6 +351,70 @@ describe('MiddlewareModule', () => {
           .getCalls()
           .map(({ args: [, wrapper] }) => wrapper.id),
       ).to.deep.equal([testWrapper.id, transientWrapper.id, anotherWrapper.id]);
+    });
+
+    it('should warn once that filter classes bound to a middleware are not applied', async () => {
+      class LoggingFilter {
+        catch() {}
+      }
+      class ClassLevelFilter {
+        catch() {}
+      }
+      @UseFilters(ClassLevelFilter)
+      class FilteredMiddleware implements NestMiddleware {
+        @UseFilters(LoggingFilter, { catch() {} })
+        public use(req, res, next) {}
+      }
+      @UseFilters({ catch() {} })
+      class InstanceFilteredMiddleware implements NestMiddleware {
+        public use(req, res, next) {}
+      }
+      const configuration = {
+        middleware: [FilteredMiddleware, InstanceFilteredMiddleware],
+        forRoutes: ['test'],
+      };
+      const app = {
+        createMiddlewareFactory: () => () => undefined,
+      };
+      const stubContainer = new NestContainer();
+      const container = new MiddlewareContainer(stubContainer);
+      const moduleKey = 'Test';
+      stubContainer
+        .getModules()
+        .set(moduleKey, new Module(TestModule, stubContainer));
+      container.insertConfig([configuration], moduleKey);
+      const collection = container.getMiddlewareCollection(moduleKey);
+      collection.set(
+        FilteredMiddleware,
+        new InstanceWrapper({
+          metatype: FilteredMiddleware,
+          instance: new FilteredMiddleware(),
+        }),
+      );
+      collection.set(
+        InstanceFilteredMiddleware,
+        new InstanceWrapper({
+          metatype: InstanceFilteredMiddleware,
+          instance: new InstanceFilteredMiddleware(),
+        }),
+      );
+      middlewareModule['container'] = stubContainer;
+      const warnStub = sinon.stub(middlewareModule['logger'], 'warn');
+
+      for (const path of ['test', 'other']) {
+        await middlewareModule.registerRouteMiddleware(
+          container,
+          { path, method: RequestMethod.ALL },
+          configuration,
+          moduleKey,
+          app,
+        );
+      }
+
+      expect(warnStub.calledOnce).to.be.true;
+      expect(warnStub.firstCall.args[0]).to.include(
+        '"ClassLevelFilter", "LoggingFilter" bound to the "FilteredMiddleware" middleware',
+      );
     });
 
     it('should insert the expected middleware definition', async () => {

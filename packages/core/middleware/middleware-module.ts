@@ -6,7 +6,8 @@ import {
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
+import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -39,6 +40,9 @@ export class MiddlewareModule<
   private readonly routerProxy = new RouterProxy();
   private readonly exceptionFiltersCache = new WeakMap();
   private readonly logger = new Logger(MiddlewareModule.name);
+  // Middleware already checked for filter classes (see
+  // "warnAboutFilterClasses()")
+  private readonly checkedFilterBindings = new WeakSet<object>();
 
   private injector: Injector;
   private routerExceptionFilter: RouterExceptionFilters;
@@ -253,6 +257,7 @@ export class MiddlewareModule<
     if (isUndefined(instance?.use)) {
       throw new InvalidMiddlewareException(metatype!.name);
     }
+    this.warnAboutFilterClasses(metatype, instance.use);
     // A transient middleware is its own inquirer, and the injector creates
     // such an instance only for a context: it is resolved per request, like a
     // request-scoped one (its static instance is never constructed)
@@ -299,6 +304,34 @@ export class MiddlewareModule<
           exceptionsHandler.next(err, host);
         }
       },
+    );
+  }
+
+  /**
+   * Exception filters bound to a middleware with @UseFilters() apply only
+   * when they are instances: a filter class has no module to be resolved in
+   * for a middleware, so it is left out. Warns once per middleware.
+   */
+  private warnAboutFilterClasses(
+    metatype: InstanceWrapper['metatype'],
+    use: Function,
+  ) {
+    if (!metatype || this.checkedFilterBindings.has(metatype)) {
+      return;
+    }
+    this.checkedFilterBindings.add(metatype);
+    const filterClasses = [
+      ...(Reflect.getMetadata(EXCEPTION_FILTERS_METADATA, metatype) ?? []),
+      ...(Reflect.getMetadata(EXCEPTION_FILTERS_METADATA, use) ?? []),
+    ].filter(filter => isFunction(filter) && !isFunction(filter.catch));
+    if (filterClasses.length === 0) {
+      return;
+    }
+    const names = [
+      ...new Set(filterClasses.map(filter => `"${filter.name}"`)),
+    ].join(', ');
+    this.logger.warn(
+      `The exception filter classes ${names} bound to the "${metatype.name}" middleware with @UseFilters() are not applied to it: a middleware only applies filter instances, such as @UseFilters(new ${filterClasses[0].name}()). Pass instances, or register the filters globally.`,
     );
   }
 
