@@ -7,6 +7,7 @@ import { KafkaContext } from '../../ctx-host';
 import { KafkaHeaders } from '../../enums';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
+import { KafkaRetriableException } from '../../exceptions';
 import {
   EachMessagePayload,
   KafkaMessage,
@@ -305,6 +306,84 @@ describe('ServerKafka', () => {
           .callsFake(() => null!);
         await server.getMessageHandler()(null!);
         expect(handleMessageStub.called).to.be.true;
+      });
+
+      const rejectionOf = (promise: Promise<unknown>) =>
+        promise.then(
+          () => {
+            throw new Error('Expected the handler to reject');
+          },
+          err => err,
+        );
+
+      it('should reject with what "handleMessage" rejects with', async () => {
+        const error = new Error('handler failed');
+        sinon.stub(server, 'handleMessage').rejects(error);
+
+        expect(await rejectionOf(server.getMessageHandler()(null!))).to.equal(
+          error,
+        );
+      });
+
+      it('should reject with a "KafkaRetriableException" as it is', async () => {
+        const error = new KafkaRetriableException('retriable');
+        sinon.stub(server, 'handleMessage').rejects(error);
+
+        expect(await rejectionOf(server.getMessageHandler()(null!))).to.equal(
+          error,
+        );
+      });
+
+      it('should reject with what is not an error as it is', async () => {
+        const error = { status: 'error', message: 'Internal server error' };
+        sinon
+          .stub(server, 'handleMessage')
+          .callsFake(() => Promise.reject(error));
+
+        expect(await rejectionOf(server.getMessageHandler()(null!))).to.equal(
+          error,
+        );
+      });
+
+      // kafkajs does not retry these, and leaves the consumer stopped
+      [TypeError, RangeError, ReferenceError, SyntaxError].forEach(
+        ErrorType => {
+          it(`should reject with an error kafkajs retries when "handleMessage" rejects with a ${ErrorType.name}`, async () => {
+            const error = new ErrorType('handler failed');
+            sinon.stub(server, 'handleMessage').rejects(error);
+
+            const rejection = await rejectionOf(
+              server.getMessageHandler()(null!),
+            );
+
+            expect(rejection).to.be.instanceOf(Error);
+            expect(rejection.name).to.equal('Error');
+            expect(rejection.message).to.equal('handler failed');
+            expect(rejection.stack).to.equal(error.stack);
+            expect(rejection.cause).to.equal(error);
+          });
+        },
+      );
+
+      it('should reject with an error kafkajs retries when an event handler fails with a TypeError', async () => {
+        // What a filter written for HTTP throws when given the RPC context
+        const error = new TypeError('response.status is not a function');
+        untypedServer.messageHandlers = objectToMap({
+          [topic]: Object.assign(
+            async () => {
+              throw error;
+            },
+            { isEventHandler: true },
+          ),
+        });
+
+        const rejection = await rejectionOf(
+          server.getMessageHandler()(eventPayload),
+        );
+
+        expect(rejection.name).to.equal('Error');
+        expect(rejection.message).to.equal(error.message);
+        expect(rejection.cause).to.equal(error);
       });
     });
   });
