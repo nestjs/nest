@@ -235,6 +235,200 @@ describe('ServerRMQ', () => {
       ).to.be.true;
     });
 
+    describe('when "wildcards" is enabled', () => {
+      const delivery = (
+        fields: { exchange: string; routingKey: string },
+        payload: Record<string, any>,
+      ) => ({ ...createMessage(payload), fields });
+
+      let publicHandler: sinon.SinonStub;
+      let adminHandler: sinon.SinonStub;
+      let createHandler: sinon.SinonStub;
+      let publicEventHandler: sinon.SinonSpy;
+      let adminEventHandler: sinon.SinonSpy;
+      let warnStub: sinon.SinonStub;
+
+      const useServer = (options: Record<string, any> = {}) => {
+        server = new ServerRMQ({
+          queue: 'accounts',
+          wildcards: true,
+          ...options,
+        });
+        untypedServer = server as any;
+        untypedServer.channel = channel;
+        sendMessageStub = sinon.stub(server, 'sendMessage');
+        warnStub = sinon.stub(untypedServer.logger, 'warn');
+
+        publicHandler = sinon.stub().resolves('public');
+        adminHandler = sinon.stub().resolves('admin');
+        createHandler = sinon.stub().resolves('created');
+        publicEventHandler = sinon.spy();
+        adminEventHandler = sinon.spy();
+        server.addHandler('public.*', publicHandler as any);
+        server.addHandler('admin.purge', adminHandler as any);
+        server.addHandler(
+          { role: 'user', cmd: 'create' },
+          createHandler as any,
+        );
+        server.addHandler('public.*.created', publicEventHandler as any, true);
+        server.addHandler('admin.purged', adminEventHandler as any, true);
+        untypedServer.initializeWildcardHandlersIfExist();
+      };
+
+      beforeEach(() => useServer());
+
+      const expectDropped = () => {
+        expect(warnStub.calledOnce).to.be.true;
+        expect(adminHandler.called).to.be.false;
+        expect(adminEventHandler.called).to.be.false;
+        expect(publicHandler.called).to.be.false;
+        expect(sendMessageStub.called).to.be.false;
+      };
+
+      it('should drop a request whose pattern names another handler than its routing key', async () => {
+        await server.handleMessage(
+          delivery(
+            { exchange: 'accounts', routingKey: 'public.info' },
+            { pattern: 'admin.purge', data: 'account-4', id: '3' },
+          ),
+          channel,
+        );
+
+        expectDropped();
+      });
+
+      it('should drop an event whose pattern names another handler than its routing key', async () => {
+        await server.handleMessage(
+          delivery(
+            { exchange: 'accounts', routingKey: 'public.account.created' },
+            { pattern: 'admin.purged', data: 'account-4' },
+          ),
+          channel,
+        );
+
+        expectDropped();
+        expect(publicEventHandler.called).to.be.false;
+      });
+
+      it('should negative acknowledge it without requeue when noAck option is false', async () => {
+        useServer({ noAck: false });
+        const message = delivery(
+          { exchange: 'accounts', routingKey: 'public.info' },
+          { pattern: 'admin.purge', data: 'account-4', id: '3' },
+        );
+
+        await server.handleMessage(message, channel);
+
+        expectDropped();
+        expect(channel.nack.calledWith(message, false, false)).to.be.true;
+      });
+
+      it('should not read the routing key as json', async () => {
+        server.addHandler('#', sinon.spy() as any);
+        untypedServer.wildcardHandlers.clear();
+        untypedServer.initializeWildcardHandlersIfExist();
+
+        await server.handleMessage(
+          delivery(
+            { exchange: 'accounts', routingKey: '"admin.purge"' },
+            { pattern: 'admin.purge', data: 'account-4', id: '3' },
+          ),
+          channel,
+        );
+
+        expectDropped();
+      });
+
+      (
+        [
+          [
+            'an exact pattern',
+            'admin.purge',
+            'admin.purge',
+            () => adminHandler,
+          ],
+          [
+            'a wildcard pattern',
+            'public.info',
+            'public.info',
+            () => publicHandler,
+          ],
+          [
+            'an object pattern, by its normalized form',
+            '{"cmd":"create","role":"user"}',
+            { role: 'user', cmd: 'create' },
+            () => createHandler,
+          ],
+        ] as const
+      ).forEach(([description, routingKey, pattern, getHandler]) => {
+        it(`should run the handler of ${description}, as ClientRMQ publishes it`, async () => {
+          await server.handleMessage(
+            delivery(
+              { exchange: 'accounts', routingKey },
+              { pattern, data: 'data', id: '3' },
+            ),
+            channel,
+          );
+
+          expect(warnStub.called).to.be.false;
+          expect(getHandler().calledOnce).to.be.true;
+        });
+      });
+
+      (
+        [
+          ['to the queue itself', { exchange: '', routingKey: 'accounts' }, {}],
+          [
+            'through another exchange',
+            { exchange: 'retries', routingKey: 'public.info' },
+            {},
+          ],
+          [
+            'through the binding of the "routingKey" option',
+            { exchange: 'accounts', routingKey: 'legacy.orders' },
+            { routingKey: 'legacy.#' },
+          ],
+          [
+            'through a fanout exchange',
+            { exchange: 'accounts', routingKey: 'public.info' },
+            { exchangeType: 'fanout' },
+          ],
+        ] as const
+      ).forEach(([description, fields, options]) => {
+        it(`should pick the handler by the pattern of a message published ${description}`, async () => {
+          useServer(options);
+
+          await server.handleMessage(
+            delivery(fields, { pattern: 'admin.purge', data: 'data', id: '3' }),
+            channel,
+          );
+
+          expect(warnStub.called).to.be.false;
+          expect(adminHandler.calledOnce).to.be.true;
+        });
+      });
+
+      it('should still answer a request no handler matches', async () => {
+        await server.handleMessage(
+          delivery(
+            { exchange: 'accounts', routingKey: 'orders.info' },
+            { pattern: 'orders.info', data: 'data', id: '3' },
+          ),
+          channel,
+        );
+
+        expect(warnStub.called).to.be.false;
+        expect(
+          sendMessageStub.calledWith(
+            { id: '3', status: 'error', err: NO_MESSAGE_HANDLER },
+            undefined,
+            1,
+            sinon.match.instanceOf(RmqContext),
+          ),
+        ).to.be.true;
+      });
+    });
+
     describe('when the id of a request is neither a number nor a short string', () => {
       // The NO_MESSAGE_HANDLER reply carries a copy of the id
       const withId = (id: unknown) => createMessage({ pattern, data: '', id });

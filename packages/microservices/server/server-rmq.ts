@@ -306,7 +306,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     if (isNil(message)) {
       return;
     }
-    const { content, properties } = message;
+    const { content, properties, fields } = message;
     if (content.length > this.maxMessageSize) {
       return this.skipOversizedMessage(message, channel);
     }
@@ -315,6 +315,15 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const pattern = this.getPatternAsString(packet.pattern);
 
     const rmqContext = new RmqContext([message, channel, pattern]);
+    if (!this.isPatternOfRoutingKey(pattern, fields)) {
+      this.logger.warn(
+        `Message dropped: its pattern does not name the handler of its routing key "${fields.routingKey}".`,
+      );
+      if (!this.noAck) {
+        this.channel!.nack(message as Message, false, false);
+      }
+      return;
+    }
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, rmqContext);
     }
@@ -475,6 +484,71 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     for (const [wildcardPattern, handler] of this.wildcardHandlers) {
       if (this.matchRmqPattern(wildcardPattern, pattern)) {
         return handler;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * With "wildcards", the queue is bound to the service's exchange once per
+   * handler pattern, so the broker routes a message published there by its
+   * routing key, which is what its topic permissions are checked against,
+   * and ClientRMQ sets that key to the pattern. The handler is picked by the
+   * pattern in the body, so this checks that it is the handler of the routing
+   * key as well. A message published to the queue itself, through another
+   * exchange, or through the binding of the "routingKey" option is not
+   * checked.
+   */
+  protected isPatternOfRoutingKey(
+    pattern: string,
+    fields: Record<string, any> | undefined,
+  ): boolean {
+    if (
+      !this.options.wildcards ||
+      !fields?.exchange ||
+      !isString(fields.routingKey)
+    ) {
+      return true;
+    }
+    const exchange = this.getOptionsProp(
+      this.options,
+      'exchange',
+      this.options.queue,
+    );
+    const exchangeType = this.getOptionsProp(
+      this.options,
+      'exchangeType',
+      'topic',
+    );
+    if (
+      fields.exchange !== exchange ||
+      (exchangeType !== 'topic' && exchangeType !== 'direct')
+    ) {
+      return true;
+    }
+    const { routingKey } = this.options;
+    if (routingKey && this.matchRmqPattern(routingKey, fields.routingKey)) {
+      return true;
+    }
+    return (
+      this.getHandlerByPattern(pattern) ===
+      this.getHandlerByRoutingKey(fields.routingKey)
+    );
+  }
+
+  /**
+   * Returns the handler of a routing key, read as the broker routed it: as
+   * JSON, '"admin.purge"' would name the handler of "admin.purge". ClientRMQ
+   * sends an object pattern as the normalized JSON its handler is stored by.
+   */
+  private getHandlerByRoutingKey(routingKey: string): MessageHandler | null {
+    const handler = this.messageHandlers.get(routingKey);
+    if (handler) {
+      return handler;
+    }
+    for (const [wildcardPattern, wildcardHandler] of this.wildcardHandlers) {
+      if (this.matchRmqPattern(wildcardPattern, routingKey)) {
+        return wildcardHandler;
       }
     }
     return null;
