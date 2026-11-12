@@ -203,7 +203,12 @@ export class WebSocketsController {
       messageHandlers,
       observableServer,
       isStatic
-        ? this.createStaticEventHandler(instance, moduleKey, 'handleConnection')
+        ? this.createStaticEventHandler(
+            instance,
+            moduleKey,
+            'handleConnection',
+            instanceWrapper.id,
+          )
         : this.createRequestScopedEventHandler(
             instanceWrapper,
             moduleRef,
@@ -212,7 +217,12 @@ export class WebSocketsController {
             observableServer.server,
           ),
       isStatic && !hasGlobalScopedEnhancers
-        ? this.createStaticEventHandler(instance, moduleKey, 'handleDisconnect')
+        ? this.createStaticEventHandler(
+            instance,
+            moduleKey,
+            'handleDisconnect',
+            instanceWrapper.id,
+          )
         : this.createRequestScopedEventHandler(
             instanceWrapper,
             moduleRef,
@@ -533,12 +543,14 @@ export class WebSocketsController {
         }
         // Built for each connection: a request-scoped filter is only
         // constructed in the context of the connection, and the static one
-        // holds an empty placeholder
+        // holds an empty placeholder. The filters of a default-scoped gateway,
+        // resolved here for request-scoped global enhancers, are static, and a
+        // transient one is constructed for the gateway in the static context.
         const exceptionFilter = this.exceptionFiltersContext.create(
           instance,
           targetCallback,
           moduleKey,
-          contextId,
+          isStatic ? STATIC_CONTEXT : contextId,
           instanceWrapper.id,
         );
         this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
@@ -587,6 +599,7 @@ export class WebSocketsController {
     instance: NestGateway,
     moduleKey: string,
     methodName: 'handleConnection' | 'handleDisconnect',
+    instanceWrapperId?: string,
   ) {
     const hook = instance[methodName] as
       ((...args: unknown[]) => unknown) | undefined;
@@ -598,10 +611,14 @@ export class WebSocketsController {
     let exceptionFilter: WsExceptionsHandler | undefined;
     return (...args: unknown[]) => {
       const handleError = (err: unknown) => {
+        // With the gateway as the inquirer, as for its message handlers, so
+        // that a transient filter is the one constructed for the gateway
         exceptionFilter ??= this.exceptionFiltersContext.create(
           instance,
           hook,
           moduleKey,
+          STATIC_CONTEXT,
+          instanceWrapperId,
         );
         this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
       };
@@ -632,7 +649,15 @@ export class WebSocketsController {
       methodName === 'handleDisconnect' ? disconnectReason : undefined;
     const host = new ExecutionContextHost([client, data, methodName]);
     host.setType('ws');
-    exceptionFilter.handle(err as Error, host);
+    // Nothing awaits a lifecycle hook, so an error leaving the filter, e.g.
+    // when its reply cannot be serialized, would end the process as an
+    // uncaught exception or an unhandled rejection. It is logged instead, as
+    // the adapters do for message handlers.
+    try {
+      exceptionFilter.handle(err as Error, host);
+    } catch (filterError) {
+      this.logger.error(filterError);
+    }
   }
 
   private getGlobalScopedEnhancers(): InstanceWrapper[] {

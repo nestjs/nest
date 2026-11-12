@@ -1,4 +1,5 @@
 import {
+  type ArgumentsHost,
   Catch,
   ExceptionFilter,
   Inject,
@@ -71,6 +72,42 @@ class UserGateway {
   constructor(@Inject(CurrentUser) readonly user: CurrentUser) {}
 
   handleConnection() {}
+}
+
+@Injectable()
+class AuditLog {
+  readonly entries: string[] = [];
+
+  record(entry: string) {
+    this.entries.push(entry);
+  }
+}
+
+@Catch(WsException)
+@Injectable({ scope: Scope.TRANSIENT })
+class AuditFilter implements ExceptionFilter {
+  constructor(@Inject(AuditLog) private readonly auditLog: AuditLog) {}
+
+  catch(exception: WsException, host: ArgumentsHost) {
+    this.auditLog.record(exception.message);
+    host.switchToWs().getClient<WebSocket>().close(4401, exception.message);
+  }
+}
+
+@UseFilters(AuditFilter)
+@WebSocketGateway()
+class AuditedGateway {
+  handleConnection() {
+    throw new WsException('Unauthorized');
+  }
+}
+
+@WebSocketGateway()
+class UnserializableErrorGateway {
+  handleConnection() {
+    // the default filter cannot send this body
+    throw new WsException({ id: 10n });
+  }
 }
 
 describe('WebSocketGateway request scope - connection hook errors', () => {
@@ -159,4 +196,48 @@ describe('WebSocketGateway request scope - connection hook errors', () => {
     expect(code).toBe(4401);
     expect(reason.toString()).toBe('Unauthorized');
   });
+
+  it('should run a transient filter of a default-scoped gateway with its dependencies', async () => {
+    await start(true, [AuditLog, AuditedGateway]);
+    const client = new WebSocket((await app.getUrl()).replace('http', 'ws'));
+    clients.push(client);
+    const [code, reason] = await once(client, 'close', {
+      signal: AbortSignal.timeout(5000),
+    });
+
+    expect(code).toBe(4401);
+    expect(reason.toString()).toBe('Unauthorized');
+    expect(app.get(AuditLog).entries).toEqual(['Unauthorized']);
+  });
+
+  it.each([
+    ['ws', true],
+    ['socket.io', false],
+  ])(
+    'should keep serving when the filter of a %s connection hook throws',
+    async (_, useWsAdapter) => {
+      await start(useWsAdapter, [UnserializableErrorGateway]);
+      const url = await app.getUrl();
+      const connectAndClose = async () => {
+        if (useWsAdapter) {
+          const client = new WebSocket(url.replace('http', 'ws'));
+          clients.push(client);
+          await once(client, 'open');
+          return;
+        }
+        const socket = io(url, {
+          transports: ['websocket'],
+          forceNew: true,
+          reconnection: false,
+        });
+        sockets.push(socket);
+        await once(socket, 'connect');
+      };
+
+      await connectAndClose();
+      // the filter's error used to be thrown on a later tick
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await connectAndClose();
+    },
+  );
 });

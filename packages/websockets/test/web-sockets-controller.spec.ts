@@ -1135,6 +1135,43 @@ describe('WebSocketsController', () => {
       );
     });
 
+    it('should resolve the exception filters of a default-scoped gateway in the static context', async () => {
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        isDependencyTreeStatic: () => true,
+        instance: {
+          handleDisconnect() {
+            throw new Error('cleanup failed');
+          },
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const createFilter = vi
+        .spyOn(exceptionFiltersContext, 'create')
+        .mockImplementation(() => ({ handle: vi.fn() }) as any);
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+
+      // a default-scoped gateway takes this path for request-scoped global
+      // enhancers
+      await instance.createRequestScopedEventHandler(
+        gatewayWrapper,
+        { providers: new Map() } as Module,
+        'moduleKey',
+        'handleDisconnect',
+        {},
+      )({});
+
+      expect(createFilter).toHaveBeenCalledWith(
+        gatewayWrapper.instance,
+        gatewayWrapper.instance.handleDisconnect,
+        'moduleKey',
+        STATIC_CONTEXT,
+        'gateway-wrapper',
+      );
+    });
+
     describe('when the gateway fails to resolve', () => {
       class Gateway {
         handleConnection() {}
@@ -1308,6 +1345,65 @@ describe('WebSocketsController', () => {
       expect(host.switchToWs().getClient()).toBe(client);
       expect(host.switchToWs().getData()).toBe('transport close');
       expect(host.switchToWs().getPattern()).toBe('handleDisconnect');
+    });
+
+    it('should resolve the filters with the gateway as the inquirer', () => {
+      const gateway = {
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      };
+
+      instance.createStaticEventHandler(
+        gateway,
+        'moduleKey',
+        'handleConnection',
+        'gatewayWrapperId',
+      )!({});
+
+      expect(exceptionFiltersContext.create).toHaveBeenCalledWith(
+        gateway,
+        gateway.handleConnection,
+        'moduleKey',
+        STATIC_CONTEXT,
+        'gatewayWrapperId',
+      );
+    });
+
+    it('should log an error thrown by the exception filter instead of rethrowing it', async () => {
+      const filterError = new TypeError(
+        'Do not know how to serialize a BigInt',
+      );
+      exceptionFilter.handle.mockImplementation(() => {
+        throw filterError;
+      });
+      const logError = vi
+        .spyOn(untypedInstance.logger, 'error')
+        .mockImplementation(() => undefined);
+      const syncGateway = {
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      };
+      const asyncGateway = {
+        handleConnection: async () => Promise.reject(new Error('Unauthorized')),
+      };
+
+      expect(() =>
+        instance.createStaticEventHandler(
+          syncGateway,
+          'moduleKey',
+          'handleConnection',
+        )!({}),
+      ).not.toThrow();
+      await expect(
+        instance.createStaticEventHandler(
+          asyncGateway,
+          'moduleKey',
+          'handleConnection',
+        )!({}),
+      ).resolves.toBeUndefined();
+      expect(logError.mock.calls).toEqual([[filterError], [filterError]]);
     });
 
     it('should delegate errors to the filters of the gateway that inherits the hook', () => {
