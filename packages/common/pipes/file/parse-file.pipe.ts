@@ -53,7 +53,13 @@ export class ParseFilePipe implements PipeTransform<any> {
 
   private async validateFilesOrFile(value: any): Promise<void> {
     if (Array.isArray(value)) {
-      await Promise.all(value.map(f => this.validate(f)));
+      // One file at a time, up to the first that fails: validating them all
+      // at once kept the work of every file (e.g. `FileTypeValidator`
+      // inspecting its content) alive together, however many files were
+      // uploaded.
+      for (const file of value) {
+        await this.validate(file);
+      }
     } else {
       await this.validate(value);
     }
