@@ -1159,6 +1159,59 @@ describe('Injector', () => {
 
       expect(result).to.be.eq('rejected');
     });
+
+    describe('when a dependency is optional', () => {
+      const error = new Error('Test error');
+      const inject = [{ token: 'Dependency', optional: true }];
+
+      let moduleRef: Module;
+      let wrapper: InstanceWrapper;
+      let callback: sinon.SinonSpy;
+
+      beforeEach(async () => {
+        const container = new NestContainer();
+        ({ moduleRef } = (await container.addModule(class TestModule {}, []))!);
+        wrapper = new InstanceWrapper({ name: 'Host', inject });
+        callback = sinon.spy();
+      });
+
+      // e.g., a request-scoped provider whose constructor throws for the request
+      const addFailingDependency = () =>
+        moduleRef.addProvider({
+          provide: 'Dependency',
+          scope: Scope.REQUEST,
+          useFactory: () => {
+            throw error;
+          },
+        });
+
+      it('should pass "undefined" when it is missing', async () => {
+        await injector.resolveConstructorParams(
+          wrapper,
+          moduleRef,
+          inject as any,
+          callback,
+          { contextId: { id: 2 } },
+        );
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args[0]).to.deep.equal([undefined]);
+      });
+
+      it('should rethrow when it is found but fails to load for a context', async () => {
+        addFailingDependency();
+
+        await expect(
+          injector.resolveConstructorParams(
+            wrapper,
+            moduleRef,
+            inject as any,
+            callback,
+            { contextId: { id: 2 } },
+          ),
+        ).to.be.rejectedWith(error);
+        expect(callback.called).to.be.false;
+      });
+    });
   });
 
   describe('resolveProperties', () => {
@@ -1175,6 +1228,53 @@ describe('Injector', () => {
         contextId: { id: 2 },
       });
       expect(loadPropertiesMetadataSpy.called).to.be.true;
+    });
+
+    describe('when a property is optional', () => {
+      const error = new Error('Test error');
+
+      class Host {
+        @Optional() @Inject('Dependency') key: unknown;
+      }
+
+      let moduleRef: Module;
+      let wrapper: InstanceWrapper;
+
+      beforeEach(async () => {
+        const container = new NestContainer();
+        ({ moduleRef } = (await container.addModule(class TestModule {}, []))!);
+        wrapper = new InstanceWrapper({ name: 'Host', metatype: Host });
+      });
+
+      // e.g., a request-scoped provider whose constructor throws for the request
+      const addFailingDependency = () =>
+        moduleRef.addProvider({
+          provide: 'Dependency',
+          scope: Scope.REQUEST,
+          useFactory: () => {
+            throw error;
+          },
+        });
+
+      it('should leave it "undefined" when it is missing', async () => {
+        const [property] = await injector.resolveProperties(
+          wrapper,
+          moduleRef,
+          undefined,
+          { contextId: { id: 2 } },
+        );
+        expect(property.instance).to.be.undefined;
+      });
+
+      it('should rethrow when it is found but fails to load for a context', async () => {
+        addFailingDependency();
+
+        await expect(
+          injector.resolveProperties(wrapper, moduleRef, undefined, {
+            contextId: { id: 2 },
+          }),
+        ).to.be.rejectedWith(error);
+      });
     });
   });
 
