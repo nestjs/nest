@@ -716,6 +716,18 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('#', '')).to.be.true;
       });
 
+      it('should not match a key longer than a routing key may be', () => {
+        // A routing key has at most 255 bytes, so the broker routes none longer
+        expect(matchRmqPattern('#', 'a'.repeat(255))).to.be.true;
+        expect(matchRmqPattern('#', 'a'.repeat(256))).to.be.false;
+        expect(matchRmqPattern('#', '.'.repeat(255))).to.be.true;
+        expect(matchRmqPattern('#', '.'.repeat(256))).to.be.false;
+        expect(matchRmqPattern('users.#', `users.${'a'.repeat(250)}`)).to.be
+          .false;
+        expect(matchRmqPattern('users.#', `users.${'a'.repeat(249)}`)).to.be
+          .true;
+      });
+
       it('should handle single segments', () => {
         expect(matchRmqPattern('user', 'user')).to.be.true;
         expect(matchRmqPattern('*', 'user')).to.be.true;
@@ -752,6 +764,20 @@ describe('ServerRMQ', () => {
       ).to.not.throw();
       expect(untypedServer.wildcardHandlers.size).to.equal(1);
       expect(untypedServer.wildcardHandlers.has('orders.*')).to.be.true;
+    });
+
+    it('should match a pattern longer than a routing key against exact handlers only', () => {
+      server = new ServerRMQ({ wildcards: true });
+      const longPattern = `users.${'a'.repeat(250)}`;
+      const wildcardHandler = sinon.spy();
+      const exactHandler = sinon.spy();
+      server.addHandler('users.#', wildcardHandler as any);
+      (server as any).initializeWildcardHandlersIfExist();
+
+      expect(server.getHandlerByPattern(longPattern)).to.be.null;
+
+      server.addHandler(longPattern, exactHandler as any);
+      expect(server.getHandlerByPattern(longPattern)).to.equal(exactHandler);
     });
   });
 });
