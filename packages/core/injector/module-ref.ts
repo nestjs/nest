@@ -205,6 +205,19 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
               inquirer: wrapper,
             },
           );
+          // In the static context, a request-scoped provider is a placeholder
+          // that is never constructed and is shared by every caller. Unlike a
+          // constructor parameter, one injected into a property (of the class
+          // or of one of its dependencies) does not skip this callback, so
+          // return without creating the instance, and create() rejects below
+          if (
+            (contextId ?? STATIC_CONTEXT) === STATIC_CONTEXT &&
+            wrapper.introspectDepsAttribute(dependencies =>
+              dependencies.some(item => !item.isDependencyTreeStatic()),
+            )
+          ) {
+            return;
+          }
           await this.injector.waitForDeferredLoads(contextId ?? STATIC_CONTEXT);
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
