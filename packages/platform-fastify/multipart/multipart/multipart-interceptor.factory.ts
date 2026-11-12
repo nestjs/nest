@@ -19,6 +19,7 @@ import type {
   MultipartModuleOptions,
   MultipartOptions,
   MultipartStorageEngine,
+  UploadedMultipartFile,
 } from '../interfaces/index.js';
 import {
   MISSING_PLUGIN_MESSAGE,
@@ -55,6 +56,38 @@ function isRejectedByPipes(req: any): boolean {
     isRejectedByPipes?: (req: unknown) => boolean;
   };
   return core.isRejectedByPipes?.(req) === true;
+}
+
+/**
+ * Destroys the request if the response is sent while its body is still being
+ * received, e.g. by an interceptor bound earlier that timed out: the route
+ * handler would then never run, and nothing would remove the files stored
+ * meanwhile. `@fastify/multipart` fails the parts iterator of a destroyed
+ * request, and `processMultipart()` then removes what it stored. Returns a
+ * function that stops watching.
+ */
+function destroyWhenAnswered(req: FastifyRequest, reply: FastifyReply) {
+  const raw = req?.raw;
+  const response = reply?.raw;
+  // A stand-in for a reply (e.g. in a unit test) is not watched.
+  if (typeof response?.on !== 'function' || !raw) {
+    return () => undefined;
+  }
+  let isReceiving = true;
+  let stopWatching: () => void;
+  try {
+    stopWatching = finished(response, () => {
+      if (isReceiving && !raw.complete) {
+        raw.destroy();
+      }
+    });
+  } catch {
+    return () => undefined;
+  }
+  return () => {
+    isReceiving = false;
+    stopWatching();
+  };
 }
 
 const verifiedInstances = new WeakSet<object>();
@@ -159,12 +192,16 @@ export function createMultipartInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
       const req = ctx.getRequest<FastifyRequest>();
-      const stored = await processMultipart(
+      const stopWatching = destroyWhenAnswered(
         req,
-        spec,
-        this.options,
-        this.storage,
+        ctx.getResponse<FastifyReply>(),
       );
+      let stored: UploadedMultipartFile[];
+      try {
+        stored = await processMultipart(req, spec, this.options, this.storage);
+      } finally {
+        stopWatching();
+      }
       return next.handle().pipe(
         // When the route's pipes reject the request (e.g. `ParseFilePipe`),
         // the route handler never sees the files, and nothing else would

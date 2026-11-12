@@ -13,12 +13,13 @@ import {
   applyDefaultLimits,
   mergeMulterOptions,
   removeFilesOnPipeRejection,
+  runMulter,
   transformException,
 } from '../../../multer/multer/multer.utils.js';
 import { MulterOptions } from '../../../multer/interfaces/multer-options.interface.js';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
 import { lastValueFrom, throwError } from 'rxjs';
-import { Readable, Writable } from 'stream';
+import { PassThrough, Readable, Writable } from 'stream';
 
 describe('mergeMulterOptions', () => {
   it('should let local options override top-level global options', () => {
@@ -404,6 +405,56 @@ describe('applyDefaultLimits', () => {
       );
       expect(dig(body, 33)).toHaveLength(1002);
     });
+  });
+});
+
+describe('runMulter', () => {
+  const response = () => new Writable({ write: (_chunk, _enc, cb) => cb() });
+  const tick = () => new Promise(resolve => setImmediate(resolve));
+
+  it('should settle with what multer calls back with', async () => {
+    await expect(
+      runMulter((_req, _res, next) => next(), {}, response()),
+    ).resolves.toBeUndefined();
+    const error = new multer.MulterError('LIMIT_FILE_SIZE', 'f');
+    await expect(
+      runMulter((_req, _res, next) => next(error), {}, response()),
+    ).rejects.toBeInstanceOf(PayloadTooLargeException);
+  });
+
+  it('should destroy the request when the response is sent while multer is receiving it', async () => {
+    const req = new PassThrough();
+    const res = response();
+    const result = runMulter(
+      (r, _res, next) =>
+        r.once('close', () => next(new Error('Request closed'))),
+      req,
+      res,
+    );
+    res.end();
+    await expect(result).rejects.toThrow('Request closed');
+    expect(req.destroyed).toBe(true);
+  });
+
+  it('should leave a request whose body has been received', async () => {
+    const req = Object.assign(new PassThrough(), { complete: true });
+    const res = response();
+    let next!: (err?: any) => void;
+    const result = runMulter((_req, _res, n) => (next = n), req, res);
+    res.end();
+    await tick();
+    expect(req.destroyed).toBe(false);
+    next();
+    await result;
+  });
+
+  it('should stop watching the response once multer is done', async () => {
+    const req = new PassThrough();
+    const res = response();
+    await runMulter((_req, _res, next) => next(), req, res);
+    res.end();
+    await tick();
+    expect(req.destroyed).toBe(false);
   });
 });
 

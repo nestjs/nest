@@ -1,19 +1,24 @@
 import {
   BadRequestException,
   Body,
+  type CallHandler,
   Controller,
+  type ExecutionContext,
   FileTypeValidator,
   MaxFileSizeValidator,
   Module,
+  type NestInterceptor,
   ParseFilePipe,
   ParseIntPipe,
   Post,
+  RequestTimeoutException,
   UploadedFile,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import multer from 'multer';
+import { throwError, timeout } from 'rxjs';
 import type { Readable } from 'stream';
 import type { UploadApi } from './upload-api.js';
 
@@ -69,6 +74,21 @@ async function describeUpload(file: any, body: any) {
         size: file.size,
       };
   return { hash, size, originalname: file.originalname, body };
+}
+
+/**
+ * Answers with a 408 when the route has not answered within a second, as a
+ * timeout interceptor bound globally would.
+ */
+class TimeoutInterceptor implements NestInterceptor {
+  intercept(_context: ExecutionContext, next: CallHandler) {
+    return next.handle().pipe(
+      timeout({
+        first: 1000,
+        with: () => throwError(() => new RequestTimeoutException()),
+      }),
+    );
+  }
 }
 
 /**
@@ -226,6 +246,16 @@ export function createUploadModule(
       }),
     )
     disk(@UploadedFiles() files: any) {
+      return { files: describeFiles(files) };
+    }
+
+    // The timeout answers while the upload is still arriving.
+    @Post('disk-timeout')
+    @UseInterceptors(
+      TimeoutInterceptor,
+      api.FilesInterceptor('docs', 5, { dest: uploadDir }),
+    )
+    diskTimeout(@UploadedFiles() files: any) {
       return { files: describeFiles(files) };
     }
 

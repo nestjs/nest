@@ -158,6 +158,54 @@ function withDefaultLimits(
   };
 }
 
+type MulterMiddleware = (req: any, res: any, next: (err?: any) => void) => void;
+
+/**
+ * Runs a multer middleware (e.g. `multer.single()`) over the request, and
+ * settles once multer has parsed the body, with multer's error mapped by
+ * `transformException()`.
+ *
+ * The request is destroyed if the response is sent while multer is still
+ * receiving the body, e.g. by an interceptor bound earlier that timed out:
+ * the route handler would then never run, and nothing would remove what
+ * multer goes on to store. multer stops for a destroyed request, and removes
+ * the files it stored for it.
+ */
+export async function runMulter(
+  middleware: MulterMiddleware,
+  req: any,
+  res: any,
+): Promise<void> {
+  let isReceiving = true;
+  const stopWatching = onResponseFinished(res, () => {
+    if (isReceiving && !req?.complete && typeof req?.destroy === 'function') {
+      req.destroy();
+    }
+  });
+  try {
+    await new Promise<void>((resolve, reject) =>
+      middleware(req, res, (err: any) =>
+        err ? reject(transformException(err)) : resolve(),
+      ),
+    );
+  } finally {
+    isReceiving = false;
+    stopWatching();
+  }
+}
+
+function onResponseFinished(res: any, callback: () => void): () => void {
+  // A stand-in for a response (e.g. in a unit test) is not watched.
+  if (typeof res?.on !== 'function') {
+    return () => undefined;
+  }
+  try {
+    return finished(res, callback);
+  } catch {
+    return () => undefined;
+  }
+}
+
 /**
  * Removes the files multer stored for `req` when the route's pipes reject
  * the request (e.g. `ParseFilePipe`): the route handler never sees them, and

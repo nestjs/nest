@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
 import { lastValueFrom, of, throwError } from 'rxjs';
-import { Writable } from 'stream';
+import { once } from 'events';
+import { Readable, Writable } from 'stream';
 import { FileInterceptor } from '../../../multipart/interceptors/file.interceptor.js';
 import { MISSING_PLUGIN_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
 import {
@@ -195,6 +196,62 @@ describe('FileInterceptor', () => {
       await expect(target.intercept(createContext(req), handler)).rejects.toBe(
         error,
       );
+    });
+
+    it('should destroy the request when the response is sent while the body is being received', async () => {
+      const storage = {
+        _handleFile: (_req: any, incoming: any, cb: any) =>
+          incoming.stream
+            .on('end', () => cb(null, { path: 'stored' }))
+            .resume(),
+        _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+      };
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([]);
+      const stream = Readable.from([Buffer.from('x')]);
+      stream.on('error', () => undefined);
+      req.parts = () =>
+        (async function* () {
+          yield {
+            type: 'file',
+            fieldname: 'avatar',
+            filename: 'a.txt',
+            encoding: '7bit',
+            mimetype: 'text/plain',
+            file: stream,
+          };
+          // As @fastify/multipart does when a request that was not read to
+          // its end is closed.
+          await once(req.raw, 'close');
+          throw Object.assign(new Error('the request was closed'), {
+            code: 'FST_MP_PREMATURE_CLOSE',
+          });
+        })();
+      const response = new Writable({ write: (_chunk, _enc, cb) => cb() });
+      const result = target.intercept(
+        createContext(req, { raw: response }),
+        handler,
+      );
+      await vi.waitFor(() => expect(stream.readableEnded).toBe(true));
+      response.end();
+
+      await expect(result).rejects.toBeInstanceOf(BadRequestException);
+      expect(req.raw.destroyed).toBe(true);
+      expect(storage._removeFile).toHaveBeenCalledWith(
+        req,
+        expect.objectContaining({ path: 'stored' }),
+        expect.any(Function),
+      );
+    });
+
+    it('should leave the request once the body has been parsed', async () => {
+      const target = new (FileInterceptor('avatar'))();
+      const req = createFakeRequest([file('avatar')]);
+      const response = new Writable({ write: (_chunk, _enc, cb) => cb() });
+      await target.intercept(createContext(req, { raw: response }), handler);
+      response.end();
+      await new Promise(resolve => setImmediate(resolve));
+      expect(req.raw.destroyed).toBe(false);
     });
 
     it('should fail the request with what fileFilter throws', async () => {

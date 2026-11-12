@@ -767,6 +767,38 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
     );
   });
 
+  describe('an interceptor bound earlier that answers mid-upload', () => {
+    it('should remove the partial file once the response is sent', async () => {
+      for (const adapterName of adapterNames) {
+        const dir = dirs[adapterName];
+        const { port } = apps[adapterName]
+          .getHttpServer()
+          .address() as AddressInfo;
+        const socket = connect(port, '127.0.0.1');
+        await once(socket, 'connect');
+        const response = once(socket, 'data');
+        const boundary = '----nestboundary';
+        socket.write(
+          `POST /disk-timeout HTTP/1.1\r\nHost: 127.0.0.1\r\n` +
+            `Content-Type: multipart/form-data; boundary=${boundary}\r\n` +
+            'Content-Length: 1000000\r\n\r\n' +
+            `--${boundary}\r\n` +
+            'Content-Disposition: form-data; name="docs"; filename="a.bin"\r\n' +
+            'Content-Type: application/octet-stream\r\n\r\npart',
+        );
+        try {
+          await vi.waitFor(() => expect(readdirSync(dir)).toHaveLength(1));
+          const [data] = await response;
+          expect(String(data)).toMatch(/^HTTP\/1\.1 408 /);
+          // The client stays connected: the upload is cut off by the server.
+          await vi.waitFor(() => expect(readdirSync(dir)).toEqual([]));
+        } finally {
+          socket.destroy();
+        }
+      }
+    });
+  });
+
   describe('streaming (FileStreamInterceptor on Fastify, memory on Express)', () => {
     const payload = Buffer.alloc(48 * 1024, 'nest');
     const expectedHash = createHash('sha256').update(payload).digest('hex');

@@ -16,7 +16,7 @@ import {
   applyDefaultLimits,
   mergeMulterOptions,
   removeFilesOnPipeRejection,
-  transformException,
+  runMulter,
 } from '../multer/multer.utils.js';
 
 type MulterInstance = any;
@@ -50,18 +50,10 @@ export function FileInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
-      await new Promise<void>((resolve, reject) =>
-        this.multer.single(fieldName)(
-          ctx.getRequest(),
-          ctx.getResponse(),
-          (err: any) => {
-            if (err) {
-              const error = transformException(err);
-              return reject(error);
-            }
-            resolve();
-          },
-        ),
+      await runMulter(
+        this.multer.single(fieldName),
+        ctx.getRequest(),
+        ctx.getResponse(),
       );
       return next
         .handle()
