@@ -108,7 +108,7 @@ export class WebSocketsController {
         } as InstanceWrapper<NestGateway>);
     const gatewayMetatype = metatype ?? instance.constructor;
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, gatewayMetatype) || {};
-    const port = Reflect.getMetadata(PORT_METADATA, gatewayMetatype) || 0;
+    const port = Reflect.getMetadata(PORT_METADATA, gatewayMetatype) ?? 0;
 
     if (!Number.isInteger(port)) {
       throw new InvalidSocketPortException(port, gatewayMetatype);
