@@ -36,7 +36,15 @@ export class LazyModuleLoader {
         insertedModules,
       });
     } catch (err) {
-      this.dependenciesScanner.removeModules(insertedModules);
+      // A concurrent load() may be building, or may have built, modules that
+      // this scan registered. Only the ones nobody took over are rolled back.
+      this.dependenciesScanner.removeModules(
+        insertedModules.filter(
+          moduleInstance =>
+            !this.modulesInFlight.has(moduleInstance) &&
+            !moduleInstance.isInstantiated,
+        ),
+      );
       throw err;
     }
     if (moduleInstances.length === 0) {
@@ -49,8 +57,12 @@ export class LazyModuleLoader {
       await this.modulesInFlight.get(moduleInstance);
       return moduleInstance && this.getTargetModuleRef(moduleInstance);
     }
+    // The scan is asynchronous, so a module that was not built yet when the
+    // scan reached it may have been built by a concurrent load() since then
     const modulesToBuild = moduleInstances.filter(
-      moduleInstance => !this.modulesInFlight.has(moduleInstance),
+      moduleInstance =>
+        !this.modulesInFlight.has(moduleInstance) &&
+        !moduleInstance.isInstantiated,
     );
     const loadsInFlight = moduleInstances.map(moduleInstance =>
       this.modulesInFlight.get(moduleInstance),

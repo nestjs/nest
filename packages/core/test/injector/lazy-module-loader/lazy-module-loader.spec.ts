@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   Module,
+  Type,
 } from '@nestjs/common';
 import {
   LazyModuleLoader,
@@ -199,6 +200,127 @@ describe('LazyModuleLoader', () => {
 
         await lazyModuleLoader.load(() => DashboardModule);
         expect(logSpy).toHaveBeenCalled();
+      });
+    });
+
+    describe('when another load() builds an imported module while load() is still scanning', () => {
+      let resolveSlowImport: (dynamicModule: DynamicModule) => void;
+      let rejectSlowImport: (reason: Error) => void;
+      let constructionsCount: number;
+
+      @Injectable()
+      class SessionRegistry {
+        constructor() {
+          constructionsCount++;
+        }
+      }
+
+      @Module({ providers: [SessionRegistry], exports: [SessionRegistry] })
+      class SessionsModule {}
+
+      @Injectable()
+      class DocumentsService {
+        constructor(readonly sessions: SessionRegistry) {}
+      }
+
+      @Module({})
+      class StorageModule {}
+
+      // The scan of the returned module registers `SessionsModule` and then
+      // waits for the second import.
+      const createDocumentsModule = () => {
+        @Module({
+          imports: [
+            SessionsModule,
+            new Promise<DynamicModule>((resolve, reject) => {
+              resolveSlowImport = resolve;
+              rejectSlowImport = reject;
+            }),
+          ],
+          providers: [DocumentsService],
+        })
+        class DocumentsModule {}
+
+        return DocumentsModule;
+      };
+
+      const isRegistered = (metatype: Type<unknown>) =>
+        [...modulesContainer.values()].some(
+          moduleRef => moduleRef.metatype === metatype,
+        );
+
+      const untilRegistered = async (metatype: Type<unknown>) => {
+        while (!isRegistered(metatype)) {
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      };
+
+      beforeEach(() => {
+        constructionsCount = 0;
+      });
+
+      it('should not build the module again', async () => {
+        const documents = lazyModuleLoader.load(createDocumentsModule);
+        await untilRegistered(SessionsModule);
+
+        const sessionsModuleRef = await lazyModuleLoader.load(
+          () => SessionsModule,
+        );
+        const sessionRegistry = sessionsModuleRef.get(SessionRegistry);
+        resolveSlowImport({ module: StorageModule });
+
+        const documentsModuleRef = await documents;
+        expect(documentsModuleRef.get(DocumentsService).sessions).toBe(
+          sessionRegistry,
+        );
+        expect(sessionsModuleRef.get(SessionRegistry)).toBe(sessionRegistry);
+        expect(constructionsCount).toBe(1);
+      });
+
+      it('should not evict the module when the scan fails', async () => {
+        const documents = lazyModuleLoader.load(createDocumentsModule);
+        await untilRegistered(SessionsModule);
+
+        const sessionsModuleRef = await lazyModuleLoader.load(
+          () => SessionsModule,
+        );
+        rejectSlowImport(new Error('Dynamic import failed'));
+
+        await expect(documents).rejects.toThrow('Dynamic import failed');
+        expect(modulesContainer.size).toBe(1);
+        expect(await lazyModuleLoader.load(() => SessionsModule)).toBe(
+          sessionsModuleRef,
+        );
+        expect(constructionsCount).toBe(1);
+      });
+
+      it('should not evict the module that is still being built when the scan fails', async () => {
+        let releaseConnection!: () => void;
+        const connection = new Promise<void>(
+          resolve => (releaseConnection = resolve),
+        );
+
+        @Module({
+          imports: [SessionsModule],
+          providers: [{ provide: 'CONNECTION', useFactory: () => connection }],
+        })
+        class ReportsModule {}
+
+        const documents = lazyModuleLoader.load(createDocumentsModule);
+        await untilRegistered(SessionsModule);
+
+        const reports = lazyModuleLoader.load(() => ReportsModule);
+        await untilRegistered(ReportsModule);
+        rejectSlowImport(new Error('Dynamic import failed'));
+
+        await expect(documents).rejects.toThrow('Dynamic import failed');
+        releaseConnection();
+        await reports;
+        expect(isRegistered(SessionsModule)).toBe(true);
+        expect(modulesContainer.size).toBe(2);
+
+        await lazyModuleLoader.load(() => SessionsModule);
+        expect(constructionsCount).toBe(1);
       });
     });
 
