@@ -37,10 +37,11 @@ import {
 import { isNil, isObject, isString } from '@nestjs/common/internal';
 
 /**
- * Characters of event data that may wait for an SSE client that is not
+ * Characters of events that may wait for an SSE client that is not
  * reading them before its connection is dropped, unless the route sets its
  * own `maxPendingDataLength` (see `@Sse()`). Events wait once the stream and
- * socket buffers are full, as a producer cannot be paused.
+ * socket buffers are full, as a producer cannot be paused. See
+ * `getDataLength()` for what each of them counts for.
  */
 const DEFAULT_MAX_PENDING_DATA_LENGTH = 4 * 1024 * 1024;
 
@@ -120,10 +121,29 @@ export function onceClosed(
   };
 }
 
+/**
+ * The least an event counts for while it waits for a client that is not
+ * reading: about what the shortest one takes once it is written
+ * (`id: 1\ndata: \n\n`).
+ */
+const MIN_PENDING_EVENT_LENGTH = 16;
+
+function getLength(field: unknown): number {
+  return isString(field) ? field.length : 0;
+}
+
+/**
+ * What a waiting event counts for. It takes up memory whatever it carries, so
+ * an event with little or no data (e.g. `{ type: 'changed', data: '' }`)
+ * counts as well: events that count for nothing would wait without limit.
+ */
 function getDataLength(message: MessageEvent): number {
-  return (
-    (isString(message.data) ? message.data.length : 0) +
-    (isString(message.comment) ? message.comment.length : 0)
+  return Math.max(
+    MIN_PENDING_EVENT_LENGTH,
+    getLength(message.data) +
+      getLength(message.comment) +
+      getLength(message.type) +
+      getLength(message.id),
   );
 }
 
@@ -487,7 +507,7 @@ export class RouterResponseController {
               stream.writableNeedDrain
             ) {
               this.logger.warn(
-                `The client is not reading its events: ${pendingDataLength} character(s) of event data are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
+                `The client is not reading its events: ${pendingDataLength} character(s) of events are queued for it, which exceeds the maximum allowed ${maxPendingDataLength}`,
               );
               (response as { destroy?(): void }).destroy?.();
               onClose();

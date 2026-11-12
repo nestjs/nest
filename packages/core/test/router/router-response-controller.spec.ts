@@ -1677,6 +1677,61 @@ data: test
         request.destroy();
       });
 
+      it.each<MessageEvent>([
+        { type: 'changed', data: '' },
+        { type: 'changed' },
+        { data: '' },
+        { comment: '' },
+        { retry: 1000 },
+        {},
+      ])(
+        'should drop the connection once too many events without data (%j) wait for it',
+        async event => {
+          const producer = new Subject<MessageEvent>();
+          const response = new StalledSink();
+          const request = new PassThrough();
+
+          const lifecycle = routerResponseController.sse(
+            producer,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+            { maxPendingDataLength: 1024 },
+          );
+          for (let i = 0; i < 256; i++) {
+            producer.next({ ...event });
+            await new Promise(resolve => setImmediate(resolve));
+          }
+
+          expect(response.destroyed).toBe(true);
+          await lifecycle;
+          expect(producer.observed).toBe(false);
+          request.destroy();
+        },
+      );
+
+      it('should keep the connection while fewer events without data wait for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          { maxPendingDataLength: 1024 },
+        );
+        for (let i = 0; i < 48; i++) {
+          producer.next({ type: 'changed', data: '' });
+          await new Promise(resolve => setImmediate(resolve));
+        }
+
+        expect(response.destroyed).toBe(false);
+        expect(producer.observed).toBe(true);
+        response.destroy();
+        await lifecycle;
+        request.destroy();
+      });
+
       // Events replayed at once, before the live ones, as a producer does
       // to resume from the id sent on reconnect
       const replayThenEmit = (producer: Subject<MessageEvent>, count: number) =>
