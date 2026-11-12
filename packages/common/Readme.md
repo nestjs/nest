@@ -56,6 +56,8 @@ const app = await NestFactory.create(AppModule);
 await app.listen(3000);
 ```
 
+tsx doesn't emit decorator metadata, which constructor injection by type and `ValidationPipe` rely on. Once the application uses them, run it with the Nest CLI, or with tsc or SWC and `emitDecoratorMetadata` enabled.
+
 ## First-party packages
 
 | What you need | Package |
