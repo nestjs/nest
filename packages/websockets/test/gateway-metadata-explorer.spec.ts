@@ -1,3 +1,4 @@
+import { InstanceWrapper } from '../../core/injector/instance-wrapper.js';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { Ack } from '../decorators/ack.decorator.js';
 import { WebSocketServer } from '../decorators/gateway-server.decorator.js';
@@ -51,6 +52,37 @@ describe('GatewayMetadataExplorer', () => {
 
       const [argProto] = getAllMethodNames.mock.calls[0];
       expect(argProto).toEqual(Object.getPrototypeOf(obj));
+    });
+    it('should find the @Ack() of the handlers of a gateway whose "constructor" a mixin helper overwrote', () => {
+      class Mixin {
+        @SubscribeMessage(ackMessage)
+        public mixedInWithAck(@Ack() ack: Function) {}
+      }
+      class Host {
+        @SubscribeMessage(ackMessage)
+        public ownWithAck(@Ack() ack: Function) {}
+
+        @SubscribeMessage(message)
+        public own() {}
+      }
+      // What the TypeScript handbook's `applyMixins()` does
+      Object.defineProperties(
+        Host.prototype,
+        Object.getOwnPropertyDescriptors(Mixin.prototype),
+      );
+      new InstanceWrapper({ metatype: Host });
+
+      const handlers = instance.explore(new Host() as any);
+      expect(
+        handlers.map(({ methodName, isAckHandledManually }) => [
+          methodName,
+          isAckHandledManually,
+        ]),
+      ).toEqual([
+        ['ownWithAck', true],
+        ['own', false],
+        ['mixedInWithAck', true],
+      ]);
     });
   });
   describe('exploreMethodMetadata', () => {

@@ -1,4 +1,5 @@
 import type { ParamData } from '@nestjs/common';
+import { getClassRef, getParamsHost } from './class-ref-registry.js';
 import { ExecutionContextHost } from './execution-context-host.js';
 import {
   PARAMTYPES_METADATA,
@@ -28,7 +29,18 @@ export class ContextUtils {
     instance: Controller,
     methodName: string,
   ): any[] {
-    return Reflect.getMetadata(PARAMTYPES_METADATA, instance, methodName);
+    // The types are stored on the prototype that declared the method, which a
+    // method copied by a mixin helper does not share with the instance.
+    const paramsHost = this.getParamsHost(instance, methodName);
+    return (
+      (paramsHost?.prototype &&
+        Reflect.getMetadata(
+          PARAMTYPES_METADATA,
+          paramsHost.prototype,
+          methodName,
+        )) ??
+      Reflect.getMetadata(PARAMTYPES_METADATA, instance, methodName)
+    );
   }
 
   public reflectCallbackMetadata<T = any>(
@@ -36,15 +48,27 @@ export class ContextUtils {
     methodName: string,
     metadataKey: string,
   ): T {
-    return Reflect.getMetadata(metadataKey, instance.constructor, methodName);
+    return Reflect.getMetadata(
+      metadataKey,
+      this.getParamsHost(instance, methodName),
+      methodName,
+    );
   }
 
   public reflectPassthrough(instance: Controller, methodName: string): boolean {
     return Reflect.getMetadata(
       RESPONSE_PASSTHROUGH_METADATA,
-      instance.constructor,
+      this.getParamsHost(instance, methodName),
       methodName,
     );
+  }
+
+  /**
+   * Returns the class that the parameter decorators of the given handler
+   * stored their metadata on (see `getParamsHost`).
+   */
+  private getParamsHost(instance: Controller, methodName: string): Function {
+    return getParamsHost(getClassRef(instance), methodName);
   }
 
   public getArgumentsLength<T>(keys: string[], metadata: T): number {

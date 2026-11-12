@@ -3,9 +3,12 @@ import {
   Body,
   createParamDecorator,
   Request,
+  Res,
 } from '@nestjs/common/decorators/index.js';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
+import { ParseIntPipe } from '@nestjs/common/pipes/index.js';
 import { ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { registerClassRef } from '../../helpers/class-ref-registry.js';
 import { ContextUtils } from '../../helpers/context-utils.js';
 import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
 
@@ -65,6 +68,53 @@ describe('ContextUtils', () => {
       expect(metadata[custom].index).toBe(2);
       expect(metadata[custom].data).toBe(undefined);
       expect(metadata[custom].factory).toBeTypeOf('function');
+    });
+  });
+  describe('when a mixin helper overwrote the "constructor" of the host prototype', () => {
+    class MixinDto {}
+    class HostDto {}
+    class Mixin {
+      public mixedIn(@Request() req, @Body() body: MixinDto) {}
+    }
+    class Host {
+      public own(
+        @Body(ParseIntPipe) body: HostDto,
+        @Res({ passthrough: true }) res,
+      ) {}
+    }
+    // What the TypeScript handbook's `applyMixins()` does
+    Object.defineProperties(
+      Host.prototype,
+      Object.getOwnPropertyDescriptors(Mixin.prototype),
+    );
+    registerClassRef(Host);
+
+    it('should reflect the parameters of a handler that the host declares', () => {
+      const metadata = contextUtils.reflectCallbackMetadata(
+        new Host(),
+        'own',
+        ROUTE_ARGS_METADATA,
+      );
+      expect(metadata[`${RouteParamtypes.BODY}:0`].pipes).toEqual([
+        ParseIntPipe,
+      ]);
+      expect(contextUtils.reflectPassthrough(new Host(), 'own')).toBe(true);
+      expect(contextUtils.reflectCallbackParamtypes(new Host(), 'own')).toEqual(
+        [HostDto, Object],
+      );
+    });
+    it('should reflect the parameters of a handler copied from the mixin', () => {
+      const metadata = contextUtils.reflectCallbackMetadata(
+        new Host(),
+        'mixedIn',
+        ROUTE_ARGS_METADATA,
+      );
+      expect(Object.keys(metadata).sort()).toEqual(
+        [`${RouteParamtypes.REQUEST}:0`, `${RouteParamtypes.BODY}:1`].sort(),
+      );
+      expect(
+        contextUtils.reflectCallbackParamtypes(new Host(), 'mixedIn'),
+      ).toEqual([Object, MixinDto]);
     });
   });
   describe('getArgumentsLength', () => {

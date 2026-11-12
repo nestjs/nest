@@ -60,11 +60,13 @@ export class GatewayMetadataExplorer {
     instancePrototype: object,
     methodName: string,
   ): boolean {
-    const paramsMetadata: ParamsMetadata = Reflect.getMetadata(
-      PARAM_ARGS_METADATA,
-      instancePrototype.constructor,
-      methodName,
-    );
+    // Read the way the execution context reads the parameters of the handler
+    const paramsMetadata =
+      this.contextUtils.reflectCallbackMetadata<ParamsMetadata>(
+        Object.create(instancePrototype),
+        methodName,
+        PARAM_ARGS_METADATA,
+      );
 
     if (!paramsMetadata) {
       return false;

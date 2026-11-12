@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ContextId } from '../injector/instance-wrapper.js';
 import { HeaderStream } from '../router/sse-stream.js';
 import type { StreamingBody } from '../router/streaming-body.js';
+import { getClassRef } from './class-ref-registry.js';
 import { ParamProperties } from './context-utils.js';
 import type { StreamableFile, Type } from '@nestjs/common';
 
@@ -47,14 +48,15 @@ export class HandlerMetadataStorage<
   TValue = HandlerMetadata,
   TKey extends Type<unknown> = any,
 > {
-  // Keyed by class: same-named classes must not share an entry.
+  // Keyed by class: same-named classes must not share an entry, and neither
+  // must classes that a mixin helper gave the same `constructor`.
   private readonly [HANDLER_METADATA_SYMBOL] = new WeakMap<
     Function,
     Map<string, TValue>
   >();
 
   set(controller: TKey, methodName: string, metadata: TValue) {
-    const ctor = controller.constructor;
+    const ctor = getClassRef(controller);
     if (!ctor) {
       return;
     }
@@ -67,7 +69,7 @@ export class HandlerMetadataStorage<
   }
 
   get(controller: TKey, methodName: string): TValue | undefined {
-    const handlers = this[HANDLER_METADATA_SYMBOL].get(controller.constructor);
+    const handlers = this[HANDLER_METADATA_SYMBOL].get(getClassRef(controller));
     return handlers?.get(methodName);
   }
 }

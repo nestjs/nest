@@ -210,6 +210,26 @@ describe('WsContextCreator', () => {
         );
         await expect(proxy(null, 'data')).rejects.toBeInstanceOf(WsException);
       });
+      it('should apply the pipes bound to the parameters of its own handlers', async () => {
+        class Mixin {}
+        class MixedIn {
+          handle(@MessageBody({ transform: () => 'piped' }) data: string) {
+            return data;
+          }
+        }
+        // What mixin helpers copying every property of the prototype do
+        MixedIn.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: MixedIn });
+
+        const gateway = new MixedIn();
+        const proxy = contextCreator.create(
+          gateway,
+          gateway.handle,
+          module,
+          'handle',
+        );
+        expect(await proxy(null, 'data')).toBe('piped');
+      });
     });
   });
 

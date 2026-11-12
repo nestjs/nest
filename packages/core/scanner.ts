@@ -15,6 +15,7 @@ import { RequestScopedGlobalEnhancerException } from './errors/exceptions/reques
 import { UndefinedModuleEntryException } from './errors/exceptions/undefined-module-entry.exception.js';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception.js';
 import { UninstantiatedGlobalEnhancerException } from './errors/exceptions/uninstantiated-global-enhancer.exception.js';
+import { getParamsHost } from './helpers/class-ref-registry.js';
 import { getClassScope } from './helpers/get-class-scope.js';
 import { STATIC_CONTEXT } from './injector/constants.js';
 import { NestContainer } from './injector/container.js';
@@ -407,7 +408,11 @@ export class DependenciesScanner {
           data: unknown;
           pipes: Array<Type<PipeTransform> | PipeTransform>;
         }
-      > = Reflect.getMetadata(metadataKey, component, methodKey);
+      > = Reflect.getMetadata(
+        metadataKey,
+        getParamsHost(component, methodKey),
+        methodKey,
+      );
 
       if (!metadata) {
         return;
