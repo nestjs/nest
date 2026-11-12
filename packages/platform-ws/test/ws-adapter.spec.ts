@@ -881,6 +881,49 @@ describe('WsAdapter', () => {
       expect(await response.text()).to.equal('Upgrade Required');
     });
 
+    describe('when gateways share the port', () => {
+      let logError: sinon.SinonStub;
+      let logWarn: sinon.SinonStub;
+      beforeEach(() => {
+        logError = sinon.stub(adapter['logger'], 'error');
+        logWarn = sinon.stub(adapter['logger'], 'warn');
+      });
+
+      it('should refuse a gateway that sets another host than the port listens on', () => {
+        adapter.create(port, { path: '/a', host: '127.0.0.1' });
+
+        expect(() =>
+          adapter.create(port, { path: '/b', host: '0.0.0.0' }),
+        ).to.throw(
+          /sets the host "0.0.0.0", but shares port \d+ with gateways that listen on the host "127.0.0.1"/,
+        );
+        expect(logError.calledOnce).to.be.true;
+      });
+
+      it('should refuse a gateway that sets a host on a port that listens on every address', () => {
+        adapter.create(port, { path: '/a' });
+
+        expect(() =>
+          adapter.create(port, { path: '/b', host: '127.0.0.1' }),
+        ).to.throw(/listen on every address/);
+      });
+
+      it('should warn about a gateway without a host on a port that listens on one host only', () => {
+        adapter.create(port, { path: '/a', host: '127.0.0.1' });
+
+        expect(() => adapter.create(port, { path: '/b' })).not.to.throw();
+        expect(logWarn.calledOnce).to.be.true;
+      });
+
+      it('should accept gateways that set the same host', () => {
+        adapter.create(port, { path: '/a', host: '127.0.0.1' });
+        adapter.create(port, { path: '/b', host: '127.0.0.1' });
+
+        expect(logError.called).to.be.false;
+        expect(logWarn.called).to.be.false;
+      });
+    });
+
     it('should listen on the host from the options', async () => {
       adapter.create(port, { path: '/chat', host: '127.0.0.1' });
       const httpServer = adapter['httpServersRegistry'].get(port);
