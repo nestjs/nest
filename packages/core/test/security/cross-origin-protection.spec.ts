@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  Logger,
   RequestMethod,
   VersioningType,
 } from '@nestjs/common';
@@ -641,6 +642,58 @@ describe('CrossOriginProtection', () => {
       });
       expect(isExcluded(protection, '/public/form')).toBe(true);
       expect(isExcluded(protection, '/private')).toBe(false);
+    });
+
+    describe('when the predicate returns something other than a boolean', () => {
+      let warn: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+      });
+
+      afterEach(() => {
+        warn.mockRestore();
+      });
+
+      it.each([
+        ['a promise of true', () => Promise.resolve(true), /a promise/],
+        ['a promise of false', () => Promise.resolve(false), /a promise/],
+        ['a truthy value', () => ['/public/form'], /not a boolean/],
+      ])(
+        'excludes nothing and warns once when it returns %s',
+        (_, exclude, message) => {
+          const protection = new CrossOriginProtection(adapter, {
+            exclude: exclude as any,
+          });
+          expect(isExcluded(protection, '/public/form')).toBe(false);
+          expect(isExcluded(protection, '/public/form')).toBe(false);
+          expect(warn).toHaveBeenCalledOnce();
+          expect(warn.mock.calls[0][0]).toMatch(message);
+        },
+      );
+
+      it('excludes nothing and does not warn when it returns nothing', () => {
+        const protection = new CrossOriginProtection(adapter, {
+          exclude: (() => undefined) as any,
+        });
+        expect(isExcluded(protection, '/public/form')).toBe(false);
+        expect(warn).not.toHaveBeenCalled();
+      });
+
+      it('handles the rejection of a promise it returns', async () => {
+        const unhandled = vi.fn();
+        process.on('unhandledRejection', unhandled);
+        try {
+          const protection = new CrossOriginProtection(adapter, {
+            exclude: (() => Promise.reject(new Error('lookup failed'))) as any,
+          });
+          expect(isExcluded(protection, '/public/form')).toBe(false);
+          await new Promise(resolve => setImmediate(resolve));
+          expect(unhandled).not.toHaveBeenCalled();
+        } finally {
+          process.off('unhandledRejection', unhandled);
+        }
+      });
     });
   });
 });

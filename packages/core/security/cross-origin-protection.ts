@@ -3,12 +3,14 @@ import {
   type HttpServer,
   type VersioningOptions,
   ForbiddenException,
+  Logger,
   RequestMethod,
 } from '@nestjs/common';
 import {
   type RouteInfo,
   addLeadingSlash,
   isFunction,
+  isNil,
   isPlainObject,
   isString,
 } from '@nestjs/common/internal';
@@ -233,6 +235,7 @@ export class CrossOriginProtection<TRequest = any> {
   private resolvedExclusions: ExcludeRouteMetadata[] = [];
   private ignoreTrailingSlash = false;
   private versioningOptions?: VersioningOptions;
+  private hasWarnedOfExcludeResult = false;
 
   /**
    * Validates the options, so that a bad configuration fails as soon as
@@ -338,9 +341,33 @@ export class CrossOriginProtection<TRequest = any> {
     return new ForbiddenException(DENIED_MESSAGES[decision.reason]);
   }
 
+  private onNonBooleanExcludeResult(result: unknown) {
+    const isThenable = isFunction((result as PromiseLike<unknown>).then);
+    if (isThenable) {
+      // Nothing else handles a rejection of the dropped promise
+      Promise.resolve(result).catch(() => {});
+    }
+    if (this.hasWarnedOfExcludeResult) {
+      return;
+    }
+    this.hasWarnedOfExcludeResult = true;
+    new Logger('CrossOriginProtection').warn(
+      `The "exclude" predicate of enableCsrfProtection() returned ${
+        isThenable ? 'a promise' : 'a value that is not a boolean'
+      }, which excludes no request. It must return true or false synchronously.`,
+    );
+  }
+
   private isExcluded(request: TRequest): boolean {
     if (this.excludePredicate) {
-      return !!this.excludePredicate(request);
+      // The check runs synchronously, so the result is not awaited: only
+      // `true` excludes the request. A promise, for one, is truthy whatever
+      // it settles to.
+      const excluded: unknown = this.excludePredicate(request);
+      if (typeof excluded !== 'boolean' && !isNil(excluded)) {
+        this.onNonBooleanExcludeResult(excluded);
+      }
+      return excluded === true;
     }
     if (this.resolvedExclusions.length === 0) {
       return false;

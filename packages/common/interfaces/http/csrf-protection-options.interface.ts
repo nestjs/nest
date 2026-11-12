@@ -35,6 +35,8 @@ export interface CsrfProtectionOptions<TRequest = any> {
    *
    * Either a list of routes, or a predicate receiving the platform request
    * object. Only consulted for requests that would otherwise be rejected.
+   * The predicate is called synchronously, and a request is excluded only
+   * when it returns `true`: a promise or any other value excludes nothing.
    *
    * Routes are declared like `MiddlewareConsumer.exclude()`: a path, or
    * `{ path, method, version? }` to narrow by method and version (the
