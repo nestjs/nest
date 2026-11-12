@@ -174,6 +174,12 @@ export class ValidationPipe implements PipeTransform<any> {
         ...this.validatorOptions.validationError,
       },
     });
+    if (isCtorNotEqual && !isPrimitive) {
+      // Left on the value, the stand-in would go wherever the value is
+      // copied (e.g. `{ ...dto }`), and class-transformer would then take
+      // the copy for an instance of the class.
+      delete entity.constructor;
+    }
     if (errors.length > 0) {
       if (isUndefined(this.validatorOptions.validationError?.value)) {
         this.stripParentErrorValues(errors);
@@ -182,12 +188,13 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     if (
       isCtorNotEqual &&
-      (isPrimitive || Array.isArray(value)) &&
+      (isPrimitive || Array.isArray(value) || this.isBinary(value)) &&
       (await this.hasValidationRules(metatype))
     ) {
-      // An array or a primitive is never an instance of the class: the
-      // validation above has only seen a stand-in without any property set,
-      // which passes when none of them is required.
+      // An array, a primitive or a binary value (which class-transformer
+      // copies as it is) is never an instance of the class: the validation
+      // above has only seen a stand-in without any property set, which
+      // passes when none of them is required.
       throw await this.exceptionFactory([
         {
           property: metadata.data || metadata.type,
@@ -403,6 +410,10 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
+  }
+
+  protected isBinary(value: unknown): boolean {
+    return ArrayBuffer.isView(value) || value instanceof ArrayBuffer;
   }
 
   protected validate(

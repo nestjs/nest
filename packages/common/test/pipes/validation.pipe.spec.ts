@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, instanceToPlain, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -665,6 +665,25 @@ describe('ValidationPipe', () => {
             }
           }
         });
+        it('should throw an error for a binary value', async () => {
+          for (const options of [
+            {},
+            { transform: true },
+            { forbidUnknownValues: true },
+            { whitelist: true, forbidNonWhitelisted: true },
+          ]) {
+            target = new ValidationPipe(options);
+            const err = await rejectionOf(
+              target.transform(Buffer.alloc(0), optionalMetadata),
+            );
+            expect(err.getResponse().message).to.deep.equal(rejection);
+          }
+          target = new ValidationPipe();
+          const err = await rejectionOf(
+            target.transform(Buffer.from('{}'), optionalMetadata),
+          );
+          expect(err.getResponse().message).to.deep.equal(rejection);
+        });
         it('should throw an error for an empty array when non-whitelisted properties are forbidden', async () => {
           target = new ValidationPipe({
             whitelist: true,
@@ -767,6 +786,36 @@ describe('ValidationPipe', () => {
           );
           expect(await target.transform(3, objMetadata)).to.be.eql(3);
           expect(await target.transform(true, objMetadata)).to.be.eql(true);
+        });
+        it('should not leave a "constructor" key on the value', async () => {
+          target = new ValidationPipe({ transform: true });
+          const objMetadata = { ...metadata, metatype: TestModelNoValidation };
+
+          for (const value of [[], [{ prop1: 'value1' }], Buffer.alloc(0)]) {
+            const result = await target.transform(value, objMetadata);
+            expect(Object.prototype.hasOwnProperty.call(result, 'constructor'))
+              .to.be.false;
+          }
+        });
+        it('should not make a copy of the value look like an instance of the class', async () => {
+          class UserEntity {
+            name: string;
+
+            @Exclude()
+            passwordHash: string;
+          }
+          target = new ValidationPipe({ transform: true });
+          const dto = await target.transform([], {
+            ...metadata,
+            metatype: TestModelNoValidation,
+          });
+
+          const user = Object.assign(new UserEntity(), {
+            ...dto,
+            name: 'name',
+            passwordHash: 'hash',
+          });
+          expect(instanceToPlain(user)).to.deep.equal({ name: 'name' });
         });
       });
     });
