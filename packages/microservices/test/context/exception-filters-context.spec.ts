@@ -1,3 +1,4 @@
+import { Scope } from '@nestjs/common';
 import { NestContainer } from '@nestjs/core/injector/container.js';
 import { Catch } from '../../../common/decorators/core/catch.decorator.js';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
@@ -81,6 +82,66 @@ describe('ExceptionFiltersContext', () => {
         expect(result).toEqual(
           expect.arrayContaining([instance, ...globalFilters]),
         );
+      });
+    });
+    describe('when a scoped filter has not been instantiated for the context', () => {
+      const contextId = { id: 4 };
+      const inquirerId = 'controller';
+      const createConstructedWrapper = (scope: Scope) => {
+        const wrapper = new InstanceWrapper({
+          metatype: ExceptionFilter,
+          scope,
+        });
+        const instance = new ExceptionFilter();
+        wrapper.setInstanceByContextId(
+          contextId,
+          { instance, isResolved: true, isConstructorCalled: true },
+          inquirerId,
+        );
+        return { wrapper, instance };
+      };
+
+      it.each([
+        ['request-scoped', Scope.REQUEST],
+        ['transient', Scope.TRANSIENT],
+      ])('should leave out the placeholder of a %s filter', (_, scope) => {
+        // An object made from the prototype, whose constructor never ran
+        const placeholderWrapper = new InstanceWrapper({
+          metatype: ExceptionFilter,
+          scope,
+          instance: Object.create(ExceptionFilter.prototype),
+        });
+        const constructed = createConstructedWrapper(scope);
+        vi.spyOn(applicationConfig, 'getGlobalFilters').mockReturnValue([]);
+        vi.spyOn(applicationConfig, 'getGlobalRequestFilters').mockReturnValue([
+          placeholderWrapper,
+          constructed.wrapper,
+        ]);
+
+        expect(
+          exceptionFilter.getGlobalMetadata(contextId, inquirerId),
+        ).toEqual([constructed.instance]);
+      });
+
+      it('should keep a filter given as a factory provider', () => {
+        const instance = { catch: () => null };
+        const factoryWrapper = new InstanceWrapper({
+          metatype: () => instance,
+          inject: [],
+          scope: Scope.REQUEST,
+        });
+        factoryWrapper.setInstanceByContextId(contextId, {
+          instance,
+          isResolved: true,
+        });
+        vi.spyOn(applicationConfig, 'getGlobalFilters').mockReturnValue([]);
+        vi.spyOn(applicationConfig, 'getGlobalRequestFilters').mockReturnValue([
+          factoryWrapper,
+        ]);
+
+        expect(exceptionFilter.getGlobalMetadata(contextId)).toEqual([
+          instance,
+        ]);
       });
     });
   });

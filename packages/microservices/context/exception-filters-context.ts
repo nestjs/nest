@@ -14,6 +14,23 @@ import {
 } from '@nestjs/core/internal';
 
 /**
+ * A filter class that has not been instantiated in a context (or for an
+ * inquirer) is represented there by an object created from its prototype.
+ * Its "catch()" would run without its constructor having been called, i.e.
+ * without its dependencies. Filters given as value or factory providers have
+ * no constructor to call.
+ *
+ * Checked here rather than through the "isInstantiated()" method of
+ * "BaseExceptionFilterContext", which a supported "@nestjs/core" may not have.
+ */
+function isInstantiated(
+  wrapper: InstanceWrapper,
+  host: { isConstructorCalled?: boolean },
+): boolean {
+  return wrapper.isNotMetatype || !!host.isConstructorCalled;
+}
+
+/**
  * @publicApi
  */
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
@@ -59,14 +76,16 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     const scopedFilterWrappers =
       this.config.getGlobalRequestFilters() as InstanceWrapper[];
     const scopedFilters = iterate(scopedFilterWrappers)
-      .map(wrapper =>
-        wrapper.getInstanceByContextId(
+      .map(wrapper => ({
+        wrapper,
+        host: wrapper.getInstanceByContextId(
           this.getContextId(contextId, wrapper),
           inquirerId,
         ),
-      )
-      .filter(host => !!host)
-      .map(host => host.instance)
+      }))
+      // e.g. a request-scoped filter that the message did not instantiate
+      .filter(({ wrapper, host }) => !!host && isInstantiated(wrapper, host))
+      .map(({ host }) => host.instance)
       .toArray();
 
     return globalFilters.concat(scopedFilters) as T;
