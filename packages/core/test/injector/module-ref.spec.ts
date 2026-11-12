@@ -1,5 +1,7 @@
 import { Inject, Injectable, Scope, Type } from '@nestjs/common';
 import { RuntimeException } from '../../errors/exceptions';
+import { RequestScopedCreateException } from '../../errors/exceptions/request-scoped-create.exception';
+import { createContextId } from '../../helpers/context-id-factory';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container';
@@ -259,6 +261,35 @@ describe('ModuleRef', () => {
         singletonWrapper.addEnhancerMetadata(new InstanceWrapper());
 
         expect(resetDependencyTreeState.calledOnce).to.be.true;
+      });
+    });
+
+    describe('when a dependency is request-scoped', () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class RequestDep {}
+      @Injectable()
+      class Created {
+        constructor(public dep: RequestDep) {}
+      }
+
+      beforeEach(() => {
+        container.addProvider(RequestDep, module.token);
+      });
+
+      it('should reject without a context id', async () => {
+        let error: unknown;
+        try {
+          await moduleRef.create(Created);
+        } catch (err) {
+          error = err;
+        }
+        expect(error).to.be.instanceOf(RequestScopedCreateException);
+      });
+
+      it('should resolve with a context id', async () => {
+        const instance = await moduleRef.create(Created, createContextId());
+
+        expect(instance.dep).to.be.instanceOf(RequestDep);
       });
     });
   });

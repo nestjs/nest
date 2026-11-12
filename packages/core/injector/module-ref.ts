@@ -1,5 +1,6 @@
 import { IntrospectionResult, Scope, Type } from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { RequestScopedCreateException } from '../errors/exceptions/request-scoped-create.exception';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
 import { AbstractInstanceResolver } from './abstract-instance-resolver';
@@ -196,6 +197,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
     }
 
     return new Promise<T>((resolve, reject) => {
+      let isCreated = false;
       const callback = async (instances: any[]) => {
         try {
           const properties = await this.injector.resolveProperties(
@@ -209,6 +211,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           );
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
+          isCreated = true;
           resolve(instance);
         } catch (err) {
           reject(err);
@@ -218,6 +221,12 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
         .resolveConstructorParams<T>(wrapper, moduleRef, undefined, callback, {
           contextId: contextId ?? STATIC_CONTEXT,
           inquirer: wrapper,
+        })
+        .then(() => {
+          // The callback is skipped when a dependency is request-scoped
+          if (!isCreated) {
+            reject(new RequestScopedCreateException(type.name));
+          }
         })
         .catch(reject);
     }).finally(() => wrapper.detachFromDependencies());
