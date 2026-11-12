@@ -7,6 +7,7 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
+import { assertEnhancer } from './helpers/assert-enhancer';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 
@@ -58,6 +59,7 @@ export class ApplicationConfig {
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]) {
+    pipes.forEach(item => item != null && assertEnhancer(item, 'pipe'));
     this.globalPipes = this.globalPipes.concat(pipes);
   }
 
@@ -86,6 +88,9 @@ export class ApplicationConfig {
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
+    interceptors.forEach(
+      item => item != null && assertEnhancer(item, 'interceptor'),
+    );
     this.globalInterceptors = this.globalInterceptors.concat(interceptors);
   }
 
@@ -98,6 +103,7 @@ export class ApplicationConfig {
   }
 
   public useGlobalGuards(...guards: CanActivate[]) {
+    guards.forEach(item => item != null && assertEnhancer(item, 'guard'));
     this.globalGuards = this.globalGuards.concat(guards);
   }
 

@@ -2,6 +2,7 @@ import { Scope, UseGuards } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
+import { InvalidEnhancerException } from '../../errors/exceptions/invalid-enhancer.exception';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { ContextId, InstanceWrapper } from '../../injector/instance-wrapper';
 
@@ -159,6 +160,56 @@ describe('GuardsContextCreator', () => {
           wrapper.instance,
         );
       });
+      it('should throw when Nest constructed the class and it has no "canActivate"', () => {
+        // What is left at run time of an abstract class used as a token
+        class AbstractGuard {}
+        const wrapper = {
+          instance: new AbstractGuard(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(guardsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(() =>
+          guardsContextCreator.getGuardInstance(AbstractGuard),
+        ).to.throw(InvalidEnhancerException);
+      });
+      it('should throw when the class was a guard factory, called by Nest', () => {
+        function RoleGuard(role = 'admin') {
+          return class {
+            canActivate() {
+              return role === 'admin';
+            }
+          };
+        }
+        const wrapper = {
+          instance: new (RoleGuard as any)(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(guardsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(() => guardsContextCreator.getGuardInstance(RoleGuard)).to.throw(
+          /The guard \(class RoleGuard\) doesn't provide the "canActivate" method/,
+        );
+      });
+      it('should not throw for the placeholder of a scoped guard', () => {
+        class ScopedGuard {
+          canActivate = () => true;
+        }
+        const wrapper = {
+          instance: Object.create(ScopedGuard.prototype),
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(guardsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(guardsContextCreator.getGuardInstance(ScopedGuard)).to.equal(
+          wrapper.instance,
+        );
+      });
       it('should return the class when only the class has a "canActivate"', () => {
         class StaticOnly {
           static canActivate() {
@@ -275,6 +326,24 @@ describe('GuardsContextCreator', () => {
           instance,
           ...globalGuards,
         );
+      });
+      it('should throw when a constructed scoped guard has no "canActivate"', () => {
+        class AbstractGuard {}
+        const instanceWrapper = new InstanceWrapper();
+        sinon
+          .stub(applicationConfig, 'getGlobalRequestGuards')
+          .callsFake(() => [instanceWrapper]);
+        sinon.stub(instanceWrapper, 'getInstanceByContextId').callsFake(
+          () =>
+            ({
+              instance: new AbstractGuard(),
+              isConstructorCalled: true,
+            }) as any,
+        );
+
+        expect(() =>
+          guardsContextCreator.getGlobalMetadata({ id: 3 }),
+        ).to.throw(InvalidEnhancerException);
       });
     });
   });

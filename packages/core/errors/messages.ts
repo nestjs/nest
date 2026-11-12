@@ -150,6 +150,18 @@ Potential solutions:
   @Body(new ValidationPipe({ expectedType: SomeDto })) body: SomeDto
 - Or run the application with a compiler that emits the metadata, such as the Nest CLI, tsc or SWC, with "emitDecoratorMetadata" enabled in tsconfig.json. tsx and esbuild don't emit it.`;
 
+export const INVALID_ENHANCER_MESSAGE = (
+  kind: string,
+  method: string,
+  description: string,
+) =>
+  `The ${kind} (${description}) doesn't provide the "${method}" method, so it can't run and the handlers it is bound to would run without it.
+
+Potential solutions:
+- Bind the class that implements the ${kind}. Nest instantiates the class given to the decorator itself, and doesn't look up a provider registered under it (e.g., an abstract class used as a token).
+- Call a factory that returns a ${kind} class before binding the class it returns.
+- Give app.useGlobal*() and the useValue or useFactory of an APP_* provider an instance, not a class, a promise or an array.`;
+
 export const INVALID_MIDDLEWARE_MESSAGE = (
   text: TemplateStringsArray,
   name: string,

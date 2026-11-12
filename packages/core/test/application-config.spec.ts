@@ -2,6 +2,7 @@ import { RequestMethod } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
 import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
+import { InvalidEnhancerException } from '../errors/exceptions/invalid-enhancer.exception';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
 
 describe('ApplicationConfig', () => {
@@ -48,8 +49,8 @@ describe('ApplicationConfig', () => {
   });
   describe('Pipes', () => {
     it('should set global pipes', () => {
-      const pipes = ['test', 'test2'];
-      appConfig.useGlobalPipes(...(pipes as any));
+      const pipes = [{ transform: () => 1 }, { transform: () => 2 }];
+      appConfig.useGlobalPipes(...pipes);
 
       expect(appConfig.getGlobalPipes()).to.be.eql(pipes);
     });
@@ -88,8 +89,11 @@ describe('ApplicationConfig', () => {
   });
   describe('Guards', () => {
     it('should set global guards', () => {
-      const guards = ['test', 'test2'];
-      appConfig.useGlobalGuards(...(guards as any));
+      const guards = [
+        { canActivate: () => true },
+        { canActivate: () => false },
+      ];
+      appConfig.useGlobalGuards(...guards);
 
       expect(appConfig.getGlobalGuards()).to.be.eql(guards);
     });
@@ -106,9 +110,48 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalRequestGuards()).to.contain(guard);
     });
   });
+  describe('when a global enhancer is not an instance', () => {
+    class AuthGuard {
+      canActivate() {
+        return true;
+      }
+    }
+    const cases: Array<[string, unknown, RegExp]> = [
+      ['a class', AuthGuard, /\(class AuthGuard\)/],
+      ['a promise', Promise.resolve(new AuthGuard()), /\(a promise\)/],
+      ['an array', [new AuthGuard()], /\(an array\)/],
+    ];
+    cases.forEach(([description, guard, message]) => {
+      it(`should throw when given ${description}`, () => {
+        expect(() => appConfig.useGlobalGuards(guard as any)).to.throw(
+          InvalidEnhancerException,
+        );
+        expect(() => appConfig.useGlobalGuards(guard as any)).to.throw(message);
+        expect(appConfig.getGlobalGuards()).to.deep.equal([]);
+      });
+    });
+    it('should throw for pipes and interceptors too', () => {
+      class SomePipe {}
+      expect(() => appConfig.useGlobalPipes(SomePipe as any)).to.throw(
+        /The pipe \(class SomePipe\) doesn't provide the "transform" method/,
+      );
+      expect(() => appConfig.useGlobalInterceptors({} as any)).to.throw(
+        /The interceptor \(an object\)/,
+      );
+    });
+    it('should accept a class that has the method as a static', () => {
+      class StaticGuard {
+        static canActivate() {
+          return true;
+        }
+      }
+      appConfig.useGlobalGuards(StaticGuard as any);
+      expect(appConfig.getGlobalGuards()).to.deep.equal([StaticGuard]);
+    });
+  });
   describe('Interceptors', () => {
     it('should set global interceptors', () => {
-      const interceptors = ['test', 'test2'];
+      const interceptors = [{ intercept: () => 1 }, { intercept: () => 2 }];
       appConfig.useGlobalInterceptors(...(interceptors as any));
 
       expect(appConfig.getGlobalInterceptors()).to.be.eql(interceptors);
