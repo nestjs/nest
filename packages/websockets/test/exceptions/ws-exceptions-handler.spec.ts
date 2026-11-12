@@ -186,6 +186,29 @@ describe('WsExceptionsHandler', () => {
       });
     });
 
+    describe('when a custom filter catches the exception', () => {
+      it('should return the promise of an asynchronous filter', () => {
+        const pending = Promise.resolve();
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => pending },
+        ] as any);
+
+        expect(
+          handler.handle(new WsException(''), executionContextHost),
+        ).to.equal(pending);
+        expect(emitStub.called).to.be.false;
+      });
+
+      it('should return nothing for a synchronous filter', () => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => 'done' },
+        ] as any);
+
+        expect(handler.handle(new WsException(''), executionContextHost)).to.be
+          .undefined;
+      });
+    });
+
     describe('when "invokeCustomFilters" returns true', () => {
       beforeEach(() => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);

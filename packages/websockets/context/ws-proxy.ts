@@ -1,6 +1,6 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { EMPTY, isObservable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { EMPTY, from, isObservable } from 'rxjs';
+import { catchError, ignoreElements } from 'rxjs/operators';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 
 export class WsProxy {
@@ -17,12 +17,21 @@ export class WsProxy {
           ? result
           : result.pipe(
               catchError(error => {
-                this.handleError(exceptionsHandler, args, error);
-                return EMPTY;
+                const pending = this.handleError(
+                  exceptionsHandler,
+                  args,
+                  error,
+                );
+                return pending ? from(pending).pipe(ignoreElements()) : EMPTY;
               }),
             );
       } catch (error) {
-        this.handleError(exceptionsHandler, args, error);
+        // The message is being handled until an asynchronous exception filter
+        // is done, which is what the adapters count ("maxConcurrentMessages")
+        const pending = this.handleError(exceptionsHandler, args, error);
+        if (pending) {
+          await pending;
+        }
       }
     };
   }
@@ -31,9 +40,9 @@ export class WsProxy {
     exceptionsHandler: WsExceptionsHandler,
     args: unknown[],
     error: T,
-  ) {
+  ): void | PromiseLike<unknown> {
     const host = new ExecutionContextHost(args);
     host.setType('ws');
-    exceptionsHandler.handle(error as Error, host);
+    return exceptionsHandler.handle(error as Error, host);
   }
 }
