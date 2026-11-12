@@ -199,6 +199,61 @@ describe('MiddlewareBuilder', () => {
           expect(builder.build()[0].forRoutes).toEqual(routes);
         });
 
+        @Controller('invoices')
+        class InvoicesController {
+          @Get()
+          findAll() {}
+        }
+
+        it.each(['{*page}', '*', '{:page}'])(
+          'should not remove the root route of a controller next to ":tenant/%s"',
+          tail => {
+            // The root route is mounted on "/invoices/" and served at
+            // "/invoices", which the parameterized route only matches with
+            // the trailing slash
+            @Controller(':tenant')
+            class TenantPagesController {
+              @Get(tail)
+              findPage() {}
+            }
+            configProxy.forRoutes(InvoicesController, TenantPagesController);
+
+            expect(
+              builder.build()[0].forRoutes.map(({ path }: any) => path),
+            ).toEqual(['/invoices/', `/:tenant/${tail}`]);
+          },
+        );
+
+        it('should not remove the root route of a controller next to an optional parameter of its own', () => {
+          @Controller('a')
+          class AController {
+            @Get()
+            findAll() {}
+
+            @Get('{:id}')
+            findOne() {}
+          }
+          configProxy.forRoutes(AController);
+
+          expect(builder.build()[0].forRoutes).toEqual([
+            { path: '/a/', method: RequestMethod.GET },
+            { path: '/a/{:id}', method: RequestMethod.GET },
+          ]);
+        });
+
+        it('should remove the root route of a controller covered by the root route of a parameterized one', () => {
+          @Controller(':tenant')
+          class TenantController {
+            @Get()
+            findOne() {}
+          }
+          configProxy.forRoutes(InvoicesController, TenantController);
+
+          expect(builder.build()[0].forRoutes).toEqual([
+            { path: '/:tenant/', method: RequestMethod.GET },
+          ]);
+        });
+
         it('should not remove a route of another version than the parameterized one', () => {
           const routes = [
             { path: '/accounts/:id', method: RequestMethod.GET, version: '1' },

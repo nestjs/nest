@@ -74,6 +74,35 @@ class UsersController {
   }
 }
 
+@Controller('invoices')
+class InvoicesController {
+  @Get()
+  findAll() {
+    return RETURN_VALUE;
+  }
+}
+
+@Controller(':tenant')
+class TenantPagesController {
+  @Get('*')
+  findPage() {
+    return RETURN_VALUE;
+  }
+}
+
+@Controller('a')
+class OptionalIdController {
+  @Get()
+  findAll() {
+    return RETURN_VALUE;
+  }
+
+  @Get('{:id}')
+  findOne() {
+    return RETURN_VALUE;
+  }
+}
+
 @Controller('shop')
 class ShopController {
   @Get('admin/reports')
@@ -106,7 +135,7 @@ describe('Middleware - routes next to a parameterized route', () => {
   const createApp = async (
     controllers: Type<any>[],
     beforeInit: (app: INestApplication) => void = () => {},
-    adapter?: FastifyAdapter,
+    adapter?: FastifyAdapter | NodeAdapter,
   ) => {
     @Module({ controllers })
     class TestModule {
@@ -167,6 +196,36 @@ describe('Middleware - routes next to a parameterized route', () => {
         .expect(200, MIDDLEWARE_VALUE);
       await request(app.getHttpServer())
         .get('/users/me')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+  });
+
+  describe.each([
+    ['Express', () => undefined],
+    ['Fastify', () => new FastifyAdapter()],
+    ['node', () => new NodeAdapter()],
+  ])('with the %s adapter', (_, createAdapter) => {
+    it(`should run on the root route "/invoices" next to "/:tenant/*"`, async () => {
+      await createApp(
+        [InvoicesController, TenantPagesController],
+        undefined,
+        createAdapter(),
+      );
+      await request(app.getHttpServer())
+        .get('/acme/settings')
+        .expect(200, MIDDLEWARE_VALUE);
+      await request(app.getHttpServer())
+        .get('/invoices')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+
+    it(`should run on the root route "/a" next to "/a/{:id}"`, async () => {
+      await createApp([OptionalIdController], undefined, createAdapter());
+      await request(app.getHttpServer())
+        .get('/a/1')
+        .expect(200, MIDDLEWARE_VALUE);
+      await request(app.getHttpServer())
+        .get('/a')
         .expect(200, MIDDLEWARE_VALUE);
     });
   });

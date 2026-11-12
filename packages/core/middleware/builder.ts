@@ -17,6 +17,14 @@ import {
   type RouteInfo,
 } from '@nestjs/common/internal';
 
+/**
+ * Returns the path the router serves the routes of a mount path at, which is
+ * also the path the adapters mount it on: without the "$" that marks an
+ * exact-match path, and without a trailing slash.
+ */
+const toServedPath = (mountPath: string): string =>
+  mountPath.replace(/\$$/, '').replace(/\/+$/, '') || '/';
+
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
 
@@ -138,6 +146,10 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
      * the middleware runs once for them. Only a route without parameters or
      * wildcards is removed, and only when the parameterized route matches
      * every path it would be mounted on (global prefix and version included).
+     *
+     * The paths are compared as the router serves them, without a trailing
+     * slash: the root route of a controller is mounted on "/cats/" and served
+     * at "/cats", which "/:id/{*path}" matches only with the slash.
      */
     private removeOverlappedRoutes(routes: RouteInfo[]) {
       const routesWithRegex = routes
@@ -168,7 +180,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
             (isRequestMethodAll(item.method) &&
               (route.method as number) !== -1)) &&
           mountPaths.every(path =>
-            item.regexes.some(regex => regex.test(path)),
+            item.regexes.some(regex => regex.test(toServedPath(path))),
           );
         return !routesWithRegex.some(isOverlapped);
       });
@@ -179,7 +191,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         return this.routeInfoPathExtractor.extractPathsFrom(route).map(
           path =>
             pathToRegexp(
-              LegacyRouteConverter.tryConvert(path.replace(/\$$/, ''), {
+              LegacyRouteConverter.tryConvert(toServedPath(path), {
                 logs: false,
               }),
               { sensitive: true },
