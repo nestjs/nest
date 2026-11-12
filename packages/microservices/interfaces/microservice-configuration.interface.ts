@@ -78,6 +78,19 @@ export interface GrpcOptions {
     protoLoader?: string;
     packageDefinition?: any;
     gracefulShutdown?: boolean;
+    /**
+     * Maximum number of responses of a streaming call that may wait for a
+     * client that is not reading them (default: 1000). A handler's Observable
+     * cannot be paused, so what it emits meanwhile is held in memory; once
+     * more than this many responses wait, the call is failed with
+     * RESOURCE_EXHAUSTED and the Observable is unsubscribed from. Responses
+     * a handler emits in one go while its client is keeping up, such as a
+     * result returned with `from(rows)`, are not counted. The limit applies
+     * to each call: to limit the calls a connection can have open at once,
+     * set "grpc.max_concurrent_streams" in "channelOptions".
+     * Set to 0 to disable.
+     */
+    maxPendingResponses?: number;
     onLoadPackageDefinition?: (pkg: any, server: any) => void;
     loader?: {
       keepCase?: boolean;
