@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subscriber, Subscription } from 'rxjs';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
@@ -12,6 +12,8 @@ import { ClientGrpc, GrpcOptions } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
 const GRPC_CANCELLED = 'Cancelled';
+// gRPC status code, as in "@grpc/grpc-js"
+const GRPC_STATUS_INTERNAL = 13;
 
 // To enable type safety for gRPC. This cant be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
@@ -183,10 +185,11 @@ export class ClientGrpcProxy
             : client![methodName](...args);
 
         if (isRequestStream && isUpstreamSubject) {
-          upstreamSubscription = upstreamSubjectOrData.subscribe(
-            (val: unknown) => call.write(val),
+          upstreamSubscription = this.writeRequestStream(
+            call,
+            upstreamSubjectOrData,
+            observer,
             (err: unknown) => observer.error(this.serializeError(err)),
-            () => call.end(),
           );
         }
         call.on('data', (data: any) => observer.next(data));
@@ -258,12 +261,12 @@ export class ClientGrpcProxy
           }
           const call = client[methodName](...callArgs);
 
-          const upstreamSubscription: Subscription =
-            upstreamSubjectOrData.subscribe(
-              (val: unknown) => call.write(val),
-              (err: unknown) => call.emit('error', err),
-              () => call.end(),
-            );
+          const upstreamSubscription: Subscription = this.writeRequestStream(
+            call,
+            upstreamSubjectOrData,
+            observer,
+            (err: unknown) => call.emit('error', err),
+          );
 
           return () => {
             upstreamSubscription.unsubscribe();
@@ -290,6 +293,49 @@ export class ClientGrpcProxy
         };
       });
     };
+  }
+
+  /**
+   * Writes the values of a request stream to the call, and ends the call once
+   * the stream completes.
+   *
+   * The call is an object mode stream, whose "write" throws on null where
+   * nothing catches it, so null fails the call instead, as a null response
+   * does on the server. What a request stream emits synchronously after the
+   * null, while it cannot be unsubscribed from yet, is not sent either, so
+   * the server cannot take the rest of the stream for all of it.
+   */
+  protected writeRequestStream(
+    call: any,
+    upstream: any,
+    observer: Subscriber<unknown>,
+    onError: (err: unknown) => void,
+  ): Subscription {
+    let isFailed = false;
+    return upstream.subscribe(
+      (val: unknown) => {
+        if (isFailed) {
+          return;
+        }
+        if (val === null) {
+          isFailed = true;
+          return observer.error(
+            this.serializeError(this.createNullRequestError()),
+          );
+        }
+        call.write(val);
+      },
+      onError,
+      () => !isFailed && call.end(),
+    );
+  }
+
+  private createNullRequestError() {
+    const details = 'The request stream emitted a null value';
+    return Object.assign(new Error(details), {
+      code: GRPC_STATUS_INTERNAL,
+      details,
+    });
   }
 
   public createClients(): any[] {
