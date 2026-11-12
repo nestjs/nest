@@ -8,6 +8,7 @@ import {
   concat,
   EMPTY,
   firstValueFrom,
+  from,
   lastValueFrom,
   NEVER,
   of,
@@ -16,11 +17,12 @@ import {
   toArray,
   throwError,
 } from 'rxjs';
-import { ignoreElements, map, tap } from 'rxjs/operators';
+import { ignoreElements, map, mergeAll, tap } from 'rxjs/operators';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
 import { GrpcMethodStreamingType, GrpcStatus } from '../../index.js';
 import { ServerGrpc } from '../../server/index.js';
+import { isUndefined } from '@nestjs/common/internal';
 import { objectToMap } from './utils/object-to-map.js';
 
 const CANCELLED_EVENT = 'cancelled';
@@ -978,6 +980,260 @@ describe('ServerGrpc', () => {
       await result;
 
       expect(handled).toEqual([0, 1, 2, 3, 4]);
+    });
+  });
+
+  describe('when the client of a streaming call does not read the responses', () => {
+    const tooManyPendingResponsesError = {
+      code: GrpcStatus.RESOURCE_EXHAUSTED,
+      details: 'Too many responses are waiting for the client to read them',
+    };
+
+    const tick = () => new Promise(resolve => setImmediate(resolve));
+
+    // Like a grpc-js call: a response is written once the client reads it.
+    // Two responses fit in the call, the others wait for a "drain".
+    function createCall() {
+      const pendingWrites: Array<() => void> = [];
+      const written: unknown[] = [];
+      const errors: unknown[] = [];
+      const call = Object.assign(
+        new Writable({
+          objectMode: true,
+          highWaterMark: 2,
+          write(chunk, _encoding, callback) {
+            pendingWrites.push(() => {
+              written.push(chunk);
+              callback();
+            });
+          },
+        }),
+        { request: {}, metadata: {}, cancelled: false },
+      );
+      call.on('error', err => errors.push(err));
+      const readResponses = async () => {
+        while (pendingWrites.length > 0) {
+          pendingWrites.splice(0).forEach(write => write());
+          await tick();
+        }
+      };
+      return { call, written, errors, readResponses };
+    }
+
+    function createServer(maxPendingResponses?: number) {
+      const grpcServer = new ServerGrpc({
+        protoPath: join(import.meta.dirname, './test.proto'),
+        package: 'test',
+        ...(isUndefined(maxPendingResponses) ? {} : { maxPendingResponses }),
+      });
+      const warn = vi.fn();
+      (grpcServer as any).logger = Object.assign(new NoopLogger(), { warn });
+      return { grpcServer, warn };
+    }
+
+    // A live stream, which emits whether or not the client reads. The call
+    // takes the first two responses, the others wait.
+    async function watch(grpcServer: ServerGrpc, waiting: number) {
+      const feed = new Subject<number>();
+      const testCall = createCall();
+      const result = grpcServer.createStreamServiceMethod(() => feed)(
+        testCall.call,
+        vi.fn(),
+      );
+      await tick();
+      feed.next(0);
+      feed.next(1);
+      await tick();
+      for (let n = 0; n < waiting; n++) {
+        feed.next(n + 2);
+        await tick();
+      }
+      return { ...testCall, feed, result };
+    }
+
+    it('should limit the waiting responses to 1000 by default', () => {
+      expect(createServer().grpcServer['maxPendingResponses']).toBe(1000);
+    });
+
+    it('should limit the waiting responses to 1000 when given a value that is not a number', () => {
+      // Such as Number(process.env.UNSET)
+      expect(createServer(NaN).grpcServer['maxPendingResponses']).toBe(1000);
+    });
+
+    it('should keep the call while no more responses wait than allowed', async () => {
+      const { grpcServer, warn } = createServer(3);
+      const { feed, errors, written, readResponses, result } = await watch(
+        grpcServer,
+        3,
+      );
+
+      expect(errors).toEqual([]);
+      expect(feed.observed).toBe(true);
+      expect(warn).not.toHaveBeenCalled();
+
+      feed.complete();
+      await readResponses();
+      await result;
+      expect(written).toEqual([0, 1, 2, 3, 4]);
+      expect(errors).toEqual([]);
+    });
+
+    it('should fail the call once more responses wait than allowed', async () => {
+      const { grpcServer, warn } = createServer(3);
+      const { feed, errors, written, readResponses, result } = await watch(
+        grpcServer,
+        4,
+      );
+
+      expect(errors).toEqual([tooManyPendingResponsesError]);
+      expect(feed.observed).toBe(false);
+      expect(warn).toHaveBeenCalledOnce();
+      await result;
+
+      // Only what the call took before is written
+      await readResponses();
+      expect(written).toEqual([0, 1]);
+    });
+
+    it('should count the responses that wait behind a pending promise', async () => {
+      const { grpcServer } = createServer(3);
+      const feed = new Subject<unknown>();
+      const { call, errors } = createCall();
+      const result = grpcServer.createStreamServiceMethod(() => feed)(
+        call,
+        vi.fn(),
+      );
+      await tick();
+      feed.next(new Promise(() => {}));
+      await tick();
+      for (let n = 0; n < 4; n++) {
+        feed.next(n);
+        await tick();
+      }
+
+      expect(errors).toEqual([tooManyPendingResponsesError]);
+      expect(feed.observed).toBe(false);
+      await result;
+    });
+
+    it('should not fail the call when the limit is disabled', async () => {
+      const { grpcServer } = createServer(0);
+      const { feed, errors, written, readResponses, result } = await watch(
+        grpcServer,
+        20,
+      );
+
+      expect(errors).toEqual([]);
+      expect(feed.observed).toBe(true);
+
+      feed.complete();
+      await readResponses();
+      await result;
+      expect(written).toHaveLength(22);
+    });
+
+    it.each([
+      [
+        'emitted while the handler is subscribed to',
+        (rows: number[]) => from(rows),
+      ],
+      [
+        'emitted once a promise resolves, as through an interceptor',
+        (rows: number[]) => from(Promise.resolve(rows)).pipe(mergeAll()),
+      ],
+      [
+        'that are promises',
+        (rows: number[]) => from(rows).pipe(map(async row => row)),
+      ],
+    ])(
+      'should send a result of more responses than allowed %s',
+      async (_, toResponses) => {
+        const { grpcServer, warn } = createServer(3);
+        const rows = Array.from({ length: 10 }, (__, n) => n);
+        const { call, errors, written, readResponses } = createCall();
+
+        let isSettled = false;
+        const result = grpcServer
+          .createStreamServiceMethod(() => toResponses(rows))(call, vi.fn())
+          .then(() => (isSettled = true));
+        while (!isSettled) {
+          await tick();
+          await readResponses();
+        }
+        await result;
+
+        expect(errors).toEqual([]);
+        expect(written).toEqual(rows);
+        expect(warn).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should send a batch of more responses than allowed once the client has caught up', async () => {
+      const { grpcServer } = createServer(3);
+      const feed = new Subject<number>();
+      const { call, errors, written, readResponses } = createCall();
+      const result = grpcServer.createStreamServiceMethod(() => feed)(
+        call,
+        vi.fn(),
+      );
+      await tick();
+
+      for (let batch = 0; batch < 2; batch++) {
+        for (let n = 0; n < 10; n++) {
+          feed.next(batch * 10 + n);
+        }
+        await readResponses();
+      }
+      feed.complete();
+      await result;
+
+      expect(errors).toEqual([]);
+      expect(written).toHaveLength(20);
+    });
+
+    it('should count a batch emitted while responses wait', async () => {
+      const { grpcServer } = createServer(3);
+      const { feed, errors, result } = await watch(grpcServer, 1);
+      for (let n = 0; n < 3; n++) {
+        feed.next(n + 3);
+      }
+
+      expect(errors).toEqual([tooManyPendingResponsesError]);
+      expect(feed.observed).toBe(false);
+      await result;
+    });
+
+    it('should fail a bidirectional call whose responses do not depend on the requests', async () => {
+      const { grpcServer } = createServer(3);
+      const feed = new Subject<number>();
+      const call = Object.assign(
+        new Duplex({
+          objectMode: true,
+          highWaterMark: 2,
+          read() {},
+          write(_chunk, _encoding, _callback) {},
+        }),
+        { request: {}, metadata: {}, cancelled: false },
+      );
+      const errors: unknown[] = [];
+      call.on('error', err => errors.push(err));
+
+      const result = grpcServer.createRequestStreamMethod(() => feed, true)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      feed.next(0);
+      feed.next(1);
+      await tick();
+      for (let n = 0; n < 4; n++) {
+        feed.next(n + 2);
+        await tick();
+      }
+
+      expect(errors).toEqual([tooManyPendingResponsesError]);
+      expect(feed.observed).toBe(false);
+      await result;
     });
   });
 

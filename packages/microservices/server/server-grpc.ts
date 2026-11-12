@@ -32,6 +32,7 @@ import { toPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { Server } from './server.js';
 import {
   isFunction,
+  isNil,
   isObject,
   isString,
   isUndefined,
@@ -39,6 +40,7 @@ import {
 import { MESSAGES } from '@nestjs/core/internal';
 
 const CANCELLED_EVENT = 'cancelled';
+const DEFAULT_MAX_PENDING_RESPONSES = 1000;
 // Half of a surrogate pair without the other half
 const LONE_SURROGATE =
   /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g;
@@ -138,6 +140,7 @@ function toSendableError(err: unknown) {
 export class ServerGrpc extends Server<never, never> {
   public transportId: TransportId = Transport.GRPC;
   protected readonly url: string;
+  protected readonly maxPendingResponses: number;
   protected grpcClient: GrpcServer;
 
   get status(): never {
@@ -149,6 +152,16 @@ export class ServerGrpc extends Server<never, never> {
   constructor(private readonly options: Readonly<GrpcOptions>['options']) {
     super();
     this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
+    const maxPendingResponses = this.getOptionsProp(
+      options,
+      'maxPendingResponses',
+    );
+    // A value that is not a number (NaN, "16mb") gets the default limit
+    // rather than none
+    this.maxPendingResponses =
+      isNil(maxPendingResponses) || isNaN(maxPendingResponses)
+        ? DEFAULT_MAX_PENDING_RESPONSES
+        : maxPendingResponses;
 
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
@@ -479,6 +492,8 @@ export class ServerGrpc extends Server<never, never> {
    * This function will ensure that backpressure is managed while writing values
    * that come from an observable to a GRPC call. On a bidirectional call, the
    * requests stop being read while the client is not reading the responses.
+   * The observable itself cannot be paused, so a call whose client leaves more
+   * than "maxPendingResponses" of them waiting is failed.
    * The value a promise resolves to is written in the order it was emitted.
    *
    * @param source The observable we want to write out to the GRPC call.
@@ -518,6 +533,47 @@ export class ServerGrpc extends Server<never, never> {
       call.on(CANCELLED_EVENT, cancelHandler);
       subscription.add(() => call.off(CANCELLED_EVENT, cancelHandler));
 
+      // The observable cannot be held back, so what it emits while the client
+      // is not reading waits here, and the call is failed once more than
+      // "maxPendingResponses" values wait. Not counted are the values it
+      // emits in one go when the client has caught up: a result it already
+      // holds, such as from(rows), or a batch of a live stream. Such a batch
+      // starts when a value has to wait while nothing else does, and ends with
+      // the turn of the event loop. Its values are written first.
+      let isEmittingBatch = false;
+      let batchEnd: ReturnType<typeof setImmediate> | undefined;
+      let batchValuesWaiting = 0;
+      const startBatch = () => {
+        if (isEmittingBatch) {
+          return;
+        }
+        isEmittingBatch = true;
+        batchEnd = setImmediate(() => (isEmittingBatch = false));
+      };
+      subscription.add(() => clearImmediate(batchEnd));
+
+      const failIfTooManyWaiting = () => {
+        const waitingCount =
+          valuesWaitingToBeDrained.length - nextIndex - batchValuesWaiting;
+        if (
+          !this.maxPendingResponses ||
+          waitingCount <= this.maxPendingResponses
+        ) {
+          return;
+        }
+        this.logger.warn(
+          `The client of a gRPC call is not reading its responses: more than ${this.maxPendingResponses} of them are waiting for it, so the call is failed`,
+        );
+        // grpc-js sends the status after the responses it already holds for
+        // the call. Nothing more is held for it meanwhile.
+        valuesWaitingToBeDrained.length = 0;
+        nextIndex = 0;
+        batchValuesWaiting = 0;
+        emitResponseError(call, this.createTooManyPendingResponsesError());
+        subscription.unsubscribe();
+        resolve();
+      };
+
       // In all cases, when we finalize, end the writable stream
       // being careful that errors and writes must be emitted _before_ this call is ended
       subscription.add(() => call.end());
@@ -545,6 +601,9 @@ export class ServerGrpc extends Server<never, never> {
             }
           }
           nextIndex++;
+          if (batchValuesWaiting > 0) {
+            batchValuesWaiting--;
+          }
           // The first time `call.write` returns false, we need to stop.
           // It wrote the value, but it won't write anything else.
           writing = call.write(value);
@@ -627,13 +686,26 @@ export class ServerGrpc extends Server<never, never> {
         }),
       );
 
+      const enqueue = (value: unknown) => {
+        valuesWaitingToBeDrained.push(value);
+        if (isEmittingBatch) {
+          batchValuesWaiting++;
+        }
+      };
+
       subscription.add(
         values$.subscribe({
           next(value) {
             if (value instanceof Promise) {
-              valuesWaitingToBeDrained.push(holdPlace(value));
+              if (writing && valuesWaitingToBeDrained.length === 0) {
+                startBatch();
+              }
+              enqueue(holdPlace(value));
             } else if (writing && valuesWaitingToBeDrained.length === 0) {
               writing = call.write(value);
+              if (!writing) {
+                startBatch();
+              }
               if (!writing && call.pause) {
                 // The responses to the requests read meanwhile would all be
                 // buffered here, as the client is not reading them.
@@ -645,7 +717,11 @@ export class ServerGrpc extends Server<never, never> {
               // wait for the drain event before we can write again
               // buffer the value and wait for the drain event
               // (or for a promise queued ahead of it to settle)
-              valuesWaitingToBeDrained.push(value);
+              enqueue(value);
+            }
+            failIfTooManyWaiting();
+            if (subscription.closed) {
+              return;
             }
             if (
               !requestsPaused &&
@@ -835,6 +911,13 @@ export class ServerGrpc extends Server<never, never> {
     return {
       code: GrpcStatus.INTERNAL,
       details: 'The handler emitted a null response',
+    };
+  }
+
+  private createTooManyPendingResponsesError() {
+    return {
+      code: GrpcStatus.RESOURCE_EXHAUSTED,
+      details: 'Too many responses are waiting for the client to read them',
     };
   }
 
