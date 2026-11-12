@@ -26,6 +26,8 @@ export const RMQ_DEFAULT_MAX_MESSAGE_SIZE = 16 * 1024 * 1024; // 16 MiB
 export const RMQ_SEPARATOR = '.';
 export const RMQ_WILDCARD_SINGLE = '*';
 export const RMQ_WILDCARD_ALL = '#';
+// In bytes, for an AMQP short string such as a routing key or "correlationId"
+export const RMQ_MAX_SHORT_STRING_LENGTH = 255;
 
 export const ECONNREFUSED = 'ECONNREFUSED';
 export const CONN_ERR = 'CONN_ERR';

@@ -23,9 +23,11 @@ import {
   RMQ_DEFAULT_QUEUE,
   RMQ_DEFAULT_QUEUE_OPTIONS,
   RMQ_DEFAULT_URL,
+  RMQ_MAX_SHORT_STRING_LENGTH,
   UNBLOCKED_RMQ_MESSAGE,
 } from '../constants.js';
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
+import { MaxRmqShortStringLengthExceededException } from '../errors/max-rmq-short-string-length-exceeded.exception.js';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
 import {
   IncomingResponse,
@@ -44,6 +46,8 @@ import {
   loadPackageSync,
   isFunction,
   isNil,
+  isObject,
+  isString,
 } from '@nestjs/common/internal';
 import { createRequire } from 'module';
 
@@ -65,6 +69,18 @@ type AmqpConnectionManager = any;
 let rmqPackage: any = null; // typeof import('amqp-connection-manager');
 
 const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
+// The message properties that AMQP encodes as short strings
+const SHORT_STRING_PROPERTIES = [
+  'contentType',
+  'contentEncoding',
+  'correlationId',
+  'replyTo',
+  'expiration',
+  'messageId',
+  'type',
+  'userId',
+  'appId',
+];
 
 /**
  * @publicApi
@@ -593,6 +609,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           'exchange',
           this.queue,
         );
+        this.assertShortStrings(sendOptions, stringifiedPattern);
 
         this.channel!.publish(
           exchange,
@@ -601,6 +618,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           sendOptions,
         ).catch(err => callback({ err }));
       } else {
+        this.assertShortStrings(sendOptions);
         this.channel!.sendToQueue(this.queue, content, sendOptions).catch(err =>
           callback({ err }),
         );
@@ -635,23 +653,61 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       const errorCallback = (err: unknown) =>
         err ? reject(err as Error) : resolve();
 
-      return this.options.wildcards || this.options.exchangeType === 'fanout'
-        ? this.channel!.publish(
-            // The exchange is the same as the queue when wildcards are enabled
-            // and the exchange is not explicitly set
-            this.getOptionsProp(this.options, 'exchange', this.queue),
-            this.normalizePattern(packet.pattern),
-            content,
-            sendOptions,
-            errorCallback,
-          )
-        : this.channel!.sendToQueue(
-            this.queue,
-            content,
-            sendOptions,
-            errorCallback,
-          );
+      if (this.options.wildcards || this.options.exchangeType === 'fanout') {
+        const routingKey = this.normalizePattern(packet.pattern);
+        this.assertShortStrings(sendOptions, routingKey);
+        return this.channel!.publish(
+          // The exchange is the same as the queue when wildcards are enabled
+          // and the exchange is not explicitly set
+          this.getOptionsProp(this.options, 'exchange', this.queue),
+          routingKey,
+          content,
+          sendOptions,
+          errorCallback,
+        );
+      }
+      this.assertShortStrings(sendOptions);
+      return this.channel!.sendToQueue(
+        this.queue,
+        content,
+        sendOptions,
+        errorCallback,
+      );
     });
+  }
+
+  /**
+   * The routing key, the names of the headers and some of the message
+   * properties are AMQP short strings. amqplib only throws on a longer one
+   * once the channel wrapper has queued the message as unconfirmed, and the
+   * wrapper then neither settles the publish nor releases the message.
+   */
+  protected assertShortStrings(
+    sendOptions: Record<string, any>,
+    routingKey?: string,
+  ) {
+    const assertLength = (field: string, value: unknown) => {
+      const length = isString(value) ? Buffer.byteLength(value) : 0;
+      if (length > RMQ_MAX_SHORT_STRING_LENGTH) {
+        throw new MaxRmqShortStringLengthExceededException(
+          field,
+          length,
+          RMQ_MAX_SHORT_STRING_LENGTH,
+        );
+      }
+    };
+    assertLength('routing key', routingKey);
+    for (const property of SHORT_STRING_PROPERTIES) {
+      assertLength(`"${property}"`, sendOptions[property]);
+    }
+    if (isObject(sendOptions.headers)) {
+      for (const name in sendOptions.headers) {
+        // amqplib leaves out the headers whose value is undefined
+        if (sendOptions.headers[name] !== undefined) {
+          assertLength('header name', name);
+        }
+      }
+    }
   }
 
   protected initializeSerializer(options: RmqOptions['options']) {

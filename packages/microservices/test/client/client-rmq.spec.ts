@@ -3,6 +3,7 @@ import { EMPTY, firstValueFrom } from 'rxjs';
 import { ClientRMQ } from '../../client/client-rmq.js';
 import { RMQ_DEFAULT_MAX_MESSAGE_SIZE } from '../../constants.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
+import { MaxRmqShortStringLengthExceededException } from '../../errors/max-rmq-short-string-length-exceeded.exception.js';
 import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { RmqRecord } from '../../record-builders/index.js';
 
@@ -642,6 +643,132 @@ describe('ClientRMQ', function () {
       expect(third.startsWith(second.slice(1))).toBe(false);
     });
 
+    describe('when a short string is longer than AMQP allows', () => {
+      // An AMQP short string has at most 255 bytes
+      const longest = 'a'.repeat(255);
+
+      const expectFailedWithoutPublishing = (
+        callback: ReturnType<typeof vi.fn>,
+      ) => {
+        expect(callback).toHaveBeenCalledExactlyOnceWith({
+          err: expect.any(MaxRmqShortStringLengthExceededException),
+        });
+        expect(publishStub).not.toHaveBeenCalled();
+        expect(sendToQueueStub).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+      };
+
+      it.each([
+        ['wildcards', { wildcards: true }],
+        ['a fanout exchange', { exchangeType: 'fanout' }],
+      ])(
+        'should fail the request without publishing when the routing key is too long, with %s',
+        (_, options) => {
+          Object.assign(untypedClient['options'], options);
+          const callback = vi.fn();
+
+          client['publish']({ pattern: `${longest}a`, data: 'data' }, callback);
+
+          expectFailedWithoutPublishing(callback);
+        },
+      );
+
+      it('should count the length of the routing key in bytes', () => {
+        untypedClient['options']['wildcards'] = true;
+        const callback = vi.fn();
+
+        // "é" takes two bytes
+        client['publish'](
+          { pattern: `${longest.slice(1)}é`, data: 'data' },
+          callback,
+        );
+
+        expectFailedWithoutPublishing(callback);
+      });
+
+      it('should check the normalized form of an object pattern', () => {
+        untypedClient['options']['wildcards'] = true;
+        const callback = vi.fn();
+
+        client['publish'](
+          { pattern: { cmd: longest }, data: 'data' },
+          callback,
+        );
+
+        expectFailedWithoutPublishing(callback);
+      });
+
+      it('should publish a request whose routing key has 255 bytes', () => {
+        untypedClient['options']['wildcards'] = true;
+        const callback = vi.fn();
+
+        client['publish']({ pattern: longest, data: 'data' }, callback);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(publishStub.mock.calls[0][1]).toBe(longest);
+      });
+
+      it('should send a longer pattern to the queue, in the body', () => {
+        const callback = vi.fn();
+
+        client['publish']({ pattern: `${longest}a`, data: 'data' }, callback);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(sendToQueueStub).toHaveBeenCalledOnce();
+      });
+
+      it.each(['messageId', 'type', 'appId', 'expiration'])(
+        'should fail the request without publishing when "%s" is too long',
+        property => {
+          const callback = vi.fn();
+
+          client['publish'](
+            {
+              pattern,
+              data: new RmqRecord('data', { [property]: `${longest}a` }),
+            },
+            callback,
+          );
+
+          expectFailedWithoutPublishing(callback);
+        },
+      );
+
+      it('should fail the request without publishing when a header name is too long', () => {
+        const callback = vi.fn();
+
+        client['publish'](
+          {
+            pattern,
+            data: new RmqRecord('data', {
+              headers: { [`${longest}a`]: 'value' },
+            }),
+          },
+          callback,
+        );
+
+        expectFailedWithoutPublishing(callback);
+      });
+
+      it('should publish properties and header names of 255 bytes', () => {
+        const callback = vi.fn();
+
+        client['publish'](
+          {
+            pattern,
+            data: new RmqRecord('data', {
+              messageId: longest,
+              headers: { [longest]: 'a'.repeat(1000) },
+            }),
+          },
+          callback,
+        );
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(sendToQueueStub.mock.calls[0][2].messageId).toBe(longest);
+      });
+    });
+
     describe('dispose callback', () => {
       let unsubscribeSpy: ReturnType<typeof vi.fn>, subscription;
 
@@ -1181,6 +1308,31 @@ describe('ClientRMQ', function () {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).toBeInstanceOf(Error),
       );
+    });
+    it('should not publish an event whose routing key is longer than AMQP allows', async () => {
+      untypedClient['options']['wildcards'] = true;
+
+      await expect(
+        client['dispatchEvent']({ pattern: 'a'.repeat(256), data: 'data' }),
+      ).rejects.toBeInstanceOf(MaxRmqShortStringLengthExceededException);
+      expect(publishStub).not.toHaveBeenCalled();
+    });
+    it('should not publish an event with a property longer than AMQP allows', async () => {
+      await expect(
+        client['dispatchEvent']({
+          pattern: 'pattern',
+          data: new RmqRecord('data', { type: 'a'.repeat(256) }),
+        }),
+      ).rejects.toBeInstanceOf(MaxRmqShortStringLengthExceededException);
+      expect(sendToQueueStub).not.toHaveBeenCalled();
+    });
+    it('should publish an event whose routing key has 255 bytes', async () => {
+      untypedClient['options']['wildcards'] = true;
+      publishStub.mockImplementation((a, b, c, d, f) => f());
+
+      await client['dispatchEvent']({ pattern: 'a'.repeat(255), data: 'data' });
+
+      expect(publishStub.mock.calls[0][1]).toBe('a'.repeat(255));
     });
 
     describe('headers', () => {
