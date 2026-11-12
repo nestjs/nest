@@ -45,8 +45,10 @@ export class HttpException extends IntrinsicException {
    *
    * @usageNotes
    * The constructor arguments define the response and the HTTP response status code.
-   * - The `response` argument (required) defines the JSON response body. alternatively, it can also be
-   *  an error object that is used to define an error [cause](https://nodejs.org/en/blog/release/v16.9.0/#error-cause).
+   * - The `response` argument (required) defines the JSON response body. Alternatively, it can be an
+   *  `Error`, whose message becomes the message of the exception but is not sent to the client: for an
+   *  error status, the client gets the standard message of that status instead. To keep an error as the
+   *  [cause](https://nodejs.org/en/blog/release/v16.9.0/#error-cause), pass it in `options.cause`.
    * - The `status` argument (required) defines the HTTP Status Code.
    * - The `options` argument (optional) defines additional error options. Currently, it supports the `cause` attribute,
    *  and can be used as an alternative way to specify the error cause: `const error = new HttpException('description', 400, { cause: new Error() });`

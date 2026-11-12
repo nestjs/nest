@@ -14,9 +14,12 @@ import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
   BadRequestException,
+  HttpException,
   HttpStatus,
+  InternalServerErrorException,
   IntrinsicException,
   Logger,
+  NotFoundException,
   type MessageEvent,
   RequestMethod,
   SSE_ABORT_CONTROLLER,
@@ -2198,6 +2201,21 @@ data: test
           'an HttpException',
           new BadRequestException('Some error'),
           'Some error',
+        ],
+        [
+          'an HttpException that wraps an Error',
+          new InternalServerErrorException(new Error('10.1.2.3:5432')),
+          'Internal Server Error',
+        ],
+        [
+          'an HttpException with a status of its own that wraps an Error',
+          new HttpException(new Error('/srv/orders/404.json'), 599),
+          'Error',
+        ],
+        [
+          'an HttpException that wraps an Error as its cause',
+          new NotFoundException('No such job', { cause: new Error('cause') }),
+          'No such job',
         ],
         [
           'an "http-errors" error',
