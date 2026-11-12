@@ -284,6 +284,39 @@ describe('WsAdapter', () => {
         expect(client.resume).toHaveBeenCalledTimes(1);
       });
 
+      it('should not read from a client again while another gateway still holds it back', () => {
+        const client = pausableClient();
+        const adapter = new WsAdapter(undefined, { maxConcurrentMessages: 1 });
+        // gateways that share a server each bind their handlers to the client
+        const [slowReplies, fastReplies] = [0, 1].map(() => {
+          const replies: Subject<string>[] = [];
+          bindHandler(adapter, client, () => {
+            const reply$ = new Subject<string>();
+            replies.push(reply$);
+            return reply$;
+          });
+          return replies;
+        });
+
+        client.emit('message', frame({ event: 'event' }));
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.pause).toHaveBeenCalledTimes(1);
+
+        // one gateway has caught up, the other still has a message waiting
+        fastReplies[0].complete();
+        expect(fastReplies).toHaveLength(2);
+        expect(slowReplies).toHaveLength(1);
+        expect(client.resume).not.toHaveBeenCalled();
+
+        slowReplies[0].complete();
+        expect(slowReplies).toHaveLength(2);
+        expect(client.resume).toHaveBeenCalledTimes(1);
+
+        // and the client can be held back again afterwards
+        client.emit('message', frame({ event: 'event' }));
+        expect(client.pause).toHaveBeenCalledTimes(2);
+      });
+
       it('should close a client once more than "maxSendBufferSize" bytes are queued for it', () => {
         const client = pausableClient();
         const adapter = new WsAdapter(undefined, { maxSendBufferSize: 1024 });
