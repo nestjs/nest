@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
-import { EMPTY } from 'rxjs';
+import { EMPTY, firstValueFrom } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
+import { RQM_DEFAULT_MAX_MESSAGE_SIZE } from '../../constants';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import { ReadPacket } from '../../interfaces';
 import { RmqRecord } from '../../record-builders';
 
@@ -462,6 +464,80 @@ describe('ClientRMQ', function () {
           expect(sendToQueueStub.getCall(0).args[2].headers).to.eql(
             requestHeaders,
           );
+        });
+      });
+    });
+
+    describe('when the reply exceeds "maxMessageSize"', () => {
+      const maxMessageSize = 16;
+      const sendRequest = async (rmqClient: ClientRMQ) => {
+        const responseEmitter = new EventEmitter();
+        const sendToQueue = sinon
+          .stub()
+          .callsFake(() => ({ catch: sinon.spy() }));
+        Object.assign(rmqClient, {
+          responseEmitter,
+          channel: { sendToQueue },
+        });
+        sinon.stub(rmqClient, 'connect').resolves(undefined);
+
+        const response = firstValueFrom(rmqClient.send('test', 'data'));
+        while (!sendToQueue.called) {
+          await new Promise(resolve => setImmediate(resolve));
+        }
+        const { correlationId } = sendToQueue.firstCall.args[2];
+        const reply = (content: Buffer) =>
+          responseEmitter.emit(correlationId, { content, options: {} });
+        return { response, reply, responseEmitter, correlationId };
+      };
+
+      it('should fail the request without decoding the reply', async () => {
+        const rmqClient = new ClientRMQ({ maxMessageSize });
+        const { response, reply, responseEmitter, correlationId } =
+          await sendRequest(rmqClient);
+        const content = Buffer.from('{"response":"12"}');
+        expect(content.length).to.equal(maxMessageSize + 1);
+        const toStringSpy = sinon.spy(content, 'toString');
+
+        reply(content);
+
+        let error: unknown;
+        await response.catch(err => (error = err));
+        expect(error).to.be.instanceOf(MaxPacketLengthExceededException);
+        expect(toStringSpy.called).to.be.false;
+        expect(responseEmitter.listenerCount(correlationId)).to.equal(0);
+      });
+
+      it('should pass on a reply of exactly "maxMessageSize" bytes', async () => {
+        const rmqClient = new ClientRMQ({ maxMessageSize });
+        const { response, reply } = await sendRequest(rmqClient);
+        const content = Buffer.from('{"response":"1"}');
+        expect(content.length).to.equal(maxMessageSize);
+
+        reply(content);
+
+        expect(await response).to.equal('1');
+      });
+
+      it('should default to 16 MiB', () => {
+        expect(RQM_DEFAULT_MAX_MESSAGE_SIZE).to.equal(16 * 1024 * 1024);
+        expect(new ClientRMQ({})['maxMessageSize']).to.equal(
+          RQM_DEFAULT_MAX_MESSAGE_SIZE,
+        );
+      });
+
+      (
+        [
+          ['NaN', NaN],
+          ['a string', '16mb'],
+        ] as const
+      ).forEach(([name, value]) => {
+        it(`should use the default for ${name}`, () => {
+          expect(
+            new ClientRMQ({ maxMessageSize: value as number })[
+              'maxMessageSize'
+            ],
+          ).to.equal(RQM_DEFAULT_MAX_MESSAGE_SIZE);
         });
       });
     });

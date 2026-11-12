@@ -18,6 +18,7 @@ import {
   CONSUMER_CANCELLED_RMQ_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RQM_DEFAULT_MAX_MESSAGE_SIZE,
   RQM_DEFAULT_NO_ASSERT,
   RQM_DEFAULT_NOACK,
   RQM_DEFAULT_PERSISTENT,
@@ -27,6 +28,7 @@ import {
   RQM_DEFAULT_URL,
   UNBLOCKED_RMQ_MESSAGE,
 } from '../constants';
+import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { RmqRecord } from '../record-builders';
@@ -71,6 +73,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected queueOptions: Record<string, any>;
   protected replyQueue: string;
   protected noAssert: boolean;
+  protected maxMessageSize: number;
 
   constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
@@ -89,6 +92,13 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.getOptionsProp(this.options, 'noAssert') ??
       this.queueOptions.noAssert ??
       RQM_DEFAULT_NO_ASSERT;
+    const maxMessageSize = this.getOptionsProp(this.options, 'maxMessageSize');
+    // A value that is not a number (such as NaN from an unset environment
+    // variable) gets the default: no size compares greater than NaN
+    this.maxMessageSize =
+      maxMessageSize == null || isNaN(maxMessageSize)
+        ? RQM_DEFAULT_MAX_MESSAGE_SIZE
+        : maxMessageSize;
 
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
     rmqPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
@@ -401,12 +411,20 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       }: {
         content: Buffer;
         options: Record<string, unknown>;
-      }) =>
-        this.handleMessage(
+      }) => {
+        if (content.length > this.maxMessageSize) {
+          // Decoding it could exhaust the heap, which ends the process
+          return callback({
+            err: new MaxPacketLengthExceededException(content.length),
+            isDisposed: true,
+          });
+        }
+        return this.handleMessage(
           this.parseMessageContent(content),
           options,
           callback,
         );
+      };
 
       Object.assign(message, { id: correlationId });
       const serializedPacket: ReadPacket & Partial<RmqRecord> =

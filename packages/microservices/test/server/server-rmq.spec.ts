@@ -1,7 +1,12 @@
 import { assert, expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER, RQM_DEFAULT_QUEUE } from '../../constants';
+import {
+  NO_MESSAGE_HANDLER,
+  RQM_DEFAULT_MAX_MESSAGE_SIZE,
+  RQM_DEFAULT_QUEUE,
+} from '../../constants';
 import { RmqContext } from '../../ctx-host';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import { MessageHandler } from '../../interfaces/message-handler.interface';
 import { ServerRMQ } from '../../server/server-rmq';
 import { objectToMap } from './utils/object-to-map';
@@ -227,6 +232,119 @@ describe('ServerRMQ', () => {
           err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;
+    });
+
+    describe('when the body exceeds "maxMessageSize"', () => {
+      // The size of '{"pattern":"test","data":"123","id":"3"}'
+      const maxMessageSize = 40;
+      const oversizedContent = () =>
+        Buffer.from(JSON.stringify({ pattern, data: '123', id: '3' }) + ' ');
+      const errorMessage = new MaxPacketLengthExceededException(
+        maxMessageSize + 1,
+      ).message;
+
+      let handler: sinon.SinonStub;
+      let loggerErrorStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        server = new ServerRMQ({ maxMessageSize });
+        untypedServer = server as any;
+        untypedServer.channel = channel;
+        sendMessageStub = sinon.stub(server, 'sendMessage');
+        loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+        handler = sinon.stub().resolves(undefined);
+        untypedServer.messageHandlers = objectToMap({ [pattern]: handler });
+      });
+
+      it('should log and skip the message without decoding it', async () => {
+        const content = oversizedContent();
+        expect(content.length).to.equal(maxMessageSize + 1);
+        const toStringSpy = sinon.spy(content, 'toString');
+
+        await server.handleMessage({ content, properties: {} }, channel);
+
+        expect(toStringSpy.called).to.be.false;
+        expect(handler.called).to.be.false;
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(loggerErrorStub.firstCall.args[0]).to.include(errorMessage);
+        expect(channel.nack.called).to.be.false;
+        expect(sendMessageStub.called).to.be.false;
+      });
+
+      it('should negative acknowledge it without requeue when noAck option is false', async () => {
+        untypedServer.noAck = false;
+        const message = { content: oversizedContent(), properties: {} };
+
+        await server.handleMessage(message, channel);
+
+        expect(channel.nack.calledWith(message, false, false)).to.be.true;
+        expect(handler.called).to.be.false;
+      });
+
+      it('should answer a request that names a reply queue with an error', async () => {
+        await server.handleMessage(
+          {
+            content: oversizedContent(),
+            properties: { replyTo: 'reply-queue', correlationId: 'abc' },
+          },
+          channel,
+        );
+
+        expect(handler.called).to.be.false;
+        expect(sendMessageStub.calledOnce).to.be.true;
+        const [packet, replyTo, correlationId, context] =
+          sendMessageStub.firstCall.args;
+        expect(packet).to.deep.equal({
+          id: 'abc',
+          err: errorMessage,
+          status: 'error',
+        });
+        expect(replyTo).to.equal('reply-queue');
+        expect(correlationId).to.equal('abc');
+        expect(context).to.be.instanceOf(RmqContext);
+      });
+
+      it('should handle a message of exactly "maxMessageSize" bytes', async () => {
+        const content = Buffer.from(
+          JSON.stringify({ pattern, data: '123', id: '3' }),
+        );
+        expect(content.length).to.equal(maxMessageSize);
+
+        await server.handleMessage({ content, properties: {} }, channel);
+
+        expect(handler.calledOnce).to.be.true;
+        expect(handler.firstCall.args[0]).to.equal('123');
+        expect(handler.firstCall.args[1]).to.be.instanceOf(RmqContext);
+        expect(loggerErrorStub.called).to.be.false;
+      });
+
+      it('should default to 16 MiB', () => {
+        expect(RQM_DEFAULT_MAX_MESSAGE_SIZE).to.equal(16 * 1024 * 1024);
+        expect(new ServerRMQ({})['maxMessageSize']).to.equal(
+          RQM_DEFAULT_MAX_MESSAGE_SIZE,
+        );
+      });
+
+      (
+        [
+          ['NaN', NaN],
+          ['a string', '16mb'],
+        ] as const
+      ).forEach(([name, value]) => {
+        it(`should use the default for ${name}`, () => {
+          expect(
+            new ServerRMQ({ maxMessageSize: value as number })[
+              'maxMessageSize'
+            ],
+          ).to.equal(RQM_DEFAULT_MAX_MESSAGE_SIZE);
+        });
+      });
+
+      it('should keep Infinity', () => {
+        expect(
+          new ServerRMQ({ maxMessageSize: Infinity })['maxMessageSize'],
+        ).to.equal(Infinity);
+      });
     });
   });
   describe('setupChannel', () => {
