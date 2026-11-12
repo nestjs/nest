@@ -19,6 +19,10 @@ import {
 } from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil, isUndefined } from '../utils/shared.utils';
+import {
+  DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
+  OMITTED_ERRORS_MESSAGE,
+} from './validation-errors.constants';
 
 /**
  * @publicApi
@@ -43,9 +47,6 @@ export interface ValidationPipeOptions extends ValidatorOptions {
    */
   maxErrorMessagesLength?: number;
 }
-
-const DEFAULT_MAX_ERROR_MESSAGES_LENGTH = 1_000_000;
-const OMITTED_ERRORS_MESSAGE = 'Further validation errors were omitted';
 
 let classValidator: ValidatorPackage = {} as any;
 let classTransformer: TransformerPackage = {} as any;

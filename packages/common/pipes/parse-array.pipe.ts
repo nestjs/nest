@@ -8,6 +8,10 @@ import {
 } from '../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util';
 import { isNil, isString, isUndefined } from '../utils/shared.utils';
+import {
+  DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
+  OMITTED_ERRORS_MESSAGE,
+} from './validation-errors.constants';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
@@ -34,6 +38,17 @@ export interface ParseArrayPipeOptions extends Omit<
    * @default false
    */
   optional?: boolean;
+  /**
+   * Maximum total length, in characters, of the messages in an error response
+   * of the built-in exception factory. With `stopAtFirstError: false`, the
+   * messages of all the invalid items count together: once they reach it,
+   * the next invalid item ends the validation, the items after it are not
+   * validated, and a last message says that errors were left out. Set it to
+   * `Infinity` to lift the limit.
+   *
+   * @default 1_000_000
+   */
+  maxErrorMessagesLength?: number;
   /**
    * A factory function that returns an exception object to be thrown
    * if validation fails.
@@ -127,12 +142,26 @@ export class ParseArrayPipe implements PipeTransform {
         // strict compare to "false" to make sure
         // that this option is disabled by default
         const errors: string[] = [];
+        // The validation pipe applies "maxErrorMessagesLength" to the
+        // messages of one item, and a string splits into up to one item per
+        // character, so the messages of all the items count against it here.
+        // As in the validation pipe, a custom exception factory gets them all.
+        let remainingLength = this.options.exceptionFactory
+          ? Infinity
+          : (this.options.maxErrorMessagesLength ??
+            DEFAULT_MAX_ERROR_MESSAGES_LENGTH);
 
         const targetArray = value as Array<unknown>;
         for (let i = 0; i < targetArray.length; i++) {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
+            if (remainingLength <= 0) {
+              // The array is rejected either way, so the items that are left
+              // are not validated.
+              errors.push(OMITTED_ERRORS_MESSAGE);
+              break;
+            }
             let message: string[] | string;
             if (err.getResponse) {
               const response = err.getResponse();
@@ -149,12 +178,9 @@ export class ParseArrayPipe implements PipeTransform {
             // Appended in place, since `concat()` would copy all the errors so
             // far for each invalid item, and one at a time, since one item can
             // have more errors than `push(...message)` takes arguments.
-            if (Array.isArray(message)) {
-              for (const item of message) {
-                errors.push(item);
-              }
-            } else {
-              errors.push(message);
+            for (const item of Array.isArray(message) ? message : [message]) {
+              errors.push(item);
+              remainingLength -= isString(item) ? item.length : 1;
             }
           }
         }
