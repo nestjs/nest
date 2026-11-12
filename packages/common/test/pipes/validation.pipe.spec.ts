@@ -673,19 +673,44 @@ describe('ValidationPipe', () => {
             {},
             { transform: true },
             { forbidUnknownValues: true },
+            { whitelist: true },
+            { whitelist: true, transform: true },
             { whitelist: true, forbidNonWhitelisted: true },
           ]) {
             target = new ValidationPipe(options);
-            const err = await rejectionOf(
-              target.transform(Buffer.alloc(0), optionalMetadata),
-            );
-            expect(err.getResponse().message).to.deep.equal(rejection);
+            for (const binary of [Buffer.alloc(0), Buffer.from('{}')]) {
+              const err = await rejectionOf(
+                target.transform(binary, optionalMetadata),
+              );
+              expect(err.getResponse().message).to.deep.equal(rejection);
+            }
           }
-          target = new ValidationPipe();
+        });
+        it('should validate the rules of the class for a binary value', async () => {
+          target = new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+          });
           const err = await rejectionOf(
-            target.transform(Buffer.from('{}'), optionalMetadata),
+            target.transform(Buffer.from('abc'), metadata),
           );
-          expect(err.getResponse().message).to.deep.equal(rejection);
+          expect(err.getResponse().message).to.deep.equal([
+            'prop1 must be a string',
+            'prop2 must be a string',
+          ]);
+        });
+        it('should return a binary value as it is for a class without rules', async () => {
+          const binary = Buffer.from('abc');
+          for (const options of [{ whitelist: true }, { transform: true }]) {
+            target = new ValidationPipe(options);
+            expect(
+              await target.transform(binary, {
+                ...optionalMetadata,
+                metatype: TestModelNoValidation,
+              }),
+            ).to.deep.equal(binary);
+          }
+          expect(binary.toString()).to.equal('abc');
         });
         it('should throw an error for an empty array when non-whitelisted properties are forbidden', async () => {
           target = new ValidationPipe({
