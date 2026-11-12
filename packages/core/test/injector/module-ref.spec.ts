@@ -1,4 +1,4 @@
-import { Injectable, Scope, Type } from '@nestjs/common';
+import { Inject, Injectable, Scope, Type } from '@nestjs/common';
 import { RuntimeException } from '../../errors/exceptions';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -157,6 +157,108 @@ describe('ModuleRef', () => {
         await moduleRef.create(Foo);
 
         expect(getSpy.called).to.be.false;
+      });
+    });
+
+    describe('when the created class has dependencies', () => {
+      @Injectable()
+      class SingletonDep {}
+      @Injectable({ scope: Scope.TRANSIENT })
+      class NestedTransientDep {}
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientDep {
+        constructor(public nested: NestedTransientDep) {}
+      }
+
+      let singletonWrapper: InstanceWrapper;
+      let transientWrapper: InstanceWrapper;
+      let nestedTransientWrapper: InstanceWrapper;
+
+      beforeEach(() => {
+        container.addProvider(SingletonDep, module.token);
+        container.addProvider(TransientDep, module.token);
+        container.addProvider(NestedTransientDep, module.token);
+        singletonWrapper = module.providers.get(SingletonDep)!;
+        transientWrapper = module.providers.get(TransientDep)!;
+        nestedTransientWrapper = module.providers.get(NestedTransientDep)!;
+      });
+
+      afterEach(() => sinon.restore());
+
+      it('should not keep the transient instances it created', async () => {
+        @Injectable()
+        class Created {
+          constructor(public dep: TransientDep) {}
+        }
+
+        await moduleRef.create(Created);
+        await moduleRef.create(Created);
+
+        expect(transientWrapper.getStaticTransientInstances()).to.deep.equal(
+          [],
+        );
+        expect(
+          nestedTransientWrapper.getStaticTransientInstances(),
+        ).to.deep.equal([]);
+      });
+
+      it('should not keep the transient instances of injected properties', async () => {
+        @Injectable()
+        class Created {
+          @Inject(TransientDep)
+          public dep: TransientDep;
+        }
+
+        await moduleRef.create(Created);
+
+        expect(transientWrapper.getStaticTransientInstances()).to.deep.equal(
+          [],
+        );
+        expect(
+          nestedTransientWrapper.getStaticTransientInstances(),
+        ).to.deep.equal([]);
+      });
+
+      it('should not stay a dependency tree parent of its dependencies', async () => {
+        @Injectable()
+        class Created {
+          constructor(public dep: SingletonDep) {}
+        }
+        await moduleRef.create(Created);
+
+        const resetDependencyTreeState = sinon.spy(
+          InstanceWrapper.prototype as any,
+          'resetDependencyTreeState',
+        );
+        singletonWrapper.addEnhancerMetadata(new InstanceWrapper());
+
+        expect(resetDependencyTreeState.calledOnce).to.be.true;
+      });
+
+      it('should not stay a dependency tree parent of its dependencies when it rejects', async () => {
+        class UnregisteredDep {}
+        @Injectable()
+        class Created {
+          constructor(
+            public dep: SingletonDep,
+            _missing: UnregisteredDep,
+          ) {}
+        }
+        let error: unknown;
+        try {
+          await moduleRef.create(Created);
+        } catch (err) {
+          error = err;
+        }
+        expect(error).to.be.instanceOf(RuntimeException);
+
+        const resetDependencyTreeState = sinon.spy(
+          InstanceWrapper.prototype as any,
+          'resetDependencyTreeState',
+        );
+        singletonWrapper.addEnhancerMetadata(new InstanceWrapper());
+
+        expect(resetDependencyTreeState.calledOnce).to.be.true;
       });
     });
   });

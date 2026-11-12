@@ -220,6 +220,6 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           inquirer: wrapper,
         })
         .catch(reject);
-    });
+    }).finally(() => wrapper.detachFromDependencies());
   }
 }
