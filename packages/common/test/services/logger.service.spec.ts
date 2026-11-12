@@ -316,6 +316,23 @@ describe('Logger', () => {
         expect(json.message.errors[999]).to.equal('[Truncated]');
       });
 
+      it('should cut a record short when the repeated values are empty strings', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const tags = new Array(10_000).fill('');
+        const copies = new Array(1_000).fill(tags);
+
+        logger.log({ copies });
+
+        expect(processStdoutWriteStub.calledOnce).to.be.true;
+        const output: string = processStdoutWriteStub.firstCall.firstArg;
+        // In full, "copies" would be about 30 million characters long.
+        expect(output.length).to.be.lessThan(3_100_000);
+        const json = JSON.parse(output);
+        expect(json.message.copies).to.have.length(1_000);
+        expect(json.message.copies[0]).to.deep.equal(tags);
+        expect(json.message.copies[999]).to.equal('[Truncated]');
+      });
+
       it('should write a long record in full when nothing is repeated', () => {
         const logger = new ConsoleLogger({ json: true });
         const items = Array.from({ length: 50_000 }, (_, id) => ({ id }));

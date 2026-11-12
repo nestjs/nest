@@ -558,6 +558,9 @@ export class ConsoleLogger implements LoggerService {
       function (this: unknown, key: string, value: unknown) {
         value = replacer.call(this, key, value);
         length +=
+          // The separator. It also makes every value count: an empty string
+          // in an array would otherwise add nothing.
+          1 +
           (Array.isArray(this) ? 0 : key.length) +
           (isString(value) || typeof value === 'number'
             ? String(value).length
