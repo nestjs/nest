@@ -111,9 +111,31 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
 
   public async close() {
     this.isManuallyClosed = true;
+    if (this.getOptionsProp(this.options, 'gracefulShutdown')) {
+      await this.stopReceivingMessages();
+      await this.waitForHandlersInFlight(
+        this.getOptionsProp(this.options, 'gracePeriod'),
+      );
+    }
     this.pubClient && (await this.quitClient(this.pubClient));
     this.subClient && (await this.quitClient(this.subClient));
     this.pendingEventListeners = [];
+  }
+
+  // The connections stay open, as the handlers in flight publish their
+  // replies through them.
+  private async stopReceivingMessages() {
+    if (!this.subClient) {
+      return;
+    }
+    try {
+      await (this.options?.wildcards
+        ? this.subClient.punsubscribe()
+        : this.subClient.unsubscribe());
+    } catch {
+      // The command cannot be sent, so the subscriber is not connected and
+      // receives nothing either way.
+    }
   }
 
   // `quit()` rejects when the command cannot be sent (e.g., while

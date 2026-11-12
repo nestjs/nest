@@ -166,6 +166,116 @@ describe('ServerRedis', () => {
       expect(failingPub.disconnect).toHaveBeenCalledOnce();
       expect(sub.quit).toHaveBeenCalledOnce();
     });
+    it('should not unsubscribe nor wait without "gracefulShutdown"', async () => {
+      const subscriber = { quit: vi.fn(), unsubscribe: vi.fn() };
+      untypedServer.subClient = subscriber;
+      const waitSpy = vi.spyOn(untypedServer, 'waitForHandlersInFlight');
+
+      await server.close();
+
+      expect(subscriber.unsubscribe).not.toHaveBeenCalled();
+      expect(waitSpy).not.toHaveBeenCalled();
+    });
+
+    describe('with "gracefulShutdown"', () => {
+      function createGracefulServer(options: Record<string, unknown> = {}) {
+        const gracefulServer = new ServerRedis({
+          gracefulShutdown: true,
+          ...options,
+        });
+        const publisher = { quit: vi.fn() };
+        const subscriber = {
+          quit: vi.fn(),
+          unsubscribe: vi.fn().mockResolvedValue(undefined),
+          punsubscribe: vi.fn().mockResolvedValue(undefined),
+        };
+        Object.assign(gracefulServer, {
+          pubClient: publisher,
+          subClient: subscriber,
+        });
+        const waitSpy = vi
+          .spyOn(gracefulServer as any, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+        return { gracefulServer, publisher, subscriber, waitSpy };
+      }
+
+      it('should stop receiving messages, wait for the handlers in flight, then close', async () => {
+        const { gracefulServer, publisher, subscriber, waitSpy } =
+          createGracefulServer();
+
+        await gracefulServer.close();
+
+        const [unsubscribed] = subscriber.unsubscribe.mock.invocationCallOrder;
+        const [waited] = waitSpy.mock.invocationCallOrder;
+        const [publisherClosed] = publisher.quit.mock.invocationCallOrder;
+        const [subscriberClosed] = subscriber.quit.mock.invocationCallOrder;
+        expect(unsubscribed).toBeLessThan(waited);
+        expect(waited).toBeLessThan(publisherClosed);
+        expect(waited).toBeLessThan(subscriberClosed);
+        expect(subscriber.punsubscribe).not.toHaveBeenCalled();
+      });
+
+      it('should keep the connections open while handlers are in flight', async () => {
+        const { gracefulServer, publisher, subscriber, waitSpy } =
+          createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+
+        const closing = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(publisher.quit).not.toHaveBeenCalled();
+        expect(subscriber.quit).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+
+        expect(publisher.quit).toHaveBeenCalledOnce();
+        expect(subscriber.quit).toHaveBeenCalledOnce();
+      });
+
+      it('should unsubscribe from the patterns with "wildcards"', async () => {
+        const { gracefulServer, subscriber } = createGracefulServer({
+          wildcards: true,
+        });
+
+        await gracefulServer.close();
+
+        expect(subscriber.punsubscribe).toHaveBeenCalledOnce();
+        expect(subscriber.unsubscribe).not.toHaveBeenCalled();
+      });
+
+      it('should wait for "gracePeriod" at most', async () => {
+        const { gracefulServer, waitSpy } = createGracefulServer({
+          gracePeriod: 500,
+        });
+
+        await gracefulServer.close();
+
+        expect(waitSpy).toHaveBeenCalledExactlyOnceWith(500);
+      });
+
+      it('should still close when the subscriber cannot unsubscribe', async () => {
+        const { gracefulServer, publisher, subscriber } =
+          createGracefulServer();
+        subscriber.unsubscribe.mockRejectedValue(
+          new Error(
+            "Stream isn't writeable and enableOfflineQueue options is false",
+          ),
+        );
+
+        await expect(gracefulServer.close()).resolves.toBeUndefined();
+
+        expect(publisher.quit).toHaveBeenCalledOnce();
+        expect(subscriber.quit).toHaveBeenCalledOnce();
+      });
+
+      it('should close a server that never listened', async () => {
+        const neverListened = new ServerRedis({ gracefulShutdown: true });
+
+        await expect(neverListened.close()).resolves.toBeUndefined();
+      });
+    });
   });
   describe('start', () => {
     it('should pass a rejected subscription to the callback', async () => {

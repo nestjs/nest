@@ -211,6 +211,17 @@ export interface RedisOptions {
      * is logged. Set to 0 to disable.
      */
     maxWildcardChannelLength?: number;
+    /**
+     * When enabled, closing the server first stops receiving messages, then
+     * waits for the requests and events being handled, for "gracePeriod" at
+     * most, before it closes its connections. (default: false)
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled. (default: 10000)
+     */
+    gracePeriod?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
   } & IORedisOptions;
