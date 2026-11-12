@@ -157,10 +157,14 @@ describe('ClientRedis', () => {
         expect(callback).toHaveBeenCalledWith({ err: error });
         expect(publishSpy).not.toHaveBeenCalled();
         expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].has(`${pattern}.reply`)).toBe(
+          false,
+        );
+        expect(client['pendingSubscriptions'].size).toBe(0);
       });
     });
     describe('when disposed before the subscription is confirmed', () => {
-      it('should not publish, count the subscription, nor unsubscribe', () => {
+      it('should not publish and give the subscription up again', () => {
         client['subscriptionsCount'].clear();
         client['routingMap'].clear();
         let confirmSubscription: () => void = () => {};
@@ -178,9 +182,104 @@ describe('ClientRedis', () => {
         expect(client['subscriptionsCount'].has(`${pattern}.reply`)).toBe(
           false,
         );
+        expect(client['pendingSubscriptions'].size).toBe(0);
+        expect(unsubscribeSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}.reply`,
+          expect.any(Function),
+        );
+        expect(callback).not.toHaveBeenCalled();
+      });
+    });
+    describe('when another request waits for the subscription', () => {
+      let confirmations: Array<() => void>;
+
+      beforeEach(() => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        confirmations = [];
+        subscribeSpy.mockImplementation((name, fn) => {
+          confirmations.push(() => fn());
+        });
+      });
+      afterEach(() => {
+        client['subscriptionsCount'].clear();
+        client['pendingSubscriptions'].clear();
+        client['routingMap'].clear();
+      });
+
+      it('should keep the channel subscribed when disposed before the confirmation', () => {
+        const dispose = client['publish'](msg, vi.fn());
+        client['publish'](msg, vi.fn());
+        dispose();
+        confirmations.forEach(confirm => confirm());
+
         expect(unsubscribeSpy).not.toHaveBeenCalled();
-        expect(callback).not.toHaveBeenCalled();
-        expect(callback).not.toHaveBeenCalled();
+        expect(publishSpy).toHaveBeenCalledOnce();
+        expect(client['subscriptionsCount'].get(`${pattern}.reply`)).toBe(1);
+      });
+      it('should keep the channel subscribed when disposed after the confirmation', () => {
+        const dispose = client['publish'](msg, vi.fn());
+        client['publish'](msg, vi.fn());
+        confirmations[0]();
+        dispose();
+        confirmations[1]();
+
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+        expect(publishSpy).toHaveBeenCalledTimes(2);
+        expect(client['subscriptionsCount'].get(`${pattern}.reply`)).toBe(1);
+      });
+      it('should not publish a request before its own subscription is confirmed', () => {
+        // Requests are not published on the connection that subscribes, so
+        // the reply could arrive before the subscription is in place
+        client['publish'](msg, vi.fn());
+        client['publish'](msg, vi.fn());
+
+        expect(subscribeSpy).toHaveBeenCalledTimes(2);
+        expect(publishSpy).not.toHaveBeenCalled();
+
+        confirmations.forEach(confirm => confirm());
+        client['publish'](msg, vi.fn());
+
+        expect(subscribeSpy).toHaveBeenCalledTimes(2);
+        expect(publishSpy).toHaveBeenCalledTimes(3);
+        expect(client['subscriptionsCount'].get(`${pattern}.reply`)).toBe(3);
+        expect(client['pendingSubscriptions'].size).toBe(0);
+      });
+      it('should subscribe again once the channel was given up', () => {
+        const dispose = client['publish'](msg, vi.fn());
+        dispose();
+        client['publish'](msg, vi.fn());
+        // The first confirmation is for the subscription that was given up
+        confirmations[0]();
+
+        expect(subscribeSpy).toHaveBeenCalledTimes(2);
+        expect(publishSpy).not.toHaveBeenCalled();
+
+        confirmations[1]();
+
+        expect(publishSpy).toHaveBeenCalledOnce();
+        expect(unsubscribeSpy).toHaveBeenCalledOnce();
+        expect(client['subscriptionsCount'].get(`${pattern}.reply`)).toBe(1);
+      });
+      it('should leave no channel behind when many requests are disposed before the confirmation', () => {
+        // Patterns may be built from request data, e.g. one per device
+        for (const device of ['a', 'b', 'c']) {
+          const dispose = client['publish'](
+            { pattern: `devices.${device}`, data: 'data' },
+            vi.fn(),
+          );
+          dispose();
+        }
+        confirmations.forEach(confirm => confirm());
+
+        expect(unsubscribeSpy.mock.calls.map(([channel]) => channel)).toEqual([
+          'devices.a.reply',
+          'devices.b.reply',
+          'devices.c.reply',
+        ]);
+        expect(client['subscriptionsCount'].size).toBe(0);
+        expect(client['pendingSubscriptions'].size).toBe(0);
+        expect(publishSpy).not.toHaveBeenCalled();
       });
     });
     describe('dispose callback', () => {

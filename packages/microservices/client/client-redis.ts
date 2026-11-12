@@ -30,6 +30,8 @@ type RedisOutputOptions = {
 export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
+  // The reply channels whose subscription Redis has not acknowledged yet
+  protected readonly pendingSubscriptions = new Set<string>();
   protected pubClient: Redis;
   protected subClient: Redis;
   protected connectionPromise: Promise<any> | null = null;
@@ -257,6 +259,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       }
     }
     this.subscriptionsCount.clear();
+    this.pendingSubscriptions.clear();
   }
 
   public getClientOptions(): Partial<RedisOptions['options']> {
@@ -368,19 +371,27 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    let undoBookkeeping = () => {};
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
       const responseChannel = this.getReplyPattern(pattern);
-      let subscriptionsCount =
-        this.subscriptionsCount.get(responseChannel) || 0;
-      let isPublished = false;
-      let isTornDown = false;
 
-      const undoBookkeeping = () => {
-        isTornDown = true;
-        isPublished = false;
+      // Counted right away rather than once published, as in ClientMqtt: a
+      // request that waits for Redis to acknowledge the subscription depends
+      // on it as well. Torn down meanwhile, it gives the subscription up, and
+      // a concurrent request that finishes first does not unsubscribe.
+      const subscriptionsCount =
+        this.subscriptionsCount.get(responseChannel) || 0;
+      this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
+      let isCounted = true;
+
+      undoBookkeeping = () => {
+        if (!isCounted) {
+          return;
+        }
+        isCounted = false;
         this.setSubscriptionsCount(
           responseChannel,
           (this.subscriptionsCount.get(responseChannel) || 1) - 1,
@@ -389,20 +400,17 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       };
 
       const publishPacket = () => {
-        if (isTornDown) {
+        if (!isCounted) {
           return;
         }
-        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
-        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
-        isPublished = true;
 
         try {
           this.pubClient.publish(
             this.getRequestPattern(pattern),
             JSON.stringify(serializedPacket),
             err => {
-              if (err && !isTornDown) {
+              if (err && isCounted) {
                 undoBookkeeping();
                 callback({ err });
               }
@@ -411,34 +419,52 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         } catch (err) {
           // The broker can acknowledge the subscription later, so this runs
           // outside the outer catch and has to undo its own work. Only the
-          // bookkeeping though: a concurrent request on this pattern may still
-          // be waiting for its own subscribe reply, so the broker subscription
-          // is left to self-heal, as in #17671.
+          // bookkeeping though, as in #17822: the next request on this
+          // pattern subscribes again.
           undoBookkeeping();
           callback({ err });
         }
       };
 
       const cleanup = () => {
-        isTornDown = true;
-        if (!isPublished) {
+        if (!isCounted) {
           return;
         }
-        isPublished = false;
+        isCounted = false;
+        // Sent on the connection that subscribes, so after the SUBSCRIBE of
+        // a request that is torn down before its acknowledgement
         this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
 
-      if (subscriptionsCount <= 0) {
-        this.subClient.subscribe(responseChannel, (err: any) =>
-          err ? callback({ err }) : publishPacket(),
-        );
+      // Requests are published on another connection than the one that
+      // subscribes, so a request that finds the channel still waiting for its
+      // acknowledgement subscribes as well rather than publishing right away,
+      // which the reply could overtake.
+      if (
+        subscriptionsCount <= 0 ||
+        this.pendingSubscriptions.has(responseChannel)
+      ) {
+        this.pendingSubscriptions.add(responseChannel);
+        this.subClient.subscribe(responseChannel, (err: any) => {
+          if (err) {
+            undoBookkeeping();
+            return callback({ err });
+          }
+          if (!isCounted) {
+            // Torn down meanwhile, which gave the subscription up
+            return;
+          }
+          this.pendingSubscriptions.delete(responseChannel);
+          publishPacket();
+        });
       } else {
         publishPacket();
       }
 
       return cleanup;
     } catch (err) {
+      undoBookkeeping();
       callback({ err });
       return () => {};
     }
@@ -475,6 +501,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       this.subscriptionsCount.set(channel, count);
     } else {
       this.subscriptionsCount.delete(channel);
+      this.pendingSubscriptions.delete(channel);
     }
   }
 }
