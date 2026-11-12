@@ -5,8 +5,10 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { EventEmitter } from 'events';
+import { Readable } from 'stream';
 import { lastValueFrom, of, throwError } from 'rxjs';
 import { FileStreamInterceptor } from '../../../multipart/interceptors/file-stream.interceptor.js';
+import { UPLOAD_DISCARDED_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
 import {
   createContext,
   createFakeRequest,
@@ -199,6 +201,87 @@ describe('FileStreamInterceptor', () => {
       expect(req.raw.unpipe).not.toHaveBeenCalled();
       reply.raw.emit('close');
       expect(req.raw.unpipe).toHaveBeenCalled();
+    });
+  });
+
+  describe('when the rest of the upload is discarded while the handler reads it', () => {
+    /** A request whose file is still arriving: its stream does not end. */
+    const createUploadingRequest = () => {
+      const req = createFakeRequest([]);
+      const stream = new Readable({ read() {} });
+      stream.push('first chunk');
+      // @fastify/multipart always listens for file stream errors.
+      stream.on('error', () => undefined);
+      req.parts = () =>
+        (async function* () {
+          yield {
+            type: 'file',
+            fieldname: 'upload',
+            filename: 'a.bin',
+            encoding: '7bit',
+            mimetype: 'application/octet-stream',
+            file: stream,
+          };
+        })();
+      return { req, stream };
+    };
+
+    it('should fail the stream once the response is sent', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const { req, stream } = createUploadingRequest();
+      const reply = createReply();
+      await target.intercept(createContext(req, reply), handler);
+      expect(stream.destroyed).toBe(false);
+
+      reply.raw.emit('close');
+      expect(stream.destroyed).toBe(true);
+      expect(stream.errored?.message).toBe(UPLOAD_DISCARDED_MESSAGE);
+      expect(req.raw.unpipe).toHaveBeenCalled();
+    });
+
+    it('should fail the stream before the result of the handler is sent', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const { req, stream } = createUploadingRequest();
+      const result$ = await target.intercept(
+        createContext(req, createReply()),
+        handler,
+      );
+      expect(await lastValueFrom(result$)).toBe('test');
+      expect(stream.errored?.message).toBe(UPLOAD_DISCARDED_MESSAGE);
+    });
+
+    it('should fail the stream at once when the response was sent already', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const { req, stream } = createUploadingRequest();
+      const reply = {
+        raw: Object.assign(new EventEmitter(), { writableFinished: true }),
+      };
+      await target.intercept(createContext(req, reply), handler);
+      expect(stream.errored?.message).toBe(UPLOAD_DISCARDED_MESSAGE);
+    });
+
+    it('should leave a stream that was read to its end', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const req = createFakeRequest([file('upload', 'streamed')]);
+      const reply = createReply();
+      await target.intercept(createContext(req, reply), handler);
+      const chunks: Buffer[] = [];
+      for await (const chunk of req.file.stream) {
+        chunks.push(chunk);
+      }
+      reply.raw.emit('close');
+      expect(req.file.stream.errored).toBeNull();
+      expect(Buffer.concat(chunks).toString()).toBe('streamed');
+    });
+
+    it('should leave the stream of a request that was destroyed', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const { req, stream } = createUploadingRequest();
+      const reply = createReply();
+      await target.intercept(createContext(req, reply), handler);
+      req.raw.destroy();
+      reply.raw.emit('close');
+      expect(stream.destroyed).toBe(false);
     });
   });
 });

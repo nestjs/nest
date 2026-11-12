@@ -18,6 +18,9 @@ import { createMultipartStreamInterceptor } from '../multipart/multipart-interce
  *   the upload first: otherwise, when the connection is not kept alive
  *   (`Connection: close`), Node.js closes it right after the response, and
  *   a client still uploading fails with EPIPE / ECONNRESET.
+ * - Once the rest of the upload is discarded, the stream errors for whoever
+ *   still reads it, e.g. a handler that is still running when a timeout
+ *   answers the request.
  * - A file in any other field fails the request with a 400.
  * - The file size is unknown up front, so `MaxFileSizeValidator` does not
  *   apply, and neither does `FileTypeValidator`'s magic-number check.

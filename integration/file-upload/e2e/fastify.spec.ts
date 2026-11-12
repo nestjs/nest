@@ -1,11 +1,15 @@
 import multipart from '@fastify/multipart';
 import {
   Body,
+  type CallHandler,
   Controller,
+  type ExecutionContext,
   type INestApplication,
   Module,
+  type NestInterceptor,
   Post,
   Req,
+  RequestTimeoutException,
   StreamableFile,
   UploadedFile,
   UseInterceptors,
@@ -22,14 +26,33 @@ import {
   MultipartModule,
   NoFilesInterceptor,
 } from '@nestjs/platform-fastify/multipart';
+import { once } from 'events';
 import { mkdtempSync, readdirSync, rmSync } from 'fs';
 import { Agent } from 'http';
+import type { AddressInfo } from 'net';
+import { connect } from 'net';
+import { throwError, timeout } from 'rxjs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import request from 'supertest';
 import { createApp, txt } from './utils.js';
 
 const uploadDir = mkdtempSync(join(tmpdir(), 'nest-upload-custom-'));
+
+/** Answers with a 408 when the route has not answered within a second. */
+class TimeoutInterceptor implements NestInterceptor {
+  intercept(_context: ExecutionContext, next: CallHandler) {
+    return next.handle().pipe(
+      timeout({
+        first: 1000,
+        with: () => throwError(() => new RequestTimeoutException()),
+      }),
+    );
+  }
+}
+
+/** How the handler of `/slow-stream` finished reading its upload. */
+const slowStreamOutcomes: string[] = [];
 
 @Controller()
 class FastifyUploadController {
@@ -81,6 +104,20 @@ class FastifyUploadController {
   )
   ignoreStream(@UploadedFile() file: any) {
     return { name: file.originalname };
+  }
+
+  @Post('slow-stream')
+  @UseInterceptors(TimeoutInterceptor, FileStreamInterceptor('upload'))
+  async slowStream(@UploadedFile() file: any) {
+    try {
+      for await (const _chunk of file.stream) {
+        // Reads it all, as a handler writing it to disk would.
+      }
+      slowStreamOutcomes.push('end');
+    } catch (err) {
+      slowStreamOutcomes.push(err.message);
+    }
+    return {};
   }
 
   @Post('echo')
@@ -221,6 +258,34 @@ describe('File upload (Fastify)', () => {
         .field('b', big, json as any);
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('JSON field values too large - b');
+    });
+
+    it('should fail the stream of a handler still reading it when a timeout answers', async () => {
+      slowStreamOutcomes.length = 0;
+      const { port } = app.getHttpServer().address() as AddressInfo;
+      const socket = connect(port, '127.0.0.1');
+      await once(socket, 'connect');
+      const boundary = '----nestboundary';
+      socket.write(
+        'POST /slow-stream HTTP/1.1\r\nHost: 127.0.0.1\r\n' +
+          `Content-Type: multipart/form-data; boundary=${boundary}\r\n` +
+          'Content-Length: 1000000\r\n\r\n' +
+          `--${boundary}\r\n` +
+          'Content-Disposition: form-data; name="upload"; filename="a.bin"\r\n' +
+          'Content-Type: application/octet-stream\r\n\r\npart',
+      );
+      try {
+        const [response] = await once(socket, 'data');
+        expect(String(response)).toMatch(/^HTTP\/1\.1 408 /);
+        // The client stays connected and sends nothing more.
+        await vi.waitFor(() =>
+          expect(slowStreamOutcomes).toEqual([
+            'The rest of the upload was discarded, as it had not been read when the request was answered',
+          ]),
+        );
+      } finally {
+        socket.destroy();
+      }
     });
 
     const upload = (i: number) => ({

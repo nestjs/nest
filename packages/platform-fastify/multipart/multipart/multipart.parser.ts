@@ -621,18 +621,18 @@ export async function processMultipart(
  * hands that file's stream to the route handler (`req.file.stream`). Text
  * fields sent before the file are in `req.body`; anything after it is not
  * parsed. As in `processMultipart()`, the gaps in the arrays of `req.body`
- * are closed.
+ * are closed. Returns that stream, or `undefined` when there is no such file.
  */
 export async function processStream(
   request: FastifyRequest,
   fieldName: string,
   options: MultipartOptions,
-): Promise<void> {
+): Promise<Readable | undefined> {
   const req = request as MultipartRequest;
   assertPluginRegistered(req);
   resetFiles(req);
   if (!req.isMultipart()) {
-    return;
+    return undefined;
   }
 
   const body = Object.create(null);
@@ -687,11 +687,12 @@ export async function processStream(
       setOnRequest(req, 'file', file);
       closeArrayGaps(body);
       // The iterator is left suspended: the handler now owns the stream.
-      return;
+      return stream;
     }
     closeArrayGaps(body);
   } catch (err) {
     await drainRequest(req.raw);
     throw transformException(err);
   }
+  return undefined;
 }

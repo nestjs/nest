@@ -24,6 +24,7 @@ import type {
 import {
   MISSING_PLUGIN_MESSAGE,
   PLUGIN_NOT_REGISTERED_AT_STARTUP_MESSAGE,
+  UPLOAD_DISCARDED_MESSAGE,
   WRONG_ADAPTER_MESSAGE,
 } from './multipart.constants.js';
 import {
@@ -249,7 +250,7 @@ export function createMultipartStreamInterceptor(
       const ctx = context.switchToHttp();
       const req = ctx.getRequest<FastifyRequest>();
       const reply = ctx.getResponse<FastifyReply>();
-      await processStream(req, fieldName, this.options);
+      const upload = await processStream(req, fieldName, this.options);
       // Whatever the handler leaves unread is discarded before the response
       // is sent, as multer does: responding while the client is still
       // uploading makes Node.js close the connection under it (EPIPE /
@@ -258,9 +259,30 @@ export function createMultipartStreamInterceptor(
       // response is the exception, as it may be the upload itself, which
       // only drains while the response is sent; what it leaves unread is
       // discarded once the response is out.
-      reply.raw.once('close', () => void drainRequest(req.raw));
+      //
+      // Discarding detaches the parser from the request, so the stream the
+      // handler was given would neither end nor fail any more: it is failed
+      // for whoever still reads it, e.g. a handler that a timeout bound
+      // earlier answered for, which would otherwise wait for good with the
+      // file it writes still open. A request that was read to its end or
+      // destroyed is left to the parser, which ends or fails the stream
+      // itself, with the actual reason.
+      const discardUpload = () => {
+        const isDiscarding = !req.raw.readableEnded && !req.raw.destroyed;
+        if (upload && !upload.readableEnded && isDiscarding) {
+          upload.destroy(new Error(UPLOAD_DISCARDED_MESSAGE));
+        }
+        return drainRequest(req.raw);
+      };
+      if (reply.raw.writableFinished || reply.raw.destroyed) {
+        // Answered while the body was being parsed (e.g. by Fastify's
+        // `handlerTimeout`): 'close' may have been emitted already.
+        void discardUpload();
+      } else {
+        reply.raw.once('close', () => void discardUpload());
+      }
       const drainBefore = <T>(result: T) =>
-        from(drainRequest(req.raw).then(() => result));
+        from(discardUpload().then(() => result));
       return next.handle().pipe(
         concatMap(result =>
           result instanceof StreamableFile ? [result] : drainBefore(result),

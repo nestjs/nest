@@ -107,6 +107,9 @@ export const PLUGIN_NOT_REGISTERED_AT_STARTUP_MESSAGE =
   'which was not registered before the Fastify instance started. ' +
   'Register it at startup: `new FastifyAdapter({ multipart: true })`, or `await app.register(multipart)`.';
 
+export const UPLOAD_DISCARDED_MESSAGE =
+  'The rest of the upload was discarded, as it had not been read when the request was answered';
+
 export const WRONG_ADAPTER_MESSAGE =
   'File upload interceptors from "@nestjs/platform-fastify/multipart" only work with the FastifyAdapter. ' +
   'With the ExpressAdapter, import them from "@nestjs/platform-express" instead.';
