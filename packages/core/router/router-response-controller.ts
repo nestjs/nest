@@ -617,8 +617,14 @@ export class RouterResponseController {
           });
 
           let pendingDataLength = 0;
+          // A limit that is not a number (e.g. NaN from
+          // "Number(process.env.UNSET)") gets the default, as a missing one
+          // does: no check below trips for NaN.
           const maxPendingDataLength =
-            options?.maxPendingDataLength ?? DEFAULT_MAX_PENDING_DATA_LENGTH;
+            options?.maxPendingDataLength == null ||
+            isNaN(options.maxPendingDataLength)
+              ? DEFAULT_MAX_PENDING_DATA_LENGTH
+              : options.maxPendingDataLength;
           // Events wait in concatMapWrites() while the client is not reading.
           // Past a limit, the connection is dropped as if the client had
           // disconnected, rather than holding events for a client that may

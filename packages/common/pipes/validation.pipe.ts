@@ -28,8 +28,8 @@ import {
 } from '../utils/shared.utils.js';
 import { stripProtoKeys } from '../utils/strip-proto-keys.util.js';
 import {
-  DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
   OMITTED_ERRORS_MESSAGE,
+  resolveMaxErrorMessagesLength,
 } from './validation-errors.constants.js';
 
 /**
@@ -132,8 +132,9 @@ export class ValidationPipe implements PipeTransform {
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
     this.errorFormat = errorFormat || 'list';
-    this.maxErrorMessagesLength =
-      maxErrorMessagesLength ?? DEFAULT_MAX_ERROR_MESSAGES_LENGTH;
+    this.maxErrorMessagesLength = resolveMaxErrorMessagesLength(
+      maxErrorMessagesLength,
+    );
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
     pendingClassValidator = this.loadValidator(validatorPackage);

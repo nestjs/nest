@@ -10,8 +10,8 @@ import { HttpErrorByCode } from '../utils/http-error-by-code.util.js';
 import { withoutArrayGaps } from '../utils/close-array-gaps.util.js';
 import { isNil, isString, isUndefined } from '../utils/shared.utils.js';
 import {
-  DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
   OMITTED_ERRORS_MESSAGE,
+  resolveMaxErrorMessagesLength,
 } from './validation-errors.constants.js';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe.js';
 
@@ -154,8 +154,7 @@ export class ParseArrayPipe implements PipeTransform {
         // As in the validation pipe, a custom exception factory gets them all.
         let remainingLength = this.options.exceptionFactory
           ? Infinity
-          : (this.options.maxErrorMessagesLength ??
-            DEFAULT_MAX_ERROR_MESSAGES_LENGTH);
+          : resolveMaxErrorMessagesLength(this.options.maxErrorMessagesLength);
 
         const targetArray = Array.from(value as Array<unknown>);
         for (let i = 0; i < targetArray.length; i++) {

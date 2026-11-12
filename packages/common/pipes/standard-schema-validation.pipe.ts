@@ -13,8 +13,8 @@ import {
 import { isObject } from '../utils/shared.utils.js';
 import { stripProtoKeys } from '../utils/strip-proto-keys.util.js';
 import {
-  DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
   OMITTED_ERRORS_MESSAGE,
+  resolveMaxErrorMessagesLength,
 } from './validation-errors.constants.js';
 
 /**
@@ -99,8 +99,9 @@ export class StandardSchemaValidationPipe implements PipeTransform {
     this.isTransformEnabled = transform;
     this.validateCustomDecorators = validateCustomDecorators;
     this.validateOptions = validateOptions;
-    this.maxErrorMessagesLength =
-      maxErrorMessagesLength ?? DEFAULT_MAX_ERROR_MESSAGES_LENGTH;
+    this.maxErrorMessagesLength = resolveMaxErrorMessagesLength(
+      maxErrorMessagesLength,
+    );
 
     this.exceptionFactory =
       exceptionFactory ||

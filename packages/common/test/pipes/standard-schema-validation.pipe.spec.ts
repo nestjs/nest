@@ -316,6 +316,14 @@ describe('StandardSchemaValidationPipe', () => {
         return (error.getResponse() as { message: string[] }).message;
       };
 
+      it('should use the default limit for a value that is not a number', () => {
+        const target = new StandardSchemaValidationPipe({
+          maxErrorMessagesLength: NaN,
+        });
+
+        expect(target['maxErrorMessagesLength']).toBe(1_000_000);
+      });
+
       it('should leave out the messages past the limit and say so', async () => {
         const target = new StandardSchemaValidationPipe({
           maxErrorMessagesLength: 30,

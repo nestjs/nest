@@ -1787,6 +1787,26 @@ data: test
         request.destroy();
       });
 
+      it('should use the default limit for a "maxPendingDataLength" that is not a number', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          { maxPendingDataLength: NaN },
+        );
+        // Dropped under the default limit
+        await emitOnSeparateTurns(producer, 128);
+
+        expect(response.destroyed).toBe(true);
+        await lifecycle;
+        expect(producer.observed).toBe(false);
+        request.destroy();
+      });
+
       it.each([0, Infinity])(
         'should keep the connection when the route lifts the limit with %s',
         async maxPendingDataLength => {
