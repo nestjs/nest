@@ -21,6 +21,14 @@ export interface ExcludeRouteMetadata {
   exactPathRegex?: RegExp;
 
   /**
+   * Set when the router does not serve the route with a parameter longer
+   * than `maxLength` (see `RouteMatchingOptions.maxParamLength`): `groups`
+   * are the capture groups of the regular expressions that hold a parameter
+   * (`:id`), which have the `d` flag, so that a match gives their position.
+   */
+  paramLimit?: { maxLength: number; groups: number[] };
+
+  /**
    * HTTP request method (e.g., GET, POST).
    */
   requestMethod: RequestMethod;

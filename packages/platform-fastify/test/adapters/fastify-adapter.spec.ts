@@ -40,6 +40,7 @@ describe('FastifyAdapter', () => {
           caseSensitive: true,
           ignoreTrailingSlash: false,
           removesTrailingSlash: true,
+          maxParamLength: 100,
         },
       },
       {
@@ -52,6 +53,7 @@ describe('FastifyAdapter', () => {
           caseSensitive: false,
           ignoreTrailingSlash: true,
           removesTrailingSlash: true,
+          maxParamLength: 100,
         },
       },
       {
@@ -65,6 +67,7 @@ describe('FastifyAdapter', () => {
           caseSensitive: false,
           ignoreTrailingSlash: true,
           removesTrailingSlash: true,
+          maxParamLength: 100,
         },
       },
       {
@@ -74,6 +77,7 @@ describe('FastifyAdapter', () => {
           caseSensitive: true,
           ignoreTrailingSlash: false,
           removesTrailingSlash: true,
+          maxParamLength: 100,
         },
       },
       {
@@ -86,6 +90,32 @@ describe('FastifyAdapter', () => {
           caseSensitive: false,
           ignoreTrailingSlash: true,
           removesTrailingSlash: true,
+          maxParamLength: 100,
+        },
+      },
+      {
+        source: 'the "maxParamLength" of "routerOptions"',
+        createAdapter: () =>
+          new FastifyAdapter({
+            maxParamLength: 50,
+            routerOptions: { maxParamLength: 200 },
+          }),
+        expected: {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          removesTrailingSlash: true,
+          maxParamLength: 200,
+        },
+      },
+      {
+        source: 'the top-level "maxParamLength" of an instance',
+        createAdapter: () =>
+          new FastifyAdapter(fastify({ maxParamLength: 50 })),
+        expected: {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          removesTrailingSlash: true,
+          maxParamLength: 50,
         },
       },
     ]) {

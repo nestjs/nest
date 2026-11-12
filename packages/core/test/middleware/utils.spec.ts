@@ -320,6 +320,53 @@ describe('middleware utils', () => {
           .true;
       });
     });
+    describe('when the router limits the length of a parameter', () => {
+      const isExcluded = (exclusion: string, url: string) => {
+        (adapter.getRequestUrl as sinon.SinonStub).callsFake(() => url);
+        const options = {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          maxParamLength: 10,
+        };
+        return isMiddlewareRouteExcluded(
+          {},
+          mapToExcludeRoute([exclusion], options),
+          adapter,
+          options,
+        );
+      };
+
+      it('should not exclude a request whose parameter is longer', () => {
+        expect(isExcluded('docs/:page', `/docs/${'a'.repeat(10)}`)).to.be.true;
+        expect(isExcluded('docs/:page', `/docs/${'a'.repeat(11)}`)).to.be.false;
+        expect(isExcluded('docs/:id/raw', `/docs/${'a'.repeat(11)}/raw`)).to.be
+          .false;
+      });
+
+      it('should measure the decoded value, as the router does', () => {
+        expect(isExcluded('docs/:page', `/docs/${'%41'.repeat(10)}`)).to.be
+          .true;
+        expect(isExcluded('docs/:page', `/docs/${'%41'.repeat(11)}`)).to.be
+          .false;
+        expect(isExcluded('docs/:page', '/docs/%E0%A4%A')).to.be.false;
+      });
+
+      it('should count the parameters of one segment together', () => {
+        expect(isExcluded('range/:from-:to', '/range/aaaaa-bbbbb')).to.be.true;
+        expect(isExcluded('range/:from-:to', '/range/aaaaaa-bbbbb')).to.be
+          .false;
+        expect(isExcluded('range/:from/:to', `/range/${'a'.repeat(10)}/bbbbb`))
+          .to.be.true;
+      });
+
+      it('should not limit wildcards or optional parameters left out', () => {
+        expect(isExcluded('docs/{*path}', `/docs/${'a'.repeat(50)}`)).to.be
+          .true;
+        expect(isExcluded('docs{/:page}', '/docs')).to.be.true;
+        expect(isExcluded('docs{/:page}', `/docs/${'a'.repeat(11)}`)).to.be
+          .false;
+      });
+    });
     describe('when the router serves "/x/" with the first route that matches it', () => {
       const matchingOptions = {
         caseSensitive: true,

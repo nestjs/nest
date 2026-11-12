@@ -130,15 +130,38 @@ class ReportsController {
   }
 }
 
+@Controller('docs')
+class DocsController {
+  @Get(':page')
+  findOne() {
+    return RETURN_VALUE;
+  }
+
+  @Get('*')
+  findAll() {
+    return RETURN_VALUE;
+  }
+}
+
 @Module({
-  controllers: [UsersController, FilesController, ReportsController],
+  controllers: [
+    UsersController,
+    FilesController,
+    ReportsController,
+    DocsController,
+  ],
 })
 class RouteMatchingModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
-      .exclude('users/login', 'files/public', 'reports')
-      .forRoutes(UsersController, FilesController, ReportsController);
+      .exclude('users/login', 'files/public', 'reports', 'docs/:page')
+      .forRoutes(
+        UsersController,
+        FilesController,
+        ReportsController,
+        DocsController,
+      );
   }
 }
 
@@ -260,6 +283,21 @@ describe('Exclude middleware (fastify) - route matching', () => {
         .expect(200, MIDDLEWARE_VALUE);
     });
 
+    it(`should exclude "/docs/:page" endpoint for a parameter of 100 characters`, () => {
+      return request(app.getHttpServer())
+        .get(`/docs/${'a'.repeat(100)}`)
+        .expect(200, RETURN_VALUE);
+    });
+
+    it(`should not exclude a longer "/docs/:page" parameter, which the router serves with "/docs/*"`, async () => {
+      await request(app.getHttpServer())
+        .get(`/docs/${'a'.repeat(101)}`)
+        .expect(200, MIDDLEWARE_VALUE);
+      await request(app.getHttpServer())
+        .get(`/docs/internal${'%2F.'.repeat(50)}`)
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+
     it(`should not exclude "/files/public/", which the router serves with "/files/*"`, () => {
       return request(app.getHttpServer())
         .get('/files/public/')
@@ -278,6 +316,24 @@ describe('Exclude middleware (fastify) - route matching', () => {
       return request(app.getHttpServer())
         .get('/users/LOGIN')
         .expect(200, RETURN_VALUE);
+    });
+  });
+
+  describe('when the router matches longer parameters', () => {
+    beforeEach(() =>
+      createApp(new FastifyAdapter({ routerOptions: { maxParamLength: 200 } })),
+    );
+
+    it(`should exclude "/docs/:page" endpoint for a parameter of 200 characters`, () => {
+      return request(app.getHttpServer())
+        .get(`/docs/${'a'.repeat(200)}`)
+        .expect(200, RETURN_VALUE);
+    });
+
+    it(`should not exclude a longer "/docs/:page" parameter, which the router serves with "/docs/*"`, () => {
+      return request(app.getHttpServer())
+        .get(`/docs/${'a'.repeat(201)}`)
+        .expect(200, MIDDLEWARE_VALUE);
     });
   });
 
