@@ -377,6 +377,67 @@ describe('ServerKafka', () => {
         await server.getMessageHandler()(null!);
         expect(handleMessageStub).toHaveBeenCalled();
       });
+
+      it('should reject with what "handleMessage" rejects with', async () => {
+        const error = new Error('handler failed');
+        vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+
+        await expect(server.getMessageHandler()(null!)).rejects.toBe(error);
+      });
+
+      it('should reject with a "KafkaRetriableException" as it is', async () => {
+        const error = new KafkaRetriableException('retriable');
+        vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+
+        await expect(server.getMessageHandler()(null!)).rejects.toBe(error);
+      });
+
+      it('should reject with what is not an error as it is', async () => {
+        const error = { status: 'error', message: 'Internal server error' };
+        vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+
+        await expect(server.getMessageHandler()(null!)).rejects.toBe(error);
+      });
+
+      // kafkajs does not retry these, and leaves the consumer stopped
+      it.each([TypeError, RangeError, ReferenceError, SyntaxError])(
+        'should reject with an error kafkajs retries when "handleMessage" rejects with a %o',
+        async ErrorType => {
+          const error = new ErrorType('handler failed');
+          vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+
+          const rejection = await server
+            .getMessageHandler()(null!)
+            .catch(err => err);
+
+          expect(rejection).toBeInstanceOf(Error);
+          expect(rejection.name).toBe('Error');
+          expect(rejection.message).toBe('handler failed');
+          expect(rejection.stack).toBe(error.stack);
+          expect(rejection.cause).toBe(error);
+        },
+      );
+
+      it('should reject with an error kafkajs retries when an event handler fails with a TypeError', async () => {
+        // What a filter written for HTTP throws when given the RPC context
+        const error = new TypeError('response.status is not a function');
+        untypedServer.messageHandlers = objectToMap({
+          [topic]: Object.assign(
+            async () => {
+              throw error;
+            },
+            { isEventHandler: true },
+          ),
+        });
+
+        const rejection = await server
+          .getMessageHandler()(eventPayload)
+          .catch(err => err);
+
+        expect(rejection.name).toBe('Error');
+        expect(rejection.message).toBe(error.message);
+        expect(rejection.cause).toBe(error);
+      });
     });
   });
 

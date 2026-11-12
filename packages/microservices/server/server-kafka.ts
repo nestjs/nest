@@ -48,6 +48,14 @@ import { isNil, isString } from '@nestjs/common/internal';
 
 // Topic names the broker accepts
 const KAFKA_TOPIC_NAME_REGEX = /^[a-zA-Z0-9._-]{1,249}$/;
+// The errors kafkajs tells by their name and never retries: a message handler
+// that rejects with one of them stops the consumer, which is not restarted
+const KAFKA_UNRECOVERABLE_ERRORS = [
+  'RangeError',
+  'ReferenceError',
+  'SyntaxError',
+  'TypeError',
+];
 
 /**
  * @publicApi
@@ -314,7 +322,35 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public getMessageHandler() {
-    return async (payload: EachMessagePayload) => this.handleMessage(payload);
+    return async (payload: EachMessagePayload) => {
+      try {
+        return await this.handleMessage(payload);
+      } catch (err) {
+        throw this.toRetriableError(err);
+      }
+    };
+  }
+
+  /**
+   * Returns what the `eachMessage` callback rejects with when handling a
+   * message failed with `err`.
+   *
+   * kafkajs delivers a message again when its handler rejects, and restarts
+   * the consumer once the retries are exhausted, except for the errors it
+   * takes for a bug in its own code: one message failing with one of those
+   * would leave the consumer stopped, for every topic. An exception filter
+   * that throws (as one written for HTTP does when given an RPC context) or
+   * that passes on the handler's own error rejects with such an error, so it
+   * reaches kafkajs as a plain error with the same message and stack, and the
+   * original error as its cause.
+   */
+  private toRetriableError(err: any): unknown {
+    if (!KAFKA_UNRECOVERABLE_ERRORS.includes(err?.name)) {
+      return err;
+    }
+    const retriableError = new Error(err.message, { cause: err });
+    retriableError.stack = err.stack;
+    return retriableError;
   }
 
   public getPublisher(
