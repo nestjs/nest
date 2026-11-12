@@ -422,6 +422,46 @@ describe('ClientRedis', () => {
         expect(callback).not.toHaveBeenCalled();
       });
     });
+    describe('response that no request waits for', () => {
+      let redisClient: ClientRedis;
+      let logDebug: ReturnType<typeof vi.spyOn>;
+      let pendingCallback: ReturnType<typeof vi.fn>;
+      let subscription: ReturnType<ClientRedis['createResponseCallback']>;
+
+      beforeEach(() => {
+        redisClient = new ClientRedis({});
+        logDebug = vi
+          .spyOn(Reflect.get(redisClient, 'logger'), 'debug')
+          .mockImplementation(() => {});
+        pendingCallback = vi.fn();
+        Reflect.get(redisClient, 'routingMap').set('1', pendingCallback);
+        subscription = redisClient.createResponseCallback();
+      });
+
+      it('should log its id and drop it', async () => {
+        await subscription('channel', JSON.stringify({ id: '2' }));
+
+        expect(logDebug).toHaveBeenCalledWith(
+          'No matching callback found for Redis response packet with id: 2',
+        );
+        expect(pendingCallback).not.toHaveBeenCalled();
+      });
+
+      it.each([
+        ['an object that cannot be converted to a string', '{"toString":1}'],
+        ['a list of such objects', '[{"toString":1}]'],
+      ])('should drop it when its id is %s', async (_, id) => {
+        // Whoever publishes on the reply channel chooses the id
+        await expect(
+          subscription('channel', `{"id":${id}}`),
+        ).resolves.toBeUndefined();
+
+        expect(logDebug).toHaveBeenCalledWith(
+          'No matching callback found for Redis response packet with id: (object)',
+        );
+        expect(pendingCallback).not.toHaveBeenCalled();
+      });
+    });
     describe('custom binary format (not json)', () => {
       it('should use buffer directly without parsing it as json', async () => {
         const clientWithBuffers = new ClientRedis({ returnBuffers: true });
@@ -1027,6 +1067,29 @@ describe('ClientRedis', () => {
       };
       client.registerReadyListener(emitter as any);
       expect(callback.mock.calls[0][0]).toEqual('ready');
+    });
+    it('should log an error that the response listener rejects with', async () => {
+      // ioredis does not handle the promise its listeners return
+      const onSpy = vi.fn();
+      const client = new ClientRedis({});
+      const untypedClient = client as any;
+      const error = new Error('callback failed');
+      vi.spyOn(client, 'createResponseCallback').mockReturnValue(() =>
+        Promise.reject(error),
+      );
+      const logError = vi
+        .spyOn(untypedClient.logger, 'error')
+        .mockImplementation(() => {});
+      const emitter = { status: 'ready', on: onSpy };
+      untypedClient.pubClient = { status: 'ready' };
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      onSpy.mock.calls[0][1]();
+      const listener = onSpy.mock.calls[1][1];
+
+      await expect(listener('channel', '{}')).resolves.toBeUndefined();
+      expect(logError).toHaveBeenCalledWith(error);
     });
     it('should register "message" event when returnBuffers is not set', () => {
       const onSpy = vi.fn();
