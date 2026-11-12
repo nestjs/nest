@@ -1,4 +1,4 @@
-import { Catch, Injectable } from '@nestjs/common';
+import { Catch, Injectable, Logger } from '@nestjs/common';
 import { GUARDS_METADATA } from '../../common/constants.js';
 import { Controller } from '../../common/decorators/core/controller.decorator.js';
 import { UseGuards } from '../../common/decorators/core/use-guards.decorator.js';
@@ -865,6 +865,27 @@ describe('DependenciesScanner', () => {
         expect(() => scanner.applyApplicationProviders()).toThrow(
           /APP_GUARD provider \(useFactory\) gives an object/,
         );
+      });
+      it('should only warn for an exception filter, and apply it as before', () => {
+        class HttpExceptionFilter {
+          catch() {}
+        }
+        mockInstance(HttpExceptionFilter);
+        untypedScanner.applicationProvidersApplyMap[0].type = APP_FILTER;
+        const applySpy = vi.fn();
+        vi.spyOn(scanner, 'getApplyProvidersMap').mockImplementation(() => ({
+          [APP_FILTER]: applySpy,
+        }));
+        const warn = vi
+          .spyOn(Logger.prototype, 'warn')
+          .mockImplementation(() => {});
+
+        expect(() => scanner.applyApplicationProviders()).not.toThrow();
+        expect(warn).toHaveBeenCalledOnce();
+        expect(warn.mock.calls[0][0]).toContain(
+          'The exception filter (APP_FILTER provider (useValue) gives class HttpExceptionFilter)',
+        );
+        expect(applySpy).toHaveBeenCalledWith(HttpExceptionFilter);
       });
     });
     describe('when a static provider has never been instantiated', () => {

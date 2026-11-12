@@ -1,14 +1,18 @@
 import {
+  ArgumentsHost,
   CanActivate,
+  Catch,
   Controller,
+  ExceptionFilter,
   Get,
   INestApplication,
   Injectable,
+  Logger,
   mixin,
   Type,
   UseGuards,
 } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { InvalidEnhancerException } from '@nestjs/core/errors/exceptions/invalid-enhancer.exception.js';
 import { Test } from '@nestjs/testing';
 
@@ -51,6 +55,13 @@ class OpenController {
   }
 }
 
+@Catch()
+class EverythingFilter implements ExceptionFilter {
+  catch(_exception: unknown, host: ArgumentsHost) {
+    host.switchToHttp().getResponse().status(418).end();
+  }
+}
+
 describe('Enhancers that are not enhancers', () => {
   let app: INestApplication | undefined;
 
@@ -76,6 +87,28 @@ describe('Enhancers that are not enhancers', () => {
         providers: [{ provide: APP_GUARD, useValue: RoleGuard('admin') }],
       }).compile(),
     ).rejects.toThrow(/APP_GUARD provider \(useValue\) gives class/);
+  });
+
+  it('should only warn when APP_FILTER gives a filter class instead of an instance', async () => {
+    const warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => {});
+    try {
+      const moduleRef = await Test.createTestingModule({
+        controllers: [OpenController],
+        providers: [{ provide: APP_FILTER, useValue: EverythingFilter }],
+      }).compile();
+      app = moduleRef.createNestApplication({ logger: false });
+      await app.init();
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'The exception filter (APP_FILTER provider (useValue) gives class EverythingFilter)',
+        ),
+      );
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('should throw when useGlobalGuards() is given a guard class', async () => {

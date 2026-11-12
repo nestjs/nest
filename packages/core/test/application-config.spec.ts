@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces/index.js';
 import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
@@ -68,8 +68,8 @@ describe('ApplicationConfig', () => {
   });
   describe('Filters', () => {
     it('should set global filters', () => {
-      const filters = ['test', 'test2'];
-      appConfig.useGlobalFilters(...(filters as any));
+      const filters = [{ catch: () => 1 }, { catch: () => 2 }];
+      appConfig.useGlobalFilters(...filters);
 
       expect(appConfig.getGlobalFilters()).toEqual(filters);
     });
@@ -134,6 +134,24 @@ describe('ApplicationConfig', () => {
       expect(() => appConfig.useGlobalInterceptors({} as any)).toThrow(
         /The interceptor \(an object\)/,
       );
+    });
+    it('should only warn for an exception filter', () => {
+      const warn = vi
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => {});
+      class HttpExceptionFilter {
+        catch() {}
+      }
+      try {
+        appConfig.useGlobalFilters(HttpExceptionFilter as any);
+        expect(warn).toHaveBeenCalledOnce();
+        expect(warn.mock.calls[0][0]).toContain(
+          'The exception filter (class HttpExceptionFilter)',
+        );
+        expect(appConfig.getGlobalFilters()).toEqual([HttpExceptionFilter]);
+      } finally {
+        warn.mockRestore();
+      }
     });
     it('should accept a class that has the method as a static', () => {
       class StaticGuard {
@@ -233,10 +251,11 @@ describe('ApplicationConfig', () => {
     });
 
     it('should accumulate global filters via useGlobalFilters and addGlobalFilter', () => {
-      appConfig.useGlobalFilters('f1' as any);
-      appConfig.addGlobalFilter('f2' as any);
+      const filters = [1, 2].map(() => ({ catch: () => null }));
+      appConfig.useGlobalFilters(filters[0]);
+      appConfig.addGlobalFilter(filters[1]);
 
-      expect(appConfig.getGlobalFilters()).toEqual(['f1', 'f2']);
+      expect(appConfig.getGlobalFilters()).toEqual(filters);
     });
 
     it('should accumulate global guards via useGlobalGuards and addGlobalGuard', () => {

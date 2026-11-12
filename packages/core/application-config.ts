@@ -10,7 +10,10 @@ import type {
   WebSocketAdapter,
 } from '@nestjs/common';
 import type { GlobalPrefixOptions } from '@nestjs/common/internal';
-import { assertEnhancer } from './helpers/assert-enhancer.js';
+import {
+  assertEnhancer,
+  warnOnInvalidFilter,
+} from './helpers/assert-enhancer.js';
 import type { CookieSigner } from './helpers/cookies/cookie-signer.js';
 import { InstanceWrapper } from './injector/instance-wrapper.js';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface.js';
@@ -80,6 +83,7 @@ export class ApplicationConfig {
   }
 
   public useGlobalFilters(...filters: ExceptionFilter[]) {
+    filters.forEach(item => item != null && warnOnInvalidFilter(item));
     this.globalFilters = this.globalFilters.concat(filters);
   }
 

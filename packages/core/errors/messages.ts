@@ -174,6 +174,12 @@ Potential solutions:
 - Call a factory that returns a ${kind} class before binding the class it returns.
 - Give app.useGlobal*() and the useValue or useFactory of an APP_* provider an instance, not a class, a promise or an array.`;
 
+export const INVALID_FILTER_MESSAGE = (description: string) =>
+  `The exception filter (${description}) doesn't provide the "catch" method, so it is skipped, and the exceptions it was meant to handle get the default response.
+
+Potential solution:
+- Give app.useGlobalFilters() and the useValue or useFactory of an APP_FILTER provider an instance, not a class, a promise or an array.`;
+
 export const INVALID_MIDDLEWARE_MESSAGE = (
   text: TemplateStringsArray,
   name: string,

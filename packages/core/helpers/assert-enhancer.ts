@@ -1,5 +1,7 @@
+import { Logger } from '@nestjs/common';
 import { isFunction, isObject } from '@nestjs/common/internal';
 import { InvalidEnhancerException } from '../errors/exceptions/invalid-enhancer.exception.js';
+import { INVALID_FILTER_MESSAGE } from '../errors/messages.js';
 
 export type EnhancerKind = 'guard' | 'interceptor' | 'pipe';
 
@@ -26,6 +28,32 @@ export function assertEnhancer(
     return;
   }
   throw new InvalidEnhancerException(kind, method, description);
+}
+
+/**
+ * Warns when the given value can't run as an exception filter. Unlike the
+ * other enhancers, such a filter is still skipped rather than rejected: the
+ * exceptions it was meant to handle get the default response, so no handler
+ * runs without a check it relies on.
+ *
+ * @param description what was bound, for the message (by default, the value)
+ */
+export function warnOnInvalidFilter(
+  filter: unknown,
+  description = describeEnhancer(filter),
+): void {
+  // A promise has a "catch" method too, but is never a filter
+  const isThenable = isFunction(
+    (filter as PromiseLike<unknown> | undefined)?.then,
+  );
+  if (
+    filter &&
+    !isThenable &&
+    isFunction((filter as Record<string, unknown>).catch)
+  ) {
+    return;
+  }
+  new Logger('ExceptionFilter').warn(INVALID_FILTER_MESSAGE(description));
 }
 
 export function describeEnhancer(value: unknown): string {

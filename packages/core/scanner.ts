@@ -19,6 +19,7 @@ import {
   assertEnhancer,
   describeEnhancer,
   type EnhancerKind,
+  warnOnInvalidFilter,
 } from './helpers/assert-enhancer.js';
 import { getParamsHost } from './helpers/class-ref-registry.js';
 import { getClassScope } from './helpers/get-class-scope.js';
@@ -794,17 +795,18 @@ export class DependenciesScanner {
           );
         }
         const instance = instanceWrapper.instance;
-        const kind = ENHANCER_KIND_BY_TOKEN[type as string];
         // A static factory that returns nothing on purpose is skipped
-        if (kind && !isNil(instance)) {
+        if (!isNil(instance)) {
           const provider = instanceWrapper.metatype
             ? this.describeEnhancerProvider(instanceWrapper)[1]
             : 'useValue';
-          assertEnhancer(
-            instance,
-            kind,
-            `${type as string} provider (${provider}) gives ${describeEnhancer(instance)}`,
-          );
+          const description = `${type as string} provider (${provider}) gives ${describeEnhancer(instance)}`;
+          const kind = ENHANCER_KIND_BY_TOKEN[type as string];
+          if (kind) {
+            assertEnhancer(instance, kind, description);
+          } else if (type === APP_FILTER) {
+            warnOnInvalidFilter(instance, description);
+          }
         }
         applyProvidersMap[type as string](instance);
       },
