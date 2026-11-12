@@ -6,6 +6,7 @@ import {
   RQM_DEFAULT_QUEUE,
 } from '../../constants';
 import { RmqContext } from '../../ctx-host';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import { MessageHandler } from '../../interfaces/message-handler.interface';
 import { ServerRMQ } from '../../server/server-rmq';
@@ -232,6 +233,61 @@ describe('ServerRMQ', () => {
           err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;
+    });
+
+    describe('when the id of a request is neither a number nor a short string', () => {
+      // The NO_MESSAGE_HANDLER reply carries a copy of the id
+      const withId = (id: unknown) => createMessage({ pattern, data: '', id });
+
+      (
+        [
+          ['a long string', 'a'.repeat(257)],
+          ['an array', [[['3']]]],
+          ['an object', { nested: {} }],
+        ] as Array<[string, unknown]>
+      ).forEach(([description, id]) => {
+        it(`should not answer a request for an unknown pattern whose id is ${description}`, async () => {
+          let error: unknown;
+          await server
+            .handleMessage(withId(id), '')
+            .catch(err => (error = err));
+          expect(error).to.be.instanceOf(InvalidPacketIdException);
+          expect(sendMessageStub.called).to.be.false;
+        });
+      });
+
+      it('should still negative acknowledge it when noAck option is false', async () => {
+        untypedServer.noAck = false;
+        const message = withId('a'.repeat(257));
+
+        let error: unknown;
+        await server.handleMessage(message, '').catch(err => (error = err));
+        expect(error).to.be.instanceOf(InvalidPacketIdException);
+        expect(channel.nack.calledWith(message, false, false)).to.be.true;
+        expect(sendMessageStub.called).to.be.false;
+      });
+
+      it('should answer a request for an unknown pattern whose id is at the limit', async () => {
+        await server.handleMessage(withId('a'.repeat(256)), '');
+
+        expect(
+          sendMessageStub.calledWith(
+            { id: 'a'.repeat(256), status: 'error', err: NO_MESSAGE_HANDLER },
+            undefined,
+            1,
+            sinon.match.instanceOf(RmqContext),
+          ),
+        ).to.be.true;
+      });
+
+      it('should still run the handler of a known pattern, whose replies do not carry the id', async () => {
+        const handler = sinon.stub().resolves('result');
+        untypedServer.messageHandlers = objectToMap({ [pattern]: handler });
+
+        await server.handleMessage(withId('a'.repeat(257)), '');
+
+        expect(handler.calledOnce).to.be.true;
+      });
     });
 
     describe('when the body exceeds "maxMessageSize"', () => {

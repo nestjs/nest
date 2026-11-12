@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaContext } from '../../ctx-host';
 import { KafkaHeaders } from '../../enums';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import {
   EachMessagePayload,
@@ -513,6 +514,83 @@ describe('ServerKafka', () => {
 
         expect(loggerErrorStub.calledOnce).to.be.true;
         expect(getPublisherSpy.called).to.be.false;
+      });
+    });
+
+    describe('when the correlation id is longer than a request id may be', () => {
+      const withCorrelationId = (
+        correlationIdHeader: string,
+      ): EachMessagePayload => ({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationIdHeader),
+          },
+        } as KafkaMessage,
+      });
+      let loggerErrorStub: sinon.SinonStub;
+      let getPublisher: sinon.SinonStub;
+
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+        getPublisher = server.getPublisher as sinon.SinonStub;
+      });
+
+      it('should log an error and not run the handler', async () => {
+        const handler = sinon.spy();
+        untypedServer.messageHandlers = objectToMap({ [topic]: handler });
+        const handleEventSpy = sinon.spy(server, 'handleEvent');
+
+        // A rejection would make kafkajs redeliver the message
+        expect(await server.handleMessage(withCorrelationId('a'.repeat(257))))
+          .to.be.undefined;
+
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(loggerErrorStub.firstCall.args[0]).to.include(
+          new InvalidPacketIdException(256).message,
+        );
+        expect(handler.called).to.be.false;
+        expect(handleEventSpy.called).to.be.false;
+        expect(getPublisher.called).to.be.false;
+      });
+
+      it('should not publish NO_MESSAGE_HANDLER', async () => {
+        await server.handleMessage(withCorrelationId('a'.repeat(257)));
+
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(getPublisher.called).to.be.false;
+        expect(getPublisherSpy.called).to.be.false;
+      });
+
+      it('should answer a request whose correlation id is at the limit', async () => {
+        const handler = sinon.spy();
+        untypedServer.messageHandlers = objectToMap({ [topic]: handler });
+
+        await server.handleMessage(withCorrelationId('a'.repeat(256)));
+
+        expect(loggerErrorStub.called).to.be.false;
+        expect(handler.called).to.be.true;
+        expect(
+          getPublisher.calledWith(
+            replyTopic,
+            replyPartition,
+            'a'.repeat(256),
+            sinon.match.instanceOf(KafkaContext),
+          ),
+        ).to.be.true;
+      });
+
+      it('should still pass the message to an event handler', async () => {
+        const handler = Object.assign(sinon.spy(), { isEventHandler: true });
+        untypedServer.messageHandlers = objectToMap({ [topic]: handler });
+
+        await server.handleMessage(withCorrelationId('a'.repeat(257)));
+
+        expect(loggerErrorStub.called).to.be.false;
+        expect(handler.called).to.be.true;
+        expect(getPublisher.called).to.be.false;
       });
     });
 
