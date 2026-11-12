@@ -518,5 +518,39 @@ describe('ServerMqtt', () => {
         server.getHandlerByPattern('{ "role": "math", "cmd": "sum" }'),
       ).to.equal(handler);
     });
+    describe('when the topic of an object pattern also matches a wildcard filter', () => {
+      // A broker ACL that lets a peer publish on "+/telemetry/#" only
+      let telemetryHandler: sinon.SinonSpy;
+      let adminHandler: sinon.SinonSpy;
+
+      beforeEach(() => {
+        telemetryHandler = sinon.spy();
+        adminHandler = sinon.spy();
+        server.addHandler('+/admin/#', adminHandler);
+        server.addHandler('+/telemetry/#', telemetryHandler);
+      });
+
+      [
+        ['with its keys out of order', '{"b":"/telemetry/","a":"/admin/"}'],
+        [
+          'with escaped "/" characters',
+          '{"b":"/telemetry/","a":"\\u002fadmin\\u002f"}',
+        ],
+        ['with a duplicate key', '{"a":"/telemetry/","b":"/admin/","a":"x"}'],
+      ].forEach(([description, topic]) => {
+        it(`should match the topic ${description} as the broker delivered it`, () => {
+          expect(server.getHandlerByPattern(topic)).to.equal(telemetryHandler);
+        });
+      });
+
+      it('should still route the topic to the handler of its object pattern', () => {
+        const objectHandler = sinon.spy();
+        server.addHandler({ b: '/telemetry/', a: '/admin/' }, objectHandler);
+
+        expect(
+          server.getHandlerByPattern('{"b":"/telemetry/","a":"/admin/"}'),
+        ).to.equal(objectHandler);
+      });
+    });
   });
 });
