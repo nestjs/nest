@@ -2,7 +2,10 @@ import { iterate } from 'iterare';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
-import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import {
+  type InstancePerContext,
+  InstanceWrapper,
+} from '../injector/instance-wrapper.js';
 import {
   FILTER_CATCH_EXCEPTIONS,
   isEmpty,
@@ -56,7 +59,24 @@ export class BaseExceptionFilterContext extends ContextCreator {
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    return instanceHost && instanceHost.instance;
+    if (!instanceHost || !this.isInstantiated(instanceWrapper, instanceHost)) {
+      return null;
+    }
+    return instanceHost.instance;
+  }
+
+  /**
+   * A filter class that has not been instantiated in a context (or for an
+   * inquirer) is represented there by an object created from its prototype,
+   * e.g. a request-scoped filter of a controller that failed to resolve for
+   * the request. Its "catch()" would run without its constructor having been
+   * called, i.e. without its dependencies.
+   */
+  protected isInstantiated(
+    instanceWrapper: InstanceWrapper,
+    instanceHost: InstancePerContext<unknown>,
+  ): boolean {
+    return instanceWrapper.isNotMetatype || !!instanceHost.isConstructorCalled;
   }
 
   public getInstanceByMetatype(

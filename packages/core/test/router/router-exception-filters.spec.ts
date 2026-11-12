@@ -135,6 +135,37 @@ describe('RouterExceptionFilters', () => {
         );
       });
     });
+    describe('when a scoped filter has not been instantiated for the request', () => {
+      it('should leave it out', () => {
+        // e.g. behind a request-scoped middleware, which does not
+        // instantiate the global enhancers of controllers
+        const contextId = { id: 4 };
+        const placeholderWrapper = new InstanceWrapper({
+          metatype: ExceptionFilter,
+          scope: Scope.REQUEST,
+          instance: Object.create(ExceptionFilter.prototype),
+        });
+        const constructedWrapper = new InstanceWrapper({
+          metatype: ExceptionFilter,
+          scope: Scope.REQUEST,
+        });
+        const instance = new ExceptionFilter();
+        constructedWrapper.setInstanceByContextId(contextId, {
+          instance,
+          isResolved: true,
+          isConstructorCalled: true,
+        });
+        vi.spyOn(applicationConfig, 'getGlobalFilters').mockReturnValue([]);
+        vi.spyOn(
+          applicationConfig,
+          'getGlobalRequestFilters',
+        ).mockImplementation(() => [placeholderWrapper, constructedWrapper]);
+
+        expect(exceptionFilter.getGlobalMetadata(contextId)).toEqual([
+          instance,
+        ]);
+      });
+    });
     describe('when a ContextIdStrategy is applied', () => {
       it('should look up durable filters with the durable context id', () => {
         const tenantContextId = { id: 2 };

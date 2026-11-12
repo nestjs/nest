@@ -82,6 +82,7 @@ describe('ExternalExceptionFilterContext', () => {
       const AnonymousFilter = (() => class {})();
       const wrapper = {
         instance: new ClassWithNoMetadata(),
+        isConstructorCalled: true,
         getInstanceByContextId: () => wrapper,
       };
       const container = new NestContainer();
