@@ -378,6 +378,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         this.logger.warn(RMQ_NO_MESSAGE_HANDLER`${pattern}`);
         this.channel!.nack(rmqContext.getMessage() as Message, false, false);
       }
+      // The sender chooses the id, which this reply carries
+      this.assertValidPacketId((packet as IncomingRequest).id);
       const status = 'error';
       const noHandlerPacket = {
         id: (packet as IncomingRequest).id,

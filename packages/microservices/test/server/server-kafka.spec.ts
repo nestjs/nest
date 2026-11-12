@@ -3,6 +3,7 @@ import { concat, EMPTY, of, Subject, throwError } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
+import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { KafkaRetriableException } from '../../exceptions/index.js';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
@@ -724,6 +725,83 @@ describe('ServerKafka', () => {
 
         expect(loggerErrorSpy).toHaveBeenCalledOnce();
         expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when the correlation id is longer than a request id may be', () => {
+      const withCorrelationId = (
+        correlationIdHeader: string,
+      ): EachMessagePayload => ({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationIdHeader),
+          },
+        } as KafkaMessage,
+      });
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+      let getPublisher: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+        getPublisher = vi.spyOn(server, 'getPublisher');
+      });
+
+      it('should log an error and not run the handler', async () => {
+        const handler = vi.fn();
+        untypedServer.messageHandlers = objectToMap({ [topic]: handler });
+        const handleEventSpy = vi.spyOn(server, 'handleEvent');
+
+        // A rejection would make kafkajs redeliver the message
+        await expect(
+          server.handleMessage(withCorrelationId('a'.repeat(257))),
+        ).resolves.toBeUndefined();
+
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringContaining(new InvalidPacketIdException(256).message),
+        );
+        expect(handler).not.toHaveBeenCalled();
+        expect(handleEventSpy).not.toHaveBeenCalled();
+        expect(getPublisher).not.toHaveBeenCalled();
+      });
+
+      it('should not publish NO_MESSAGE_HANDLER', async () => {
+        await server.handleMessage(withCorrelationId('a'.repeat(257)));
+
+        expect(loggerErrorSpy).toHaveBeenCalledOnce();
+        expect(getPublisher).not.toHaveBeenCalled();
+        expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+
+      it('should answer a request whose correlation id is at the limit', async () => {
+        const handler = vi.fn();
+        untypedServer.messageHandlers = objectToMap({ [topic]: handler });
+
+        await server.handleMessage(withCorrelationId('a'.repeat(256)));
+
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+        expect(handler).toHaveBeenCalled();
+        expect(getPublisher).toHaveBeenCalledWith(
+          replyTopic,
+          replyPartition,
+          'a'.repeat(256),
+          expect.any(KafkaContext),
+        );
+      });
+
+      it('should still pass the message to an event handler', async () => {
+        const handler = Object.assign(vi.fn(), { isEventHandler: true });
+        untypedServer.messageHandlers = objectToMap({ [topic]: handler });
+
+        await server.handleMessage(withCorrelationId('a'.repeat(257)));
+
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+        expect(handler).toHaveBeenCalled();
+        expect(getPublisher).not.toHaveBeenCalled();
       });
     });
 

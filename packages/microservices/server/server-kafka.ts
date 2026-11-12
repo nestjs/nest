@@ -384,6 +384,16 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     if (handler?.isEventHandler || !correlationId || !replyTopic) {
       return this.handleEvent(packet.pattern, packet, kafkaContext);
     }
+    // The sender picks the correlation id too, and every reply carries a copy
+    // of it, so it is held to the limit the other transports put on an id
+    try {
+      this.assertValidPacketId(correlationId);
+    } catch (err) {
+      // A rejection would make kafkajs redeliver the message forever
+      return this.logger.error(
+        `The correlation id of the message is not valid (${err.message}), so it cannot be answered and has been dropped. Message pattern: ${packet.pattern}`,
+      );
+    }
     // The sender picks the reply topic. kafkajs keeps every topic a producer
     // is asked to send to, so one it cannot encode (such as a name longer
     // than a Kafka string) would fail every later reply of the producer too.
