@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { ModuleCompiler } from '../../injector/compiler';
 import { ByReferenceModuleOpaqueKeyFactory } from '../../injector/opaque-key-factory/by-reference-module-opaque-key-factory';
 
@@ -27,6 +28,45 @@ describe('ModuleCompiler', () => {
           dynamicMetadata: undefined,
         });
       });
+    });
+  });
+
+  describe('resolveForwardReference', () => {
+    it('should resolve a reference once and return the same module after', () => {
+      class CatsModule {}
+      const forwardRef = sinon.spy(() => ({ module: CatsModule }));
+      const reference = { forwardRef };
+
+      const first = compiler.resolveForwardReference(reference);
+      expect(compiler.resolveForwardReference(reference)).to.equal(first);
+      expect(forwardRef.calledOnce).to.be.true;
+      expect(compiler.extractMetadata(reference)).to.deep.equal({
+        type: CatsModule,
+        dynamicMetadata: {},
+      });
+    });
+
+    it('should not remember a reference that resolves to nothing yet', () => {
+      class CatsModule {}
+      let resolved: typeof CatsModule | undefined;
+      const reference = { forwardRef: () => resolved };
+
+      expect(compiler.resolveForwardReference(reference)).to.be.undefined;
+      resolved = CatsModule;
+      expect(compiler.resolveForwardReference(reference)).to.equal(CatsModule);
+    });
+
+    it('should give a reference the token of the module it resolves to', async () => {
+      class CatsModule {}
+      const dynamicModule = { module: CatsModule, providers: [] };
+      const reference = { forwardRef: () => dynamicModule };
+
+      expect((await compiler.compile(reference)).token).to.equal(
+        (await compiler.compile(dynamicModule)).token,
+      );
+      expect(
+        (await compiler.compile({ forwardRef: () => CatsModule })).token,
+      ).to.equal((await compiler.compile(CatsModule)).token);
     });
   });
 
