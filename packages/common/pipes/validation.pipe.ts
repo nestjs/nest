@@ -26,8 +26,8 @@ import {
   isUndefined,
 } from '../utils/shared.utils';
 import {
-  DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
   OMITTED_ERRORS_MESSAGE,
+  resolveMaxErrorMessagesLength,
 } from './validation-errors.constants';
 
 /**
@@ -109,8 +109,9 @@ export class ValidationPipe implements PipeTransform<any> {
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
-    this.maxErrorMessagesLength =
-      maxErrorMessagesLength ?? DEFAULT_MAX_ERROR_MESSAGES_LENGTH;
+    this.maxErrorMessagesLength = resolveMaxErrorMessagesLength(
+      maxErrorMessagesLength,
+    );
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
     classValidator = this.loadValidator(validatorPackage);

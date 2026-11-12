@@ -132,6 +132,10 @@ describe('ValidationPipe', () => {
     const messageOf = (pipe: ValidationPipe, errors: ValidationError[]) =>
       (pipe.createExceptionFactory()(errors) as any).getResponse().message;
 
+    it('should use the default limit for a value that is not a number', () => {
+      const pipe = new ValidationPipe({ maxErrorMessagesLength: NaN });
+      expect(pipe['maxErrorMessagesLength']).to.equal(1_000_000);
+    });
     it('should leave out the messages past the limit and say so', () => {
       const pipe = new ValidationPipe({ maxErrorMessagesLength: 30 });
       expect(messageOf(pipe, errors)).to.deep.equal([

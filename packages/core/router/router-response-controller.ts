@@ -249,8 +249,14 @@ export class RouterResponseController {
           });
 
           let pendingDataLength = 0;
+          // A limit that is not a number (e.g. NaN from
+          // "Number(process.env.UNSET)") gets the default, as a missing one
+          // does: no check below trips for NaN.
           const maxPendingDataLength =
-            options?.maxPendingDataLength ?? DEFAULT_MAX_PENDING_DATA_LENGTH;
+            options?.maxPendingDataLength == null ||
+            isNaN(options.maxPendingDataLength)
+              ? DEFAULT_MAX_PENDING_DATA_LENGTH
+              : options.maxPendingDataLength;
           subscription = observableResult
             .pipe(
               map((message): MessageEvent => {
