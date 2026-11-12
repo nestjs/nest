@@ -1280,7 +1280,7 @@ export class FastifyAdapter<
         }
 
         if (bodyParser) {
-          bodyParser(req, body, done);
+          this.runBodyParser(bodyParser, req, body, done);
           return;
         }
 
@@ -1289,6 +1289,48 @@ export class FastifyAdapter<
     );
 
     this.registeredContentTypes.add(this.normalizeContentType(type));
+  }
+
+  /**
+   * Runs a parser given to `useBodyParser()`, like `runLifecycleHook()` runs
+   * a hook: it completes once, a synchronous throw is passed to `done`, and so
+   * is the rejection of the promise the parser returns, which Fastify would
+   * not see (the content type parser above returns nothing). A parser that
+   * declares `done` completes through it; the value any other one resolves
+   * with is the parsed body. The promise is not returned to Fastify, which
+   * would call `done` a second time for an async parser that calls it.
+   */
+  private runBodyParser(
+    parser: FastifyBodyParser<Buffer, TServer>,
+    req: FastifyRequest<any, TServer, TRawRequest>,
+    body: Buffer,
+    done: (err: Error | null, body?: unknown) => void,
+  ): void {
+    let completed = false;
+    const doneOnce = (err: Error | null, parsed?: unknown) => {
+      if (completed) return;
+      completed = true;
+      done(err, parsed);
+    };
+    const fail = (err: Error) => {
+      if (completed) {
+        this.logger.error(err);
+        return;
+      }
+      doneOnce(err || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR());
+    };
+    try {
+      const result: any = parser(req as any, body, doneOnce);
+      if (result && typeof result.then === 'function') {
+        result.then((parsed: unknown) => {
+          if (parser.length < 3) {
+            doneOnce(null, parsed);
+          }
+        }, fail);
+      }
+    } catch (err) {
+      fail(err);
+    }
   }
 
   public async createMiddlewareFactory(
@@ -1438,7 +1480,8 @@ export class FastifyAdapter<
     };
     try {
       // middie discards the return value, so the promise is observed here:
-      // the proxies of `RouterProxy` reject when the exception layer throws.
+      // the proxies of `RouterProxy` reject when the exception layer throws,
+      // and an async middleware passed to `use()` when it throws.
       // Its resolution is not passed to `next`, as a middleware that answers
       // the request does not call it.
       const result = middleware(req, res, nextOnce);
@@ -1486,6 +1529,10 @@ export class FastifyAdapter<
   }
 
   public use(...args: any[]) {
+    // middie neither observes the promise a middleware returns nor catches
+    // what it throws once an earlier one called "next" asynchronously, so
+    // each middleware is run like those of `createMiddlewareFactory()`
+    args = args.map(arg => this.wrapMiddleware(arg));
     // Fastify requires @fastify/middie plugin to be registered before middleware can be used.
     // If middie is not registered yet, we queue the middleware and register it later during init.
     if (!this.isMiddieRegistered) {
@@ -1493,6 +1540,21 @@ export class FastifyAdapter<
       return this;
     }
     return (this.instance.use as any)(...args);
+  }
+
+  private wrapMiddleware(arg: unknown): unknown {
+    if (Array.isArray(arg)) {
+      return arg.map(item => this.wrapMiddleware(item));
+    }
+    // A path is left as it is, and so is a function with more than three
+    // parameters: with `skipMiddie`, "use()" belongs to the plugin the
+    // application registered, which may tell error handlers by their arity
+    if (!isFunction(arg) || arg.length > 3) {
+      return arg;
+    }
+    const middleware = arg;
+    return (req: unknown, res: unknown, next: (err?: Error) => void) =>
+      this.runMiddleware(middleware, req, res, next);
   }
 
   public mapException(error: unknown): unknown {

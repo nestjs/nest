@@ -107,9 +107,7 @@ describe.each(adapters('express', 'fastify', 'node'))(
   },
 );
 
-// Fastify's middleware engine leaves the rejection of an async middleware
-// unhandled
-describe.each(adapters('express', 'node'))(
+describe.each(adapters('express', 'fastify', 'node'))(
   'Errors from async middleware (%s)',
   name => {
     let app: INestApplication;

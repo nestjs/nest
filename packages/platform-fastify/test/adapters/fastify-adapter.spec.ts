@@ -1959,6 +1959,207 @@ describe('FastifyAdapter', () => {
         expect(res.statusCode).toBe(400);
       });
     });
+
+    describe('with a custom parser that returns a promise or throws', () => {
+      type Done = (err: Error | null, body?: unknown) => void;
+      const parse = (body: Buffer) => {
+        if (body.toString() === 'malformed') {
+          throw new Error('malformed body');
+        }
+        return `custom:${body.toString()}`;
+      };
+      const handler = vi.fn((req: FastifyRequest, reply: FastifyReply) =>
+        fastifyAdapter.reply(reply, { body: req.body }),
+      );
+
+      beforeEach(() => {
+        handler.mockClear();
+        fastifyAdapter.setErrorHandler((err: Error, _req, reply) =>
+          reply.code(500).send(`error handler: ${err.message}`),
+        );
+        fastifyAdapter.post('/', handler);
+      });
+
+      describe.each([
+        [
+          'an async parser that calls "done"',
+          async (_req: unknown, body: Buffer, done: Done) => {
+            await Promise.resolve();
+            done(null, parse(body));
+          },
+        ],
+        [
+          'an async parser that calls "done" after it resolved',
+          async (_req: unknown, body: Buffer, done: Done) => {
+            const parsed = parse(await Promise.resolve(body));
+            setImmediate(() => done(null, parsed));
+          },
+        ],
+        [
+          'a parser that resolves with the body',
+          async (_req: unknown, body: Buffer) => {
+            await Promise.resolve();
+            return parse(body);
+          },
+        ],
+        [
+          'a synchronous parser that calls "done"',
+          (_req: unknown, body: Buffer, done: Done) => {
+            done(null, parse(body));
+          },
+        ],
+      ])('%s', (_, parser) => {
+        beforeEach(() => {
+          fastifyAdapter.useBodyParser('text/custom', false, {}, parser as any);
+        });
+
+        it('should pass the parsed body to the handler once', async () => {
+          const res = await post('text/custom', 'hello');
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(res.statusCode).toBe(200);
+          expect(JSON.parse(res.body)).toEqual({ body: 'custom:hello' });
+          expect(handler).toHaveBeenCalledOnce();
+        });
+
+        it('should pass what it throws or rejects with to the error handler', async () => {
+          const res = await post('text/custom', 'malformed');
+
+          expect(res.statusCode).toBe(500);
+          expect(res.body).toBe('error handler: malformed body');
+          expect(handler).not.toHaveBeenCalled();
+        });
+      });
+
+      it('should log a rejection that follows a call to "done"', async () => {
+        const error = vi
+          .spyOn(Logger.prototype, 'error')
+          .mockImplementation(() => {});
+        let rejection!: Promise<void>;
+        fastifyAdapter.useBodyParser(
+          'text/custom',
+          false,
+          {},
+          (_req, body, done) => {
+            done(null, parse(body));
+            rejection = Promise.reject(new Error('parser failed'));
+            return rejection;
+          },
+        );
+
+        const res = await post('text/custom', 'hello');
+        await rejection.catch(() => {});
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body)).toEqual({ body: 'custom:hello' });
+        expect(handler).toHaveBeenCalledOnce();
+        expect(error).toHaveBeenCalledOnce();
+      });
+    });
+  });
+
+  describe('use', () => {
+    let adapter: FastifyAdapter;
+    const handler = vi.fn(() => 'ok');
+
+    beforeEach(() => {
+      handler.mockClear();
+      adapter = new FastifyAdapter();
+      adapter.setErrorHandler((err: Error, _req, reply) =>
+        reply.code(500).send(`error handler: ${err.message}`),
+      );
+    });
+
+    afterEach(async () => {
+      await adapter.close();
+    });
+
+    const rejecting = async () => {
+      await Promise.resolve();
+      throw new Error('rejected');
+    };
+    const get = (url = '/a') => adapter.inject({ method: 'GET', url });
+
+    it('should pass the rejection of an async middleware to the error handler', async () => {
+      await adapter.init();
+      adapter.use(rejecting);
+      adapter.get('/a', handler);
+
+      const res = await get();
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toBe('error handler: rejected');
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('should pass the rejection of a middleware queued before init to the error handler', async () => {
+      adapter.use(rejecting);
+      await adapter.init();
+      adapter.get('/a', handler);
+
+      const res = await get();
+
+      expect(res.body).toBe('error handler: rejected');
+    });
+
+    it('should pass what a middleware throws after an earlier one called "next" asynchronously to the error handler', async () => {
+      await adapter.init();
+      adapter.use(async (_req: unknown, _res: unknown, next: () => void) => {
+        await Promise.resolve();
+        next();
+      });
+      adapter.use(() => {
+        throw new Error('thrown');
+      });
+      adapter.get('/a', handler);
+
+      const res = await get();
+
+      expect(res.body).toBe('error handler: thrown');
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('should run the middleware of a path, and of a list, in the same way', async () => {
+      await adapter.init();
+      const calls: string[] = [];
+      adapter.use('/a', (_req: unknown, _res: unknown, next: () => void) => {
+        calls.push('path');
+        next();
+      });
+      adapter.use([
+        (_req: unknown, _res: unknown, next: () => void) => {
+          calls.push('list');
+          next();
+        },
+      ]);
+      adapter.use('/b', [rejecting]);
+      adapter.get('/a', handler);
+      adapter.get('/b', handler);
+
+      const a = await get('/a');
+      const b = await get('/b');
+
+      expect(a.body).toBe('ok');
+      expect(b.body).toBe('error handler: rejected');
+      expect(calls).toEqual(['path', 'list', 'list']);
+    });
+
+    it('should hand a function with more than three parameters to "use()" as it is', async () => {
+      await adapter.close();
+      adapter = new FastifyAdapter({ skipMiddie: true });
+      await adapter.register(middie);
+      const use = vi.spyOn(adapter.getInstance() as any, 'use');
+      const errorHandler = (
+        _err: unknown,
+        _req: unknown,
+        _res: unknown,
+        next: () => void,
+      ) => next();
+
+      adapter.use(errorHandler);
+
+      expect(use).toHaveBeenCalledWith(errorHandler);
+    });
   });
 
   describe('listen', () => {
