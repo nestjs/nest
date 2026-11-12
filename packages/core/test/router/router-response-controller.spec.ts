@@ -2236,6 +2236,115 @@ data: test
         ).rejects.toThrow(TypeError);
         request.destroy();
       });
+
+      describe('when the teardown of the producer throws', () => {
+        // Unsubscribing rethrows what the teardown throws, in a socket event
+        // or a timer, where nothing but the process would catch it.
+        const teardownError = new Error('Teardown error');
+        const createResponse = () =>
+          new Writable({
+            write(_chunk, _encoding, callback) {
+              callback();
+            },
+          });
+
+        it('should log the error and end the response when the client disconnects', async () => {
+          const response = createResponse();
+          const request = attachSocket(new PassThrough());
+          const result = new Observable<string>(() => () => {
+            throw teardownError;
+          });
+
+          const ssePromise = routerResponseController.sse(
+            result,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          );
+          // Once the producer is subscribed to
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(() => request.socket.emit('close')).not.toThrow();
+          await ssePromise;
+
+          expect(response.writableEnded).toBe(true);
+          expect(loggerErrorSpy).toHaveBeenCalledOnce();
+          expect(loggerErrorSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ errors: [teardownError] }),
+          );
+        });
+
+        it('should log the error and end the response to a HEAD request', async () => {
+          const response = createResponse();
+          const request = Object.assign(attachSocket(new PassThrough()), {
+            method: 'HEAD',
+          });
+          const result = new Observable<string>(() => () => {
+            throw teardownError;
+          });
+
+          await routerResponseController.sse(
+            result,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          );
+
+          expect(response.writableEnded).toBe(true);
+          expect(loggerErrorSpy).toHaveBeenCalledOnce();
+          expect(loggerErrorSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ errors: [teardownError] }),
+          );
+        });
+
+        it('should log the error and reject with the error of the producer', async () => {
+          const response = createResponse();
+          const request = new PassThrough();
+          const result = new Observable<string>(subscriber => {
+            queueMicrotask(() => subscriber.error(new Error('Some error')));
+            return () => {
+              throw teardownError;
+            };
+          });
+
+          await expect(
+            routerResponseController.sse(
+              result,
+              response as unknown as ServerResponse,
+              request as unknown as IncomingMessage,
+            ),
+          ).rejects.toThrow('Some error');
+
+          expect(loggerErrorSpy).toHaveBeenCalledOnce();
+          expect(loggerErrorSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ errors: [teardownError] }),
+          );
+          request.destroy();
+        });
+
+        it('should log the error when the client disconnects synchronously during subscription', async () => {
+          const response = createResponse();
+          const request = attachSocket(new PassThrough());
+          const result = new Observable<string>(() => {
+            request.socket.emit('close');
+            return () => {
+              throw teardownError;
+            };
+          });
+
+          await routerResponseController.sse(
+            result,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          );
+          // Once the producer is subscribed to
+          await new Promise(resolve => setImmediate(resolve));
+
+          expect(response.writableEnded).toBe(true);
+          expect(loggerErrorSpy).toHaveBeenCalledOnce();
+          expect(loggerErrorSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ errors: [teardownError] }),
+          );
+        });
+      });
     });
   });
 });
