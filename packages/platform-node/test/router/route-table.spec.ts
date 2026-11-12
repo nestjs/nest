@@ -166,34 +166,81 @@ describe('RouteTable', () => {
       expect(table.lookup('GET', '/posts/')).toBeNull();
     });
 
-    it('should try the other routes when the most specific one leaves a parameter empty', () => {
-      const docs = handler();
-      const all = handler();
+    // As with Fastify, rather than the next route in registration order (as
+    // Express would try them), which may be less specific
+    it('should not match when the most specific route leaves a parameter of a mixed segment empty', () => {
       table.add('GET', '/docs/:name.:ext', handler());
-      table.add('GET', '/docs/*path', docs);
+      table.add('GET', '/docs/*path', handler());
       table.add('GET', '/files/:name.:ext', handler());
-      table.add(null, '/{*path}', all);
+      table.add(null, '/{*path}', handler());
+      table.add('GET', '/ext/:file', handler());
+      table.add('GET', '/ext/:file.:ext', handler());
 
-      // As Express, which tries the routes in registration order
-      expect(table.lookup('GET', '/docs/.env')).toEqual({
-        handlers: [docs],
-        params: { path: ['.env'] },
-        seqs: [1],
-      });
-      expect(table.lookup('GET', '/files/.env')?.handlers).toEqual([all]);
+      expect(table.lookup('GET', '/docs/.env')).toBeNull();
+      expect(table.lookup('GET', '/files/.env')).toBeNull();
+      expect(table.lookup('GET', '/ext/.b')).toBeNull();
+      expect(table.lookup('GET', '/ext/a')?.seqs).toEqual([4]);
     });
 
-    it('should try the routes with a wildcard for a path with an empty segment', () => {
+    it('should match the most specific route without its optional group when it would leave a parameter empty', () => {
+      const catchAll = handler();
+      const page = handler();
+      table.add('GET', '/docs/*path', catchAll);
+      table.add('GET', '/docs/:page{.:format}', page);
+
+      expect(table.lookup('GET', '/docs/.env')).toEqual({
+        handlers: [page],
+        params: { page: '.env' },
+        seqs: [1],
+      });
+      expect(table.lookup('GET', '/docs/plan.')?.params).toEqual({
+        page: 'plan.',
+      });
+      expect(table.lookup('GET', '/docs/drafts/plan.md')?.handlers).toEqual([
+        catchAll,
+      ]);
+    });
+
+    it('should not match a route matched with path-to-regexp only instead', () => {
+      // "{*any}" does not start with "/" (see toFindMyWayPath())
+      table.add(null, '{*any}', handler());
+      table.add('GET', '/docs/:name.:ext', handler());
+
+      expect(table.lookup('GET', '/docs/.env')).toBeNull();
+      expect(table.lookup('GET', '/docs/a.b')?.seqs).toEqual([1]);
+    });
+
+    // As with Fastify: Express would try "/users/*rest" next
+    it('should not match when the most specific route leaves a whole segment empty', () => {
       const rest = handler();
       table.add('GET', '/users/:id/profile', handler());
       table.add('GET', '/users/*rest', rest);
 
-      expect(table.lookup('GET', '/users//profile')).toEqual({
+      expect(table.lookup('GET', '/users//profile')).toBeNull();
+      expect(table.lookup('GET', '/users/1/profile')?.seqs).toEqual([0]);
+      expect(table.lookup('GET', '/users//other')).toEqual({
         handlers: [rest],
-        params: { rest: ['', 'profile'] },
+        params: { rest: ['', 'other'] },
         seqs: [1],
       });
-      expect(table.lookup('GET', '/users/1/profile')?.seqs).toEqual([0]);
+    });
+
+    it('should not match a less specific route registered before for a path with an empty segment', () => {
+      table.add('GET', '/{*path}', handler());
+      table.add('GET', '/docs/*rest', handler());
+      table.add('GET', '/docs/:id/edit', handler());
+
+      expect(table.lookup('GET', '/docs//edit')).toBeNull();
+    });
+
+    it('should match "//" with a "/" route sharing its record with a root optional group', () => {
+      const root = handler();
+      // Not in the record of "/": "/*path" needs a character after the "/"
+      table.add('GET', '/*path', handler());
+      table.add('GET', '{/:locale}', handler());
+      table.add('GET', '/', root);
+
+      expect(table.lookup('GET', '//')?.handlers).toEqual([root]);
     });
 
     it('should only try the routes that can match an empty segment', () => {

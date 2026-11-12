@@ -71,6 +71,14 @@ interface FoundRoute {
   seqs: number[];
   params: Record<string, any>;
   paramsByHandler?: Record<string, any>[];
+  /**
+   * Set when the route of the record left a parameter empty, or its
+   * path-to-regexp matcher did not match the path: `seqs` are then those of
+   * the routes of the record, and `params` empty (see `lookup()`).
+   * `'segment'` for a parameter that is a whole segment of the route, without
+   * an empty segment in the path ("/" for "/:id").
+   */
+  mismatch?: 'segment' | 'param';
 }
 
 interface FindMyWayVariant {
@@ -599,12 +607,26 @@ export class RouteTable {
       exceeded = true;
       found = null;
     }
-    if (found === EMPTY_PARAM || found === EMPTY_SEGMENT) {
-      // find-my-way does not look past the most specific route, while another
-      // one may match ("/ext/.b" is "/ext/:file", not "/ext/:file.:ext"). A
-      // path with an empty segment can only match `emptySegmentRoutes`. When
-      // the empty parameter is a whole segment of its route otherwise ("/"
-      // for "/:id"), find-my-way would have found any route matching it.
+    if (found?.mismatch === 'segment') {
+      // find-my-way would have found any other route of the tree matching it
+      found = null;
+    } else if (found?.mismatch === 'param') {
+      // The most specific route left a parameter empty ("/docs/.env" for
+      // "/docs/:page.:format", "/docs//edit" for "/docs/:id/edit"). The
+      // routes of its record may still match the path without one of their
+      // optional groups ("/docs/:page{.:format}" gives "/docs/:page" too);
+      // otherwise the request is a miss, as with Fastify, rather than going
+      // to another, less specific route ("/docs/*path", or "/ext/:file" for
+      // "/ext/.b"), which the exclusions of middleware do not attribute it to
+      return this.lookupFirst(
+        method,
+        path,
+        found.seqs.map(seq => this.routes[seq]),
+      );
+    } else if (found === EMPTY_PARAM || found === EMPTY_SEGMENT) {
+      // A wildcard left empty: find-my-way does not look past the most
+      // specific route, while another one may match. A path with an empty
+      // segment can only match `emptySegmentRoutes`.
       if (path.indexOf('//') !== -1) {
         return this.lookupFirst(method, path, this.emptySegmentRoutes);
       }
@@ -663,7 +685,15 @@ export class RouteTable {
       // one ("/users//profile"). Treat that as no match, or the route could
       // run without the middleware guarding it.
       if (key !== '*' && values[key] === '') {
-        return record.hasMixedSegment ? EMPTY_PARAM : EMPTY_SEGMENT;
+        return {
+          handlers: [],
+          seqs: record.seqs,
+          params: {},
+          mismatch:
+            record.hasMixedSegment || path.indexOf('//') !== -1
+              ? 'param'
+              : 'segment',
+        };
       }
     }
     let wildcard: string[] | undefined;
@@ -712,7 +742,12 @@ export class RouteTable {
       if (pathMatcher !== undefined) {
         const result = pathMatcher(path);
         if (!result) {
-          return EMPTY_PARAM;
+          return {
+            handlers: [],
+            seqs: record.seqs,
+            params: {},
+            mismatch: 'param',
+          };
         }
         Object.assign(params, result.params);
         continue;
