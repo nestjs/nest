@@ -17,6 +17,7 @@ import {
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
+import { LegacyRouteConverter } from '@nestjs/core/internal';
 import {
   FastifyInstance,
   FastifyReply,
@@ -1195,6 +1196,115 @@ describe('FastifyAdapter', () => {
       expect(JSON.parse(res.body)).toEqual({ from: 'a', to: 'b' });
       expect(handler).toHaveBeenCalledOnce();
     });
+
+    // "request.params" holds the last value of a repeated parameter name
+    it.each([
+      ['/projects/:id/tasks/:id', '/projects//tasks/5'],
+      ['/projects/:id/tasks/:id', '/projects/1/tasks/'],
+      ['/projects/:id/tasks/:id.json', '/projects//tasks/5.json'],
+      ['/ranges/:id-:id', '/ranges/-b'],
+      ['/files/:id/:id/*', '/files//b/c'],
+    ])(
+      'should pass a request for "%s" with an empty value of a repeated parameter name (%s) to the not-found handler',
+      async (path, url) => {
+        const handler = vi.fn(() => 'found');
+        fastifyAdapter.get(path, handler);
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body).toBe('not found');
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([
+      ['/projects/:id/tasks/:id', '/projects/1/tasks/5?sort=asc', { id: '5' }],
+      ['/ranges/:id-:id', '/ranges/a-b', { id: 'b' }],
+      ['/files/:id/:id/*', '/files/a/b/', { id: 'b', '*': '' }],
+      ['/files/:id/:id/*', '/files/a/b/c/d', { id: 'b', '*': 'c/d' }],
+    ])(
+      'should call the handler of "%s" when every value of a repeated parameter name is set (%s)',
+      async (path, url, params) => {
+        const handler = vi.fn((req: FastifyRequest) => req.params);
+        fastifyAdapter.get(path, handler);
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body)).toEqual(params);
+        expect(handler).toHaveBeenCalledOnce();
+      },
+    );
+
+    it('should match a route with a repeated parameter name with the options of the router', async () => {
+      fastifyAdapter = new FastifyAdapter({
+        routerOptions: {
+          caseSensitive: false,
+          ignoreTrailingSlash: true,
+          maxParamLength: 200,
+        },
+      });
+      fastifyAdapter.setNotFoundHandler((_req, reply) =>
+        reply.code(404).send('not found'),
+      );
+      const handler = vi.fn(() => 'found');
+      fastifyAdapter.get('/Projects/:id/tasks/:id', handler);
+
+      const res = await fastifyAdapter.inject({
+        method: 'GET',
+        url: `/PROJECTS/${'a'.repeat(150)}/tasks/5/`,
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('found');
+
+      const emptyRes = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/projects//tasks/5/',
+      });
+      expect(emptyRes.statusCode).toBe(404);
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('should pass a request with an empty value of a repeated parameter name to the not-found handler for routes registered with all()', async () => {
+      const handler = vi.fn(() => 'found');
+      fastifyAdapter.all('/projects/:id/tasks/:id', handler);
+
+      for (const method of ['GET', 'POST'] as const) {
+        const res = await fastifyAdapter.inject({
+          method,
+          url: '/projects//tasks/5',
+        });
+        expect(res.statusCode).toBe(404);
+      }
+      expect(handler).not.toHaveBeenCalled();
+
+      const res = await fastifyAdapter.inject({
+        method: 'POST',
+        url: '/projects/1/tasks/5',
+      });
+      expect(res.body).toBe('found');
+    });
+
+    // Only paths in the syntax of path-to-regexp can have middleware: no
+    // route-bound middleware can be registered for these
+    it.each([
+      '/projects/:id/tasks/:id?',
+      '/projects/:id/tasks/:id(^\\d+$)',
+      '/a::b/:id/:id',
+    ])(
+      'should not register middleware for a path in the syntax of find-my-way only (%s)',
+      async path => {
+        vi.spyOn(LegacyRouteConverter, 'printError').mockImplementation(
+          () => {},
+        );
+        const register = await fastifyAdapter.createMiddlewareFactory(
+          RequestMethod.GET,
+        );
+
+        expect(() => register(path, () => {})).toThrow(TypeError);
+      },
+    );
 
     it('should call the handler for an empty wildcard', async () => {
       const handler = vi.fn(() => 'found');

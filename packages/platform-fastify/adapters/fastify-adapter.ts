@@ -1811,6 +1811,9 @@ export class FastifyAdapter<
     if (isString(url) && !url.includes(':')) {
       return handler;
     }
+    const matchesRequest = isString(url)
+      ? this.createRepeatedParamMatcher(url)
+      : undefined;
     const routeHandler = function (
       this: unknown,
       request: TRequest,
@@ -1823,6 +1826,10 @@ export class FastifyAdapter<
           return;
         }
       }
+      if (matchesRequest && !matchesRequest(request)) {
+        reply.callNotFound();
+        return;
+      }
       return handler.call(this, request, reply);
     };
     Object.defineProperty(routeHandler, 'name', {
@@ -1830,6 +1837,51 @@ export class FastifyAdapter<
       value: handler.name,
     });
     return routeHandler as unknown as THandler;
+  }
+
+  /**
+   * "find-my-way" keeps one value per parameter name: for a route path that
+   * uses a name more than once ("/projects/:id/tasks/:id"), "request.params"
+   * only holds the last value, and an empty earlier one cannot be seen there.
+   * For such a route path, returns a function that matches the path of a
+   * request as the middleware of that path is matched (see
+   * `createMiddlewareFactory()`), which needs at least one character per
+   * parameter. A route path that path-to-regexp cannot read gets no such
+   * function, as no middleware can be bound to that path either.
+   */
+  private createRepeatedParamMatcher(
+    url: string,
+  ): ((request: TRequest) => boolean) | undefined {
+    let matches: (pathname: string) => boolean;
+    try {
+      const path = LegacyRouteConverter.tryConvert(url, { logs: false });
+      const names = new Set<string>();
+      let hasRepeatedName = false;
+      const visit = (tokens: Token[]) => {
+        for (const token of tokens) {
+          if (token.type === 'group') {
+            visit(token.tokens);
+          } else if (token.type !== 'text') {
+            hasRepeatedName ||= names.has(token.name);
+            names.add(token.name);
+          }
+        }
+      };
+      visit(parse(path).tokens);
+      if (!hasRepeatedName) {
+        return undefined;
+      }
+      ({ matches } = this.createPathMatcher(path));
+    } catch {
+      return undefined;
+    }
+    return (request: TRequest) => {
+      const rawUrl = this.getRequestOriginalUrl(request.raw as TRawRequest);
+      const queryParamsIndex = rawUrl.indexOf('?');
+      const pathname =
+        queryParamsIndex >= 0 ? rawUrl.slice(0, queryParamsIndex) : rawUrl;
+      return matches(this.sanitizeUrl(pathname));
+    };
   }
 
   /**
