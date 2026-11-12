@@ -376,6 +376,55 @@ describe('RpcContextCreator', () => {
         expect(pipesFn).toBeTypeOf('function');
       });
     });
+    describe('when the pipe of a parameter fails', () => {
+      const param = (index: number, transform: () => unknown) => ({
+        index,
+        type: 'test',
+        data: null!,
+        pipes: [{ transform }],
+        extractValue: () => null,
+      });
+
+      it('should fail once the pipes of the other parameters have settled', async () => {
+        const error = new RpcException('Validation failed');
+        let finishLookup!: () => void;
+        const lookup = new Promise<string>(resolve => {
+          finishLookup = () => resolve('entity');
+        });
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [param(1, () => Promise.reject(error)), param(2, () => lookup)],
+        )!;
+
+        let settled = false;
+        const result = pipesFn([]).finally(() => (settled = true));
+        result.catch(() => undefined);
+        await new Promise(resolve => setImmediate(resolve));
+        expect(settled).toBe(false);
+
+        finishLookup();
+        await expect(result).rejects.toBe(error);
+      });
+
+      it('should fail with the error that came first', async () => {
+        const first = new Error('first');
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [
+            param(
+              1,
+              () =>
+                new Promise((_, reject) =>
+                  setImmediate(() => reject(new Error('second'))),
+                ),
+            ),
+            param(2, () => Promise.reject(first)),
+          ],
+        )!;
+
+        await expect(pipesFn([])).rejects.toBe(first);
+      });
+    });
   });
 
   describe('preRequest hooks', () => {
