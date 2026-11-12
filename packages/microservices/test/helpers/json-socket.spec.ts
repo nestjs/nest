@@ -131,7 +131,9 @@ describe('JsonSocket', () => {
 
       expect(Math.max(...bufferLengths)).to.equal(32);
       expect(bufferLengths[32]).to.equal(0);
-      expect(errors).to.have.lengthOf(3);
+      // Nothing is read after the error
+      expect(bufferLengths.slice(32).every(length => length === 0)).to.be.true;
+      expect(errors).to.have.lengthOf(1);
       expect(errors[0]).to.be.instanceOf(CorruptedPacketLengthException);
     });
 
@@ -142,14 +144,16 @@ describe('JsonSocket', () => {
       expect(received).to.deep.equal([{ x: 1234 }]);
     });
 
-    it('resets state after a corrupted length so subsequent valid frames are processed', () => {
+    it('ignores what the peer sends after a corrupted length', () => {
       expect(() => (jsonSocket as any).handleData('bad#')).to.throw(
         CorruptedPacketLengthException,
       );
-      // After the error the socket state must be clean
+      // The connection is being closed, and where the next packet starts can
+      // no longer be told
       (jsonSocket as any).handleData(frame({ ok: true }));
-      expect(received).to.have.lengthOf(1);
-      expect(received[0]).to.deep.equal({ ok: true });
+      expect(received).to.have.lengthOf(0);
+      expect((jsonSocket as any).buffer).to.equal('');
+      expect((jsonSocket as any).contentLength).to.be.null;
     });
   });
 

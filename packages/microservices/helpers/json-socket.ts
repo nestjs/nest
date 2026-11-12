@@ -51,6 +51,11 @@ export class JsonSocket extends TcpSocket {
   private drainTimer: NodeJS.Timeout | null = null;
   private isBackpressured = false;
   private writtenLength = 0;
+  /**
+   * Set once the data received could not be framed. Whatever the peer sends
+   * after that can no longer be split into packets reliably.
+   */
+  private hasFramingError = false;
 
   constructor(socket: any, options?: JsonSocketOptions) {
     super(socket);
@@ -115,6 +120,9 @@ export class JsonSocket extends TcpSocket {
   }
 
   protected handleData(dataRaw: Buffer | string) {
+    if (this.hasFramingError) {
+      return;
+    }
     const data = Buffer.isBuffer(dataRaw)
       ? this.stringDecoder.write(dataRaw)
       : dataRaw;
@@ -122,9 +130,23 @@ export class JsonSocket extends TcpSocket {
 
     try {
       this.processBuffer();
+    } catch (err) {
+      this.discardAfterFramingError();
+      throw err;
     } finally {
       this.refreshIncompleteMessageTimer();
     }
+  }
+
+  /**
+   * The socket is ended after a framing error, but the peer may keep sending
+   * until it closes. Parsing that from wherever the failed packet left off
+   * could turn an arbitrary part of it into a message, so it is ignored.
+   */
+  private discardAfterFramingError() {
+    this.hasFramingError = true;
+    this.buffer = '';
+    this.contentLength = null;
   }
 
   private processBuffer() {
@@ -138,7 +160,13 @@ export class JsonSocket extends TcpSocket {
         break;
       }
 
-      if (this.buffer.length > this.maxBufferSize) {
+      // A read may hold several packets, or the end of one and the start of
+      // the next. They are taken off the buffer one at a time below, so only
+      // the packet at its start has to be within the limit.
+      if (
+        this.buffer.length > this.maxBufferSize &&
+        !this.startsWithPacketWithinLimit()
+      ) {
         const bufferLength = this.buffer.length;
         this.buffer = '';
         throw new MaxPacketLengthExceededException(bufferLength);
@@ -195,6 +223,27 @@ export class JsonSocket extends TcpSocket {
     }
   }
 
+  /**
+   * Whether the buffer starts with a packet that "maxBufferSize" allows: one
+   * whose header, read already or not, declares a length within the limit.
+   * Such a packet is either complete, and taken off the buffer right away,
+   * or keeps the buffer within the limit plus one read.
+   */
+  private startsWithPacketWithinLimit(): boolean {
+    if (this.contentLength !== null) {
+      return (
+        this.contentLength >= 0 && this.contentLength <= this.maxBufferSize
+      );
+    }
+    const header = this.buffer.substring(0, MAX_CONTENT_LENGTH_SIZE + 1);
+    const i = header.indexOf(this.delimiter);
+    if (i === -1) {
+      return false;
+    }
+    const contentLength = parseInt(header.substring(0, i), 10);
+    return contentLength >= 0 && contentLength <= this.maxBufferSize;
+  }
+
   private applyBackpressure() {
     if (this.isBackpressured) {
       return;
@@ -214,6 +263,7 @@ export class JsonSocket extends TcpSocket {
     try {
       this.processBuffer();
     } catch (e) {
+      this.discardAfterFramingError();
       this.handleDataError(e);
     } finally {
       this.refreshIncompleteMessageTimer();
