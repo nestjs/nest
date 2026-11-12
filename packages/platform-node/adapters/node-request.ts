@@ -511,6 +511,8 @@ export class NodeResponse<
    * `res.headersSent` before responding). Without one, a failure goes to the
    * error-handling middleware and Nest's exception filters, as with Express:
    * a missing file is a 404, a directory answers like an unmatched route.
+   * What the callback throws once `sendFile()` returned (or the promise it
+   * returns rejects with) goes there as well, unlike with Express.
    */
   sendFile(
     path: string,
@@ -550,9 +552,42 @@ export class NodeResponse<
     opts.etag ??= true;
     const req = this.req;
     const file = send(req, encodeURI(path), opts as send.SendOptions);
+    const report = (err: unknown) => {
+      const handleError = (req.socket as any)?.server?.[ROUTE_ERROR_HANDLER];
+      if (handleError) {
+        handleError(err, req, this);
+      } else {
+        respondWithError(this, err);
+      }
+    };
+    // Whatever the callback throws is an error: the router's next() takes a
+    // falsy value and "route" for none, and "router" for leaving the router
+    const reportThrown = (reason: unknown) =>
+      report(
+        !reason || reason === 'route' || reason === 'router'
+          ? new Error(`res.sendFile() callback failed: ${String(reason)}`)
+          : reason,
+      );
+    let returned = false;
     transferFile(this, file, opts, err => {
       if (done) {
-        return done(err);
+        // The callback mostly runs from a listener of the send stream, once
+        // the route handler returned, where nothing else would catch what it
+        // throws (or the rejection of the promise it returns)
+        try {
+          const result: any = done(err);
+          if (result !== undefined && typeof result?.then === 'function') {
+            result.then(undefined, reportThrown);
+          }
+        } catch (error) {
+          // send refuses some paths (a dotfile) at once: the caller of
+          // sendFile() is still there to catch the error, as with Express
+          if (!returned) {
+            throw error;
+          }
+          reportThrown(error);
+        }
+        return;
       }
       // Client aborts and write errors are nothing to report, as with Express
       if (
@@ -562,13 +597,9 @@ export class NodeResponse<
       ) {
         return;
       }
-      const handleError = (req.socket as any)?.server?.[ROUTE_ERROR_HANDLER];
-      if (handleError) {
-        handleError(err, req, this);
-      } else {
-        respondWithError(this, err);
-      }
+      report(err);
     });
+    returned = true;
   }
 
   /**

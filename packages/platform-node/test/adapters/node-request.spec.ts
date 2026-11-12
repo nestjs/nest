@@ -860,6 +860,90 @@ describe('NodeResponse', () => {
       expect(errors).toHaveLength(1);
       expect(errors[0].status).toBe(404);
     });
+
+    describe('with a callback that fails once sendFile() returned', () => {
+      const handleWith = (errors: unknown[]) => {
+        (server as any)[ROUTE_ERROR_HANDLER] = (
+          err: unknown,
+          req: NodeRequest,
+          res: NodeResponse,
+        ) => {
+          errors.push(err);
+          res.statusCode = 499;
+          res.end('handled');
+        };
+      };
+
+      it.each([
+        [
+          'throws',
+          (error: unknown) => () => {
+            throw error;
+          },
+        ],
+        ['rejects with', (error: unknown) => () => Promise.reject(error)],
+      ])(
+        "should hand what the callback %s to the server's error handler",
+        async (_, callbackFor) => {
+          const thrown = new Error('from the callback');
+          const errors: unknown[] = [];
+          const port = await listen((req, res) =>
+            res.sendFile(join(dir, 'nope.txt'), callbackFor(thrown)),
+          );
+          handleWith(errors);
+
+          const response = await request(port);
+
+          expect(response.statusCode).toBe(499);
+          expect(errors).toEqual([thrown]);
+        },
+      );
+
+      it.each([undefined, null, 'route', 'router'])(
+        'should hand %s thrown by the callback over as an error',
+        async thrown => {
+          const errors: unknown[] = [];
+          const port = await listen((req, res) =>
+            res.sendFile(join(dir, 'nope.txt'), () => {
+              throw thrown;
+            }),
+          );
+          handleWith(errors);
+
+          const response = await request(port);
+
+          expect(response.statusCode).toBe(499);
+          expect(errors).toHaveLength(1);
+          expect(errors[0]).toBeInstanceOf(Error);
+        },
+      );
+
+      it('should leave what the callback throws before sendFile() returned to the caller', async () => {
+        const thrown = new Error('from the callback');
+        const errors: unknown[] = [];
+        // A dotfile is refused at once, a missing file after a fs.stat()
+        const port = await listen((req, res) =>
+          res.sendFile(join(dir, '.secret'), () => {
+            throw thrown;
+          }),
+        );
+        handleWith(errors);
+
+        await expect(request(port)).rejects.toBe(thrown);
+        expect(errors).toEqual([]);
+      });
+
+      it('should answer with 500 when there is no adapter', async () => {
+        const response = await respond((req, res) =>
+          res.sendFile(join(dir, 'nope.txt'), () => {
+            throw new Error('from the callback');
+          }),
+        );
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body.toString()).toBe('Internal Server Error');
+      });
+    });
   });
 
   describe('redirect()', () => {

@@ -241,6 +241,86 @@ describe('NodeAdapter', () => {
     });
   });
 
+  describe('res.sendFile() callbacks that fail', () => {
+    let dir: string;
+    let port: number;
+    let errors: unknown[];
+    let calls: number;
+
+    const serve = async (callback: (err?: Error) => unknown) => {
+      port = await startServer();
+      adapter.get('/:name', (req: NodeRequest, res: NodeResponse) => {
+        calls++;
+        res.sendFile(join(dir, req.params.name), callback);
+      });
+      adapter.setErrorHandler(
+        (err: any, req: NodeRequest, res: NodeResponse, next: Next) => {
+          errors.push(err);
+          const status = err.getStatus?.() ?? 500;
+          adapter.reply(res, { status }, status);
+        },
+      );
+    };
+
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'nest-adapter-send-file-'));
+      errors = [];
+      calls = 0;
+    });
+
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    it.each([
+      [
+        'throws',
+        (err?: Error) => {
+          if (err) {
+            throw new NotFoundException('There is no such file');
+          }
+        },
+      ],
+      [
+        'rejects with',
+        async (err?: Error) => {
+          if (err) {
+            throw new NotFoundException('There is no such file');
+          }
+        },
+      ],
+    ])(
+      'should hand the exception a callback %s to the error handlers',
+      async (_, callback) => {
+        await serve(callback);
+
+        const res = await request(port, { path: '/nope.txt' });
+
+        expect(res.status).toBe(404);
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toBeInstanceOf(NotFoundException);
+      },
+    );
+
+    it.each([undefined, 'route', 'router'])(
+      'should not route the request again when a callback throws %s',
+      async thrown => {
+        await serve(err => {
+          if (err) {
+            throw thrown;
+          }
+        });
+
+        const res = await request(port, { path: '/nope.txt' });
+
+        expect(res.status).toBe(500);
+        expect(calls).toBe(1);
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toBeInstanceOf(Error);
+      },
+    );
+  });
+
   describe('error handlers that fail as well', () => {
     let dir: string;
 
