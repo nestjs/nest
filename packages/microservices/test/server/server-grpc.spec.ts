@@ -1764,6 +1764,71 @@ describe('ServerGrpc', () => {
     });
   });
 
+  describe('when a client stream call is cancelled', () => {
+    function createCall() {
+      return Object.assign(new EventEmitter(), {
+        request: undefined,
+        metadata: {},
+        cancelled: false,
+        end: vi.fn(),
+      });
+    }
+
+    function cancelCall(call: ReturnType<typeof createCall>) {
+      call.cancelled = true;
+      call.emit(CANCELLED_EVENT, 'cancelled');
+    }
+
+    function bindEndHook() {
+      const endHook = vi.fn();
+      untypedServer.onProcessingEndHook = endHook;
+      return endHook;
+    }
+
+    it('should unsubscribe from a response that has not emitted', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+      const response$ = new Subject<string>();
+
+      const result = server.createRequestStreamMethod(() => response$, false)(
+        call as any,
+        callback,
+      );
+      await new Promise(resolve => setImmediate(resolve));
+      expect(response$.observed).toBe(true);
+      cancelCall(call);
+      await result;
+
+      expect(response$.observed).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should not subscribe to the response if the call was cancelled while the handler ran', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+      const response$ = new Subject<string>();
+      // An async guard, interceptor or pipe, or an async handler
+      const handler = async () => {
+        cancelCall(call);
+        return response$;
+      };
+
+      const result = server.createRequestStreamMethod(handler, false)(
+        call as any,
+        callback,
+      );
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(response$.observed).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledOnce();
+      await result;
+    });
+  });
+
   describe('when an error cannot be sent as it is', () => {
     // grpc-js throws on an error that is not an object ("'message' in
     // error") and on a status message with a lone surrogate ("encodeURI")
