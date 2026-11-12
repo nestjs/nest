@@ -1532,7 +1532,29 @@ export class FastifyAdapter<
         };
       case 'application/x-www-form-urlencoded':
         return (_req, body, done) => {
-          done(null, querystringParse(body.toString()));
+          const parsedBody = querystringParse(body.toString());
+          // "fast-querystring" returns an object without a prototype, where
+          // "__proto__" is an ordinary key: copied onto another object, it
+          // would replace the prototype of that object. It is handled as in
+          // a JSON body ("onProtoPoisoning"), with the NodeAdapter's message.
+          const onProtoPoisoning =
+            this.instance.initialConfig.onProtoPoisoning || 'error';
+          if (
+            onProtoPoisoning !== 'ignore' &&
+            Object.hasOwn(parsedBody, '__proto__')
+          ) {
+            if (onProtoPoisoning === 'error') {
+              done(
+                new BadRequestException(
+                  'Object contains forbidden prototype property',
+                ),
+                undefined,
+              );
+              return;
+            }
+            delete parsedBody['__proto__'];
+          }
+          done(null, parsedBody);
         };
     }
   }

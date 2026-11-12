@@ -1754,6 +1754,83 @@ describe('FastifyAdapter', () => {
       expect(text.statusCode).toBe(200);
       expect(JSON.parse(text.body).rawBody).toBe('hello');
     });
+
+    describe('with a "__proto__" key in a urlencoded body', () => {
+      const form = 'application/x-www-form-urlencoded';
+      const registerKeysRoute = () =>
+        fastifyAdapter.post('/', (req: FastifyRequest, reply: FastifyReply) =>
+          fastifyAdapter.reply(reply, {
+            keys: Object.keys(req.body as object),
+          }),
+        );
+
+      it.each([
+        'msg=hello&__proto__=a',
+        'msg=hello&__proto__=a&__proto__=b',
+        'msg=hello&%5F_proto__=a',
+      ])('should reject "%s" by default, as a JSON body', async payload => {
+        fastifyAdapter.registerParserMiddleware();
+        registerKeysRoute();
+
+        const res = await post(form, payload);
+        expect(res.statusCode).toBe(400);
+        expect(JSON.parse(res.body).message).toBe(
+          'Object contains forbidden prototype property',
+        );
+
+        const json = await post(
+          'application/json',
+          '{"msg":"hello","__proto__":["a","b"]}',
+        );
+        expect(json.statusCode).toBe(400);
+      });
+
+      it('should accept a key that only contains "__proto__"', async () => {
+        fastifyAdapter.registerParserMiddleware();
+        registerKeysRoute();
+
+        const res = await post(form, 'msg=hello&__proto__x=a&a__proto__=b');
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body).keys).toEqual([
+          'msg',
+          '__proto__x',
+          'a__proto__',
+        ]);
+      });
+
+      it('should remove the key when "onProtoPoisoning" is "remove"', async () => {
+        fastifyAdapter = new FastifyAdapter({ onProtoPoisoning: 'remove' });
+        fastifyAdapter.registerParserMiddleware();
+        registerKeysRoute();
+
+        const res = await post(form, 'msg=hello&__proto__=a&__proto__=b');
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body).keys).toEqual(['msg']);
+      });
+
+      it('should keep the key when "onProtoPoisoning" is "ignore"', async () => {
+        fastifyAdapter = new FastifyAdapter({ onProtoPoisoning: 'ignore' });
+        fastifyAdapter.registerParserMiddleware();
+        registerKeysRoute();
+
+        const res = await post(form, 'msg=hello&__proto__=a&__proto__=b');
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body).keys).toEqual(['msg', '__proto__']);
+      });
+
+      it('should reject the key with the default parser registered through useBodyParser()', async () => {
+        fastifyAdapter.useBodyParser(form, false, { bodyLimit: 10_485_760 });
+        fastifyAdapter.registerParserMiddleware();
+        registerKeysRoute();
+
+        const res = await post(form, '__proto__=a&__proto__=b');
+
+        expect(res.statusCode).toBe(400);
+      });
+    });
   });
 
   describe('listen', () => {
