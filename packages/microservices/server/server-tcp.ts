@@ -3,7 +3,7 @@ import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
 import { isObservable, Observable, of, ReplaySubject } from 'rxjs';
-import { switchMap, takeUntil } from 'rxjs/operators';
+import { finalize, switchMap, takeUntil } from 'rxjs/operators';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
   EADDRINUSE,
@@ -132,7 +132,33 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
 
     const tcpContext = new TcpContext([socket, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
-      return this.handleEvent(pattern, packet, tcpContext);
+      const handler = this.getHandlerByPattern(pattern);
+      if (!handler || handler.isEventHandler) {
+        return this.handleEvent(pattern, packet, tcpContext, handler);
+      }
+      // A message handler is called without an id as well (ClientProxy#emit).
+      // Nobody waits for its reply, but the stream it returns belongs to the
+      // connection it was called over, as for a request. Event handlers stay
+      // detached from the connection the event came from.
+      return this.onProcessingStartHook(
+        this.transportId,
+        tcpContext,
+        async () => {
+          const response$ = this.endOnDisconnect(
+            await handler(packet.data, tcpContext),
+            tcpContext,
+            socket,
+          );
+          this.send(
+            response$.pipe(
+              finalize(() =>
+                this.onProcessingEndHook?.(this.transportId, tcpContext),
+              ),
+            ),
+            () => undefined,
+          );
+        },
+      );
     }
     this.assertValidPacketId((packet as IncomingRequest).id);
 

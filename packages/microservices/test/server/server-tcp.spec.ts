@@ -6,7 +6,7 @@ import {
   Server as NetServer,
   Socket as NetSocket,
 } from 'net';
-import { Observable, tap } from 'rxjs';
+import { Observable, of, tap } from 'rxjs';
 import * as sinon from 'sinon';
 import { CallHandler } from '../../../common';
 import { ApplicationConfig } from '../../../core/application-config';
@@ -322,6 +322,80 @@ describe('ServerTCP', () => {
       await server.handleMessage(socket as any, msg);
 
       expect(stream.subscribed).to.be.false;
+    });
+
+    describe('and the packet has no id', () => {
+      const event = { pattern: msg.pattern, data: msg.data };
+
+      ['close', 'error'].forEach(disconnectEvent => {
+        it(`should end the stream of a message handler on "${disconnectEvent}"`, async () => {
+          const { stream, observable } = createStream();
+          const endHook = sinon.spy();
+          untypedServer.onProcessingEndHook = endHook;
+          untypedServer.messageHandlers = objectToMap({
+            [msg.pattern]: async () => observable,
+          });
+
+          await server.handleMessage(socket as any, event);
+          expect(stream.subscribed).to.be.true;
+          expect(endHook.called).to.be.false;
+
+          socket.emit(disconnectEvent, new Error('read ECONNRESET'));
+
+          expect(stream.tornDown).to.be.true;
+          expect(endHook.calledOnce).to.be.true;
+        });
+      });
+      it('should not subscribe to the stream of a message handler once the peer has gone', async () => {
+        const { stream, observable } = createStream();
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: async () => observable,
+        });
+
+        socket.emit('close');
+        await server.handleMessage(socket as any, event);
+
+        expect(stream.subscribed).to.be.false;
+      });
+      it('should not reply with what a message handler returns', async () => {
+        const endHook = sinon.spy();
+        untypedServer.onProcessingEndHook = endHook;
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: async () => of('first', 'second'),
+        });
+
+        await server.handleMessage(socket as any, event);
+        await flush();
+
+        expect(socket.sendMessage.called).to.be.false;
+        expect(endHook.calledOnce).to.be.true;
+      });
+      it('should leave the stream of an event handler running', async () => {
+        const { stream, observable } = createStream();
+        untypedServer.messageHandlers = objectToMap({
+          [msg.pattern]: Object.assign(async () => observable, {
+            isEventHandler: true,
+          }),
+        });
+
+        await server.handleMessage(socket as any, event);
+        expect(stream.subscribed).to.be.true;
+
+        socket.emit('close');
+
+        expect(stream.tornDown).to.be.false;
+      });
+      it('should look the handler up only once', async () => {
+        const handler = Object.assign(sinon.spy(), { isEventHandler: true });
+        untypedServer.messageHandlers = objectToMap({ [msg.pattern]: handler });
+        const getHandlerByPattern = sinon.spy(server, 'getHandlerByPattern');
+
+        await server.handleMessage(socket as any, event);
+        await server.handleMessage(socket as any, { pattern: 'unknown' });
+
+        expect(handler.calledOnce).to.be.true;
+        expect(getHandlerByPattern.callCount).to.equal(2);
+      });
     });
 
     describe('and the handler has an interceptor', () => {

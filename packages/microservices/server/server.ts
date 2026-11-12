@@ -221,12 +221,15 @@ export abstract class Server<
       .subscribe((response: any) => scheduleOnNextTick({ response }));
   }
 
+  /**
+   * @param handler - the handler of `pattern`, if it was looked up already
+   */
   public async handleEvent(
     pattern: string,
     packet: ReadPacket,
     context: BaseRpcContext,
+    handler: MessageHandler | null = this.getHandlerByPattern(pattern),
   ): Promise<any> {
-    const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
