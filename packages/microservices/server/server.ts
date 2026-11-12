@@ -41,9 +41,12 @@ import {
 import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
 import { ConsumerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
-import { transformPatternToRoute } from '../utils';
+import { exceedsPatternLimits, transformPatternToRoute } from '../utils';
 
 const MAX_PACKET_ID_LENGTH = 256;
+// Far longer than the route of any pattern within the limits of a route, and
+// short enough for parsing it to stay cheap
+const MAX_JSON_PATTERN_LENGTH = 1024 * 1024;
 
 /**
  * @publicApi
@@ -349,7 +352,12 @@ export abstract class Server<
     let validPattern: MsPattern;
 
     try {
-      validPattern = JSON.parse(pattern);
+      // Parsing a longer one would cost many times its size, only for its
+      // route to say that it exceeds the limits of a route
+      validPattern =
+        pattern.length <= MAX_JSON_PATTERN_LENGTH
+          ? JSON.parse(pattern)
+          : pattern;
     } catch (error) {
       // Uses a fundamental object (`pattern` variable without any conversion)
       validPattern = pattern;
@@ -368,12 +376,20 @@ export abstract class Server<
    * `JSON.stringify` throw a `RangeError`, which must not escape the message
    * handler (as an unhandled promise rejection that terminates the process).
    *
+   * A pattern that exceeds the limits of a route is not serialized at all:
+   * its handler would be looked up by parsing the text again, at several
+   * times its size in memory, only for its route to say which limit it
+   * exceeds. That route is returned instead.
+   *
    * @param  {unknown} pattern - client pattern
    * @returns string
    */
   protected getPatternAsString(pattern: unknown): string {
     if (isString(pattern)) {
       return pattern;
+    }
+    if (exceedsPatternLimits(pattern)) {
+      return this.normalizePattern(pattern as MsPattern);
     }
     try {
       return JSON.stringify(pattern);

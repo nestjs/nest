@@ -133,6 +133,62 @@ describe('Server', () => {
       }
     });
   });
+
+  describe('getPatternAsString', () => {
+    it('should return the json text of a pattern within the limits', () => {
+      expect(untypedServer.getPatternAsString({ cmd: 'sum' })).to.equal(
+        '{"cmd":"sum"}',
+      );
+      expect(untypedServer.getPatternAsString('sum')).to.equal('sum');
+    });
+    it('should return the route of a pattern over the limits without serializing it', () => {
+      const wideArray = Array(100_000).fill({});
+      const stringify = sinon.spy(JSON, 'stringify');
+      let routes: string[];
+      try {
+        routes = [
+          untypedServer.getPatternAsString(wideArray),
+          untypedServer.getPatternAsString({ cmd: '\\"'.repeat(10_000) }),
+        ];
+      } finally {
+        stringify.restore();
+      }
+
+      expect(routes).to.deep.equal([
+        '[TOO_MANY_KEYS]',
+        '{"cmd":[VALUE_TOO_LONG]}',
+      ]);
+      expect(stringify.called).to.be.false;
+    });
+    it('should find the handler of a pattern within the limits', () => {
+      const handler = sinon.spy();
+      untypedServer.messageHandlers = new Map([['{"a":1,"b":2}', handler]]);
+
+      expect(
+        server.getHandlerByPattern(
+          untypedServer.getPatternAsString({ b: 2, a: 1 }),
+        ),
+      ).to.equal(handler);
+    });
+  });
+
+  describe('getRouteFromPattern with a long json text', () => {
+    it('should not parse it', () => {
+      const text = JSON.stringify(Array(600_000).fill(0));
+      expect(text.length).to.be.greaterThan(1024 * 1024);
+      const parse = sinon.spy(JSON, 'parse');
+      let route: string;
+      try {
+        route = untypedServer.getRouteFromPattern(text);
+      } finally {
+        parse.restore();
+      }
+
+      expect(route).to.equal(text);
+      expect(parse.called).to.be.false;
+    });
+  });
+
   describe('send', () => {
     let stream$: Observable<string>;
     let sendSpy: sinon.SinonSpy;
