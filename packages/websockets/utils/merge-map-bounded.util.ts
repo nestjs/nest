@@ -44,6 +44,10 @@ export function mergeMapBounded<T, R>(
         while (head && active < concurrent && !subscriber.closed) {
           const { value } = head;
           head = head.next;
+          if (!head) {
+            // Otherwise the last value would be kept until the next one
+            tail = undefined;
+          }
           active++;
           subscriber.add(
             defer(() => project(value)).subscribe({
