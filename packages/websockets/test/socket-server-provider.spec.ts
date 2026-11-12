@@ -153,5 +153,79 @@ describe('SocketServerProvider', () => {
         ).not.to.equal(host);
       });
     });
+
+    describe('when a gateway joins a server created for another one', () => {
+      let logError: sinon.SinonStub;
+      let logWarn: sinon.SinonStub;
+      beforeEach(() => {
+        logError = sinon.stub(instance['logger'], 'error');
+        logWarn = sinon.stub(instance['logger'], 'warn');
+      });
+
+      for (const key of ['verifyClient', 'allowRequest']) {
+        it(`should refuse a gateway whose "${key}" the server would not run`, () => {
+          instance.scanForSocketServer({ path }, port, 'OpenGateway');
+
+          expect(() =>
+            instance.scanForSocketServer(
+              { path, [key]: () => false },
+              port,
+              'CheckedGateway',
+            ),
+          ).to.throw(
+            `The gateway CheckedGateway sets "${key}", but shares the server on port ${port} and the path "${path}" with a gateway declared before it, and the server runs no "${key}" of that gateway.`,
+          );
+          expect(logError.calledOnce).to.be.true;
+        });
+      }
+
+      it('should refuse a gateway on a namespace with another "allowRequest"', () => {
+        instance.scanForSocketServer(
+          { path, namespace: 'a', allowRequest: () => true },
+          port,
+        );
+
+        expect(() =>
+          instance.scanForSocketServer(
+            { path, namespace: 'b', allowRequest: () => false },
+            port,
+          ),
+        ).to.throw(/runs the "allowRequest" of that gateway/);
+      });
+
+      it('should accept a gateway with the same connection check, or none', () => {
+        const verifyClient = () => true;
+        instance.scanForSocketServer({ path, verifyClient }, port);
+
+        instance.scanForSocketServer({ path, verifyClient }, port);
+        instance.scanForSocketServer({ path }, port);
+
+        expect(logError.called).to.be.false;
+        expect(logWarn.called).to.be.false;
+      });
+
+      it('should report other options the gateway would lose', () => {
+        instance.scanForSocketServer(
+          { path, namespace: 'a', cors: { origin: '*' } },
+          port,
+        );
+
+        instance.scanForSocketServer(
+          { path, namespace: 'b', cors: { origin: '*' } },
+          port,
+        );
+        expect(logWarn.called).to.be.false;
+
+        instance.scanForSocketServer(
+          { path, namespace: 'c', cors: { origin: 'x' }, transports: [] },
+          port,
+          'ChatGateway',
+        );
+        expect(logWarn.calledOnce).to.be.true;
+        expect(logWarn.firstCall.args[0]).to.match(
+          /^The gateway ChatGateway shares .* not applied: "cors", "transports"\.$/,
+        );
+      });
+    });
   });
 });

@@ -109,6 +109,7 @@ export class WebSocketsController {
     const observableServer = this.socketServerProvider.scanForSocketServer<T>(
       options,
       port,
+      (instance as object)?.constructor?.name,
     );
     this.assignServerToProperties(instance, observableServer.server);
     this.subscribeEvents(instance, messageHandlers, observableServer);
