@@ -735,3 +735,20 @@ describe('RouteInfoPathExtractor - controller routes on the other side of the gl
     ).to.deep.equal([]);
   });
 });
+
+describe('RouteInfoPathExtractor - paths ending in an optional segment', () => {
+  it('should mount the root route of a controller without the slash after an optional segment', () => {
+    const extractor = new RouteInfoPathExtractor(new ApplicationConfig());
+    const mount = (path: string) =>
+      extractor.extractPathsFrom({ path, method: RequestMethod.GET });
+
+    expect(mount('/proxy/*/')).to.deep.equal(['/proxy/*']);
+    expect(mount('/proxy/(.*)/')).to.deep.equal(['/proxy/(.*)']);
+    expect(mount('/files/{*path}/')).to.deep.equal(['/files/{*path}']);
+    expect(mount('/items/{:id}/')).to.deep.equal(['/items/{:id}']);
+    // The slash is kept where nothing optional comes before it
+    expect(mount('/invoices/')).to.deep.equal(['/invoices/']);
+    expect(mount('/users/:id/')).to.deep.equal(['/users/:id/']);
+    expect(mount('/files/*path/')).to.deep.equal(['/files/*path/']);
+  });
+});
