@@ -2,6 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import createHttpError from 'http-errors';
 import { of, throwError } from 'rxjs';
+import { PassThrough } from 'stream';
 import { AbstractHttpAdapter } from '../../adapters/index.js';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception.js';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler.js';
@@ -296,6 +297,173 @@ describe('ExceptionsHandler', () => {
 
         expect(statusStub).not.toHaveBeenCalled();
         expect(jsonStub).not.toHaveBeenCalled();
+      });
+    });
+    // What a GraphQL exception filter does when it is bound globally, and so
+    // to the HTTP routes as well
+    describe('when a custom filter returns the exception', () => {
+      it('should answer as if no filter had matched', () => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: (exception: unknown) => exception },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(404);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 404,
+          message: 'Not Found',
+        });
+      });
+
+      it('should not answer again if the filter has answered', () => {
+        vi.spyOn(adapter, 'isHeadersSent').mockReturnValue(true);
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: (exception: unknown) => exception },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).not.toHaveBeenCalled();
+        expect(jsonStub).not.toHaveBeenCalled();
+      });
+    });
+    describe('when a custom filter returns something else', () => {
+      // e.g. "return response.status(404).json(...)", or "return
+      // stream.pipe(response)" that answers a little later
+      it.each([
+        ['the response', () => response],
+        ['a stream', () => new PassThrough()],
+        ['a value', () => true],
+        // e.g. a Fastify reply, which is a thenable
+        ['a thenable', () => ({ then: vi.fn() })],
+      ])('should leave the request to the filter (%s)', (_, getResult) => {
+        const result = getResult();
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => result },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).not.toHaveBeenCalled();
+        expect(jsonStub).not.toHaveBeenCalled();
+        if (typeof result?.then === 'function') {
+          expect(result.then).not.toHaveBeenCalled();
+        }
+      });
+    });
+    describe('when a custom filter is async', () => {
+      const settled = () => new Promise(resolve => setImmediate(resolve));
+      const next = () =>
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+      // What an async RPC exception filter does in a hybrid application
+      it.each([
+        ['a stream', () => throwError(() => ({ code: 2 }))],
+        ['the exception', (exception: unknown) => exception],
+      ])(
+        'should answer once it resolves to %s, as if no filter had matched',
+        async (_, getResult) => {
+          handler.setCustomFilters([
+            {
+              exceptionMetatypes: [],
+              func: async (exception: unknown) => getResult(exception),
+            },
+          ]);
+          next();
+          expect(statusStub).not.toHaveBeenCalled();
+          await settled();
+
+          expect(statusStub).toHaveBeenCalledOnce();
+          expect(statusStub).toHaveBeenCalledWith(404);
+          expect(jsonStub).toHaveBeenCalledWith({
+            statusCode: 404,
+            message: 'Not Found',
+          });
+        },
+      );
+
+      it('should not answer if the response was sent before it resolved', async () => {
+        let headersSent = false;
+        vi.spyOn(adapter, 'isHeadersSent').mockImplementation(
+          () => headersSent,
+        );
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: async () => {
+              headersSent = true;
+              return of(null);
+            },
+          },
+        ]);
+        next();
+        await settled();
+
+        expect(statusStub).not.toHaveBeenCalled();
+        expect(jsonStub).not.toHaveBeenCalled();
+      });
+
+      it('should leave the request to a filter that resolves to nothing', async () => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: async () => undefined },
+        ]);
+        next();
+        await settled();
+
+        expect(statusStub).not.toHaveBeenCalled();
+        expect(jsonStub).not.toHaveBeenCalled();
+      });
+
+      it('should leave the rejection of a filter as it is', () => {
+        // Only its fulfilment is handled, so it is reported as before
+        class ObservedPromise<T> extends Promise<T> {
+          static readonly handlers: unknown[][] = [];
+          then(...handlers: any[]) {
+            ObservedPromise.handlers.push(handlers);
+            return super.then(...handlers);
+          }
+        }
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: () => ObservedPromise.resolve(undefined),
+          },
+        ]);
+        next();
+
+        expect(ObservedPromise.handlers[0]).toEqual([expect.any(Function)]);
+      });
+
+      it('should answer with a server error if the default answer fails', async () => {
+        const replyError = new TypeError('Do not know how to serialize');
+        vi.mocked(adapter.reply).mockImplementationOnce(() => {
+          throw replyError;
+        });
+        const logger = vi
+          .spyOn((ExceptionsHandler as any).logger, 'error')
+          .mockImplementation(() => {});
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: async () => of(null) },
+        ]);
+        next();
+        await settled();
+
+        expect(statusStub).toHaveBeenCalledWith(500);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+        expect(logger).toHaveBeenCalledWith(replyError);
       });
     });
   });
