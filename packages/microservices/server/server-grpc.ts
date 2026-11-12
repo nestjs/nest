@@ -94,21 +94,39 @@ function toWellFormed(text: unknown) {
   return isString(text) ? text.replace(LONE_SURROGATE, '\ufffd') : text;
 }
 
+// grpc-js takes the status message from a "message" of any type, and only
+// converts it to a string where it encodes it. A message that is not a string
+// (a list of messages, an Error) is converted here instead, so that its text
+// is made well-formed as well.
+function toStatusMessage(message: unknown) {
+  if (isUndefined(message) || isString(message)) {
+    return toWellFormed(message);
+  }
+  try {
+    return toWellFormed(String(message));
+  } catch {
+    // It has no text at all, such as an object without a prototype
+    return MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
+  }
+}
+
 // grpc-js throws on an error that is not an object, and on a status message
 // with a lone surrogate, which it cannot encode into the "grpc-message"
-// trailer. It does so from the subscriber that hands it the error, where
-// nothing catches the throw and the process exits.
+// trailer. It does so from the subscriber that hands it the error, or from
+// the stream's "wantTrailers" listener, where nothing catches the throw and
+// the process exits.
 function toSendableError(err: unknown) {
   if (!isObject(err) && !isFunction(err)) {
     return { code: GrpcStatus.UNKNOWN, message: toWellFormed(String(err)) };
   }
   const { code, message, details, metadata } = err as Record<string, unknown>;
-  if (toWellFormed(message) === message && toWellFormed(details) === details) {
+  const statusMessage = toStatusMessage(message);
+  if (statusMessage === message && toWellFormed(details) === details) {
     return err;
   }
   return {
     code,
-    message: toWellFormed(message),
+    message: statusMessage,
     details: toWellFormed(details),
     metadata,
   };

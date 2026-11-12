@@ -1845,6 +1845,48 @@ describe('ServerGrpc', () => {
       code: GrpcStatus.INVALID_ARGUMENT,
       message: `Unexpected token '\ufffd', "😀" is not valid JSON`,
     };
+    // grpc-js converts a message that is not a string to one ("encodeURI")
+    const loneSurrogateListError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: ['document 0: ok', `document 1: Unexpected token '\ud83d'`],
+    };
+    const sendableLoneSurrogateListError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: `document 0: ok,document 1: Unexpected token '�'`,
+    };
+    const loneSurrogateCauseError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: new SyntaxError(`Unexpected token '\ud83d'`),
+    };
+    const sendableLoneSurrogateCauseError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: `SyntaxError: Unexpected token '�'`,
+    };
+    const textlessMessageError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: Object.create(null),
+    };
+    const sendableTextlessMessageError = {
+      code: GrpcStatus.INVALID_ARGUMENT,
+      message: 'Internal server error',
+    };
+    const nonStringMessageCases = [
+      [
+        'a list of messages',
+        loneSurrogateListError,
+        sendableLoneSurrogateListError,
+      ],
+      [
+        'an Error as the message',
+        loneSurrogateCauseError,
+        sendableLoneSurrogateCauseError,
+      ],
+      [
+        'a message without text',
+        textlessMessageError,
+        sendableTextlessMessageError,
+      ],
+    ] as const;
 
     const createCall = () => ({
       request: {},
@@ -1859,6 +1901,7 @@ describe('ServerGrpc', () => {
     it.each([
       ['a string', stringError, sendableStringError],
       ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+      ...nonStringMessageCases,
     ])(
       'should send a unary call an error with %s that grpc-js can send',
       async (_, error, sendableError) => {
@@ -1876,6 +1919,7 @@ describe('ServerGrpc', () => {
     it.each([
       ['a string', stringError, sendableStringError],
       ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+      ...nonStringMessageCases,
     ])(
       'should emit a response stream an error with %s that grpc-js can send',
       async (_, error, sendableError) => {
@@ -1890,6 +1934,22 @@ describe('ServerGrpc', () => {
           'error',
           sendableError,
         );
+      },
+    );
+
+    it.each(nonStringMessageCases)(
+      'should give grpc-js an error with %s whose status message it can encode',
+      async (_, error) => {
+        const callback = vi.fn();
+
+        await server.createUnaryServiceMethod(() => throwError(() => error))(
+          createCall(),
+          callback,
+        );
+
+        // As grpc-js does in serverErrorToStatus() and sendStatus()
+        const [sentError] = callback.mock.calls[0];
+        expect(() => encodeURI(sentError.message)).not.toThrow();
       },
     );
 
