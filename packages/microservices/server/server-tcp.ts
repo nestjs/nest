@@ -13,6 +13,7 @@ import {
   TCP_DEFAULT_PORT,
 } from '../constants';
 import { getHandlerObservableNotifier } from '../context/rpc-context-creator';
+import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { TcpContext } from '../ctx-host/tcp.context';
 import { Transport } from '../enums';
 import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events';
@@ -20,6 +21,7 @@ import { JsonSocket, TcpSocket } from '../helpers';
 import { InvalidTcpDataReceptionException } from '../errors/invalid-tcp-data-reception.exception';
 import {
   IncomingRequest,
+  MessageHandler,
   PacketId,
   ReadPacket,
   WritePacket,
@@ -29,6 +31,8 @@ import {
   TransportId,
 } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+
+const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 
 /**
  * @publicApi
@@ -44,6 +48,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly incompleteMessageTimeout?: number;
   protected readonly maxSendBufferSize?: number;
   protected readonly drainTimeout?: number;
+  protected readonly maxConcurrentMessages: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
   protected tlsOptions?: TlsOptions;
@@ -67,6 +72,18 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     TcpSocket,
     Observable<void>
   >();
+  /**
+   * How many messages of each socket are being handled.
+   */
+  protected readonly pendingMessages = new WeakMap<TcpSocket, number>();
+  /**
+   * What settles the message of a context, until the stream its handler
+   * returned takes it over (see "takePendingMessageSettler").
+   */
+  protected readonly pendingMessageSettlers = new WeakMap<
+    BaseRpcContext,
+    () => void
+  >();
 
   constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
@@ -85,6 +102,15 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     );
     this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
     this.drainTimeout = this.getOptionsProp(options, 'drainTimeout');
+    // Not a number gets the default as well, and 0 lifts the limit
+    const maxConcurrentMessages = this.getOptionsProp(
+      options,
+      'maxConcurrentMessages',
+    );
+    this.maxConcurrentMessages =
+      maxConcurrentMessages == null || isNaN(maxConcurrentMessages)
+        ? DEFAULT_MAX_CONCURRENT_MESSAGES
+        : maxConcurrentMessages || Infinity;
 
     this.init();
     this.initializeSerializer(options);
@@ -127,14 +153,42 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   }
 
   public async handleMessage(socket: TcpSocket, rawMessage: unknown) {
-    const packet = await this.deserializer.deserialize(rawMessage);
-    const pattern = this.getPatternAsString(packet.pattern);
+    // Up to its first "await" this runs within the "message" event, so a
+    // socket paused here emits no further message of the same read
+    const settle = this.trackPendingMessage(socket);
+    let tcpContext: TcpContext | undefined;
+    try {
+      const packet = await this.deserializer.deserialize(rawMessage);
+      const pattern = this.getPatternAsString(packet.pattern);
 
-    const tcpContext = new TcpContext([socket, pattern]);
+      tcpContext = new TcpContext([socket, pattern]);
+      this.pendingMessageSettlers.set(tcpContext, settle);
+      return await this.dispatchMessage(socket, packet, pattern, tcpContext);
+    } finally {
+      // A message whose handler returned a stream is settled once that stream
+      // is done (see "takePendingMessageSettler"). Any other is done with
+      // now, as its handler, and the processing end hook, have run.
+      if (!tcpContext || this.pendingMessageSettlers.delete(tcpContext)) {
+        settle();
+      }
+    }
+  }
+
+  protected dispatchMessage(
+    socket: TcpSocket,
+    packet: ReadPacket,
+    pattern: string,
+    tcpContext: TcpContext,
+  ) {
     if (isUndefined((packet as IncomingRequest).id)) {
       const handler = this.getHandlerByPattern(pattern);
       if (!handler || handler.isEventHandler) {
-        return this.handleEvent(pattern, packet, tcpContext, handler);
+        return this.handleEvent(
+          pattern,
+          packet,
+          tcpContext,
+          handler && this.settleOnStreamEnd(handler, tcpContext),
+        );
       }
       // A message handler is called without an id as well (ClientProxy#emit).
       // Nobody waits for its reply, but the stream it returns belongs to the
@@ -149,11 +203,16 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
             tcpContext,
             socket,
           );
+          const settle = this.takePendingMessageSettler(tcpContext);
           this.send(
             response$.pipe(
-              finalize(() =>
-                this.onProcessingEndHook?.(this.transportId, tcpContext),
-              ),
+              finalize(() => {
+                try {
+                  this.onProcessingEndHook?.(this.transportId, tcpContext);
+                } finally {
+                  settle();
+                }
+              }),
             ),
             () => undefined,
           );
@@ -183,17 +242,87 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
         );
 
         response$ &&
-          this.send(response$, data => {
-            Object.assign(data, { id: (packet as IncomingRequest).id });
-            const outgoingResponse = this.serializer.serialize(
-              data as WritePacket & PacketId,
-            );
+          this.send(
+            response$.pipe(
+              finalize(this.takePendingMessageSettler(tcpContext)),
+            ),
+            data => {
+              Object.assign(data, { id: (packet as IncomingRequest).id });
+              const outgoingResponse = this.serializer.serialize(
+                data as WritePacket & PacketId,
+              );
 
-            this.onProcessingEndHook?.(this.transportId, tcpContext);
-            socket.sendMessage(outgoingResponse);
-          });
+              this.onProcessingEndHook?.(this.transportId, tcpContext);
+              socket.sendMessage(outgoingResponse);
+            },
+          );
       },
     );
+  }
+
+  /**
+   * Counts a message of "socket" as pending, and asks the socket for no
+   * further messages while "maxConcurrentMessages" of them are. How many a
+   * peer sends before any of them is done is up to the peer, and each takes
+   * up memory for as long as its handler, and the stream it returned, run.
+   * Returns what to call, once, when the message is no longer pending.
+   */
+  protected trackPendingMessage(socket: TcpSocket): () => void {
+    const pending = (this.pendingMessages.get(socket) ?? 0) + 1;
+    this.pendingMessages.set(socket, pending);
+    if (pending >= this.maxConcurrentMessages) {
+      // A socket class written for an older version may lack it
+      socket.pauseMessages?.();
+    }
+
+    let isPending = true;
+    return () => {
+      if (!isPending) {
+        return;
+      }
+      isPending = false;
+      const stillPending = this.pendingMessages.get(socket)! - 1;
+      this.pendingMessages.set(socket, stillPending);
+      // Nothing more is dispatched once the server is closed, including what
+      // a socket has read but not emitted yet
+      if (
+        stillPending < this.maxConcurrentMessages &&
+        !this.isManuallyTerminated
+      ) {
+        socket.resumeMessages?.();
+      }
+    };
+  }
+
+  /**
+   * Keeps a message pending from the moment its handler has returned a stream
+   * until that stream has settled. The caller settles the message by calling
+   * what this returns, which does nothing if it was settled already.
+   */
+  protected takePendingMessageSettler(context: BaseRpcContext): () => void {
+    const settle = this.pendingMessageSettlers.get(context);
+    if (!settle) {
+      return () => {};
+    }
+    this.pendingMessageSettlers.delete(context);
+    return settle;
+  }
+
+  /**
+   * Wraps an event handler, so that the message is kept pending until the
+   * stream the handler returned, if any, has settled.
+   */
+  protected settleOnStreamEnd(
+    handler: MessageHandler,
+    context: BaseRpcContext,
+  ): MessageHandler {
+    return async (...args: Parameters<MessageHandler>) => {
+      const result = await handler(...args);
+      if (!isObservable(result)) {
+        return result;
+      }
+      return result.pipe(finalize(this.takePendingMessageSettler(context)));
+    };
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {

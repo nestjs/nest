@@ -38,6 +38,16 @@ export abstract class TcpSocket {
     return this;
   }
 
+  /**
+   * Asks the socket to emit no further messages until "resumeMessages" is
+   * called. "ServerTCP" does so while "maxConcurrentMessages" messages of the
+   * peer are being handled. A socket class that does not implement it keeps
+   * emitting messages as it reads them.
+   */
+  public pauseMessages() {}
+
+  public resumeMessages() {}
+
   public sendMessage(message: any, callback?: (err?: any) => void) {
     if (this.isClosed) {
       callback && callback(new NetSocketClosedException());

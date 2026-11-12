@@ -5,6 +5,7 @@ import { DrainTimeoutException } from '../errors/drain-timeout.exception';
 import { IncompleteMessageTimeoutException } from '../errors/incomplete-message-timeout.exception';
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception';
 import { MaxSendBufferSizeExceededException } from '../errors/max-send-buffer-size-exceeded.exception';
+import { PendingMessagesTimeoutException } from '../errors/pending-messages-timeout.exception';
 import { TcpEventsMap } from '../events/tcp.events';
 import { TcpSocket } from './tcp-socket';
 
@@ -54,6 +55,15 @@ export class JsonSocket extends TcpSocket {
   private incompleteMessageTimer: NodeJS.Timeout | null = null;
   private drainTimer: NodeJS.Timeout | null = null;
   private isBackpressured = false;
+  /**
+   * Set while the owner of the socket asked for no further messages (see
+   * "pauseMessages"). Reading goes on, so that a peer that leaves is noticed,
+   * until more than "maxBufferSize" characters are waiting.
+   */
+  private isHoldingMessages = false;
+  private isReadingPaused = false;
+  private holdTimer: NodeJS.Timeout | null = null;
+  private isProcessingBuffer = false;
   private writtenLength = 0;
   /**
    * Set once the data received could not be framed. Whatever the peer sends
@@ -85,6 +95,7 @@ export class JsonSocket extends TcpSocket {
     this.socket.on(TcpEventsMap.CLOSE, () => {
       this.clearIncompleteMessageTimer();
       this.clearDrainTimer();
+      this.clearHoldTimer();
     });
   }
 
@@ -137,6 +148,7 @@ export class JsonSocket extends TcpSocket {
     try {
       this.processBuffer();
       this.flattenBufferIfFragmented();
+      this.updateReading();
     } catch (err) {
       this.discardAfterFramingError();
       throw err;
@@ -182,13 +194,27 @@ export class JsonSocket extends TcpSocket {
   }
 
   private processBuffer() {
+    // A message handler may resume messages while one is being emitted. The
+    // loop below then simply goes on.
+    if (this.isProcessingBuffer) {
+      return;
+    }
+    this.isProcessingBuffer = true;
+    try {
+      this.processBufferedPackets();
+    } finally {
+      this.isProcessingBuffer = false;
+    }
+  }
+
+  private processBufferedPackets() {
     // Iterative loop replaces recursion to prevent stack overflow on pipelined
     // TCP messages (e.g. many small frames arriving in one read event).
     while (true) {
       // Stop turning buffered frames into responses while the outgoing buffer
-      // is backed up. Whatever is left stays in the buffer and is picked up
-      // again once the socket drains.
-      if (this.isBackpressured) {
+      // is backed up, or while no further messages are wanted. Whatever is
+      // left stays in the buffer and is picked up again afterwards.
+      if (this.isStalled) {
         break;
       }
 
@@ -276,12 +302,134 @@ export class JsonSocket extends TcpSocket {
     return contentLength >= 0 && contentLength <= this.maxBufferSize;
   }
 
+  /**
+   * Emits no further messages until "resumeMessages" is called. The data
+   * read meanwhile is kept, and reading is suspended only once more than
+   * "maxBufferSize" characters are waiting. If none of the pending messages
+   * settles for "drainTimeout" after that, the peer is dropped: with reading
+   * suspended, it would not be noticed if it left.
+   */
+  public override pauseMessages() {
+    if (this.isHoldingMessages) {
+      return;
+    }
+    this.stall(() => (this.isHoldingMessages = true));
+    this.updateReading();
+  }
+
+  public override resumeMessages() {
+    if (!this.isHoldingMessages) {
+      return;
+    }
+    this.isHoldingMessages = false;
+    this.unstall();
+  }
+
+  /**
+   * Whether buffered frames are kept rather than turned into messages, during
+   * which the peer is not held to the timeouts of an incomplete packet.
+   */
+  private get isStalled() {
+    return this.isBackpressured || this.isHoldingMessages;
+  }
+
+  private stall(setReason: () => void) {
+    const wasStalled = this.isStalled;
+    setReason();
+    if (!wasStalled) {
+      this.clearIncompleteMessageTimer();
+    }
+  }
+
+  private unstall() {
+    this.updateReading();
+    if (this.isStalled) {
+      return;
+    }
+    // Nothing more is handled for a connection that was torn down. A peer
+    // that ended the connection after its last frame has all of them handled.
+    if (
+      this.hasFramingError ||
+      (this.socket.destroyed && !this.socket.readableEnded)
+    ) {
+      return;
+    }
+
+    // Frames that arrived while stalled may still be buffered.
+    try {
+      this.processBuffer();
+      this.updateReading();
+    } catch (e) {
+      this.discardAfterFramingError();
+      this.handleDataError(e);
+    } finally {
+      this.refreshIncompleteMessageTimer();
+    }
+  }
+
+  /**
+   * Suspends reading while the outgoing buffer is backed up, or while more
+   * than "maxBufferSize" characters wait for messages to be resumed.
+   */
+  private updateReading() {
+    const isWaitingTooLong =
+      this.isHoldingMessages && this.buffer.length > this.maxBufferSize;
+    if (isWaitingTooLong) {
+      this.armHoldTimer();
+    } else {
+      this.clearHoldTimer();
+    }
+
+    const shouldPause = this.isBackpressured || isWaitingTooLong;
+    if (shouldPause === this.isReadingPaused || this.socket.destroyed) {
+      return;
+    }
+    this.isReadingPaused = shouldPause;
+    if (shouldPause) {
+      this.socket.pause();
+    } else {
+      this.socket.resume();
+    }
+  }
+
+  private armHoldTimer() {
+    if (!this.drainTimeout || this.holdTimer) {
+      return;
+    }
+    this.holdTimer = setTimeout(
+      () => this.handleHoldTimeout(),
+      this.drainTimeout,
+    );
+    this.holdTimer.unref?.();
+  }
+
+  private clearHoldTimer() {
+    if (!this.holdTimer) {
+      return;
+    }
+    clearTimeout(this.holdTimer);
+    this.holdTimer = null;
+  }
+
+  private handleHoldTimeout() {
+    this.holdTimer = null;
+    const bufferedLength = this.buffer.length;
+    this.buffer = '';
+    this.contentLength = null;
+    this.handleDataError(
+      new PendingMessagesTimeoutException(bufferedLength, this.drainTimeout),
+      { destroy: true },
+    );
+  }
+
   private applyBackpressure() {
     if (this.isBackpressured) {
       return;
     }
-    this.isBackpressured = true;
-    this.socket.pause();
+    // Reads are paused by us, so the peer cannot make progress on an inbound
+    // packet. Resume its timeouts only after outgoing data has drained.
+    this.stall(() => (this.isBackpressured = true));
+    this.updateReading();
     this.socket.once(TcpEventsMap.DRAIN, () => this.releaseBackpressure());
     this.armDrainTimer();
   }
@@ -289,17 +437,7 @@ export class JsonSocket extends TcpSocket {
   private releaseBackpressure() {
     this.isBackpressured = false;
     this.clearDrainTimer();
-    this.socket.resume();
-
-    // Frames that arrived before the socket was paused may still be buffered.
-    try {
-      this.processBuffer();
-    } catch (e) {
-      this.discardAfterFramingError();
-      this.handleDataError(e);
-    } finally {
-      this.refreshIncompleteMessageTimer();
-    }
+    this.unstall();
   }
 
   /**
@@ -365,7 +503,11 @@ export class JsonSocket extends TcpSocket {
 
     const hasIncompleteMessage =
       this.buffer.length > 0 || this.contentLength !== null;
-    if (!this.incompleteMessageTimeout || !hasIncompleteMessage) {
+    if (
+      this.isStalled ||
+      !this.incompleteMessageTimeout ||
+      !hasIncompleteMessage
+    ) {
       return;
     }
 
