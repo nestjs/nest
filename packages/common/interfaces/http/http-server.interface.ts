@@ -50,6 +50,13 @@ export interface RouteMatchingOptions {
    * `/users;a=1` is served by the `/users` route. Defaults to `false`.
    */
   useSemicolonDelimiter?: boolean;
+  /**
+   * Whether the text that follows a parameter in its path segment (`.png` in
+   * `/reports/:id.png`) is matched as written even when `caseSensitive` is
+   * `false`, as find-my-way does: `/reports/7.PNG` is then served by another
+   * route. Defaults to `false`.
+   */
+  caseSensitiveParamSuffix?: boolean;
 }
 
 export interface HttpServer<
