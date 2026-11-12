@@ -415,6 +415,24 @@ describe('MiddlewareBuilder', () => {
       ]);
     });
 
+    it('should not exclude the parent route of a wildcard, excluded from the global prefix with a trailing slash', () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['webhooks/']),
+      });
+      builder = new MiddlewareBuilder(
+        new RoutesMapper(new NestContainer(), appConfig),
+        new NoopHttpAdapter({}),
+        new RouteInfoPathExtractor(appConfig),
+      );
+      const proxy: any = builder.apply().exclude('webhooks/{*path}');
+
+      expect(proxy.getExcludedRoutes()).toEqual([
+        { path: '/api/webhooks/{*path}', method: -1 },
+      ]);
+    });
+
     it('should match the routes excluded from the global prefix with the case sensitivity of the router', () => {
       const appConfig = new ApplicationConfig();
       appConfig.setGlobalPrefix('api');

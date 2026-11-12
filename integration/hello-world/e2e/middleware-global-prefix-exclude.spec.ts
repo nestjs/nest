@@ -218,6 +218,20 @@ describe.each([
       },
     );
 
+    it.each(['health/{*path}', 'health/*', 'health/(.*)'])(
+      `exclude('%s') should not skip "/health" excluded from the prefix as "health/"`,
+      async exclusion => {
+        // Served at "/health", which the exclusion does not match
+        await createApp(exclusion, ['health/']);
+        await request(app.getHttpServer())
+          .get('/health')
+          .expect(200, MIDDLEWARE_VALUE);
+        await request(app.getHttpServer())
+          .get('/api/health/ready')
+          .expect(200, RETURN_VALUE);
+      },
+    );
+
     it(`exclude('reports') should skip "/reports" excluded by a wildcard`, async () => {
       await createApp('reports', ['reports/{*path}']);
       await request(app.getHttpServer())

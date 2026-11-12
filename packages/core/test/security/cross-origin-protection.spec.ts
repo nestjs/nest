@@ -513,6 +513,18 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(protection, '/api/webhooks/github')).toBe(true);
     });
 
+    it('does not exclude the parent route of a wildcard, excluded from the global prefix with a trailing slash', () => {
+      const protection = createProtection(['webhooks/{*path}'], config => {
+        config.setGlobalPrefix('api');
+        config.setGlobalPrefixOptions({
+          exclude: mapToExcludeRoute(['webhooks/']),
+        });
+      });
+      // Served at "/webhooks", which the wildcard does not match
+      expect(isExcluded(protection, '/webhooks')).toBe(false);
+      expect(isExcluded(protection, '/api/webhooks/stripe')).toBe(true);
+    });
+
     it('matches the routes excluded from the global prefix case-sensitively', () => {
       const protection = createProtection(
         [{ path: 'WEBHOOKS/*path', method: RequestMethod.POST }],

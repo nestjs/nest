@@ -599,6 +599,48 @@ describe('RouteInfoPathExtractor', () => {
       ]);
     });
 
+    it(`should compare an excluded route written with a trailing slash as the router serves it`, () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.setGlobalPrefix('api');
+      appConfig.setGlobalPrefixOptions({
+        exclude: mapToExcludeRoute(['webhooks/', 'orders/archive/']),
+      });
+      const extractor = new RouteInfoPathExtractor(appConfig);
+
+      // "/webhooks/" is served at "/webhooks", which the wildcard does not
+      // match
+      for (const path of [
+        '/webhooks/{*path}',
+        '/webhooks/*',
+        '/webhooks/(.*)',
+        '/webhooks/{:id}',
+      ]) {
+        expect(
+          extractor.extractExclusionsFrom({
+            path,
+            method: -1 as RequestMethod,
+          }),
+        ).toEqual([{ path: '/api' + path, method: -1 }]);
+      }
+      // A route written with a trailing slash is served without it too
+      expect(
+        extractor.extractExclusionsFrom({
+          path: '/orders/:id/',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([
+        { path: '/api/orders/:id/', method: -1 },
+        { path: '/orders/archive/', method: -1 },
+      ]);
+      // forRoutes() mounts the middleware on more paths with it
+      expect(
+        extractor.extractExcludedRoutesCoveredBy({
+          path: '/webhooks/{*path}',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([{ path: '/webhooks/', method: -1 }]);
+    });
+
     it(`should only return the route itself when it is excluded or a wildcard`, () => {
       expect(
         routeInfoPathExtractor.extractExclusionsFrom({
