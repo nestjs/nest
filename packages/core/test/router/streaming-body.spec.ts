@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'async_hooks';
 import { EventEmitter } from 'events';
 import { of, Subject } from 'rxjs';
 import { Readable } from 'stream';
@@ -439,6 +440,27 @@ describe('streaming body', () => {
       }
 
       expect(chunks).toEqual(['']);
+    });
+
+    it('should read the body in the async context it was created in', async () => {
+      const storage = new AsyncLocalStorage<string>();
+      const stream = storage.run('this request', () =>
+        toReadable(
+          openStreamingBody(
+            (async function* () {
+              yield storage.getStore();
+              yield { toJSON: () => storage.getStore() };
+            })(),
+          ),
+          'first',
+        ),
+      );
+
+      const chunks = await storage.run('another request', () =>
+        stream.toArray(),
+      );
+
+      expect(chunks).toEqual(['first', 'this request', '"this request"\n']);
     });
 
     it('should read no further than asked', async () => {

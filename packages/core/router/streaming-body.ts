@@ -187,23 +187,28 @@ export function toReadable(
   // Destroyed when the client goes away, which on Node.js before 22.16 happens
   // outside of the request's async context. `finally` blocks run in the context
   // of whoever stops a generator, and may need AsyncLocalStorage stores.
+  // The rest of the body likewise runs in the context of whatever asks for the
+  // next chunk: once the response has made the stream wait, that is what
+  // drained it, which for a pipelined request is the end of the response before
+  // it on the same connection, i.e. another request.
   const asyncScope = new AsyncResource('StreamingBody');
   let pendingChunk: string | Uint8Array | undefined = firstChunk;
   return Readable.from({
     [Symbol.asyncIterator]() {
       return this;
     },
-    next: async () => {
-      if (pendingChunk !== undefined) {
-        const value = pendingChunk;
-        pendingChunk = undefined;
-        return { done: false, value };
-      }
-      const result = await iterator.next();
-      return result.done
-        ? { done: true, value: undefined }
-        : { done: false, value: toResponseChunk(result.value) };
-    },
+    next: () =>
+      asyncScope.runInAsyncScope(async () => {
+        if (pendingChunk !== undefined) {
+          const value = pendingChunk;
+          pendingChunk = undefined;
+          return { done: false, value };
+        }
+        const result = await iterator.next();
+        return result.done
+          ? { done: true, value: undefined }
+          : { done: false, value: toResponseChunk(result.value) };
+      }),
     return: async () => {
       await asyncScope.runInAsyncScope(() => iterator.return());
       return { done: true, value: undefined };

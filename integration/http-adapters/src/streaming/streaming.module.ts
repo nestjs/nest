@@ -591,6 +591,7 @@ export class GeneratorController {
     const chunk = Buffer.alloc(256 * 1024, 'x');
     const seen = new Set<string | undefined>();
     for (let i = 0; i < 20; i++) {
+      streaming.pulled++;
       seen.add(requestStore.getStore()?.id);
       yield chunk;
     }
@@ -933,12 +934,15 @@ export class CompatibleController {
 export class StreamingModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply((_req: unknown, res: any, next: () => void) => {
+      .apply((req: any, res: any, next: () => void) => {
         const raw = res.raw ?? res;
         raw.setHeader('x-middleware', 'ran');
         raw.setHeader('x-shared-with-middleware', 'middleware');
         raw.setHeader('set-cookie', 'from=middleware');
-        requestStore.run({ id: 'request' }, next);
+        requestStore.run(
+          { id: req.headers['x-request-id'] ?? 'request' },
+          next,
+        );
       })
       .forRoutes('{*path}');
   }

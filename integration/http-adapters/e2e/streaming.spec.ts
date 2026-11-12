@@ -521,6 +521,28 @@ describe.each(adapters('express', 'fastify', 'node'))(
         expect(res.text.split('\n').pop()).toBe('["request"]');
       });
 
+      it('should keep the AsyncLocalStorage store of a pipelined request', async () => {
+        const { port } = new URL(baseUrl);
+        const socket = connect(Number(port), '127.0.0.1');
+        let text = '';
+        socket.setEncoding('latin1');
+        socket.on('data', chunk => (text += chunk));
+        const closed = new Promise(resolve => socket.once('close', resolve));
+        socket.write(
+          'GET /generator/flushed HTTP/1.1\r\nHost: localhost\r\nX-Request-Id: first\r\n\r\n' +
+            'GET /generator/context HTTP/1.1\r\nHost: localhost\r\nX-Request-Id: second\r\nConnection: close\r\n\r\n',
+        );
+
+        // The second response has no socket until the first one ends, which
+        // is what resumes it once it has buffered as much as it may
+        await vi.waitFor(() => expect(streaming.pulled).toBeGreaterThan(0));
+        await new Promise(resolve => setTimeout(resolve, 100));
+        streaming.openGate();
+        await closed;
+
+        expect(text.match(/\[.*\]/)?.[0]).toBe('["second"]');
+      });
+
       it('should not start it for HEAD', async () => {
         const res = await send('/generator', { method: 'HEAD' });
 
