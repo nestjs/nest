@@ -1,6 +1,7 @@
 import { RequestMethod, StreamableFile } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import * as express from 'express';
 import * as sinon from 'sinon';
 import { PassThrough, Readable, Writable } from 'stream';
@@ -90,6 +91,28 @@ describe('ExpressAdapter', () => {
         expect(source.destroyed).to.be.true;
         expect(errorHandler.called).to.be.false;
         expect(errorLogger.called).to.be.false;
+      });
+
+      it('should destroy the source streams of pipelined responses when the connection closes', async () => {
+        // Responses queued behind an unread one on the same connection: they
+        // have no socket of their own, and may never be closed themselves
+        const connection = Object.assign(new EventEmitter(), {
+          destroyed: false,
+        });
+        const sources = Array.from({ length: 3 }, () => new PassThrough());
+        for (const source of sources) {
+          const response = Object.assign(createStreamResponse(), {
+            req: { method: 'GET', socket: connection },
+          });
+          expressAdapter.reply(response, new StreamableFile(source));
+          source.write('partial');
+        }
+        expect(connection.listenerCount('close')).to.equal(1);
+
+        connection.emit('close');
+
+        await waitFor(() => sources.every(source => source.destroyed));
+        expect(sources.every(source => source.destroyed)).to.be.true;
       });
 
       it('should destroy the source stream when the client disconnected before the reply', async () => {

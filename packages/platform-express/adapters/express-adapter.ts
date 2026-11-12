@@ -31,11 +31,12 @@ import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
-import { Duplex, finished, Writable } from 'stream';
+import { Duplex, Writable } from 'stream';
 import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
 import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
+import { onResponseClose } from './utils/on-response-close.util';
 
 type VersionedRoute = <
   TRequest extends Record<string, any> = any,
@@ -121,8 +122,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         this.handleStreamError(body, err, response);
       });
       // pipe() leaves the source open when the client disconnects early,
-      // also before reply() runs ("close" has already fired by then)
-      finished(response, () => {
+      // also before reply() runs ("close" has already fired by then), or
+      // while the response waits behind others pipelined on the connection
+      onResponseClose(response, () => {
         if (!stream.readableEnded) {
           stream.destroy();
         }
