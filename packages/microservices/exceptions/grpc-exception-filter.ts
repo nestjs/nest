@@ -1,6 +1,8 @@
 import {
   type ArgumentsHost,
   Catch,
+  IntrinsicException,
+  Logger,
   type RpcExceptionFilter,
 } from '@nestjs/common';
 import { isNumber, isObject } from '@nestjs/common/internal';
@@ -15,6 +17,8 @@ import { RpcException } from './rpc-exception.js';
  */
 @Catch()
 export class GrpcExceptionFilter implements RpcExceptionFilter {
+  private static readonly logger = new Logger('RpcExceptionsHandler');
+
   public catch(
     exception: unknown,
     host: ArgumentsHost,
@@ -35,6 +39,23 @@ export class GrpcExceptionFilter implements RpcExceptionFilter {
 
   private serializeRpcException(exception: RpcException): GrpcExceptionBody {
     const error = exception.getError();
+
+    // An Error, as in `new RpcException(err)`, was not written for the
+    // caller: its message, and its "details" and "metadata" if it has them,
+    // would be sent with the status. As in `BaseRpcExceptionFilter`, it is
+    // logged and answered as an unknown error, except that its numeric "code"
+    // or "status" is still used as the status. An exception that returns
+    // itself from `getError()` holds no error other than its own.
+    if (error instanceof Error && error !== exception) {
+      if (!(error instanceof IntrinsicException)) {
+        GrpcExceptionFilter.logger.error(error);
+      }
+      const code = this.getErrorCode(error);
+      return {
+        code: isNumber(code) ? code : GrpcStatus.UNKNOWN,
+        message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+      };
+    }
 
     if (isObject(error)) {
       const code = this.getErrorCode(error);
