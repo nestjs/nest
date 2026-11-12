@@ -943,6 +943,20 @@ describe('NodeRouter', () => {
       expect(route).not.toHaveBeenCalled();
       expect(finalHandler.mock.calls[0][0]).toBeInstanceOf(URIError);
       expect(finalHandler.mock.calls[1][0]).toBeInstanceOf(URIError);
+      // The client's error, as the Express router marks it
+      expect(finalHandler.mock.calls[0][0].status).toBe(400);
+      expect(finalHandler.mock.calls[1][0].status).toBe(400);
+    });
+
+    it('should not mark the URIError a middleware throws as the one of a malformed URL', () => {
+      router.use(() => {
+        decodeURIComponent('%');
+      });
+
+      dispatch('GET', '/');
+
+      expect(finalHandler.mock.calls[0][0]).toBeInstanceOf(URIError);
+      expect(finalHandler.mock.calls[0][0].status).toBeUndefined();
     });
 
     it('should report a request target it cannot route to onRejectedTarget, before the error handlers', () => {

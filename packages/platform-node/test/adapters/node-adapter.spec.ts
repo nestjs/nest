@@ -2831,14 +2831,34 @@ describe('NodeAdapter', () => {
     });
 
     it.each([
-      new SyntaxError('Unexpected end of JSON input'),
-      new URIError('URI malformed'),
-    ])('should map a $name to a BadRequestException', error => {
-      const result = adapter.mapException(error) as BadRequestException;
+      // As the body parsers and the router raise them
+      createHttpError(400, new SyntaxError('Unexpected end of JSON input')),
+      Object.assign(new URIError('URI malformed'), { status: 400 }),
+    ])(
+      'should map a $name with a 400 status to a BadRequestException',
+      error => {
+        const result = adapter.mapException(error) as BadRequestException;
 
-      expect(result).toBeInstanceOf(BadRequestException);
-      expect(result.message).toBe(error.message);
-      expect(result.cause).toBe(error);
+        expect(result).toBeInstanceOf(BadRequestException);
+        expect(result.message).toBe(error.message);
+        expect(result.cause).toBe(error);
+      },
+    );
+
+    it.each([
+      // e.g. a middleware that decodes a query param, or parses a header
+      new SyntaxError('Unexpected token in config/internal.json'),
+      new URIError('URI malformed'),
+    ])('should not map a $name without a status', error => {
+      expect(adapter.mapException(error)).toBe(error);
+    });
+
+    it('should not map a SyntaxError of another status', () => {
+      const error = Object.assign(new SyntaxError('internal detail'), {
+        status: 500,
+      });
+
+      expect(adapter.mapException(error)).toBe(error);
     });
 
     it('should map an http-errors error to an HttpException with its status', () => {
@@ -3432,6 +3452,17 @@ describe('NodeAdapter', () => {
         expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
       },
     );
+
+    it('should answer a malformed URL with a 400', async () => {
+      adapter.get('/:id', (req: NodeRequest, res: NodeResponse) =>
+        res.end('ok'),
+      );
+
+      const res = await request(port, { path: '/%E0%A4%A' });
+
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Bad Request');
+    });
 
     it.each([
       ['a plain error', new Error('db password: hunter2')],

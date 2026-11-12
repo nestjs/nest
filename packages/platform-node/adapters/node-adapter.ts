@@ -819,9 +819,15 @@ export class NodeAdapter extends AbstractHttpAdapter<
       return error;
     }
     // SyntaxError is thrown by the JSON body parser when given invalid JSON,
-    // URIError
-    // when a path parameter has an invalid percent-encoding (e.g. "%FF")
-    if (error instanceof SyntaxError || error instanceof URIError) {
+    // URIError by the router when the request target has an invalid
+    // percent-encoding (e.g. "%FF"). Both set a 400 status. One without it
+    // comes from server code (e.g. a middleware passed to "app.use()"), and
+    // its message may hold internal details. It stays unmapped, so the
+    // built-in filter answers it with a generic 500 and logs it.
+    if (
+      (error instanceof SyntaxError || error instanceof URIError) &&
+      (error as { status?: unknown }).status === HttpStatus.BAD_REQUEST
+    ) {
       return new BadRequestException(error.message, { cause: error });
     }
     // As with Express and Fastify: http-errors-style client errors (those of

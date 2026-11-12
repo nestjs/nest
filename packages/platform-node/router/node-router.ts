@@ -126,6 +126,19 @@ function compileMiddlewareMatcher(
   };
 }
 
+/**
+ * Marks the URIError of a request target the router cannot decode as the
+ * client's error, with a 400 status, as the Express router does for a
+ * malformed parameter. One a middleware throws has none: it comes from
+ * server code (see `NodeAdapter.mapException()`).
+ */
+function toClientError(error: unknown) {
+  if (error instanceof URIError) {
+    (error as URIError & { status?: number }).status = 400;
+  }
+  return error;
+}
+
 function invoke(
   handler: Function,
   req: any,
@@ -578,7 +591,7 @@ export class NodeRouter {
             if (err === undefined) {
               this.onRejectedTarget?.(req, res);
             }
-            err ??= error;
+            err ??= toClientError(error);
           }
         }
 
@@ -590,7 +603,7 @@ export class NodeRouter {
           try {
             found = layer.table.lookup(method, cachedPath);
           } catch (error) {
-            err = error;
+            err = toClientError(error);
             continue;
           }
           if (found === null) {
@@ -629,7 +642,7 @@ export class NodeRouter {
           try {
             result = layer.matcher(cachedPath);
           } catch (error) {
-            err = error;
+            err = toClientError(error);
             continue;
           }
           if (!result) {
