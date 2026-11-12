@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
@@ -7,7 +7,10 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Validate,
   ValidateNested,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
 } from 'class-validator';
 import { BadRequestException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface.js';
@@ -435,6 +438,93 @@ describe('ParseArrayPipe', () => {
               '[1] number must be a number conforming to the specified constraints',
             ]);
           }
+        });
+
+        it('should rethrow an error thrown by a transformation', async () => {
+          const error = Object.assign(new Error('lookup failed'), {
+            code: 'ECONNREFUSED',
+            address: '10.0.0.5',
+          });
+          class ArrItemWithTransform {
+            @Transform(({ value }) => {
+              if (value === 'unknown') {
+                throw error;
+              }
+              return value;
+            })
+            @IsString()
+            name: string;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithTransform,
+            stopAtFirstError: false,
+          });
+
+          await expect(
+            pipe.transform(
+              [{ name: 1 }, { name: 'unknown' }] as any[],
+              {} as ArgumentMetadata,
+            ),
+          ).rejects.toBe(error);
+        });
+
+        it('should rethrow the rejection of an async constraint', async () => {
+          const error = new Error('lookup failed');
+          @ValidatorConstraint({ name: 'isKnown', async: true })
+          class IsKnown implements ValidatorConstraintInterface {
+            async validate(value: string) {
+              if (value === 'unknown') {
+                throw error;
+              }
+              return true;
+            }
+          }
+          class ArrItemWithConstraint {
+            @Validate(IsKnown)
+            name: string;
+          }
+          const exceptionFactory = vi.fn(
+            (errors: any) => new BadRequestException(errors),
+          );
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithConstraint,
+            stopAtFirstError: false,
+            exceptionFactory,
+          });
+
+          await expect(
+            pipe.transform(
+              [{ name: 'known' }, { name: 'unknown' }] as any[],
+              {} as ArgumentMetadata,
+            ),
+          ).rejects.toBe(error);
+          expect(exceptionFactory).not.toHaveBeenCalled();
+        });
+
+        it('should rethrow such an error after "maxErrorMessagesLength" is reached', async () => {
+          const error = new Error('lookup failed');
+          class ArrItemWithTransform {
+            @Transform(({ value }) => {
+              if (value === 'unknown') {
+                throw error;
+              }
+              return value;
+            })
+            @IsString()
+            name: string;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithTransform,
+            stopAtFirstError: false,
+            maxErrorMessagesLength: 1,
+          });
+
+          await expect(
+            pipe.transform(
+              [{ name: 1 }, { name: 'unknown' }] as any[],
+              {} as ArgumentMetadata,
+            ),
+          ).rejects.toBe(error);
         });
 
         it('should collect the errors without copying them for each item', async () => {
