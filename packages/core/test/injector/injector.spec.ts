@@ -25,6 +25,8 @@ import {
 } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { SettlementSignal } from '../../injector/settlement-signal.js';
+import { REQUEST } from '../../router/request/request-constants.js';
+import { requestProvider } from '../../router/request/request-providers.js';
 
 describe('Injector', () => {
   let injector: Injector;
@@ -217,6 +219,114 @@ describe('Injector', () => {
             inquirer,
           }),
         ).rejects.toBeInstanceOf(CircularDependencyException);
+      });
+    });
+
+    describe('when the context id strategy keeps the instance in a durable context', () => {
+      type TenantPayload = { tenantId: string };
+      type TenantRequest = TenantPayload & { user: string };
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TenantLogger {
+        constructor(@Inject(REQUEST) public tenant: TenantPayload) {}
+      }
+
+      @Injectable({ scope: Scope.REQUEST, durable: true })
+      class TenantStats {
+        @Inject(REQUEST) tenantProperty: TenantPayload;
+
+        constructor(
+          @Inject(REQUEST) public tenant: TenantPayload,
+          public logger: TenantLogger,
+        ) {}
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class CurrentUser {
+        @Inject(REQUEST) requestProperty: TenantRequest;
+
+        constructor(@Inject(REQUEST) public request: TenantRequest) {}
+      }
+
+      let moduleRef: Module;
+      let tenants: Map<string, ContextId>;
+
+      // the context of an entry point that is not durable: it registers the request
+      const createContextId = (request: TenantRequest, payload?: unknown) => {
+        if (!tenants.has(request.tenantId)) {
+          tenants.set(request.tenantId, { id: Math.random() });
+        }
+        const contextId: ContextId = {
+          id: Math.random(),
+          payload,
+          getParent: ({ isTreeDurable }) =>
+            isTreeDurable ? tenants.get(request.tenantId)! : contextId,
+        };
+        moduleRef.providers.get(REQUEST)!.setInstanceByContextId(contextId, {
+          instance: request,
+          isResolved: true,
+        });
+        return contextId;
+      };
+
+      const load = async <T>(type: Type<T>, contextId: ContextId) => {
+        const wrapper = moduleRef.providers.get(type)!;
+        await injector.loadInstance(wrapper, moduleRef.providers, moduleRef, {
+          contextId,
+        });
+        const hostContextId = contextId.getParent!({
+          token: type,
+          isTreeDurable: wrapper.isDependencyTreeDurable(),
+        });
+        return wrapper.getInstanceByContextId(hostContextId).instance as T;
+      };
+
+      beforeEach(() => {
+        tenants = new Map();
+        moduleRef = new Module(class TestModule {}, new NestContainer());
+        moduleRef.addProvider(requestProvider);
+        moduleRef.addProvider(TenantLogger);
+        moduleRef.addProvider(TenantStats);
+        moduleRef.addProvider(CurrentUser);
+      });
+
+      it('should inject the payload of the strategy as "REQUEST", not the request', async () => {
+        // the dependencies of the second tenant are loaded from the cached metadata
+        for (const tenantId of ['acme', 'globex']) {
+          const payload = { tenantId };
+          const contextId = createContextId(
+            { tenantId, user: 'alice' },
+            payload,
+          );
+          const stats = await load(TenantStats, contextId);
+
+          expect(stats.tenant).toBe(payload);
+          expect(stats.tenantProperty).toBe(payload);
+          expect(stats.logger.tenant).toBe(payload);
+        }
+      });
+
+      it('should inject what is registered as "REQUEST" when the strategy has no payload', async () => {
+        for (const tenantId of ['acme', 'globex']) {
+          const request = { tenantId, user: 'alice' };
+          const contextId = createContextId(request);
+          const stats = await load(TenantStats, contextId);
+
+          expect(stats.tenant).toBe(request);
+          expect(stats.tenantProperty).toBe(request);
+          expect(stats.logger.tenant).toBe(request);
+        }
+      });
+
+      it('should keep injecting the request into the instances of its own context', async () => {
+        for (const user of ['alice', 'bob']) {
+          const request = { tenantId: 'acme', user };
+          const contextId = createContextId(request, { tenantId: 'acme' });
+          const currentUser = await load(CurrentUser, contextId);
+
+          expect(currentUser.request).toBe(request);
+          expect(currentUser.requestProperty).toBe(request);
+        }
       });
     });
   });

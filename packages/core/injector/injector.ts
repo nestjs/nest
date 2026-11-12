@@ -31,6 +31,7 @@ import { UnknownDependenciesException } from '../errors/exceptions/unknown-depen
 import { MISSING_DECORATOR_METADATA_MESSAGE } from '../errors/messages.js';
 import { Barrier } from '../helpers/barrier.js';
 import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator.js';
+import { REQUEST } from '../router/request/request-constants.js';
 import { STATIC_CONTEXT } from './constants.js';
 import { isDebugMode } from './helpers/is-debug-mode.util.js';
 import { INQUIRER } from './inquirer/index.js';
@@ -507,6 +508,16 @@ export class Injector {
         );
         if (!instanceHost.isResolved && !paramWrapperWithInstance.forwardRef) {
           isResolved = false;
+        }
+        if (
+          this.shouldInjectDurablePayload(
+            paramWrapperWithInstance,
+            wrapper,
+            parentInquirer,
+            resolutionContext.contextId,
+          )
+        ) {
+          return resolutionContext.contextId.payload;
         }
         return instanceHost?.instance;
       } catch (err) {
@@ -1073,6 +1084,16 @@ export class Injector {
           ),
           effectivePropertyResolutionContext.effectiveInquirerId,
         );
+        if (
+          this.shouldInjectDurablePayload(
+            paramWrapperWithInstance,
+            wrapper,
+            parentInquirer,
+            resolutionContext.contextId,
+          )
+        ) {
+          return resolutionContext.contextId.payload;
+        }
         return instanceHost.instance;
       } catch (err) {
         /*
@@ -1281,6 +1302,16 @@ export class Injector {
         parentInquirer,
       );
 
+      if (
+        this.shouldInjectDurablePayload(
+          item,
+          inquirer,
+          parentInquirer,
+          contextId,
+        )
+      ) {
+        return contextId.payload;
+      }
       return item?.getInstanceByContextId(
         this.getContextId(contextId, item),
         effectiveInquirerId,
@@ -1324,10 +1355,17 @@ export class Injector {
       return {
         key,
         name: key,
-        instance: host?.getInstanceByContextId(
-          this.getContextId(contextId, host),
-          effectiveInquirerId,
-        ).instance,
+        instance: this.shouldInjectDurablePayload(
+          host,
+          inquirer,
+          parentInquirer,
+          contextId,
+        )
+          ? contextId.payload
+          : host?.getInstanceByContextId(
+              this.getContextId(contextId, host),
+              effectiveInquirerId,
+            ).instance,
       };
     });
   }
@@ -1918,6 +1956,28 @@ export class Injector {
             instanceWrapper.isDependencyTreeDurable(),
         })
       : contextId;
+  }
+
+  /**
+   * An instance kept in another context than the one being resolved (a
+   * durable one, see `ContextIdStrategy`) outlives the request it is built
+   * for, and is handed to the next requests mapped to that context. When the
+   * strategy supplies a payload, that is its `REQUEST`, never the request
+   * that the entry point (a controller that is not durable, a middleware, a
+   * message handler, ...) registered as the `REQUEST` of the context.
+   */
+  private shouldInjectDurablePayload(
+    dependency: InstanceWrapper | undefined,
+    dependent: InstanceWrapper | undefined,
+    parentInquirer: InstanceWrapper | undefined,
+    contextId: ContextId,
+  ): boolean {
+    if (dependency?.token !== REQUEST || isUndefined(contextId.payload)) {
+      return false;
+    }
+    // An instance of a transient provider belongs to its consumer
+    const host = dependent?.isTransient ? parentInquirer : dependent;
+    return !!host && this.getContextId(contextId, host) !== contextId;
   }
 
   private getNowTimestamp() {
