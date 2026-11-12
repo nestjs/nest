@@ -752,3 +752,27 @@ describe('RouteInfoPathExtractor - paths ending in an optional segment', () => {
     expect(mount('/files/*path/')).to.deep.equal(['/files/*path/']);
   });
 });
+
+describe('RouteInfoPathExtractor - paths ending in "$"', () => {
+  it('should add a slash to a route path that ends in "$", but not to the exact-match mark', () => {
+    const appConfig = new ApplicationConfig();
+    appConfig.setGlobalPrefix('api');
+    appConfig.setGlobalPrefixOptions({
+      exclude: mapToExcludeRoute(['health$']),
+    });
+    const extractor = new RouteInfoPathExtractor(appConfig);
+
+    expect(
+      extractor.extractPathsFrom({
+        path: '/prices/usd$',
+        method: RequestMethod.GET,
+      }),
+    ).to.deep.equal(['/api/prices/usd$/']);
+    expect(
+      extractor.extractPathsFrom({
+        path: '/{*path}',
+        method: -1 as RequestMethod,
+      }),
+    ).to.deep.equal(['/api$', '/api/{*path}', '/health$/']);
+  });
+});

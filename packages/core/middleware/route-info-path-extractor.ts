@@ -94,20 +94,24 @@ export class RouteInfoPathExtractor {
       return [
         ...new Set([
           ...entries,
-          ...this.excludedGlobalPrefixRoutes
-            .flatMap(route => this.getPathsOfExcludedRoute(route))
-            .flatMap(excludedPath =>
-              excludedVersionPaths.map(v => v + excludedPath),
+          ...[
+            ...this.excludedGlobalPrefixRoutes
+              .flatMap(route => this.getPathsOfExcludedRoute(route))
+              .flatMap(excludedPath =>
+                excludedVersionPaths.map(v => v + excludedPath),
+              ),
+            ...this.getPathsOfCoveredControllerRoutes(
+              method,
+              wildcardVersionPaths,
             ),
-          ...this.getPathsOfCoveredControllerRoutes(
-            method,
-            wildcardVersionPaths,
-          ),
+          ].map(escapeEndOfPath),
         ]),
       ];
     }
 
-    return this.extractNonWildcardPathsFrom({ path, method, version });
+    return this.extractNonWildcardPathsFrom({ path, method, version }).map(
+      escapeEndOfPath,
+    );
   }
 
   /**
@@ -520,4 +524,16 @@ function toMountPath(path: string): string {
   return LegacyRouteConverter.tryConvert(path, { logs: false }).endsWith('}/')
     ? path.slice(0, -1)
     : path;
+}
+
+/**
+ * Returns a route path that really ends in "$" with a trailing slash, so
+ * that the adapters do not read its "$" as the mark of a path that matches
+ * exactly (which the core adds to the paths it builds, such as "/api$"):
+ * they would mount the middleware on the path without it. The routers drop
+ * the slash (Express, the node adapter), and the Fastify adapter matches
+ * the request path with a slash added.
+ */
+function escapeEndOfPath(path: string): string {
+  return path.endsWith('$') ? path + '/' : path;
 }
