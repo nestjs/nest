@@ -44,6 +44,16 @@ type IoAdapterOptions = {
 };
 
 /**
+ * A limit that is missing, or that is not a number (e.g. NaN from
+ * "Number(process.env.UNSET)"), gets its default: none of the checks on a
+ * limit trips for NaN, so keeping it would turn the limit off. 0 and
+ * Infinity are kept.
+ */
+function resolveLimit(value: number | undefined, defaultValue: number) {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
+/**
  * @publicApi
  */
 export class IoAdapter extends AbstractWsAdapter {
@@ -57,10 +67,14 @@ export class IoAdapter extends AbstractWsAdapter {
     options?: IoAdapterOptions,
   ) {
     super(appOrHttpServer);
-    this.maxConcurrentMessages =
-      options?.maxConcurrentMessages ?? DEFAULT_MAX_CONCURRENT_MESSAGES;
-    this.maxWaitingMessages =
-      options?.maxWaitingMessages ?? DEFAULT_MAX_WAITING_MESSAGES;
+    this.maxConcurrentMessages = resolveLimit(
+      options?.maxConcurrentMessages,
+      DEFAULT_MAX_CONCURRENT_MESSAGES,
+    );
+    this.maxWaitingMessages = resolveLimit(
+      options?.maxWaitingMessages,
+      DEFAULT_MAX_WAITING_MESSAGES,
+    );
   }
 
   public create(
