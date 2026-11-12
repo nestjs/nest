@@ -1,7 +1,7 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import { IncomingMessage, ServerResponse } from 'http';
-import { NEVER, Observable, of, Subject } from 'rxjs';
+import { from, NEVER, Observable, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
@@ -1445,6 +1445,133 @@ data: test
 
         expect(response.writableEnded).to.be.true;
         expectTeardownErrorLogged();
+      });
+    });
+
+    describe('when many events wait to be written', () => {
+      class Sink extends Writable {
+        readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk.toString());
+          callback();
+        }
+      }
+
+      // More than are written in one turn of the event loop
+      const count = 5000;
+      const replay = () =>
+        from(Array.from({ length: count }, (_, i) => ({ data: String(i) })));
+      const turn = () => new Promise(resolve => setImmediate(resolve));
+      const finished = async (response: Writable) => {
+        for (let i = 0; i < 100 && !response.writableFinished; i++) {
+          await turn();
+        }
+        expect(response.writableFinished).to.be.true;
+      };
+
+      it('should write them in order', async () => {
+        const response = new Sink();
+        const request = new PassThrough();
+
+        await routerResponseController.sse(
+          replay(),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await finished(response);
+
+        expect(response.chunks.join('')).to.equal(
+          '\n' +
+            Array.from(
+              { length: count },
+              (_, i) => `id: ${i + 1}\ndata: ${i}\n\n`,
+            ).join(''),
+        );
+        request.destroy();
+      });
+
+      it('should not shift each of them off a queue', async () => {
+        // Each shift() moves the events queued behind the one it removes, so
+        // writing n events that way takes time quadratic in n.
+        const events = Array.from({ length: 3 }, (_, i) => ({
+          data: String(i),
+        }));
+        const shift = Array.prototype.shift;
+        const shifted: unknown[] = [];
+        Array.prototype.shift = function (this: unknown[]) {
+          const item = shift.call(this);
+          shifted.push(item);
+          return item;
+        };
+        const response = new Sink();
+        const request = new PassThrough();
+        try {
+          await routerResponseController.sse(
+            from(events),
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          );
+          await finished(response);
+        } finally {
+          Array.prototype.shift = shift;
+        }
+
+        expect(response.chunks.join('')).to.contain('data: 2\n\n');
+        expect(
+          shifted.filter(item => events.includes(item as any)),
+        ).to.deep.equal([]);
+        request.destroy();
+      });
+
+      it('should let the event loop run before the last one is written', async () => {
+        const response = new Sink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          replay(),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await turn();
+        const writtenInFirstTurn = response.chunks.length;
+
+        expect(writtenInFirstTurn).to.be.greaterThan(0);
+        expect(writtenInFirstTurn).to.be.lessThan(count);
+        await lifecycle;
+        request.destroy();
+      });
+
+      it('should not fall behind a producer that emits as many on every turn', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new Sink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        // Once the producer is subscribed to
+        await turn();
+        let emitted = 0;
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < count; j++) {
+            producer.next({ data: String(emitted++) });
+          }
+          await turn();
+        }
+        // The first chunk is the line that follows the headers
+        const waiting = emitted - (response.chunks.length - 1);
+
+        expect(waiting).to.be.at.most(count);
+        producer.complete();
+        await lifecycle;
+        request.destroy();
       });
     });
   });
