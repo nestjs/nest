@@ -1,4 +1,5 @@
 import { iterate } from 'iterare';
+import { getClassRef } from '../helpers/class-ref-registry.js';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
@@ -94,9 +95,18 @@ export class BaseExceptionFilterContext extends ContextCreator {
   }
 
   public reflectCatchExceptions(instance: ExceptionFilter): Type<any>[] {
-    const prototype = Object.getPrototypeOf(instance);
+    // `@Catch()` also stores the types on the prototype of the filter class,
+    // because the "constructor" of that prototype may name another class (see
+    // `getClassRef`), and a filter the application instantiated itself is not
+    // a registered class. The class lookup serves filters that an older
+    // `@Catch()` decorated.
     return (
-      Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, prototype.constructor) || []
+      Reflect.getMetadata(
+        FILTER_CATCH_EXCEPTIONS,
+        Object.getPrototypeOf(instance),
+      ) ??
+      Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, getClassRef(instance)) ??
+      []
     );
   }
 }

@@ -17,4 +17,12 @@ describe('@Catch', () => {
     const metadata = Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, Test);
     expect(metadata).toEqual(exceptions);
   });
+
+  it('should enhance the prototype of the class with expected exceptions array', () => {
+    const metadata = Reflect.getOwnMetadata(
+      FILTER_CATCH_EXCEPTIONS,
+      Test.prototype,
+    );
+    expect(metadata).toEqual(exceptions);
+  });
 });
