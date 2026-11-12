@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, instanceToPlain, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -860,6 +860,23 @@ describe('ValidationPipe', () => {
             }
           }
         });
+        it('should throw an error for a binary value', async () => {
+          for (const options of [
+            {},
+            { transform: true },
+            { forbidUnknownValues: true },
+            { whitelist: true, forbidNonWhitelisted: true },
+          ]) {
+            target = new ValidationPipe(options);
+            await expect(
+              target.transform(Buffer.alloc(0), optionalMetadata),
+            ).rejects.toMatchObject(rejection);
+          }
+          target = new ValidationPipe();
+          await expect(
+            target.transform(Buffer.from('{}'), optionalMetadata),
+          ).rejects.toMatchObject(rejection);
+        });
         it('should throw an error for an empty array when non-whitelisted properties are forbidden', async () => {
           target = new ValidationPipe({
             whitelist: true,
@@ -959,6 +976,35 @@ describe('ValidationPipe', () => {
           );
           expect(await target.transform(3, objMetadata)).toEqual(3);
           expect(await target.transform(true, objMetadata)).toEqual(true);
+        });
+        it('should not leave a "constructor" key on the value', async () => {
+          target = new ValidationPipe({ transform: true });
+          const objMetadata = { ...metadata, metatype: TestModelNoValidation };
+
+          for (const value of [[], [{ prop1: 'value1' }], Buffer.alloc(0)]) {
+            const result = await target.transform(value, objMetadata);
+            expect(Object.hasOwn(result, 'constructor')).toBe(false);
+          }
+        });
+        it('should not make a copy of the value look like an instance of the class', async () => {
+          class UserEntity {
+            name: string;
+
+            @Exclude()
+            passwordHash: string;
+          }
+          target = new ValidationPipe({ transform: true });
+          const dto = await target.transform([], {
+            ...metadata,
+            metatype: TestModelNoValidation,
+          });
+
+          const user = Object.assign(new UserEntity(), {
+            ...dto,
+            name: 'name',
+            passwordHash: 'hash',
+          });
+          expect(instanceToPlain(user)).toEqual({ name: 'name' });
         });
       });
     });
