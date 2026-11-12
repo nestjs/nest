@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   Module,
+  Type,
 } from '@nestjs/common';
 import { expect } from 'chai';
 import {
@@ -300,6 +301,81 @@ describe('LazyModuleLoader', () => {
         expect(moduleRef.get(GlobalHuskConsumer).childOut).to.equal(
           'child(globalDep)',
         );
+      });
+    });
+
+    describe('when another load() builds an imported module while load() is still scanning', () => {
+      let resolveSlowImport: (dynamicModule: DynamicModule) => void;
+      let constructionsCount: number;
+
+      @Injectable()
+      class SessionRegistry {
+        constructor() {
+          constructionsCount++;
+        }
+      }
+
+      @Module({ providers: [SessionRegistry], exports: [SessionRegistry] })
+      class SessionsModule {}
+
+      @Injectable()
+      class DocumentsService {
+        constructor(readonly sessions: SessionRegistry) {}
+      }
+
+      @Module({})
+      class StorageModule {}
+
+      // The scan of the returned module registers `SessionsModule` and then
+      // waits for the second import.
+      const createDocumentsModule = () => {
+        @Module({
+          imports: [
+            SessionsModule,
+            new Promise<DynamicModule>(resolve => {
+              resolveSlowImport = resolve;
+            }),
+          ],
+          providers: [DocumentsService],
+        })
+        class DocumentsModule {}
+
+        return DocumentsModule;
+      };
+
+      const isRegistered = (metatype: Type<unknown>) =>
+        [...modulesContainer.values()].some(
+          moduleRef => moduleRef.metatype === metatype,
+        );
+
+      const untilRegistered = async (metatype: Type<unknown>) => {
+        while (!isRegistered(metatype)) {
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      };
+
+      beforeEach(() => {
+        constructionsCount = 0;
+      });
+
+      it('should not build the module again', async () => {
+        const documents = lazyModuleLoader.load(createDocumentsModule);
+        await untilRegistered(SessionsModule);
+
+        const sessionsModuleRef = await lazyModuleLoader.load(
+          () => SessionsModule,
+        );
+        const sessionRegistry = sessionsModuleRef.get(SessionRegistry);
+        resolveSlowImport({ module: StorageModule });
+
+        const documentsModuleRef = await documents;
+        expect(documentsModuleRef.get(DocumentsService).sessions).to.equal(
+          sessionRegistry,
+        );
+        expect(sessionsModuleRef.get(SessionRegistry)).to.equal(
+          sessionRegistry,
+        );
+        expect(constructionsCount).to.equal(1);
       });
     });
   });

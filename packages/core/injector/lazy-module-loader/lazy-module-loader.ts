@@ -42,14 +42,21 @@ export class LazyModuleLoader {
       const moduleInstance = this.modulesContainer.get(token)!;
       return moduleInstance && this.getTargetModuleRef(moduleInstance);
     }
-    const lazyModulesContainer =
-      this.createLazyModulesContainer(moduleInstances);
-    await this.dependenciesScanner.scanModulesForDependencies(
-      lazyModulesContainer,
+    // The scan is asynchronous, so a module that was not built yet when the
+    // scan reached it may have been built by a concurrent load() since then
+    const modulesToBuild = moduleInstances.filter(
+      moduleInstance => !moduleInstance.isInstantiated,
     );
-    await this.instanceLoader.createInstancesOfDependencies(
-      lazyModulesContainer,
-    );
+    if (modulesToBuild.length > 0) {
+      const lazyModulesContainer =
+        this.createLazyModulesContainer(modulesToBuild);
+      await this.dependenciesScanner.scanModulesForDependencies(
+        lazyModulesContainer,
+      );
+      await this.instanceLoader.createInstancesOfDependencies(
+        lazyModulesContainer,
+      );
+    }
     const [targetModule] = moduleInstances;
     return this.getTargetModuleRef(targetModule);
   }
