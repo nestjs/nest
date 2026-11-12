@@ -297,7 +297,7 @@ export interface RmqOptions {
     socketOptions?: AmqpConnectionManagerSocketOptions;
     /**
      * If true, the broker won’t expect an acknowledgement of messages delivered to this consumer; i.e., it will dequeue messages as soon as they’ve been sent down the wire.
-     * @default false
+     * @default true
      */
     noAck?: boolean;
     /**
@@ -327,7 +327,7 @@ export interface RmqOptions {
      */
     headers?: Record<string, string>;
     /**
-     * When false, a queue will not be asserted before consuming.
+     * When true, a queue will not be asserted before consuming.
      * @default false
      */
     noAssert?: boolean;
