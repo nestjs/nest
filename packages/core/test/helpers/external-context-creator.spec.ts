@@ -177,6 +177,133 @@ describe('ExternalContextCreator', () => {
         );
       });
     });
+    describe('when several modules provide the class of the host', () => {
+      class Resolver {}
+
+      let wrapper: InstanceWrapper;
+
+      beforeEach(() => {
+        const modules = new ModulesContainer();
+        const otherModuleRef = new Module(class {}, new NestContainer());
+        otherModuleRef.addProvider(Resolver);
+        otherModuleRef.providers.get(Resolver)!.instance = new Resolver();
+        modules.set('other', otherModuleRef);
+
+        const moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider(Resolver);
+        wrapper = moduleRef.providers.get(Resolver)!;
+        wrapper.instance = new Resolver();
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should find the module of the host by its instance', () => {
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          wrapper.instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          undefined,
+        );
+      });
+
+      it('should find the module of the host by the inquirer id', () => {
+        const instance = new Resolver();
+        const contextId = { id: 2 };
+        contextCreator.create(
+          instance,
+          callback,
+          '',
+          '',
+          null!,
+          contextId,
+          wrapper.id,
+        );
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'key',
+          contextId,
+          wrapper.id,
+        );
+      });
+
+      it('should find the first module that provides the class when the host cannot be identified', () => {
+        const instance = new Resolver();
+        contextCreator.create(instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          instance,
+          callback,
+          'other',
+          STATIC_CONTEXT,
+          undefined,
+        );
+      });
+    });
+    describe('when a factory provider of another module returns the host', () => {
+      class Resolver {}
+
+      let modules: ModulesContainer;
+      let moduleRef: Module;
+
+      const addFactoryOf = (
+        host: InstanceWrapper,
+        token: string | Function,
+      ) => {
+        const otherModuleRef = new Module(class {}, new NestContainer());
+        otherModuleRef.addProvider({
+          provide: token,
+          useFactory: () => host.instance,
+        });
+        otherModuleRef.providers.get(token)!.instance = host.instance;
+        modules.set('other', otherModuleRef);
+        modules.set('key', moduleRef);
+      };
+
+      beforeEach(() => {
+        modules = new ModulesContainer();
+        moduleRef = new Module(class {}, new NestContainer());
+        (contextCreator as any).modulesContainer = modules;
+      });
+
+      it('should find the module that provides the host under its class', () => {
+        moduleRef.addProvider(Resolver);
+        const wrapper = moduleRef.providers.get(Resolver)!;
+        wrapper.instance = new Resolver();
+        addFactoryOf(wrapper, Resolver);
+
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          wrapper.instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          undefined,
+        );
+      });
+
+      it('should find the module that provides the host under another token', () => {
+        moduleRef.addProvider({ provide: 'RESOLVER', useClass: Resolver });
+        const wrapper = moduleRef.providers.get('RESOLVER')!;
+        wrapper.instance = new Resolver();
+        addFactoryOf(wrapper, 'FACTORY');
+
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(guardsContextCreator.create).toHaveBeenCalledWith(
+          wrapper.instance,
+          callback,
+          'key',
+          STATIC_CONTEXT,
+          undefined,
+        );
+      });
+    });
     describe('returns proxy function', () => {
       let proxyContext;
       let instance;

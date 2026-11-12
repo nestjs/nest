@@ -15,7 +15,7 @@ import { FORBIDDEN_MESSAGE } from '../guards/constants.js';
 import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
-import { ContextId } from '../injector/instance-wrapper.js';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper.js';
 import { ModulesContainer } from '../injector/modules-container.js';
 import {
   InterceptorsConsumer,
@@ -111,9 +111,13 @@ export class ExternalContextCreator {
     contextType: TContext = 'http' as TContext,
   ) {
     const classRef = getClassRef(instance);
+    // Several modules may provide the class, each with its own host and its
+    // own enhancers, so the module that holds this host comes first. The
+    // lookup by class is left for a host that cannot be identified (e.g., a
+    // contextual instance passed without an inquirer id).
     const moduleKey =
-      this.getContextModuleKey(classRef) ||
-      this.getHostModuleKey(instance, inquirerId);
+      this.getHostModuleKey(instance, classRef, inquirerId) ||
+      this.getContextModuleKey(classRef);
     // Transient enhancers are created per host, so those of a static entry
     // provider can only be found with that provider as the inquirer.
     inquirerId ??= this.modulesContainer
@@ -278,23 +282,47 @@ export class ExternalContextCreator {
   }
 
   /**
-   * Returns the key of the module of a host registered under a token other
-   * than its class (e.g., `{ provide: 'TOKEN', useClass: Resolver }`): the
-   * module whose providers include the given inquirer or, without one, the
-   * given instance.
+   * Returns the key of the module whose providers hold the host: the provider
+   * with the given inquirer id or, without one, the provider of the given
+   * instance. A factory or value provider of another module may return the
+   * same instance, so a provider that Nest created from its class wins.
    */
-  private getHostModuleKey(instance: object, inquirerId?: string): string {
+  private getHostModuleKey(
+    instance: object,
+    classRef: Function,
+    inquirerId?: string,
+  ): string {
+    const isHost = (
+      wrapper: InstanceWrapper | undefined,
+    ): wrapper is InstanceWrapper =>
+      !!wrapper &&
+      (inquirerId
+        ? wrapper.id === inquirerId
+        : !wrapper.isAlias && wrapper.instance === instance);
+
+    // Hosts are usually provided under their class, so look there first (a
+    // scoped host gets here on every request).
     for (const [key, moduleRef] of this.modulesContainer.entries()) {
-      const host = inquirerId
-        ? moduleRef.getProviderById(inquirerId)
-        : [...moduleRef.providers.values()].find(
-            wrapper => !wrapper.isAlias && wrapper.instance === instance,
-          );
-      if (host) {
+      const wrapper = moduleRef.providers.get(classRef);
+      if (isHost(wrapper) && !wrapper.isNotMetatype) {
         return key;
       }
     }
-    return '';
+    // Otherwise the host is provided under another token (e.g.,
+    // `{ provide: 'TOKEN', useClass: Resolver }`).
+    let moduleKey = '';
+    for (const [key, moduleRef] of this.modulesContainer.entries()) {
+      for (const wrapper of moduleRef.providers.values()) {
+        if (!isHost(wrapper)) {
+          continue;
+        }
+        if (!wrapper.isNotMetatype) {
+          return key;
+        }
+        moduleKey ||= key;
+      }
+    }
+    return moduleKey;
   }
 
   public exchangeKeysForValues<TMetadata = any>(
