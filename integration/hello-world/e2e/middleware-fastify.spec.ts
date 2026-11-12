@@ -1446,6 +1446,16 @@ describe('Middleware (FastifyAdapter)', () => {
       }
     }
 
+    // Both parameters have the same name: the handler gets the last value
+    @Controller('projects/:id/tasks')
+    class TasksController {
+      @Get(':id')
+      findOne(@Param('id') id: string) {
+        handlerCalls.push(`task:${id}`);
+        return `task:${id}`;
+      }
+    }
+
     @Module({
       controllers: [
         UsersController,
@@ -1453,6 +1463,7 @@ describe('Middleware (FastifyAdapter)', () => {
         ActionsController,
         VersionedController,
         FilesController,
+        TasksController,
       ],
     })
     class EmptyRouteParamsModule implements NestModule {
@@ -1464,16 +1475,23 @@ describe('Middleware (FastifyAdapter)', () => {
             RangesController,
             ActionsController,
             VersionedController,
+            TasksController,
           );
       }
     }
 
-    const createApp = async (adapter = new FastifyAdapter()) => {
+    const createApp = async (
+      adapter = new FastifyAdapter(),
+      globalPrefix?: string,
+    ) => {
       app = (
         await Test.createTestingModule({
           imports: [EmptyRouteParamsModule],
         }).compile()
       ).createNestApplication<NestFastifyApplication>(adapter);
+      if (globalPrefix) {
+        app.setGlobalPrefix(globalPrefix);
+      }
       app.enableVersioning({
         type: VersioningType.HEADER,
         header: 'X-API-Version',
@@ -1542,6 +1560,32 @@ describe('Middleware (FastifyAdapter)', () => {
 
       await expectNotFound('GET', '/ranges/-b');
       await expectNotFound('GET', '/ranges/a-');
+    });
+
+    it('responds with 404 to an empty value of a repeated route parameter name', async () => {
+      await createApp();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/projects/1/tasks/5',
+      });
+      expect(response.payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+
+      await expectNotFound('GET', '/projects//tasks/5');
+      await expectNotFound('HEAD', '/projects//tasks/5');
+      await expectNotFound('GET', '/projects/1/tasks/');
+    });
+
+    it('responds with 404 to an empty value of a parameter name repeated by the global prefix', async () => {
+      await createApp(new FastifyAdapter(), 'tenants/:id');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/tenants/1/users/5',
+      });
+      expect(response.payload).to.equal(MIDDLEWARE_RETURN_VALUE);
+
+      await expectNotFound('GET', '/tenants//users/5');
     });
 
     it('responds with 404 to an empty route parameter of an @All() route', async () => {

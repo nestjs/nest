@@ -6,6 +6,7 @@ import {
   VERSION_NEUTRAL,
   VersioningType,
 } from '@nestjs/common';
+import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
 import { expect } from 'chai';
 import {
   FastifyInstance,
@@ -562,6 +563,110 @@ describe('FastifyAdapter', () => {
       expect(JSON.parse(res.body)).to.deep.equal({ from: 'a', to: 'b' });
       expect(handler.calledOnce).to.be.true;
     });
+
+    // "request.params" holds the last value of a repeated parameter name
+    for (const [path, url] of [
+      ['/projects/:id/tasks/:id', '/projects//tasks/5'],
+      ['/projects/:id/tasks/:id', '/projects/1/tasks/'],
+      ['/projects/:id/tasks/:id.json', '/projects//tasks/5.json'],
+      ['/ranges/:id-:id', '/ranges/-b'],
+      ['/files/:id/:id/*', '/files//b/c'],
+    ]) {
+      it(`should pass a request for "${path}" with an empty value of a repeated parameter name (${url}) to the not-found handler`, async () => {
+        const handler = sinon.spy(() => 'found');
+        fastifyAdapter.get(path, handler);
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+        expect(res.statusCode).to.equal(404);
+        expect(res.body).to.equal('not found');
+        expect(handler.called).to.be.false;
+      });
+    }
+
+    for (const [path, url, params] of [
+      ['/projects/:id/tasks/:id', '/projects/1/tasks/5?sort=asc', { id: '5' }],
+      ['/ranges/:id-:id', '/ranges/a-b', { id: 'b' }],
+      ['/files/:id/:id/*', '/files/a/b/', { id: 'b', '*': '' }],
+      ['/files/:id/:id/*', '/files/a/b/c/d', { id: 'b', '*': 'c/d' }],
+    ] as const) {
+      it(`should call the handler of "${path}" when every value of a repeated parameter name is set (${url})`, async () => {
+        const handler = sinon.spy((req: FastifyRequest) => req.params);
+        fastifyAdapter.get(path, handler);
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+        expect(res.statusCode).to.equal(200);
+        expect(JSON.parse(res.body)).to.deep.equal(params);
+        expect(handler.calledOnce).to.be.true;
+      });
+    }
+
+    it('should match a route with a repeated parameter name with the options of the router', async () => {
+      fastifyAdapter = new FastifyAdapter({
+        routerOptions: {
+          caseSensitive: false,
+          ignoreTrailingSlash: true,
+          maxParamLength: 200,
+        },
+      });
+      fastifyAdapter.setNotFoundHandler((_req, reply) =>
+        reply.code(404).send('not found'),
+      );
+      const handler = sinon.spy(() => 'found');
+      fastifyAdapter.get('/Projects/:id/tasks/:id', handler);
+
+      const res = await fastifyAdapter.inject({
+        method: 'GET',
+        url: `/PROJECTS/${'a'.repeat(150)}/tasks/5/`,
+      });
+      expect(res.statusCode).to.equal(200);
+      expect(res.body).to.equal('found');
+
+      const emptyRes = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/projects//tasks/5/',
+      });
+      expect(emptyRes.statusCode).to.equal(404);
+      expect(handler.calledOnce).to.be.true;
+    });
+
+    it('should pass a request with an empty value of a repeated parameter name to the not-found handler for routes registered with all()', async () => {
+      const handler = sinon.spy(() => 'found');
+      fastifyAdapter.all('/projects/:id/tasks/:id', handler);
+
+      for (const method of ['GET', 'POST'] as const) {
+        const res = await fastifyAdapter.inject({
+          method,
+          url: '/projects//tasks/5',
+        });
+        expect(res.statusCode).to.equal(404);
+      }
+      expect(handler.called).to.be.false;
+
+      const res = await fastifyAdapter.inject({
+        method: 'POST',
+        url: '/projects/1/tasks/5',
+      });
+      expect(res.body).to.equal('found');
+    });
+
+    // Only paths in the syntax of path-to-regexp can have middleware: no
+    // route-bound middleware can be registered for these
+    for (const path of [
+      '/projects/:id/tasks/:id?',
+      '/projects/:id/tasks/:id(^\\d+$)',
+      '/a::b/:id/:id',
+    ]) {
+      it(`should not register middleware for a path in the syntax of find-my-way only (${path})`, async () => {
+        sinon.stub(LegacyRouteConverter, 'printError');
+        const register = await fastifyAdapter.createMiddlewareFactory(
+          RequestMethod.GET,
+        );
+
+        expect(() => register(path, () => {})).to.throw(TypeError);
+      });
+    }
 
     it('should call the handler for an empty wildcard', async () => {
       const handler = sinon.spy(() => 'found');
