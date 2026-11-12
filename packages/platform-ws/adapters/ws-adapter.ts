@@ -60,6 +60,14 @@ type WsAdapterOptions = {
    * @default 1000
    */
   unclaimedUpgradeTimeout?: number;
+  /**
+   * The largest message, in bytes, a client may send. A client that sends a
+   * larger one is disconnected with the close code 1009. The `maxPayload`
+   * option of a gateway takes precedence. Set it to `0` to lift the limit.
+   *
+   * @default 1048576 (1 MB)
+   */
+  maxPayload?: number;
 };
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
@@ -71,6 +79,9 @@ const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;
 const DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT = 1000;
+// ws takes up to 100 MB by default, and the default parser runs JSON.parse()
+// on the whole message at once, before any guard can run
+const DEFAULT_MAX_PAYLOAD = 1024 * 1024;
 
 // Kept out of the class so that an adapter can be compared against it to tell
 // whether the parser in use is still the built-in one.
@@ -111,6 +122,7 @@ export class WsAdapter extends AbstractWsAdapter {
   protected readonly maxConcurrentMessages: number;
   protected readonly maxSendBufferSize: number;
   protected readonly unclaimedUpgradeTimeout: number;
+  protected readonly maxPayload: number;
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
@@ -127,6 +139,7 @@ export class WsAdapter extends AbstractWsAdapter {
       options?.maxSendBufferSize ?? DEFAULT_MAX_SEND_BUFFER_SIZE;
     this.unclaimedUpgradeTimeout =
       options?.unclaimedUpgradeTimeout ?? DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT;
+    this.maxPayload = options?.maxPayload ?? DEFAULT_MAX_PAYLOAD;
   }
 
   public create(
@@ -143,7 +156,11 @@ export class WsAdapter extends AbstractWsAdapter {
       path?: string;
       host?: string;
       backlog?: number;
+      maxPayload?: number;
     };
+    // A copy, so the gateway's options are left as they are. ws reads an
+    // undefined "maxPayload" as no limit at all.
+    wsOptions.maxPayload ??= this.maxPayload;
     if (wsOptions?.namespace) {
       const error = new Error(
         '"WsAdapter" does not support namespaces. If you need namespaces in your project, consider using the "@nestjs/platform-socket.io" package instead.',
