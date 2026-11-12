@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDate,
   IsDefined,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -461,6 +462,158 @@ describe('ParseArrayPipe', () => {
           expect(error).toBeInstanceOf(BadRequestException);
           expect(error.getResponse().message).toHaveLength(100);
           expect(copied).toBeLessThan(100);
+        });
+
+        class Contact {
+          @IsString()
+          @IsNotEmpty()
+          firstName: string;
+
+          @IsString()
+          @IsNotEmpty()
+          lastName: string;
+
+          @IsString()
+          @IsNotEmpty()
+          email: string;
+
+          @IsString()
+          @IsNotEmpty()
+          phone: string;
+
+          @IsString()
+          @IsNotEmpty()
+          city: string;
+        }
+
+        it('should stop at "maxErrorMessagesLength" characters of messages of all the items', async () => {
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+            maxErrorMessagesLength: 60,
+          });
+          const isNumeric = vi.spyOn(pipe as any, 'isNumeric');
+
+          const error = await pipe
+            .transform(','.repeat(99), {} as ArgumentMetadata)
+            .catch(err => err);
+
+          expect(error).toBeInstanceOf(BadRequestException);
+          expect(error.getResponse().message).toEqual([
+            '[0] item must be a number',
+            '[1] item must be a number',
+            '[2] item must be a number',
+            'Further validation errors were omitted',
+          ]);
+          // the items after the first one left out are not validated
+          expect(isNumeric).toHaveBeenCalledTimes(4);
+        });
+
+        it('should not start the limit over for each item with nested errors', async () => {
+          class Address {
+            @IsString()
+            city: string;
+
+            @IsString()
+            street: string;
+          }
+          class ArrItemObject {
+            @ValidateNested()
+            @Type(() => Address)
+            address: Address;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemObject,
+            stopAtFirstError: false,
+            maxErrorMessagesLength: 100,
+          });
+
+          const error = await pipe
+            .transform(
+              new Array(100).fill({ address: {} }),
+              {} as ArgumentMetadata,
+            )
+            .catch(err => err);
+
+          expect(error.getResponse().message).toEqual([
+            '[0] address.city must be a string',
+            '[0] address.street must be a string',
+            '[1] address.city must be a string',
+            '[1] address.street must be a string',
+            'Further validation errors were omitted',
+          ]);
+        });
+
+        it('should limit the messages of all the items by default', async () => {
+          const pipe = new ParseArrayPipe({
+            items: Contact,
+            stopAtFirstError: false,
+          });
+
+          const error = await pipe
+            .transform(new Array(10_000).fill({}), {} as ArgumentMetadata)
+            .catch(err => err);
+
+          const messages: string[] = error.getResponse().message;
+          expect(messages.at(-1)).toBe(
+            'Further validation errors were omitted',
+          );
+          // about 3 million characters in full
+          expect(messages.join('').length).toBeLessThan(1_001_000);
+        });
+
+        it('should not say that errors were omitted when none were left out', async () => {
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+            maxErrorMessagesLength: 10,
+          });
+
+          const error = await pipe
+            .transform(['a', '1', '2'], {} as ArgumentMetadata)
+            .catch(err => err);
+
+          expect(error.getResponse().message).toEqual([
+            '[0] item must be a number',
+          ]);
+        });
+
+        it('should hand every error to a custom exception factory', async () => {
+          const exceptionFactory = vi.fn(
+            (errors: any) => new BadRequestException(errors),
+          );
+          const pipe = new ParseArrayPipe({
+            items: Number,
+            stopAtFirstError: false,
+            maxErrorMessagesLength: 10,
+            exceptionFactory,
+          });
+
+          const error = await pipe
+            .transform(','.repeat(9), {} as ArgumentMetadata)
+            .catch(err => err);
+
+          expect(error.getResponse().message).toHaveLength(10);
+          expect(exceptionFactory).toHaveBeenLastCalledWith(
+            expect.arrayContaining(['[9] item must be a number']),
+          );
+        });
+
+        it('should collect every error when "maxErrorMessagesLength" is Infinity', async () => {
+          const pipe = new ParseArrayPipe({
+            items: Contact,
+            stopAtFirstError: false,
+            maxErrorMessagesLength: Infinity,
+          });
+
+          const error = await pipe
+            .transform(new Array(4_000).fill({}), {} as ArgumentMetadata)
+            .catch(err => err);
+
+          const messages: string[] = error.getResponse().message;
+          expect(messages).toHaveLength(40_000);
+          expect(messages.join('').length).toBeGreaterThan(1_000_000);
+          expect(messages.at(-1)).toBe('[3999] city must be a string');
         });
 
         it('should report every array nested in the array', async () => {

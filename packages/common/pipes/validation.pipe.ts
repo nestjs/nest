@@ -20,6 +20,10 @@ import {
 import { loadPackage } from '../utils/load-package.util.js';
 import { isNil, isUndefined } from '../utils/shared.utils.js';
 import { stripProtoKeys } from '../utils/strip-proto-keys.util.js';
+import {
+  DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
+  OMITTED_ERRORS_MESSAGE,
+} from './validation-errors.constants.js';
 
 /**
  * @publicApi
@@ -62,9 +66,6 @@ export interface ValidationPipeOptions extends ValidatorOptions {
    */
   maxErrorMessagesLength?: number;
 }
-
-const DEFAULT_MAX_ERROR_MESSAGES_LENGTH = 1_000_000;
-const OMITTED_ERRORS_MESSAGE = 'Further validation errors were omitted';
 
 let classValidator: any = {} as any;
 let classTransformer: any = {} as any;
