@@ -4,6 +4,7 @@ import { TLSSocket } from 'tls';
 import { ClientTCP } from '../../client/client-tcp.js';
 import { ECONNREFUSED } from '../../constants.js';
 import { TcpStatus } from '../../events/tcp.events.js';
+import { JsonSocket } from '../../helpers/json-socket.js';
 import { TcpSocket } from '../../helpers/tcp-socket.js';
 
 /**
@@ -27,6 +28,28 @@ describe('ClientTCP', () => {
   let untypedClient: any;
   let socket: any;
   let createSocketStub: ReturnType<typeof vi.fn>;
+
+  describe('when "host", "port" or "socketClass" is empty', () => {
+    it.each([undefined, null, ''])(
+      'should connect to localhost when "host" is %j',
+      host => {
+        const client = new ClientTCP({ host: host as string }) as any;
+        expect(client.host).toBe('localhost');
+      },
+    );
+    it.each([undefined, null])(
+      'should use the default port and JsonSocket for %j',
+      value => {
+        const client = new ClientTCP({
+          port: value as unknown as number,
+          socketClass: value as any,
+        }) as any;
+
+        expect(client.port).toBe(3000);
+        expect(client.socketClass).toBe(JsonSocket);
+      },
+    );
+  });
 
   beforeEach(() => {
     client = new ClientTCP({});

@@ -42,9 +42,11 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
   constructor(options: Required<TcpClientOptions>['options']) {
     super();
-    this.port = this.getOptionsProp(options, 'port', TCP_DEFAULT_PORT);
-    this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
-    this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
+    // Present but empty means the default as well (see "ServerTCP")
+    this.port = this.getOptionsProp(options, 'port') ?? TCP_DEFAULT_PORT;
+    this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+    this.socketClass =
+      this.getOptionsProp(options, 'socketClass') ?? JsonSocket;
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
     this.maxBufferSize = this.getOptionsProp(options, 'maxBufferSize');
     this.incompleteMessageTimeout = this.getOptionsProp(
