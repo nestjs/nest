@@ -295,6 +295,105 @@ describe('StandardSchemaValidationPipe', () => {
       });
     });
 
+    describe('option: "maxErrorMessagesLength"', () => {
+      const omitted = 'Further validation errors were omitted';
+      const issues = [
+        { message: 'must be a string', path: ['a'] },
+        { message: 'must be a string', path: ['b', { key: 'c' }] },
+        { message: 'must be a string', path: ['b', 'd'] },
+      ];
+      const messagesOf = async (
+        target: StandardSchemaValidationPipe,
+        schemaIssues: readonly StandardSchemaV1.Issue[],
+      ): Promise<string[]> => {
+        const error: HttpException = await target
+          .transform({}, {
+            type: 'body',
+            schema: createSchema(() => ({ issues: schemaIssues })),
+          } as ArgumentMetadata)
+          .catch(err => err);
+        expect(error).toBeInstanceOf(HttpException);
+        return (error.getResponse() as { message: string[] }).message;
+      };
+
+      it('should leave out the messages past the limit and say so', async () => {
+        const target = new StandardSchemaValidationPipe({
+          maxErrorMessagesLength: 30,
+        });
+
+        expect(await messagesOf(target, issues)).toEqual([
+          'a: must be a string',
+          'b.c: must be a string',
+          omitted,
+        ]);
+      });
+
+      it('should not format the issues past the limit', async () => {
+        const target = new StandardSchemaValidationPipe({
+          maxErrorMessagesLength: 50,
+        });
+        let read = 0;
+        const paths = Array.from({ length: 1_000 }, (_, index) => ({
+          get key() {
+            read++;
+            return index;
+          },
+        }));
+
+        const messages = await messagesOf(
+          target,
+          paths.map(segment => ({
+            message: 'must be a string',
+            path: ['items', segment],
+          })),
+        );
+
+        expect(messages.at(-1)).toBe(omitted);
+        expect(read).toBeLessThan(10);
+      });
+
+      it('should limit the messages to about a million characters by default', async () => {
+        const manyIssues = Array.from({ length: 100_000 }, (_, index) => ({
+          message: 'Invalid input: expected string, received undefined',
+          path: ['contacts', index, 'name'],
+        }));
+
+        const messages = await messagesOf(pipe, manyIssues);
+
+        expect(messages.at(-1)).toBe(omitted);
+        // about 7 million characters in full
+        expect(messages.join('').length).toBeLessThan(1_000_100);
+      });
+
+      it('should keep every message when the limit is lifted', async () => {
+        const target = new StandardSchemaValidationPipe({
+          maxErrorMessagesLength: Infinity,
+        });
+
+        expect(await messagesOf(target, issues)).toEqual([
+          'a: must be a string',
+          'b.c: must be a string',
+          'b.d: must be a string',
+        ]);
+      });
+
+      it('should hand every issue to a custom exception factory', async () => {
+        const exceptionFactory = vi.fn(() => new Error('custom'));
+        const target = new StandardSchemaValidationPipe({
+          maxErrorMessagesLength: 10,
+          exceptionFactory,
+        });
+
+        await expect(
+          target.transform({}, {
+            type: 'body',
+            schema: createSchema(() => ({ issues })),
+          } as ArgumentMetadata),
+        ).rejects.toThrow('custom');
+        expect(exceptionFactory).toHaveBeenCalledWith(issues);
+      });
+    });
+
     describe('when transform is enabled (default)', () => {
       it('should return the schema-produced value', async () => {
         const input = { name: 'test' };
