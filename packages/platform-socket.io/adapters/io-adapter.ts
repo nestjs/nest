@@ -15,6 +15,7 @@ import {
   takeUntil,
 } from 'rxjs/operators';
 import { Server, ServerOptions, Socket } from 'socket.io';
+import { hasRepeatedBinary } from '../utils/has-repeated-binary.util';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util';
 
 // How many messages of one event a client may have handled at the same time
@@ -95,6 +96,18 @@ export class IoAdapter extends AbstractWsAdapter {
 
     handlers.forEach(({ message, callback, isAckHandledManually }) => {
       const source$ = fromEvent(socket, message).pipe(
+        // No Socket.IO client sends a message that refers to the same binary
+        // value more than once, so the client is disconnected
+        filter((payload: unknown) => {
+          if (!hasRepeatedBinary(payload)) {
+            return true;
+          }
+          this.disconnectClient(
+            socket,
+            `Disconnecting a client whose "${String(message)}" message refers to the same binary data more than once`,
+          );
+          return false;
+        }),
         // How many messages are pending at once is up to the client: engine.io
         // hands over a whole polling payload before any handler can settle,
         // and goes on reading while the messages wait for their turn.
@@ -148,15 +161,20 @@ export class IoAdapter extends AbstractWsAdapter {
    * the client's message streams, which drops the messages still waiting.
    */
   protected disconnectOverflowingClient(socket: Socket, message: unknown) {
+    this.disconnectClient(
+      socket,
+      `Disconnecting a client with more than "maxWaitingMessages" (${this.maxWaitingMessages}) "${String(message)}" messages waiting to be handled`,
+    );
+  }
+
+  private disconnectClient(socket: Socket, warning: string) {
     // Called from the client's message stream, where a throw would end the
     // process, e.g. from a disconnect hook
     try {
       if (!socket.connected) {
         return;
       }
-      this.logger.warn(
-        `Disconnecting a client with more than "maxWaitingMessages" (${this.maxWaitingMessages}) "${String(message)}" messages waiting to be handled`,
-      );
+      this.logger.warn(warning);
       socket.disconnect(true);
     } catch (err) {
       this.logger.error(err);

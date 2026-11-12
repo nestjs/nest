@@ -147,6 +147,57 @@ describe('IoAdapter', () => {
       });
     });
 
+    describe('when a message refers to the same binary data more than once', () => {
+      const bindHandler = (socket: any) => {
+        const callback = sinon.spy();
+        adapter.bindMessageHandlers(
+          socket,
+          [
+            {
+              message: 'upload',
+              methodName: 'upload',
+              callback,
+              isAckHandledManually: false,
+            },
+          ],
+          (data: any) => of(data),
+        );
+        return callback;
+      };
+      const connectedSocket = () => {
+        const socket = new EventEmitter() as any;
+        socket.connected = true;
+        socket.disconnect = sinon.spy(() => {
+          socket.connected = false;
+          socket.emit('disconnect', 'server namespace disconnect');
+        });
+        return socket;
+      };
+
+      it('should disconnect the client without handling the message', () => {
+        const socket = connectedSocket();
+        const logWarn = sinon.stub(adapter['logger'], 'warn');
+        const callback = bindHandler(socket);
+        const file = Buffer.from('content');
+
+        socket.emit('upload', { parts: [file, file] });
+
+        expect(callback.called).to.be.false;
+        expect(socket.disconnect.calledWith(true)).to.be.true;
+        expect(logWarn.calledOnce).to.be.true;
+      });
+
+      it('should handle a message with distinct binary values', () => {
+        const socket = connectedSocket();
+        const callback = bindHandler(socket);
+
+        socket.emit('upload', { parts: [Buffer.from('a'), Buffer.from('a')] });
+
+        expect(callback.calledOnce).to.be.true;
+        expect(socket.disconnect.called).to.be.false;
+      });
+    });
+
     it('should register only one disconnect listener regardless of call count', () => {
       const addListenerSpy = sinon.spy();
       const fakeSocket = {

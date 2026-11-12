@@ -131,6 +131,92 @@ describe('WsExceptionsHandler', () => {
       });
     });
 
+    describe('when the data of the message holds binary data', () => {
+      const binaryData = {
+        file: { name: 'a.png', content: Buffer.from('image') },
+        chunks: [new Uint8Array(4), new ArrayBuffer(4)],
+      };
+      const hostWithData = (data: unknown) =>
+        new ExecutionContextHost([client, data, pattern]);
+      let loggerErrorStub: sinon.SinonStub;
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(
+          (WsExceptionsHandler as any).logger,
+          'error',
+        );
+      });
+      afterEach(() => {
+        loggerErrorStub.restore();
+      });
+
+      for (const [description, exception, message] of [
+        ['a WsException', new WsException('Unauthorized'), 'Unauthorized'],
+        ['an unknown exception', new Error('test'), 'Internal server error'],
+      ] as const) {
+        it(`should leave the data out of the cause for ${description}`, () => {
+          handler.handle(exception, hostWithData(binaryData));
+
+          expect(
+            emitStub.calledWith('exception', {
+              status: 'error',
+              message,
+              cause: { pattern },
+            }),
+          ).to.be.true;
+        });
+      }
+
+      for (const [description, data] of [
+        ['a Buffer', Buffer.from('x')],
+        ['an ArrayBuffer', new ArrayBuffer(1)],
+        ['a typed array', new Float32Array(1)],
+        ['a DataView', new DataView(new ArrayBuffer(1))],
+        ['a Blob', new Blob(['x'])],
+      ] as const) {
+        it(`should leave out data that is ${description}`, () => {
+          handler.handle(new WsException('Unauthorized'), hostWithData([data]));
+
+          expect(emitStub.firstCall.args[1].cause).to.deep.equal({ pattern });
+        });
+      }
+
+      it('should look through data nested deeper than the stack allows', () => {
+        let nested: Record<string, unknown> = { content: Buffer.from('x') };
+        for (let depth = 0; depth < 100_000; depth++) {
+          nested = { nested };
+        }
+
+        handler.handle(new WsException('Unauthorized'), hostWithData(nested));
+
+        expect(emitStub.firstCall.args[1].cause).to.deep.equal({ pattern });
+      });
+
+      it('should keep the data of a message without binary data', () => {
+        const data = { text: 'hello', list: [1, { a: null }] };
+        handler.handle(new WsException('Unauthorized'), hostWithData(data));
+
+        expect(emitStub.firstCall.args[1].cause).to.deep.equal({
+          pattern,
+          data,
+        });
+      });
+
+      it('should pass the data to a custom "causeFactory" as it is', () => {
+        const causeFactory = sinon.spy((pattern: string, data: unknown) => ({
+          pattern,
+          data,
+        }));
+        handler = new WsExceptionsHandler({ causeFactory });
+
+        handler.handle(
+          new WsException('Unauthorized'),
+          hostWithData(binaryData),
+        );
+
+        expect(causeFactory.calledWith(pattern, binaryData)).to.be.true;
+      });
+    });
+
     describe('when the error payload cannot be sent with its cause', () => {
       let loggerErrorStub: sinon.SinonStub;
 
