@@ -11,6 +11,7 @@ import {
 } from '../interfaces/index.js';
 import { loadPackage } from '../utils/load-package.util.js';
 import { isStreamingBody } from '../utils/is-streaming-body.util.js';
+import { mapStreamingBody } from '../utils/map-streaming-body.util.js';
 import { isObject } from '../utils/shared.utils.js';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
 import { ClassSerializerContextOptions } from './class-serializer.interfaces.js';
@@ -71,11 +72,19 @@ export class ClassSerializerInterceptor implements NestInterceptor {
       ...this.defaultOptions,
       ...contextOptions,
     };
+    // The router sends each object a stream yields as a line of JSON, so these
+    // are serialized as the stream yields them. Other transports leave what a
+    // stream yields to whatever consumes it (e.g. a GraphQL subscription).
+    const isHttp = context.getType?.() === 'http';
     return next
       .handle()
       .pipe(
         map((res: PlainLiteralObject | Array<PlainLiteralObject>) =>
-          this.serialize(res, options),
+          isHttp && isStreamingBody(res)
+            ? mapStreamingBody(res, chunk =>
+                this.serialize(chunk as PlainLiteralObject, options),
+              )
+            : this.serialize(res, options),
         ),
       );
   }

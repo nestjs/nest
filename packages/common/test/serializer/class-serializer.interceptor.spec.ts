@@ -205,6 +205,98 @@ describe('ClassSerializerInterceptor', () => {
       expect(await firstValueFrom(result$)).toEqual({ id: 1 });
     });
 
+    describe('when the handler streams', () => {
+      @Exclude()
+      class UserDto {
+        @Expose()
+        id: number;
+
+        password: string;
+      }
+      const users = () => [
+        Object.assign(new UserDto(), { id: 1, password: 'secret' }),
+        Object.assign(new UserDto(), { id: 2, password: 'secret' }),
+      ];
+      const collect = async (stream: unknown) => {
+        const chunks: unknown[] = [];
+        for await (const chunk of stream as AsyncIterable<unknown>) {
+          chunks.push(chunk);
+        }
+        return chunks;
+      };
+
+      beforeEach(() => {
+        interceptor = new ClassSerializerInterceptor(mockReflector, {
+          transformerPackage: classTransformer,
+        });
+      });
+
+      it.each<[string, (chunks: unknown[]) => unknown]>([
+        [
+          'an async generator',
+          chunks =>
+            (async function* () {
+              yield* chunks;
+            })(),
+        ],
+        ['a Readable in object mode', chunks => Readable.from(chunks)],
+        ['a ReadableStream', chunks => ReadableStream.from(chunks)],
+      ])(
+        'should serialize the objects %s yields over HTTP',
+        async (_, create) => {
+          const context = {
+            ...mockExecutionContext,
+            getType: () => 'http',
+          } as ExecutionContext;
+          const bytes = Buffer.from('bytes');
+          const next: CallHandler = {
+            handle: () => of(create([...users(), 'text', bytes])),
+          };
+
+          const result = await firstValueFrom(
+            await interceptor.intercept(context, next),
+          );
+
+          expect(await collect(result)).toEqual([
+            { id: 1 },
+            { id: 2 },
+            'text',
+            bytes,
+          ]);
+        },
+      );
+
+      it('should leave a stream alone for another transport', async () => {
+        const context = {
+          ...mockExecutionContext,
+          getType: () => 'rpc',
+        } as ExecutionContext;
+        const stream = Readable.from(users());
+        const next: CallHandler = { handle: () => of(stream) };
+
+        const result = await firstValueFrom(
+          await interceptor.intercept(context, next),
+        );
+
+        expect(result).toBe(stream);
+      });
+
+      it('should leave the bytes of a Response alone', async () => {
+        const context = {
+          ...mockExecutionContext,
+          getType: () => 'http',
+        } as ExecutionContext;
+        const response = new Response('bytes');
+        const next: CallHandler = { handle: () => of(response) };
+
+        const result = await firstValueFrom(
+          await interceptor.intercept(context, next),
+        );
+
+        expect(result).toBe(response);
+      });
+    });
+
     describe('with class-transformer groups', () => {
       @Exclude()
       class UserDto {

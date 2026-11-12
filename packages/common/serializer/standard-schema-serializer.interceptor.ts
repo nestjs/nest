@@ -8,6 +8,7 @@ import {
   NestInterceptor,
 } from '../interfaces/index.js';
 import { isStreamingBody } from '../utils/is-streaming-body.util.js';
+import { mapStreamingBody } from '../utils/map-streaming-body.util.js';
 import { isObject } from '../utils/shared.utils.js';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
 import { StandardSchemaSerializerContextOptions } from './standard-schema-serializer.interfaces.js';
@@ -133,12 +134,24 @@ export class StandardSchemaSerializerInterceptor implements NestInterceptor {
     const validateOptions =
       contextOptions?.validateOptions ?? this.defaultOptions.validateOptions;
 
+    // The router sends each object a stream yields as a line of JSON, so these
+    // are serialized as the stream yields them. Other transports leave what a
+    // stream yields to whatever consumes it (e.g. a GraphQL subscription).
+    const isHttp = context.getType?.() === 'http';
     return next
       .handle()
       .pipe(
         concatMapAsync(
           async (res: PlainLiteralObject | Array<PlainLiteralObject>) =>
-            this.serialize(res, schema, validateOptions),
+            isHttp && schema && isStreamingBody(res)
+              ? mapStreamingBody(res, chunk =>
+                  this.serialize(
+                    chunk as PlainLiteralObject,
+                    schema,
+                    validateOptions,
+                  ),
+                )
+              : this.serialize(res, schema, validateOptions),
         ),
       );
   }

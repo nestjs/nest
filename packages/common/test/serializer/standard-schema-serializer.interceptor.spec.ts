@@ -1,5 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { from, lastValueFrom, of, Subject, toArray } from 'rxjs';
+import { Readable } from 'stream';
 import { StreamableFile } from '../../file-stream/index.js';
 import { CallHandler, ExecutionContext } from '../../interfaces/index.js';
 import { StandardSchemaSerializerInterceptor } from '../../serializer/standard-schema-serializer.interceptor.js';
@@ -237,6 +238,93 @@ describe('StandardSchemaSerializerInterceptor', () => {
         );
 
         expect(await lastValueFrom(result$)).toBe(stream);
+      });
+    });
+
+    describe('when the handler streams over HTTP', () => {
+      const collect = async (stream: unknown) => {
+        const chunks: unknown[] = [];
+        for await (const chunk of stream as AsyncIterable<unknown>) {
+          chunks.push(chunk);
+        }
+        return chunks;
+      };
+
+      beforeEach(() => {
+        (mockExecutionContext as any).getType = () => 'http';
+      });
+
+      it.each<[string, (chunks: unknown[]) => unknown]>([
+        ['a Readable in object mode', chunks => Readable.from(chunks)],
+        ['a ReadableStream', chunks => ReadableStream.from(chunks)],
+        [
+          'an async generator',
+          chunks =>
+            (async function* () {
+              yield* chunks;
+            })(),
+        ],
+      ])('should serialize the objects %s yields', async (_, create) => {
+        const validateOptions = { libraryOptions: { strip: true } };
+        const validate = vi.fn((value: any) => ({ value: { id: value.id } }));
+        interceptor = new StandardSchemaSerializerInterceptor(mockReflector, {
+          schema: createSchema(validate),
+          validateOptions,
+        });
+        const entity = { id: 1, password: 'secret' };
+        const bytes = Buffer.from('bytes');
+        (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+          of(create([entity, [entity], 'text', bytes])),
+        );
+
+        const result = await lastValueFrom(
+          interceptor.intercept(mockExecutionContext, mockCallHandler),
+        );
+
+        expect(await collect(result)).toEqual([
+          { id: 1 },
+          [{ id: 1 }],
+          'text',
+          bytes,
+        ]);
+        expect(validate).toHaveBeenCalledWith(entity, validateOptions);
+      });
+
+      it('should fail the stream with the issues of an object it yields', async () => {
+        interceptor = new StandardSchemaSerializerInterceptor(mockReflector, {
+          schema: createSchema(() => ({
+            issues: [{ message: 'id is required' }],
+          })),
+        });
+        (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+          of(
+            (async function* () {
+              yield { password: 'secret' };
+            })(),
+          ),
+        );
+
+        const result = await lastValueFrom(
+          interceptor.intercept(mockExecutionContext, mockCallHandler),
+        );
+
+        await expect((result as AsyncIterator<unknown>).next()).rejects.toThrow(
+          'Serialization failed: id is required',
+        );
+      });
+
+      it('should leave a stream alone without a schema', async () => {
+        interceptor = new StandardSchemaSerializerInterceptor(mockReflector);
+        const stream = Readable.from([{ id: 1 }]);
+        (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+          of(stream),
+        );
+
+        const result = await lastValueFrom(
+          interceptor.intercept(mockExecutionContext, mockCallHandler),
+        );
+
+        expect(result).toBe(stream);
       });
     });
 

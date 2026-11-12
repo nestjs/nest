@@ -680,6 +680,34 @@ describe.each(adapters('express', 'fastify', 'node'))(
         expect(res.complete).toBe(true);
       });
 
+      it.each(['generator', 'web-stream', 'node-stream'])(
+        'should serialize the objects of a class-serialized %s',
+        async source => {
+          const res = await send(
+            `/intercepted/class-serialized/entities/${source}`,
+          );
+
+          expect(res.headers['content-type']).toBe('application/x-ndjson');
+          expect(res.text).toBe('{"id":1}\n');
+        },
+      );
+
+      it('should send the serialized objects of a stream another interceptor wrapped', async () => {
+        const res = await send(
+          '/intercepted/wrapped/class-serialized/entities',
+        );
+
+        expect(res.text).toBe('{"id":1}\n');
+      });
+
+      it('should not send the objects of a stream unserialized when the serializer gets it wrapped', async () => {
+        const res = await send(
+          '/intercepted/class-serialized/entities/wrapped',
+        );
+
+        expect(res.text).not.toContain('secret');
+      });
+
       it('should keep the status and headers of a Response an interceptor wrapped', async () => {
         const res = await send('/intercepted/wrapped/response');
 

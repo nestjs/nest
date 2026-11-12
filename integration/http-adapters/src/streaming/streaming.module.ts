@@ -25,6 +25,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
+import { Exclude } from 'class-transformer';
 import { createReadStream } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -131,6 +132,13 @@ class TeapotFilter implements ExceptionFilter {
     raw.end('caught by the filter');
     res.hijack?.();
   }
+}
+
+class SerializedEntity {
+  id = 1;
+
+  @Exclude()
+  secret = 'secret';
 }
 
 class WrappingInterceptor implements NestInterceptor {
@@ -787,6 +795,37 @@ export class InterceptedController {
   @UseInterceptors(ClassSerializerInterceptor)
   classSerializedNodeStream() {
     return Readable.from(['from a node stream']);
+  }
+
+  @Get('class-serialized/entities/generator')
+  @UseInterceptors(ClassSerializerInterceptor)
+  async *classSerializedEntitiesGenerator() {
+    yield new SerializedEntity();
+  }
+
+  @Get('class-serialized/entities/web-stream')
+  @UseInterceptors(ClassSerializerInterceptor)
+  classSerializedEntitiesWebStream() {
+    return ReadableStream.from([new SerializedEntity()]);
+  }
+
+  @Get('class-serialized/entities/node-stream')
+  @UseInterceptors(ClassSerializerInterceptor)
+  classSerializedEntitiesNodeStream() {
+    return Readable.from([new SerializedEntity()]);
+  }
+
+  // A global serializer runs before the interceptors of the route
+  @Get('class-serialized/entities/wrapped')
+  @UseInterceptors(ClassSerializerInterceptor, WrappingInterceptor)
+  async *classSerializedEntitiesWrapped() {
+    yield new SerializedEntity();
+  }
+
+  @Get('wrapped/class-serialized/entities')
+  @UseInterceptors(WrappingInterceptor, ClassSerializerInterceptor)
+  async *wrappedClassSerializedEntities() {
+    yield new SerializedEntity();
   }
 
   @Get('tapped')
