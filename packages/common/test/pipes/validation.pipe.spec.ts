@@ -4,6 +4,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDefined,
@@ -863,11 +864,9 @@ describe('ValidationPipe', () => {
       ).to.be.rejected.and.eventually.deep.equal([
         {
           property: 'items',
-          value: [{ name: 1 }],
           children: [
             {
               property: '0',
-              value: { name: 1 },
               children: [
                 {
                   property: 'name',
@@ -906,6 +905,64 @@ describe('ValidationPipe', () => {
       expect(await sizeOfErrors(200)).to.be.lessThan(
         3 * (await sizeOfErrors(100)),
       );
+    });
+    it('should not repeat a nested value in each of the errors above it', async () => {
+      class NestedOrder {
+        @ValidateNested({ each: true })
+        @Type(() => Item)
+        items: unknown[];
+      }
+      target = new ValidationPipe({ exceptionFactory });
+      const item = 'a'.repeat(1_000);
+      const depth = 100;
+      let items: unknown = [item];
+      for (let i = 0; i < depth; i++) {
+        items = [items];
+      }
+
+      const errors: ValidationError[] = await target
+        .transform({ items }, { type: 'body', metatype: NestedOrder })
+        .catch(err => err);
+
+      let error = errors[0];
+      for (let i = 0; i <= depth; i++) {
+        expect(error).to.not.have.property('value');
+        error = error.children![0];
+      }
+      expect(error.value).to.equal(item);
+      expect(error.children).to.deep.equal([]);
+      expect(JSON.stringify(errors).split(item)).to.have.length(2);
+    });
+    it('should keep the value of an error without children', async () => {
+      class LimitedOrder {
+        @ArrayMinSize(2)
+        @ValidateNested({ each: true })
+        @Type(() => Item)
+        items: Item[];
+      }
+      target = new ValidationPipe({ exceptionFactory });
+
+      const [error]: ValidationError[] = await target
+        .transform(
+          { items: [{ name: 'a' }] },
+          { type: 'body', metatype: LimitedOrder },
+        )
+        .catch(err => err);
+      expect(error.constraints).to.have.property('arrayMinSize');
+      expect(error.value).to.deep.equal([{ name: 'a' }]);
+    });
+    it('should expose the value of every error when asked to', async () => {
+      target = new ValidationPipe({
+        exceptionFactory,
+        validationError: { value: true },
+      });
+
+      const [error]: ValidationError[] = await target
+        .transform(orderOf(1), orderMetadata)
+        .catch(err => err);
+      expect(error.value).to.deep.equal(orderOf(1).items);
+      expect(error.children![0].value).to.deep.equal(orderOf(1).items[0]);
+      expect(error).to.not.have.property('target');
     });
     it('should expose the target when asked to', async () => {
       target = new ValidationPipe({
