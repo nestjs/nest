@@ -214,5 +214,46 @@ describe('ParseFilePipe', () => {
         );
       });
     });
+
+    describe('when an array of files is validated', () => {
+      class TrackingValidator extends FileValidator<{ id: number }> {
+        active = 0;
+        maxActive = 0;
+        readonly seen: number[] = [];
+
+        async isValid(file: { id: number; valid?: boolean }) {
+          this.seen.push(file.id);
+          this.active++;
+          this.maxActive = Math.max(this.maxActive, this.active);
+          await new Promise(resolve => setImmediate(resolve));
+          this.active--;
+          return file.valid !== false;
+        }
+        buildErrorMessage(file: { id: number }): string {
+          return `file ${file.id} is invalid`;
+        }
+      }
+
+      it('should validate one file at a time', async () => {
+        const validator = new TrackingValidator({});
+        parseFilePipe = new ParseFilePipe({ validators: [validator] });
+        const files = [{ id: 1 }, { id: 2 }, { id: 3 }];
+
+        await expect(parseFilePipe.transform(files)).resolves.toBe(files);
+        expect(validator.maxActive).toBe(1);
+        expect(validator.seen).toEqual([1, 2, 3]);
+      });
+
+      it('should stop at the first invalid file', async () => {
+        const validator = new TrackingValidator({});
+        parseFilePipe = new ParseFilePipe({ validators: [validator] });
+        const files = [{ id: 1 }, { id: 2, valid: false }, { id: 3 }];
+
+        await expect(parseFilePipe.transform(files)).rejects.toThrow(
+          'file 2 is invalid',
+        );
+        expect(validator.seen).toEqual([1, 2]);
+      });
+    });
   });
 });
