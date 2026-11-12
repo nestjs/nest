@@ -93,6 +93,32 @@ describe('MiddlewareModule', () => {
     });
   });
 
+  describe('resolveMiddleware', () => {
+    it('should keep the configurations in the order of the modules when a "configure" method awaits', async () => {
+      const stubContainer = new NestContainer();
+      const modules = stubContainer.getModules();
+      const addModule = (name: string, configure: () => unknown) => {
+        const moduleRef = new Module(class {}, stubContainer);
+        vi.spyOn(moduleRef, 'instance', 'get').mockReturnValue({ configure });
+        modules.set(name, moduleRef);
+      };
+      addModule('First', () => new Promise(resolve => setTimeout(resolve, 5)));
+      addModule('Second', () => undefined);
+      addModule('Third', async () => undefined);
+
+      const middlewareContainer = new MiddlewareContainer(stubContainer);
+      (middlewareModule as any).container = stubContainer;
+      (middlewareModule as any).resolver = { resolveInstances: vi.fn() };
+      await middlewareModule.resolveMiddleware(middlewareContainer, modules);
+
+      expect([...middlewareContainer.getConfigurations().keys()]).toEqual([
+        'First',
+        'Second',
+        'Third',
+      ]);
+    });
+  });
+
   describe('registerRouteMiddleware', () => {
     class TestModule {}
 

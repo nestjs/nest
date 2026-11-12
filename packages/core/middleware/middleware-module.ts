@@ -109,6 +109,11 @@ export class MiddlewareModule<
     if (!instance.configure) {
       return;
     }
+    // The modules' "configure()" methods run concurrently, and
+    // "registerMiddleware()" mounts the middleware of modules at the same
+    // distance in the order of their configurations: a module whose
+    // "configure()" awaits must not end up behind the modules after it
+    middlewareContainer.reserveConfig(moduleKey);
     const middlewareBuilder = new MiddlewareBuilder(
       this.routesMapper,
       this.httpAdapter,

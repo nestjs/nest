@@ -147,3 +147,49 @@ describe('Middleware (execution order of a module also imported by a sibling)', 
     await app.close();
   });
 });
+
+const RETURN_VALUE_FIRST = 'test_FIRST';
+const RETURN_VALUE_SECOND = 'test_SECOND';
+
+@Module({})
+class AsyncFirstModule {
+  async configure(consumer: MiddlewareConsumer) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+    consumer
+      .apply((req, res, next) => res.send(RETURN_VALUE_FIRST))
+      .forRoutes('hello');
+  }
+}
+
+@Module({})
+class SecondModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(RETURN_VALUE_SECOND))
+      .forRoutes('hello');
+  }
+}
+
+describe('Middleware (execution order with an asynchronous "configure")', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    app = (
+      await Test.createTestingModule({
+        imports: [AsyncFirstModule, SecondModule],
+      }).compile()
+    ).createNestApplication();
+
+    await listenOnLoopback(app);
+  });
+
+  it('should execute the middleware in the order of the "imports" array', () => {
+    return request(app.getHttpServer())
+      .get('/hello')
+      .expect(200, RETURN_VALUE_FIRST);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+});
