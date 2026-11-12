@@ -167,7 +167,11 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public render(response: any, view: string, options: any) {
-    return response.render(view, options);
+    // res.render() assigns "_locals" (the res.locals of this request) to the
+    // object it is given. Here that is the value the handler returned, which
+    // may outlive the request (e.g. a cached view model). The view gets the
+    // same variables from a copy, as app.render() spreads them anyway.
+    return response.render(view, isObject(options) ? { ...options } : options);
   }
 
   public redirect(response: any, statusCode: number, url: string) {
