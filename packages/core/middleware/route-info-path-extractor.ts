@@ -14,7 +14,7 @@ import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadat
 import { LegacyRouteConverter } from '../router/legacy-route-converter';
 import { isRequestMethodAll, isRouteExcluded } from '../router/utils';
 import { RoutePathFactory } from './../router/route-path-factory';
-import { isStaticPath } from './utils';
+import { isStaticPath, stripEndSlashes } from './utils';
 
 // Named so that it does not clash with a parameter of an excluded route
 const URI_VERSION_PARAM = 'nestUriVersion';
@@ -262,12 +262,20 @@ export class RouteInfoPathExtractor {
    *
    * The route matches case-insensitively unless `caseSensitive` is set: a
    * caller that skips something for the covered routes (an exclusion) must
-   * match them as strictly as the router does.
+   * match them as strictly as the router does. Such a caller also sets
+   * `asServed`, to compare the paths as the router serves them, without a
+   * trailing slash: an excluded route written "webhooks/" is served at
+   * "/webhooks", which "webhooks/{*path}" does not match.
    */
   public extractExcludedRoutesCoveredBy(
     { path, method, version }: RouteInfo,
-    { caseSensitive = false }: { caseSensitive?: boolean } = {},
+    {
+      caseSensitive = false,
+      asServed = false,
+    }: { caseSensitive?: boolean; asServed?: boolean } = {},
   ): RouteInfo[] {
+    const toComparedPath = (value: string) =>
+      asServed ? stripEndSlashes(value) || '/' : value;
     if (
       !Array.isArray(this.excludedGlobalPrefixRoutes) ||
       this.isAWildcard(path) ||
@@ -278,7 +286,9 @@ export class RouteInfoPathExtractor {
     let routeRegex: RegExp;
     try {
       routeRegex = pathToRegexp(
-        LegacyRouteConverter.tryConvert(addLeadingSlash(path), { logs: false }),
+        LegacyRouteConverter.tryConvert(toComparedPath(addLeadingSlash(path)), {
+          logs: false,
+        }),
         { sensitive: caseSensitive },
       ).regexp;
     } catch {
@@ -296,7 +306,8 @@ export class RouteInfoPathExtractor {
       // Mounted with the trailing slash, like the root route of a controller
       // passed to forRoutes(), so that it is not under the prefix either
       const coveredPath =
-        isStaticPath(excludedPath) && routeRegex.test(excludedPath)
+        isStaticPath(excludedPath) &&
+        routeRegex.test(toComparedPath(excludedPath))
           ? excludedPath
           : this.isExcludedWithTrailingSlash(excludedRoute, path)
             ? stripEndSlash(addLeadingSlash(path)) + '/'
@@ -329,7 +340,10 @@ export class RouteInfoPathExtractor {
   ): RouteInfo[] {
     return [
       route,
-      ...this.extractExcludedRoutesCoveredBy(route, { caseSensitive }),
+      ...this.extractExcludedRoutesCoveredBy(route, {
+        caseSensitive,
+        asServed: true,
+      }),
     ].flatMap(excludedRoute =>
       this.extractPathFrom(excludedRoute).map(path => ({
         ...excludedRoute,
