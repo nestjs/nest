@@ -231,4 +231,85 @@ describe('SocketServerProvider', () => {
       });
     });
   });
+
+  describe('when there is no HTTP server', () => {
+    class ListenerlessAdapter extends NoopAdapter {
+      public createWithoutListener = vi.fn(() => ({ listenerless: true }));
+    }
+    let adapter: ListenerlessAdapter;
+    let create: ReturnType<typeof vi.spyOn>;
+    const providerFor = (config: ApplicationConfig, hasHttpServer = false) =>
+      new SocketServerProvider(new SocketsContainer(), config, hasHttpServer);
+
+    beforeEach(() => {
+      adapter = new ListenerlessAdapter();
+      create = vi.spyOn(adapter, 'create');
+    });
+
+    it('should create the server of a gateway without a port without a listener', () => {
+      const provider = providerFor(new ApplicationConfig(adapter));
+      const logSpy = vi
+        .spyOn(provider['logger'], 'log')
+        .mockImplementation(() => undefined);
+      const verifyClient = () => true;
+
+      const host = provider.scanForSocketServer(
+        { path: '/live', verifyClient },
+        0,
+        'LiveGateway',
+      );
+
+      expect(host.server).toEqual({ listenerless: true });
+      expect(adapter.createWithoutListener).toHaveBeenCalledWith({
+        path: '/live',
+        verifyClient,
+      });
+      expect(create).not.toHaveBeenCalled();
+      expect(logSpy.mock.calls[0][0]).toMatch(
+        /^LiveGateway has no port, and there is no HTTP server/,
+      );
+    });
+
+    it('should create the server of a gateway with a port as before', () => {
+      providerFor(new ApplicationConfig(adapter)).scanForSocketServer({}, 8080);
+
+      expect(create).toHaveBeenCalledWith(8080, {});
+      expect(adapter.createWithoutListener).not.toHaveBeenCalled();
+    });
+
+    it('should serve a gateway without a port on the HTTP server of the adapter', () => {
+      const adapterWithServer = new ListenerlessAdapter({});
+      const createOnServer = vi.spyOn(adapterWithServer, 'create');
+
+      providerFor(new ApplicationConfig(adapterWithServer)).scanForSocketServer(
+        {},
+        0,
+      );
+
+      expect(createOnServer).toHaveBeenCalledWith(0, {});
+      expect(adapterWithServer.createWithoutListener).not.toHaveBeenCalled();
+    });
+
+    it('should leave a gateway without a port to an adapter without "createWithoutListener"', () => {
+      const noopAdapter = new NoopAdapter();
+      const noopCreate = vi.spyOn(noopAdapter, 'create');
+
+      providerFor(new ApplicationConfig(noopAdapter)).scanForSocketServer(
+        {},
+        0,
+      );
+
+      expect(noopCreate).toHaveBeenCalledWith(0, {});
+    });
+
+    it('should not use "createWithoutListener" in an application with an HTTP server', () => {
+      providerFor(new ApplicationConfig(adapter), true).scanForSocketServer(
+        {},
+        0,
+      );
+
+      expect(create).toHaveBeenCalledWith(0, {});
+      expect(adapter.createWithoutListener).not.toHaveBeenCalled();
+    });
+  });
 });

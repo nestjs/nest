@@ -1,9 +1,15 @@
+import { AbstractWsAdapter } from './adapters/ws-adapter.js';
 import { ServerAndEventStreamsFactory } from './factories/server-and-event-streams-factory.js';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface.js';
 import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface.js';
 import { SocketsContainer } from './sockets-container.js';
 import { Logger } from '@nestjs/common';
-import { addLeadingSlash, isNil, isString } from '@nestjs/common/internal';
+import {
+  addLeadingSlash,
+  isFunction,
+  isNil,
+  isString,
+} from '@nestjs/common/internal';
 import type { ApplicationConfig } from '@nestjs/core';
 import { isDeepStrictEqual } from 'util';
 
@@ -24,6 +30,7 @@ export class SocketServerProvider {
   constructor(
     private readonly socketsContainer: SocketsContainer,
     private readonly applicationConfig: ApplicationConfig,
+    private readonly hasHttpServer = true,
   ) {}
 
   public scanForSocketServer<T extends GatewayMetadata = any>(
@@ -47,19 +54,30 @@ export class SocketServerProvider {
     }
     return serverAndStreamsHost
       ? serverAndStreamsHost
-      : this.createSocketServer(options, port);
+      : this.createSocketServer(options, port, gatewayName);
   }
 
   private createSocketServer<T extends GatewayMetadata>(
     options: T,
     port: number,
+    gatewayName?: string,
   ): ServerAndEventStreamsHost {
     const adapter = this.applicationConfig.getIoAdapter();
     const { namespace, server, ...partialOptions } = options as Record<
       string,
       unknown
     >;
-    const ioServer = adapter.create(port, partialOptions);
+    let ioServer: unknown;
+    if (this.isServedWithoutListener(port, adapter)) {
+      // An adapter would otherwise listen on a port of the kernel's choosing,
+      // on every interface
+      this.logger.log(
+        `${gatewayName ?? 'A gateway'} has no port, and there is no HTTP server to serve it on, so its server does not listen for clients. Give it a port of its own to serve clients from this process.`,
+      );
+      ioServer = adapter.createWithoutListener(partialOptions);
+    } else {
+      ioServer = adapter.create(port, partialOptions);
+    }
     const serverAndEventStreamsHost =
       ServerAndEventStreamsFactory.create(ioServer);
 
@@ -75,6 +93,23 @@ export class SocketServerProvider {
       return serverAndEventStreamsHost;
     }
     return this.decorateWithNamespace(options, port, ioServer);
+  }
+
+  private isServedWithoutListener(
+    port: number,
+    adapter: unknown,
+  ): adapter is AbstractWsAdapter & {
+    createWithoutListener: NonNullable<
+      AbstractWsAdapter['createWithoutListener']
+    >;
+  } {
+    return (
+      port === 0 &&
+      !this.hasHttpServer &&
+      adapter instanceof AbstractWsAdapter &&
+      !adapter['httpServer'] &&
+      isFunction(adapter.createWithoutListener)
+    );
   }
 
   /**

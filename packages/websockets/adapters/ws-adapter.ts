@@ -1,5 +1,5 @@
 import type { INestApplicationContext, WebSocketAdapter } from '@nestjs/common';
-import { NestApplication } from '@nestjs/core';
+import { NestApplication, NestApplicationContext } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants.js';
 import type { WsMessageHandler } from '@nestjs/common';
@@ -29,6 +29,9 @@ export abstract class AbstractWsAdapter<
   constructor(appOrHttpServer?: INestApplicationContext | object) {
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
       this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
+    } else if (appOrHttpServer instanceof NestApplicationContext) {
+      // An application without an HTTP server, e.g. a standalone microservice
+      this.httpServer = undefined;
     } else {
       this.httpServer = appOrHttpServer;
     }
@@ -54,6 +57,15 @@ export abstract class AbstractWsAdapter<
   public async dispose() {}
 
   public abstract create(port: number, options?: TOptions): TServer;
+
+  /**
+   * Creates the server of a gateway without a port in an application without
+   * an HTTP server to serve it on, such as a standalone microservice. The
+   * server does not listen for clients, but it can still be used, e.g. to
+   * broadcast through an adapter shared with other processes. Without this
+   * method, `create(0, options)` is called instead.
+   */
+  public createWithoutListener?(options?: TOptions): TServer;
   public abstract bindMessageHandlers(
     client: TClient,
     handlers: WsMessageHandler[],
