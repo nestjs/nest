@@ -47,7 +47,8 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { parse, pathToRegexp, type Token } from 'path-to-regexp';
-import { Duplex, Readable } from 'stream';
+import { Duplex, finished, Readable, Transform } from 'stream';
+import { types } from 'util';
 import middie from '@fastify/middie';
 import {
   type SecurityRequestHook,
@@ -851,13 +852,14 @@ export class FastifyAdapter<
       fastifyReply.status(statusCode);
     }
     if (body instanceof StreamableFile) {
-      const stream = body.getStream();
+      const file = body;
+      const stream = file.getStream();
       // Once the reply was sent (e.g. by `handlerTimeout`), send() drops the
       // stream without consuming or destroying it.
       if (fastifyReply.sent && isFunction(stream?.destroy)) {
         stream.destroy();
       }
-      const streamHeaders = body.getHeaders();
+      const streamHeaders = file.getHeaders();
       if (
         fastifyReply.getHeader('Content-Type') === undefined &&
         streamHeaders.type !== undefined
@@ -890,15 +892,20 @@ export class FastifyAdapter<
       ) {
         stream.destroy();
         body = Readable.from([]);
-      } else if (fastifyReply.raw && isFunction(stream?.destroy)) {
-        // Fastify destroys the stream once the response has closed. The
-        // response of a pipelined request that waits behind others on the
-        // connection may never close, even when the connection does.
-        onResponseClose(fastifyReply.raw, () => {
-          if (!stream.readableEnded) {
-            stream.destroy();
-          }
-        });
+      } else {
+        if (fastifyReply.raw && isFunction(stream?.destroy)) {
+          // Fastify destroys the stream once the response has closed. The
+          // response of a pipelined request that waits behind others on the
+          // connection may never close, even when the connection does.
+          onResponseClose(fastifyReply.raw, () => {
+            if (!stream.readableEnded) {
+              stream.destroy();
+            }
+          });
+        }
+        if (stream?.readableObjectMode) {
+          body = this.toWritableChunks(stream, file);
+        }
       }
     }
     // Fastify passes an Error payload to the error handler instead of
@@ -1693,6 +1700,60 @@ export class FastifyAdapter<
   }
 
   /**
+   * Fastify pipes a stream into the response, whose write() throws for a chunk
+   * that is neither a string nor bytes, inside the "data" listener of pipe(),
+   * where nothing catches it. A source in object mode (e.g. "Readable.from()"
+   * over values) is checked as it is read instead, by a stream that Fastify
+   * sends in its place, and that fails on such a chunk before writing it.
+   */
+  private toWritableChunks(stream: Readable, file: StreamableFile): Readable {
+    const logger = this.logger;
+    // Passes the chunks on as they are (an empty string, too, which sends
+    // the headers early), one at a time, so that it does not read ahead of
+    // the response
+    const checked = new Transform({
+      objectMode: true,
+      highWaterMark: 1,
+      transform(chunk, _encoding, callback) {
+        if (isWritableChunk(chunk)) {
+          return callback(null, chunk);
+        }
+        // Answered like a failing file stream on the other adapters: a 400
+        // with the standard body before any data (see `mapException()`),
+        // and an aborted response after
+        const err = Object.assign(
+          new TypeError(
+            `A StreamableFile can only send string and Uint8Array chunks, received ${typeof chunk}`,
+          ),
+          { status: 400, statusCode: 400, expose: false },
+        );
+        // Called as the source emits the chunk, where nothing would catch
+        // what the logger throws
+        try {
+          file.errorLogger(err);
+        } catch (loggerError) {
+          logger.error(loggerError);
+        }
+        callback(err);
+      },
+    });
+    // pipe() neither fails the stream Fastify sends when the source fails,
+    // nor destroys the source when Fastify destroys that stream (e.g. when
+    // the client goes away)
+    finished(stream, { writable: false }, err => {
+      if (err) {
+        checked.destroy(err);
+      }
+    });
+    finished(checked, () => {
+      if (!stream.readableEnded) {
+        stream.destroy();
+      }
+    });
+    return stream.pipe(checked);
+  }
+
+  /**
    * A reply around a raw response, e.g. the one middleware and the exception
    * filters of its errors get. When a stream it sends fails or the client goes
    * away, Fastify reads the request, server and logger of the reply, and runs
@@ -2175,6 +2236,10 @@ export class FastifyAdapter<
       this.openConnections.delete(socket);
     }
   }
+}
+
+function isWritableChunk(chunk: unknown): chunk is string | Uint8Array {
+  return typeof chunk === 'string' || types.isUint8Array(chunk);
 }
 
 /**
