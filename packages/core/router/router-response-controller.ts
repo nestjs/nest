@@ -72,6 +72,54 @@ export function pickCloseSource(
   return isCloseSource(response) ? response : undefined;
 }
 
+interface CloseWatcher {
+  callbacks: Set<() => void>;
+  listener: () => void;
+}
+
+/**
+ * The callbacks waiting for a connection to close, by close source. A source
+ * gets a single listener, however many of its requests are waiting: the client
+ * chooses how many requests it pipelines on a connection, and an
+ * `EventEmitter` searches all the listeners of an event to remove one of them,
+ * so a listener per request costs time quadratic in their number.
+ */
+const closeWatchers = new WeakMap<CloseSource, CloseWatcher>();
+
+/**
+ * Calls `callback` once `source` closes.
+ * @returns a function that stops waiting. Once nothing waits for `source`
+ * anymore, no listener is left on it.
+ */
+export function onceClosed(
+  source: CloseSource,
+  callback: () => void,
+): () => void {
+  let watcher = closeWatchers.get(source);
+  if (!watcher) {
+    const callbacks = new Set<() => void>();
+    const listener = () => {
+      closeWatchers.delete(source);
+      callbacks.forEach(call => call());
+    };
+    watcher = { callbacks, listener };
+    closeWatchers.set(source, watcher);
+    source.once('close', listener);
+  }
+  const { callbacks, listener } = watcher;
+  callbacks.add(callback);
+  return () => {
+    if (
+      callbacks.delete(callback) &&
+      callbacks.size === 0 &&
+      closeWatchers.get(source)?.callbacks === callbacks
+    ) {
+      closeWatchers.delete(source);
+      source.removeListener('close', listener);
+    }
+  };
+}
+
 function getDataLength(message: MessageEvent): number {
   return (
     (isString(message.data) ? message.data.length : 0) +
@@ -211,12 +259,13 @@ export class RouterResponseController {
       return Promise.resolve(undefined);
     }
     return new Promise((resolve, reject) => {
-      const onClose = () => resolve(undefined);
-      disconnectSource?.once('close', onClose);
+      const stopWaitingForClose =
+        disconnectSource &&
+        onceClosed(disconnectSource, () => resolve(undefined));
       iterator
         .next()
         .then(resolve, reject)
-        .finally(() => disconnectSource?.removeListener('close', onClose));
+        .finally(() => stopWaitingForClose?.());
     });
   }
 
@@ -347,8 +396,9 @@ export class RouterResponseController {
       // so a handler that ties its resources to the signal releases them once,
       // regardless of how the stream ended. `abort()` is idempotent, so paths
       // that already aborted on disconnect are unaffected.
+      let stopWaitingForClose: (() => void) | undefined;
       const finalize = () => {
-        disconnectSource?.removeListener('close', onClose);
+        stopWaitingForClose?.();
         abortController.abort();
       };
 
@@ -397,7 +447,8 @@ export class RouterResponseController {
         resolve();
       };
 
-      disconnectSource?.once('close', onClose);
+      stopWaitingForClose =
+        disconnectSource && onceClosed(disconnectSource, onClose);
       // The client may have disconnected before the handler ran (e.g., during
       // a guard), in which case "close" has already been emitted.
       if (disconnectSource?.destroyed) {

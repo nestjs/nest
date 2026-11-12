@@ -62,6 +62,7 @@ import { IRouteParamsFactory } from './interfaces/route-params-factory.interface
 import { markRejectedByPipes } from './rejected-by-pipes.js';
 import {
   CustomHeader,
+  onceClosed,
   pickCloseSource,
   RedirectResponse,
   RouterResponseController,
@@ -727,9 +728,7 @@ export class RouterExecutionContext {
         subscriber.next();
         return;
       }
-      const onClose = () => subscriber.next();
-      source.once('close', onClose);
-      return () => source.removeListener('close', onClose);
+      return onceClosed(source, () => subscriber.next());
     });
   }
 

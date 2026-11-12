@@ -22,7 +22,10 @@ import {
   StreamableFile,
 } from '../../../common/index.js';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
-import { RouterResponseController } from '../../router/router-response-controller.js';
+import {
+  onceClosed,
+  RouterResponseController,
+} from '../../router/router-response-controller.js';
 import { SseStream } from '../../router/sse-stream.js';
 import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
@@ -463,6 +466,70 @@ describe('RouterResponseController', () => {
       await new Promise(resolve => stream.once('close', resolve));
 
       expect(logged).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onceClosed', () => {
+    let source: EventEmitter;
+
+    beforeEach(() => {
+      source = new EventEmitter();
+    });
+
+    it('should call every callback once the source closes, through one listener', () => {
+      const callbacks = [vi.fn(), vi.fn(), vi.fn()];
+
+      callbacks.forEach(callback => onceClosed(source, callback));
+      expect(source.listenerCount('close')).toBe(1);
+
+      source.emit('close');
+      source.emit('close');
+
+      callbacks.forEach(callback => expect(callback).toHaveBeenCalledTimes(1));
+      expect(source.listenerCount('close')).toBe(0);
+    });
+
+    it('should not call a callback that stopped waiting', () => {
+      const first = vi.fn();
+      const second = vi.fn();
+
+      const stopWaiting = onceClosed(source, first);
+      onceClosed(source, second);
+      stopWaiting();
+      stopWaiting();
+      expect(source.listenerCount('close')).toBe(1);
+
+      source.emit('close');
+
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledTimes(1);
+    });
+
+    it('should leave no listener behind once nothing is waiting', () => {
+      const stopWaiting = [vi.fn(), vi.fn()].map(callback =>
+        onceClosed(source, callback),
+      );
+
+      stopWaiting.forEach(stop => stop());
+      expect(source.listenerCount('close')).toBe(0);
+
+      // And wait again for a later request on the same connection
+      const callback = vi.fn();
+      onceClosed(source, callback);
+      source.emit('close');
+
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    it('should let a callback stop waiting while the source closes', () => {
+      const stops: Array<() => void> = [];
+      const callbacks = [0, 1, 2].map(index => vi.fn(() => stops[index]()));
+      callbacks.forEach(callback => stops.push(onceClosed(source, callback)));
+
+      source.emit('close');
+
+      callbacks.forEach(callback => expect(callback).toHaveBeenCalledTimes(1));
+      expect(source.listenerCount('close')).toBe(0);
     });
   });
 

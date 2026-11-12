@@ -1019,6 +1019,34 @@ describe('RouterExecutionContext', () => {
         expect(request.socket.listenerCount('close')).toBe(0);
       });
 
+      it('should share one "close" listener among the pipelined requests of a connection', async () => {
+        const producers = [
+          createProducer(),
+          createProducer(),
+          createProducer(),
+        ];
+
+        const pending = producers.map(({ observable }) =>
+          handler(observable, response, request),
+        );
+        expect(request.socket.listenerCount('close')).toBe(1);
+
+        // A request that is answered leaves the others waiting
+        producers[0].source.next('done');
+        producers[0].source.complete();
+        await pending[0];
+        expect(adapterReplySpy).toHaveBeenCalledTimes(1);
+        expect(request.socket.listenerCount('close')).toBe(1);
+
+        request.socket.emit('close');
+        await Promise.all(pending);
+
+        expect(producers[1].producer.tornDown).toBe(true);
+        expect(producers[2].producer.tornDown).toBe(true);
+        expect(adapterReplySpy).toHaveBeenCalledTimes(1);
+        expect(request.socket.listenerCount('close')).toBe(0);
+      });
+
       it('should not subscribe an Observable returned by the handler once the client is gone', async () => {
         const { producer, observable } = createProducer();
         request.socket.destroyed = true;
