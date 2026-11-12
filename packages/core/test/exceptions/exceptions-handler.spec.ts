@@ -2,7 +2,9 @@ import { HttpException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import * as createHttpError from 'http-errors';
+import { of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
+import { PassThrough } from 'stream';
 import { AbstractHttpAdapter } from '../../adapters';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
@@ -125,6 +127,205 @@ describe('ExceptionsHandler', () => {
 
         expect(statusStub.calledWith(status)).to.be.true;
         expect(jsonStub.calledWith({ message, statusCode: status })).to.be.true;
+      });
+    });
+    // What an RPC exception filter (such as GrpcExceptionFilter) does when a
+    // hybrid application binds it to its HTTP routes as a global filter
+    describe('when a custom filter returns a stream', () => {
+      it('should answer as if no filter had matched', () => {
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: () => throwError(() => ({ code: 2 })),
+          },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub.calledWith(404)).to.be.true;
+        expect(jsonStub.calledWith({ statusCode: 404, message: 'Not Found' }))
+          .to.be.true;
+      });
+
+      it('should not answer again if the filter has answered', () => {
+        sinon.stub(adapter, 'isHeadersSent').returns(true);
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => of(null) },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub.called).to.be.false;
+        expect(jsonStub.called).to.be.false;
+      });
+    });
+    // What a GraphQL exception filter does when it is bound globally, and so
+    // to the HTTP routes as well
+    describe('when a custom filter returns the exception', () => {
+      it('should answer as if no filter had matched', () => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: (exception: unknown) => exception },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub.calledWith(404)).to.be.true;
+        expect(jsonStub.calledWith({ statusCode: 404, message: 'Not Found' }))
+          .to.be.true;
+      });
+
+      it('should not answer again if the filter has answered', () => {
+        sinon.stub(adapter, 'isHeadersSent').returns(true);
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: (exception: unknown) => exception },
+        ]);
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub.called).to.be.false;
+        expect(jsonStub.called).to.be.false;
+      });
+    });
+    describe('when a custom filter returns something else', () => {
+      // e.g. "return response.status(404).json(...)", or "return
+      // stream.pipe(response)" that answers a little later
+      (
+        [
+          ['the response', () => response],
+          ['a stream', () => new PassThrough()],
+          ['a value', () => true],
+          // e.g. a Fastify reply, which is a thenable
+          ['a thenable', () => ({ then: sinon.spy() })],
+        ] as Array<[string, () => any]>
+      ).forEach(([name, getResult]) => {
+        it(`should leave the request to the filter (${name})`, () => {
+          const result = getResult();
+          handler.setCustomFilters([
+            { exceptionMetatypes: [], func: () => result },
+          ]);
+          handler.next(
+            new HttpException('Not Found', 404),
+            new ExecutionContextHost([0, response]),
+          );
+
+          expect(statusStub.called).to.be.false;
+          expect(jsonStub.called).to.be.false;
+          if (typeof result?.then === 'function') {
+            expect(result.then.called).to.be.false;
+          }
+        });
+      });
+    });
+    describe('when a custom filter is async', () => {
+      const settled = () => new Promise(resolve => setImmediate(resolve));
+      const next = () =>
+        handler.next(
+          new HttpException('Not Found', 404),
+          new ExecutionContextHost([0, response]),
+        );
+
+      // What an async RPC exception filter does in a hybrid application
+      (
+        [
+          ['a stream', () => throwError(() => ({ code: 2 }))],
+          ['the exception', (exception: unknown) => exception],
+        ] as Array<[string, (exception: unknown) => unknown]>
+      ).forEach(([name, getResult]) => {
+        it(`should answer once it resolves to ${name}, as if no filter had matched`, async () => {
+          handler.setCustomFilters([
+            {
+              exceptionMetatypes: [],
+              func: async (exception: unknown) => getResult(exception),
+            },
+          ]);
+          next();
+          expect(statusStub.called).to.be.false;
+          await settled();
+
+          expect(statusStub.calledOnce).to.be.true;
+          expect(statusStub.calledWith(404)).to.be.true;
+          expect(jsonStub.calledWith({ statusCode: 404, message: 'Not Found' }))
+            .to.be.true;
+        });
+      });
+
+      it('should not answer if the response was sent before it resolved', async () => {
+        let headersSent = false;
+        sinon.stub(adapter, 'isHeadersSent').callsFake(() => headersSent);
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: async () => {
+              headersSent = true;
+              return of(null);
+            },
+          },
+        ]);
+        next();
+        await settled();
+
+        expect(statusStub.called).to.be.false;
+        expect(jsonStub.called).to.be.false;
+      });
+
+      it('should leave the request to a filter that resolves to nothing', async () => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: async () => undefined },
+        ]);
+        next();
+        await settled();
+
+        expect(statusStub.called).to.be.false;
+        expect(jsonStub.called).to.be.false;
+      });
+
+      it('should leave the rejection of a filter as it is', () => {
+        // Only its fulfilment is handled, so it is reported as before
+        class ObservedPromise<T> extends Promise<T> {
+          static readonly handlers: unknown[][] = [];
+          then(...handlers: any[]): any {
+            ObservedPromise.handlers.push(handlers);
+            return (super.then as any)(...handlers);
+          }
+        }
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: () => ObservedPromise.resolve(undefined),
+          },
+        ]);
+        next();
+
+        expect(ObservedPromise.handlers[0]).to.have.lengthOf(1);
+        expect(ObservedPromise.handlers[0][0]).to.be.a('function');
+      });
+
+      it('should answer with a server error if the default answer fails', async () => {
+        const replyError = new TypeError('Do not know how to serialize');
+        (adapter.reply as sinon.SinonStub).onFirstCall().throws(replyError);
+        const logger = sinon.stub((ExceptionsHandler as any).logger, 'error');
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: async () => of(null) },
+        ]);
+        next();
+        await settled();
+
+        expect(statusStub.calledWith(500)).to.be.true;
+        expect(
+          jsonStub.calledWith({
+            statusCode: 500,
+            message: 'Internal server error',
+          }),
+        ).to.be.true;
+        expect(logger.calledWith(replyError)).to.be.true;
       });
     });
     describe('when "invokeCustomFilters" returns true', () => {
