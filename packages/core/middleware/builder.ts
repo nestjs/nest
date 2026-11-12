@@ -135,13 +135,18 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
      * Adds the routes excluded from the global prefix that a route covers
      * without being excluded itself (e.g. "users/me" for "users/:id"): the
      * router serves them outside of the prefix the route is mounted under.
+     * Also adds the routes of the controllers that a route covers on the
+     * other side of the prefix (see `extractControllerRoutesCoveredBy()`).
      */
     private addCoveredExcludedRoutes(routes: RouteInfo[]): RouteInfo[] {
       const allRoutes = [...routes];
       for (const route of routes) {
-        for (const excludedRoute of this.routeInfoPathExtractor.extractExcludedRoutesCoveredBy(
-          route,
-        )) {
+        for (const excludedRoute of [
+          ...this.routeInfoPathExtractor.extractExcludedRoutesCoveredBy(route),
+          ...this.routeInfoPathExtractor.extractControllerRoutesCoveredBy(
+            route,
+          ),
+        ]) {
           const isListed = allRoutes.some(
             item =>
               item.path === excludedRoute.path &&

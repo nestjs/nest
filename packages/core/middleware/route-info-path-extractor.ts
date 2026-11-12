@@ -1,4 +1,4 @@
-import { VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
+import { RequestMethod, VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
@@ -17,13 +17,35 @@ import {
 // Named so that it does not clash with a parameter of an excluded route
 const URI_VERSION_PARAM = 'nestUriVersion';
 
+/**
+ * A route of a controller, as the router serves it: on which side of the
+ * global prefix, and under which version paths (`''` for none).
+ */
+interface ServedControllerRoute {
+  path: string;
+  method: RequestMethod;
+  version?: VersionValue;
+  isExcludedFromPrefix: boolean;
+  versionPaths: string[];
+}
+
 export class RouteInfoPathExtractor {
   private readonly routePathFactory: RoutePathFactory;
   private readonly prefixPath: string;
   private readonly excludedGlobalPrefixRoutes: ExcludeRouteMetadata[];
   private readonly versioningConfig?: VersioningOptions;
+  private servedControllerRoutes?: ServedControllerRoute[];
 
-  constructor(private readonly applicationConfig: ApplicationConfig) {
+  /**
+   * @param getControllerRoutes Returns the routes of the controllers of the
+   * application, so that a route passed to `forRoutes()` is also mounted on
+   * the routes it covers that the router serves on the other side of the
+   * global prefix (see `getPathsOfCoveredControllerRoutes()`).
+   */
+  constructor(
+    private readonly applicationConfig: ApplicationConfig,
+    private readonly getControllerRoutes?: () => RouteInfo[],
+  ) {
     this.routePathFactory = new RoutePathFactory(applicationConfig);
     this.prefixPath = stripEndSlash(
       addLeadingSlash(this.applicationConfig.getGlobalPrefix()),
@@ -64,16 +86,157 @@ export class RouteInfoPathExtractor {
       const excludedVersionPaths =
         this.getVersionPathsOfExcludedRoutes(wildcardVersionPaths);
       return [
-        ...entries,
-        ...this.excludedGlobalPrefixRoutes
-          .flatMap(route => this.getPathsOfExcludedRoute(route))
-          .flatMap(excludedPath =>
-            excludedVersionPaths.map(v => v + excludedPath),
+        ...new Set([
+          ...entries,
+          ...this.excludedGlobalPrefixRoutes
+            .flatMap(route => this.getPathsOfExcludedRoute(route))
+            .flatMap(excludedPath =>
+              excludedVersionPaths.map(v => v + excludedPath),
+            ),
+          ...this.getPathsOfCoveredControllerRoutes(
+            method,
+            wildcardVersionPaths,
           ),
+        ]),
       ];
     }
 
     return this.extractNonWildcardPathsFrom({ path, method, version });
+  }
+
+  /**
+   * Returns the routes of the controllers that the route passed to
+   * `forRoutes()` covers, but that the router serves on the other side of
+   * the global prefix than the paths the route is mounted on, with the method
+   * of the route they are served for. The router decides for each route
+   * whether the prefix applies, by testing the exclusions against the path
+   * the route is declared with, while the route of `forRoutes()` is mounted
+   * on one side only: "files/*path" excluded by "files/:name" (which matches
+   * its text) is mounted without the prefix, where "files/:name/versions" is
+   * served under it.
+   *
+   * A route covers a controller route whose declared path it matches (as a
+   * plain string mounted on the sub-paths too), of a method it is mounted
+   * for, under one of its versions. See `getPathsOfCoveredControllerRoutes()`
+   * for a wildcard.
+   */
+  public extractControllerRoutesCoveredBy({
+    path,
+    method,
+    version = this.getVersionOfUnversionedRoutes(),
+  }: RouteInfo): RouteInfo[] {
+    const controllerRoutes = this.getServedControllerRoutes();
+    if (controllerRoutes.length === 0 || this.isAWildcard(path)) {
+      return [];
+    }
+    let routeRegex: RegExp;
+    try {
+      routeRegex = pathToRegexp(
+        LegacyRouteConverter.tryConvert(addLeadingSlash(path), { logs: false }),
+        // A plain string is mounted on its sub-paths (Express "use()")
+        { sensitive: false, end: (method as number) !== -1 },
+      ).regexp;
+    } catch {
+      // The adapter reports a path it cannot mount
+      return [];
+    }
+    const isMountedOutsidePrefix = isRouteExcluded(
+      this.excludedGlobalPrefixRoutes,
+      path,
+      method,
+    );
+    const mountedVersionPaths = this.toMountedVersionPaths(
+      this.extractVersionPathFrom(version),
+    );
+    return controllerRoutes.flatMap(controllerRoute => {
+      if (
+        controllerRoute.isExcludedFromPrefix === isMountedOutsidePrefix ||
+        !isMethodCovered(method, controllerRoute.method) ||
+        !controllerRoute.versionPaths.some(versionPath =>
+          mountedVersionPaths.includes(versionPath),
+        ) ||
+        !routeRegex.test(controllerRoute.path) ||
+        !isMountable(controllerRoute.path)
+      ) {
+        return [];
+      }
+      const routeInfo: RouteInfo = {
+        path: controllerRoute.path,
+        method: isRequestMethodAll(method) ? controllerRoute.method : method,
+      };
+      if (controllerRoute.version) {
+        routeInfo.version = controllerRoute.version;
+      }
+      return [routeInfo];
+    });
+  }
+
+  /**
+   * Returns the paths the router serves the routes of the controllers that it
+   * takes out of the global prefix at, for a wildcard of `forRoutes()`: it
+   * is mounted under the prefix and on the exclusions themselves, which do
+   * not cover every route they take out ("files/:id" also takes out
+   * "files/*path", read as a value of ":id", which serves "/files/a/b"; a
+   * mis-cased exclusion takes out the route as it is spelled). The routes of
+   * other versions than the wildcard's own are left out.
+   */
+  private getPathsOfCoveredControllerRoutes(
+    method: RequestMethod,
+    wildcardVersionPaths: string[],
+  ): string[] {
+    return this.getServedControllerRoutes().flatMap(controllerRoute => {
+      if (
+        !controllerRoute.isExcludedFromPrefix ||
+        !isMethodCovered(method, controllerRoute.method)
+      ) {
+        return [];
+      }
+      return controllerRoute.versionPaths
+        .filter(
+          versionPath =>
+            wildcardVersionPaths.length === 0 ||
+            wildcardVersionPaths.includes(versionPath),
+        )
+        .map(
+          versionPath => versionPath + toMountablePath(controllerRoute.path),
+        );
+    });
+  }
+
+  /**
+   * A route without a version is mounted without a version path.
+   */
+  private toMountedVersionPaths(versionPaths: string[]): string[] {
+    return versionPaths.length > 0 ? versionPaths : [''];
+  }
+
+  private getServedControllerRoutes(): ServedControllerRoute[] {
+    if (
+      !this.getControllerRoutes ||
+      !this.prefixPath ||
+      !Array.isArray(this.excludedGlobalPrefixRoutes) ||
+      this.excludedGlobalPrefixRoutes.length === 0
+    ) {
+      return [];
+    }
+    return (this.servedControllerRoutes ??= this.getControllerRoutes().map(
+      ({ path, method, version }) => {
+        return {
+          path: addLeadingSlash(path),
+          method,
+          version,
+          // As the router decides it (see `RoutePathFactory`)
+          isExcludedFromPrefix: isRouteExcluded(
+            this.excludedGlobalPrefixRoutes,
+            path,
+            method,
+          ),
+          versionPaths: this.toMountedVersionPaths(
+            this.extractVersionPathFrom(version),
+          ),
+        };
+      },
+    ));
   }
 
   /**
@@ -326,4 +489,51 @@ export class RouteInfoPathExtractor {
     }
     return [toVersionPath(versionValue)];
   }
+}
+
+/**
+ * Tells whether a route of `forRoutes()` mounted for a method also runs for
+ * the requests of a controller route of another one.
+ */
+function isMethodCovered(
+  mountedMethod: RequestMethod,
+  routeMethod: RequestMethod,
+): boolean {
+  return (
+    isRequestMethodAll(mountedMethod) ||
+    isRequestMethodAll(routeMethod) ||
+    mountedMethod === routeMethod ||
+    // The middleware of a GET route runs for HEAD requests too
+    (mountedMethod === RequestMethod.GET && routeMethod === RequestMethod.HEAD)
+  );
+}
+
+/**
+ * Returns the path to mount a middleware on for a route served at the path.
+ * A path the adapters cannot mount a middleware on (syntax of the router of
+ * Fastify, such as ":id?") is replaced with the paths below its leading
+ * static segments.
+ */
+function isMountable(path: string): boolean {
+  try {
+    pathToRegexp(LegacyRouteConverter.tryConvert(path, { logs: false }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function toMountablePath(path: string): string {
+  if (isMountable(path)) {
+    return path;
+  }
+  const segments = path.split('/');
+  const firstPatternSegment = segments.findIndex(
+    segment => !isStaticPath(segment),
+  );
+  return (
+    segments
+      .slice(0, firstPatternSegment >= 0 ? firstPatternSegment : undefined)
+      .join('/') + '{/*path}'
+  );
 }
