@@ -150,6 +150,44 @@ describe('ExpressAdapter', () => {
         expect(response.setHeader.called).to.be.false;
       });
 
+      ['image/', 'pdf', 'image/png'].forEach(type => {
+        it(`should answer a source that fails with a plain-text 400 (type "${type}")`, async () => {
+          // e.g. a type built from a file name without an extension, and a
+          // file that does not exist
+          expressAdapter.getInstance().get('/', (_req, res) => {
+            const source = new PassThrough();
+            const file = new StreamableFile(source, { type }).setErrorLogger(
+              () => {},
+            );
+            expressAdapter.reply(res, file);
+            source.destroy(new Error('ENOENT'));
+          });
+
+          await request(expressAdapter.getInstance())
+            .get('/')
+            .timeout(2000)
+            .expect(400, 'Bad Request')
+            .expect('Content-Type', 'text/plain; charset=utf-8');
+        });
+      });
+
+      it('should destroy the response when the error handler throws', async () => {
+        const logger = sinon.stub((expressAdapter as any).logger, 'error');
+        const source = new PassThrough();
+        const handlerError = new TypeError('invalid media type');
+        const file = new StreamableFile(source).setErrorHandler(() => {
+          throw handlerError;
+        });
+        const response = createStreamResponse();
+
+        expressAdapter.reply(response, file);
+        source.destroy(new Error('ENOENT'));
+
+        await waitFor(() => response.destroyed);
+        expect(response.destroyed).to.be.true;
+        expect(logger.calledWith(handlerError)).to.be.true;
+      });
+
       describe('for a HEAD request', () => {
         // Node discards what is written to a HEAD response, so its write()
         // never applies backpressure

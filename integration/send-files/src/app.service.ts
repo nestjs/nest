@@ -45,6 +45,13 @@ export class AppService {
     return new StreamableFile(createReadStream('does-not-exist.txt'));
   }
 
+  getFileThatDoesNotExistWithMalformedType(): StreamableFile {
+    // e.g. a type built from a file name that has no extension
+    return new StreamableFile(createReadStream('does-not-exist'), {
+      type: 'image/',
+    });
+  }
+
   getFileThatFailsMidway(): StreamableFile {
     let reads = 0;
     const stream = new Readable({

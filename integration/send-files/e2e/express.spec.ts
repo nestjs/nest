@@ -85,6 +85,15 @@ describe('Express FileSend', () => {
   it('should answer a HEAD request with an error if the file does not exist', async () => {
     return request(app.getHttpServer()).head('/file/not/exist').expect(400);
   });
+  it('should return an error if the file does not exist and its type is malformed', async () => {
+    await request(app.getHttpServer())
+      .get('/file/not/exist/malformed-type')
+      .expect(400, 'Bad Request')
+      .expect('Content-Type', 'text/plain; charset=utf-8');
+    await request(app.getHttpServer())
+      .head('/file/not/exist/malformed-type')
+      .expect(400);
+  });
   it('should not complete the response when the stream fails after sending data', async () => {
     await app.listen(0, '127.0.0.1');
     const url = await getHttpBaseOptions(app);
