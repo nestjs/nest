@@ -18,7 +18,13 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util.js';
 import { loadPackage } from '../utils/load-package.util.js';
-import { isNil, isUndefined } from '../utils/shared.utils.js';
+import {
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+  isUndefined,
+} from '../utils/shared.utils.js';
 import { stripProtoKeys } from '../utils/strip-proto-keys.util.js';
 import {
   DEFAULT_MAX_ERROR_MESSAGES_LENGTH,
@@ -66,6 +72,10 @@ export interface ValidationPipeOptions extends ValidatorOptions {
    */
   maxErrorMessagesLength?: number;
 }
+
+// Metadata types of class-validator ("ValidationTypes")
+const NESTED_VALIDATION = 'nestedValidation';
+const CONDITIONAL_VALIDATION = 'conditionalValidation';
 
 let classValidator: any = {} as any;
 let classTransformer: any = {} as any;
@@ -200,6 +210,14 @@ export class ValidationPipe implements PipeTransform {
       entity = { constructor: metatype };
     }
 
+    const binaryErrors = this.findNestedBinaryValues(entity);
+    if (binaryErrors.length > 0) {
+      // A binary value (e.g. an attachment of a socket.io message) is never
+      // an instance of a nested class: class-transformer copies it instead
+      // of building the class from it, and class-validator then looks for
+      // the rules of its own type (there are none), not those of the class.
+      throw await this.exceptionFactory(binaryErrors);
+    }
     const errors = await this.validate(entity, {
       ...this.validatorOptions,
       // The target of an error is the whole object it was found in, so an
@@ -438,6 +456,116 @@ export class ValidationPipe implements PipeTransform {
     validatorOptions?: ValidatorOptions,
   ): Promise<ValidationError[]> | ValidationError[] {
     return classValidator.validate(object, validatorOptions);
+  }
+
+  /**
+   * Returns an error for each binary value (a Buffer, a typed array or an
+   * ArrayBuffer) that a property validated as a nested object holds, directly
+   * or as an item, in the shape of class-validator's error for a primitive in
+   * that place. The properties are read from class-validator's metadata
+   * storage, once per class: a validator package without one is not checked.
+   */
+  protected findNestedBinaryValues(
+    object: any,
+    metadataCache = new Map<unknown, any[]>(),
+  ): ValidationError[] {
+    const metadataStorage = classValidator.getMetadataStorage?.();
+    if (
+      !metadataStorage ||
+      !isObject(object) ||
+      Array.isArray(object) ||
+      this.isBinary(object) ||
+      !isFunction((object as any).constructor) ||
+      // an object that holds nothing but primitives needs no look
+      !Object.values(object).some(isObject)
+    ) {
+      return [];
+    }
+    const target = object as Record<string, unknown>;
+    let metadatas = metadataCache.get(target.constructor);
+    if (!metadatas) {
+      const {
+        always = false,
+        strictGroups = false,
+        groups,
+      } = this.validatorOptions;
+      metadatas = metadataStorage.getTargetValidationMetadatas(
+        target.constructor,
+        undefined,
+        always,
+        strictGroups,
+        groups,
+      ) as any[];
+      metadataCache.set(target.constructor, metadatas);
+    }
+    const errors: ValidationError[] = [];
+    const checked = new Set<string>();
+    for (const metadata of metadatas) {
+      const property: string = metadata.propertyName;
+      if (metadata.type !== NESTED_VALIDATION || checked.has(property)) {
+        continue;
+      }
+      checked.add(property);
+      const value = target[property];
+      // class-validator does not look at a value that a condition of the
+      // property (e.g. "@ValidateIf()" or "@IsOptional()") rules out
+      const isValidated = () =>
+        metadatas.every(
+          item =>
+            item.type !== CONDITIONAL_VALIDATION ||
+            item.propertyName !== property ||
+            item.constraints[0](target, value),
+        );
+      const message = (
+        isString(metadata.message)
+          ? metadata.message
+          : `${metadata.each ? 'each value in ' : ''}nested property $property must be either object or array`
+      ).replace(/\$property/g, property);
+      const error = this.toNestedBinaryError(
+        property,
+        value,
+        message,
+        metadataCache,
+      );
+      if (error && isValidated()) {
+        errors.push(error);
+      }
+    }
+    return errors;
+  }
+
+  protected toNestedBinaryError(
+    property: string,
+    value: unknown,
+    message: string,
+    metadataCache: Map<unknown, any[]>,
+  ): ValidationError | undefined {
+    if (this.isBinary(value)) {
+      return {
+        property,
+        constraints: { [NESTED_VALIDATION]: message },
+        children: [],
+      };
+    }
+    let children: ValidationError[] = [];
+    if (Array.isArray(value) || value instanceof Set || value instanceof Map) {
+      // class-validator validates each item, with or without "each"
+      const items: any = value instanceof Set ? Array.from(value) : value;
+      items.forEach((item: unknown, key: unknown) => {
+        const error = this.toNestedBinaryError(
+          String(key),
+          item,
+          message,
+          metadataCache,
+        );
+        if (error) {
+          children.push(error);
+        }
+      });
+    } else {
+      children = this.findNestedBinaryValues(value, metadataCache);
+    }
+    return children.length > 0 ? { property, children } : undefined;
   }
 
   protected async hasValidationRules(
