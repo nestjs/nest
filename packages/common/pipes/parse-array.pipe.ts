@@ -7,6 +7,7 @@ import {
   PipeTransform,
 } from '../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util';
+import { withoutArrayGaps } from '../utils/close-array-gaps.util';
 import { isNil, isString, isUndefined } from '../utils/shared.utils';
 import {
   OMITTED_ERRORS_MESSAGE,
@@ -115,6 +116,11 @@ export class ParseArrayPipe implements PipeTransform {
           throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
         }
       }
+    } else {
+      // Only the items that are present (`[, '1']` gives `['1']`), as
+      // ValidationPipe does: the gaps of a sparse array would otherwise be
+      // handed on unvalidated. The input array is left unchanged.
+      value = withoutArrayGaps(value);
     }
     if (this.options.items) {
       const validationMetadata: ArgumentMetadata = {
@@ -202,12 +208,7 @@ export class ParseArrayPipe implements PipeTransform {
         const targetArray = value as Array<unknown>;
         const items: unknown[] = [];
         for (let i = 0; i < targetArray.length; i++) {
-          // As with `map()`, the holes of a sparse array are not validated.
-          items.push(
-            i in targetArray
-              ? await toClassInstance(targetArray[i], i)
-              : undefined,
-          );
+          items.push(await toClassInstance(targetArray[i], i));
         }
         value = items;
       }

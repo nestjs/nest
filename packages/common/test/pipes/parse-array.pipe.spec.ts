@@ -358,15 +358,35 @@ describe('ParseArrayPipe', () => {
         ).to.deep.equal([1, 2]);
         expect(input).to.deep.equal(['1', '2']);
       });
-      it('should not validate the holes of a sparse array', async () => {
+      it('should close the gaps of a sparse array and leave the input unchanged', async () => {
         const input = ['1', '2', '3'];
         // eslint-disable-next-line @typescript-eslint/no-array-delete
         delete input[1];
         target = new ParseArrayPipe({ items: Number });
 
+        const result = await target.transform(input, {} as ArgumentMetadata);
+        expect(result).to.deep.equal([1, 3]);
+        expect(result).to.have.lengthOf(2);
+        expect(input).to.have.lengthOf(3);
+        expect(1 in input).to.be.false;
+      });
+      it('should close the gaps of a sparse array when not stopping at the first error', async () => {
+        const input: string[] = [];
+        input[1] = '9';
+        target = new ParseArrayPipe({ items: Number, stopAtFirstError: false });
+
         expect(
           await target.transform(input, {} as ArgumentMetadata),
-        ).to.deep.equal([1, undefined, 3]);
+        ).to.deep.equal([9]);
+      });
+      it('should only visit the items of a sparse array, whatever its length', async () => {
+        const input: string[] = [];
+        input[2 ** 32 - 2] = '1';
+        target = new ParseArrayPipe({ items: Number });
+
+        expect(
+          await target.transform(input, {} as ArgumentMetadata),
+        ).to.deep.equal([1]);
       });
       describe('when "stopAtFirstError" is explicitly turned off', () => {
         it('should validate each item and concat errors', async () => {

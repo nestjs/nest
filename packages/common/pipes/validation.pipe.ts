@@ -17,6 +17,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
+import { closeArrayGaps } from '../utils/close-array-gaps.util';
 import { loadPackage } from '../utils/load-package.util';
 import {
   isFunction,
@@ -153,6 +154,11 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     const originalValue = value;
     value = this.toEmptyIfNil(value, metatype);
+    // class-transformer copies an array without its gaps, so the array of a
+    // sparse value would be validated without them and returned with them
+    // when the value is returned as it came. The gaps are closed first, in
+    // place, as the prototype keys are stripped below.
+    this.closeArrayGaps(value);
 
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
@@ -428,6 +434,15 @@ export class ValidationPipe implements PipeTransform<any> {
     for (const key in value) {
       this.stripProtoKeys(value[key]);
     }
+  }
+
+  /**
+   * Closes the gaps of the sparse arrays in the value to validate, in place
+   * (`[, 'a']` becomes `['a']`), so that the arrays that are validated are
+   * the ones that are returned.
+   */
+  protected closeArrayGaps(value: unknown): void {
+    closeArrayGaps(value);
   }
 
   protected isPrimitive(value: unknown): boolean {
