@@ -35,6 +35,7 @@ import { UndefinedDependencyException } from '../errors/exceptions/undefined-dep
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { Barrier } from '../helpers/barrier';
 import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator';
+import { REQUEST } from '../router/request/request-constants';
 import { STATIC_CONTEXT } from './constants';
 import { INQUIRER } from './inquirer';
 import {
@@ -425,6 +426,16 @@ export class Injector {
         if (!instanceHost.isResolved && !paramWrapperWithInstance.forwardRef) {
           isResolved = false;
         }
+        if (
+          this.shouldInjectDurablePayload(
+            paramWrapperWithInstance,
+            wrapper,
+            parentInquirer,
+            resolutionContext.contextId,
+          )
+        ) {
+          return resolutionContext.contextId.payload;
+        }
         return instanceHost?.instance;
       } catch (err) {
         /*
@@ -780,6 +791,7 @@ export class Injector {
         metadata,
         resolutionContext.contextId,
         resolutionContext.inquirer,
+        parentInquirer,
       );
     }
     const properties = this.reflectProperties(wrapper.metatype as Type<any>);
@@ -843,6 +855,16 @@ export class Injector {
             ),
             effectivePropertyResolutionContext.effectiveInquirerId,
           );
+          if (
+            this.shouldInjectDurablePayload(
+              paramWrapperWithInstance,
+              wrapper,
+              parentInquirer,
+              resolutionContext.contextId,
+            )
+          ) {
+            return resolutionContext.contextId.payload;
+          }
           return instanceHost.instance;
         } catch (err) {
           /*
@@ -1019,6 +1041,16 @@ export class Injector {
         parentInquirer,
       );
 
+      if (
+        this.shouldInjectDurablePayload(
+          item,
+          inquirer,
+          parentInquirer,
+          contextId,
+        )
+      ) {
+        return contextId.payload;
+      }
       return item?.getInstanceByContextId(
         this.getContextId(contextId, item),
         effectiveInquirerId,
@@ -1030,6 +1062,7 @@ export class Injector {
     metadata: PropertyMetadata[],
     contextId: ContextId,
     inquirer?: InstanceWrapper,
+    parentInquirer?: InstanceWrapper,
   ): Promise<PropertyDependency[]> {
     const dependenciesHosts = await Promise.all(
       metadata.map(async ({ wrapper: item, key }) => ({
@@ -1045,10 +1078,17 @@ export class Injector {
     return dependenciesHosts.map(({ key, host }) => ({
       key,
       name: key,
-      instance: host.getInstanceByContextId(
-        this.getContextId(contextId, host),
-        inquirerId,
-      ).instance,
+      instance: this.shouldInjectDurablePayload(
+        host,
+        inquirer,
+        parentInquirer,
+        contextId,
+      )
+        ? contextId.payload
+        : host.getInstanceByContextId(
+            this.getContextId(contextId, host),
+            inquirerId,
+          ).instance,
     }));
   }
 
@@ -1378,6 +1418,28 @@ export class Injector {
             instanceWrapper.isDependencyTreeDurable(),
         })
       : contextId;
+  }
+
+  /**
+   * An instance kept in another context than the one being resolved (a
+   * durable one, see `ContextIdStrategy`) outlives the request it is built
+   * for, and is handed to the next requests mapped to that context. When the
+   * strategy supplies a payload, that is its `REQUEST`, never the request
+   * that the entry point (a controller that is not durable, a middleware, a
+   * message handler, ...) registered as the `REQUEST` of the context.
+   */
+  private shouldInjectDurablePayload(
+    dependency: InstanceWrapper | undefined,
+    dependent: InstanceWrapper | undefined,
+    parentInquirer: InstanceWrapper | undefined,
+    contextId: ContextId,
+  ): boolean {
+    if (dependency?.token !== REQUEST || isUndefined(contextId.payload)) {
+      return false;
+    }
+    // An instance of a transient provider belongs to its consumer
+    const host = dependent?.isTransient ? parentInquirer : dependent;
+    return !!host && this.getContextId(contextId, host) !== contextId;
   }
 
   private getNowTimestamp() {
