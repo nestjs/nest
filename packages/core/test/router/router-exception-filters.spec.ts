@@ -2,13 +2,19 @@ import { Catch } from '../../../common/decorators/core/catch.decorator.js';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
 import { Scope } from '../../../common/interfaces/scope-options.interface.js';
 import { ApplicationConfig } from '../../application-config.js';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
+import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
+import { Injector } from '../../injector/injector.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { REQUEST_CONTEXT_ID } from '../../router/request/request-constants.js';
 import { RouterExceptionFilters } from '../../router/router-exception-filters.js';
 import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
 describe('RouterExceptionFilters', () => {
   let applicationConfig: ApplicationConfig;
+  let container: NestContainer;
+  let injector: Injector;
   let exceptionFilter: RouterExceptionFilters;
 
   class CustomException {}
@@ -19,10 +25,13 @@ describe('RouterExceptionFilters', () => {
 
   beforeEach(() => {
     applicationConfig = new ApplicationConfig();
+    container = new NestContainer();
+    injector = new Injector();
     exceptionFilter = new RouterExceptionFilters(
-      new NestContainer(),
+      container,
       applicationConfig,
       new NoopHttpAdapter({}),
+      injector,
     );
   });
   describe('create', () => {
@@ -53,6 +62,130 @@ describe('RouterExceptionFilters', () => {
         expect((filter as any).filters).not.toHaveLength(0);
       });
     });
+    describe('when there are request-scoped or transient global filters', () => {
+      @Catch()
+      class CatchAllFilter {
+        public catch(exc, res) {}
+      }
+      const exception = new CustomException() as any;
+      let wrapper: InstanceWrapper;
+      let scopedFilter: ExceptionFilter;
+      let sharedFilter: CatchAllFilter;
+      let req: object;
+      let host: ExecutionContextHost;
+
+      beforeEach(() => {
+        wrapper = new InstanceWrapper({
+          scope: Scope.TRANSIENT,
+          host: {} as any,
+        });
+        scopedFilter = new ExceptionFilter();
+        sharedFilter = new CatchAllFilter();
+        req = {};
+        host = new ExecutionContextHost([req, {}]);
+
+        applicationConfig.addGlobalRequestFilter(wrapper);
+        applicationConfig.addGlobalFilter(sharedFilter);
+        vi.spyOn(scopedFilter, 'catch');
+        vi.spyOn(sharedFilter, 'catch');
+        vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+          () => {},
+        );
+        vi.spyOn(injector, 'loadInjectable').mockImplementation(
+          async (item, _, contextId, inquirer) =>
+            item.setInstanceByContextId(
+              contextId!,
+              { instance: scopedFilter, isResolved: true },
+              inquirer!.id,
+            ),
+        );
+      });
+
+      it('should instantiate them for the request that has failed', async () => {
+        const handler = exceptionFilter.create({}, () => {}, undefined);
+        expect(injector.loadInjectable).not.toHaveBeenCalled();
+
+        await handler.next(exception, host);
+
+        const contextId = req[REQUEST_CONTEXT_ID];
+        expect(contextId).toBeDefined();
+        expect(container.registerRequestProvider).toHaveBeenCalledWith(
+          req,
+          contextId,
+        );
+        expect(injector.loadInjectable).toHaveBeenCalledWith(
+          wrapper,
+          wrapper.host,
+          contextId,
+          wrapper,
+        );
+        expect(scopedFilter.catch).toHaveBeenCalledWith(exception, host);
+        expect(sharedFilter.catch).not.toHaveBeenCalled();
+      });
+
+      it('should reuse the context id of the request', async () => {
+        const contextId = { id: 1 };
+        req[REQUEST_CONTEXT_ID] = contextId;
+
+        await exceptionFilter
+          .create({}, () => {}, undefined)
+          .next(exception, host);
+
+        expect(container.registerRequestProvider).not.toHaveBeenCalled();
+        expect(injector.loadInjectable).toHaveBeenCalledWith(
+          wrapper,
+          wrapper.host,
+          contextId,
+          wrapper,
+        );
+        expect(scopedFilter.catch).toHaveBeenCalledWith(exception, host);
+      });
+
+      it('should instantiate them for the context the handler is created for', async () => {
+        // e.g. the one of a request-scoped middleware
+        const contextId = { id: 2 };
+
+        await exceptionFilter
+          .create({}, () => {}, undefined, contextId)
+          .next(exception, host);
+
+        expect(container.registerRequestProvider).not.toHaveBeenCalled();
+        expect(injector.loadInjectable).toHaveBeenCalledWith(
+          wrapper,
+          wrapper.host,
+          contextId,
+          wrapper,
+        );
+        expect(scopedFilter.catch).toHaveBeenCalledWith(exception, host);
+      });
+
+      it('should pass the error to the filters without a scope when they cannot be instantiated', async () => {
+        const error = new Error('cannot be instantiated');
+        vi.spyOn(injector, 'loadInjectable').mockRejectedValue(error);
+
+        await exceptionFilter
+          .create({}, () => {}, undefined)
+          .next(exception, host);
+
+        expect(scopedFilter.catch).not.toHaveBeenCalled();
+        expect(sharedFilter.catch).toHaveBeenCalledWith(error, host);
+      });
+
+      it('should not instantiate them when the inquirer has already done it', async () => {
+        wrapper.setInstanceByContextId(
+          STATIC_CONTEXT,
+          { instance: scopedFilter, isResolved: true },
+          'inquirerId',
+        );
+
+        await exceptionFilter
+          .create({}, () => {}, undefined, STATIC_CONTEXT, 'inquirerId')
+          .next(exception, host);
+
+        expect(injector.loadInjectable).not.toHaveBeenCalled();
+        expect(scopedFilter.catch).toHaveBeenCalledWith(exception, host);
+      });
+    });
   });
   describe('reflectCatchExceptions', () => {
     it('should return FILTER_CATCH_EXCEPTIONS metadata', () => {
@@ -77,38 +210,6 @@ describe('RouterExceptionFilters', () => {
       it('should return global filters', () => {
         const expectedResult = applicationConfig.getGlobalFilters();
         expect(exceptionFilter.getGlobalMetadata()).toBe(expectedResult);
-      });
-
-      it('should warn once that request-scoped and transient global filters are left out', () => {
-        const warnSpy = vi
-          .spyOn((RouterExceptionFilters as any).logger, 'warn')
-          .mockImplementation(() => {});
-        vi.spyOn(applicationConfig, 'getGlobalRequestFilters').mockReturnValue([
-          new InstanceWrapper({ scope: Scope.REQUEST }),
-        ]);
-        // e.g. the one of the middleware module
-        const otherExceptionFilter = new RouterExceptionFilters(
-          new NestContainer(),
-          applicationConfig,
-          new NoopHttpAdapter({}),
-        );
-
-        exceptionFilter.getGlobalMetadata();
-        exceptionFilter.getGlobalMetadata();
-        otherExceptionFilter.getGlobalMetadata();
-
-        expect(warnSpy).toHaveBeenCalledOnce();
-        expect(warnSpy.mock.calls[0][0]).toContain('outside of controllers');
-      });
-
-      it('should not warn without request-scoped or transient global filters', () => {
-        const warnSpy = vi
-          .spyOn((RouterExceptionFilters as any).logger, 'warn')
-          .mockImplementation(() => {});
-
-        exceptionFilter.getGlobalMetadata();
-
-        expect(warnSpy).not.toHaveBeenCalled();
       });
     });
     describe('otherwise', () => {
