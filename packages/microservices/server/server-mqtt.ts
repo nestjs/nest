@@ -313,9 +313,12 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       return this.messageHandlers.get(route) || null;
     }
 
+    // Wildcard filters are matched against the topic itself: decoding moves
+    // its levels around ('/' inside a JSON string is a level separator), so
+    // the decoded topic can match a filter that the topic does not.
     for (const [key, value] of this.messageHandlers) {
       const keyWithoutSharedPrefix = this.removeHandlerKeySharedPrefix(key);
-      if (this.matchMqttPattern(keyWithoutSharedPrefix, route)) {
+      if (this.matchMqttPattern(keyWithoutSharedPrefix, pattern)) {
         return value;
       }
     }

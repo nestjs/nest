@@ -1066,5 +1066,37 @@ describe('ServerMqtt', () => {
         server.getHandlerByPattern('{ "role": "math", "cmd": "sum" }'),
       ).toBe(handler);
     });
+    describe('when the topic of an object pattern also matches a wildcard filter', () => {
+      // A broker ACL that lets a peer publish on "+/telemetry/#" only
+      let telemetryHandler: ReturnType<typeof vi.fn>;
+      let adminHandler: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        telemetryHandler = vi.fn();
+        adminHandler = vi.fn();
+        server.addHandler('+/admin/#', adminHandler);
+        server.addHandler('+/telemetry/#', telemetryHandler);
+      });
+
+      it.each([
+        ['with its keys out of order', '{"b":"/telemetry/","a":"/admin/"}'],
+        [
+          'with escaped "/" characters',
+          '{"b":"/telemetry/","a":"\\u002fadmin\\u002f"}',
+        ],
+        ['with a duplicate key', '{"a":"/telemetry/","b":"/admin/","a":"x"}'],
+      ])('should match the topic %s as the broker delivered it', (_, topic) => {
+        expect(server.getHandlerByPattern(topic)).toBe(telemetryHandler);
+      });
+
+      it('should still route the topic to the handler of its object pattern', () => {
+        const objectHandler = vi.fn();
+        server.addHandler({ b: '/telemetry/', a: '/admin/' }, objectHandler);
+
+        expect(
+          server.getHandlerByPattern('{"b":"/telemetry/","a":"/admin/"}'),
+        ).toBe(objectHandler);
+      });
+    });
   });
 });
