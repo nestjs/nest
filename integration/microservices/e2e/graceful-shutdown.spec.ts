@@ -23,6 +23,11 @@ describe.each([
     transport: Transport.REDIS,
     connection: { host: '0.0.0.0', port: 6379 },
   },
+  {
+    name: 'NATS',
+    transport: Transport.NATS,
+    connection: { servers: 'nats://0.0.0.0:4222' },
+  },
 ] as const)(
   '$name transport (graceful shutdown)',
   ({ transport, connection }) => {
