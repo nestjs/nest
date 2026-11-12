@@ -99,4 +99,13 @@ describe('FileFieldsInterceptor', () => {
         .true;
     });
   });
+  it('should set the default parts limit', () => {
+    const target = new (FileFieldsInterceptor([{ name: 'file' }], {
+      limits: { fileSize: 10 },
+    }))();
+    expect((target as any).multer.limits).to.deep.equal({
+      fileSize: 10,
+      parts: 1000,
+    });
+  });
 });

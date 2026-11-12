@@ -16,6 +16,15 @@ export const multerExceptions = {
   // stays a 500.
 };
 
+/**
+ * Default of the number of parts (text fields and files) a multipart request
+ * may have, which multer leaves at `Infinity`, so that a single request could
+ * carry any number of fields and files. `1000` is the number of parts
+ * `@fastify/multipart` accepts, and the number of parameters `body-parser`
+ * parses in the urlencoded bodies the ExpressAdapter parses.
+ */
+export const DEFAULT_PARTS_LIMIT = 1000;
+
 export const busboyExceptions = {
   // from https://github.com/mscdex/busboy/blob/master/lib/types/multipart.js
   MULTIPART_BOUNDARY_NOT_FOUND: 'Multipart: Boundary not found',

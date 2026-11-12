@@ -10,13 +10,155 @@ import {
   multerExceptions,
 } from '../../../multer/multer/multer.constants';
 import {
+  applyDefaultLimits,
   removeFilesOnPipeRejection,
   transformException,
 } from '../../../multer/multer/multer.utils';
+import { MulterOptions } from '../../../multer/interfaces/multer-options.interface';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes';
 import { lastValueFrom, throwError } from 'rxjs';
 import * as sinon from 'sinon';
-import { Writable } from 'stream';
+import { Readable, Writable } from 'stream';
+
+describe('applyDefaultLimits', () => {
+  const defaults = { parts: 1000 };
+
+  it('should set the parts limit when no limits are set', () => {
+    const options = applyDefaultLimits({ dest: '/uploads' });
+    expect(options).to.deep.equal({ dest: '/uploads', limits: defaults });
+  });
+
+  it('should keep the other limits and the parts limit that is set', () => {
+    expect(
+      applyDefaultLimits({ limits: { fileSize: 10 } }).limits,
+    ).to.deep.equal({ fileSize: 10, parts: 1000 });
+    expect(
+      applyDefaultLimits({ limits: { parts: Infinity } }).limits,
+    ).to.deep.equal({ parts: Infinity });
+    expect(applyDefaultLimits({ limits: { parts: 5 } }).limits).to.deep.equal({
+      parts: 5,
+    });
+  });
+
+  it('should set the parts limit when it is null or undefined', () => {
+    expect(
+      applyDefaultLimits({ limits: { parts: undefined } }).limits,
+    ).to.deep.equal(defaults);
+    expect(
+      applyDefaultLimits({ limits: { parts: null! } }).limits,
+    ).to.deep.equal(defaults);
+  });
+
+  it('should not modify the options it is given', () => {
+    const options = { limits: { fileSize: 10 } };
+    applyDefaultLimits(options);
+    expect(options).to.deep.equal({ limits: { fileSize: 10 } });
+  });
+
+  it('should set the parts limit on the limits a function returns', () => {
+    const { limits } = applyDefaultLimits({
+      limits: ((req: { size: number }) => ({ fileSize: req.size })) as any,
+    });
+    expect((limits as any)({ size: 10 })).to.deep.equal({
+      fileSize: 10,
+      ...defaults,
+    });
+    expect(
+      (applyDefaultLimits({ limits: (() => undefined) as any }).limits as any)(
+        {},
+      ),
+    ).to.deep.equal(defaults);
+  });
+
+  describe('with multer', () => {
+    /** Runs `multer(options).none()` over a body with the given text fields. */
+    const parseFields = (options: MulterOptions, fieldNames: string[]) => {
+      const boundary = 'nestjs';
+      const body =
+        fieldNames
+          .map(
+            name =>
+              `--${boundary}\r\n` +
+              `Content-Disposition: form-data; name="${name}"\r\n\r\n` +
+              `x\r\n`,
+          )
+          .join('') + `--${boundary}--\r\n`;
+      const req = Object.assign(Readable.from([Buffer.from(body)]), {
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`,
+          'content-length': String(Buffer.byteLength(body)),
+        },
+      });
+      return new Promise<any>((resolve, reject) =>
+        (multer as any)(applyDefaultLimits(options)).none()(
+          req as any,
+          {} as any,
+          (err?: any) => (err ? reject(err) : resolve((req as any).body)),
+        ),
+      );
+    };
+
+    /** `count` distinct field names. */
+    const names = (count: number) =>
+      Array.from({ length: count }, (_, i) => `f${i}`);
+
+    it('should reject more than 1000 parts by default', async () => {
+      expect(Object.keys(await parseFields({}, names(1000)))).to.have.lengthOf(
+        1000,
+      );
+      await expect(parseFields({}, names(1001)))
+        .to.be.rejected.and.eventually.have.property('code')
+        .that.equals('LIMIT_PART_COUNT');
+    });
+
+    it('should count files as parts', async () => {
+      const boundary = 'nestjs';
+      const body =
+        Array.from(
+          { length: 1001 },
+          (_, i) =>
+            `--${boundary}\r\n` +
+            `Content-Disposition: form-data; name="f"; filename="${i}.txt"\r\n` +
+            `Content-Type: text/plain\r\n\r\n` +
+            `x\r\n`,
+        ).join('') + `--${boundary}--\r\n`;
+      const req = Object.assign(Readable.from([Buffer.from(body)]), {
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`,
+          'content-length': String(Buffer.byteLength(body)),
+        },
+      });
+      await expect(
+        new Promise<void>((resolve, reject) =>
+          (multer as any)(applyDefaultLimits({})).any()(
+            req as any,
+            {} as any,
+            (err?: any) => (err ? reject(err) : resolve()),
+          ),
+        ),
+      )
+        .to.be.rejected.and.eventually.have.property('code')
+        .that.equals('LIMIT_PART_COUNT');
+    });
+
+    it('should apply the parts limit that is set', async () => {
+      await expect(parseFields({ limits: { parts: 2 } }, names(3)))
+        .to.be.rejected.and.eventually.have.property('code')
+        .that.equals('LIMIT_PART_COUNT');
+      const body = await parseFields(
+        { limits: { parts: Infinity } },
+        names(1001),
+      );
+      expect(Object.keys(body)).to.have.lengthOf(1001);
+    });
+
+    it('should apply the default to the limits a function returns', async () => {
+      await expect(parseFields({ limits: (() => ({})) as any }, names(1001)))
+        .to.be.rejected.and.eventually.have.property('code')
+        .that.equals('LIMIT_PART_COUNT');
+    });
+  });
+});
 
 describe('removeFilesOnPipeRejection', () => {
   const error = new BadRequestException('Validation failed');

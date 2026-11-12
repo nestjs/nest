@@ -5,7 +5,40 @@ import {
 } from '@nestjs/common';
 import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { finished } from 'stream';
-import { multerExceptions, busboyExceptions } from './multer.constants';
+import {
+  DEFAULT_PARTS_LIMIT,
+  multerExceptions,
+  busboyExceptions,
+} from './multer.constants';
+import { MulterOptions } from '../interfaces/multer-options.interface';
+
+type MulterLimits = NonNullable<MulterOptions['limits']>;
+
+/**
+ * Sets `parts`, which multer leaves at `Infinity`, to `DEFAULT_PARTS_LIMIT`
+ * wherever it is not set. multer only checks a limit that is present in
+ * `limits`, so the default is added to the object, or to the object a
+ * function-valued `limits` (multer >= 2.4.0) returns.
+ */
+export function applyDefaultLimits<T extends MulterOptions>(options: T): T {
+  const limits: unknown = options.limits;
+  return {
+    ...options,
+    limits:
+      typeof limits === 'function'
+        ? (req: any) => withDefaultLimits(limits(req))
+        : withDefaultLimits(limits as MulterLimits | null | undefined),
+  };
+}
+
+function withDefaultLimits(
+  limits: MulterLimits | null | undefined,
+): MulterLimits {
+  return {
+    ...limits,
+    parts: limits?.parts ?? DEFAULT_PARTS_LIMIT,
+  };
+}
 
 /**
  * Set on a request whose pipes rejected it, by the router of

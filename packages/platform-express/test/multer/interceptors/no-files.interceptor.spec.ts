@@ -41,4 +41,11 @@ describe('NoFilesInterceptor', () => {
       );
     });
   });
+  it('should set the default parts limit', () => {
+    const target = new (NoFilesInterceptor({ limits: { fileSize: 10 } }))();
+    expect((target as any).multer.limits).to.deep.equal({
+      fileSize: 10,
+      parts: 1000,
+    });
+  });
 });

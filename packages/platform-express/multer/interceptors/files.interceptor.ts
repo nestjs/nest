@@ -13,6 +13,7 @@ import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { MulterModuleOptions } from '../interfaces';
 import { MulterOptions } from '../interfaces/multer-options.interface';
 import {
+  applyDefaultLimits,
   removeFilesOnPipeRejection,
   transformException,
 } from '../multer/multer.utils';
@@ -40,10 +41,12 @@ export function FilesInterceptor(
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.multer = (multer as any)({
-        ...options,
-        ...localOptions,
-      });
+      this.multer = (multer as any)(
+        applyDefaultLimits({
+          ...options,
+          ...localOptions,
+        }),
+      );
     }
 
     async intercept(

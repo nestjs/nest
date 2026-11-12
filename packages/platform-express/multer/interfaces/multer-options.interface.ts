@@ -8,8 +8,9 @@ export interface MulterOptions {
   /** The storage engine to use for uploaded files. */
   storage?: any;
   /**
-   * An object specifying the size limits of the following optional properties. This object is passed to busboy
-   * directly, and the details of properties can be found on https://github.com/mscdex/busboy#busboy-methods
+   * An object specifying the size limits of the following optional properties. This object is passed to busboy,
+   * with `parts` set to its default when absent, and the details of properties can be found on
+   * https://github.com/mscdex/busboy#busboy-methods
    */
   limits?: {
     /** Max field name size (Default: 100 bytes) */
@@ -22,7 +23,11 @@ export interface MulterOptions {
     fileSize?: number;
     /** For multipart forms, the max number of file fields (Default: Infinity) */
     files?: number;
-    /** For multipart forms, the max number of parts (fields + files)(Default: Infinity) */
+    /**
+     * For multipart forms, the max number of parts (fields + files) (Default:
+     * 1000, as on Fastify, where multer's own default is Infinity). Set it to
+     * `Infinity` to lift the limit.
+     */
     parts?: number;
     /** For multipart forms, the max number of header key=> value pairs to parse Default: 2000(same as node's http). */
     headerPairs?: number;
