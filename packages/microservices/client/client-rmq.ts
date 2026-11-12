@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil, isString } from '@nestjs/common/utils/shared.utils';
 import { randomUUID } from 'crypto';
 import { EventEmitter } from 'events';
 import {
@@ -15,6 +15,7 @@ import {
 import { first, map, retryWhen, scan, skip, switchMap } from 'rxjs/operators';
 import {
   BLOCKED_RMQ_MESSAGE,
+  CONSUMER_CANCELLED_RMQ_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_NO_ASSERT,
@@ -247,11 +248,19 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     await channel.consume(
       this.replyQueue,
       (msg: ConsumeMessage | null) => {
+        if (isNil(msg)) {
+          // amqplib calls the consumer with "null" once the broker has
+          // cancelled it (e.g., its queue was deleted). Reading from it would
+          // throw inside amqplib's dispatch and close the connection.
+          this.logger.error(CONSUMER_CANCELLED_RMQ_MESSAGE);
+          this.consumeChannel(channel).catch(err => this.logger.error(err));
+          return;
+        }
         // Whoever publishes to the reply queue chooses the correlation id, so
         // only the ids of pending requests become event names: an "error"
         // event nobody listens to throws inside amqplib's dispatch, which
         // closes the channel and the connection.
-        const correlationId = msg!.properties.correlationId;
+        const correlationId = msg.properties.correlationId;
         if (this.responseEmitter.listenerCount(correlationId) > 0) {
           this.responseEmitter.emit(correlationId, msg);
         }

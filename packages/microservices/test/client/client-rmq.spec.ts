@@ -205,6 +205,19 @@ describe('ClientRMQ', function () {
         expect(listener.calledWith(msg)).to.be.true;
       });
 
+      it('should not throw when the broker cancels the consumer', () => {
+        expect(() => onMessage(null)).to.not.throw();
+        expect(emitSpy.called).to.be.false;
+      });
+
+      it('should consume the reply queue again after a cancel', () => {
+        expect(channel.consume.callCount).to.equal(1);
+
+        onMessage(null);
+
+        expect(channel.consume.callCount).to.equal(2);
+      });
+
       it('should ignore a message no request waits for', () => {
         const msg = {
           properties: { correlationId: 'unknown' },
