@@ -278,6 +278,40 @@ describe('createRedactor', () => {
       expect(redacted.errors[1_000].target).toBe(redacted.errors[0].target);
       expect(redacted.layers.a).toBe(redacted.layers.b);
     });
+
+    it('should traverse a shared object once for the keys no dotted path goes through', () => {
+      const shared = { password: 'a' };
+      // Longer than the 16,383 characters up to which V8 hashes a string by
+      // its content.
+      const longKey = 'k'.repeat(20_000);
+
+      const redacted = redact(['password', 'org.user.password'], {
+        first: { [longKey]: shared },
+        second: { [`${longKey}2`]: shared },
+        org: { user: shared },
+      }) as any;
+
+      expect(redacted.first[longKey]).toEqual({ password: '[REDACTED]' });
+      expect(redacted.second[`${longKey}2`]).toBe(redacted.first[longKey]);
+      expect(redacted.org.user).toEqual({ password: '[REDACTED]' });
+      expect(redacted.org.user).not.toBe(redacted.first[longKey]);
+    });
+
+    it('should tell keys a dotted path goes through from other keys', () => {
+      const longKey = 'k'.repeat(20_000);
+
+      expect(
+        redact(['req.body.password'], {
+          req: { [longKey]: { password: 'a' }, body: { password: 'b' } },
+          [longKey]: { req: { body: { password: 'c' } } },
+          body: { [longKey]: { password: 'd' } },
+        }),
+      ).toEqual({
+        req: { [longKey]: { password: 'a' }, body: { password: '[REDACTED]' } },
+        [longKey]: { req: { body: { password: '[REDACTED]' } } },
+        body: { [longKey]: { password: 'd' } },
+      });
+    });
   });
 
   describe('copies', () => {

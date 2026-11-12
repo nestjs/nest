@@ -55,9 +55,18 @@ export function createRedactor(
     0,
     ...dottedPaths.map(segments => segments.length - 1),
   );
+  // The keys that a dotted path compares with the keys leading to a
+  // property. Any other key is never equal to one of them, so it is kept as
+  // "" (which is never a segment): the cache keys built from the path are
+  // then made of configured keys only, however long the keys of the logged
+  // value are.
+  const parentSegments = new Set(
+    dottedPaths.flatMap(segments => segments.slice(0, -1)),
+  );
 
   return (value: unknown) => {
-    // Lower-cased keys from the root to the value being visited.
+    // Lower-cased keys from the root to the value being visited, or "" for a
+    // key that no dotted path goes through.
     const path: string[] = [];
     // Objects on that path, to detect circular references.
     const ancestors: object[] = [];
@@ -95,7 +104,7 @@ export function createRedactor(
       if (typeof propertyValue !== 'object' || propertyValue === null) {
         return propertyValue;
       }
-      path.push(normalizedKey);
+      path.push(parentSegments.has(normalizedKey) ? normalizedKey : '');
       const redacted = visit(propertyValue);
       path.pop();
       return redacted;
