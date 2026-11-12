@@ -277,9 +277,8 @@ export class ExternalContextCreator {
   /**
    * Returns the key of the module whose providers hold the host: the provider
    * with the given inquirer id or, without one, the provider of the given
-   * instance. Under the class of the host, a factory or value provider of
-   * another module may return the same instance, so a provider that Nest
-   * created from its class wins.
+   * instance. A factory or value provider of another module may return the
+   * same instance, so a provider that Nest created from its class wins.
    */
   private getHostModuleKey(
     instance: object,
@@ -304,14 +303,19 @@ export class ExternalContextCreator {
     }
     // Otherwise the host is provided under another token (e.g.,
     // `{ provide: 'TOKEN', useClass: Resolver }`).
+    let moduleKey = '';
     for (const [key, moduleRef] of this.modulesContainer.entries()) {
       for (const wrapper of moduleRef.providers.values()) {
-        if (isHost(wrapper)) {
+        if (!isHost(wrapper)) {
+          continue;
+        }
+        if (!wrapper.isNotMetatype) {
           return key;
         }
+        moduleKey ||= key;
       }
     }
-    return '';
+    return moduleKey;
   }
 
   public exchangeKeysForValues<TMetadata = any>(

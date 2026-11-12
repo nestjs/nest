@@ -285,6 +285,36 @@ describe('ExternalContextCreator', () => {
           ),
         ).to.be.true;
       });
+
+      it('should find the module that provides the host under another token', () => {
+        const modules = new ModulesContainer();
+        const moduleRef = new Module(class {}, new NestContainer());
+        moduleRef.addProvider({ provide: 'RESOLVER', useClass: Resolver });
+        const wrapper: InstanceWrapper = moduleRef.providers.get('RESOLVER')!;
+        wrapper.instance = new Resolver();
+
+        const otherModuleRef = new Module(class {}, new NestContainer());
+        otherModuleRef.addProvider({
+          provide: 'FACTORY',
+          useFactory: () => wrapper.instance,
+        });
+        otherModuleRef.providers.get('FACTORY')!.instance = wrapper.instance;
+        modules.set('other', otherModuleRef);
+        modules.set('key', moduleRef);
+        (contextCreator as any).modulesContainer = modules;
+
+        contextCreator.create(wrapper.instance, callback, '', '', null!);
+
+        expect(
+          (guardsContextCreator.create as sinon.SinonStub).calledWith(
+            wrapper.instance,
+            callback,
+            'key',
+            STATIC_CONTEXT,
+            undefined,
+          ),
+        ).to.be.true;
+      });
     });
     describe('returns proxy function', () => {
       let proxyContext;
