@@ -93,6 +93,19 @@ describe('Fastify FileSend', () => {
         expect(statusCode).toBe(500);
       });
   });
+  it('should answer with JSON if the file does not exist and its type is malformed', async () => {
+    const { statusCode, headers, payload } = await app.inject({
+      method: 'GET',
+      url: '/file/not/exist/malformed-type',
+    });
+
+    expect(statusCode).toBe(500);
+    expect(headers['content-type']).toBe('application/json; charset=utf-8');
+    expect(JSON.parse(payload)).toEqual({
+      statusCode: 500,
+      message: 'Internal server error',
+    });
+  });
   it('should answer a HEAD request with the headers of a file', async () => {
     return app
       .inject({ url: '/file/with/headers', method: 'HEAD' })

@@ -63,7 +63,7 @@ import {
 import { AbstractHttpAdapter } from '@nestjs/core';
 import { LegacyRouteConverter } from '@nestjs/core/internal';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
-const { kReplySerializer, kRouteContext } = fastifySymbols;
+const { kErrorHandler, kReplySerializer, kRouteContext } = fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
 import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
@@ -843,19 +843,7 @@ export class FastifyAdapter<
     statusCode?: number,
   ) {
     const fastifyReply: TReply = this.isNativeResponse(response)
-      ? new Reply(
-          response,
-          {
-            [kRouteContext]: {
-              preSerialization: null,
-              preValidation: [],
-              preHandler: [],
-              onSend: [],
-              onError: [],
-            },
-          },
-          {},
-        )
+      ? this.createReplyForRawResponse(response)
       : response;
 
     if (!isNil(statusCode)) {
@@ -904,10 +892,9 @@ export class FastifyAdapter<
       }
     }
     // Fastify passes an Error payload to the error handler instead of
-    // sending it, and the reply around a raw response (e.g. the one
-    // middleware gets) has none. An Error body sent with an error status,
-    // as for `new UnauthorizedException(err)`, gets the standard body of the
-    // status instead, without the properties of the Error.
+    // sending it. An Error body sent with an error status, as for
+    // `new UnauthorizedException(err)`, gets the standard body of the status
+    // instead, without the properties of the Error.
     if (
       body instanceof Error &&
       fastifyReply.statusCode >= HttpStatus.BAD_REQUEST
@@ -1693,6 +1680,31 @@ export class FastifyAdapter<
     prefix = '/',
   ) {
     return this.instance.register(factory, { prefix });
+  }
+
+  /**
+   * A reply around a raw response, e.g. the one middleware and the exception
+   * filters of its errors get. When a stream it sends fails or the client goes
+   * away, Fastify reads the request, server and logger of the reply, and runs
+   * its error handler if no data was sent yet: these are those of the instance.
+   */
+  private createReplyForRawResponse(response: TRawResponse): TReply {
+    const instance = this.instance as TInstance & Record<symbol, unknown>;
+    const request = {
+      raw: (response as { req?: unknown }).req ?? {},
+      server: instance,
+      log: instance.log,
+      [kRouteContext]: {
+        preSerialization: null,
+        preValidation: [],
+        preHandler: [],
+        onSend: [],
+        onError: [],
+        server: instance,
+        errorHandler: instance[kErrorHandler],
+      },
+    };
+    return new Reply(response, request, instance.log);
   }
 
   private isNativeResponse(

@@ -24,7 +24,9 @@ import {
   FastifyRequest,
   fastify,
 } from 'fastify';
+import * as http from 'http';
 import { inject } from 'light-my-request';
+import { AddressInfo } from 'net';
 import { PassThrough } from 'stream';
 
 describe('FastifyAdapter', () => {
@@ -248,6 +250,96 @@ describe('FastifyAdapter', () => {
       fastifyAdapter.reply(reply as any, new StreamableFile(source));
 
       expect(source.destroyed).toBe(true);
+    });
+
+    // e.g. the response middleware gets, and the exception filters of its
+    // errors
+    describe('for a StreamableFile on a raw response', () => {
+      let source: PassThrough;
+      let afterReply: () => void;
+
+      beforeEach(() => {
+        source = new PassThrough();
+        afterReply = () => {};
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          reply.hijack();
+          fastifyAdapter.reply(
+            reply.raw,
+            new StreamableFile(source, { type: 'image/png' }),
+          );
+          afterReply();
+        });
+      });
+
+      afterEach(() => fastifyAdapter.close());
+
+      const request = async () => {
+        await fastifyAdapter
+          .getInstance()
+          .listen({ port: 0, host: '127.0.0.1' });
+        const { port } = fastifyAdapter
+          .getHttpServer()
+          .address() as AddressInfo;
+        return new Promise<{
+          clientRequest: http.ClientRequest;
+          response: http.IncomingMessage;
+        }>((resolve, reject) => {
+          const clientRequest = http
+            .get({ host: '127.0.0.1', port, path: '/' }, response =>
+              resolve({ clientRequest, response }),
+            )
+            .on('error', reject);
+        });
+      };
+      const readBody = (response: http.IncomingMessage) =>
+        new Promise<string>((resolve, reject) => {
+          let body = '';
+          response.setEncoding('utf8');
+          response.on('data', chunk => (body += chunk));
+          response.on('end', () => resolve(body));
+          response.on('error', reject);
+        });
+
+      it('should answer a stream that fails before any data with the error handler of the instance', async () => {
+        const error = new Error('ENOENT');
+        const errorHandler = vi.fn((_err, _req, reply: FastifyReply) => {
+          reply.code(503).type('text/plain').send('handled');
+        });
+        fastifyAdapter.setErrorHandler(errorHandler);
+        afterReply = () => source.destroy(error);
+
+        const { response } = await request();
+
+        expect(response.statusCode).toBe(503);
+        expect(await readBody(response)).toBe('handled');
+        expect(errorHandler).toHaveBeenCalledWith(
+          error,
+          expect.anything(),
+          expect.anything(),
+        );
+      });
+
+      it('should abort the response when the stream fails after some data', async () => {
+        source.write('first');
+
+        const { response } = await request();
+        await new Promise(resolve => response.once('data', resolve));
+        source.destroy(new Error('EIO'));
+        response.on('error', () => {});
+        await new Promise(resolve => response.once('close', resolve));
+
+        expect(response.complete).toBe(false);
+      });
+
+      it('should destroy the stream when the client goes away', async () => {
+        source.write('first');
+
+        const { clientRequest, response } = await request();
+        await new Promise(resolve => response.once('data', resolve));
+        clientRequest.destroy();
+
+        await vi.waitFor(() => expect(source.destroyed).toBe(true));
+      });
     });
   });
 
