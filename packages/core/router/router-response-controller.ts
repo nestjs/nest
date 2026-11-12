@@ -37,6 +37,26 @@ interface CloseSource {
   removeListener(event: 'close', listener: () => void): unknown;
 }
 
+function isCloseSource(source: unknown): source is CloseSource {
+  return (
+    typeof (source as Partial<CloseSource> | undefined)?.once === 'function'
+  );
+}
+
+/**
+ * The request's socket, or the response, whichever the router can listen on
+ * for the connection to close.
+ */
+export function pickCloseSource(
+  socket: unknown,
+  response: unknown,
+): CloseSource | undefined {
+  if (isCloseSource(socket)) {
+    return socket;
+  }
+  return isCloseSource(response) ? response : undefined;
+}
+
 interface CloseWatcher {
   callbacks: Set<() => void>;
   listener: () => void;

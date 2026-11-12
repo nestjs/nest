@@ -33,6 +33,7 @@ import {
   Subject,
 } from 'rxjs';
 import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { finished, Stream, type Writable } from 'stream';
 import {
   FORBIDDEN_MESSAGE,
   GuardsConsumer,
@@ -57,6 +58,7 @@ import { markRejectedByPipes } from './rejected-by-pipes';
 import {
   CustomHeader,
   onceClosed,
+  pickCloseSource,
   RedirectResponse,
   RouterResponseController,
 } from './router-response-controller';
@@ -576,16 +578,61 @@ export class RouterExecutionContext {
         return res;
       }
       if (!isResponseHandled) {
+        // A file of the handler that an interceptor replaced (e.g. with an
+        // empty 304, or a file of its own) is not sent either. What is sent
+        // in its place may still read from it, so it is released once the
+        // response is over.
+        this.releaseOnceResponseIsOver(
+          handlerFiles.filter(file => file !== result),
+          req,
+          res,
+        );
         try {
           await this.responseController.apply(result, res, httpStatusCode);
         } catch (err) {
           // Not sent either, e.g. for a header value Node.js rejects
-          destroyStreamableFile(result);
+          [result, ...handlerFiles].forEach(destroyStreamableFile);
           throw err;
         }
       }
       return res;
     };
+  }
+
+  /**
+   * Releases files that are not sent once the response is over: sent, or
+   * its connection closed. The connection is watched as well, since a
+   * pipelined response that still waits for its turn never learns that it is
+   * gone.
+   */
+  private releaseOnceResponseIsOver(
+    files: StreamableFile[],
+    req: any,
+    res: any,
+  ) {
+    if (isEmpty(files)) {
+      return;
+    }
+    const response = res?.raw ?? res;
+    const connection = pickCloseSource((req?.raw ?? req)?.socket, response);
+    let isReleased = false;
+    let stopWaitingForClose: (() => void) | undefined;
+    const release = () => {
+      if (isReleased) {
+        return;
+      }
+      isReleased = true;
+      stopWaitingForClose?.();
+      files.forEach(destroyStreamableFile);
+    };
+    if (connection?.destroyed) {
+      return release();
+    }
+    stopWaitingForClose = connection && onceClosed(connection, release);
+    // `finished()` throws for anything but a stream
+    if (response instanceof Stream) {
+      finished(response as Writable, release);
+    }
   }
 
   private notifyIfObservable(

@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import {
   concatMap,
   lastValueFrom,
+  map,
   Observable,
   of,
   ReplaySubject,
@@ -11,7 +12,7 @@ import {
   throwError,
 } from 'rxjs';
 import * as sinon from 'sinon';
-import { PassThrough } from 'stream';
+import { PassThrough, Writable } from 'stream';
 import {
   HttpException,
   HttpStatus,
@@ -896,6 +897,147 @@ describe('RouterExecutionContext', () => {
           expect(err).to.equal(error);
         }
         expect(stream.destroyed).to.be.true;
+      });
+
+      it('should destroy the stream of the file an interceptor replaced', async () => {
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          false,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        const error = new TypeError('Invalid character in header content');
+        sinon.stub(adapter, 'reply').throws(error);
+        const stream = new PassThrough();
+
+        try {
+          await handler('replaced', {}, {}, undefined, [
+            new StreamableFile(stream),
+          ]);
+          expect.fail('should have thrown');
+        } catch (err) {
+          expect(err).to.equal(error);
+        }
+        expect(stream.destroyed).to.be.true;
+      });
+    });
+
+    describe('when an interceptor replaced a file of the handler', () => {
+      let handler: HandlerResponseBasicFn;
+      let request: { socket: EventEmitter & { destroyed?: boolean } };
+      let response: Writable;
+      let stream: PassThrough;
+
+      /** Lets the event loop turn until `check()` holds, a few times at most. */
+      const eventually = async (check: () => boolean) => {
+        for (let i = 0; i < 10 && !check(); i++) {
+          await new Promise(resolve => setImmediate(resolve));
+        }
+        return check();
+      };
+
+      beforeEach(() => {
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
+        handler = contextCreator.createHandleResponseFn(
+          null!,
+          false,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        sinon.stub(adapter, 'reply').returns(undefined);
+        request = { socket: new EventEmitter() };
+        response = new Writable({ write: (chunk, encoding, done) => done() });
+        stream = new PassThrough();
+      });
+
+      // e.g. an empty 304 for a client that has the file already
+      const reply = () =>
+        handler(undefined, response, request, undefined, [
+          new StreamableFile(stream),
+        ]);
+
+      it('should destroy its stream once the response is over', async () => {
+        await reply();
+        // What is sent instead may still read from it
+        expect(stream.destroyed).to.be.false;
+
+        response.end();
+        expect(await eventually(() => stream.destroyed)).to.be.true;
+        expect(request.socket.listenerCount('close')).to.equal(0);
+      });
+
+      it('should destroy its stream once the raw response is over', async () => {
+        await handler(
+          undefined,
+          { raw: response },
+          { raw: request },
+          undefined,
+          [new StreamableFile(stream)],
+        );
+
+        response.end();
+        expect(await eventually(() => stream.destroyed)).to.be.true;
+      });
+
+      it('should destroy its stream if the connection closes before the response is sent', async () => {
+        await reply();
+
+        request.socket.emit('close');
+        expect(stream.destroyed).to.be.true;
+      });
+
+      it('should destroy its stream if the connection is closed already', async () => {
+        request.socket.destroyed = true;
+
+        await reply();
+        expect(stream.destroyed).to.be.true;
+      });
+
+      it('should leave the stream of the file it sends alone', async () => {
+        const file = new StreamableFile(stream);
+        await handler(file, response, request, undefined, [file]);
+
+        response.end();
+        await new Promise(resolve => setImmediate(resolve));
+        expect(stream.destroyed).to.be.false;
+      });
+
+      it('should destroy the stream of a file the route handler emitted', async () => {
+        sinon.stub(contextCreator, 'getMetadata').returns({
+          argsLength: 0,
+          fnHandleResponse: handler,
+          isSseHandler: false,
+          paramtypes: [],
+          getParamsMetadata: sinon.stub().returns([]),
+          httpStatusCode: 200,
+          hasCustomHeaders: false,
+          responseHeaders: [],
+        } as any);
+        sinon.stub(contextCreator, 'createGuardsFn').returns(null as any);
+        sinon.stub(contextCreator, 'createPipesFn').returns(null as any);
+        sinon
+          .stub((contextCreator as any).interceptorsContextCreator, 'create')
+          .returns([
+            {
+              intercept: (_, next) => next.handle().pipe(map(() => undefined)),
+            },
+          ]);
+        const proxy = contextCreator.create(
+          {} as any,
+          { apply: () => of(new StreamableFile(stream)) } as any,
+          '',
+          '',
+          0,
+        );
+
+        await proxy(request, response, sinon.stub());
+        expect(stream.destroyed).to.be.false;
+
+        response.end();
+        expect(await eventually(() => stream.destroyed)).to.be.true;
       });
     });
 
