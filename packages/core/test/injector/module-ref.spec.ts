@@ -9,7 +9,9 @@ import { ContextId } from '../../injector/instance-wrapper';
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { InstanceLoader } from '../../injector/instance-loader';
 import { Injector } from '../../injector/injector';
+import { DeterministicUuidRegistry } from '../../inspector/deterministic-uuid-registry';
 import { GraphInspector } from '../../inspector/graph-inspector';
+import { UuidFactory, UuidFactoryMode } from '../../inspector/uuid-factory';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 
 class ConcreteModuleRef extends ModuleRef {
@@ -133,6 +135,29 @@ describe('ModuleRef', () => {
       } catch (err) {
         expect(err).to.be.instanceOf(RuntimeException);
       }
+    });
+
+    describe('when ids are deterministic (snapshot mode)', () => {
+      beforeEach(() => {
+        UuidFactory.mode = UuidFactoryMode.Deterministic;
+      });
+
+      afterEach(() => {
+        sinon.restore();
+        UuidFactory.mode = UuidFactoryMode.Random;
+        DeterministicUuidRegistry.clear();
+      });
+
+      it('should not take an id from the registry for every call', async () => {
+        @Injectable()
+        class Foo {}
+
+        const getSpy = sinon.spy(DeterministicUuidRegistry, 'get');
+        await moduleRef.create(Foo);
+        await moduleRef.create(Foo);
+
+        expect(getSpy.called).to.be.false;
+      });
     });
   });
 

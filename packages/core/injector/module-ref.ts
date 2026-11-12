@@ -1,4 +1,5 @@
 import { IntrospectionResult, Scope, Type } from '@nestjs/common';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
 import { AbstractInstanceResolver } from './abstract-instance-resolver';
@@ -6,7 +7,11 @@ import { STATIC_CONTEXT } from './constants';
 import { NestContainer } from './container';
 import { Injector } from './injector';
 import { InstanceLinksHost } from './instance-links-host';
-import { ContextId, InstanceWrapper } from './instance-wrapper';
+import {
+  ContextId,
+  INSTANCE_ID_SYMBOL,
+  InstanceWrapper,
+} from './instance-wrapper';
 import { Module } from './module';
 
 export interface ModuleRefGetOrResolveOpts {
@@ -172,6 +177,10 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
       scope: getClassScope(type),
       durable: isDurable(type),
       host: moduleRef,
+      // Thrown away once the instance is created, and never a node of the
+      // serialized graph, so it takes no deterministic id (snapshot mode)
+      // from a registry that would grow with every call
+      [INSTANCE_ID_SYMBOL]: randomStringGenerator(),
     });
 
     if (type?.prototype) {
