@@ -5,7 +5,10 @@ import {
   ENOTFOUND,
   MQTT_DEFAULT_URL,
   MQTT_MAX_TOPIC_LENGTH,
+  MQTT_WILDCARD_ALL,
+  MQTT_WILDCARD_SINGLE,
 } from '../constants.js';
+import { InvalidMqttTopicNameException } from '../errors/invalid-mqtt-topic-name.exception.js';
 import { MaxMqttTopicLengthExceededException } from '../errors/max-mqtt-topic-length-exceeded.exception.js';
 import {
   MqttEvents,
@@ -356,6 +359,8 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResponsePattern(pattern);
+      this.assertTopicName(this.getRequestPattern(pattern));
+      this.assertTopicName(responseChannel);
       this.assertTopicLength(this.getRequestPattern(pattern));
       this.assertTopicLength(responseChannel);
 
@@ -447,6 +452,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    this.assertTopicName(pattern);
     this.assertTopicLength(pattern);
     const options =
       isObject(packet?.data) && packet.data instanceof MqttRecord
@@ -500,6 +506,22 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         length,
         MQTT_MAX_TOPIC_LENGTH,
       );
+    }
+  }
+
+  /**
+   * A topic name cannot hold the wildcards of topic filters, nor U+0000.
+   * mqtt.js only checks the filters it subscribes to, so it would publish
+   * such a topic, and the broker would close the connection that every
+   * request of this client shares. A pattern can be built from request data.
+   */
+  protected assertTopicName(topic: string) {
+    if (
+      topic.includes(MQTT_WILDCARD_SINGLE) ||
+      topic.includes(MQTT_WILDCARD_ALL) ||
+      topic.includes('\u0000')
+    ) {
+      throw new InvalidMqttTopicNameException();
     }
   }
 

@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { EMPTY } from 'rxjs';
 import { ClientMqtt } from '../../client/client-mqtt.js';
 import { MQTT_MAX_TOPIC_LENGTH } from '../../constants.js';
+import { InvalidMqttTopicNameException } from '../../errors/invalid-mqtt-topic-name.exception.js';
 import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception.js';
 import { ReadPacket } from '../../interfaces/index.js';
 import { MqttRecord } from '../../record-builders/index.js';
@@ -121,6 +122,30 @@ describe('ClientMqtt', () => {
           false,
         );
       });
+    });
+    describe('when a topic would hold a wildcard or the null character', () => {
+      // A pattern built from request data, such as `devices/${id}/status`
+      it.each([
+        'devices/+/status',
+        'devices/#',
+        'devices/a+b',
+        'devices/\u0000',
+      ])(
+        'should fail the request on %j without subscribing or publishing',
+        pattern => {
+          const callback = vi.fn();
+
+          client['publish']({ pattern, data: 'data' }, callback);
+
+          expect(callback).toHaveBeenCalledWith({
+            err: expect.any(InvalidMqttTopicNameException),
+          });
+          expect(subscribeSpy).not.toHaveBeenCalled();
+          expect(publishSpy).not.toHaveBeenCalled();
+          expect(client['routingMap'].size).toBe(0);
+          expect(client['subscriptionsCount'].size).toBe(0);
+        },
+      );
     });
     describe('when a topic would exceed the maximum topic length', () => {
       // A pattern that leaves just enough room for "/reply"
@@ -1055,6 +1080,15 @@ describe('ClientMqtt', () => {
         expect(err).toBeInstanceOf(Error),
       );
     });
+    it.each(['devices/+/status', 'devices/#', 'devices/\u0000'])(
+      'should not publish an event on %j',
+      pattern => {
+        expect(() =>
+          client['dispatchEvent']({ pattern, data: 'data' }),
+        ).toThrow(InvalidMqttTopicNameException);
+        expect(publishStub).not.toHaveBeenCalled();
+      },
+    );
     it('should not publish an event whose topic exceeds the maximum topic length', () => {
       const pattern = 'a'.repeat(MQTT_MAX_TOPIC_LENGTH + 1);
 
