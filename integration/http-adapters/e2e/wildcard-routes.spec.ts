@@ -3,6 +3,7 @@ import request from 'supertest';
 import { adapters, createApp } from '../src/adapters.js';
 import {
   RootCatchAllModule,
+  RootOptionalGroupModule,
   WildcardsModule,
 } from '../src/wildcards/wildcards.module.js';
 
@@ -114,6 +115,24 @@ describe.each(adapters('express', 'node'))(
         expect((await get('/api')).status).toBe(404);
         expect((await get('/api/')).text).toBe('catch-all');
         expect((await get('/api/x')).text).toBe('catch-all');
+      });
+    });
+
+    describe('an optional group at the root, with middleware applied to its controller', () => {
+      beforeEach(async () => {
+        app = await createApp(name, RootOptionalGroupModule);
+      });
+
+      it('should match "/" and one segment, but not "//", which its middleware does not match', async () => {
+        const root = await get('/');
+        const withLocale = await get('/en/');
+        const doubleSlash = await get('//');
+
+        expect(root.body).toEqual({ locale: null });
+        expect(root.headers['x-middleware']).toBe('ran');
+        expect(withLocale.body).toEqual({ locale: 'en' });
+        expect(withLocale.headers['x-middleware']).toBe('ran');
+        expect(doubleSlash.status).toBe(404);
       });
     });
   },

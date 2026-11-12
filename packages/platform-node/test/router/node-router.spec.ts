@@ -749,6 +749,27 @@ describe('NodeRouter', () => {
       expect(route).not.toHaveBeenCalled();
       expect(finalHandler).toHaveBeenCalledTimes(1);
     });
+
+    it.each(['{/:locale}', '{/admin}'])(
+      'should not match "//" with the route %s, as its middleware does not',
+      path => {
+        const guard = vi.fn((_req: unknown, _res: unknown, next: Next) =>
+          next(),
+        );
+        const route = vi.fn();
+        router.useExact(undefined, path, guard);
+        router.get(path, route);
+
+        dispatch('GET', '/');
+        expect(guard).toHaveBeenCalledOnce();
+        expect(route).toHaveBeenCalledOnce();
+
+        dispatch('GET', '//');
+        expect(guard).toHaveBeenCalledOnce();
+        expect(route).toHaveBeenCalledOnce();
+        expect(finalHandler).toHaveBeenCalledOnce();
+      },
+    );
   });
 
   describe('path prefixes', () => {

@@ -50,7 +50,8 @@ interface RouteRecord {
   entries?: RecordEntry[];
   /**
    * For each handler, the path-to-regexp matcher of its route when it has
-   * variants ending with "/" (see `RouteTable.add()`).
+   * variants ending with "/", or when this is the record of "/" and the route
+   * does not match "//" (see `RouteTable.add()`).
    */
   pathMatchers: (Matcher | undefined)[];
   hasPathMatchers: boolean;
@@ -384,7 +385,8 @@ export class RouteTable {
   /**
    * The routes that can match a path with an empty segment ("/a//b"), in
    * registration order: those with a wildcard, a variant ending with "/" or
-   * holding "//", or a variant find-my-way cannot express.
+   * holding "//", a variant in the tree as "/" (where "//" goes), or a variant
+   * find-my-way cannot express.
    */
   private readonly emptySegmentRoutes: RegisteredRoute[] = [];
   /** See `getPrefixSkips()`, for `lookupFirst()` and `lookupRest()`. */
@@ -425,13 +427,15 @@ export class RouteTable {
         : expandGroups(tokens);
     const variants = expanded?.map(toFindMyWayPath) ?? [undefined];
     // A variant ending with "/" also matches the path with one more "/"
-    // ("/a{/}" matches "/a//"); one find-my-way cannot express may be anything
+    // ("/a{/}" matches "/a//"), as "/" does ("//"); one find-my-way cannot
+    // express may be anything
     if (
       variants.some(
         variant =>
           variant === undefined ||
           variant.hasWildcard ||
           variant.trailingSlash ||
+          variant.path === '/' ||
           variant.path.includes('//'),
       )
     ) {
@@ -483,6 +487,18 @@ export class RouteTable {
     const treeMethods =
       method === null ? METHODS : method === 'GET' ? GET_AND_HEAD : [method];
     for (const variant of uniqueVariants.values()) {
+      // The empty variant of a route ("{/:id}" without its group) is "/" in
+      // the tree, where find-my-way's ignoreTrailingSlash also sends "//".
+      // Unlike the "/" route, such a route does not match "//", nor does its
+      // middleware: find() then checks that path with path-to-regexp, as it
+      // does for the routes with variants ending with "/".
+      let recordMatcher = pathMatcher;
+      if (recordMatcher === undefined && variant.path === '/') {
+        const matcher = compileMatcher(path);
+        if (!matcher('//')) {
+          recordMatcher = matcher;
+        }
+      }
       for (const treeMethod of treeMethods) {
         if (
           !this.addToRecord(
@@ -491,7 +507,7 @@ export class RouteTable {
             method,
             handler,
             seq,
-            pathMatcher,
+            recordMatcher,
           )
         ) {
           // Same shape as an existing route under different parameter names

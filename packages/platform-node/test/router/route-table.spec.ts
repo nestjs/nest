@@ -496,6 +496,42 @@ describe('RouteTable', () => {
         ext: 'b',
       });
     });
+
+    it.each(['{/:id}', '{/:a}{/:b}', '{/admin}'])(
+      'should not match %s on "//", as Express does not',
+      path => {
+        table.add('GET', path, handler());
+
+        // Without its groups, the route is "/" for find-my-way, which also
+        // serves "//" with it, while path-to-regexp (and so the middleware
+        // of the route) does not match that path
+        expect(table.lookup('GET', '/')?.params).toEqual({});
+        expect(table.lookup('GET', '//')).toBeNull();
+        expect(table.lookup('HEAD', '//')).toBeNull();
+      },
+    );
+
+    it('should still match "//" with a "/" route registered next to such a route', () => {
+      const optional = handler();
+      const root = handler();
+      table.add('GET', '{/:id}', optional);
+      table.add('GET', '/', root);
+
+      expect(table.lookup('GET', '/')?.handlers).toEqual([optional, root]);
+      expect(table.lookup('GET', '/5/')?.handlers).toEqual([optional]);
+      // As with Express, whose "/" matches "//" as well
+      expect(table.lookup('GET', '//')).toEqual({
+        handlers: [root],
+        params: {},
+        seqs: [1],
+      });
+    });
+
+    it('should match "//" with a route whose own path matches it', () => {
+      table.add('GET', '/{:id}', handler());
+
+      expect(table.lookup('GET', '//')).not.toBeNull();
+    });
   });
 
   describe('paths find-my-way cannot express', () => {

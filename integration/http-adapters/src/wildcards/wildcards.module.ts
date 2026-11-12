@@ -91,3 +91,19 @@ export class RootCatchAllController {
 
 @Module({ controllers: [RootCatchAllController] })
 export class RootCatchAllModule {}
+
+// Served at "/" and "/<locale>": nothing comes before the optional group
+@Controller('{/:locale}')
+export class LocaleController {
+  @Get()
+  index(@Param('locale') locale: string | undefined) {
+    return { locale: locale ?? null };
+  }
+}
+
+@Module({ controllers: [LocaleController] })
+export class RootOptionalGroupModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(markMiddleware).forRoutes(LocaleController);
+  }
+}
