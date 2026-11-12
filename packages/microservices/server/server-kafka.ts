@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil, isString } from '@nestjs/common/utils/shared.utils';
-import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
+import { isObservable, lastValueFrom, Observable, Subject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -278,10 +278,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
           handler(packet.data, kafkaContext),
         );
 
-        const replayStream$ = new ReplaySubject();
-        await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
+        const replyStream$ =
+          await this.combineStreamsAndThrowIfRetriable(response$);
 
-        this.send(replayStream$, publish);
+        this.send(replyStream$, publish);
       },
     );
   }
@@ -302,30 +302,56 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     throw new Error('Method is not supported for Kafka server');
   }
 
-  private combineStreamsAndThrowIfRetriable(
-    response$: Observable<any>,
-    replayStream$: ReplaySubject<unknown>,
-  ) {
-    return new Promise<void>((resolve, reject) => {
+  /**
+   * Subscribes to the response of a request and settles once it emits or
+   * fails. A retriable exception that comes before any value rejects, which
+   * makes kafkajs deliver the message again; otherwise it resolves with the
+   * stream to reply with.
+   *
+   * That stream is subscribed to after the response, so it replays what the
+   * response emitted until then, once. Later values are only passed on: a
+   * long stream is not kept in memory until it completes.
+   */
+  private combineStreamsAndThrowIfRetriable(response$: Observable<any>) {
+    return new Promise<Observable<unknown>>((resolve, reject) => {
       let isPromiseResolved = false;
+      let pendingValues: unknown[] | null = [];
+      const stream$ = new Subject<unknown>();
+      const replyStream$ = new Observable<unknown>(subscriber => {
+        const values = pendingValues ?? [];
+        // A value emitted while these are replayed is appended to them
+        for (let i = 0; i < values.length && !subscriber.closed; i++) {
+          subscriber.next(values[i]);
+        }
+        pendingValues = null;
+        // A subject that has failed or completed tells a late subscriber so
+        return stream$.subscribe(subscriber);
+      });
+      const settle = () => {
+        if (!isPromiseResolved) {
+          isPromiseResolved = true;
+          resolve(replyStream$);
+        }
+      };
       response$.subscribe({
         next: val => {
-          replayStream$.next(val);
-          if (!isPromiseResolved) {
-            isPromiseResolved = true;
-            resolve();
+          if (pendingValues) {
+            pendingValues.push(val);
+          } else {
+            stream$.next(val);
           }
+          settle();
         },
         error: err => {
           if (err instanceof KafkaRetriableException && !isPromiseResolved) {
             isPromiseResolved = true;
             reject(err);
           } else {
-            resolve();
+            settle();
           }
-          replayStream$.error(err);
+          stream$.error(err);
         },
-        complete: () => replayStream$.complete(),
+        complete: () => stream$.complete(),
       });
     });
   }

@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { AssertionError, expect } from 'chai';
+import { concat, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaContext } from '../../ctx-host';
@@ -591,6 +592,71 @@ describe('ServerKafka', () => {
         expect(loggerErrorStub.called).to.be.false;
         expect(handler.called).to.be.true;
         expect(getPublisher.called).to.be.false;
+      });
+    });
+
+    describe('when the handler returns a stream', () => {
+      const flushPublishes = () =>
+        new Promise(resolve => setImmediate(resolve));
+      const bindHandler = (handler: (...args: any[]) => any) => {
+        untypedServer.messageHandlers = objectToMap({ [topic]: handler });
+      };
+
+      it('should reply with what a stream emits before and after its first response, in order', async () => {
+        const later$ = new Subject<string>();
+        bindHandler(() => concat(of('first', 'second'), later$));
+
+        await server.handleMessage(payload);
+        later$.next('third');
+        await flushPublishes();
+        later$.next('fourth');
+        later$.complete();
+        await flushPublishes();
+
+        const replies = getPublisherSpy.getCalls().map(call => call.args[0]);
+        expect(replies.map(reply => reply.response)).to.deep.equal([
+          'first',
+          'second',
+          'third',
+          'fourth',
+        ]);
+        expect(replies[3].isDisposed).to.be.true;
+      });
+
+      it('should reply with the error of a stream that fails after its first response', async () => {
+        const later$ = new Subject<string>();
+        bindHandler(() => concat(of('first'), later$));
+
+        await server.handleMessage(payload);
+        later$.error('failed');
+        await flushPublishes();
+
+        expect(getPublisherSpy.callCount).to.equal(2);
+        expect(getPublisherSpy.firstCall.args[0]).to.deep.equal({
+          response: 'first',
+        });
+        expect(getPublisherSpy.secondCall.args[0]).to.deep.equal({
+          err: 'failed',
+          isDisposed: true,
+        });
+      });
+
+      it('should not keep the responses of a stream once they have been passed on', async () => {
+        const later$ = new Subject<string>();
+        const sendSpy = sinon.spy(server, 'send');
+        bindHandler(() => concat(of('first'), later$));
+
+        await server.handleMessage(payload);
+        later$.next('second');
+        await flushPublishes();
+        expect(getPublisherSpy.callCount).to.equal(2);
+
+        // Whatever the reply stream still held would be replayed to a new
+        // subscriber. The stream is still open, so all of a long one would be.
+        const [stream$] = sendSpy.firstCall.args;
+        const replayed = sinon.spy();
+        stream$.subscribe(replayed).unsubscribe();
+        expect(replayed.called).to.be.false;
       });
     });
 
