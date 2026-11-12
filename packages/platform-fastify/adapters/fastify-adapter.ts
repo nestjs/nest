@@ -83,6 +83,8 @@ import {
 } from '../interfaces/index.js';
 const { safeDecodeURI } = urlSanitizer;
 
+type StreamableHandlerResponse = Parameters<StreamableFile['errorHandler']>[1];
+
 const MISSING_MULTIPART_PACKAGE_MESSAGE =
   'The "@fastify/multipart" package is missing. Please, make sure to install it (npm i @fastify/multipart) ' +
   'to use the file upload interceptors from "@nestjs/platform-fastify/multipart".';
@@ -260,6 +262,9 @@ export class FastifyAdapter<
   private versioningOptions?: VersioningOptions;
   // Exceptions thrown by the extractor of custom versioning, by raw request
   private readonly versionExtractorErrors = new WeakMap<object, unknown>();
+  // The StreamableFile each reply sends, whose error handler answers for a
+  // stream that fails before the headers are sent (see `setErrorHandler()`)
+  private readonly streamableFiles = new WeakMap<object, StreamableFile>();
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
@@ -788,6 +793,20 @@ export class FastifyAdapter<
       ) {
         fastifyReply.header('Content-Length', streamHeaders.length);
       }
+      // The file's error handler answers for its stream, as on the other
+      // adapters. Fastify hands an error raised before the headers are sent
+      // to its error handler (see `setErrorHandler()`); one raised later
+      // only makes it destroy the response.
+      this.streamableFiles.set(fastifyReply, body);
+      const file = body;
+      stream?.once('error', (err: Error) => {
+        if (fastifyReply.raw.headersSent) {
+          file.errorHandler(
+            err,
+            this.toStreamableHandlerResponse(fastifyReply),
+          );
+        }
+      });
       body = stream;
       // Fastify's HEAD route handler resumes a stream payload, and a route
       // declared for HEAD (or a raw response) pipes it into a response that
@@ -862,7 +881,51 @@ export class FastifyAdapter<
   }
 
   public setErrorHandler(handler: Parameters<TInstance['setErrorHandler']>[0]) {
-    return this.instance.setErrorHandler(handler);
+    const { streamableFiles } = this;
+    const toResponse = (reply: TReply) =>
+      this.toStreamableHandlerResponse(reply);
+    return this.instance.setErrorHandler(function (
+      this: TInstance,
+      error,
+      request,
+      reply,
+    ) {
+      // The stream of a StreamableFile failed before the headers were sent
+      // (e.g. a missing file): the file's error handler answers
+      const file = streamableFiles.get(reply);
+      if (file && file.getStream()?.errored === error) {
+        return file.errorHandler(error as Error, toResponse(reply as TReply));
+      }
+      return (handler as Function).call(this, error, request, reply);
+    } as typeof handler);
+  }
+
+  // `StreamableFile` error handlers reply through an Express-like `send()`
+  private toStreamableHandlerResponse(
+    reply: TReply,
+  ): StreamableHandlerResponse {
+    return {
+      get destroyed() {
+        return reply.raw.destroyed;
+      },
+      get headersSent() {
+        return reply.raw.headersSent;
+      },
+      get statusCode() {
+        return reply.statusCode;
+      },
+      set statusCode(statusCode: number) {
+        reply.status(statusCode);
+      },
+      // Replaces the type of the file, as the node adapter does (Fastify
+      // replaces its length)
+      send: (body: string) => {
+        reply.type('text/plain; charset=utf-8').send(body);
+      },
+      end: () => (reply.raw.headersSent ? reply.raw.end() : reply.send()),
+      // Ending would make a file that failed midway look complete
+      destroy: (error?: Error) => reply.raw.destroy(error),
+    };
   }
 
   public setNotFoundHandler(handler: Function) {

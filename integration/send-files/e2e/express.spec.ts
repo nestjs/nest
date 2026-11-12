@@ -8,6 +8,7 @@ import { get } from 'http';
 import { join } from 'path';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { AppService } from '../src/app.service.js';
 import {
   getHttpBaseOptions,
   sendCanceledHttpRequest,
@@ -94,6 +95,36 @@ describe('Express FileSend', () => {
       }).on('error', () => resolve(false));
     });
     expect(complete).toBe(false);
+  });
+  it('should answer with the error handler set on the file', async () => {
+    const res = await request(app.getHttpServer()).get(
+      '/file/not/exist/error-handler',
+    );
+    expect(res.status).toBe(503);
+    // Express keeps the type of the file, so the body is not parsed as text
+    expect(String(res.text ?? res.body)).toBe('custom');
+  });
+  it('should log with the error logger set on the file', async () => {
+    await request(app.getHttpServer())
+      .get('/file/not/exist/error-logger')
+      .expect(400);
+    expect(app.get(AppService).loggedErrors).toEqual([
+      expect.objectContaining({ code: 'ENOENT' }),
+    ]);
+  });
+  it('should log with the error logger set on a file that fails midway', async () => {
+    const url = await getHttpBaseOptions(app);
+    await new Promise<void>(resolve => {
+      get(new URL('/file/fails/midway/error-logger', url), res => {
+        res.resume();
+        res.on('close', () => resolve());
+      }).on('error', () => resolve());
+    });
+    await vi.waitFor(() =>
+      expect(app.get(AppService).loggedErrors).toEqual([
+        expect.objectContaining({ message: 'EIO: i/o error, read' }),
+      ]),
+    );
   });
   // TODO: temporarily turned off (flaky test)
   it.skip('should allow for the client to end the response and be able to make another', async () => {

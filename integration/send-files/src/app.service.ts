@@ -10,6 +10,8 @@ import { NonFile } from './non-file.js';
 export class AppService {
   // `randomBytes` has a max value of 2^31 -1. That's all this is
   private readonly MAX_BITES = Math.pow(2, 31) - 1;
+  // What the error loggers set on the files below were called with
+  readonly loggedErrors: Error[] = [];
 
   getReadStream(): StreamableFile {
     return new StreamableFile(
@@ -57,6 +59,25 @@ export class AppService {
       },
     });
     return new StreamableFile(stream);
+  }
+
+  getFileThatDoesNotExistWithErrorHandler(): StreamableFile {
+    return this.getFileThatDoesNotExist().setErrorHandler((_err, res) => {
+      res.statusCode = 503;
+      res.send('custom');
+    });
+  }
+
+  getFileThatDoesNotExistWithErrorLogger(): StreamableFile {
+    return this.getFileThatDoesNotExist().setErrorLogger(err =>
+      this.loggedErrors.push(err),
+    );
+  }
+
+  getFileThatFailsMidwayWithErrorLogger(): StreamableFile {
+    return this.getFileThatFailsMidway().setErrorLogger(err =>
+      this.loggedErrors.push(err),
+    );
   }
 
   getSlowStream(): StreamableFile {
