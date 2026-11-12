@@ -1,5 +1,5 @@
 import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
-import { parse } from 'path-to-regexp';
+import { parse, type Token } from 'path-to-regexp';
 
 /**
  * Drops the trailing slash of a pattern, so that "/users/" matches "/users"
@@ -10,15 +10,86 @@ export function loosen(path: string) {
 }
 
 /**
+ * The characters that stay percent-encoded in a routing path (see
+ * `getRoutingPath()`), and their escapes. "/" is left out: "%2F" never stands
+ * for a "/" of a route path.
+ */
+const RESERVED_CHARACTERS = /[#$%&+,:;=?@]/;
+const RESERVED_ESCAPES = /%(?:2[3-6bc]|3[abdf]|40)/gi;
+
+function hasDecodedText(
+  tokens: Token[],
+  segment = { hasParam: false },
+): boolean {
+  for (const token of tokens) {
+    if (token.type === 'group') {
+      // The segment may go on with or without the group
+      const { hasParam } = segment;
+      if (hasDecodedText(token.tokens, segment)) {
+        return true;
+      }
+      segment.hasParam ||= hasParam;
+    } else if (token.type === 'text') {
+      const slashIndex = token.value.indexOf('/');
+      const segmentText =
+        slashIndex === -1 ? token.value : token.value.slice(0, slashIndex);
+      if (
+        token.value.includes('%') ||
+        (segment.hasParam && RESERVED_CHARACTERS.test(segmentText))
+      ) {
+        return true;
+      }
+      segment.hasParam &&= slashIndex === -1;
+    } else {
+      segment.hasParam = true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether the routes match some text of a pattern (path-to-regexp syntax)
+ * with another form of the path than the routing path. find-my-way decodes
+ * the reserved characters of a segment before it matches the text that
+ * follows a parameter there (the "@" of "/:user-avatar@2x.png" matches
+ * "%40"), and it reaches a "%" of a route only as "%25" ("%2525" in such a
+ * segment). Returns `false` for a pattern path-to-regexp cannot parse.
+ */
+export function hasTextDecodedByRouter(path: string): boolean {
+  try {
+    return hasDecodedText(parse(path).tokens);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The other forms of a routing path a pattern for which
+ * `hasTextDecodedByRouter()` holds is matched in, as find-my-way may match its
+ * routes: with the reserved characters but "/" decoded, then with "%25"
+ * folded to "%" as well.
+ */
+export function getDecodedForms(path: string): [string, string] {
+  const decoded = path.replace(RESERVED_ESCAPES, decodeURIComponent);
+  return [decoded, decoded.replaceAll('%25', '%')];
+}
+
+/**
  * The text every path a pattern (path-to-regexp syntax, as given to the
  * case-sensitive matchers) matches starts with: "/users/" for "/users/:id",
- * the whole path when it has no parameter.
+ * the whole path when it has no parameter. It ends before a "%", which a
+ * routing path holds as "%25" (see `getDecodedForms()`).
  */
 export function getLiteralPrefix(path: string): string {
   let prefix = '';
   try {
     for (const token of parse(path).tokens) {
       if (token.type !== 'text') {
+        break;
+      }
+      const percentIndex = token.value.indexOf('%');
+      if (percentIndex !== -1) {
+        prefix += token.value.slice(0, percentIndex);
         break;
       }
       prefix += token.value;

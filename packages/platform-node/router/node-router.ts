@@ -11,10 +11,12 @@ import {
 } from './route-table.js';
 import {
   getCommonPrefix,
+  getDecodedForms,
   getLiteralPrefix,
   getPrefixSkips,
   getRawPrefixEnd,
   getRoutingPath,
+  hasTextDecodedByRouter,
   loosen,
 } from './utils.js';
 
@@ -75,6 +77,53 @@ function decodeParam(value: string) {
   // decodeURIComponent() is a call into the runtime (about 80 ns), even for a
   // value without any "%" to decode
   return value.indexOf('%') === -1 ? value : decodeURIComponent(value);
+}
+
+/**
+ * The matcher of a middleware path (or list of paths matched as one), on the
+ * routing path. Where the routes match some text of a path in a decoded form
+ * of the routing path (see `hasTextDecodedByRouter()`), the path is matched
+ * in those forms too, so that the middleware runs for every request its
+ * route serves. Their parameters are not decoded again.
+ */
+function compileMiddlewareMatcher(
+  path: string | string[],
+  end: boolean,
+): PathMatcher {
+  const pattern = Array.isArray(path) ? path.map(loosen) : loosen(path);
+  const options = { end, sensitive: true };
+  const matcher = match(pattern, {
+    ...options,
+    decode: decodeParam,
+  }) as PathMatcher;
+  const paths = Array.isArray(path) ? path : [path];
+  if (!paths.some(hasTextDecodedByRouter)) {
+    return matcher;
+  }
+  const formMatcher = match(pattern, { ...options, decode: false });
+  return (routingPath: string) => {
+    const result = matcher(routingPath);
+    if (result) {
+      return result;
+    }
+    const [decoded, folded] = getDecodedForms(routingPath);
+    const formResult = formMatcher(decoded) || formMatcher(folded);
+    if (!formResult) {
+      return false;
+    }
+    // The forms have the segments of the routing path: the matched path (a
+    // mount path, see dispatch()) is given as it is there
+    const segments = formResult.path.split('/');
+    const trailingSlash = formResult.path.endsWith('/');
+    const matched = routingPath
+      .split('/')
+      .slice(0, trailingSlash ? segments.length - 1 : segments.length)
+      .join('/');
+    return {
+      path: trailingSlash ? `${matched}/` : matched,
+      params: formResult.params,
+    };
+  };
 }
 
 function invoke(
@@ -312,15 +361,8 @@ export class NodeRouter {
     const isRoot = !paths || args[0] === '/' || args[0] === '';
     const matchers = isRoot
       ? []
-      : paths.map(
-          path =>
-            match(Array.isArray(path) ? path.map(loosen) : loosen(path), {
-              decode: decodeParam,
-              end: false,
-              // Case-sensitive, as routes are (see RouteTable)
-              sensitive: true,
-            }) as PathMatcher,
-        );
+      : // Case-sensitive, as routes are (see RouteTable)
+        paths.map(path => compileMiddlewareMatcher(path, false));
     // With several paths, the first one that matches is the mount path and
     // the middleware runs once, as with Express
     const matcher: PathMatcher | null = isRoot
@@ -398,11 +440,7 @@ export class NodeRouter {
   public useExact(method: string | undefined, path: string, handler: Function) {
     this.skips = undefined;
     this.stack.push({
-      matcher: match(loosen(path), {
-        decode: decodeParam,
-        end: true,
-        sensitive: true,
-      }) as PathMatcher,
+      matcher: compileMiddlewareMatcher(path, true),
       prefix: getLiteralPrefix(loosen(path)),
       isMount: false,
       method,

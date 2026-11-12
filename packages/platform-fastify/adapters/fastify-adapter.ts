@@ -46,7 +46,7 @@ import {
   Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
-import { pathToRegexp } from 'path-to-regexp';
+import { parse, pathToRegexp, type Token } from 'path-to-regexp';
 import { Duplex, Readable } from 'stream';
 import middie from '@fastify/middie';
 import {
@@ -196,6 +196,51 @@ type VersionedRoute<TRequest, TResponse> = ((
  */
 type FastifyRawRequest<TServer extends RawServerBase> =
   RawRequestDefaultExpression<TServer> & { originalUrl?: string };
+
+/**
+ * The characters that stay percent-encoded in the path the router (and
+ * `sanitizeUrl()`) decodes with `safeDecodeURI()`, and their escapes. "/" is
+ * left out: "%2F" never stands for a "/" of a route path.
+ */
+const RESERVED_CHARACTERS = /[#$%&+,:;=?@]/;
+const RESERVED_ESCAPES = /%(?:2[3-6bc]|3[abdf]|40)/gi;
+
+/**
+ * Whether the router compares some text of a path (path-to-regexp tokens)
+ * with another form of the request path than `sanitizeUrl()` returns. It
+ * decodes the reserved characters of a segment before it matches the text
+ * that follows a parameter there (the "@" of ":user-avatar@2x.png" matches
+ * "%40"), and it reaches a "%" only as "%25" ("%2525" in such a segment).
+ */
+function hasTextDecodedByRouter(
+  tokens: Token[],
+  segment = { hasParam: false },
+): boolean {
+  for (const token of tokens) {
+    if (token.type === 'group') {
+      // The segment may go on with or without the group
+      const { hasParam } = segment;
+      if (hasTextDecodedByRouter(token.tokens, segment)) {
+        return true;
+      }
+      segment.hasParam ||= hasParam;
+    } else if (token.type === 'text') {
+      const slashIndex = token.value.indexOf('/');
+      const segmentText =
+        slashIndex === -1 ? token.value : token.value.slice(0, slashIndex);
+      if (
+        token.value.includes('%') ||
+        (segment.hasParam && RESERVED_CHARACTERS.test(segmentText))
+      ) {
+        return true;
+      }
+      segment.hasParam &&= slashIndex === -1;
+    } else {
+      segment.hasParam = true;
+    }
+  }
+  return false;
+}
 
 /**
  * @publicApi
@@ -1274,24 +1319,10 @@ export class FastifyAdapter<
       }
 
       try {
-        // A case-insensitive router lower-cases the decoded path, where some
-        // characters only fold to ASCII ("%E2%84%AA", KELVIN SIGN, is routed
-        // as "k"). The RegExp of @fastify/middie does not fold them, so on
-        // such a router the middleware is registered for every path and the
-        // path is only matched below.
-        const { caseSensitive } = this.getRouteMatchingOptions();
-
-        // Such a router lower-cases the paths of its routes too, with
-        // "toLowerCase()", which the "i" flag of a RegExp does not follow for
-        // every letter ("\u0130" lower-cases to "i\u0307"), so the path of
-        // the middleware is lower-cased like the request path (see
-        // `sanitizeUrl()`)
-        let { regexp: re } = pathToRegexp(
-          caseSensitive ? normalizedPath : normalizedPath.toLowerCase(),
+        const { matches, isMatchedByMiddie } = this.createPathMatcher(
+          normalizedPath,
+          hasEndOfStringCharacter,
         );
-        re = hasEndOfStringCharacter
-          ? new RegExp(re.source + '$', re.flags)
-          : re;
 
         const createMiddleware =
           (stripsPath: boolean) =>
@@ -1305,10 +1336,7 @@ export class FastifyAdapter<
             pathname = this.sanitizeUrl(pathname);
 
             if (normalizedPath) {
-              const pathToCheck = pathname.endsWith('/')
-                ? pathname
-                : `${pathname}/`;
-              if (!re.exec(pathToCheck)) {
+              if (!matches(pathname)) {
                 return next();
               }
               if (stripsPath) {
@@ -1327,8 +1355,8 @@ export class FastifyAdapter<
         // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
         // ref https://github.com/fastify/middie/pull/55
         this.instance.use(
-          caseSensitive ? normalizedPath : '/',
-          createMiddleware(!caseSensitive),
+          isMatchedByMiddie ? normalizedPath : '/',
+          createMiddleware(!isMatchedByMiddie),
         );
         // The contexts created since middie was registered have a copy of the
         // middleware of their parent without this one (see `registerMiddie()`).
@@ -1349,6 +1377,51 @@ export class FastifyAdapter<
         throw e;
       }
     };
+  }
+
+  /**
+   * Matches the paths of a middleware (path-to-regexp syntax) with a request
+   * path as `sanitizeUrl()` returns it, the way the router matches the route
+   * of the same path. `isMatchedByMiddie` tells whether the RegExp of
+   * @fastify/middie, which sees the request path in another form, matches the
+   * same paths; the path must be matched with `matches()` otherwise.
+   */
+  private createPathMatcher(path: string, endsAtPath = false) {
+    // A case-insensitive router lower-cases the decoded path, where some
+    // characters only fold to ASCII ("%E2%84%AA", KELVIN SIGN, is routed as
+    // "k"). The RegExp of @fastify/middie does not fold them.
+    const { caseSensitive } = this.getRouteMatchingOptions();
+
+    // Such a router lower-cases the paths of its routes too, with
+    // "toLowerCase()", which the "i" flag of a RegExp does not follow for
+    // every letter ("\u0130" lower-cases to "i\u0307"), so the path of the
+    // middleware is lower-cased like the request path (see `sanitizeUrl()`)
+    let { regexp: re } = pathToRegexp(
+      caseSensitive ? path : path.toLowerCase(),
+    );
+    re = endsAtPath ? new RegExp(re.source + '$', re.flags) : re;
+
+    // The router matches some text in a decoded form of the request path
+    // (see `hasTextDecodedByRouter()`): such a path is also matched with the
+    // reserved characters but "/" decoded, then with "%25" folded as well.
+    // Where that decodes more than the router does, the middleware only runs
+    // for more requests.
+    const hasDecodedText = hasTextDecodedByRouter(parse(path).tokens);
+    const matchesForm = (pathname: string) =>
+      re.exec(pathname.endsWith('/') ? pathname : `${pathname}/`) !== null;
+    const matches = (pathname: string) => {
+      if (matchesForm(pathname)) {
+        return true;
+      }
+      if (!hasDecodedText) {
+        return false;
+      }
+      const decoded = pathname.replace(RESERVED_ESCAPES, decodeURIComponent);
+      return (
+        matchesForm(decoded) || matchesForm(decoded.replaceAll('%25', '%'))
+      );
+    };
+    return { matches, isMatchedByMiddie: caseSensitive && !hasDecodedText };
   }
 
   private runMiddleware(

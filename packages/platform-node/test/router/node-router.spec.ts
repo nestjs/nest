@@ -601,6 +601,82 @@ describe('NodeRouter', () => {
   });
 
   describe('useExact()', () => {
+    // find-my-way decodes the reserved characters of a segment before it
+    // matches the text that follows a parameter there, and it reaches a "%"
+    // of a route only as "%25"
+    describe('with a reserved character in the text of the path', () => {
+      it.each([
+        ['/avatars/:user-avatar@2x.png', '/avatars/alice-avatar@2x.png'],
+        ['/avatars/:user-avatar@2x.png', '/avatars/alice-avatar%402x.png'],
+        ['/skus/:sku-color=:color', '/skus/42-color%3Dred'],
+        ['/discounts/100%', '/discounts/100%25'],
+        ['/discounts/:id-100%', '/discounts/5-100%2525'],
+        ['/a%b/:id', '/a%25b/1'],
+      ])(
+        'should run the middleware of "%s" for "%s", which its route serves',
+        (path, url) => {
+          const calls: string[] = [];
+          router.useExact(
+            'GET',
+            path,
+            (_req: unknown, _res: unknown, next: Next) => {
+              calls.push('guard');
+              next();
+            },
+          );
+          router.get(path, () => calls.push('route'));
+
+          dispatch('GET', url);
+
+          expect(calls).toEqual(['guard', 'route']);
+        },
+      );
+
+      it.each([
+        [
+          '/avatars/:user-avatar@2x.png',
+          '/avatars/:user',
+          '/avatars/alice-avatar%403x.png',
+        ],
+        // The text of a segment without a parameter is compared as it is
+        ['/users/@me', '/users/:id', '/users/%40me'],
+      ])(
+        'should not run the middleware of "%s" for the route "%s"',
+        (path, routePath, url) => {
+          const calls: string[] = [];
+          router.useExact(
+            'GET',
+            path,
+            (_req: unknown, _res: unknown, next: Next) => {
+              calls.push('guard');
+              next();
+            },
+          );
+          router.get(path, () => calls.push('guarded route'));
+          router.get(routePath, () => calls.push('route'));
+
+          dispatch('GET', url);
+
+          expect(calls).toEqual(['route']);
+        },
+      );
+
+      it('should match a mount path in those forms too, and strip it from the URL', () => {
+        let seen: string | undefined;
+        router.use(
+          '/v/:name@:tag',
+          (req: NodeRequest, _res: unknown, next: Next) => {
+            seen = `${req.baseUrl} ${req.url}`;
+            next();
+          },
+        );
+
+        dispatch('GET', '/v/nest%4012/files?x=1');
+
+        expect(seen).toBe('/v/nest%4012 /files?x=1');
+      });
+    });
+
     it('should only run for requests whose whole path matches', () => {
       const middleware = vi.fn((_req: unknown, _res: unknown, next: Next) =>
         next(),

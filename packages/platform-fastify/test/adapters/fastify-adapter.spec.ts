@@ -720,6 +720,91 @@ describe('FastifyAdapter', () => {
       await adapter.close();
     });
 
+    // The router decodes the reserved characters of a segment before it
+    // matches the text that follows a parameter there, and stores "%" as "%25"
+    describe('with a reserved character in the text of the path', () => {
+      it.each([
+        ['/avatars/:user-avatar@2x.png', '/avatars/alice-avatar@2x.png'],
+        ['/avatars/:user-avatar@2x.png', '/avatars/alice-avatar%402x.png'],
+        ['/skus/:sku-color=:color', '/skus/42-color%3Dred'],
+        ['/discounts/100%', '/discounts/100%25'],
+        ['/discounts/:id-100%', '/discounts/5-100%2525'],
+      ])(
+        'should run the middleware of "%s" for "%s"',
+        async (path, requestPath) => {
+          const adapter = new FastifyAdapter();
+          let urls: { url: string; originalUrl: string } | undefined;
+          const middleware = vi.fn((req, _res, next: Function) => {
+            urls = { url: req.url, originalUrl: req.originalUrl };
+            next();
+          });
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.GET,
+          );
+          register(path, middleware);
+          adapter.get(path, () => 'route');
+
+          const url = `${requestPath}?size=2`;
+          const res = await adapter.inject({ method: 'GET', url });
+
+          expect(res.body).toBe('route');
+          expect(middleware).toHaveBeenCalledOnce();
+          expect(urls).toEqual({ url: '/?size=2', originalUrl: url });
+          await adapter.close();
+        },
+      );
+
+      it('should run the middleware on a case-insensitive router', async () => {
+        const adapter = new FastifyAdapter({
+          routerOptions: { caseSensitive: false },
+        });
+        const middleware = vi.fn((_req, _res, next: Function) => next());
+        const register = await adapter.createMiddlewareFactory(
+          RequestMethod.GET,
+        );
+        register('/Avatars/:user-avatar@2x.png', middleware);
+        adapter.get('/Avatars/:user-avatar@2x.png', () => 'route');
+
+        const res = await adapter.inject({
+          method: 'GET',
+          url: '/AVATARS/alice-avatar%402x.png',
+        });
+
+        expect(res.body).toBe('route');
+        expect(middleware).toHaveBeenCalledOnce();
+        await adapter.close();
+      });
+
+      it.each([
+        [
+          '/avatars/:user-avatar@2x.png',
+          '/avatars/:user',
+          '/avatars/alice-avatar%403x.png',
+        ],
+        // The text of a segment without a parameter is compared as it is
+        ['/users/@me', '/users/:id', '/users/%40me'],
+        ['/users/:id/@me', '/users/:id/:name', '/users/1/%40me'],
+      ])(
+        'should not run the middleware of "%s" for the route "%s"',
+        async (path, routePath, url) => {
+          const adapter = new FastifyAdapter();
+          const middleware = vi.fn((_req, _res, next: Function) => next());
+          const register = await adapter.createMiddlewareFactory(
+            RequestMethod.GET,
+          );
+          register(path, middleware);
+          adapter.get(path, () => 'guarded');
+          adapter.get(routePath, () => 'route');
+
+          const res = await adapter.inject({ method: 'GET', url });
+
+          expect(res.body).toBe('route');
+          expect(middleware).not.toHaveBeenCalled();
+          await adapter.close();
+        },
+      );
+    });
+
     describe('on a case-insensitive router', () => {
       let adapter: FastifyAdapter;
       let urls: { url: string; originalUrl: string };

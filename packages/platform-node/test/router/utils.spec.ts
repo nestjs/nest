@@ -1,8 +1,10 @@
 import {
+  getDecodedForms,
   getLiteralPrefix,
   getPrefixSkips,
   getRawPrefixEnd,
   getRoutingPath,
+  hasTextDecodedByRouter,
   loosen,
 } from '../../router/utils.js';
 
@@ -37,6 +39,45 @@ describe('getLiteralPrefix', () => {
 
   it('should unescape escaped characters', () => {
     expect(getLiteralPrefix('/a\\:b/:id')).toBe('/a:b/');
+  });
+
+  // A routing path holds a "%" as "%25"
+  it('should end before a "%"', () => {
+    expect(getLiteralPrefix('/a%b/:id')).toBe('/a');
+    expect(getLiteralPrefix('/discounts/100%')).toBe('/discounts/100');
+  });
+});
+
+describe('hasTextDecodedByRouter', () => {
+  it.each([
+    '/avatars/:user-avatar@2x.png',
+    '/skus/:sku-color=:color',
+    '/geo/:lat-:lng,:zoom',
+    '/files/:name{.:ext}@2x',
+    '/discounts/100%',
+    '/a%b/:id',
+  ])('should hold for "%s"', path => {
+    expect(hasTextDecodedByRouter(path)).toBe(true);
+  });
+
+  it.each([
+    '/users/@me',
+    '/users/:id/@me',
+    '/files/:name.:ext',
+    '/users/:id-:slug',
+    '/files/*path',
+    '/users/:',
+  ])('should not hold for "%s"', path => {
+    expect(hasTextDecodedByRouter(path)).toBe(false);
+  });
+});
+
+describe('getDecodedForms', () => {
+  it('should decode the reserved characters but "/", then fold "%25"', () => {
+    expect(getDecodedForms('/a/b%40c%3D%2Fd%2525')).toEqual([
+      '/a/b@c=%2Fd%25',
+      '/a/b@c=%2Fd%',
+    ]);
   });
 });
 
