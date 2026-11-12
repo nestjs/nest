@@ -1565,6 +1565,7 @@ export class FastifyAdapter<
     caseSensitive: boolean;
     ignoreTrailingSlash: boolean;
     removesTrailingSlash: boolean;
+    maxParamLength: number;
   } {
     const initialConfig = this.instance.initialConfig as FastifyServerOptions;
     // Absent when a Fastify instance created without it is passed in
@@ -1580,7 +1581,29 @@ export class FastifyAdapter<
       ),
       // find-my-way trims the slash before it looks for a route
       removesTrailingSlash: true,
+      maxParamLength: this.getMaxParamLength(initialConfig),
     };
+  }
+
+  /**
+   * Returns the "maxParamLength" the router uses. The one of "routerOptions"
+   * wins, but "initialConfig" fills it in with the default (100) when only
+   * the top-level option is set, so the lower one is taken then. A value of
+   * 0 means the default, as for find-my-way.
+   */
+  private getMaxParamLength(initialConfig: FastifyServerOptions): number {
+    const defaultMaxParamLength = 100;
+    const topLevel = initialConfig.maxParamLength || defaultMaxParamLength;
+    const routerOptions = initialConfig.routerOptions as
+      Partial<FastifyServerOptions> | undefined;
+    if (!routerOptions) {
+      return topLevel;
+    }
+    const fromRouterOptions =
+      routerOptions.maxParamLength || defaultMaxParamLength;
+    return fromRouterOptions === defaultMaxParamLength
+      ? Math.min(fromRouterOptions, topLevel)
+      : fromRouterOptions;
   }
 
   public use(...args: any[]) {

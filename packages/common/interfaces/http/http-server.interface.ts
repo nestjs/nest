@@ -95,6 +95,13 @@ export interface RouteMatchingOptions {
    * read when `ignoreTrailingSlash` is `true`.
    */
   removesTrailingSlash?: boolean;
+  /**
+   * Longest (percent-decoded) value a route parameter such as `:id` matches,
+   * when the router has such a limit: it serves a request whose parameter is
+   * longer with another matching route (a wildcard, for instance), if any.
+   * Wildcards are not limited. Not set when parameters are not limited.
+   */
+  maxParamLength?: number;
 }
 
 /**

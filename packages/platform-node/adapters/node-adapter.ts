@@ -53,6 +53,10 @@ import {
   NodeRouter,
   PARAM_TOO_LONG_KEY,
 } from '../router/node-router.js';
+import {
+  MAX_PARAM_LENGTH,
+  type RouteTableOptions,
+} from '../router/route-table.js';
 import { getRoutingPath } from '../router/utils.js';
 import { createRequestClass } from './configured-request.js';
 import { type NodeViewOptions, ViewRenderer } from '../views/view-renderer.js';
@@ -690,10 +694,19 @@ export class NodeAdapter extends AbstractHttpAdapter<
   public getRouteMatchingOptions(): {
     caseSensitive: boolean;
     ignoreTrailingSlash: boolean;
+    maxParamLength: number;
   } {
-    // Like the router (see RouteTable): "/Users" is not "/users", and
-    // "/users/" is served by the "/users" route
-    return { caseSensitive: true, ignoreTrailingSlash: true };
+    // Like the router (see RouteTable): "/Users" is not "/users", "/users/"
+    // is served by the "/users" route, and a parameter longer than the limit
+    // is served by another route
+    const { routeTableOptions } = this.getInstance() as unknown as {
+      routeTableOptions?: RouteTableOptions;
+    };
+    return {
+      caseSensitive: true,
+      ignoreTrailingSlash: true,
+      maxParamLength: routeTableOptions?.maxParamLength ?? MAX_PARAM_LENGTH,
+    };
   }
 
   public applyVersionFilter(

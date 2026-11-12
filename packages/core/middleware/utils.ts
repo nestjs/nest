@@ -9,7 +9,11 @@ import { pathToRegexp } from 'path-to-regexp';
 import { uid } from 'uid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
-import { isRequestMethodAll } from '../router/utils/index.js';
+import {
+  isRequestMethodAll,
+  matchesExcludedPath,
+  toExcludedPathMatcher,
+} from '../router/utils/index.js';
 import type { HttpServer, Type } from '@nestjs/common';
 import {
   type RouteInfo,
@@ -38,13 +42,13 @@ export const mapToExcludeRoute = (
       const excludedRoute: ExcludeRouteMetadata = {
         path,
         requestMethod: isString(route) ? RequestMethod.ALL : route.method,
-        pathRegex: compileExcludedPath(path, matchingOptions),
+        ...compileExcludedPath(path, matchingOptions),
       };
       if (matchingOptions && servesTrailingSlashByAnyRoute(matchingOptions)) {
         excludedRoute.exactPathRegex = compileExcludedPath(path, {
           ...matchingOptions,
           ignoreTrailingSlash: false,
-        });
+        }).pathRegex;
       }
       if (!isString(route) && route.version) {
         excludedRoute.version = route.version;
@@ -62,17 +66,20 @@ export const mapToExcludeRoute = (
 function compileExcludedPath(
   path: string,
   matchingOptions?: RouteMatchingOptions,
-): RegExp {
+): Pick<ExcludeRouteMetadata, 'pathRegex' | 'paramLimit'> {
   if (!matchingOptions) {
-    return pathToRegexp(addLeadingSlash(path)).regexp;
+    return { pathRegex: pathToRegexp(addLeadingSlash(path)).regexp };
   }
   // Routes are registered without a trailing slash, so "users/login/" must
   // match the requests the router serves with the "users/login" route
   const routePath = path.length > 1 ? path.replace(/\/+$/, '') : path;
-  return pathToRegexp(addLeadingSlash(routePath) || '/', {
-    sensitive: matchingOptions.caseSensitive,
-    trailing: matchingOptions.ignoreTrailingSlash,
-  }).regexp;
+  return toExcludedPathMatcher(
+    pathToRegexp(addLeadingSlash(routePath) || '/', {
+      sensitive: matchingOptions.caseSensitive,
+      trailing: matchingOptions.ignoreTrailingSlash,
+    }),
+    matchingOptions.maxParamLength,
+  );
 }
 
 const EXACT_ROUTE_MATCHING: RouteMatchingOptions = {
@@ -111,7 +118,12 @@ function mapToServedRoutes(
     .flatMap(route => {
       const path = LegacyRouteConverter.tryConvert(route.path, { logs: false });
       try {
-        const pathRegex = compileExcludedPath(path, matchingOptions);
+        // Without the parameter limit: a route that may serve the path
+        // makes its exclusion match less
+        const { pathRegex } = compileExcludedPath(path, {
+          ...matchingOptions,
+          maxParamLength: undefined,
+        });
         return [{ path, requestMethod: route.method, pathRegex }];
       } catch {
         // A path that the router reads in another way (Fastify syntax)
@@ -301,14 +313,14 @@ export function isMiddlewareRouteExcluded(
   const requestMethod = RequestMethod[reqMethod as keyof typeof RequestMethod];
   const isHeadRequest = requestMethod === RequestMethod.HEAD;
   const isRequestForRoute = (
-    { requestMethod: routeMethod, pathRegex }: ExcludeRouteMetadata,
+    route: ExcludeRouteMetadata,
     path: string,
-    regex = pathRegex,
+    pathRegex = route.pathRegex,
   ) =>
-    (isRequestMethodAll(routeMethod) ||
-      routeMethod === requestMethod ||
-      (isHeadRequest && routeMethod === RequestMethod.GET)) &&
-    regex.test(path);
+    (isRequestMethodAll(route.requestMethod) ||
+      route.requestMethod === requestMethod ||
+      (isHeadRequest && route.requestMethod === RequestMethod.GET)) &&
+    matchesExcludedPath(route, path, pathRegex);
   const isVersionRequested = createRequestedVersionMatcher(
     req,
     versioningOptions,

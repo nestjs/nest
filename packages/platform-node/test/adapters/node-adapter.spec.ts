@@ -150,7 +150,12 @@ describe('NodeAdapter', () => {
       expect(adapter.getRouteMatchingOptions()).toEqual({
         caseSensitive: true,
         ignoreTrailingSlash: true,
+        maxParamLength: 100,
       });
+      expect(
+        new NodeAdapter({ maxParamLength: 200 }).getRouteMatchingOptions()
+          .maxParamLength,
+      ).toBe(200);
 
       const port = await startServer();
       adapter.get('/users/login', (req: NodeRequest, res: NodeResponse) =>

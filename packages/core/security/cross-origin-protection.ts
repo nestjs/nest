@@ -21,7 +21,10 @@ import {
 } from '../middleware/utils.js';
 import type { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
-import { isRouteExcluded } from '../router/utils/index.js';
+import {
+  isRouteExcluded,
+  toExcludedPathMatcher,
+} from '../router/utils/index.js';
 
 /**
  * The request facts the cross-origin decision depends on.
@@ -285,19 +288,25 @@ export class CrossOriginProtection<TRequest = any> {
    * excluded too, at the paths the router serves them at.
    */
   public resolveExclusions(pathExtractor: RouteInfoPathExtractor): void {
+    const { ignoreTrailingSlash, maxParamLength } =
+      this.httpAdapter.getRouteMatchingOptions?.() ?? {};
     this.resolvedExclusions = this.excludedRoutes.flatMap(route =>
       pathExtractor
         .extractExclusionsFrom(route, { caseSensitive: true })
         .map(({ path, method }) => {
-          const exclusion = compileExclusion(path, method, true);
+          const exclusion = compileExclusion(
+            path,
+            method,
+            true,
+            maxParamLength,
+          );
           if (route.version) {
             exclusion.version = route.version;
           }
           return exclusion;
         }),
     );
-    this.ignoreTrailingSlash =
-      !!this.httpAdapter.getRouteMatchingOptions?.()?.ignoreTrailingSlash;
+    this.ignoreTrailingSlash = !!ignoreTrailingSlash;
     this.versioningOptions = pathExtractor.getVersioningOptions();
   }
 
@@ -394,11 +403,14 @@ function toRouteInfo(route: string | RouteInfo): RouteInfo {
  * the match is exact: case-sensitive (Fastify routes case-sensitively, so
  * `/WEBHOOKS` may reach another route) and without an optional trailing
  * slash (Fastify routes `/webhooks/` to `/webhooks/:id` with an empty `id`).
+ * With the `maxParamLength` of the router, it does not match a parameter
+ * that is longer, which the router serves with another route.
  */
 function compileExclusion(
   path: string,
   requestMethod: RequestMethod,
   logs: boolean,
+  maxParamLength?: number,
 ): ExcludeRouteMetadata {
   const converted = LegacyRouteConverter.tryConvert(path, { logs });
   const normalized =
@@ -406,10 +418,13 @@ function compileExclusion(
   return {
     path: normalized,
     requestMethod,
-    pathRegex: pathToRegexp(addLeadingSlash(normalized) || '/', {
-      sensitive: true,
-      trailing: false,
-    }).regexp,
+    ...toExcludedPathMatcher(
+      pathToRegexp(addLeadingSlash(normalized) || '/', {
+        sensitive: true,
+        trailing: false,
+      }),
+      maxParamLength,
+    ),
   };
 }
 

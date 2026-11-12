@@ -444,6 +444,31 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(strict, '/webhooks/')).toBe(true);
     });
 
+    it('does not exclude a parameter longer than the router serves the route with', () => {
+      class LimitedRouterAdapter extends TestAdapter {
+        getRouteMatchingOptions() {
+          return {
+            caseSensitive: true,
+            ignoreTrailingSlash: false,
+            maxParamLength: 10,
+          };
+        }
+      }
+      const limited = new CrossOriginProtection(new LimitedRouterAdapter({}), {
+        exclude: ['webhooks/:id', 'files/{*path}'],
+      });
+      limited.resolveExclusions(
+        new RouteInfoPathExtractor(new ApplicationConfig()),
+      );
+      expect(isExcluded(limited, `/webhooks/${'a'.repeat(10)}`)).toBe(true);
+      expect(isExcluded(limited, `/webhooks/${'a'.repeat(11)}`)).toBe(false);
+      // Wildcards are not limited
+      expect(isExcluded(limited, `/files/${'a'.repeat(11)}`)).toBe(true);
+
+      const unlimited = createProtection(['webhooks/:id']);
+      expect(isExcluded(unlimited, `/webhooks/${'a'.repeat(11)}`)).toBe(true);
+    });
+
     it('excludes nothing until the exclusions are resolved (app.init())', () => {
       const protection = new CrossOriginProtection(adapter, {
         exclude: ['webhooks'],

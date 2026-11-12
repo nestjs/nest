@@ -317,6 +317,60 @@ describe('middleware utils', () => {
         );
       });
     });
+    describe('when the router limits the length of a parameter', () => {
+      const isExcluded = (exclusion: string, url: string) => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        const options = {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          maxParamLength: 10,
+        };
+        return isMiddlewareRouteExcluded(
+          {},
+          mapToExcludeRoute([exclusion], options),
+          adapter,
+          options,
+        );
+      };
+
+      it('should not exclude a request whose parameter is longer', () => {
+        expect(isExcluded('docs/:page', `/docs/${'a'.repeat(10)}`)).toBe(true);
+        expect(isExcluded('docs/:page', `/docs/${'a'.repeat(11)}`)).toBe(false);
+        expect(isExcluded('docs/:id/raw', `/docs/${'a'.repeat(11)}/raw`)).toBe(
+          false,
+        );
+      });
+
+      it('should measure the decoded value, as the router does', () => {
+        expect(isExcluded('docs/:page', `/docs/${'%41'.repeat(10)}`)).toBe(
+          true,
+        );
+        expect(isExcluded('docs/:page', `/docs/${'%41'.repeat(11)}`)).toBe(
+          false,
+        );
+        expect(isExcluded('docs/:page', '/docs/%E0%A4%A')).toBe(false);
+      });
+
+      it('should count the parameters of one segment together', () => {
+        expect(isExcluded('range/:from-:to', '/range/aaaaa-bbbbb')).toBe(true);
+        expect(isExcluded('range/:from-:to', '/range/aaaaaa-bbbbb')).toBe(
+          false,
+        );
+        expect(
+          isExcluded('range/:from/:to', `/range/${'a'.repeat(10)}/bbbbb`),
+        ).toBe(true);
+      });
+
+      it('should not limit wildcards or optional parameters left out', () => {
+        expect(isExcluded('docs/{*path}', `/docs/${'a'.repeat(50)}`)).toBe(
+          true,
+        );
+        expect(isExcluded('docs{/:page}', '/docs')).toBe(true);
+        expect(isExcluded('docs{/:page}', `/docs/${'a'.repeat(11)}`)).toBe(
+          false,
+        );
+      });
+    });
     describe('when the router serves "/x/" with the first route that matches it', () => {
       const matchingOptions = {
         caseSensitive: true,

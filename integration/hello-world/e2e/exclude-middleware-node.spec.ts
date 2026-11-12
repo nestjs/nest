@@ -101,15 +101,28 @@ class UsersController {
   }
 }
 
+@Controller('docs')
+class DocsController {
+  @Get(':page')
+  findOne() {
+    return RETURN_VALUE;
+  }
+
+  @Get('*path')
+  findAll() {
+    return RETURN_VALUE;
+  }
+}
+
 @Module({
-  controllers: [UsersController],
+  controllers: [UsersController, DocsController],
 })
 class RouteMatchingModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => res.send(MIDDLEWARE_VALUE))
-      .exclude('users/login')
-      .forRoutes(UsersController);
+      .exclude('users/login', 'docs/:page')
+      .forRoutes(UsersController, DocsController);
   }
 }
 
@@ -145,6 +158,21 @@ describe('Exclude middleware - route matching', () => {
   it(`should not exclude "/users/LOGIN", which the router serves with "/users/:id"`, () => {
     return request(app.getHttpServer())
       .get('/users/LOGIN')
+      .expect(200, MIDDLEWARE_VALUE);
+  });
+
+  it(`should exclude "/docs/:page" endpoint for a parameter of 100 characters`, () => {
+    return request(app.getHttpServer())
+      .get(`/docs/${'a'.repeat(100)}`)
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude a longer "/docs/:page" parameter, which the router serves with "/docs/*path"`, async () => {
+    await request(app.getHttpServer())
+      .get(`/docs/${'a'.repeat(101)}`)
+      .expect(200, MIDDLEWARE_VALUE);
+    await request(app.getHttpServer())
+      .get(`/docs/internal${'%2F.'.repeat(50)}`)
       .expect(200, MIDDLEWARE_VALUE);
   });
 });
