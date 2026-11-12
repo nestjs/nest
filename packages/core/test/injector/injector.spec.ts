@@ -1678,6 +1678,86 @@ describe('Injector', () => {
       expect(instance).toBeInstanceOf(TestClass);
       expect(instance).toBe(wrapper.instance);
     });
+
+    describe('when a transient provider depends on a durable one', () => {
+      @Injectable({ scope: Scope.REQUEST, durable: true })
+      class TenantDatabase {}
+
+      @Injectable({ scope: Scope.TRANSIENT })
+      class ProfileLoader {
+        constructor(
+          @Inject(TenantDatabase) public readonly database: TenantDatabase,
+        ) {}
+      }
+
+      @Injectable({ scope: Scope.REQUEST })
+      class CurrentUser {
+        constructor(
+          @Inject(ProfileLoader) public readonly loader: ProfileLoader,
+        ) {}
+      }
+
+      @Injectable()
+      class TenantSettings {
+        constructor(
+          @Inject(ProfileLoader) public readonly loader: ProfileLoader,
+        ) {}
+      }
+
+      const tenant: ContextId = { id: 1 };
+      const createContextId = () => {
+        const contextId: ContextId = {
+          id: Math.random(),
+          getParent: ({ isTreeDurable }) =>
+            isTreeDurable ? tenant : contextId,
+        };
+        return contextId;
+      };
+
+      let moduleRef: Module;
+      const load = <T>(type: Type<T>): Promise<T> =>
+        injector.loadPerContext(
+          Object.create(type.prototype),
+          moduleRef,
+          moduleRef.providers,
+          createContextId(),
+        );
+
+      beforeEach(async () => {
+        const container = new NestContainer();
+        ({ moduleRef } = (await container.addModule(class TestModule {}, []))!);
+        [TenantDatabase, ProfileLoader, CurrentUser, TenantSettings].forEach(
+          provider => moduleRef.addProvider(provider),
+        );
+      });
+
+      it('should create it for every instance of a consumer that is not durable', async () => {
+        const first = await load(CurrentUser);
+        const second = await load(CurrentUser);
+
+        expect(second).not.toBe(first);
+        expect(second.loader).toBeInstanceOf(ProfileLoader);
+        expect(second.loader).not.toBe(first.loader);
+        expect(second.loader.database).toBe(first.loader.database);
+      });
+
+      it('should create it once for a durable consumer', async () => {
+        const first = await load(TenantSettings);
+        const second = await load(TenantSettings);
+
+        expect(second).toBe(first);
+        expect(second.loader).toBeInstanceOf(ProfileLoader);
+        expect(second.loader.database).toBeInstanceOf(TenantDatabase);
+      });
+
+      it('should create it for every context that it is resolved in', async () => {
+        const first = await load(ProfileLoader);
+        const second = await load(ProfileLoader);
+
+        expect(second).not.toBe(first);
+        expect(second.database).toBe(first.database);
+      });
+    });
   });
 
   describe('loadEnhancersPerContext', () => {
