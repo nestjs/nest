@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
@@ -11,7 +11,10 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Validate,
   ValidateNested,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
 } from 'class-validator';
 import { BadRequestException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
@@ -391,6 +394,96 @@ describe('ParseArrayPipe', () => {
               '[1] number must be a number conforming to the specified constraints',
             ]);
           }
+        });
+
+        it('should rethrow an error thrown by a transformation', async () => {
+          const error = Object.assign(new Error('lookup failed'), {
+            code: 'ECONNREFUSED',
+            address: '10.0.0.5',
+          });
+          class ArrItemWithTransform {
+            @Transform(({ value }) => {
+              if (value === 'unknown') {
+                throw error;
+              }
+              return value;
+            })
+            @IsString()
+            name: string;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithTransform,
+            stopAtFirstError: false,
+          });
+
+          const thrown = await pipe
+            .transform(
+              [{ name: 1 }, { name: 'unknown' }] as any[],
+              {} as ArgumentMetadata,
+            )
+            .catch(err => err);
+          expect(thrown).to.equal(error);
+        });
+
+        it('should rethrow the rejection of an async constraint', async () => {
+          const error = new Error('lookup failed');
+          @ValidatorConstraint({ name: 'isKnown', async: true })
+          class IsKnown implements ValidatorConstraintInterface {
+            async validate(value: string) {
+              if (value === 'unknown') {
+                throw error;
+              }
+              return true;
+            }
+          }
+          class ArrItemWithConstraint {
+            @Validate(IsKnown)
+            name: string;
+          }
+          const exceptionFactory = sinon.spy(
+            (errors: any) => new BadRequestException(errors),
+          );
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithConstraint,
+            stopAtFirstError: false,
+            exceptionFactory,
+          });
+
+          const thrown = await pipe
+            .transform(
+              [{ name: 'known' }, { name: 'unknown' }] as any[],
+              {} as ArgumentMetadata,
+            )
+            .catch(err => err);
+          expect(thrown).to.equal(error);
+          expect(exceptionFactory.called).to.be.false;
+        });
+
+        it('should rethrow such an error after "maxErrorMessagesLength" is reached', async () => {
+          const error = new Error('lookup failed');
+          class ArrItemWithTransform {
+            @Transform(({ value }) => {
+              if (value === 'unknown') {
+                throw error;
+              }
+              return value;
+            })
+            @IsString()
+            name: string;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithTransform,
+            stopAtFirstError: false,
+            maxErrorMessagesLength: 1,
+          });
+
+          const thrown = await pipe
+            .transform(
+              [{ name: 1 }, { name: 'unknown' }] as any[],
+              {} as ArgumentMetadata,
+            )
+            .catch(err => err);
+          expect(thrown).to.equal(error);
         });
 
         it('should collect the errors without copying them for each item', async () => {

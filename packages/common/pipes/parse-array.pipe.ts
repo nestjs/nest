@@ -156,6 +156,14 @@ export class ParseArrayPipe implements PipeTransform {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
+            if (err instanceof Error && !(err as any).getResponse) {
+              // Not a validation error, but a failure of the code that
+              // validates (e.g. an async constraint or a `@Transform()`
+              // function). It is left to the exception filters, as when the
+              // pipe stops at the first error: in the list of messages, it
+              // would be sent as it is and never logged.
+              throw err;
+            }
             if (remainingLength <= 0) {
               // The array is rejected either way, so the items that are left
               // are not validated.
