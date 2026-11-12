@@ -651,6 +651,50 @@ describe('FastifyAdapter', () => {
       expect(res.body).to.equal('found');
     });
 
+    // find-my-way ends a parameter name at "-", "." or "/" only
+    describe('with a parameter name the router reads otherwise', () => {
+      let warn: sinon.SinonStub;
+
+      beforeEach(() => {
+        warn = sinon.stub(Logger.prototype, 'warn');
+      });
+
+      for (const [path, missUrl, url, name] of [
+        ['/geo/:lat,:lng', '/geo/12', '/geo/1,2', 'lat,:lng'],
+        ['/pkg/:name@:version', '/pkg/nest12', '/pkg/nest@12', 'name@:version'],
+        ['/items/:id~x', '/items/5', '/items/5~x', 'id~x'],
+      ]) {
+        it(`should only serve the requests "${path}" matches as written`, async () => {
+          const handler = sinon.spy(() => 'found');
+          fastifyAdapter.get(path, handler);
+
+          const miss = await fastifyAdapter.inject({
+            method: 'GET',
+            url: missUrl,
+          });
+          const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+          expect(miss.statusCode).to.equal(404);
+          expect(res.statusCode).to.equal(200);
+          expect(handler.calledOnce).to.be.true;
+          expect(warn.calledOnce).to.be.true;
+          expect(warn.firstCall.args[0]).to.include(`":${name}"`);
+        });
+      }
+
+      for (const path of [
+        '/files/:name.:ext',
+        '/ranges/:from-:to',
+        '/a::b/:id',
+      ]) {
+        it(`should not log anything for "${path}"`, () => {
+          fastifyAdapter.get(path, () => 'found');
+
+          expect(warn.called).to.be.false;
+        });
+      }
+    });
+
     // Only paths in the syntax of path-to-regexp can have middleware: no
     // route-bound middleware can be registered for these
     for (const path of [

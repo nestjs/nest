@@ -146,6 +146,40 @@ type FastifyRawRequest<TServer extends RawServerBase> =
 const RESERVED_CHARACTERS = /[#$%&+,:;=?@]/;
 const RESERVED_ESCAPES = /%(?:2[3-6bc]|3[abdf]|40)/gi;
 
+// find-my-way reads a parameter name up to the next "(", "-", "." or "/",
+// path-to-regexp only as long as it is an identifier
+const FIND_MY_WAY_NAME_ENDS = '(-./';
+const PATH_TO_REGEXP_NAME =
+  /^[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$/u;
+
+/**
+ * The first parameter name of a route path (find-my-way syntax) that
+ * find-my-way reads otherwise than path-to-regexp: ":lat,:lng" is one
+ * parameter, "lat,:lng", for find-my-way, and two for path-to-regexp.
+ */
+function getMisreadParamName(path: string): string | undefined {
+  for (let i = 0; i < path.length; i++) {
+    if (path[i] !== ':') {
+      continue;
+    }
+    if (path[i + 1] === ':') {
+      // "::" is an escaped colon
+      i++;
+      continue;
+    }
+    let end = i + 1;
+    while (end < path.length && !FIND_MY_WAY_NAME_ENDS.includes(path[end])) {
+      end++;
+    }
+    const name = path.slice(i + 1, end);
+    if (!PATH_TO_REGEXP_NAME.test(name)) {
+      return name;
+    }
+    i = end - 1;
+  }
+  return undefined;
+}
+
 /**
  * Whether the router compares some text of a path (path-to-regexp tokens)
  * with another form of the request path than `sanitizeUrl()` returns. It
@@ -1443,7 +1477,7 @@ export class FastifyAdapter<
       return handler;
     }
     const matchesRequest = isString(url)
-      ? this.createRepeatedParamMatcher(url)
+      ? this.createRouteParamsMatcher(url)
       : undefined;
     const routeHandler = function (
       this: unknown,
@@ -1471,21 +1505,28 @@ export class FastifyAdapter<
   }
 
   /**
-   * "find-my-way" keeps one value per parameter name: for a route path that
-   * uses a name more than once ("/projects/:id/tasks/:id"), "request.params"
-   * only holds the last value, and an empty earlier one cannot be seen there.
-   * For such a route path, returns a function that matches the path of a
+   * For a route path whose parameters "find-my-way" does not read as
+   * path-to-regexp does, returns a function that matches the path of a
    * request as the middleware of that path is matched (see
    * `createMiddlewareFactory()`), which needs at least one character per
-   * parameter. A route path that path-to-regexp cannot read gets no such
-   * function, as no middleware can be bound to that path either.
+   * parameter:
+   * - "find-my-way" keeps one value per parameter name, so for a route path
+   *   that uses a name more than once ("/projects/:id/tasks/:id"),
+   *   "request.params" only holds the last value, and an empty earlier one
+   *   cannot be seen there;
+   * - it ends a parameter name at "-", "." or "/" only, so ":lat,:lng" is a
+   *   single parameter that matches any segment ("/geo/12"), which is also
+   *   logged when the route is registered.
+   * A route path that path-to-regexp cannot read gets no such function, as
+   * `createMiddlewareFactory()` does not take that path either.
    */
-  private createRepeatedParamMatcher(
+  private createRouteParamsMatcher(
     url: string,
   ): ((request: TRequest) => boolean) | undefined {
     let matches: (pathname: string) => boolean;
     try {
       const path = LegacyRouteConverter.tryConvert(url, { logs: false });
+      const misreadName = getMisreadParamName(url);
       const names = new Set<string>();
       let hasRepeatedName = false;
       const visit = (tokens: Token[]) => {
@@ -1499,10 +1540,15 @@ export class FastifyAdapter<
         }
       };
       visit(parse(path).tokens);
-      if (!hasRepeatedName) {
+      if (!hasRepeatedName && misreadName === undefined) {
         return undefined;
       }
       ({ matches } = this.createPathMatcher(path));
+      if (misreadName !== undefined) {
+        this.logger.warn(
+          `The router reads ":${misreadName}" in the route path "${url}" as one parameter, as a parameter name ends at "-", "." or "/" only. The route only serves the requests the path matches as written; separate its parameters with "-" or ".".`,
+        );
+      }
     } catch {
       return undefined;
     }
