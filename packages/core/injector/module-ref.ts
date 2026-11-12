@@ -150,7 +150,11 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
   public introspect<T = any>(
     token: Type<T> | string | symbol,
   ): IntrospectionResult {
-    const { wrapperRef } = this.instanceLinksHost.get(token);
+    const { wrapperRef: wrapper } = this.instanceLinksHost.get(token);
+    // An alias (`useExisting`) has the scope of the provider it stands for
+    const wrapperRef = wrapper.isAlias
+      ? this.injector.getAliasedWrapper(wrapper)
+      : wrapper;
 
     let scope = Scope.DEFAULT;
     if (!wrapperRef.isDependencyTreeStatic()) {

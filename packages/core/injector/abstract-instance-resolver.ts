@@ -58,7 +58,13 @@ export abstract class AbstractInstanceResolver {
         });
 
     const pluckInstance = async (instanceLink: InstanceLink) => {
-      const { wrapperRef, collection } = instanceLink;
+      let { wrapperRef, collection } = instanceLink;
+      if (wrapperRef.isAlias) {
+        // An alias (`useExisting`) is default-scoped whatever the scope of
+        // the provider it stands for, so that provider is resolved instead
+        wrapperRef = this.injector.getAliasedWrapper(wrapperRef);
+        collection = wrapperRef.host?.providers ?? collection;
+      }
       if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
         return wrapperRef.instance;
       }

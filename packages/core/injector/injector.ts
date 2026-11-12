@@ -677,7 +677,10 @@ export class Injector {
       );
     }
     if (name && providers.has(name)) {
-      const instanceWrapper = providers.get(name)!;
+      const instanceWrapper = this.getDependencyWrapper(
+        providers.get(name)!,
+        wrapper,
+      );
       this.printFoundInModuleLog(name, moduleRef);
       this.addDependencyMetadata(keyOrIndex!, wrapper, instanceWrapper);
       return instanceWrapper;
@@ -762,7 +765,10 @@ export class Injector {
         continue;
       }
       this.printFoundInModuleLog(name, relatedModule);
-      instanceWrapperRef = providers.get(name)!;
+      instanceWrapperRef = this.getDependencyWrapper(
+        providers.get(name)!,
+        wrapper,
+      );
       this.addDependencyMetadata(keyOrIndex!, wrapper, instanceWrapperRef);
 
       /*
@@ -773,6 +779,107 @@ export class Injector {
       break;
     }
     return instanceWrapperRef;
+  }
+
+  /**
+   * Returns the provider that an alias (`useExisting`) stands for, following
+   * a chain of aliases, each looked up the way the alias looks it up when it
+   * is loaded. An alias is a default-scoped provider of its own, so injecting
+   * it would hand the one instance it got itself to every consumer, which
+   * breaks a transient provider behind it. Returns the alias as it is when
+   * the provider it stands for is not found, or when the aliases point to
+   * each other, so that loading the alias reports it.
+   *
+   * Synchronous, so that a lookup settles after as many microtask hops
+   * whether it finds an alias or not.
+   */
+  public getAliasedWrapper(alias: InstanceWrapper): InstanceWrapper {
+    const aliases = new Set<InstanceWrapper>();
+    let instanceWrapper = alias;
+    while (instanceWrapper.isAlias && instanceWrapper.host) {
+      if (aliases.has(instanceWrapper)) {
+        return alias;
+      }
+      aliases.add(instanceWrapper);
+
+      // `{ inject: [useExisting] }` (see `Module#addCustomUseExisting`)
+      const dependency = instanceWrapper.inject?.[0];
+      const token = (
+        isObject(dependency) && 'forwardRef' in dependency
+          ? (dependency as ForwardReference).forwardRef()
+          : dependency
+      ) as InjectionToken | undefined;
+      if (isNil(token)) {
+        return alias;
+      }
+      const { host } = instanceWrapper;
+      const aliasedWrapper =
+        host.providers.get(token) ??
+        this.lookupAliasedComponentInImports(host, token, new Set<string>());
+      if (!aliasedWrapper) {
+        return alias;
+      }
+      instanceWrapper = aliasedWrapper;
+    }
+    return instanceWrapper;
+  }
+
+  /**
+   * The wrapper to inject for the one found for a dependency of the given
+   * wrapper: the provider an alias stands for (see `getAliasedWrapper`),
+   * except to another alias, which loads it itself.
+   */
+  private getDependencyWrapper(
+    instanceWrapper: InstanceWrapper,
+    wrapper: InstanceWrapper,
+  ): InstanceWrapper {
+    return instanceWrapper.isAlias && !wrapper.isAlias
+      ? this.getAliasedWrapper(instanceWrapper)
+      : instanceWrapper;
+  }
+
+  /**
+   * A synchronous `lookupComponentInImports` for `getAliasedWrapper`: walks
+   * the imports the same way, without recording dependency metadata, so
+   * that the lookups of other dependencies keep the same number of awaits.
+   */
+  private lookupAliasedComponentInImports(
+    moduleRef: Module,
+    name: InjectionToken,
+    moduleRegistry: Set<string>,
+    isTraversing?: boolean,
+  ): InstanceWrapper | undefined {
+    const imports = moduleRef.imports || new Set<Module>();
+    for (const relatedModule of imports) {
+      if (!relatedModule) {
+        continue;
+      }
+      if (isTraversing && !moduleRef.exports.has(relatedModule.metatype)) {
+        continue;
+      }
+      if (moduleRegistry.has(relatedModule.id)) {
+        continue;
+      }
+      this.printLookingForProviderLog(name, relatedModule);
+      moduleRegistry.add(relatedModule.id);
+
+      const { providers, exports } = relatedModule;
+      if (!exports.has(name) || !providers.has(name)) {
+        const instanceRef = this.lookupAliasedComponentInImports(
+          relatedModule,
+          name,
+          moduleRegistry,
+          true,
+        );
+        if (instanceRef) {
+          return instanceRef;
+        }
+        continue;
+      }
+      this.printFoundInModuleLog(name, relatedModule);
+      return providers.get(name)!;
+    }
+    return undefined;
   }
 
   public async resolveProperties<T>(
