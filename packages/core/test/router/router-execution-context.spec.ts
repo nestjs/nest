@@ -772,7 +772,9 @@ describe('RouterExecutionContext', () => {
         expect(stream.destroyed).to.be.true;
       });
 
-      it('should destroy the stream of a StreamableFile an interceptor holds', async () => {
+      const disconnectWhileAnInterceptorHolds = async (
+        handlerResult: (file: StreamableFile) => unknown,
+      ) => {
         const stream = new PassThrough();
         let holding!: () => void;
         const held = new Promise<void>(resolve => (holding = resolve));
@@ -805,7 +807,7 @@ describe('RouterExecutionContext', () => {
           ]);
         const proxy = contextCreator.create(
           {} as any,
-          { apply: () => of(new StreamableFile(stream)) } as any,
+          { apply: () => handlerResult(new StreamableFile(stream)) } as any,
           '',
           '',
           0,
@@ -815,6 +817,29 @@ describe('RouterExecutionContext', () => {
         await held;
         request.socket.emit('close');
         await pending;
+        return stream;
+      };
+
+      it('should destroy the stream of a StreamableFile an interceptor holds', async () => {
+        const stream = await disconnectWhileAnInterceptorHolds(of);
+
+        expect(adapterReplySpy.called).to.be.false;
+        expect(stream.destroyed).to.be.true;
+      });
+
+      it('should destroy one emitted by an Observable the handler resolves to', async () => {
+        const stream = await disconnectWhileAnInterceptorHolds(async file =>
+          of(file),
+        );
+
+        expect(adapterReplySpy.called).to.be.false;
+        expect(stream.destroyed).to.be.true;
+      });
+
+      it('should destroy one emitted by an Observable a thenable of the handler resolves to', async () => {
+        const stream = await disconnectWhileAnInterceptorHolds(file => ({
+          then: (resolve: (value: unknown) => void) => resolve(of(file)),
+        }));
 
         expect(adapterReplySpy.called).to.be.false;
         expect(stream.destroyed).to.be.true;

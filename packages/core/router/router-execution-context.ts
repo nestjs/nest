@@ -61,6 +61,11 @@ import {
 } from './router-response-controller';
 import { HeaderStream } from './sse-stream';
 
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  value !== null &&
+  (typeof value === 'object' || typeof value === 'function') &&
+  typeof (value as PromiseLike<unknown>).then === 'function';
+
 export interface ParamProperties {
   index: number;
   type: RouteParamtypes | string;
@@ -174,15 +179,21 @@ export class RouterExecutionContext {
         if (!handlerObservable$) {
           return result;
         }
-        this.notifyIfObservable(result, handlerObservable$);
-        return isObservable(result)
-          ? result.pipe(
+        // Settled here, so that an Observable a promise resolves to is tapped
+        // like one the handler returns as it is. The `then()` of a thenable
+        // (e.g. a lazy query builder) is still called once, as its value is
+        // returned in its place.
+        const value = isThenable(result) ? await result : result;
+        this.notifyIfObservable(value, handlerObservable$);
+        return isObservable(value)
+          ? value.pipe(
               tap(
-                value =>
-                  value instanceof StreamableFile && handlerFiles.push(value),
+                emitted =>
+                  emitted instanceof StreamableFile &&
+                  handlerFiles.push(emitted),
               ),
             )
-          : result;
+          : value;
       };
 
     return async <TRequest, TResponse>(
@@ -582,14 +593,6 @@ export class RouterExecutionContext {
   ) {
     if (isObservable(result)) {
       handlerObservable$.next();
-    } else if (result instanceof Promise) {
-      // Only native promises are observed: calling `then()` on an arbitrary
-      // thenable (e.g. a lazy query builder) could repeat its side effects.
-      // This extra reaction leaves the handler's own promise chain untouched.
-      result.then(
-        value => isObservable(value) && handlerObservable$.next(),
-        () => undefined,
-      );
     }
   }
 
