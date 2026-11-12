@@ -288,6 +288,37 @@ describe('File upload (Fastify)', () => {
       }
     });
 
+    it('should remove the stored file when the client leaves a form the parser never finishes', async () => {
+      const { port } = app.getHttpServer().address() as AddressInfo;
+      const socket = connect(port, '127.0.0.1');
+      await once(socket, 'connect');
+      const boundary = '----nestboundary';
+      // The second part has a header line but no empty line after it, so
+      // @fastify/busboy never emits it, nor finishes the form.
+      const body =
+        `--${boundary}\r\n` +
+        'Content-Disposition: form-data; name="doc"; filename="stall.txt"\r\n' +
+        'Content-Type: text/plain\r\n\r\n' +
+        'data\r\n' +
+        `--${boundary}\r\n` +
+        'Content-Disposition: form-data; name="x"\r\n' +
+        `--${boundary}--\r\n`;
+      socket.write(
+        'POST /custom-disk HTTP/1.1\r\nHost: 127.0.0.1\r\n' +
+          `Content-Type: multipart/form-data; boundary=${boundary}\r\n` +
+          `Content-Length: ${Buffer.byteLength(body)}\r\n\r\n` +
+          body,
+      );
+      const stored = () =>
+        readdirSync(uploadDir).filter(name => name === 'custom-stall.txt');
+      try {
+        await vi.waitFor(() => expect(stored()).toHaveLength(1));
+      } finally {
+        socket.destroy();
+      }
+      await vi.waitFor(() => expect(stored()).toEqual([]));
+    });
+
     const upload = (i: number) => ({
       filename: `f${i}.bin`,
       contentType: 'application/octet-stream',

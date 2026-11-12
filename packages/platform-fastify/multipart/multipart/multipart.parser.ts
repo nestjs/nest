@@ -288,6 +288,35 @@ function readingAhead<T>(iterator: AsyncIterator<T>) {
   };
 }
 
+/**
+ * Rejects once the connection is closed. `@fastify/multipart` only fails the
+ * parts iterator when a request that was not read to its end is closed, and
+ * `@fastify/busboy` never finishes a form holding a part whose headers are
+ * not followed by an empty line: the parse loop would then wait after the
+ * client is gone, and the files stored so far would never be removed. The
+ * connection's `close` is watched, as the request's own is emitted once its
+ * body has been read. Returns the promise, which is only awaited while the
+ * parse loop waits for a part, and a function that stops watching.
+ */
+function rejectWhenDisconnected(raw: IncomingMessage) {
+  const socket = raw?.socket;
+  if (typeof socket?.once !== 'function') {
+    return { disconnected: new Promise<never>(() => undefined), stop() {} };
+  }
+  let onClose!: () => void;
+  const disconnected = new Promise<never>((_resolve, reject) => {
+    onClose = () =>
+      reject(
+        new BadRequestException(
+          busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FORM,
+        ),
+      );
+    socket.once('close', onClose);
+  });
+  disconnected.catch(() => undefined);
+  return { disconnected, stop: () => socket.off('close', onClose) };
+}
+
 export function removeFiles(
   storage: MultipartStorageEngine,
   req: FastifyRequest,
@@ -549,6 +578,7 @@ export async function processMultipart(
   const body = Object.create(null);
   setOnRequest(req, 'body', body);
   const stored: UploadedMultipartFile[] = [];
+  const disconnection = rejectWhenDisconnected(req.raw);
 
   try {
     const limits = resolveLimits(req, options);
@@ -556,7 +586,9 @@ export async function processMultipart(
     const iterator = req
       .parts(toBusboyConfig(limits, options))
       [Symbol.asyncIterator]();
-    const { nextPart, readAhead } = readingAhead(iterator);
+    const { nextPart: readPart, readAhead } = readingAhead(iterator);
+    const nextPart = () =>
+      Promise.race([readPart(), disconnection.disconnected]);
     for (
       let result = await nextPart();
       !result.done;
@@ -604,6 +636,8 @@ export async function processMultipart(
     await removeFiles(storage, req, stored);
     await drainRequest(req.raw);
     throw transformException(err);
+  } finally {
+    disconnection.stop();
   }
 
   switch (spec.strategy) {

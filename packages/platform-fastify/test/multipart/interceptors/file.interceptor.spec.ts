@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes.js';
 import { lastValueFrom, of, throwError } from 'rxjs';
-import { once } from 'events';
+import { EventEmitter, once } from 'events';
 import { Readable, Writable } from 'stream';
 import { FileInterceptor } from '../../../multipart/interceptors/file.interceptor.js';
 import { MISSING_PLUGIN_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
@@ -503,6 +503,61 @@ describe('FileInterceptor', () => {
           expect.objectContaining({ path: '/uploads/partial' }),
           expect.any(Function),
         );
+      });
+    });
+
+    describe('when the parser never finishes the form', () => {
+      it('should remove the stored files once the client disconnects', async () => {
+        const storage = {
+          _handleFile: vi.fn((_req, incoming, cb) =>
+            incoming.stream
+              .on('end', () => cb(null, { path: '/uploads/a' }))
+              .resume(),
+          ),
+          _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+        };
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const req = createFakeRequest([]);
+        const socket = new EventEmitter();
+        req.raw.socket = socket;
+        const stream = Readable.from([Buffer.from('x')]);
+        stream.on('error', () => undefined);
+        req.parts = () =>
+          (async function* () {
+            yield {
+              type: 'file',
+              fieldname: 'avatar',
+              filename: 'a.txt',
+              encoding: '7bit',
+              mimetype: 'text/plain',
+              file: stream,
+            };
+            // A part whose headers never end: busboy never emits it.
+            await new Promise(() => undefined);
+          })();
+        const result = target.intercept(createContext(req), handler);
+        await vi.waitFor(() => expect(storage._handleFile).toHaveBeenCalled());
+        await new Promise(resolve => setImmediate(resolve));
+        expect(storage._removeFile).not.toHaveBeenCalled();
+
+        socket.emit('close');
+        await expect(result).rejects.toEqual(
+          new BadRequestException('Multipart: Unexpected end of form'),
+        );
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          expect.objectContaining({ path: '/uploads/a' }),
+          expect.any(Function),
+        );
+      });
+
+      it('should stop watching the connection once the form is parsed', async () => {
+        const target = new (FileInterceptor('avatar'))();
+        const req = createFakeRequest([file('avatar')]);
+        const socket = new EventEmitter();
+        req.raw.socket = socket;
+        await target.intercept(createContext(req), handler);
+        expect(socket.listenerCount('close')).toBe(0);
       });
     });
 
