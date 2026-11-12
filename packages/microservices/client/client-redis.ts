@@ -29,6 +29,8 @@ let redisPackage = {} as any;
 export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
+  // The reply channels whose subscription Redis has not acknowledged yet
+  protected readonly pendingSubscriptions = new Set<string>();
   protected pubClient: Redis;
   protected subClient: Redis;
   protected connectionPromise: Promise<any>;
@@ -199,6 +201,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       this.routingMap.clear();
     }
     this.subscriptionsCount.clear();
+    this.pendingSubscriptions.clear();
   }
 
   public getClientOptions(): Partial<RedisOptions['options']> {
@@ -299,17 +302,38 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    let undoBookkeeping = () => {};
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
       const responseChannel = this.getReplyPattern(pattern);
-      let subscriptionsCount =
+
+      // Counted right away rather than once published, as in ClientMqtt: a
+      // request that waits for Redis to acknowledge the subscription depends
+      // on it as well. Torn down meanwhile, it gives the subscription up, and
+      // a concurrent request that finishes first does not unsubscribe.
+      const subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
+      this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
+      let isCounted = true;
+
+      undoBookkeeping = () => {
+        if (!isCounted) {
+          return;
+        }
+        isCounted = false;
+        this.setSubscriptionsCount(
+          responseChannel,
+          (this.subscriptionsCount.get(responseChannel) || 1) - 1,
+        );
+        this.routingMap.delete(packet.id);
+      };
 
       const publishPacket = () => {
-        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
-        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
+        if (!isCounted) {
+          return;
+        }
         this.routingMap.set(packet.id, callback);
         this.pubClient.publish(
           this.getRequestPattern(pattern),
@@ -317,20 +341,39 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         );
       };
 
-      if (subscriptionsCount <= 0) {
-        this.subClient.subscribe(
-          responseChannel,
-          (err: any) => !err && publishPacket(),
-        );
+      // Requests are published on another connection than the one that
+      // subscribes, so a request that finds the channel still waiting for its
+      // acknowledgement subscribes as well rather than publishing right away,
+      // which the reply could overtake.
+      if (
+        subscriptionsCount <= 0 ||
+        this.pendingSubscriptions.has(responseChannel)
+      ) {
+        this.pendingSubscriptions.add(responseChannel);
+        this.subClient.subscribe(responseChannel, (err: any) => {
+          if (err || !isCounted) {
+            // Torn down meanwhile, which gave the subscription up
+            return;
+          }
+          this.pendingSubscriptions.delete(responseChannel);
+          publishPacket();
+        });
       } else {
         publishPacket();
       }
 
       return () => {
+        if (!isCounted) {
+          return;
+        }
+        isCounted = false;
+        // Sent on the connection that subscribes, so after the SUBSCRIBE of
+        // a request that is torn down before its acknowledgement
         this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
     } catch (err) {
+      undoBookkeeping();
       callback({ err });
       return () => {};
     }
@@ -349,10 +392,17 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
   protected unsubscribeFromChannel(channel: string) {
     const subscriptionCount = this.subscriptionsCount.get(channel)!;
-    this.subscriptionsCount.set(channel, subscriptionCount - 1);
+    this.setSubscriptionsCount(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
       this.subClient.unsubscribe(channel);
+    }
+  }
+
+  private setSubscriptionsCount(channel: string, count: number) {
+    this.subscriptionsCount.set(channel, count);
+    if (count <= 0) {
+      this.pendingSubscriptions.delete(channel);
     }
   }
 }
