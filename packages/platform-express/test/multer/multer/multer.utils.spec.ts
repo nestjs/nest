@@ -3,7 +3,9 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import * as multer from 'multer';
 import {
   busboyExceptions,
@@ -13,13 +15,16 @@ import {
   applyDefaultLimits,
   mergeMulterOptions,
   removeFilesOnPipeRejection,
+  runMulter,
   transformException,
 } from '../../../multer/multer/multer.utils';
 import { MulterOptions } from '../../../multer/interfaces/multer-options.interface';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes';
 import { lastValueFrom, throwError } from 'rxjs';
 import * as sinon from 'sinon';
-import { Readable, Writable } from 'stream';
+import { PassThrough, Readable, Writable } from 'stream';
+
+chai.use(chaiAsPromised);
 
 describe('mergeMulterOptions', () => {
   it('should let local options override global options', () => {
@@ -281,6 +286,55 @@ describe('applyDefaultLimits', () => {
         .to.be.rejected.and.eventually.have.property('code')
         .that.equals('LIMIT_PART_COUNT');
     });
+  });
+});
+
+describe('runMulter', () => {
+  const response = () => new Writable({ write: (_chunk, _enc, cb) => cb() });
+  const tick = () => new Promise(resolve => setImmediate(resolve));
+
+  it('should settle with what multer calls back with', async () => {
+    expect(await runMulter((_req, _res, next) => next(), {}, response())).to.be
+      .undefined;
+    const error = new (multer as any).MulterError('LIMIT_FILE_SIZE', 'f');
+    await expect(
+      runMulter((_req, _res, next) => next(error), {}, response()),
+    ).to.be.rejectedWith(PayloadTooLargeException);
+  });
+
+  it('should destroy the request when the response is sent while multer is receiving it', async () => {
+    const req = new PassThrough();
+    const res = response();
+    const result = runMulter(
+      (r, _res, next) =>
+        r.once('close', () => next(new Error('Request closed'))),
+      req,
+      res,
+    );
+    res.end();
+    await expect(result).to.be.rejectedWith('Request closed');
+    expect(req.destroyed).to.be.true;
+  });
+
+  it('should leave a request whose body has been received', async () => {
+    const req = Object.assign(new PassThrough(), { complete: true });
+    const res = response();
+    let next!: (err?: any) => void;
+    const result = runMulter((_req, _res, n) => (next = n), req, res);
+    res.end();
+    await tick();
+    expect(req.destroyed).to.be.false;
+    next();
+    await result;
+  });
+
+  it('should stop watching the response once multer is done', async () => {
+    const req = new PassThrough();
+    const res = response();
+    await runMulter((_req, _res, next) => next(), req, res);
+    res.end();
+    await tick();
+    expect(req.destroyed).to.be.false;
   });
 });
 

@@ -1,11 +1,15 @@
 import { BadRequestException, CallHandler } from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { markRejectedByPipes } from '@nestjs/core/router/rejected-by-pipes';
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import { lastValueFrom, of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
-import { Writable } from 'stream';
+import { PassThrough, Writable } from 'stream';
 import { FileInterceptor } from '../../../multer/interceptors/file.interceptor';
+
+chai.use(chaiAsPromised);
 
 describe('FileInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -43,6 +47,25 @@ describe('FileInterceptor', () => {
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
         error => expect(error).to.not.be.undefined,
       );
+    });
+    it('should destroy the request when the response is sent while the upload is received', async () => {
+      const target = new (FileInterceptor('file'))();
+      (target as any).multer = {
+        single: () => (r, _res, next) =>
+          r.once('close', () => next(new Error('Request closed'))),
+      };
+      const req = new PassThrough();
+      const res = new Writable({ write: (_chunk, _encoding, cb) => cb() });
+
+      const result = target.intercept(
+        new ExecutionContextHost([req, res]),
+        handler,
+      );
+      // e.g. a timeout interceptor bound earlier answers meanwhile
+      res.end();
+
+      await expect(result).to.be.rejectedWith('Request closed');
+      expect(req.destroyed).to.be.true;
     });
     it('should remove the stored file when the pipes reject the request', async () => {
       const file = { fieldname: 'file' };

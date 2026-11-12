@@ -15,7 +15,7 @@ import { MulterOptions } from '../interfaces/multer-options.interface';
 import {
   applyDefaultLimits,
   mergeMulterOptions,
-  transformException,
+  runMulter,
 } from '../multer/multer.utils';
 
 type MulterInstance = any;
@@ -47,15 +47,7 @@ export function NoFilesInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
-      await new Promise<void>((resolve, reject) =>
-        this.multer.none()(ctx.getRequest(), ctx.getResponse(), (err: any) => {
-          if (err) {
-            const error = transformException(err);
-            return reject(error);
-          }
-          resolve();
-        }),
-      );
+      await runMulter(this.multer.none(), ctx.getRequest(), ctx.getResponse());
       return next.handle();
     }
   }
