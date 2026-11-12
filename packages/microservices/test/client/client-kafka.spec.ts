@@ -920,6 +920,33 @@ describe('ClientKafka', () => {
         expect(first.headers).toEqual({ 'x-request-id': 'trace-1' });
         expect(second.headers).toEqual({ 'x-request-id': 'own-id' });
       });
+
+      it('should not send the headers that ask for a reply', async () => {
+        const send = vi.fn().mockResolvedValue([]);
+        vi.spyOn(client as any, 'producer', 'get').mockReturnValue({ send });
+
+        await lastValueFrom(
+          client.emitBatch(topic, {
+            messages: [
+              { value: 'a' },
+              {
+                value: 'b',
+                headers: {
+                  [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+                  [KafkaHeaders.REPLY_TOPIC]: 'other.topic',
+                  [KafkaHeaders.REPLY_PARTITION]: '0',
+                },
+              },
+            ],
+          }),
+        );
+
+        const [first, second] = send.mock.calls[0][0].messages;
+        expect(first.headers).toEqual({});
+        expect(second.headers).toEqual({
+          [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+        });
+      });
     });
 
     it('should return Observable with error', () => {
@@ -1009,6 +1036,50 @@ describe('ClientKafka', () => {
         tenant: 'acme',
       });
       expect(record.headers).toEqual({ 'x-request-id': 'own-id' });
+    });
+
+    it('should not send the headers that ask for a reply', async () => {
+      vi.spyOn(client as any, '_producer', 'get').mockReturnValue({
+        send: sendSpy,
+      });
+      // As a gateway forwards it, with a "value" of the sender's choosing
+      const forwarded = {
+        value: { item: 'book' },
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+          [KafkaHeaders.REPLY_TOPIC]: 'other.topic',
+          [KafkaHeaders.REPLY_PARTITION]: '0',
+          'x-origin': 'gateway',
+        },
+      };
+
+      await client['dispatchEvent']({ pattern: topic, data: forwarded });
+
+      const sentMessage = sendSpy.mock.calls[0][0].messages[0];
+      // ServerKafka handles a message without a reply topic as an event
+      expect(sentMessage.headers).toEqual({
+        [KafkaHeaders.CORRELATION_ID]: 'chosen-id',
+        'x-origin': 'gateway',
+      });
+      expect(forwarded.headers).toHaveProperty(KafkaHeaders.REPLY_TOPIC);
+    });
+
+    it('should not send the headers that ask for a reply when metadata is merged in', async () => {
+      vi.spyOn(client as any, '_producer', 'get').mockReturnValue({
+        send: sendSpy,
+      });
+
+      await client['dispatchEvent']({
+        pattern: topic,
+        data: {
+          value: 'data',
+          headers: { [KafkaHeaders.REPLY_TOPIC]: 'other.topic' },
+        },
+        metadata: { 'x-request-id': 'trace-1' },
+      });
+
+      const sentMessage = sendSpy.mock.calls[0][0].messages[0];
+      expect(sentMessage.headers).toEqual({ 'x-request-id': 'trace-1' });
     });
   });
 

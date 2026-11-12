@@ -457,7 +457,9 @@ export class ClientKafka
       topic: pattern,
       // The batch is a single packet, so its metadata goes on every message
       messages: outgoingEvents.map(outgoingEvent =>
-        this.mergeMetadata(outgoingEvent, packets.metadata),
+        this.withoutReplyHeaders(
+          this.mergeMetadata(outgoingEvent, packets.metadata),
+        ),
       ),
       ...(this.options.send || {}),
     };
@@ -467,9 +469,11 @@ export class ClientKafka
 
   protected async dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const outgoingEvent = this.mergeMetadata(
-      await this.serializer.serialize(packet.data, { pattern }),
-      packet.metadata,
+    const outgoingEvent = this.withoutReplyHeaders(
+      this.mergeMetadata(
+        await this.serializer.serialize(packet.data, { pattern }),
+        packet.metadata,
+      ),
     );
     const message = {
       topic: pattern,
@@ -554,6 +558,25 @@ export class ClientKafka
       return message;
     }
     return { ...message, headers: { ...metadata, ...message.headers } };
+  }
+
+  /**
+   * Returns a copy of an event's message without the headers that make
+   * ServerKafka take a message with a correlation id for a request, and
+   * publish its response to the topic they name. The headers of an event can
+   * come from the data it forwards (an object with a "value" is sent as the
+   * message it describes), so they cannot ask for a reply.
+   */
+  protected withoutReplyHeaders<T extends { headers?: Record<string, any> }>(
+    message: T,
+  ): T {
+    if (!message?.headers) {
+      return message;
+    }
+    const headers = { ...message.headers };
+    delete headers[KafkaHeaders.REPLY_TOPIC];
+    delete headers[KafkaHeaders.REPLY_PARTITION];
+    return { ...message, headers };
   }
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
