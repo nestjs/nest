@@ -128,7 +128,8 @@ export class InstanceWrapper<T = any> {
   private rootInquirer: InstanceWrapper | undefined;
 
   constructor(
-    metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
+    metadata: Partial<InstanceWrapper<T>> &
+      Partial<InstancePerContext<T>> & { [INSTANCE_ID_SYMBOL]?: string } = {},
   ) {
     this.initialize(metadata);
     if (this.isNewable()) {

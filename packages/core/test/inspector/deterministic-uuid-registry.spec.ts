@@ -30,6 +30,27 @@ describe('DeterministicUuidRegistry', () => {
       const id2 = DeterministicUuidRegistry.get('same-string');
       expect(id1).not.toBe(id2);
     });
+
+    it('should keep returning unique ids for the same input without exhausting the call stack', () => {
+      const ids = new Set<string>();
+      for (let i = 0; i < 20_000; i++) {
+        ids.add(DeterministicUuidRegistry.get('same-string'));
+      }
+      expect(ids.size).toBe(20_000);
+    });
+
+    it('should return the ids of the first free suffixes, in order', () => {
+      const ids = Array.from({ length: 3 }, () =>
+        DeterministicUuidRegistry.get('seq'),
+      );
+      DeterministicUuidRegistry.clear();
+
+      expect(ids).toEqual([
+        DeterministicUuidRegistry.get('seq'),
+        DeterministicUuidRegistry.get('seq_1'),
+        DeterministicUuidRegistry.get('seq_2'),
+      ]);
+    });
   });
 
   describe('clear', () => {
