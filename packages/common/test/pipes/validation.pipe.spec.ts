@@ -815,6 +815,60 @@ describe('ValidationPipe', () => {
         });
       });
     });
+    describe('when the value holds a sparse array', () => {
+      class TagsDto {
+        @IsArray()
+        @IsString({ each: true })
+        tags: string[];
+      }
+      const tagsMetadata: ArgumentMetadata = {
+        type: 'body',
+        metatype: TagsDto,
+        data: '',
+      };
+      const sparse = () => {
+        const tags: string[] = [];
+        tags[1000] = 'a';
+        return tags;
+      };
+
+      it('should return the array that was validated, without its gaps', async () => {
+        for (const options of [{}, { transform: true }, { whitelist: true }]) {
+          target = new ValidationPipe(options);
+          const value = { tags: sparse() };
+          const result = await target.transform(value, tagsMetadata);
+          expect(result.tags).toEqual(['a']);
+          expect(result.tags).toHaveLength(1);
+        }
+      });
+
+      it('should close the gaps in place, as it strips prototype keys', async () => {
+        target = new ValidationPipe({ transform: true });
+        const value = { tags: sparse() };
+        const { tags } = value;
+        await target.transform(value, tagsMetadata);
+        expect(tags).toEqual(['a']);
+        expect(value.tags).toBe(tags);
+      });
+
+      it('should validate the items that are present', async () => {
+        target = new ValidationPipe();
+        const tags: unknown[] = [];
+        tags[3] = 1;
+        await expect(
+          target.transform({ tags }, tagsMetadata),
+        ).rejects.toBeDefined();
+      });
+
+      it('should let a subclass override closeArrayGaps', async () => {
+        class KeepGapsPipe extends ValidationPipe {
+          protected override closeArrayGaps() {}
+        }
+        target = new KeepGapsPipe();
+        const result = await target.transform({ tags: sparse() }, tagsMetadata);
+        expect(result.tags).toHaveLength(1001);
+      });
+    });
     describe("when type doesn't match", () => {
       describe('when validation rules are applied', () => {
         it('should throw an error', async () => {
