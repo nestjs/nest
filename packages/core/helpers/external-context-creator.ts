@@ -160,6 +160,13 @@ export class ExternalContextCreator {
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
+    this.contextUtils.warnOnMissingParamtypes(
+      instance,
+      methodName,
+      paramtypes,
+      pipes,
+      paramsOptions,
+    );
 
     const fnCanActivate = options.guards
       ? this.createGuardsFn(guards, instance, callback, contextType)

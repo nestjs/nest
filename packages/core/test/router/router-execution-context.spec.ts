@@ -11,14 +11,24 @@ import {
   throwError,
 } from 'rxjs';
 import { PassThrough, Readable, Writable } from 'stream';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  PARAMTYPES_METADATA,
+} from '../../../common/constants.js';
+import {
+  Body,
+  Req,
+} from '../../../common/decorators/http/route-params.decorator.js';
 import { Sse } from '../../../common/decorators/http/sse.decorator.js';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
 import {
   HttpException,
   HttpStatus,
+  Logger,
+  RequestMethod,
   RouteParamMetadata,
   StreamableFile,
+  ValidationPipe,
 } from '../../../common/index.js';
 import { AbstractHttpAdapter } from '../../adapters/index.js';
 import { ApplicationConfig } from '../../application-config.js';
@@ -86,6 +96,49 @@ describe('RouterExecutionContext', () => {
     );
   });
   describe('create', () => {
+    describe('when the handler has no parameter types', () => {
+      it('should warn once that a ValidationPipe cannot validate its parameters', () => {
+        class TypelessController {
+          public create(@Body() body: object, @Req() req: object) {}
+        }
+        // What a compiler that emits no decorator metadata leaves
+        Reflect.deleteMetadata(
+          PARAMTYPES_METADATA,
+          TypelessController.prototype,
+          'create',
+        );
+        const applicationConfig = new ApplicationConfig();
+        applicationConfig.addGlobalPipe(new ValidationPipe());
+        contextCreator = new RouterExecutionContext(
+          factory,
+          new PipesContextCreator(new NestContainer(), applicationConfig),
+          consumer,
+          new GuardsContextCreator(new NestContainer()),
+          guardsConsumer,
+          new InterceptorsContextCreator(new NestContainer()),
+          interceptorsConsumer,
+          adapter,
+        );
+        const warn = vi
+          .spyOn(Logger.prototype, 'warn')
+          .mockImplementation(() => {});
+
+        const instance = new TypelessController();
+        for (let i = 0; i < 2; i++) {
+          contextCreator.create(
+            instance,
+            instance.create,
+            'create',
+            '',
+            RequestMethod.POST,
+          );
+        }
+        expect(warn).toHaveBeenCalledOnce();
+        expect(warn.mock.calls[0][0]).toContain('TypelessController.create()');
+        warn.mockRestore();
+      });
+    });
+
     it('should pass an unresolved Promise<Observable> to the SSE response handler', async () => {
       const result = Promise.resolve(of('test'));
       const fnHandleResponse = vi.fn().mockResolvedValue(undefined);

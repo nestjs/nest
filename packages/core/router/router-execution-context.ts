@@ -154,6 +154,13 @@ export class RouterExecutionContext {
       contextId,
       inquirerId,
     );
+    this.contextUtils.warnOnMissingParamtypes(
+      instance,
+      methodName,
+      paramtypes,
+      pipes,
+      paramsOptions.filter(({ type }) => this.isPipeable(type)),
+    );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
