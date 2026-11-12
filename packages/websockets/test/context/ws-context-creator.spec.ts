@@ -251,5 +251,70 @@ describe('WsContextCreator', () => {
         expect(pipesFn).to.be.a('function');
       });
     });
+    describe('when the pipe of a parameter fails', () => {
+      it('should fail once the pipes of the other parameters have settled', async () => {
+        const error = new WsException('Validation failed');
+        let finishLookup!: () => void;
+        const lookup = new Promise<string>(resolve => {
+          finishLookup = () => resolve('entity');
+        });
+        const param = (index: number, transform: () => unknown) => ({
+          index,
+          type: 'test',
+          data: null!,
+          pipes: [{ transform }],
+          extractValue: () => null,
+        });
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [param(1, () => Promise.reject(error)), param(2, () => lookup)],
+        )!;
+
+        let settled = false;
+        const result = pipesFn([]).finally(() => (settled = true));
+        result.catch(() => undefined);
+        await new Promise(resolve => setImmediate(resolve));
+        expect(settled).to.be.false;
+
+        finishLookup();
+        let failure: unknown;
+        await result.catch(err => (failure = err));
+        expect(failure).to.equal(error);
+      });
+
+      it('should fail with the error that came first', async () => {
+        const first = new Error('first');
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [
+            {
+              index: 1,
+              type: 'test',
+              data: null!,
+              pipes: [
+                {
+                  transform: () =>
+                    new Promise((_, reject) =>
+                      setImmediate(() => reject(new Error('second'))),
+                    ),
+                },
+              ],
+              extractValue: () => null,
+            },
+            {
+              index: 2,
+              type: 'test',
+              data: null!,
+              pipes: [{ transform: () => Promise.reject(first) }],
+              extractValue: () => null,
+            },
+          ],
+        )!;
+
+        let failure: unknown;
+        await pipesFn([]).catch(err => (failure = err));
+        expect(failure).to.equal(first);
+      });
+    });
   });
 });
