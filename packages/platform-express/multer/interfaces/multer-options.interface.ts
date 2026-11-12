@@ -39,6 +39,12 @@ export interface MulterOptions {
   /** Default character set for part header values (e.g. filename) (Default: 'latin1') */
   defParamCharset?: string;
 
+  /**
+   * Decides which files are stored. Call `callback(null, false)` to skip a
+   * file, or `callback(error, false)` to fail the request with `error`. An
+   * error the filter throws, or an async filter rejects with, before it
+   * calls back fails the request in the same way.
+   */
   fileFilter?(
     req: any,
     file: {
