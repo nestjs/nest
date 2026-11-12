@@ -12,6 +12,7 @@ import {
   FastifyRequest,
   fastify,
 } from 'fastify';
+import { EventEmitter } from 'events';
 import * as http from 'http';
 import { inject } from 'light-my-request';
 import { AddressInfo } from 'net';
@@ -618,6 +619,33 @@ describe('FastifyAdapter', () => {
       fastifyAdapter.reply(reply as any, new StreamableFile(source));
 
       expect(source.destroyed).to.be.true;
+    });
+
+    it('should destroy the streams of pipelined responses when the connection closes', async () => {
+      // Responses queued behind an unread one on the same connection: they
+      // have no socket of their own, and may never be closed themselves
+      const connection = Object.assign(new EventEmitter(), {
+        destroyed: false,
+      });
+      const sources = Array.from({ length: 3 }, () => new PassThrough());
+      for (const source of sources) {
+        const reply = {
+          ...createReply(),
+          raw: Object.assign(new PassThrough(), {
+            req: { method: 'GET', socket: connection },
+          }),
+        };
+        fastifyAdapter.reply(reply as any, new StreamableFile(source));
+        source.write('partial');
+      }
+      expect(connection.listenerCount('close')).to.equal(1);
+
+      connection.emit('close');
+
+      for (let i = 0; i < 10 && !sources.every(s => s.destroyed); i++) {
+        await new Promise(resolve => setImmediate(resolve));
+      }
+      expect(sources.every(source => source.destroyed)).to.be.true;
     });
 
     // e.g. the response middleware gets, and the exception filters of its
