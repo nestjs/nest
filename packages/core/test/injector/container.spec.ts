@@ -175,6 +175,45 @@ describe('NestContainer', () => {
       await container.addModule(GlobalTestModule as any, []);
       expect(addGlobalModuleSpy).toHaveBeenCalledOnce();
     });
+
+    describe('when module ids are deep hashes', () => {
+      @Module({})
+      class SnowflakeModule {}
+      @Module({})
+      class AuthModule {}
+
+      it.each([
+        ['bigints', () => ({ epoch: 1288834974657n })],
+        [
+          'values that cannot be serialized',
+          () => ({
+            toJSON() {
+              throw new Error('Not serializable');
+            },
+          }),
+        ],
+      ])(
+        'should add the dynamic modules of different classes whose metadata holds %s',
+        async (_, createOptions) => {
+          const deepHashContainer = new NestContainer(undefined, {
+            moduleIdGeneratorAlgorithm: 'deep-hash',
+          });
+          const dynamicModules = [SnowflakeModule, AuthModule].map(module => ({
+            module,
+            providers: [{ provide: 'OPTIONS', useValue: createOptions() }],
+          }));
+
+          for (const dynamicModule of dynamicModules) {
+            await deepHashContainer.addModule(dynamicModule, []);
+          }
+
+          const metatypes = [...deepHashContainer.getModules().values()].map(
+            moduleRef => moduleRef.metatype,
+          );
+          expect(metatypes).toEqual([SnowflakeModule, AuthModule]);
+        },
+      );
+    });
   });
 
   describe('replaceModule', () => {

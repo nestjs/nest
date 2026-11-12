@@ -32,6 +32,75 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
 
       expect(token1).toEqual(token2);
     });
+
+    it('should tell apart dynamic modules holding different bigints', () => {
+      const token1 = factory.createForDynamic(Module, {
+        providers: [{ provide: 'Options', useValue: { limit: 10n } }],
+      });
+      const token2 = factory.createForDynamic(Module, {
+        providers: [{ provide: 'Options', useValue: { limit: 10n } }],
+      });
+      const token3 = factory.createForDynamic(Module, {
+        providers: [{ provide: 'Options', useValue: { limit: 1000n } }],
+      });
+
+      expect(token1).toEqual(token2);
+      expect(token1).not.toEqual(token3);
+    });
+
+    describe('when the dynamic metadata cannot be serialized', () => {
+      class OtherModule {}
+
+      const createMetadata = () => ({
+        providers: [
+          {
+            provide: 'Options',
+            useValue: {
+              toJSON() {
+                throw new Error('not serializable');
+              },
+            },
+          },
+        ],
+      });
+
+      it('should not give modules of different classes the same token', () => {
+        const metadata = createMetadata();
+        const dynamicModule = { module: Module, ...metadata };
+        const otherDynamicModule = { module: OtherModule, ...metadata };
+
+        expect(
+          factory.createForDynamic(Module, metadata, dynamicModule),
+        ).not.toEqual(
+          factory.createForDynamic(OtherModule, metadata, otherDynamicModule),
+        );
+      });
+
+      it('should identify the dynamic module by reference', () => {
+        const metadata = createMetadata();
+        const dynamicModule = { module: Module, ...metadata };
+        const otherDynamicModule = { module: Module, ...metadata };
+
+        const token1 = factory.createForDynamic(
+          Module,
+          { ...metadata },
+          dynamicModule,
+        );
+        const token2 = factory.createForDynamic(
+          Module,
+          { ...metadata },
+          dynamicModule,
+        );
+        const token3 = factory.createForDynamic(
+          Module,
+          { ...metadata },
+          otherDynamicModule,
+        );
+
+        expect(token1).toEqual(token2);
+        expect(token1).not.toEqual(token3);
+      });
+    });
   });
 
   describe('getModuleName', () => {
@@ -100,6 +169,17 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
 
         expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
           '{"providers":[{"provide":"Options","useValue":{"map":{"Map":[["a",1]]},"set":{"Set":["b"]},"pattern":{"RegExp":"/c/i"}}}]}',
+        );
+      });
+      it('should serialize bigints in a dynamic metadata object', () => {
+        const metadata = {
+          providers: [
+            { provide: 'Options', useValue: { epoch: 1288834974657n } },
+          ],
+        };
+
+        expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
+          '{"providers":[{"provide":"Options","useValue":{"epoch":{"BigInt":"1288834974657"}}}]}',
         );
       });
       it('should fall back to empty objects for maps and sets holding a cycle', () => {
