@@ -629,6 +629,76 @@ describe('WsAdapter', () => {
         await new Promise(resolve => httpServer.close(resolve));
       }
     });
+
+    describe('when another upgrade listener is present', () => {
+      const upgrade = (
+        bytesWritten: number,
+        options?: { unclaimedUpgradeTimeout?: number },
+      ) => {
+        const httpServer = createServer();
+        const adapter = new WsAdapter(httpServer, options);
+        adapter.create(0, { path: '/live' });
+        // e.g. GraphQL subscriptions, which serve only their own path
+        httpServer.on('upgrade', () => undefined);
+        const socket = Object.assign(new EventEmitter(), {
+          writable: true,
+          bytesWritten,
+          destroy: vi.fn(),
+        });
+        const request = { url: '/unknown', headers: { host: 'localhost' } };
+        httpServer.emit('upgrade', request, socket, Buffer.alloc(0));
+        return { adapter, socket };
+      };
+
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should close the socket of an upgrade request that no listener claims after a delay', async () => {
+        const { adapter, socket } = upgrade(0);
+
+        expect(socket.destroy).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+
+        await adapter.dispose();
+      });
+
+      it('should wait for "unclaimedUpgradeTimeout" before closing an unclaimed socket', async () => {
+        const { adapter, socket } = upgrade(0, {
+          unclaimedUpgradeTimeout: 5000,
+        });
+
+        vi.advanceTimersByTime(4999);
+        expect(socket.destroy).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+
+        await adapter.dispose();
+      });
+
+      it('should leave an unclaimed socket open when "unclaimedUpgradeTimeout" is 0', async () => {
+        const { adapter, socket } = upgrade(0, { unclaimedUpgradeTimeout: 0 });
+
+        vi.runAllTimers();
+        expect(socket.destroy).not.toHaveBeenCalled();
+
+        await adapter.dispose();
+      });
+
+      it('should keep the socket of an upgrade request that another listener answered', async () => {
+        const { adapter, socket } = upgrade(129);
+
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+
+        await adapter.dispose();
+      });
+    });
   });
 
   describe('create (own port and path)', () => {
