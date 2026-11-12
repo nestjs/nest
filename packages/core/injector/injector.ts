@@ -92,6 +92,17 @@ interface ResolutionContext {
   effectiveInquirerId?: string;
 }
 
+/**
+ * Durable instances that may reference the placeholder of a provider whose
+ * deferred load failed, with the error (see `trackDurableDeferredLoad`).
+ * These instances live in instance wrappers that every injector of an
+ * application shares (the one of the application, the one of each
+ * `ModuleRef`, and those of microservices and gateways), so this is shared
+ * by all injectors too: an instance one of them knows to be built with a
+ * failed placeholder must not be handed out by another.
+ */
+const failedInstances = new WeakMap<InstancePerContext<unknown>, unknown>();
+
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
   private readonly instanceDecorator: (target: unknown) => unknown = (
@@ -108,20 +119,16 @@ export class Injector {
   /**
    * Deferred loads that are still running, per durable dependent of the
    * provider being loaded and per context of that dependent (see
-   * `trackDurableDeferredLoad`).
+   * `trackDurableDeferredLoad`). Like `deferredLoads`, these are kept per
+   * injector: a durable provider that resolves another one through its own
+   * `ModuleRef` while such a load runs must not wait for it, as the load may
+   * be waiting for that provider.
    */
   private readonly durableDeferredLoads = new WeakMap<
     InstanceWrapper,
     WeakMap<ContextId, Set<Promise<unknown>>>
   >();
-  /**
-   * Durable instances that may reference the placeholder of a provider whose
-   * deferred load failed, with the error (see `trackDurableDeferredLoad`).
-   */
-  private readonly failedInstances = new WeakMap<
-    InstancePerContext<unknown>,
-    unknown
-  >();
+  private readonly failedInstances = failedInstances;
 
   constructor(
     private readonly options?: {
@@ -669,9 +676,16 @@ export class Injector {
        */
       if (instanceHost.donePromise) {
         const deferredLoad = instanceHost.donePromise.then((err?: unknown) => {
-          // The placeholder handed out belongs to the load that failed
+          // The placeholder handed out belongs to the load that failed...
           if (err) {
             throw err;
+          }
+          // ...or to an instance built with a provider whose deferred load
+          // failed (see `trackDurableDeferredLoad`). Loading the provider
+          // would build it again (see `getInstanceHost`), which may defer
+          // this load again and fail the same way, without end
+          if (this.failedInstances.has(instanceHost)) {
+            throw this.failedInstances.get(instanceHost);
           }
           return this.loadProvider(
             instanceWrapper,

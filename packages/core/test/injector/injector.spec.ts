@@ -1301,6 +1301,98 @@ describe('Injector', () => {
           await expect(injector.waitForDeferredLoads(nextContextId)).to
             .eventually.be.undefined;
         });
+
+        it('should make the loads deferred for a dependent of the provider reject instead of loading it again when loadProvider throws', async () => {
+          const error = new Error('Test error');
+          const loadStub = sinon.stub(injector, 'loadProvider');
+          loadStub.callsFake(() => Promise.resolve());
+          loadStub.onFirstCall().callsFake(() => Promise.reject(error));
+          const settlementSignal = new SettlementSignal();
+          // still being built for the tenant, and not awaited by its dependents
+          dependent.forwardRef = true;
+          dependent.setInstanceByContextId(tenant, {
+            instance: {},
+            isResolved: false,
+            isPending: true,
+            donePromise: settlementSignal.asPromise(),
+          });
+
+          const contextId = createContextId();
+          await injector.resolveComponentHost(module, wrapper, {
+            contextId,
+            inquirer: dependent,
+          });
+          await expect(
+            injector.waitForDeferredLoads(contextId),
+          ).to.be.rejectedWith(error);
+          // defers the load of the dependent until it is built
+          const waitingContextId = createContextId();
+          await injector.resolveComponentHost(module, dependent, {
+            contextId: waitingContextId,
+          });
+          dependent.getInstanceByContextId(tenant).isResolved = true;
+          settlementSignal.complete();
+
+          await expect(
+            injector.waitForDeferredLoads(waitingContextId),
+          ).to.be.rejectedWith(error);
+          expect(loadStub.calledOnce).to.be.true;
+        });
+
+        describe('and a dependent of the provider is used through another injector', () => {
+          // e.g., the one of a `ModuleRef`, a gateway or a microservice
+          let anotherInjector: Injector;
+
+          beforeEach(() => {
+            anotherInjector = new Injector();
+          });
+
+          it('should load the dependent again for the next context when loadProvider throws', async () => {
+            const error = new Error('Test error');
+            sinon
+              .stub(injector, 'loadProvider')
+              .callsFake(() => Promise.reject(error));
+            const loadStub = sinon
+              .stub(anotherInjector, 'loadProvider')
+              .callsFake(() => Promise.resolve());
+
+            const contextId = createContextId();
+            await injector.resolveComponentHost(module, wrapper, {
+              contextId,
+              inquirer: dependent,
+            });
+            await expect(
+              injector.waitForDeferredLoads(contextId),
+            ).to.be.rejectedWith(error);
+
+            const nextContextId = createContextId();
+            await anotherInjector.resolveComponentHost(module, dependent, {
+              contextId: nextContextId,
+            });
+
+            expect(loadStub.lastCall.args).to.deep.equal([
+              dependent,
+              module,
+              { contextId: nextContextId },
+            ]);
+          });
+
+          it('should not make its "waitForDeferredLoads" wait for the loads deferred by the other injector for the same context', async () => {
+            sinon
+              .stub(injector, 'loadProvider')
+              .callsFake(() => new Promise(() => {}));
+
+            const contextId = createContextId();
+            await injector.resolveComponentHost(module, wrapper, {
+              contextId,
+              inquirer: dependent,
+            });
+
+            expect(anotherInjector.hasDeferredLoads(contextId)).to.be.false;
+            await expect(anotherInjector.waitForDeferredLoads(contextId)).to
+              .eventually.be.undefined;
+          });
+        });
       });
     });
   });
