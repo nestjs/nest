@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { GUARDS_METADATA } from '../../common/constants';
 import { Controller } from '../../common/decorators/core/controller.decorator';
 import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
+import { Param } from '../../common/decorators/http/route-params.decorator';
 import { Module } from '../../common/decorators/modules/module.decorator';
 import { Scope } from '../../common/interfaces';
 import { ApplicationConfig } from '../application-config';
@@ -308,6 +309,74 @@ describe('DependenciesScanner', () => {
       expect(
         moduleRef.providers.get('GUARDED')!.getEnhancersMetadata(),
       ).to.deep.equal([enhancerWrapper]);
+    });
+  });
+
+  describe('reflectParamInjectables', () => {
+    class ParamPipe {
+      transform(value: unknown) {
+        return value;
+      }
+    }
+    class OwnPipe extends ParamPipe {}
+
+    class Routes {
+      public findOne(@Param('id', ParamPipe) id: unknown) {}
+    }
+    // What the TypeScript handbook's `applyMixins()` does
+    const applyRoutes = (host: Function) =>
+      Object.defineProperties(
+        host.prototype,
+        Object.getOwnPropertyDescriptors(Routes.prototype),
+      );
+
+    const getInjectables = async (controller: Function) => {
+      @Module({ controllers: [controller as any] })
+      class HostModule {}
+
+      await scanner.scan(HostModule);
+      return [...container.getModules().values()].find(
+        ({ metatype }) => metatype === HostModule,
+      )!.injectables;
+    };
+
+    it('should register the pipes of the parameters of an inherited handler', async () => {
+      @Controller()
+      class InheritedController extends Routes {}
+
+      const injectables = await getInjectables(InheritedController);
+      expect(injectables.get(ParamPipe)).to.be.instanceOf(InstanceWrapper);
+    });
+
+    it('should register the pipes of the parameters of handlers copied by a mixin helper and of the own ones', async () => {
+      @Controller()
+      class MixedInController {
+        public own(@Param('id', OwnPipe) id: unknown) {}
+      }
+      applyRoutes(MixedInController);
+
+      const injectables = await getInjectables(MixedInController);
+      expect(injectables.get(ParamPipe)).to.be.instanceOf(InstanceWrapper);
+      expect(injectables.get(OwnPipe)).to.be.instanceOf(InstanceWrapper);
+    });
+
+    it('should register the pipes of the parameters when a class decorator returned a proxy', async () => {
+      const Proxied = (): ClassDecorator => (target: any) => {
+        const proxy = new Proxy(target, {});
+        Reflect.getMetadataKeys(target).forEach(key =>
+          Reflect.defineMetadata(key, Reflect.getMetadata(key, target), proxy),
+        );
+        return proxy;
+      };
+
+      @Proxied()
+      @Controller()
+      class ProxiedController {
+        public findOne(@Param('id', OwnPipe) id: unknown) {}
+      }
+
+      const injectables = await getInjectables(ProxiedController);
+      expect(injectables.get(OwnPipe)).to.be.instanceOf(InstanceWrapper);
     });
   });
 

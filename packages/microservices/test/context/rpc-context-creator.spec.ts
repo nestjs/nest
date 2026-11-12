@@ -19,6 +19,7 @@ import {
   RpcContextCreator,
 } from '../../context/rpc-context-creator';
 import { RpcProxy } from '../../context/rpc-proxy';
+import { Payload } from '../../decorators/payload.decorator';
 import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
 import { RpcParamsFactory } from '../../factories/rpc-params-factory';
 import { RpcException } from '../../index';
@@ -166,6 +167,26 @@ describe('RpcContextCreator', () => {
           error = err;
         }
         expect(error).to.be.instanceOf(RpcException);
+      });
+      it('should apply the pipes bound to the parameters of its own handlers', async () => {
+        class Mixin {}
+        class MixedIn {
+          handle(@Payload({ transform: () => 'piped' }) data: string) {
+            return of(data);
+          }
+        }
+        // What mixin helpers copying every property of the prototype do
+        MixedIn.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: MixedIn });
+
+        const controller = new MixedIn();
+        const proxy = contextCreator.create(
+          controller,
+          controller.handle,
+          module,
+          'handle',
+        );
+        expect(await lastValueFrom(await proxy('data'))).to.equal('piped');
       });
     });
   });

@@ -15,6 +15,7 @@ import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 import { WsContextCreator } from '../../context/ws-context-creator';
 import { WsProxy } from '../../context/ws-proxy';
+import { MessageBody } from '../../decorators/message-body.decorator';
 import { WsParamtype } from '../../enums/ws-paramtype.enum';
 import { WsParamsFactory } from '../../factories/ws-params-factory';
 import { WsException } from '../../index';
@@ -158,6 +159,26 @@ describe('WsContextCreator', () => {
           error = err;
         }
         expect(error).to.be.instanceOf(WsException);
+      });
+      it('should apply the pipes bound to the parameters of its own handlers', async () => {
+        class Mixin {}
+        class MixedIn {
+          handle(@MessageBody({ transform: () => 'piped' }) data: string) {
+            return data;
+          }
+        }
+        // What mixin helpers copying every property of the prototype do
+        MixedIn.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: MixedIn });
+
+        const gateway = new MixedIn();
+        const proxy = contextCreator.create(
+          gateway,
+          gateway.handle,
+          module,
+          'handle',
+        );
+        expect(await proxy(null, 'data')).to.equal('piped');
       });
     });
   });

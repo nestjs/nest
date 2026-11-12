@@ -1,8 +1,15 @@
 import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { Body, createParamDecorator, Request } from '@nestjs/common/decorators';
+import {
+  Body,
+  createParamDecorator,
+  Request,
+  Res,
+} from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { ParseIntPipe } from '@nestjs/common/pipes';
 import { expect } from 'chai';
 import { ROUTE_ARGS_METADATA } from '../../../common/constants';
+import { registerClassRef } from '../../helpers/class-ref-registry';
 import { ContextUtils } from '../../helpers/context-utils';
 import { ExecutionContextHost } from '../../helpers/execution-context-host';
 
@@ -62,6 +69,53 @@ describe('ContextUtils', () => {
       expect(metadata[custom].index).to.be.eq(2);
       expect(metadata[custom].data).to.be.eq(undefined);
       expect(metadata[custom].factory).to.be.a('function');
+    });
+  });
+  describe('when a mixin helper overwrote the "constructor" of the host prototype', () => {
+    class MixinDto {}
+    class HostDto {}
+    class Mixin {
+      public mixedIn(@Request() req, @Body() body: MixinDto) {}
+    }
+    class Host {
+      public own(
+        @Body(ParseIntPipe) body: HostDto,
+        @Res({ passthrough: true }) res,
+      ) {}
+    }
+    // What the TypeScript handbook's `applyMixins()` does
+    Object.defineProperties(
+      Host.prototype,
+      Object.getOwnPropertyDescriptors(Mixin.prototype),
+    );
+    registerClassRef(Host);
+
+    it('should reflect the parameters of a handler that the host declares', () => {
+      const metadata = contextUtils.reflectCallbackMetadata(
+        new Host(),
+        'own',
+        ROUTE_ARGS_METADATA,
+      );
+      expect(metadata[`${RouteParamtypes.BODY}:0`].pipes).to.deep.equal([
+        ParseIntPipe,
+      ]);
+      expect(contextUtils.reflectPassthrough(new Host(), 'own')).to.equal(true);
+      expect(
+        contextUtils.reflectCallbackParamtypes(new Host(), 'own'),
+      ).to.deep.equal([HostDto, Object]);
+    });
+    it('should reflect the parameters of a handler copied from the mixin', () => {
+      const metadata = contextUtils.reflectCallbackMetadata(
+        new Host(),
+        'mixedIn',
+        ROUTE_ARGS_METADATA,
+      );
+      expect(Object.keys(metadata).sort()).to.deep.equal(
+        [`${RouteParamtypes.REQUEST}:0`, `${RouteParamtypes.BODY}:1`].sort(),
+      );
+      expect(
+        contextUtils.reflectCallbackParamtypes(new Host(), 'mixedIn'),
+      ).to.deep.equal([Object, MixinDto]);
     });
   });
   describe('getArgumentsLength', () => {

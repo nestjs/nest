@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { CONTROLLER_ID_KEY } from '../injector/constants';
 import { ContextId } from '../injector/instance-wrapper';
 import { HeaderStream } from '../router/sse-stream';
+import { getClassRef } from './class-ref-registry';
 import { ParamProperties } from './context-utils';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
@@ -61,7 +62,9 @@ export class HandlerMetadataStorage<
   }
 
   private getMetadataKey(controller: Controller, methodName: string): string {
-    const ctor = controller.constructor;
+    // Classes that a mixin helper gave the same `constructor` must not share
+    // an entry
+    const ctor = getClassRef(controller);
     const controllerKey = ctor && (ctor[CONTROLLER_ID_KEY] || ctor.name);
     return controllerKey + methodName;
   }

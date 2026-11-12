@@ -47,6 +47,7 @@ import { InvalidModuleException } from './errors/exceptions/invalid-module.excep
 import { RequestScopedGlobalEnhancerException } from './errors/exceptions/request-scoped-global-enhancer.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { UninstantiatedGlobalEnhancerException } from './errors/exceptions/uninstantiated-global-enhancer.exception';
+import { getParamsHost } from './helpers/class-ref-registry';
 import { getClassScope } from './helpers/get-class-scope';
 import { STATIC_CONTEXT } from './injector/constants';
 import { NestContainer } from './injector/container';
@@ -387,7 +388,11 @@ export class DependenciesScanner {
           data: unknown;
           pipes: Array<Type<PipeTransform> | PipeTransform>;
         }
-      > = Reflect.getMetadata(metadataKey, component, methodKey);
+      > = Reflect.getMetadata(
+        metadataKey,
+        getParamsHost(component, methodKey),
+        methodKey,
+      );
 
       if (!metadata) {
         return;
