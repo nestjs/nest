@@ -455,7 +455,15 @@ export class Injector {
         return undefined;
       }
     };
-    const instances = await Promise.all(dependencies.map(resolveParam));
+    const loads = dependencies.map(resolveParam);
+    let instances: unknown[];
+    try {
+      instances = await Promise.all(loads);
+    } catch (err) {
+      this.releaseDetachedWrappersOnSettle(loads, wrapper, parentInquirer);
+      throw err;
+    }
+    this.releaseDetachedWrappers(wrapper, parentInquirer);
     isResolved && (await callback(instances));
   }
 
@@ -903,94 +911,100 @@ export class Injector {
     }
     const properties = this.reflectProperties(wrapper.metatype as Type<any>);
     const propertyBarrier = new Barrier(properties.length);
-    const instances = await Promise.all(
-      properties.map(async (item: PropertyDependency) => {
-        let isFound = false;
-        try {
-          const dependencyContext = {
-            key: item.key,
-            name: item.name as Function | string | symbol,
-          };
-          if (this.isInquirer(item.name, parentInquirer)) {
-            /*
-             * Signal the barrier to make sure other dependencies do not get stuck waiting forever.
-             */
-            propertyBarrier.signal();
-
-            return parentInquirer && parentInquirer.instance;
-          }
-          const nestedResolutionContext =
-            this.getStaticTransientResolutionContext(
-              resolutionContext,
-              parentInquirer,
-            );
-          const paramWrapper = await this.resolveSingleParam<T>(
-            wrapper,
-            item.name as string,
-            dependencyContext,
-            moduleRef,
-            nestedResolutionContext,
-            item.key,
-          );
-          isFound = true;
-
+    const loads = properties.map(async (item: PropertyDependency) => {
+      let isFound = false;
+      try {
+        const dependencyContext = {
+          key: item.key,
+          name: item.name as Function | string | symbol,
+        };
+        if (this.isInquirer(item.name, parentInquirer)) {
           /*
-           * Ensure that all instance wrappers are resolved at this point before we continue.
-           * Otherwise the staticity of `wrapper`'s dependency tree may be evaluated incorrectly
-           * and result in undefined / null injection.
-           */
-          await propertyBarrier.signalAndWait();
-
-          const effectivePropertyResolutionContext =
-            this.getEffectiveResolutionContext(
-              paramWrapper,
-              resolutionContext,
-              parentInquirer,
-            );
-          const paramWrapperWithInstance = await this.resolveComponentHost(
-            moduleRef,
-            paramWrapper,
-            effectivePropertyResolutionContext,
-          );
-          if (!paramWrapperWithInstance) {
-            return undefined;
-          }
-          const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
-            this.getContextId(
-              effectivePropertyResolutionContext.contextId,
-              paramWrapperWithInstance,
-            ),
-            effectivePropertyResolutionContext.effectiveInquirerId,
-          );
-          if (
-            this.shouldInjectDurablePayload(
-              paramWrapperWithInstance,
-              wrapper,
-              parentInquirer,
-              resolutionContext.contextId,
-            )
-          ) {
-            return resolutionContext.contextId.payload;
-          }
-          return instanceHost.instance;
-        } catch (err) {
-          /*
-           * Signal the barrier to make sure other dependencies do not get stuck waiting forever. We
-           * do not care if this occurs after `Barrier.signalAndWait()` is called in the `try` block
-           * because the barrier will always have been resolved by then.
+           * Signal the barrier to make sure other dependencies do not get stuck waiting forever.
            */
           propertyBarrier.signal();
 
-          if (
-            !item.isOptional ||
-            this.isLoadOfFoundDependency(isFound, resolutionContext)
-          ) {
-            throw err;
-          }
+          return parentInquirer && parentInquirer.instance;
+        }
+        const nestedResolutionContext =
+          this.getStaticTransientResolutionContext(
+            resolutionContext,
+            parentInquirer,
+          );
+        const paramWrapper = await this.resolveSingleParam<T>(
+          wrapper,
+          item.name as string,
+          dependencyContext,
+          moduleRef,
+          nestedResolutionContext,
+          item.key,
+        );
+        isFound = true;
+
+        /*
+         * Ensure that all instance wrappers are resolved at this point before we continue.
+         * Otherwise the staticity of `wrapper`'s dependency tree may be evaluated incorrectly
+         * and result in undefined / null injection.
+         */
+        await propertyBarrier.signalAndWait();
+
+        const effectivePropertyResolutionContext =
+          this.getEffectiveResolutionContext(
+            paramWrapper,
+            resolutionContext,
+            parentInquirer,
+          );
+        const paramWrapperWithInstance = await this.resolveComponentHost(
+          moduleRef,
+          paramWrapper,
+          effectivePropertyResolutionContext,
+        );
+        if (!paramWrapperWithInstance) {
           return undefined;
         }
-      }),
-    );
+        const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
+          this.getContextId(
+            effectivePropertyResolutionContext.contextId,
+            paramWrapperWithInstance,
+          ),
+          effectivePropertyResolutionContext.effectiveInquirerId,
+        );
+        if (
+          this.shouldInjectDurablePayload(
+            paramWrapperWithInstance,
+            wrapper,
+            parentInquirer,
+            resolutionContext.contextId,
+          )
+        ) {
+          return resolutionContext.contextId.payload;
+        }
+        return instanceHost.instance;
+      } catch (err) {
+        /*
+         * Signal the barrier to make sure other dependencies do not get stuck waiting forever. We
+         * do not care if this occurs after `Barrier.signalAndWait()` is called in the `try` block
+         * because the barrier will always have been resolved by then.
+         */
+        propertyBarrier.signal();
+
+        if (
+          !item.isOptional ||
+          this.isLoadOfFoundDependency(isFound, resolutionContext)
+        ) {
+          throw err;
+        }
+        return undefined;
+      }
+    });
+    let instances: unknown[];
+    try {
+      instances = await Promise.all(loads);
+    } catch (err) {
+      this.releaseDetachedWrappersOnSettle(loads, wrapper, parentInquirer);
+      throw err;
+    }
+    this.releaseDetachedWrappers(wrapper, parentInquirer);
     return properties.map((item: PropertyDependency, index: number) => ({
       ...item,
       instance: instances[index],
@@ -1130,16 +1144,22 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ): Promise<any[]> {
-    const hosts: Array<InstanceWrapper<any> | undefined> = await Promise.all(
-      metadata.map(async item =>
-        this.resolveScopedComponentHost(
-          item,
-          contextId,
-          inquirer,
-          parentInquirer,
-        ),
+    const loads = metadata.map(async item =>
+      this.resolveScopedComponentHost(
+        item,
+        contextId,
+        inquirer,
+        parentInquirer,
       ),
     );
+    let hosts: Array<InstanceWrapper<any> | undefined>;
+    try {
+      hosts = await Promise.all(loads);
+    } catch (err) {
+      this.releaseDetachedWrappersOnSettle(loads, inquirer, parentInquirer);
+      throw err;
+    }
+    this.releaseDetachedWrappers(inquirer, parentInquirer);
     return hosts.map((item, index) => {
       const dependency = metadata[index];
       const effectiveInquirerId = this.getEffectiveInquirerId(
@@ -1171,16 +1191,25 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ): Promise<PropertyDependency[]> {
-    const dependenciesHosts = await Promise.all(
-      metadata.map(async ({ wrapper: item, key }) => ({
-        key,
-        host: await this.resolveComponentHost(
-          item.host!,
-          item,
-          this.createResolutionContext(contextId, inquirer),
-        ),
-      })),
-    );
+    const loads = metadata.map(async ({ wrapper: item, key }) => ({
+      key,
+      host: await this.resolveComponentHost(
+        item.host!,
+        item,
+        this.createResolutionContext(contextId, inquirer),
+      ),
+    }));
+    let dependenciesHosts: Array<{
+      key: string | symbol;
+      host: InstanceWrapper;
+    }>;
+    try {
+      dependenciesHosts = await Promise.all(loads);
+    } catch (err) {
+      this.releaseDetachedWrappersOnSettle(loads, inquirer, parentInquirer);
+      throw err;
+    }
+    this.releaseDetachedWrappers(inquirer, parentInquirer);
     const inquirerId = this.getInquirerId(inquirer);
     return dependenciesHosts.map(({ key, host }) => ({
       key,
@@ -1213,6 +1242,40 @@ export class Injector {
     resolutionContext: ResolutionContext,
   ) {
     return isFound && resolutionContext.contextId !== STATIC_CONTEXT;
+  }
+
+  /**
+   * A wrapper may be detached while a dependency of it is still loading,
+   * e.g., when `ModuleRef#create()` rejects on the first error of its
+   * dependencies, or when a lazy module fails to load and is removed before
+   * its other providers settle (see `NestContainer#removeModules`). Releases
+   * what the dependencies kept for it since.
+   */
+  private releaseDetachedWrappers(
+    wrapper: InstanceWrapper | undefined,
+    inquirer: InstanceWrapper | undefined,
+  ) {
+    if (wrapper?.isDetached) {
+      wrapper.detachFromDependencies();
+    }
+    if (inquirer?.isDetached) {
+      inquirer.detachFromDependencies();
+    }
+  }
+
+  /**
+   * As `releaseDetachedWrappers`, once the given loads settle: when one of
+   * the dependencies of a wrapper fails, the others keep loading after its
+   * consumers have failed, and may be detached by then.
+   */
+  private releaseDetachedWrappersOnSettle(
+    loads: Promise<unknown>[],
+    wrapper: InstanceWrapper | undefined,
+    inquirer: InstanceWrapper | undefined,
+  ) {
+    void Promise.allSettled(loads).then(() =>
+      this.releaseDetachedWrappers(wrapper, inquirer),
+    );
   }
 
   private getInquirerId(

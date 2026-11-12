@@ -94,6 +94,7 @@ export class InstanceWrapper<T = any> {
    * is transient and has a parent inquirer.
    */
   private rootInquirer: InstanceWrapper | undefined;
+  private _isDetached = false;
 
   constructor(
     metadata: Partial<InstanceWrapper<T>> &
@@ -456,7 +457,23 @@ export class InstanceWrapper<T = any> {
     return false;
   }
 
+  /**
+   * Whether `detachFromDependencies` was called, i.e., the wrapper is no
+   * longer in use (e.g., its module was removed from the container, or it
+   * served a single `ModuleRef#create()` call).
+   */
+  get isDetached(): boolean {
+    return this._isDetached;
+  }
+
+  /**
+   * Makes the dependencies of this wrapper (constructor, property and
+   * enhancer ones) forget it: that it depends on them, and the transient
+   * instances they hold for it. The wrapper stays detached, so that a load of
+   * it that is still running does not register it as a dependent again.
+   */
   public detachFromDependencies() {
+    this._isDetached = true;
     this.getDependencyWrappers().forEach(dependency => {
       dependencyTreeParents.get(dependency)?.delete(this);
       dependency.removeTransientInstancesOf(this);
@@ -517,6 +534,9 @@ export class InstanceWrapper<T = any> {
   }
 
   private registerDependencyTreeParent(wrapper: InstanceWrapper) {
+    if (this._isDetached) {
+      return;
+    }
     if (wrapper instanceof InstanceWrapper) {
       const parents = dependencyTreeParents.get(wrapper) ?? new Set();
       parents.add(this);
@@ -525,11 +545,15 @@ export class InstanceWrapper<T = any> {
   }
 
   private getDependencyWrappers(): InstanceWrapper[] {
-    const { dependencies = [], properties = [] } =
-      this[INSTANCE_METADATA_SYMBOL];
+    const {
+      dependencies = [],
+      properties = [],
+      enhancers = [],
+    } = this[INSTANCE_METADATA_SYMBOL];
     return [
       ...dependencies,
       ...properties.map(({ wrapper }) => wrapper),
+      ...enhancers,
     ].filter(dependency => dependency instanceof InstanceWrapper);
   }
 

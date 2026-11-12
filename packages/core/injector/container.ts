@@ -349,6 +349,13 @@ export class NestContainer {
         ...moduleRef.providers.values(),
         ...moduleRef.controllers.values(),
       ]);
+      // The providers of the remaining modules must not keep the removed ones
+      // as their dependents, nor the transient instances created for them
+      [
+        ...moduleRef.providers.values(),
+        ...moduleRef.injectables.values(),
+        ...moduleRef.controllers.values(),
+      ].forEach(wrapper => wrapper.detachFromDependencies());
     }
   }
 

@@ -1,12 +1,19 @@
 import {
+  CallHandler,
   DynamicModule,
+  ExecutionContext,
   Global,
   Inject,
   Injectable,
   Module,
+  NestInterceptor,
+  Scope,
   Type,
+  UseInterceptors,
 } from '@nestjs/common';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { DiscoverableMetaHostCollection } from '../../../discovery/discoverable-meta-host-collection';
 import {
   LazyModuleLoader,
   ModuleRef,
@@ -15,6 +22,7 @@ import {
 } from '../../../injector';
 import { Injector } from '../../../injector/injector';
 import { InstanceLoader } from '../../../injector/instance-loader';
+import { InstanceWrapper } from '../../../injector/instance-wrapper';
 import { GraphInspector } from '../../../inspector/graph-inspector';
 import { MetadataScanner } from '../../../metadata-scanner';
 import { DependenciesScanner } from '../../../scanner';
@@ -427,6 +435,195 @@ describe('LazyModuleLoader', () => {
         await delay(50);
 
         expect(modulesContainer.size).to.equal(0);
+      });
+
+      describe('and its providers depend on a module that stays', () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+        @Injectable()
+        class Config {}
+
+        @Injectable({ scope: Scope.TRANSIENT })
+        class TransientLogger {}
+
+        @Module({
+          providers: [Config, TransientLogger],
+          exports: [Config, TransientLogger],
+        })
+        class SharedModule {}
+
+        const failingProvider = {
+          provide: 'FAILING',
+          useFactory: () => Promise.reject(new Error('Connection refused')),
+          inject: [Config],
+        };
+
+        const slowProvider = {
+          provide: 'SLOW',
+          useFactory: () => delay(30),
+        };
+
+        const getSharedWrapper = (token: Type<unknown>) =>
+          [...modulesContainer.values()]
+            .find(moduleRef => moduleRef.metatype === SharedModule)!
+            .providers.get(token)!;
+
+        // A reset of the dependency tree state reaches every wrapper that
+        // depends on the given one, directly or not
+        const countDependents = (wrapper: InstanceWrapper) => {
+          const resetDependencyTreeState = sinon.spy(
+            InstanceWrapper.prototype as any,
+            'resetDependencyTreeState',
+          );
+          try {
+            wrapper.addEnhancerMetadata(new InstanceWrapper());
+          } finally {
+            resetDependencyTreeState.restore();
+          }
+          return resetDependencyTreeState.callCount - 1;
+        };
+
+        const expectNoDependents = () => {
+          expect(countDependents(getSharedWrapper(Config))).to.equal(0);
+          expect(countDependents(getSharedWrapper(TransientLogger))).to.equal(
+            0,
+          );
+          expect(
+            getSharedWrapper(TransientLogger)['transientMap']!.size,
+          ).to.equal(0);
+        };
+
+        beforeEach(() => lazyModuleLoader.load(() => SharedModule));
+
+        it('should not keep the removed module as a dependent of those providers', async () => {
+          @Injectable()
+          class Consumer {
+            constructor(
+              @Inject('FAILING') readonly connection: string,
+              readonly logger: TransientLogger,
+            ) {}
+          }
+
+          @Module({
+            imports: [SharedModule],
+            providers: [failingProvider, Consumer],
+          })
+          class FailingConsumerModule {}
+
+          const err = await rejectionOf(
+            lazyModuleLoader.load(() => FailingConsumerModule),
+          );
+          expect(err.message).to.equal('Connection refused');
+
+          expect(modulesContainer.size).to.equal(1);
+          expectNoDependents();
+        });
+
+        it('should not keep the transient instances created for the enhancers of its providers', async () => {
+          @Injectable({ scope: Scope.TRANSIENT })
+          class TransientInterceptor implements NestInterceptor {
+            constructor(readonly logger: TransientLogger) {}
+
+            intercept(context: ExecutionContext, next: CallHandler) {
+              return next.handle();
+            }
+          }
+
+          @UseInterceptors(TransientInterceptor)
+          @Injectable()
+          class Host {}
+
+          @Module({
+            imports: [SharedModule],
+            providers: [
+              Host,
+              {
+                provide: 'FAILING_LATE',
+                useFactory: () =>
+                  delay(10).then(() =>
+                    Promise.reject(new Error('Connection refused')),
+                  ),
+              },
+            ],
+          })
+          class FailingHostModule {}
+
+          const err = await rejectionOf(
+            lazyModuleLoader.load(() => FailingHostModule),
+          );
+          expect(err.message).to.equal('Connection refused');
+
+          expectNoDependents();
+        });
+
+        it('should not keep the providers that were still loading when it failed', async () => {
+          @Injectable()
+          class SlowConsumer {
+            @Inject(Config)
+            readonly config: Config;
+            @Inject(TransientLogger)
+            readonly logger: TransientLogger;
+
+            constructor(@Inject('SLOW') readonly slow: unknown) {}
+          }
+
+          @Injectable()
+          class BrokenConsumer {
+            constructor(
+              @Inject('MISSING') readonly missing: unknown,
+              readonly logger: TransientLogger,
+            ) {}
+          }
+
+          @Module({
+            imports: [SharedModule],
+            providers: [slowProvider, SlowConsumer, BrokenConsumer],
+          })
+          class FailingSlowModule {}
+
+          await rejectionOf(lazyModuleLoader.load(() => FailingSlowModule));
+
+          await delay(50);
+
+          expectNoDependents();
+        });
+
+        it('should not discover a provider that was still loading when it failed', async () => {
+          @Injectable()
+          class SlowDiscoverable {
+            constructor(@Inject('SLOW') readonly slow: unknown) {}
+          }
+
+          @Module({
+            imports: [SharedModule],
+            providers: [slowProvider, SlowDiscoverable, failingProvider],
+          })
+          class FailingDiscoverableModule {}
+
+          DiscoverableMetaHostCollection.addClassMetaHostLink(
+            SlowDiscoverable,
+            'slow_discoverable',
+          );
+          try {
+            const err = await rejectionOf(
+              lazyModuleLoader.load(() => FailingDiscoverableModule),
+            );
+            expect(err.message).to.equal('Connection refused');
+
+            await delay(50);
+
+            expect(
+              DiscoverableMetaHostCollection.getProvidersByMetaKey(
+                modulesContainer,
+                'slow_discoverable',
+              ).size,
+            ).to.equal(0);
+          } finally {
+            DiscoverableMetaHostCollection.metaHostLinks.delete(
+              SlowDiscoverable,
+            );
+          }
+        });
       });
     });
 
