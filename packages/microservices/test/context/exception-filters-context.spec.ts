@@ -1,3 +1,4 @@
+import { Scope } from '@nestjs/common';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -82,6 +83,69 @@ describe('ExceptionFiltersContext', () => {
           instance,
           ...globalFilters,
         );
+      });
+    });
+    describe('when a scoped filter has not been instantiated for the context', () => {
+      const contextId = { id: 4 };
+      const inquirerId = 'controller';
+      const createConstructedWrapper = (scope: Scope) => {
+        const wrapper = new InstanceWrapper({
+          metatype: ExceptionFilter,
+          scope,
+        });
+        const instance = new ExceptionFilter();
+        wrapper.setInstanceByContextId(
+          contextId,
+          { instance, isResolved: true, isConstructorCalled: true },
+          inquirerId,
+        );
+        return { wrapper, instance };
+      };
+
+      (
+        [
+          ['request-scoped', Scope.REQUEST],
+          ['transient', Scope.TRANSIENT],
+        ] as const
+      ).forEach(([description, scope]) => {
+        it(`should leave out the placeholder of a ${description} filter`, () => {
+          // An object made from the prototype, whose constructor never ran
+          const placeholderWrapper = new InstanceWrapper({
+            metatype: ExceptionFilter,
+            scope,
+            instance: Object.create(ExceptionFilter.prototype),
+          });
+          const constructed = createConstructedWrapper(scope);
+          sinon.stub(applicationConfig, 'getGlobalFilters').returns([]);
+          sinon
+            .stub(applicationConfig, 'getGlobalRequestFilters')
+            .returns([placeholderWrapper, constructed.wrapper]);
+
+          expect(
+            exceptionFilter.getGlobalMetadata(contextId, inquirerId),
+          ).to.deep.equal([constructed.instance]);
+        });
+      });
+
+      it('should keep a filter given as a factory provider', () => {
+        const instance = { catch: () => null };
+        const factoryWrapper = new InstanceWrapper({
+          metatype: () => instance,
+          inject: [],
+          scope: Scope.REQUEST,
+        });
+        factoryWrapper.setInstanceByContextId(contextId, {
+          instance,
+          isResolved: true,
+        });
+        sinon.stub(applicationConfig, 'getGlobalFilters').returns([]);
+        sinon
+          .stub(applicationConfig, 'getGlobalRequestFilters')
+          .returns([factoryWrapper]);
+
+        expect(exceptionFilter.getGlobalMetadata(contextId)).to.deep.equal([
+          instance,
+        ]);
       });
     });
   });
