@@ -7,11 +7,19 @@ import {
   Injectable,
   Module,
   Optional,
+  Provider,
   Scope,
   Type,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ContextIdFactory, ModuleRef, REQUEST } from '@nestjs/core';
+import {
+  ContextId,
+  ContextIdFactory,
+  ContextIdStrategy,
+  HostComponentInfo,
+  ModuleRef,
+  REQUEST,
+} from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as chai from 'chai';
 import { expect } from 'chai';
@@ -167,6 +175,170 @@ describe('Request-scoped providers with a forward reference', () => {
 
         expect(service.tenant.isConstructed).to.equal(true);
         expect(service.tenant.service).to.equal(service);
+      });
+    });
+  }
+
+  for (const [kind, isAsync] of [
+    ['class', false],
+    ['async factory', true],
+  ] as const) {
+    describe(`when it depends on a durable ${kind} provider`, () => {
+      const knownTenants = ['acme'];
+      const tenantSubTrees = new Map<string, ContextId>();
+
+      class TenantContextIdStrategy implements ContextIdStrategy<Request> {
+        attach(contextId: ContextId, request: Request) {
+          const tenantId = request.headers['x-tenant-id']!;
+          if (!tenantSubTrees.has(tenantId)) {
+            tenantSubTrees.set(tenantId, ContextIdFactory.create());
+          }
+          const tenantSubTree = tenantSubTrees.get(tenantId)!;
+          return (info: HostComponentInfo) =>
+            info.isTreeDurable ? tenantSubTree : contextId;
+        }
+      }
+
+      @Injectable({ scope: Scope.REQUEST, durable: true })
+      class TenantDatabase {
+        constructor(@Inject(REQUEST) public readonly request: Request) {}
+      }
+
+      // Keeps the load of TenantContext running while other requests come in
+      const asyncTenantDatabase: Provider = {
+        provide: TenantDatabase,
+        scope: Scope.REQUEST,
+        durable: true,
+        inject: [REQUEST],
+        useFactory: async (request: Request) => {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          return new TenantDatabase(request);
+        },
+      };
+
+      @Injectable()
+      class AuditLog {}
+
+      // Durable, as it depends on TenantDatabase
+      @Injectable()
+      class TenantContext {
+        public readonly tenantId: string;
+
+        constructor(
+          database: TenantDatabase,
+          @Inject(forwardRef(() => AuditLog)) public readonly log: AuditLog,
+        ) {
+          const tenantId = database.request.headers['x-tenant-id']!;
+          if (!knownTenants.includes(tenantId)) {
+            throw new UnauthorizedException();
+          }
+          this.tenantId = tenantId;
+        }
+      }
+
+      @Injectable()
+      class Consumer {
+        constructor(public readonly context: TenantContext) {}
+      }
+
+      // Not durable, as it injects REQUEST
+      @Injectable()
+      class RequestConsumer {
+        constructor(
+          @Inject(REQUEST) public readonly request: Request,
+          public readonly consumer: Consumer,
+        ) {}
+      }
+
+      let moduleRef: TestingModule;
+
+      before(async () => {
+        moduleRef = await Test.createTestingModule({
+          providers: [
+            isAsync ? asyncTenantDatabase : TenantDatabase,
+            AuditLog,
+            TenantContext,
+            Consumer,
+            RequestConsumer,
+          ],
+        }).compile();
+        ContextIdFactory.apply(new TenantContextIdStrategy());
+      });
+
+      after(async () => {
+        ContextIdFactory.apply({ attach: () => undefined });
+        await moduleRef.close();
+      });
+
+      const resolve = <T>(type: Type<T>, tenantId: string) => {
+        const request: Request = { headers: { 'x-tenant-id': tenantId } };
+        const contextId = ContextIdFactory.getByRequest(request);
+        moduleRef.registerRequestByContextId(request, contextId);
+        return moduleRef.resolve(type, contextId);
+      };
+
+      it('should reject every request of the tenant when its constructor throws', async () => {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await expect(resolve(Consumer, 'initech')).to.be.rejectedWith(
+            UnauthorizedException,
+          );
+        }
+      });
+
+      it('should reject every request of the tenant for a consumer that is not durable', async () => {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await expect(resolve(RequestConsumer, 'umbrella')).to.be.rejectedWith(
+            UnauthorizedException,
+          );
+        }
+      });
+
+      it('should reject the overlapping requests of the tenant when its constructor throws', async () => {
+        const results = await Promise.allSettled(
+          [Consumer, Consumer, RequestConsumer].map(type =>
+            resolve<object>(type, 'hooli'),
+          ),
+        );
+
+        for (const result of results) {
+          expect(result.status).to.equal('rejected');
+          expect((result as PromiseRejectedResult).reason).to.be.instanceOf(
+            UnauthorizedException,
+          );
+        }
+      });
+
+      it('should construct it for the next request of the tenant once its constructor succeeds', async () => {
+        await expect(resolve(Consumer, 'globex')).to.be.rejectedWith(
+          UnauthorizedException,
+        );
+
+        knownTenants.push('globex');
+        const { context } = await resolve(Consumer, 'globex');
+        expect(context.tenantId).to.equal('globex');
+      });
+
+      it('should construct it before the overlapping requests of the tenant use it', async () => {
+        const tenantIds = await Promise.all(
+          [Consumer, Consumer, RequestConsumer].map(async type => {
+            const instance = await resolve<object>(type, 'acme');
+            const consumer =
+              instance instanceof RequestConsumer
+                ? instance.consumer
+                : instance;
+            return (consumer as Consumer).context.tenantId;
+          }),
+        );
+
+        expect(tenantIds).to.deep.equal(['acme', 'acme', 'acme']);
+      });
+
+      it('should share it between the requests of the tenant', async () => {
+        const first = await resolve(Consumer, 'acme');
+        const second = await resolve(Consumer, 'acme');
+
+        expect(second).to.equal(first);
+        expect(second.context.tenantId).to.equal('acme');
       });
     });
   }
