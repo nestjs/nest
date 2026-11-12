@@ -89,6 +89,27 @@ export class DiscoverableMetaHostCollection {
     }
   }
 
+  public static removeInstanceWrappers(
+    hostContainerRef: ModulesContainer,
+    instanceWrappers: InstanceWrapper[],
+  ) {
+    const ids = new Set(
+      instanceWrappers.filter(Boolean).map(wrapper => wrapper.id),
+    );
+    for (const wrapperByMetaKeyMap of [
+      this.providersByMetaKey,
+      this.controllersByMetaKey,
+    ]) {
+      wrapperByMetaKeyMap.get(hostContainerRef)?.forEach(wrappers => {
+        for (const wrapper of wrappers) {
+          if (ids.has(wrapper.id)) {
+            wrappers.delete(wrapper);
+          }
+        }
+      });
+    }
+  }
+
   public static getProvidersByMetaKey(
     hostContainerRef: ModulesContainer,
     metaKey: string,

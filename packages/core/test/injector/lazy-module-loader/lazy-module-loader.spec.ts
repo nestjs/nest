@@ -24,6 +24,7 @@ describe('LazyModuleLoader', () => {
   let dependenciesScanner: DependenciesScanner;
   let instanceLoader: InstanceLoader;
   let modulesContainer: ModulesContainer;
+  let nestContainer: NestContainer;
 
   class NoopLogger {
     log() {}
@@ -32,7 +33,7 @@ describe('LazyModuleLoader', () => {
   }
 
   beforeEach(() => {
-    const nestContainer = new NestContainer();
+    nestContainer = new NestContainer();
     const graphInspector = new GraphInspector(nestContainer);
     dependenciesScanner = new DependenciesScanner(
       nestContainer,
@@ -81,6 +82,351 @@ describe('LazyModuleLoader', () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleC);
         const moduleRef2 = await lazyModuleLoader.load(() => ModuleC);
         expect(moduleRef).to.equal(moduleRef2);
+      });
+    });
+
+    describe('when the first load() fails', () => {
+      let factoryCalls: number;
+
+      const connectionProvider = {
+        provide: 'CONNECTION',
+        useFactory: () => {
+          factoryCalls++;
+          if (factoryCalls === 1) {
+            throw new Error('Connection refused');
+          }
+          return 'connection';
+        },
+      };
+
+      @Injectable()
+      class ConnectionConsumer {
+        constructor(@Inject('CONNECTION') readonly connection: string) {}
+      }
+
+      @Module({ providers: [connectionProvider, ConnectionConsumer] })
+      class FailingModule {}
+
+      @Global()
+      @Module({
+        providers: [connectionProvider],
+        exports: [connectionProvider],
+      })
+      class FailingGlobalModule {}
+
+      @Module({ providers: [ConnectionConsumer] })
+      class ConsumerModule {}
+
+      @Module({ imports: [undefined as any] })
+      class FailingScanModule {}
+
+      const rejectionOf = (promise: Promise<unknown>) =>
+        promise.then(
+          () => {
+            throw new Error('Expected a rejection');
+          },
+          (err: Error) => err,
+        );
+
+      beforeEach(() => {
+        factoryCalls = 0;
+      });
+
+      it('should build the module again on the next load()', async () => {
+        const err = await rejectionOf(
+          lazyModuleLoader.load(() => FailingModule),
+        );
+        expect(err.message).to.equal('Connection refused');
+        const moduleRef = await lazyModuleLoader.load(() => FailingModule);
+
+        expect(moduleRef.get('CONNECTION')).to.equal('connection');
+        expect(moduleRef.get(ConnectionConsumer).connection).to.equal(
+          'connection',
+        );
+        expect(factoryCalls).to.equal(2);
+      });
+
+      it('should build a global module again on the next load()', async () => {
+        const err = await rejectionOf(
+          lazyModuleLoader.load(() => FailingGlobalModule),
+        );
+        expect(err.message).to.equal('Connection refused');
+        await lazyModuleLoader.load(() => FailingGlobalModule);
+        const moduleRef = await lazyModuleLoader.load(() => ConsumerModule);
+
+        expect(moduleRef.get(ConnectionConsumer).connection).to.equal(
+          'connection',
+        );
+      });
+
+      it('should roll back modules if scanForModules() fails midway', async () => {
+        await rejectionOf(lazyModuleLoader.load(() => FailingScanModule));
+        expect(modulesContainer.size).to.equal(0);
+      });
+
+      it('should not evict a module that a concurrent load() still uses', async () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        let sharedInstances = 0;
+
+        @Injectable()
+        class SharedService {
+          constructor() {
+            sharedInstances++;
+          }
+        }
+
+        @Module({ providers: [SharedService], exports: [SharedService] })
+        class SharedModule {}
+
+        @Module({
+          imports: [SharedModule],
+          providers: [
+            {
+              provide: 'FAIL',
+              useFactory: () =>
+                delay(10).then(() => Promise.reject(new Error('A failed'))),
+            },
+          ],
+        })
+        class AModule {}
+
+        @Module({
+          imports: [SharedModule],
+          providers: [{ provide: 'SLOW', useFactory: () => delay(30) }],
+        })
+        class BModule {}
+
+        const [a, b] = await Promise.allSettled([
+          lazyModuleLoader.load(() => AModule),
+          lazyModuleLoader.load(() => BModule),
+        ]);
+        expect(a.status).to.equal('rejected');
+        expect(b.status).to.equal('fulfilled');
+        const instancesBefore = sharedInstances;
+
+        await lazyModuleLoader.load(() => SharedModule);
+
+        expect(sharedInstances).to.equal(instancesBefore);
+      });
+
+      it('should not evict a module that a concurrent load() has built', async () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        let sharedInstances = 0;
+
+        @Injectable()
+        class SharedService {
+          constructor() {
+            sharedInstances++;
+          }
+        }
+
+        @Module({ providers: [SharedService], exports: [SharedService] })
+        class SharedModule {}
+
+        @Module({
+          imports: [SharedModule],
+          providers: [
+            {
+              provide: 'FAIL',
+              useFactory: () =>
+                delay(30).then(() => Promise.reject(new Error('A failed'))),
+            },
+          ],
+        })
+        class AModule {}
+
+        @Module({
+          imports: [SharedModule],
+          providers: [{ provide: 'SLOW', useFactory: () => delay(10) }],
+        })
+        class BModule {}
+
+        const [a, b] = await Promise.allSettled([
+          lazyModuleLoader.load(() => AModule),
+          lazyModuleLoader.load(() => BModule),
+        ]);
+        expect(a.status).to.equal('rejected');
+        expect(b.status).to.equal('fulfilled');
+        const instancesBefore = sharedInstances;
+
+        await lazyModuleLoader.load(() => SharedModule);
+
+        expect(sharedInstances).to.equal(instancesBefore);
+      });
+
+      it('should allow a retry after a failure while another load is in flight', async () => {
+        let xCalls = 0;
+        const xProvider = {
+          provide: 'X_PROVIDER',
+          useFactory: () => {
+            xCalls++;
+            if (xCalls === 1) {
+              throw new Error('X failed');
+            }
+            return 'x_value';
+          },
+        };
+
+        @Module({ providers: [xProvider], exports: [xProvider] })
+        class XModule {}
+
+        @Module({
+          imports: [XModule],
+          providers: [
+            {
+              provide: 'Z_PROVIDER',
+              useFactory: () => new Promise(resolve => setTimeout(resolve, 20)),
+            },
+          ],
+        })
+        class ZModule {}
+
+        const p1 = lazyModuleLoader.load(() => XModule);
+        const p2 = lazyModuleLoader.load(() => ZModule);
+
+        expect((await rejectionOf(p1)).message).to.equal('X failed');
+        // Start retry immediately from first rejection
+        const retry = await lazyModuleLoader.load(() => XModule);
+        expect(retry.get('X_PROVIDER')).to.equal('x_value');
+
+        await Promise.allSettled([p2]);
+        // Ensure retry module ref is still healthy and in container
+        const retryAfter = await lazyModuleLoader.load(() => XModule);
+        expect(retryAfter).to.equal(retry);
+      });
+
+      it('should roll back an overridden module when its load fails', async () => {
+        let overriddenCalls = 0;
+        const failingProvider = {
+          provide: 'FAILING_OVERRIDE',
+          useFactory: () => {
+            overriddenCalls++;
+            if (overriddenCalls === 1) {
+              throw new Error('Override failed');
+            }
+            return 'override_value';
+          },
+        };
+
+        @Module({})
+        class OriginalModule {}
+
+        @Module({ providers: [failingProvider], exports: [failingProvider] })
+        class OverriddenModule {}
+
+        const overriddenLoader = new LazyModuleLoader(
+          dependenciesScanner,
+          instanceLoader,
+          nestContainer['moduleCompiler'],
+          modulesContainer,
+          [{ moduleToReplace: OriginalModule, newModule: OverriddenModule }],
+        );
+
+        const err = await rejectionOf(
+          overriddenLoader.load(() => OriginalModule),
+        );
+        expect(err.message).to.equal('Override failed');
+
+        const moduleRef = await overriddenLoader.load(() => OriginalModule);
+        expect(moduleRef.get('FAILING_OVERRIDE')).to.equal('override_value');
+        expect(overriddenCalls).to.equal(2);
+      });
+
+      it('should unlink a failed global module from another module loaded concurrently', async () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+        @Global()
+        @Module({
+          providers: [
+            {
+              provide: 'FAILING_GLOBAL',
+              useFactory: () =>
+                delay(10).then(() =>
+                  Promise.reject(new Error('Global failed')),
+                ),
+            },
+          ],
+          exports: ['FAILING_GLOBAL'],
+        })
+        class FailingGlobalMod {}
+
+        @Module({
+          providers: [
+            {
+              provide: 'OTHER_PROVIDER',
+              useFactory: () => delay(20).then(() => 'other_value'),
+            },
+          ],
+        })
+        class OtherMod {}
+
+        const [globalResult, otherResult] = await Promise.allSettled([
+          lazyModuleLoader.load(() => FailingGlobalMod),
+          lazyModuleLoader.load(() => OtherMod),
+        ]);
+
+        expect(globalResult.status).to.equal('rejected');
+        expect(otherResult.status).to.equal('fulfilled');
+
+        const { token: otherToken } =
+          await nestContainer['moduleCompiler'].compile(OtherMod);
+        const otherModuleInstance = modulesContainer.get(otherToken)!;
+
+        const { token: globalToken } =
+          await nestContainer['moduleCompiler'].compile(FailingGlobalMod);
+
+        const hasGlobalImport = [...otherModuleInstance.imports].some(
+          imported => imported.token === globalToken,
+        );
+        expect(hasGlobalImport).to.be.false;
+      });
+
+      it('should roll back parent module when an imported dynamic module fails to load', async () => {
+        const failingDynamicModule: Promise<DynamicModule> = Promise.reject(
+          new Error('Dynamic import failed'),
+        );
+        failingDynamicModule.catch(() => {});
+
+        @Module({
+          imports: [failingDynamicModule],
+        })
+        class ParentWithFailingDynamicImportModule {}
+
+        const err = await rejectionOf(
+          lazyModuleLoader.load(() => ParentWithFailingDynamicImportModule),
+        );
+        expect(err.message).to.equal('Dynamic import failed');
+
+        expect(modulesContainer.size).to.equal(0);
+      });
+
+      it('should roll back parent and slow sibling when another dynamic import fails to load', async () => {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+        @Module({})
+        class SlowSiblingModule {}
+
+        const slowPromise: Promise<DynamicModule> = delay(30).then(() => ({
+          module: SlowSiblingModule,
+        }));
+        const failingPromise: Promise<DynamicModule> = Promise.reject(
+          new Error('Dynamic import failed'),
+        );
+        failingPromise.catch(() => {});
+
+        @Module({
+          imports: [failingPromise, slowPromise],
+        })
+        class ParentWithMixedDynamicImportsModule {}
+
+        const err = await rejectionOf(
+          lazyModuleLoader.load(() => ParentWithMixedDynamicImportsModule),
+        );
+        expect(err.message).to.equal('Dynamic import failed');
+
+        await delay(50);
+
+        expect(modulesContainer.size).to.equal(0);
       });
     });
 

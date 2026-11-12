@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Module } from '../../../common/decorators/modules/module.decorator';
-import { Global } from '../../../common/index';
+import { Controller, Global, Injectable } from '../../../common/index';
+import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection';
 import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestContainer } from '../../injector/container';
@@ -58,6 +59,75 @@ describe('NestContainer', () => {
       const clearSpy = sinon.spy(untypedContainer.modules, 'clear');
       container.clear();
       expect(clearSpy.called).to.be.true;
+    });
+  });
+
+  describe('removeModules', () => {
+    @Injectable()
+    class DiscoverableProvider {}
+
+    @Controller()
+    class DiscoverableController {}
+
+    afterEach(() => {
+      DiscoverableMetaHostCollection.metaHostLinks.delete(DiscoverableProvider);
+      DiscoverableMetaHostCollection.metaHostLinks.delete(
+        DiscoverableController,
+      );
+    });
+
+    it('should remove the modules with their global, dynamic and discoverable entries', async () => {
+      DiscoverableMetaHostCollection.addClassMetaHostLink(
+        DiscoverableProvider,
+        'discoverable_p',
+      );
+      DiscoverableMetaHostCollection.addClassMetaHostLink(
+        DiscoverableController,
+        'discoverable_c',
+      );
+      const { moduleRef } = (await container.addModule(
+        {
+          module: GlobalTestModule,
+          providers: [DiscoverableProvider],
+          controllers: [DiscoverableController],
+        },
+        [],
+      ))!;
+      container.addProvider(DiscoverableProvider, moduleRef.token);
+      container.addController(DiscoverableController, moduleRef.token);
+
+      container.removeModules([moduleRef]);
+
+      expect(container.getModules().has(moduleRef.token)).to.be.false;
+      expect(untypedContainer.globalModules.has(moduleRef)).to.be.false;
+      expect(container.getDynamicMetadataByToken(moduleRef.token)).to.be
+        .undefined;
+      expect(
+        DiscoverableMetaHostCollection.getProvidersByMetaKey(
+          container.getModules(),
+          'discoverable_p',
+        ).size,
+      ).to.equal(0);
+      expect(
+        DiscoverableMetaHostCollection.getControllersByMetaKey(
+          container.getModules(),
+          'discoverable_c',
+        ).size,
+      ).to.equal(0);
+    });
+
+    it('should ignore module if token maps to a different module instance', async () => {
+      const { moduleRef } = (await container.addModule(TestModule, []))!;
+      const differentModuleRef = new (moduleRef.constructor as any)(
+        class AnotherModule {},
+        container,
+      );
+      differentModuleRef.token = moduleRef.token;
+
+      container.removeModules([differentModuleRef]);
+
+      expect(container.getModules().has(moduleRef.token)).to.be.true;
+      expect(container.getModules().get(moduleRef.token)).to.equal(moduleRef);
     });
   });
 

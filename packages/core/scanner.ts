@@ -80,6 +80,7 @@ interface ModulesScanParameters {
   ctxRegistry?: (ForwardReference | DynamicModule | Type<unknown>)[];
   overrides?: ModuleOverride[];
   lazy?: boolean;
+  insertedModules?: Module[];
 }
 
 const ENHANCER_KIND_BY_TOKEN: Record<string, EnhancerKind> = {
@@ -125,10 +126,15 @@ export class DependenciesScanner {
     scope = [],
     ctxRegistry = [],
     overrides = [],
+    insertedModules,
   }: ModulesScanParameters): Promise<Module[]> {
     const { moduleRef: moduleInstance, inserted: moduleInserted } =
-      (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
-      {};
+      (await this.insertOrOverrideModule(
+        moduleDefinition,
+        overrides,
+        scope,
+        insertedModules,
+      )) ?? {};
 
     if (lazy && !moduleInserted && moduleInstance?.isInstantiated) {
       return [];
@@ -188,6 +194,7 @@ export class DependenciesScanner {
         ctxRegistry,
         overrides,
         lazy,
+        insertedModules,
       });
       registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
     }
@@ -204,6 +211,7 @@ export class DependenciesScanner {
   public async insertModule(
     moduleDefinition: any,
     scope: Type<unknown>[],
+    insertedModules?: Module[],
   ): Promise<
     | {
         moduleRef: Module;
@@ -233,7 +241,11 @@ export class DependenciesScanner {
       throw new InvalidClassModuleException(moduleDefinition, scope, 'filter');
     }
 
-    return this.container.addModule(moduleToAdd, scope);
+    return this.container.addModule(moduleToAdd, scope, insertedModules);
+  }
+
+  public removeModules(modules: Iterable<Module>) {
+    this.container.removeModules(modules);
   }
 
   public async scanModulesForDependencies(
@@ -603,6 +615,7 @@ export class DependenciesScanner {
     moduleDefinition: ModuleDefinition,
     overrides: ModuleOverride[],
     scope: Type<unknown>[],
+    insertedModules?: Module[],
   ): Promise<
     | {
         moduleRef: Module;
@@ -619,10 +632,11 @@ export class DependenciesScanner {
         moduleDefinition,
         overrideModule.newModule,
         scope,
+        insertedModules,
       );
     }
 
-    return this.insertModule(moduleDefinition, scope);
+    return this.insertModule(moduleDefinition, scope, insertedModules);
   }
 
   private getOverrideModuleByModule(
@@ -649,6 +663,7 @@ export class DependenciesScanner {
     moduleToOverride: ModuleDefinition,
     newModule: ModuleDefinition,
     scope: Type<unknown>[],
+    insertedModules?: Module[],
   ): Promise<
     | {
         moduleRef: Module;
@@ -664,6 +679,7 @@ export class DependenciesScanner {
         ? this.resolveForwardReference(newModule)
         : newModule,
       scope,
+      insertedModules,
     );
   }
 
