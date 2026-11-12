@@ -418,6 +418,17 @@ describe('ServerKafka', () => {
   });
 
   describe('getHandlerByPattern', () => {
+    it('should chain event handlers registered with equal regex patterns', () => {
+      const first = vi.fn();
+      const second = vi.fn();
+      server.addHandler(/test\..*/, first, true);
+      server.addHandler(/test\..*/, second, true);
+
+      expect(server.getHandlers().size).toBe(1);
+      expect(server.getHandlerByPattern(topic)).toBe(first);
+      expect(first.next).toBe(second);
+    });
+
     it('should return a handler when topic matches a regex pattern', () => {
       const handler = vi.fn();
       server.addHandler(/test\..*/, handler);

@@ -113,8 +113,16 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     callback.isEventHandler = isEventHandler;
     callback.extras = extras;
 
-    if (messageHandlers.has(pattern) && isEventHandler) {
-      const headRef = messageHandlers.get(pattern)!;
+    const key =
+      [...messageHandlers.keys()].find(
+        registered =>
+          registered instanceof RegExp &&
+          registered.source === pattern.source &&
+          registered.flags === pattern.flags,
+      ) ?? pattern;
+
+    if (messageHandlers.has(key) && isEventHandler) {
+      const headRef = messageHandlers.get(key)!;
       const getTail = (handler: MessageHandler) =>
         handler?.next ? getTail(handler.next) : handler;
 
