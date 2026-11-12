@@ -43,11 +43,9 @@ export class NestContainer {
 
   constructor(
     private readonly _applicationConfig:
-      | ApplicationConfig
-      | undefined = undefined,
+      ApplicationConfig | undefined = undefined,
     private readonly _contextOptions:
-      | NestApplicationContextOptions
-      | undefined = undefined,
+      NestApplicationContextOptions | undefined = undefined,
   ) {
     const moduleOpaqueKeyFactory =
       this._contextOptions?.moduleIdGeneratorAlgorithm === 'deep-hash'
@@ -356,6 +354,13 @@ export class NestContainer {
         ...moduleRef.providers.values(),
         ...moduleRef.controllers.values(),
       ]);
+      // The providers of the remaining modules must not keep the removed ones
+      // as their dependents, nor the transient instances created for them
+      [
+        ...moduleRef.providers.values(),
+        ...moduleRef.injectables.values(),
+        ...moduleRef.controllers.values(),
+      ].forEach(wrapper => wrapper.detachFromDependencies());
     }
   }
 

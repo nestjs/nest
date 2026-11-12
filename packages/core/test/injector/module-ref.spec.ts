@@ -253,6 +253,147 @@ describe('ModuleRef', () => {
 
         expect(resetDependencyTreeState).toHaveBeenCalledOnce();
       });
+
+      it('should not keep the transient instances still being created when it rejects', async () => {
+        class UnregisteredDep {}
+        @Injectable()
+        class Created {
+          constructor(
+            public dep: TransientDep,
+            _missing: UnregisteredDep,
+          ) {}
+        }
+        await expect(moduleRef.create(Created)).rejects.toBeInstanceOf(
+          RuntimeException,
+        );
+        // Lets a load that outlived the rejection finish
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(transientWrapper.getStaticTransientInstances()).toEqual([]);
+        expect(nestedTransientWrapper.getStaticTransientInstances()).toEqual(
+          [],
+        );
+      });
+
+      it('should not keep the transient instances still being created when a dependency fails', async () => {
+        @Injectable({ scope: Scope.REQUEST })
+        class FailingDep {
+          constructor() {
+            throw new Error('failing');
+          }
+        }
+        @Injectable()
+        class Created {
+          constructor(
+            _failing: FailingDep,
+            public dep: TransientDep,
+          ) {}
+        }
+        container.addProvider(FailingDep, module.token);
+
+        const contextId = createContextId();
+        await expect(moduleRef.create(Created, contextId)).rejects.toThrow(
+          'failing',
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(
+          transientWrapper.getExistingInstancesByContextId(contextId),
+        ).toEqual([]);
+        expect(
+          nestedTransientWrapper.getExistingInstancesByContextId(contextId),
+        ).toEqual([]);
+      });
+
+      it('should not keep the transient instances still being created when an injected property fails', async () => {
+        class UnregisteredDep {}
+        @Injectable()
+        class Created {
+          @Inject(TransientDep)
+          public dep: TransientDep;
+          @Inject(UnregisteredDep)
+          public missing: UnregisteredDep;
+        }
+        await expect(moduleRef.create(Created)).rejects.toBeInstanceOf(
+          RuntimeException,
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(transientWrapper.getStaticTransientInstances()).toEqual([]);
+        expect(nestedTransientWrapper.getStaticTransientInstances()).toEqual(
+          [],
+        );
+      });
+
+      describe('when a dependency of a transient dependency fails', () => {
+        @Injectable({ scope: Scope.REQUEST })
+        class FailingDep {
+          constructor() {
+            throw new Error('failing');
+          }
+        }
+        @Injectable({ scope: Scope.TRANSIENT })
+        class OuterTransientDep {
+          constructor(public dep: TransientDep) {}
+        }
+        @Injectable({ scope: Scope.TRANSIENT })
+        class HostWithParams {
+          constructor(
+            _failing: FailingDep,
+            public dep: OuterTransientDep,
+          ) {}
+        }
+        @Injectable({ scope: Scope.TRANSIENT })
+        class HostWithProperties {
+          @Inject(FailingDep)
+          public failing: FailingDep;
+          @Inject(OuterTransientDep)
+          public dep: OuterTransientDep;
+        }
+
+        beforeEach(() => {
+          container.addProvider(FailingDep, module.token);
+          container.addProvider(OuterTransientDep, module.token);
+          container.addProvider(HostWithParams, module.token);
+          container.addProvider(HostWithProperties, module.token);
+        });
+
+        it.each([
+          ['constructor parameters', HostWithParams],
+          ['properties', HostWithProperties],
+        ])(
+          'should not keep the transient instances still being created (%s)',
+          async (_, Host) => {
+            @Injectable()
+            class Created {
+              constructor(@Inject(Host) public host: unknown) {}
+            }
+
+            // From the second call on, the dependencies of the host are
+            // resolved from its metadata
+            const contextIds = [createContextId(), createContextId()];
+            for (const contextId of contextIds) {
+              await expect(
+                moduleRef.create(Created, contextId),
+              ).rejects.toThrow('failing');
+              await new Promise(resolve => setImmediate(resolve));
+            }
+
+            const wrappers = [
+              module.providers.get(OuterTransientDep)!,
+              transientWrapper,
+              nestedTransientWrapper,
+            ];
+            for (const contextId of contextIds) {
+              for (const wrapper of wrappers) {
+                expect(
+                  wrapper.getExistingInstancesByContextId(contextId),
+                ).toEqual([]);
+              }
+            }
+          },
+        );
+      });
     });
 
     describe('when a dependency is request-scoped', () => {

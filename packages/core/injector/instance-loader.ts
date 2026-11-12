@@ -72,6 +72,10 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
     await Promise.all(
       wrappers.map(async item => {
         await this.injector.loadProvider(item, moduleRef);
+        if (item.isDetached) {
+          // its module was removed while the provider was still loading
+          return;
+        }
         this.graphInspector.inspectInstanceWrapper(item, moduleRef);
         if (!item.isAlias) {
           // an alias wrapper is factory-shaped, so inspecting it would
@@ -98,6 +102,9 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
     await Promise.all(
       wrappers.map(async item => {
         await this.injector.loadController(item, moduleRef);
+        if (item.isDetached) {
+          return;
+        }
         this.graphInspector.inspectInstanceWrapper(item, moduleRef);
       }),
     );
@@ -116,6 +123,9 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
     await Promise.all(
       wrappers.map(async item => {
         await this.injector.loadInjectable(item, moduleRef);
+        if (item.isDetached) {
+          return;
+        }
         this.graphInspector.inspectInstanceWrapper(item, moduleRef);
       }),
     );
