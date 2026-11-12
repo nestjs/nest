@@ -8,8 +8,11 @@ import {
   IsArray,
   IsBoolean,
   IsDefined,
+  IsInstance,
+  IsObject,
   IsOptional,
   IsString,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
@@ -818,6 +821,178 @@ describe('ValidationPipe', () => {
           expect(instanceToPlain(user)).to.deep.equal({ name: 'name' });
         });
       });
+    });
+  });
+
+  describe('when a nested value is binary', () => {
+    class Nested {
+      @IsString()
+      public prop: string;
+    }
+    class WithNested {
+      @IsOptional()
+      @IsObject()
+      @ValidateNested()
+      @Type(() => Nested)
+      public nested: Nested;
+
+      @IsOptional()
+      @IsArray()
+      @ValidateNested({ each: true })
+      @Type(() => Nested)
+      public items: Nested[];
+
+      @ValidateIf(object => object.kind === 'nested')
+      @ValidateNested()
+      @Type(() => Nested)
+      public conditional: Nested;
+
+      @IsOptional()
+      @IsString()
+      public kind: string;
+
+      @IsOptional()
+      @IsInstance(Buffer)
+      public file: Buffer;
+    }
+    class WithDeepNested {
+      @ValidateNested()
+      @Type(() => WithNested)
+      public parent: WithNested;
+    }
+    const nestedMetadata: ArgumentMetadata = {
+      type: 'body',
+      metatype: WithNested,
+      data: '',
+    };
+    const nestedMessage =
+      'nested property nested must be either object or array';
+    const itemsMessage =
+      'each value in nested property items must be either object or array';
+    const messageOf = (promise: Promise<unknown>) =>
+      promise.then(
+        () => {
+          throw new Error('Expected a rejection');
+        },
+        err => err.getResponse().message,
+      );
+
+    it('should throw an error instead of skipping the rules of the nested class', async () => {
+      for (const options of [
+        {},
+        { transform: true },
+        { whitelist: true },
+        { whitelist: true, forbidNonWhitelisted: true, transform: true },
+        { forbidUnknownValues: true },
+      ]) {
+        target = new ValidationPipe(options);
+        for (const binary of [Buffer.alloc(0), Buffer.from('abc')]) {
+          expect(
+            await messageOf(
+              target.transform({ nested: binary }, nestedMetadata),
+            ),
+          ).to.deep.equal([nestedMessage]);
+          expect(
+            await messageOf(
+              target.transform(
+                { items: [{ prop: 'value' }, binary] },
+                nestedMetadata,
+              ),
+            ),
+          ).to.deep.equal([`items.${itemsMessage}`]);
+        }
+      }
+    });
+    it('should throw an error for a binary value in place of the items or in a nested array', async () => {
+      target = new ValidationPipe();
+      expect(
+        await messageOf(
+          target.transform({ items: Buffer.alloc(0) }, nestedMetadata),
+        ),
+      ).to.deep.equal([itemsMessage]);
+      expect(
+        await messageOf(
+          target.transform({ items: [[Buffer.alloc(0)]] }, nestedMetadata),
+        ),
+      ).to.deep.equal([`items.0.${itemsMessage}`]);
+    });
+    it('should pass the path of the value to the exception factory', async () => {
+      target = new ValidationPipe({ exceptionFactory: errors => errors });
+      await expect(
+        target.transform(
+          { parent: { nested: Buffer.alloc(0), items: [Buffer.alloc(0)] } },
+          { ...nestedMetadata, metatype: WithDeepNested },
+        ),
+      ).to.be.rejected.and.eventually.deep.equal([
+        {
+          property: 'parent',
+          children: [
+            {
+              property: 'nested',
+              constraints: { nestedValidation: nestedMessage },
+              children: [],
+            },
+            {
+              property: 'items',
+              children: [
+                {
+                  property: '0',
+                  constraints: { nestedValidation: itemsMessage },
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+    });
+    it('should keep a custom message of the nested validation', async () => {
+      class WithMessage {
+        @ValidateNested({ message: '$property must be an address' })
+        @Type(() => Nested)
+        public address: Nested;
+      }
+      target = new ValidationPipe();
+      expect(
+        await messageOf(
+          target.transform(
+            { address: Buffer.alloc(0) },
+            { ...nestedMetadata, metatype: WithMessage },
+          ),
+        ),
+      ).to.deep.equal(['address must be an address']);
+    });
+    it('should not throw an error for a binary value that is not validated as a nested one', async () => {
+      const file = Buffer.from('abc');
+      target = new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      });
+      const result = await target.transform(
+        {
+          file,
+          conditional: file,
+          nested: { prop: 'value' },
+          items: [{ prop: 'value' }],
+        },
+        nestedMetadata,
+      );
+      expect(result).to.be.instanceOf(WithNested);
+      expect(result.file).to.deep.equal(file);
+      expect(result.conditional).to.deep.equal(file);
+      expect(result.nested).to.be.instanceOf(Nested);
+
+      await expect(
+        target.transform({ kind: 'nested', conditional: file }, nestedMetadata),
+      ).to.be.rejected;
+    });
+    it('should not throw an error when the validator has no metadata storage', async () => {
+      target = new ValidationPipe({
+        validatorPackage: { validate: () => [] },
+      });
+      const value = { nested: Buffer.alloc(0) };
+      expect(await target.transform(value, nestedMetadata)).to.equal(value);
     });
   });
 
