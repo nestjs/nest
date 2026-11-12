@@ -286,9 +286,8 @@ export class ListenersController {
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
       const originalArgs = [...args];
+      let contextId: ContextId | undefined;
       try {
-        let contextId: ContextId;
-
         let [dataOrContextHost] = args;
         if (dataOrContextHost instanceof RequestContextHost) {
           contextId = this.getContextId(dataOrContextHost, isTreeDurable);
@@ -331,6 +330,14 @@ export class ListenersController {
         }
         return returnValue;
       } catch (err) {
+        const scopedExceptionFilter =
+          contextId &&
+          (await this.createScopedExceptionFilter(
+            wrapper,
+            moduleKey,
+            methodKey,
+            contextId,
+          ));
         exceptionFilter ??= this.exceptionFiltersContext.create(
           instance,
           instance[methodKey],
@@ -338,7 +345,7 @@ export class ListenersController {
         );
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        const returnValue = exceptionFilter.handle(
+        const returnValue = (scopedExceptionFilter || exceptionFilter).handle(
           err,
           host,
           reportUnhandledErrors,
@@ -354,6 +361,44 @@ export class ListenersController {
       }
     };
     return requestScopedHandler;
+  }
+
+  /**
+   * Creates the exception filters of a controller that failed to resolve for
+   * a context. Request-scoped and transient filters, the global ones
+   * included, only exist per context, where they are created after the
+   * controller, so the filters for the static context leave them out. Only
+   * the filters are created here, so that a guard or an interceptor that
+   * depends on what failed does not get in the way. When one of them fails
+   * to resolve as well, the filters for the static context are left to
+   * handle the error.
+   */
+  private async createScopedExceptionFilter(
+    wrapper: InstanceWrapper,
+    moduleKey: string,
+    methodKey: string,
+    contextId: ContextId,
+  ): Promise<RpcExceptionsHandler | undefined> {
+    const filters = (wrapper.getEnhancersMetadata() ?? []).filter(
+      enhancer => enhancer.subtype === 'filter',
+    );
+    try {
+      await this.injector.loadEnhancersPerContext(
+        wrapper,
+        contextId,
+        wrapper,
+        filters,
+      );
+      return this.exceptionFiltersContext.create(
+        wrapper.instance,
+        wrapper.instance[methodKey],
+        moduleKey,
+        contextId,
+        wrapper.id,
+      );
+    } catch {
+      return undefined;
+    }
   }
 
   private getContextId<T extends RequestContext = any>(

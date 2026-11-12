@@ -319,6 +319,71 @@ describe('ListenersController', () => {
       const patterns = [{}];
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
+      it('should create the filters for the context of the message', async () => {
+        const error = new Error('provider failed');
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(error);
+        const loadEnhancersPerContext = vi
+          .spyOn(injector, 'loadEnhancersPerContext')
+          .mockResolvedValue(undefined);
+        const filter = new InstanceWrapper({ subtype: 'filter' } as any);
+        const guard = new InstanceWrapper({ subtype: 'guard' } as any);
+        const scopedWrapper = new InstanceWrapper({
+          instance: { [methodKey]: {} },
+        });
+        vi.spyOn(scopedWrapper, 'getEnhancersMetadata').mockReturnValue([
+          filter,
+          guard,
+        ]);
+        const handler = instance.createRequestScopedHandler(
+          scopedWrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+        );
+
+        await handler('data');
+
+        // Only the filters: a guard may need what failed to resolve
+        const [, contextId, inquirer, enhancers] =
+          loadEnhancersPerContext.mock.calls[0];
+        expect(inquirer).toBe(scopedWrapper);
+        expect(enhancers).toEqual([filter]);
+        expect(exceptionFiltersContext.create).toHaveBeenCalledWith(
+          scopedWrapper.instance,
+          scopedWrapper.instance[methodKey],
+          moduleKey,
+          contextId,
+          scopedWrapper.id,
+        );
+        expect(handleSpy).toHaveBeenCalledWith(error, expect.anything(), false);
+      });
+
+      it('should fall back to the static filters when the filters fail to resolve', async () => {
+        const error = new Error('provider failed');
+        vi.spyOn(injector, 'loadPerContext').mockRejectedValue(error);
+        vi.spyOn(injector, 'loadEnhancersPerContext').mockRejectedValue(
+          new Error('filter failed'),
+        );
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+        );
+
+        await handler('data');
+
+        expect(exceptionFiltersContext.create).toHaveBeenCalledOnce();
+        expect(exceptionFiltersContext.create).toHaveBeenCalledWith(
+          wrapper.instance,
+          wrapper.instance[methodKey],
+          moduleKey,
+        );
+        expect(handleSpy).toHaveBeenCalledWith(error, expect.anything(), false);
+      });
+
       it('should delegate error to exception filters', async () => {
         vi.spyOn(injector, 'loadPerContext').mockImplementation(() => {
           throw new Error();
