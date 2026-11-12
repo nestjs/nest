@@ -3,6 +3,7 @@ import { Type } from '@nestjs/common/interfaces';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { getClassRef } from '../helpers/class-ref-registry';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
@@ -92,9 +93,18 @@ export class BaseExceptionFilterContext extends ContextCreator {
   }
 
   public reflectCatchExceptions(instance: ExceptionFilter): Type<any>[] {
-    const prototype = Object.getPrototypeOf(instance);
+    // `@Catch()` also stores the types on the prototype of the filter class,
+    // because the "constructor" of that prototype may name another class (see
+    // `getClassRef`), and a filter the application instantiated itself is not
+    // a registered class. The class lookup serves filters that an older
+    // `@Catch()` decorated.
     return (
-      Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, prototype.constructor) || []
+      Reflect.getMetadata(
+        FILTER_CATCH_EXCEPTIONS,
+        Object.getPrototypeOf(instance),
+      ) ??
+      Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, getClassRef(instance)) ??
+      []
     );
   }
 }

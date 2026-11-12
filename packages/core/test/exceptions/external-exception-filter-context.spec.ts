@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { FILTER_CATCH_EXCEPTIONS } from '../../../common/constants';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { ApplicationConfig } from '../../application-config';
@@ -66,6 +67,72 @@ describe('ExternalExceptionFilterContext', () => {
       expect(
         exceptionFilter.reflectCatchExceptions(new ClassWithNoMetadata()),
       ).to.be.eql([]);
+    });
+    it('should return the metadata of the parent of an undecorated filter', () => {
+      class Inherited extends ExceptionFilter {}
+      @Catch()
+      class CatchEverything extends ExceptionFilter {}
+
+      expect(
+        exceptionFilter.reflectCatchExceptions(new Inherited()),
+      ).to.deep.equal([CustomException]);
+      expect(
+        exceptionFilter.reflectCatchExceptions(new CatchEverything()),
+      ).to.deep.equal([]);
+    });
+    describe('when a mixin helper overwrote the "constructor" of the filter prototype', () => {
+      class OtherException {}
+      @Catch(OtherException)
+      class Mixin {}
+      class MixinWithNoMetadata {}
+
+      it('should return the metadata of the filter class', () => {
+        @Catch(CustomException)
+        class MixedIn implements ExceptionFilter {
+          public catch(exc, res) {}
+        }
+        // What mixin helpers copying every property of the prototype do
+        MixedIn.prototype.constructor = MixinWithNoMetadata;
+        expect(
+          exceptionFilter.reflectCatchExceptions(new MixedIn()),
+        ).to.deep.equal([CustomException]);
+
+        MixedIn.prototype.constructor = Mixin;
+        expect(
+          exceptionFilter.reflectCatchExceptions(new MixedIn()),
+        ).to.deep.equal([CustomException]);
+      });
+      it('should return the metadata defined on the registered class only', () => {
+        class MixedIn implements ExceptionFilter {
+          public catch(exc, res) {}
+        }
+        // What an older "@Catch()" stores
+        Reflect.defineMetadata(
+          FILTER_CATCH_EXCEPTIONS,
+          [CustomException],
+          MixedIn,
+        );
+        MixedIn.prototype.constructor = Mixin;
+        new InstanceWrapper({ metatype: MixedIn });
+
+        expect(
+          exceptionFilter.reflectCatchExceptions(new MixedIn()),
+        ).to.deep.equal([CustomException]);
+      });
+    });
+    describe('when a class decorator below "@Catch()" returned a Proxy', () => {
+      it('should return the metadata of the filter class', () => {
+        const Proxied = (target: any) => new Proxy(target, {});
+
+        @Catch(CustomException)
+        @Proxied
+        class ProxiedFilter implements ExceptionFilter {
+          public catch(exc, res) {}
+        }
+        expect(
+          exceptionFilter.reflectCatchExceptions(new ProxiedFilter()),
+        ).to.deep.equal([CustomException]);
+      });
     });
   });
   describe('createConcreteContext', () => {
