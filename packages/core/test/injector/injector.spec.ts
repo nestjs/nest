@@ -1437,6 +1437,97 @@ describe('Injector', () => {
             injector.waitForDeferredLoads(nextContextId),
           ).resolves.toBeUndefined();
         });
+
+        it('should make the loads deferred for a dependent of the provider reject instead of loading it again when loadProvider throws', async () => {
+          const error = new Error('Test error');
+          const loadStub = vi
+            .spyOn(injector, 'loadProvider')
+            .mockImplementationOnce(() => Promise.reject(error))
+            .mockImplementation(() => Promise.resolve());
+          const settlementSignal = new SettlementSignal();
+          // still being built for the tenant, and not awaited by its dependents
+          dependent.forwardRef = true;
+          dependent.setInstanceByContextId(tenant, {
+            instance: {},
+            isResolved: false,
+            isPending: true,
+            donePromise: settlementSignal.asPromise(),
+          });
+
+          const contextId = createContextId();
+          await injector.resolveComponentHost(module, wrapper, {
+            contextId,
+            inquirer: dependent,
+          });
+          await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+            error,
+          );
+          // defers the load of the dependent until it is built
+          const waitingContextId = createContextId();
+          await injector.resolveComponentHost(module, dependent, {
+            contextId: waitingContextId,
+          });
+          dependent.getInstanceByContextId(tenant).isResolved = true;
+          settlementSignal.complete();
+
+          await expect(
+            injector.waitForDeferredLoads(waitingContextId),
+          ).rejects.toBe(error);
+          expect(loadStub).toHaveBeenCalledOnce();
+        });
+
+        describe('and a dependent of the provider is used through another injector', () => {
+          // e.g., the one of a `ModuleRef`, a gateway or a microservice
+          let anotherInjector: Injector;
+
+          beforeEach(() => {
+            anotherInjector = new Injector();
+          });
+
+          it('should load the dependent again for the next context when loadProvider throws', async () => {
+            const error = new Error('Test error');
+            vi.spyOn(injector, 'loadProvider').mockImplementation(() =>
+              Promise.reject(error),
+            );
+            const loadStub = vi
+              .spyOn(anotherInjector, 'loadProvider')
+              .mockImplementation(() => Promise.resolve());
+
+            const contextId = createContextId();
+            await injector.resolveComponentHost(module, wrapper, {
+              contextId,
+              inquirer: dependent,
+            });
+            await expect(injector.waitForDeferredLoads(contextId)).rejects.toBe(
+              error,
+            );
+
+            const nextContextId = createContextId();
+            await anotherInjector.resolveComponentHost(module, dependent, {
+              contextId: nextContextId,
+            });
+
+            expect(loadStub).toHaveBeenLastCalledWith(dependent, module, {
+              contextId: nextContextId,
+            });
+          });
+
+          it('should not make its "waitForDeferredLoads" wait for the loads deferred by the other injector for the same context', async () => {
+            vi.spyOn(injector, 'loadProvider').mockImplementation(
+              () => new Promise(() => {}),
+            );
+
+            const contextId = createContextId();
+            await injector.resolveComponentHost(module, wrapper, {
+              contextId,
+              inquirer: dependent,
+            });
+
+            await expect(
+              anotherInjector.waitForDeferredLoads(contextId),
+            ).resolves.toBeUndefined();
+          });
+        });
       });
     });
   });
