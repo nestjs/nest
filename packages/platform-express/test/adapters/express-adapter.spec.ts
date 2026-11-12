@@ -211,6 +211,131 @@ describe('ExpressAdapter', () => {
         expect(logger.calledWith(handlerError)).to.be.true;
       });
 
+      describe('when the source is in object mode', () => {
+        it('should send the strings and bytes it emits', async () => {
+          const source = Readable.from([
+            'first ',
+            Buffer.from('second '),
+            new Uint8Array([116, 104, 105, 114, 100]),
+          ]);
+          const response = createStreamResponse();
+          const chunks: Buffer[] = [];
+          response.on('data', chunk => chunks.push(chunk));
+
+          expressAdapter.reply(response, new StreamableFile(source));
+          await new Promise(resolve => response.once('end', resolve));
+
+          expect(Buffer.concat(chunks).toString()).to.equal(
+            'first second third',
+          );
+        });
+
+        it('should write an empty first chunk, which sends the headers early', async () => {
+          const source = Readable.from(['', 'later']);
+          const response = createStreamResponse();
+          const write = sinon.spy(response, 'write');
+          response.resume();
+
+          expressAdapter.reply(response, new StreamableFile(source));
+          await new Promise(resolve => response.once('end', resolve));
+
+          expect(write.getCalls().map(call => call.args[0])).to.deep.equal([
+            '',
+            'later',
+          ]);
+        });
+
+        (
+          [
+            ['an object', { id: 1 }],
+            ['an array', ['a', 'b']],
+            ['a number', 42],
+          ] as const
+        ).forEach(([name, chunk]) => {
+          it(`should fail the stream on ${name} without writing it`, async () => {
+            const errorHandler = sinon.spy();
+            const response = createStreamResponse();
+            const write = sinon.spy(response, 'write');
+            response.resume();
+            // The chunk first, last (the source may have ended before it
+            // is written) and in between
+            const sources = [
+              Readable.from([chunk]),
+              Readable.from(['first', chunk]),
+              Readable.from(['first', chunk, 'last']),
+            ];
+
+            for (const source of sources) {
+              const file = new StreamableFile(source).setErrorHandler(
+                errorHandler,
+              );
+              expressAdapter.reply(response, file);
+            }
+
+            await waitFor(() => errorHandler.callCount === sources.length);
+            expect(errorHandler.callCount).to.equal(sources.length);
+            const [error, target] = errorHandler.firstCall.args;
+            expect(error).to.be.instanceOf(TypeError);
+            expect(error.message).to.contain(
+              'A StreamableFile can only send string and Uint8Array chunks',
+            );
+            expect(target).to.equal(response);
+            expect(write.getCalls().some(call => call.args[0] === chunk)).to.be
+              .false;
+            for (const source of sources) {
+              expect(source.destroyed).to.be.true;
+              expect(source.readableEnded).to.be.false;
+            }
+          });
+        });
+
+        it('should answer 400 for such a chunk before any data', async () => {
+          expressAdapter.getInstance().get('/', (_req, res) => {
+            const file = new StreamableFile(
+              Readable.from([{ id: 1 }]),
+            ).setErrorLogger(() => {});
+            expressAdapter.reply(res, file);
+          });
+
+          await request(expressAdapter.getInstance())
+            .get('/')
+            .timeout(2000)
+            .expect(400, 'Bad Request');
+        });
+
+        it('should abort the response for such a chunk after some data', async () => {
+          const response = createStreamResponse();
+          const end = sinon.spy(response, 'end');
+          let headersSent = false;
+          Object.defineProperty(response, 'headersSent', {
+            get: () => headersSent,
+          });
+          response.on('data', () => (headersSent = true));
+          const file = new StreamableFile(
+            Readable.from(['first', ['a', 'b']]),
+          ).setErrorLogger(() => {});
+
+          expressAdapter.reply(response, file);
+
+          await waitFor(() => response.destroyed);
+          expect(response.destroyed).to.be.true;
+          expect(headersSent).to.be.true;
+          expect(end.called).to.be.false;
+        });
+
+        it('should end the response for a source that has already ended', async () => {
+          const source = Readable.from([]);
+          source.resume();
+          await new Promise(resolve => source.once('end', resolve));
+          const response = createStreamResponse();
+          response.resume();
+
+          expressAdapter.reply(response, new StreamableFile(source));
+
+          await new Promise(resolve => response.once('end', resolve));
+        });
+      });
+
       describe('for a HEAD request', () => {
         // Node discards what is written to a HEAD response, so its write()
         // never applies backpressure
