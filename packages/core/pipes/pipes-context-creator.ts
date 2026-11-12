@@ -1,5 +1,9 @@
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
+import {
+  assertEnhancer,
+  describeEnhancer,
+} from '../helpers/assert-enhancer.js';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
@@ -72,11 +76,20 @@ export class PipesContextCreator extends ContextCreator {
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    return this.pickEnhancer<PipeTransform>(
+    const enhancer = this.pickEnhancer<PipeTransform>(
       pipe,
       instanceHost && instanceHost.instance,
       'transform',
     );
+    // Nest constructed the bound class, and neither the instance nor the
+    // class can run as a pipe. A request-scoped or transient pipe outside of
+    // its context is only a placeholder whose constructor never ran, and a
+    // class that resolves to no provider (a host outside of every module)
+    // is skipped as before.
+    if (instanceHost?.isConstructorCalled) {
+      assertEnhancer(enhancer, 'pipe', describeEnhancer(pipe));
+    }
+    return enhancer;
   }
 
   public getInstanceByMetatype(
@@ -114,7 +127,13 @@ export class PipesContextCreator extends ContextCreator {
         ),
       )
       .filter(host => !!host)
-      .map(host => host.instance)
+      .map(host => {
+        // A scoped instance only exists here, once per context
+        if (host.isConstructorCalled) {
+          assertEnhancer(host.instance, 'pipe');
+        }
+        return host.instance;
+      })
       .toArray();
 
     return globalPipes.concat(scopedPipes) as T;

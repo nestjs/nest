@@ -16,6 +16,7 @@ import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception.js';
 import { RequestScopedGlobalEnhancerException } from '../errors/exceptions/request-scoped-global-enhancer.exception.js';
 import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception.js';
+import { InvalidEnhancerException } from '../errors/exceptions/invalid-enhancer.exception.js';
 import { UninstantiatedGlobalEnhancerException } from '../errors/exceptions/uninstantiated-global-enhancer.exception.js';
 import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
@@ -693,7 +694,7 @@ describe('DependenciesScanner', () => {
       };
       untypedScanner.applicationProvidersApplyMap = [provider];
 
-      const expectedInstance = {};
+      const expectedInstance = { canActivate: () => true };
       const instanceWrapper = {
         instance: expectedInstance,
         isDependencyTreeStatic: () => true,
@@ -812,6 +813,58 @@ describe('DependenciesScanner', () => {
 
         expect(() => scanner.applyApplicationProviders()).not.toThrow();
         expect(applySpy).toHaveBeenCalledWith(null);
+      });
+    });
+    describe('when a static provider does not give an enhancer', () => {
+      const mockInstance = (instance: unknown, metatype: unknown = null) => {
+        untypedScanner.applicationProvidersApplyMap = [
+          {
+            moduleKey: 'moduleToken',
+            providerKey: 'providerToken',
+            type: APP_GUARD,
+          },
+        ];
+        const wrapper = {
+          instance,
+          metatype,
+          isAlias: false,
+          inject: metatype ? [] : null,
+          isDependencyTreeStatic: () => true,
+          getInstanceByContextId: () => ({ instance, isResolved: true }),
+        };
+        vi.spyOn(container, 'getModules').mockImplementation(
+          () =>
+            ({
+              get: () => ({ providers: { get: () => wrapper } }),
+            }) as any,
+        );
+        vi.spyOn(graphInspector, 'insertAttachedEnhancer').mockImplementation(
+          () => {},
+        );
+      };
+
+      it('should throw for a value that is a class', () => {
+        // e.g., `{ provide: APP_GUARD, useValue: RoleGuard('admin') }`
+        class RoleGuard {
+          canActivate() {
+            return false;
+          }
+        }
+        mockInstance(RoleGuard);
+
+        expect(() => scanner.applyApplicationProviders()).toThrow(
+          InvalidEnhancerException,
+        );
+        expect(() => scanner.applyApplicationProviders()).toThrow(
+          /The guard \(APP_GUARD provider \(useValue\) gives class RoleGuard\)/,
+        );
+      });
+      it('should throw for a factory that returns an object without the method', () => {
+        mockInstance({}, () => ({}));
+
+        expect(() => scanner.applyApplicationProviders()).toThrow(
+          /APP_GUARD provider \(useFactory\) gives an object/,
+        );
       });
     });
     describe('when a static provider has never been instantiated', () => {

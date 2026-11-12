@@ -1,5 +1,6 @@
 import { Scope, UseGuards } from '@nestjs/common';
 import { ApplicationConfig } from '../../application-config.js';
+import { InvalidEnhancerException } from '../../errors/exceptions/invalid-enhancer.exception.js';
 import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
 import { ContextId, InstanceWrapper } from '../../injector/instance-wrapper.js';
 
@@ -159,6 +160,59 @@ describe('GuardsContextCreator', () => {
           wrapper.instance,
         );
       });
+      it('should throw when Nest constructed the class and it has no "canActivate"', () => {
+        // What is left at run time of an abstract class used as a token
+        class AbstractGuard {}
+        const wrapper = {
+          instance: new AbstractGuard(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(
+          guardsContextCreator,
+          'getInstanceByMetatype',
+        ).mockImplementation(() => wrapper as any);
+        expect(() =>
+          guardsContextCreator.getGuardInstance(AbstractGuard),
+        ).toThrow(InvalidEnhancerException);
+      });
+      it('should throw when the class was a guard factory, called by Nest', () => {
+        function RoleGuard(role = 'admin') {
+          return class {
+            canActivate() {
+              return role === 'admin';
+            }
+          };
+        }
+        const wrapper = {
+          instance: new (RoleGuard as any)(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(
+          guardsContextCreator,
+          'getInstanceByMetatype',
+        ).mockImplementation(() => wrapper as any);
+        expect(() => guardsContextCreator.getGuardInstance(RoleGuard)).toThrow(
+          /The guard \(class RoleGuard\) doesn't provide the "canActivate" method/,
+        );
+      });
+      it('should not throw for the placeholder of a scoped guard', () => {
+        class ScopedGuard {
+          canActivate = () => true;
+        }
+        const wrapper = {
+          instance: Object.create(ScopedGuard.prototype),
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(
+          guardsContextCreator,
+          'getInstanceByMetatype',
+        ).mockImplementation(() => wrapper as any);
+        expect(guardsContextCreator.getGuardInstance(ScopedGuard)).toBe(
+          wrapper.instance,
+        );
+      });
       it('should return the class when only the class has a "canActivate"', () => {
         class StaticOnly {
           static canActivate() {
@@ -276,6 +330,25 @@ describe('GuardsContextCreator', () => {
 
         expect(guardsContextCreator.getGlobalMetadata({ id: 3 })).toEqual(
           expect.arrayContaining([instance, ...globalGuards]),
+        );
+      });
+      it('should throw when a constructed scoped guard has no "canActivate"', () => {
+        class AbstractGuard {}
+        const instanceWrapper = new InstanceWrapper();
+        vi.spyOn(
+          applicationConfig,
+          'getGlobalRequestGuards',
+        ).mockImplementation(() => [instanceWrapper]);
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () =>
+            ({
+              instance: new AbstractGuard(),
+              isConstructorCalled: true,
+            }) as any,
+        );
+
+        expect(() => guardsContextCreator.getGlobalMetadata({ id: 3 })).toThrow(
+          InvalidEnhancerException,
         );
       });
     });

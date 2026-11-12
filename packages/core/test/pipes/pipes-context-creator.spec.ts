@@ -84,6 +84,20 @@ describe('PipesContextCreator', () => {
         );
         expect(creator.getPipeInstance(WithStatic)).toBe(wrapper.instance);
       });
+      it('should throw when Nest constructed the class and it has no "transform"', () => {
+        class AbstractEnhancer {}
+        const wrapper = {
+          instance: new AbstractEnhancer(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(creator, 'getInstanceByMetatype').mockImplementation(
+          () => wrapper as any,
+        );
+        expect(() => creator.getPipeInstance(AbstractEnhancer)).toThrow(
+          /The pipe \(class AbstractEnhancer\) doesn't provide the "transform" method/,
+        );
+      });
       it('should return the class when only the class has a "transform"', () => {
         class StaticOnly {
           static transform() {

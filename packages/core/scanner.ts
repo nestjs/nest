@@ -15,6 +15,11 @@ import { RequestScopedGlobalEnhancerException } from './errors/exceptions/reques
 import { UndefinedModuleEntryException } from './errors/exceptions/undefined-module-entry.exception.js';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception.js';
 import { UninstantiatedGlobalEnhancerException } from './errors/exceptions/uninstantiated-global-enhancer.exception.js';
+import {
+  assertEnhancer,
+  describeEnhancer,
+  type EnhancerKind,
+} from './helpers/assert-enhancer.js';
 import { getParamsHost } from './helpers/class-ref-registry.js';
 import { getClassScope } from './helpers/get-class-scope.js';
 import { STATIC_CONTEXT } from './injector/constants.js';
@@ -75,6 +80,12 @@ interface ModulesScanParameters {
   lazy?: boolean;
   insertedModules?: Module[];
 }
+
+const ENHANCER_KIND_BY_TOKEN: Record<string, EnhancerKind> = {
+  [APP_GUARD]: 'guard',
+  [APP_INTERCEPTOR]: 'interceptor',
+  [APP_PIPE]: 'pipe',
+};
 
 export class DependenciesScanner {
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
@@ -782,7 +793,20 @@ export class DependenciesScanner {
             provider,
           );
         }
-        applyProvidersMap[type as string](instanceWrapper.instance);
+        const instance = instanceWrapper.instance;
+        const kind = ENHANCER_KIND_BY_TOKEN[type as string];
+        // A static factory that returns nothing on purpose is skipped
+        if (kind && !isNil(instance)) {
+          const provider = instanceWrapper.metatype
+            ? this.describeEnhancerProvider(instanceWrapper)[1]
+            : 'useValue';
+          assertEnhancer(
+            instance,
+            kind,
+            `${type as string} provider (${provider}) gives ${describeEnhancer(instance)}`,
+          );
+        }
+        applyProvidersMap[type as string](instance);
       },
     );
   }

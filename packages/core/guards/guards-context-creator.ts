@@ -1,6 +1,10 @@
 import type { CanActivate } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
+import {
+  assertEnhancer,
+  describeEnhancer,
+} from '../helpers/assert-enhancer.js';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
@@ -80,11 +84,20 @@ export class GuardsContextCreator extends ContextCreator {
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    return this.pickEnhancer<CanActivate>(
+    const enhancer = this.pickEnhancer<CanActivate>(
       metatype,
       instanceHost && instanceHost.instance,
       'canActivate',
     );
+    // Nest constructed the bound class, and neither the instance nor the
+    // class can run as a guard. A request-scoped or transient guard outside of
+    // its context is only a placeholder whose constructor never ran, and a
+    // class that resolves to no provider (a host outside of every module)
+    // is skipped as before.
+    if (instanceHost?.isConstructorCalled) {
+      assertEnhancer(enhancer, 'guard', describeEnhancer(metatype));
+    }
+    return enhancer;
   }
 
   public getInstanceByMetatype(
@@ -123,7 +136,13 @@ export class GuardsContextCreator extends ContextCreator {
         ),
       )
       .filter(host => !!host)
-      .map(host => host.instance)
+      .map(host => {
+        // A scoped instance only exists here, once per context
+        if (host.isConstructorCalled) {
+          assertEnhancer(host.instance, 'guard');
+        }
+        return host.instance;
+      })
       .toArray();
 
     return globalGuards.concat(scopedGuards) as T;

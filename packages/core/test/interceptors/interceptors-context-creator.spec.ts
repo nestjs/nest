@@ -140,6 +140,23 @@ describe('InterceptorsContextCreator', () => {
           interceptorsContextCreator.getInterceptorInstance(WithStatic),
         ).toBe(wrapper.instance);
       });
+      it('should throw when Nest constructed the class and it has no "intercept"', () => {
+        class AbstractEnhancer {}
+        const wrapper = {
+          instance: new AbstractEnhancer(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(
+          interceptorsContextCreator,
+          'getInstanceByMetatype',
+        ).mockImplementation(() => wrapper as any);
+        expect(() =>
+          interceptorsContextCreator.getInterceptorInstance(AbstractEnhancer),
+        ).toThrow(
+          /The interceptor \(class AbstractEnhancer\) doesn't provide the "intercept" method/,
+        );
+      });
       it('should return the class when only the class has a "intercept"', () => {
         class StaticOnly {
           static intercept() {

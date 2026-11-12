@@ -1,5 +1,9 @@
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
+import {
+  assertEnhancer,
+  describeEnhancer,
+} from '../helpers/assert-enhancer.js';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
@@ -80,11 +84,20 @@ export class InterceptorsContextCreator extends ContextCreator {
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    return this.pickEnhancer<NestInterceptor>(
+    const enhancer = this.pickEnhancer<NestInterceptor>(
       metatype,
       instanceHost && instanceHost.instance,
       'intercept',
     );
+    // Nest constructed the bound class, and neither the instance nor the
+    // class can run as a interceptor. A request-scoped or transient interceptor outside of
+    // its context is only a placeholder whose constructor never ran, and a
+    // class that resolves to no provider (a host outside of every module)
+    // is skipped as before.
+    if (instanceHost?.isConstructorCalled) {
+      assertEnhancer(enhancer, 'interceptor', describeEnhancer(metatype));
+    }
+    return enhancer;
   }
 
   public getInstanceByMetatype(
@@ -122,7 +135,13 @@ export class InterceptorsContextCreator extends ContextCreator {
         ),
       )
       .filter(host => !!host)
-      .map(host => host.instance)
+      .map(host => {
+        // A scoped instance only exists here, once per context
+        if (host.isConstructorCalled) {
+          assertEnhancer(host.instance, 'interceptor');
+        }
+        return host.instance;
+      })
       .toArray();
 
     return globalInterceptors.concat(scopedInterceptors) as T;

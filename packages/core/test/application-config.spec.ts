@@ -2,6 +2,7 @@ import { RequestMethod } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces/index.js';
 import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
+import { InvalidEnhancerException } from '../errors/exceptions/invalid-enhancer.exception.js';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;
@@ -47,8 +48,8 @@ describe('ApplicationConfig', () => {
   });
   describe('Pipes', () => {
     it('should set global pipes', () => {
-      const pipes = ['test', 'test2'];
-      appConfig.useGlobalPipes(...(pipes as any));
+      const pipes = [{ transform: () => 1 }, { transform: () => 2 }];
+      appConfig.useGlobalPipes(...pipes);
 
       expect(appConfig.getGlobalPipes()).toEqual(pipes);
     });
@@ -87,8 +88,11 @@ describe('ApplicationConfig', () => {
   });
   describe('Guards', () => {
     it('should set global guards', () => {
-      const guards = ['test', 'test2'];
-      appConfig.useGlobalGuards(...(guards as any));
+      const guards = [
+        { canActivate: () => true },
+        { canActivate: () => false },
+      ];
+      appConfig.useGlobalGuards(...guards);
 
       expect(appConfig.getGlobalGuards()).toEqual(guards);
     });
@@ -103,6 +107,42 @@ describe('ApplicationConfig', () => {
       appConfig.addGlobalRequestGuard(guard as any);
 
       expect(appConfig.getGlobalRequestGuards()).toContain(guard);
+    });
+  });
+  describe('when a global enhancer is not an instance', () => {
+    class AuthGuard {
+      canActivate() {
+        return true;
+      }
+    }
+    it.each([
+      ['a class', AuthGuard, /\(class AuthGuard\)/],
+      ['a promise', Promise.resolve(new AuthGuard()), /\(a promise\)/],
+      ['an array', [new AuthGuard()], /\(an array\)/],
+    ])('should throw when given %s', (_, guard, message) => {
+      expect(() => appConfig.useGlobalGuards(guard as any)).toThrow(
+        InvalidEnhancerException,
+      );
+      expect(() => appConfig.useGlobalGuards(guard as any)).toThrow(message);
+      expect(appConfig.getGlobalGuards()).toEqual([]);
+    });
+    it('should throw for pipes and interceptors too', () => {
+      class SomePipe {}
+      expect(() => appConfig.useGlobalPipes(SomePipe as any)).toThrow(
+        /The pipe \(class SomePipe\) doesn't provide the "transform" method/,
+      );
+      expect(() => appConfig.useGlobalInterceptors({} as any)).toThrow(
+        /The interceptor \(an object\)/,
+      );
+    });
+    it('should accept a class that has the method as a static', () => {
+      class StaticGuard {
+        static canActivate() {
+          return true;
+        }
+      }
+      appConfig.useGlobalGuards(StaticGuard as any);
+      expect(appConfig.getGlobalGuards()).toEqual([StaticGuard]);
     });
   });
   describe('PreRequestHooks', () => {
@@ -123,7 +163,7 @@ describe('ApplicationConfig', () => {
   });
   describe('Interceptors', () => {
     it('should set global interceptors', () => {
-      const interceptors = ['test', 'test2'];
+      const interceptors = [{ intercept: () => 1 }, { intercept: () => 2 }];
       appConfig.useGlobalInterceptors(...(interceptors as any));
 
       expect(appConfig.getGlobalInterceptors()).toEqual(interceptors);
@@ -185,10 +225,11 @@ describe('ApplicationConfig', () => {
 
   describe('accumulation', () => {
     it('should accumulate global pipes via useGlobalPipes and addGlobalPipe', () => {
-      appConfig.useGlobalPipes('pipe1' as any, 'pipe2' as any);
-      appConfig.addGlobalPipe('pipe3' as any);
+      const pipes = [1, 2, 3].map(() => ({ transform: () => null }));
+      appConfig.useGlobalPipes(pipes[0], pipes[1]);
+      appConfig.addGlobalPipe(pipes[2]);
 
-      expect(appConfig.getGlobalPipes()).toEqual(['pipe1', 'pipe2', 'pipe3']);
+      expect(appConfig.getGlobalPipes()).toEqual(pipes);
     });
 
     it('should accumulate global filters via useGlobalFilters and addGlobalFilter', () => {
@@ -199,17 +240,19 @@ describe('ApplicationConfig', () => {
     });
 
     it('should accumulate global guards via useGlobalGuards and addGlobalGuard', () => {
-      appConfig.useGlobalGuards('g1' as any);
-      appConfig.addGlobalGuard('g2' as any);
+      const guards = [1, 2].map(() => ({ canActivate: () => true }));
+      appConfig.useGlobalGuards(guards[0]);
+      appConfig.addGlobalGuard(guards[1]);
 
-      expect(appConfig.getGlobalGuards()).toEqual(['g1', 'g2']);
+      expect(appConfig.getGlobalGuards()).toEqual(guards);
     });
 
     it('should accumulate global interceptors via useGlobalInterceptors and addGlobalInterceptor', () => {
-      appConfig.useGlobalInterceptors('i1' as any);
-      appConfig.addGlobalInterceptor('i2' as any);
+      const interceptors = [1, 2].map(() => ({ intercept: () => null }));
+      appConfig.useGlobalInterceptors(...(interceptors as any[]).slice(0, 1));
+      appConfig.addGlobalInterceptor(interceptors[1] as any);
 
-      expect(appConfig.getGlobalInterceptors()).toEqual(['i1', 'i2']);
+      expect(appConfig.getGlobalInterceptors()).toEqual(interceptors);
     });
   });
   describe('Route conflict policy', () => {
