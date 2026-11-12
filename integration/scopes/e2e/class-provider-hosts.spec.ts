@@ -40,6 +40,13 @@ class RequestScopedAllowGuard implements CanActivate {
   }
 }
 
+@Injectable({ scope: Scope.TRANSIENT })
+class TransientDenyGuard implements CanActivate {
+  canActivate() {
+    return false;
+  }
+}
+
 @WebSocketGateway()
 class VaultGateway {
   @UseGuards(DenyGuard)
@@ -63,6 +70,11 @@ class RequestScopedVaultGateway {
 class PayrollResolver {
   payroll() {
     return 'payroll';
+  }
+
+  @UseGuards(DenyGuard)
+  secret() {
+    return 'secret';
   }
 }
 
@@ -148,19 +160,44 @@ describe('Class providers that host handlers', () => {
   });
 
   describe('when a resolver is registered with "useClass" under another token', () => {
-    it('should run a request-scoped global guard on it', async () => {
-      const moduleRef = await Test.createTestingModule({
+    let moduleRef: TestingModule;
+
+    afterEach(async () => {
+      await moduleRef.close();
+    });
+
+    const compile = async (providers: Provider[]) => {
+      moduleRef = await Test.createTestingModule({
         providers: [
           { provide: 'PAYROLL', useClass: PayrollResolver },
-          { provide: APP_GUARD, useClass: RequestScopedDenyGuard },
+          ...providers,
         ],
       }).compile();
       const hostModule = [...moduleRef.get(ModulesContainer).values()].find(
         ({ providers }) => providers.has('PAYROLL'),
       )!;
-      const wrapper = hostModule.providers.get('PAYROLL')!;
+      return { hostModule, wrapper: hostModule.providers.get('PAYROLL')! };
+    };
 
-      // What @nestjs/graphql does for a resolver that is not static
+    // What @nestjs/graphql does for a static resolver
+    const createStaticHandler = async (
+      providers: Provider[],
+      methodName: 'payroll' | 'secret',
+    ) => {
+      const { wrapper } = await compile(providers);
+      expect(wrapper.isDependencyTreeStatic()).to.be.true;
+      const resolver = wrapper.instance as PayrollResolver;
+      return moduleRef
+        .get(ExternalContextCreator)
+        .create(resolver, resolver[methodName], methodName);
+    };
+
+    // What @nestjs/graphql does for a resolver that is not static
+    const createRequestScopedHandler = async (
+      providers: Provider[],
+      methodName: 'payroll' | 'secret',
+    ) => {
+      const { hostModule, wrapper } = await compile(providers);
       expect(wrapper.isDependencyTreeStatic()).to.be.false;
       const contextId = ContextIdFactory.create();
       moduleRef.registerRequestByContextId({}, contextId);
@@ -170,26 +207,50 @@ describe('Class providers that host handlers', () => {
         hostModule.providers,
         contextId,
       );
-      const handler = moduleRef
+      return moduleRef
         .get(ExternalContextCreator)
         .create(
           resolver,
-          resolver.payroll,
-          'payroll',
+          resolver[methodName],
+          methodName,
           undefined,
           undefined,
           contextId,
           wrapper.id,
         );
+    };
 
-      let error: unknown;
-      try {
-        await handler();
-      } catch (err) {
-        error = err;
-      }
-      expect(error).to.be.instanceOf(ForbiddenException);
-      await moduleRef.close();
+    it('should run a request-scoped global guard on it', async () => {
+      const handler = await createRequestScopedHandler(
+        [{ provide: APP_GUARD, useClass: RequestScopedDenyGuard }],
+        'payroll',
+      );
+
+      expect(await rejectionOf(handler())).to.be.instanceOf(ForbiddenException);
+    });
+
+    it('should run its own guards', async () => {
+      const handler = await createStaticHandler([], 'secret');
+
+      expect(await rejectionOf(handler())).to.be.instanceOf(ForbiddenException);
+    });
+
+    it('should run its own guards when it is request-scoped', async () => {
+      const handler = await createRequestScopedHandler(
+        [{ provide: APP_GUARD, useClass: RequestScopedAllowGuard }],
+        'secret',
+      );
+
+      expect(await rejectionOf(handler())).to.be.instanceOf(ForbiddenException);
+    });
+
+    it('should run a transient global guard on it', async () => {
+      const handler = await createStaticHandler(
+        [{ provide: APP_GUARD, useClass: TransientDenyGuard }],
+        'payroll',
+      );
+
+      expect(await rejectionOf(handler())).to.be.instanceOf(ForbiddenException);
     });
   });
 
