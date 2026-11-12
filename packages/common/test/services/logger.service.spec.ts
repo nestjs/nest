@@ -333,6 +333,67 @@ describe('Logger', () => {
         expect(json.message.copies[999]).to.equal('[Truncated]');
       });
 
+      it('should not call toJSON() on the values past the limit', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const toJSON = sinon.spy((_key: string) => 'x'.repeat(100_000));
+        const items = new Array(1_000).fill({ toJSON });
+
+        logger.log({ items });
+
+        const json = JSON.parse(processStdoutWriteStub.firstCall.firstArg);
+        expect(json.message.items).to.have.length(1_000);
+        expect(json.message.items[0]).to.equal('x'.repeat(100_000));
+        expect(json.message.items[999]).to.equal('[Truncated]');
+        expect(toJSON.calledWith('0')).to.be.true;
+        expect(toJSON.callCount).to.be.at.most(11);
+      });
+
+      it('should not convert a Buffer for each reference past the limit', () => {
+        const logger = new ConsoleLogger({ json: true });
+        // A Buffer is written as an array of one number per byte.
+        const attachment = Buffer.alloc(100_000, 1);
+        const attachments = new Array(100).fill(attachment);
+        const toJSON = sinon.spy(Buffer.prototype, 'toJSON');
+        let calls: number;
+
+        try {
+          logger.log({ attachments });
+        } finally {
+          calls = toJSON.callCount;
+          toJSON.restore();
+        }
+
+        expect(calls).to.be.at.most(10);
+        const json = JSON.parse(processStdoutWriteStub.firstCall.firstArg);
+        expect(json.message.attachments).to.have.length(100);
+        expect(json.message.attachments[0]).to.deep.equal(attachment.toJSON());
+        expect(json.message.attachments[99]).to.equal('[Truncated]');
+      });
+
+      it('should write the values with a toJSON() as before', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const at = new Date(0);
+
+        logger.log({ list: [at, { at, data: Buffer.from([1]) }] });
+
+        const json = JSON.parse(processStdoutWriteStub.firstCall.firstArg);
+        expect(json.message.list).to.deep.equal([
+          '1970-01-01T00:00:00.000Z',
+          {
+            at: '1970-01-01T00:00:00.000Z',
+            data: { type: 'Buffer', data: [1] },
+          },
+        ]);
+      });
+
+      it('should still detect circular references next to values with a toJSON()', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const list: any[] = [new Date(0)];
+        list.push({ at: new Date(1), list, data: Buffer.from([1]) });
+
+        expect(() => logger.log(list)).to.throw(TypeError, /circular/);
+      });
+
       it('should write a long record in full when nothing is repeated', () => {
         const logger = new ConsoleLogger({ json: true });
         const items = Array.from({ length: 50_000 }, (_, id) => ({ id }));

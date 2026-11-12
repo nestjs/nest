@@ -3,6 +3,7 @@ import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util';
 import {
   isFunction,
+  isObject,
   isPlainObject,
   isString,
   isUndefined,
@@ -550,8 +551,48 @@ export class ConsoleLogger implements LoggerService {
    */
   protected stringifyJsonLogObject(logObject: Record<string, unknown>) {
     const replacer = this.stringifyReplacer;
+    // What `JSON.stringify` was given in place of each object. The same one
+    // is handed over at every reference, so that a circular reference is
+    // still detected.
+    const holders = new Map<object, object>();
     // Approximate length of the output so far (array indices aren't written).
     let length = 0;
+
+    // `JSON.stringify` calls the `toJSON()` of a value before the replacer,
+    // so past the limit the replacer could only drop its result: for a
+    // `Buffer`, an array of one number per byte, built again for every
+    // reference to it. Such values are handed over behind a `toJSON()` that
+    // checks the limit first, in a shallow copy of the object holding them.
+    const hasToJSON = (item: unknown) =>
+      isObject(item) && isFunction((item as { toJSON?: unknown }).toJSON);
+    const deferToJSON = (item: unknown) =>
+      hasToJSON(item)
+        ? {
+            toJSON: (key: string) =>
+              length > MAX_JSON_LENGTH
+                ? '[Truncated]'
+                : (item as { toJSON(key: string): unknown }).toJSON(key),
+          }
+        : item;
+    const toHolder = (value: object): object => {
+      let holder = holders.get(value);
+      if (holder) {
+        return holder;
+      }
+      if (Array.isArray(value)) {
+        holder = value.some(hasToJSON) ? value.map(deferToJSON) : value;
+      } else {
+        const record = value as Record<string, unknown>;
+        const keys = Object.keys(record);
+        holder = keys.some(key => hasToJSON(record[key]))
+          ? Object.fromEntries(keys.map(key => [key, deferToJSON(record[key])]))
+          : value;
+      }
+      if (holder !== value) {
+        holders.set(value, holder);
+      }
+      return holder;
+    };
 
     return JSON.stringify(
       logObject,
@@ -573,7 +614,9 @@ export class ConsoleLogger implements LoggerService {
             ? '[Truncated]'
             : value;
         }
-        return value;
+        return typeof value === 'object' && value !== null
+          ? toHolder(value)
+          : value;
       },
     );
   }
