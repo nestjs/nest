@@ -561,6 +561,13 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   private matchRmqPattern(pattern: string, routingKey: string): boolean {
+    // The key comes from the body of the message, as long as its sender
+    // likes, and matching costs a pass per segment. A routing key is an AMQP
+    // short string, so the broker routes no longer one (more characters are
+    // more bytes too).
+    if (routingKey && routingKey.length > RMQ_MAX_SHORT_STRING_LENGTH) {
+      return false;
+    }
     // The broker splits an empty key into no words at all, so "#" and "#.#"
     // match it
     const patternSegments = pattern ? pattern.split(RMQ_SEPARATOR) : [];

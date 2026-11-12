@@ -1052,6 +1052,20 @@ describe('ServerRMQ', () => {
 
       expect(server.getHandlerByPattern('1.0')).toBe(handler);
     });
+
+    it('should match a pattern longer than a routing key against exact handlers only', () => {
+      server = new ServerRMQ({ wildcards: true });
+      const longPattern = `users.${'a'.repeat(250)}`;
+      const wildcardHandler = vi.fn();
+      const exactHandler = vi.fn();
+      server.addHandler('users.#', wildcardHandler);
+      (server as any).initializeWildcardHandlersIfExist();
+
+      expect(server.getHandlerByPattern(longPattern)).toBeNull();
+
+      server.addHandler(longPattern, exactHandler);
+      expect(server.getHandlerByPattern(longPattern)).toBe(exactHandler);
+    });
   });
 
   describe('matchRmqPattern', () => {
@@ -1205,6 +1219,20 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('*.*', '.a')).toBe(true);
         // "#" cannot stand in for a missing word
         expect(matchRmqPattern('a..#', 'a')).toBe(false);
+      });
+
+      it('should not match a key longer than a routing key may be', () => {
+        // A routing key has at most 255 bytes, so the broker routes none longer
+        expect(matchRmqPattern('#', 'a'.repeat(255))).toBe(true);
+        expect(matchRmqPattern('#', 'a'.repeat(256))).toBe(false);
+        expect(matchRmqPattern('#', '.'.repeat(255))).toBe(true);
+        expect(matchRmqPattern('#', '.'.repeat(256))).toBe(false);
+        expect(matchRmqPattern('users.#', `users.${'a'.repeat(250)}`)).toBe(
+          false,
+        );
+        expect(matchRmqPattern('users.#', `users.${'a'.repeat(249)}`)).toBe(
+          true,
+        );
       });
 
       it('should handle complex $ patterns that previously failed', () => {
