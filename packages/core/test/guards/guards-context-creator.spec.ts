@@ -139,6 +139,43 @@ describe('GuardsContextCreator', () => {
           wrapper.instance,
         );
       });
+      it('should pick the instance from the container when the class also has a static "canActivate"', () => {
+        class WithStatic {
+          static canActivate() {
+            return 'static';
+          }
+          canActivate() {
+            return 'instance';
+          }
+        }
+        const wrapper = {
+          instance: new WithStatic(),
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(guardsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(guardsContextCreator.getGuardInstance(WithStatic)).to.equal(
+          wrapper.instance,
+        );
+      });
+      it('should return the class when only the class has a "canActivate"', () => {
+        class StaticOnly {
+          static canActivate() {
+            return 'static';
+          }
+        }
+        const wrapper = {
+          instance: new StaticOnly(),
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(guardsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(guardsContextCreator.getGuardInstance(StaticOnly)).to.equal(
+          StaticOnly,
+        );
+      });
       it('should return null', () => {
         sinon
           .stub(guardsContextCreator, 'getInstanceByMetatype')

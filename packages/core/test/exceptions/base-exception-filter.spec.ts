@@ -35,6 +35,41 @@ describe('BaseExceptionFilterContext', () => {
           .callsFake(() => wrapper as any);
         expect(filter.getFilterInstance(Filter)).to.be.eql(wrapper.instance);
       });
+      it('should pick the instance from the container when the class also has a static "catch"', () => {
+        class WithStatic {
+          static catch() {
+            return 'static';
+          }
+          catch() {
+            return 'instance';
+          }
+        }
+        const wrapper = {
+          instance: new WithStatic(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(filter, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(filter.getFilterInstance(WithStatic)).to.equal(wrapper.instance);
+      });
+      it('should return the class when only the class has a "catch"', () => {
+        class StaticOnly {
+          static catch() {
+            return 'static';
+          }
+        }
+        const wrapper = {
+          instance: new StaticOnly(),
+          isConstructorCalled: true,
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(filter, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(filter.getFilterInstance(StaticOnly)).to.equal(StaticOnly);
+      });
       it('should return null', () => {
         sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => null!);
         expect(filter.getFilterInstance(Filter)).to.be.eql(null);

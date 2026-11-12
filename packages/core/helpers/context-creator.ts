@@ -1,4 +1,5 @@
 import { Controller } from '@nestjs/common/interfaces';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { getClassRef } from './class-ref-registry';
@@ -50,6 +51,26 @@ export abstract class ContextCreator {
     metadataKey: string,
   ): T {
     return Reflect.getMetadata(metadataKey, callback);
+  }
+
+  /**
+   * Returns the enhancer to run for one bound as a class: the instance that
+   * the container holds for it. The class itself is used only when that
+   * instance doesn't implement the method and the class has a static one of
+   * that name, so a static method no longer takes the place of the instance.
+   */
+  protected pickEnhancer<T extends object>(
+    metatype: Function,
+    instance: T | null | undefined,
+    methodKey: keyof T,
+  ): T | null {
+    if (instance && isFunction(instance[methodKey])) {
+      return instance;
+    }
+    if (isFunction((metatype as unknown as T)[methodKey])) {
+      return metatype as unknown as T;
+    }
+    return instance ?? null;
   }
 
   protected getContextId(

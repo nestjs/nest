@@ -66,6 +66,39 @@ describe('PipesContextCreator', () => {
         sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => wrapper);
         expect(creator.getPipeInstance(Pipe)).to.be.eql(wrapper.instance);
       });
+      it('should pick the instance from the container when the class also has a static "transform"', () => {
+        class WithStatic {
+          static transform() {
+            return 'static';
+          }
+          transform() {
+            return 'instance';
+          }
+        }
+        const wrapper = {
+          instance: new WithStatic(),
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(creator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(creator.getPipeInstance(WithStatic)).to.equal(wrapper.instance);
+      });
+      it('should return the class when only the class has a "transform"', () => {
+        class StaticOnly {
+          static transform() {
+            return 'static';
+          }
+        }
+        const wrapper = {
+          instance: new StaticOnly(),
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(creator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(creator.getPipeInstance(StaticOnly)).to.equal(StaticOnly);
+      });
       it('should return null', () => {
         sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => null!);
         expect(creator.getPipeInstance(Pipe)).to.be.eql(null);

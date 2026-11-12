@@ -120,6 +120,43 @@ describe('InterceptorsContextCreator', () => {
           interceptorsContextCreator.getInterceptorInstance(Interceptor),
         ).to.be.eql(wrapper.instance);
       });
+      it('should pick the instance from the container when the class also has a static "intercept"', () => {
+        class WithStatic {
+          static intercept() {
+            return 'static';
+          }
+          intercept() {
+            return 'instance';
+          }
+        }
+        const wrapper = {
+          instance: new WithStatic(),
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(interceptorsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(
+          interceptorsContextCreator.getInterceptorInstance(WithStatic),
+        ).to.equal(wrapper.instance);
+      });
+      it('should return the class when only the class has an "intercept"', () => {
+        class StaticOnly {
+          static intercept() {
+            return 'static';
+          }
+        }
+        const wrapper = {
+          instance: new StaticOnly(),
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(interceptorsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
+        expect(
+          interceptorsContextCreator.getInterceptorInstance(StaticOnly),
+        ).to.equal(StaticOnly);
+      });
       it('should return null', () => {
         sinon
           .stub(interceptorsContextCreator, 'getInstanceByMetatype')

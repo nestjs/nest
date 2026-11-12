@@ -46,22 +46,25 @@ export class BaseExceptionFilterContext extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): ExceptionFilter | null {
-    const isObject = !!(filter as ExceptionFilter).catch;
-    if (isObject) {
-      return filter as ExceptionFilter;
+    if (!isFunction(filter)) {
+      return filter;
     }
     const instanceWrapper = this.getInstanceByMetatype(filter as Type<unknown>);
     if (!instanceWrapper) {
-      return null;
+      return this.pickEnhancer<ExceptionFilter>(filter, null, 'catch');
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    if (!instanceHost || !this.isInstantiated(instanceWrapper, instanceHost)) {
+    if (instanceHost && !this.isInstantiated(instanceWrapper, instanceHost)) {
       return null;
     }
-    return instanceHost.instance;
+    return this.pickEnhancer<ExceptionFilter>(
+      filter,
+      instanceHost && instanceHost.instance,
+      'catch',
+    );
   }
 
   /**

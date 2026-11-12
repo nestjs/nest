@@ -63,21 +63,24 @@ export class GuardsContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): CanActivate | null {
-    const isObject = !!(metatype as CanActivate).canActivate;
-    if (isObject) {
-      return metatype as CanActivate;
+    if (!isFunction(metatype)) {
+      return metatype;
     }
     const instanceWrapper = this.getInstanceByMetatype(
       metatype as Type<unknown>,
     );
     if (!instanceWrapper) {
-      return null;
+      return this.pickEnhancer<CanActivate>(metatype, null, 'canActivate');
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    return instanceHost && instanceHost.instance;
+    return this.pickEnhancer<CanActivate>(
+      metatype,
+      instanceHost && instanceHost.instance,
+      'canActivate',
+    );
   }
 
   public getInstanceByMetatype(

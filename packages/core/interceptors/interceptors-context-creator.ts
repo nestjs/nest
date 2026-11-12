@@ -64,21 +64,24 @@ export class InterceptorsContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): NestInterceptor | null {
-    const isObject = !!(metatype as NestInterceptor).intercept;
-    if (isObject) {
-      return metatype as NestInterceptor;
+    if (!isFunction(metatype)) {
+      return metatype;
     }
     const instanceWrapper = this.getInstanceByMetatype(
       metatype as Type<unknown>,
     );
     if (!instanceWrapper) {
-      return null;
+      return this.pickEnhancer<NestInterceptor>(metatype, null, 'intercept');
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    return instanceHost && instanceHost.instance;
+    return this.pickEnhancer<NestInterceptor>(
+      metatype,
+      instanceHost && instanceHost.instance,
+      'intercept',
+    );
   }
 
   public getInstanceByMetatype(
