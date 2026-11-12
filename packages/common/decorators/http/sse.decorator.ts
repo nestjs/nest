@@ -18,12 +18,14 @@ export interface SseOptions {
   method?: RequestMethod;
 
   /**
-   * Maximum number of characters of event data (`data` plus `comment`) that
-   * may wait for a client that is not reading its events (default:
-   * 4 * 1024 * 1024, i.e. 4M characters). Events wait once the stream and
-   * socket buffers are full, as the producer cannot be paused. Past this
-   * limit, the connection is dropped as if the client had disconnected, and
-   * a warning is logged. Set to 0 or `Infinity` to disable.
+   * Maximum number of characters of event data (`data` and `comment`, plus
+   * `type` and `id`) that may wait for a client that is not reading its
+   * events (default: 4 * 1024 * 1024, i.e. 4M characters). An event counts
+   * for at least 16 characters, so that events with little or no data (e.g.
+   * `{ type: 'changed', data: '' }`) are limited in number too. Events wait
+   * once the stream and socket buffers are full, as the producer cannot be
+   * paused. Past this limit, the connection is dropped as if the client had
+   * disconnected, and a warning is logged. Set to 0 or `Infinity` to disable.
    */
   maxPendingDataLength?: number;
 }
@@ -35,6 +37,7 @@ export interface SseOptions {
  * `maxPendingDataLength` characters of event data (4M by default) wait for a
  * client whose stream is backed up, its connection is dropped. An
  * `EventSource` then reconnects, sending the id of the last event it received.
+ * An event counts for at least 16 characters, whatever it carries.
  * Raise the limit for a route that streams bulk data faster than its clients
  * read, or set it to 0 or `Infinity` to lift it.
  *

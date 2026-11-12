@@ -1081,6 +1081,59 @@ data: test
         request.destroy();
       });
 
+      (
+        [
+          { type: 'changed', data: '' },
+          { type: 'changed' },
+          { data: '' },
+          { comment: '' },
+          { retry: 1000 },
+          {},
+        ] as MessageEvent[]
+      ).forEach(event => {
+        it(`should drop the connection once too many events without data (${JSON.stringify(event)}) wait for it`, async () => {
+          const producer = new Subject<MessageEvent>();
+          const response = new StalledSink();
+          const request = new PassThrough();
+
+          const lifecycle = routerResponseController.sse(
+            producer,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+            { maxPendingDataLength: 1024 },
+          );
+          await emitOnSeparateTurns(producer, 256, () => ({ ...event }));
+
+          expect(response.destroyed).to.be.true;
+          await lifecycle;
+          expect(producer.observed).to.be.false;
+          request.destroy();
+        });
+      });
+
+      it('should keep the connection while fewer events without data wait for it', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new StalledSink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+          { maxPendingDataLength: 1024 },
+        );
+        await emitOnSeparateTurns(producer, 48, () => ({
+          type: 'changed',
+          data: '',
+        }));
+
+        expect(response.destroyed).to.be.false;
+        expect(producer.observed).to.be.true;
+        response.destroy();
+        await lifecycle;
+        request.destroy();
+      });
+
       it('should use the default limit for a "maxPendingDataLength" that is not a number', async () => {
         const producer = new Subject<MessageEvent>();
         const response = new StalledSink();
