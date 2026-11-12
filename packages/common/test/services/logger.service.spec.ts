@@ -969,6 +969,33 @@ describe('Logger', () => {
       );
     });
 
+    it('should print every level when depth is null', () => {
+      const consoleLogger = new ConsoleLogger({
+        colors: false,
+        depth: null,
+      });
+
+      consoleLogger.log({
+        a: { b: { c: { d: { e: { f: { g: 'leaf' } } } } } },
+      });
+
+      expect(processStdoutWriteSpy.calledOnce).to.be.true;
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.include("g: 'leaf'");
+    });
+
+    it('should stop at 5 levels when depth is not set', () => {
+      const consoleLogger = new ConsoleLogger({ colors: false });
+
+      consoleLogger.log({
+        a: { b: { c: { d: { e: { f: { g: 'leaf' } } } } } },
+      });
+
+      expect(processStdoutWriteSpy.calledOnce).to.be.true;
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        'f: [Object]',
+      );
+    });
+
     it('should support custom formatter', () => {
       class CustomConsoleLogger extends ConsoleLogger {
         protected formatMessage(
