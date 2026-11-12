@@ -542,3 +542,196 @@ describe('RouteInfoPathExtractor', () => {
     });
   });
 });
+
+describe('RouteInfoPathExtractor - controller routes on the other side of the global prefix', () => {
+  const createExtractor = (
+    exclude: Parameters<typeof mapToExcludeRoute>[0],
+    controllerRoutes: {
+      path: string;
+      method: RequestMethod;
+      version?: string;
+    }[],
+    configure: (config: ApplicationConfig) => void = () => {},
+  ) => {
+    const appConfig = new ApplicationConfig();
+    appConfig.setGlobalPrefix('api');
+    appConfig.setGlobalPrefixOptions({ exclude: mapToExcludeRoute(exclude) });
+    configure(appConfig);
+    return new RouteInfoPathExtractor(appConfig, () => controllerRoutes);
+  };
+  const filesRoutes = [
+    { path: '/files/:name', method: RequestMethod.GET },
+    { path: '/files/:name/versions', method: RequestMethod.GET },
+  ];
+
+  it('should return the prefixed routes a route that reads as excluded covers', () => {
+    const extractor = createExtractor(['files/:name'], filesRoutes);
+
+    expect(
+      extractor.extractControllerRoutesCoveredBy({
+        path: '/files/*path',
+        method: -1 as RequestMethod,
+      }),
+    ).to.deep.equal([
+      { path: '/files/:name/versions', method: RequestMethod.GET },
+    ]);
+    // Mounted on the side the router serves it at
+    expect(
+      extractor.extractPathsFrom({
+        path: '/files/:name/versions',
+        method: RequestMethod.GET,
+      }),
+    ).to.deep.equal(['/api/files/:name/versions']);
+  });
+
+  it('should return the excluded routes a route covers, of a method it is mounted for', () => {
+    const extractor = createExtractor(
+      [
+        'files/:name/versions',
+        { path: 'users/:id', method: RequestMethod.GET },
+      ],
+      [...filesRoutes, { path: '/users/:id', method: RequestMethod.GET }],
+    );
+
+    expect(
+      extractor.extractControllerRoutesCoveredBy({
+        path: '/files/*path',
+        method: -1 as RequestMethod,
+      }),
+    ).to.deep.equal([
+      { path: '/files/:name/versions', method: RequestMethod.GET },
+    ]);
+    expect(
+      extractor.extractControllerRoutesCoveredBy({
+        path: '/users/:id',
+        method: RequestMethod.ALL,
+      }),
+    ).to.deep.equal([{ path: '/users/:id', method: RequestMethod.GET }]);
+    expect(
+      extractor.extractControllerRoutesCoveredBy({
+        path: '/users/:id',
+        method: RequestMethod.POST,
+      }),
+    ).to.deep.equal([]);
+  });
+
+  it('should match a plain string on the routes below it, and a route on its own path only', () => {
+    const extractor = createExtractor(
+      ['users/me'],
+      [
+        { path: '/users/me', method: RequestMethod.GET },
+        { path: '/users/me/settings', method: RequestMethod.GET },
+        { path: '/users/:id', method: RequestMethod.GET },
+      ],
+    );
+
+    expect(
+      extractor.extractControllerRoutesCoveredBy({
+        path: '/users',
+        method: -1 as RequestMethod,
+      }),
+    ).to.deep.equal([{ path: '/users/me', method: RequestMethod.GET }]);
+    expect(
+      extractor.extractControllerRoutesCoveredBy({
+        path: '/users',
+        method: RequestMethod.GET,
+      }),
+    ).to.deep.equal([]);
+  });
+
+  it('should only return the routes of the versions a route is mounted under', () => {
+    const extractor = createExtractor(
+      ['files/:name/versions'],
+      [
+        { ...filesRoutes[1], version: '1' },
+        { ...filesRoutes[1], version: '2' },
+      ],
+      config =>
+        config.enableVersioning({
+          type: VersioningType.URI,
+          defaultVersion: '1',
+        }),
+    );
+
+    expect(
+      extractor.extractControllerRoutesCoveredBy({
+        path: '/files/*path',
+        method: -1 as RequestMethod,
+      }),
+    ).to.deep.equal([
+      {
+        path: '/files/:name/versions',
+        method: RequestMethod.GET,
+        version: '1',
+      },
+    ]);
+  });
+
+  it('should mount a wildcard on the excluded routes, under their own version', () => {
+    const extractor = createExtractor(
+      ['documents/:id'],
+      [
+        { path: '/documents/*path', method: RequestMethod.GET, version: '1' },
+        { path: '/documents/*path', method: RequestMethod.GET, version: '2' },
+        { path: '/users/:id', method: RequestMethod.GET, version: '1' },
+      ],
+      config =>
+        config.enableVersioning({
+          type: VersioningType.URI,
+          defaultVersion: '1',
+        }),
+    );
+
+    const paths = extractor.extractPathsFrom({
+      path: '/{*splat}',
+      method: -1 as RequestMethod,
+    });
+    expect(paths).to.include('/v1/documents/*path');
+    expect(paths).to.include('/v2/documents/*path');
+    expect(paths).not.to.include('/v1/users/:id');
+
+    expect(
+      extractor.extractPathsFrom({
+        path: '/{*splat}',
+        method: -1 as RequestMethod,
+        version: '2',
+      }),
+    ).not.to.include('/v1/documents/*path');
+  });
+
+  it('should mount a route the adapters cannot mount on the paths below its static segments', () => {
+    const extractor = createExtractor(
+      ['files/:id'],
+      [{ path: '/files/:id?', method: RequestMethod.GET }],
+    );
+
+    expect(
+      extractor.extractPathsFrom({
+        path: '/{*splat}',
+        method: -1 as RequestMethod,
+      }),
+    ).to.include('/files{/*path}');
+  });
+
+  it('should not return anything without a global prefix or controller routes', () => {
+    const appConfig = new ApplicationConfig();
+    appConfig.setGlobalPrefixOptions({
+      exclude: mapToExcludeRoute(['files/:name']),
+    });
+    expect(
+      new RouteInfoPathExtractor(
+        appConfig,
+        () => filesRoutes,
+      ).extractControllerRoutesCoveredBy({
+        path: '/files/*path',
+        method: -1 as RequestMethod,
+      }),
+    ).to.deep.equal([]);
+    expect(
+      createExtractor(['files/:name'], []).extractControllerRoutesCoveredBy({
+        path: '/files/*path',
+        method: -1 as RequestMethod,
+      }),
+    ).to.deep.equal([]);
+  });
+});

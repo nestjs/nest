@@ -69,7 +69,9 @@ export class MiddlewareModule<
     );
     this.routesMapper = new RoutesMapper(container, config);
     this.resolver = new MiddlewareResolver(middlewareContainer, injector);
-    this.routeInfoPathExtractor = new RouteInfoPathExtractor(config);
+    this.routeInfoPathExtractor = new RouteInfoPathExtractor(config, () =>
+      this.routesMapper.mapControllersToRouteInfo(),
+    );
     this.injector = injector;
     this.container = container;
     this.httpAdapter = httpAdapter;
