@@ -877,3 +877,20 @@ describe('RouteInfoPathExtractor - controller routes on the other side of the gl
     ).toEqual([]);
   });
 });
+
+describe('RouteInfoPathExtractor - paths ending in an optional segment', () => {
+  it('should mount the root route of a controller without the slash after an optional segment', () => {
+    const extractor = new RouteInfoPathExtractor(new ApplicationConfig());
+    const mount = (path: string) =>
+      extractor.extractPathsFrom({ path, method: RequestMethod.GET });
+
+    expect(mount('/proxy/*/')).toEqual(['/proxy/*']);
+    expect(mount('/proxy/(.*)/')).toEqual(['/proxy/(.*)']);
+    expect(mount('/files/{*path}/')).toEqual(['/files/{*path}']);
+    expect(mount('/items/{:id}/')).toEqual(['/items/{:id}']);
+    // The slash is kept where nothing optional comes before it
+    expect(mount('/invoices/')).toEqual(['/invoices/']);
+    expect(mount('/users/:id/')).toEqual(['/users/:id/']);
+    expect(mount('/files/*path/')).toEqual(['/files/*path/']);
+  });
+});

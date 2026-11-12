@@ -55,7 +55,11 @@ export class RouteInfoPathExtractor {
     this.versioningConfig = this.applicationConfig.getVersioning();
   }
 
-  public extractPathsFrom({
+  public extractPathsFrom(route: RouteInfo): string[] {
+    return this.extractMountPathsFrom(route).map(toMountPath);
+  }
+
+  private extractMountPathsFrom({
     path,
     method,
     version = this.getVersionOfUnversionedRoutes(),
@@ -536,4 +540,23 @@ function toMountablePath(path: string): string {
       .slice(0, firstPatternSegment >= 0 ? firstPatternSegment : undefined)
       .join('/') + '{/*path}'
   );
+}
+
+/**
+ * Returns the path to mount a middleware on, without the trailing slash
+ * that follows an optional segment at its end. The root route of a
+ * controller is listed with a trailing slash ("/proxy/{*path}/" for
+ * `@Controller('proxy/{*path}')`, or the legacy "proxy/" + "*"), which
+ * path-to-regexp would require after the optional wildcard, so that the path
+ * would not match "/proxy/", which the route serves with an empty wildcard.
+ * The routers drop that slash anyway (Express, the node adapter), while a
+ * matcher compiled from the path as it is (Fastify) would not.
+ */
+function toMountPath(path: string): string {
+  if (path.length <= 1 || !path.endsWith('/')) {
+    return path;
+  }
+  return LegacyRouteConverter.tryConvert(path, { logs: false }).endsWith('}/')
+    ? path.slice(0, -1)
+    : path;
 }
