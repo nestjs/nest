@@ -145,6 +145,14 @@ function toIncomingFile(part: MultipartPart): IncomingMultipartFile {
   return file;
 }
 
+/**
+ * Whether `value` is a promise (e.g. the result of an async callback-style
+ * function), whose rejection would go unhandled if it were ignored.
+ */
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return typeof (value as PromiseLike<unknown> | null)?.then === 'function';
+}
+
 function applyFileFilter(
   options: MultipartOptions,
   req: FastifyRequest,
@@ -153,11 +161,16 @@ function applyFileFilter(
   if (!options.fileFilter) {
     return Promise.resolve(true);
   }
-  return new Promise((resolve, reject) =>
-    options.fileFilter!(req, file, (err, accept) =>
+  return new Promise((resolve, reject) => {
+    const result: unknown = options.fileFilter!(req, file, (err, accept) =>
       err ? reject(err) : resolve(accept),
-    ),
-  );
+    );
+    // The rejection of an async filter fails the request, as a throw does,
+    // rather than going unhandled.
+    if (isThenable(result)) {
+      result.then(undefined, reject);
+    }
+  });
 }
 
 const ABORTED = Symbol('aborted');

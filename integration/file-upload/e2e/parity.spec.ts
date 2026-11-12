@@ -633,6 +633,25 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
         message: 'No executables',
       });
     });
+
+    it('should fail the request when the fileFilter throws or rejects', async () => {
+      const thrown = await expectParity(http =>
+        http.post('/filter-throws').attach('f', text('x'), txt('100%.txt')),
+      );
+      expect(thrown.status).toBe(500);
+      const rejected = await expectParity(http =>
+        http.post('/filter-throws').attach('f', text('x'), txt('async.txt')),
+      );
+      expect(rejected.body).toEqual({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Rejected',
+      });
+      const ok = await expectParity(http =>
+        http.post('/filter-throws').attach('f', text('x'), txt('ok.txt')),
+      );
+      expect(ok.status).toBe(201);
+    });
   });
 
   describe('disk storage', () => {

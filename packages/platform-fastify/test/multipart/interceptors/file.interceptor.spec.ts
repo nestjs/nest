@@ -197,6 +197,32 @@ describe('FileInterceptor', () => {
       );
     });
 
+    it('should fail the request with what fileFilter throws', async () => {
+      const error = new BadRequestException('nope');
+      const target = new (FileInterceptor('avatar', {
+        fileFilter: () => {
+          throw error;
+        },
+      }))();
+      const req = createFakeRequest([file('avatar')]);
+      await expect(target.intercept(createContext(req), handler)).rejects.toBe(
+        error,
+      );
+    });
+
+    it('should fail the request with what an async fileFilter rejects with', async () => {
+      const error = new BadRequestException('nope');
+      const target = new (FileInterceptor('avatar', {
+        fileFilter: (async () => {
+          throw error;
+        }) as any,
+      }))();
+      const req = createFakeRequest([file('avatar')]);
+      await expect(target.intercept(createContext(req), handler)).rejects.toBe(
+        error,
+      );
+    });
+
     it('should report the error of a storage engine that destroyed the stream', async () => {
       const error = new Error('EACCES');
       const storage = {

@@ -37,9 +37,16 @@ function resolveName(
   req: any,
   file: IncomingMultipartFile,
 ) {
-  return new Promise<string>((resolve, reject) =>
-    resolver(req, file, (err, value) => (err ? reject(err) : resolve(value))),
-  );
+  return new Promise<string>((resolve, reject) => {
+    const result: unknown = resolver(req, file, (err, value) =>
+      err ? reject(err) : resolve(value),
+    );
+    // The rejection of an async resolver fails the upload, as a throw does,
+    // rather than going unhandled.
+    if (typeof (result as PromiseLike<unknown> | null)?.then === 'function') {
+      (result as PromiseLike<unknown>).then(undefined, reject);
+    }
+  });
 }
 
 const STREAM_DESTROYED_MESSAGE = 'File stream was destroyed';

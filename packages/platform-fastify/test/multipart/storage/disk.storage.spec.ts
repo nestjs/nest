@@ -59,6 +59,24 @@ describe('diskStorage', () => {
     expect(info.path).toBe(join(dir, 'x-a.txt'));
   });
 
+  it('should fail with what an async destination or filename function rejects with', async () => {
+    const error = new Error('nope');
+    const fail = (async () => {
+      throw error;
+    }) as any;
+    for (const options of [
+      { destination: fail },
+      { destination: dir, filename: fail },
+    ]) {
+      await expect(
+        handle(
+          diskStorage(options),
+          incoming(Readable.from([Buffer.from('x')])),
+        ),
+      ).rejects.toBe(error);
+    }
+  });
+
   it('should remove a partially written file when the stream fails', async () => {
     const stream = new Readable({
       read() {

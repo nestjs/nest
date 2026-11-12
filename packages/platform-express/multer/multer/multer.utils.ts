@@ -4,7 +4,7 @@ import {
   PayloadTooLargeException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
-import { isNil, isPlainObject } from '@nestjs/common/internal';
+import { isFunction, isNil, isPlainObject } from '@nestjs/common/internal';
 import * as coreInternal from '@nestjs/core/internal';
 import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { finished } from 'stream';
@@ -85,15 +85,62 @@ function withoutNil<T extends object>(options: T): Partial<T> {
  * wherever they are not set. multer only checks a limit that is present in
  * `limits`, so the defaults are added to the object, or to the object a
  * function-valued `limits` returns.
+ *
+ * `fileFilter` is wrapped as well (see `passErrorToCallback()`).
  */
 export function applyDefaultLimits<T extends MulterOptions>(options: T): T {
-  const { limits } = options;
+  const { limits, fileFilter } = options;
   return {
     ...options,
+    ...(isFunction(fileFilter) && {
+      fileFilter: passErrorToCallback(fileFilter),
+    }),
     limits:
       typeof limits === 'function'
         ? (req: any) => withDefaultLimits(limits(req))
         : withDefaultLimits(limits),
+  };
+}
+
+type FileFilter = NonNullable<MulterOptions['fileFilter']>;
+
+/**
+ * multer calls `fileFilter` from an event of the multipart parser, where
+ * nothing catches what it throws: the error would not fail the request but
+ * end the process, as would the rejection of an async filter. Either is
+ * handed to the filter's callback instead, so that multer fails the request
+ * with it, as with `callback(error)`. Once the filter has called back, an
+ * error is no longer its decision on the file (multer runs the storage
+ * engine from that callback), and is left as it is.
+ */
+function passErrorToCallback(fileFilter: FileFilter): FileFilter {
+  return (req, file, callback) => {
+    let calledBack = false;
+    const callbackOnce: typeof callback = (error, acceptFile) => {
+      if (!calledBack) {
+        calledBack = true;
+        callback(error, acceptFile);
+      }
+    };
+    const fail = (error: unknown) => {
+      if (calledBack) {
+        throw error;
+      }
+      // multer takes a falsy error for none.
+      callbackOnce(
+        (error || new Error(`fileFilter failed: ${String(error)}`)) as Error,
+        false,
+      );
+    };
+    let result: unknown;
+    try {
+      result = fileFilter(req, file, callbackOnce);
+    } catch (error) {
+      return fail(error);
+    }
+    if (isFunction((result as PromiseLike<unknown> | undefined)?.then)) {
+      (result as PromiseLike<unknown>).then(undefined, fail);
+    }
   };
 }
 

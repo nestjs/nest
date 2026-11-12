@@ -187,6 +187,99 @@ describe('applyDefaultLimits', () => {
     ).toEqual(defaults);
   });
 
+  describe('fileFilter', () => {
+    const file: any = { fieldname: 'f' };
+    const filterWith = (fileFilter: MulterOptions['fileFilter']) =>
+      new Promise<[Error | null, boolean]>(resolve =>
+        applyDefaultLimits({ fileFilter }).fileFilter!({}, file, (...args) =>
+          resolve(args),
+        ),
+      );
+
+    it('should keep the decision of a filter that calls back', async () => {
+      expect(await filterWith((_req, _file, cb) => cb(null, true))).toEqual([
+        null,
+        true,
+      ]);
+      const error = new Error('nope');
+      expect(await filterWith((_req, _file, cb) => cb(error, false))).toEqual([
+        error,
+        false,
+      ]);
+    });
+
+    it('should pass what the filter throws to its callback', async () => {
+      const error = new BadRequestException('nope');
+      expect(
+        await filterWith(() => {
+          throw error;
+        }),
+      ).toEqual([error, false]);
+    });
+
+    it('should pass what an async filter rejects with to its callback', async () => {
+      const error = new Error('nope');
+      expect(
+        await filterWith((async () => {
+          throw error;
+        }) as any),
+      ).toEqual([error, false]);
+    });
+
+    it('should call back once', async () => {
+      const callback = vi.fn();
+      applyDefaultLimits({
+        fileFilter: (_req, _file, cb) => {
+          cb(null, true);
+          cb(null, false);
+        },
+      }).fileFilter!({}, file, callback);
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith(null, true);
+    });
+
+    it('should rethrow what is thrown once the filter has called back', () => {
+      const error = new Error('from the storage engine');
+      const { fileFilter } = applyDefaultLimits({
+        fileFilter: (_req, _file, cb) => cb(null, true),
+      });
+      expect(() =>
+        fileFilter!({}, file, () => {
+          throw error;
+        }),
+      ).toThrow(error);
+    });
+
+    it('should fail the request with what the filter throws, with multer', async () => {
+      const boundary = 'nestjs';
+      const body =
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="f"; filename="a.txt"\r\n` +
+        `Content-Type: text/plain\r\n\r\n` +
+        `x\r\n` +
+        `--${boundary}--\r\n`;
+      const req = Object.assign(Readable.from([Buffer.from(body)]), {
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`,
+          'content-length': String(Buffer.byteLength(body)),
+        },
+      });
+      const error = new BadRequestException('nope');
+      const options = applyDefaultLimits({
+        fileFilter: (_req, file) => {
+          throw file.originalname === 'a.txt' ? error : new Error();
+        },
+      });
+      await expect(
+        new Promise<void>((resolve, reject) =>
+          multer(options).single('f')(req as any, {} as any, (err?: any) =>
+            err ? reject(err) : resolve(),
+          ),
+        ),
+      ).rejects.toBe(error);
+    });
+  });
+
   describe('with multer', () => {
     /** Runs `multer(options).none()` over a body with the given text fields. */
     const parseFields = (options: MulterOptions, fieldNames: string[]) => {

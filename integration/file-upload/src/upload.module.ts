@@ -201,6 +201,23 @@ export function createUploadModule(
       return { files: describeFiles(files) };
     }
 
+    // A filter that throws (or rejects) instead of calling back with the
+    // error, e.g. on a file name it cannot decode.
+    @Post('filter-throws')
+    @UseInterceptors(
+      api.AnyFilesInterceptor({
+        fileFilter: (_req: any, file: any, cb: any) => {
+          if (file.originalname === 'async.txt') {
+            return Promise.reject(new BadRequestException('Rejected'));
+          }
+          cb(null, decodeURIComponent(file.originalname) !== '');
+        },
+      }),
+    )
+    filterThrows(@UploadedFiles() files: any) {
+      return { files: describeFiles(files) };
+    }
+
     @Post('disk')
     @UseInterceptors(
       api.FilesInterceptor('docs', 5, {

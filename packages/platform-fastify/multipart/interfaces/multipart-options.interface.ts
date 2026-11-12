@@ -90,7 +90,9 @@ export interface MultipartOptions {
   defParamCharset?: string;
   /**
    * Decides which files are stored. Call `callback(null, false)` to skip a
-   * file, or `callback(error, false)` to fail the request with `error`.
+   * file, or `callback(error, false)` to fail the request with `error`. An
+   * error the filter throws, or an async filter rejects with, fails the
+   * request in the same way.
    */
   fileFilter?(
     req: any,
