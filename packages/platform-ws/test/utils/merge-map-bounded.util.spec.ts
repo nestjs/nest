@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { EMPTY, from, lastValueFrom, of, Subject, toArray } from 'rxjs';
 import * as sinon from 'sinon';
+import { setFlagsFromString } from 'v8';
+import { runInNewContext } from 'vm';
 import { mergeMapBounded } from '../../utils/merge-map-bounded.util';
 
 describe('mergeMapBounded', () => {
@@ -118,6 +120,24 @@ describe('mergeMapBounded', () => {
     expect(inner$.observed).to.be.false;
     inner$.complete();
     expect(project.calledOnce).to.be.true;
+  });
+
+  it('should not hold on to a value once it has been handled', async () => {
+    setFlagsFromString('--expose-gc');
+    const collectGarbage: () => void = runInNewContext('gc');
+    const source$ = new Subject<object>();
+    const subscription = source$
+      .pipe(mergeMapBounded(() => EMPTY, 1))
+      .subscribe();
+
+    const handled = new WeakRef({});
+    source$.next(handled.deref()!);
+    // A WeakRef keeps its target alive until the current job has ended
+    await new Promise(resolve => setTimeout(resolve));
+    collectGarbage();
+
+    expect(handled.deref()).to.be.undefined;
+    subscription.unsubscribe();
   });
 
   it('should report when values start and stop waiting for their turn', () => {
