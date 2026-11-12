@@ -20,6 +20,7 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
+  RMQ_MAX_SHORT_STRING_LENGTH,
   RQM_NO_EVENT_HANDLER,
   RQM_NO_MESSAGE_HANDLER,
   UNBLOCKED_RMQ_MESSAGE,
@@ -56,8 +57,6 @@ type Channel = any;
 let rmqPackage = {} as any; // as typeof import('amqp-connection-manager');
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
-// In bytes, for an AMQP short string such as "replyTo" or "correlationId"
-const MAX_SHORT_STRING_LENGTH = 255;
 
 /**
  * @publicApi
@@ -418,10 +417,10 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     // longer strings than it can encode again, and once it throws on one, the
     // channel wrapper never settles the publish nor releases the reply.
     const isTooLong = (value: unknown) =>
-      isString(value) && Buffer.byteLength(value) > MAX_SHORT_STRING_LENGTH;
+      isString(value) && Buffer.byteLength(value) > RMQ_MAX_SHORT_STRING_LENGTH;
     if (isTooLong(replyTo) || isTooLong(correlationId)) {
       this.logger.error(
-        `Dropped a reply whose "replyTo" or "correlationId" is longer than ${MAX_SHORT_STRING_LENGTH} bytes.`,
+        `Dropped a reply whose "replyTo" or "correlationId" is longer than ${RMQ_MAX_SHORT_STRING_LENGTH} bytes.`,
       );
       return;
     }

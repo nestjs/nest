@@ -5,6 +5,7 @@ import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
 import { RQM_DEFAULT_MAX_MESSAGE_SIZE } from '../../constants';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
+import { MaxRmqShortStringLengthExceededException } from '../../errors/max-rmq-short-string-length-exceeded.exception';
 import { ReadPacket } from '../../interfaces';
 import { RmqRecord } from '../../record-builders';
 
@@ -402,6 +403,131 @@ describe('ClientRMQ', function () {
       expect(third.startsWith(second.slice(1))).to.be.false;
     });
 
+    describe('when a short string is longer than AMQP allows', () => {
+      // An AMQP short string has at most 255 bytes
+      const longest = 'a'.repeat(255);
+
+      const expectFailedWithoutPublishing = (callback: sinon.SinonSpy) => {
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args[0]).to.have.keys('err');
+        expect(callback.firstCall.args[0].err).to.be.instanceOf(
+          MaxRmqShortStringLengthExceededException,
+        );
+        expect(publishStub.called).to.be.false;
+        expect(sendToQueueStub.called).to.be.false;
+        // Only the listener registered by "beforeEach" is left
+        expect(client['responseEmitter'].eventNames()).to.deep.equal([pattern]);
+      };
+
+      [
+        ['wildcards', { wildcards: true }],
+        ['a fanout exchange', { exchangeType: 'fanout' }],
+      ].forEach(([description, options]) => {
+        it(`should fail the request without publishing when the routing key is too long, with ${description as string}`, () => {
+          Object.assign(untypedClient['options'], options);
+          const callback = sinon.spy();
+
+          client['publish']({ pattern: `${longest}a`, data: 'data' }, callback);
+
+          expectFailedWithoutPublishing(callback);
+        });
+      });
+
+      it('should count the length of the routing key in bytes', () => {
+        untypedClient['options']['wildcards'] = true;
+        const callback = sinon.spy();
+
+        // "é" takes two bytes
+        client['publish'](
+          { pattern: `${longest.slice(1)}é`, data: 'data' },
+          callback,
+        );
+
+        expectFailedWithoutPublishing(callback);
+      });
+
+      it('should check the normalized form of an object pattern', () => {
+        untypedClient['options']['wildcards'] = true;
+        const callback = sinon.spy();
+
+        client['publish'](
+          { pattern: { cmd: longest }, data: 'data' },
+          callback,
+        );
+
+        expectFailedWithoutPublishing(callback);
+      });
+
+      it('should publish a request whose routing key has 255 bytes', () => {
+        untypedClient['options']['wildcards'] = true;
+        const callback = sinon.spy();
+
+        client['publish']({ pattern: longest, data: 'data' }, callback);
+
+        expect(callback.called).to.be.false;
+        expect(publishStub.firstCall.args[1]).to.equal(longest);
+      });
+
+      it('should send a longer pattern to the queue, in the body', () => {
+        const callback = sinon.spy();
+
+        client['publish']({ pattern: `${longest}a`, data: 'data' }, callback);
+
+        expect(callback.called).to.be.false;
+        expect(sendToQueueStub.calledOnce).to.be.true;
+      });
+
+      ['messageId', 'type', 'appId', 'expiration'].forEach(property => {
+        it(`should fail the request without publishing when "${property}" is too long`, () => {
+          const callback = sinon.spy();
+
+          client['publish'](
+            {
+              pattern,
+              data: new RmqRecord('data', { [property]: `${longest}a` }),
+            },
+            callback,
+          );
+
+          expectFailedWithoutPublishing(callback);
+        });
+      });
+
+      it('should fail the request without publishing when a header name is too long', () => {
+        const callback = sinon.spy();
+
+        client['publish'](
+          {
+            pattern,
+            data: new RmqRecord('data', {
+              headers: { [`${longest}a`]: 'value' },
+            }),
+          },
+          callback,
+        );
+
+        expectFailedWithoutPublishing(callback);
+      });
+
+      it('should publish properties and header names of 255 bytes', () => {
+        const callback = sinon.spy();
+
+        client['publish'](
+          {
+            pattern,
+            data: new RmqRecord('data', {
+              messageId: longest,
+              headers: { [longest]: 'a'.repeat(1000) },
+            }),
+          },
+          callback,
+        );
+
+        expect(callback.called).to.be.false;
+        expect(sendToQueueStub.firstCall.args[2].messageId).to.equal(longest);
+      });
+    });
+
     describe('dispose callback', () => {
       let unsubscribeSpy: sinon.SinonSpy, subscription;
 
@@ -669,6 +795,34 @@ describe('ClientRMQ', function () {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
+    });
+    it('should not publish an event whose routing key is longer than AMQP allows', async () => {
+      untypedClient['options']['wildcards'] = true;
+
+      let error: unknown;
+      await client['dispatchEvent']({
+        pattern: 'a'.repeat(256),
+        data: 'data',
+      }).catch(err => (error = err));
+      expect(error).to.be.instanceOf(MaxRmqShortStringLengthExceededException);
+      expect(publishStub.called).to.be.false;
+    });
+    it('should not publish an event with a property longer than AMQP allows', async () => {
+      let error: unknown;
+      await client['dispatchEvent']({
+        pattern: 'pattern',
+        data: new RmqRecord('data', { type: 'a'.repeat(256) }),
+      }).catch(err => (error = err));
+      expect(error).to.be.instanceOf(MaxRmqShortStringLengthExceededException);
+      expect(sendToQueueStub.called).to.be.false;
+    });
+    it('should publish an event whose routing key has 255 bytes', async () => {
+      untypedClient['options']['wildcards'] = true;
+      publishStub.callsFake((a, b, c, d, f) => f());
+
+      await client['dispatchEvent']({ pattern: 'a'.repeat(255), data: 'data' });
+
+      expect(publishStub.firstCall.args[1]).to.equal('a'.repeat(255));
     });
 
     describe('headers', () => {
