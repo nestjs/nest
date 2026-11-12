@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/websockets",
-  "version": "12.4.2",
+  "version": "12.5.0",
   "description": "WebSockets for NestJS: gateways with message handlers, guards, pipes and interceptors, on Socket.IO or ws.",
   "keywords": [
     "nestjs",
@@ -37,8 +37,8 @@
     "tslib": "2.9.1"
   },
   "devDependencies": {
-    "@nestjs/common": "12.4.2",
-    "@nestjs/core": "12.4.2"
+    "@nestjs/common": "12.5.0",
+    "@nestjs/core": "12.5.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.0",

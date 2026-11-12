@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/microservices",
-  "version": "12.4.2",
+  "version": "12.5.0",
   "description": "Microservices for NestJS: message and event handlers over Kafka, RabbitMQ, NATS, Redis, MQTT, gRPC or TCP.",
   "keywords": [
     "nestjs",
@@ -41,8 +41,8 @@
     "tslib": "2.9.1"
   },
   "devDependencies": {
-    "@nestjs/common": "12.4.2",
-    "@nestjs/core": "12.4.2"
+    "@nestjs/common": "12.5.0",
+    "@nestjs/core": "12.5.0"
   },
   "peerDependencies": {
     "@grpc/grpc-js": "*",
