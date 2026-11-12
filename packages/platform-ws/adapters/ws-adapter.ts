@@ -13,7 +13,7 @@ import {
   takeUntil,
 } from 'rxjs/operators';
 import { WebSocketServer } from 'ws';
-import { isNil, normalizePath } from '@nestjs/common/internal';
+import { isFunction, isNil, normalizePath } from '@nestjs/common/internal';
 import {
   CLOSE_EVENT,
   CONNECTION_EVENT,
@@ -38,6 +38,7 @@ type UpgradeListener = (
   socket: Duplex,
   head: Buffer,
 ) => void;
+type UpgradeHook = (...args: any[]) => any;
 type WsData = string | Buffer | ArrayBuffer | Buffer[];
 type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
 type WsAdapterOptions = {
@@ -138,6 +139,9 @@ export class WsAdapter extends AbstractWsAdapter {
   // bind their handlers to the same client, and a single resume() undoes
   // every pause().
   private readonly pauseRequests = new WeakMap<object, number>();
+  // Upgrade requests whose "handleProtocols" threw, which ws goes on to
+  // complete anyway
+  private readonly refusedUpgrades = new WeakSet<object>();
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
@@ -172,10 +176,13 @@ export class WsAdapter extends AbstractWsAdapter {
       host?: string;
       backlog?: number;
       maxPayload?: number;
+      verifyClient?: UpgradeHook;
+      handleProtocols?: UpgradeHook;
     };
     // A copy, so the gateway's options are left as they are. ws reads an
     // undefined "maxPayload" as no limit at all.
     wsOptions.maxPayload ??= this.maxPayload;
+    this.guardUpgradeHooks(wsOptions);
     if (wsOptions?.namespace) {
       const error = new Error(
         '"WsAdapter" does not support namespaces. If you need namespaces in your project, consider using the "@nestjs/platform-socket.io" package instead.',
@@ -226,6 +233,83 @@ export class WsAdapter extends AbstractWsAdapter {
       }),
     );
     return wsServer;
+  }
+
+  /**
+   * ws calls "verifyClient" and "handleProtocols" while it handles an upgrade
+   * request, and catches nothing they throw. On a server that ws creates
+   * itself (a port without a path) nothing else does either, and a promise
+   * that "verifyClient" returns is not waited for on any server. An error in
+   * a gateway's check of what a client sent would end the process, and
+   * without a callback, a promise would let every client in. Here an error is
+   * logged and the client is refused, and a promise is waited for.
+   */
+  protected guardUpgradeHooks(wsOptions: {
+    verifyClient?: UpgradeHook;
+    handleProtocols?: UpgradeHook;
+  }) {
+    const { verifyClient, handleProtocols } = wsOptions;
+    if (isFunction(verifyClient)) {
+      // ws tells the two forms apart the same way
+      const takesCallback = verifyClient.length === 2;
+      wsOptions.verifyClient = (info: unknown, callback: UpgradeHook) => {
+        // A function that fails after it has called back must not answer
+        // again
+        let isSettled = false;
+        const settle = (...verdict: unknown[]) => {
+          if (!isSettled) {
+            isSettled = true;
+            callback(...verdict);
+          }
+        };
+        const refuse = (err: unknown) => {
+          this.logger.error(err);
+          settle(false, 500);
+        };
+        let result: any;
+        try {
+          result = takesCallback
+            ? verifyClient(info, settle)
+            : verifyClient(info);
+        } catch (err) {
+          return refuse(err);
+        }
+        if (isFunction(result?.then)) {
+          Promise.resolve(result)
+            .then(verdict => !takesCallback && settle(verdict))
+            .catch(refuse);
+        } else if (!takesCallback) {
+          settle(result);
+        }
+      };
+    }
+    if (isFunction(handleProtocols)) {
+      wsOptions.handleProtocols = (
+        protocols: Set<string>,
+        request: http.IncomingMessage,
+      ) => {
+        try {
+          return handleProtocols(protocols, request);
+        } catch (err) {
+          // ws completes the handshake whatever this returns, without a
+          // subprotocol for a falsy value, so the client is cut off here and
+          // its connection is not handed to the gateway (bindClientConnect)
+          this.logger.error(err);
+          this.refusedUpgrades.add(request);
+          request.socket.destroy();
+          return false;
+        }
+      };
+    }
+  }
+
+  public bindClientConnect(server: any, callback: Function) {
+    server.on(CONNECTION_EVENT, (client: any, request: any, ...rest: any[]) => {
+      if (request && this.refusedUpgrades.has(request)) {
+        return;
+      }
+      callback(client, request, ...rest);
+    });
   }
 
   public bindMessageHandlers(
@@ -464,15 +548,23 @@ export class WsAdapter extends AbstractWsAdapter {
     this.httpServersRegistry.set(port, httpServer);
 
     const upgradeListener: UpgradeListener = (request, socket, head) => {
+      let pathname: string;
       try {
         const baseUrl = 'ws://' + request.headers.host + '/';
-        const pathname = new URL(request.url!, baseUrl).pathname;
+        pathname = new URL(request.url!, baseUrl).pathname;
+      } catch {
+        return this.abortUpgrade(socket, 400);
+      }
+      // A listener of the "connection" event runs within handleUpgrade()
+      let client: { terminate(): void } | undefined;
+      try {
         const wsServersCollection = this.wsServersRegistry.get(port)!;
 
         let isRequestDelegated = false;
         for (const wsServer of wsServersCollection) {
           if (pathname === wsServer.path) {
-            wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
+            wsServer.handleUpgrade(request, socket, head, (ws: any) => {
+              client = ws;
               wsServer.emit('connection', ws, request);
             });
             isRequestDelegated = true;
@@ -508,18 +600,34 @@ export class WsAdapter extends AbstractWsAdapter {
           }
         }
       } catch (err) {
-        // Node hands the socket over without listeners of its own, and end()
-        // only half-closes it. A client resetting the connection afterwards
-        // would raise an unhandled 'error' event, and one that never closes
-        // would keep the socket open. ws's own abortHandshake() does the same.
-        socket.on(ERROR_EVENT, () => socket.destroy());
-        socket.once('finish', () => socket.destroy());
-        socket.end(`HTTP/1.1 400\r\n${err.message}`);
+        // What went wrong is for the logs, not for the client
+        this.logger.error(err);
+        if (client) {
+          client.terminate();
+        } else {
+          this.abortUpgrade(socket, 500);
+        }
       }
     };
     httpServer.on('upgrade', upgradeListener);
     this.upgradeListenersRegistry.set(port, upgradeListener);
     return httpServer;
+  }
+
+  /**
+   * Answers an upgrade request with an error status and closes its socket.
+   * Node hands the socket over without listeners of its own, and end() only
+   * half-closes it. A client resetting the connection afterwards would raise
+   * an unhandled 'error' event, and one that never closes would keep the
+   * socket open. ws's own abortHandshake() does the same.
+   */
+  protected abortUpgrade(socket: Duplex, statusCode: number) {
+    socket.on(ERROR_EVENT, () => socket.destroy());
+    socket.once('finish', () => socket.destroy());
+    socket.end(
+      `HTTP/1.1 ${statusCode} ${http.STATUS_CODES[statusCode]}\r\n` +
+        'Connection: close\r\nContent-Length: 0\r\n\r\n',
+    );
   }
 
   protected addWsServerToRegistry<T extends Record<'path', string> = any>(
