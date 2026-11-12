@@ -13,6 +13,7 @@ import {
   isMiddlewareRouteExcluded,
   mapToClass,
   mapToExcludeRoute,
+  stripEndSlashes,
 } from '../../middleware/utils.js';
 import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
@@ -205,6 +206,17 @@ describe('middleware utils', () => {
     });
   });
 
+  describe('stripEndSlashes', () => {
+    it('should remove the trailing slashes only', () => {
+      expect(stripEndSlashes('/cats')).toBe('/cats');
+      expect(stripEndSlashes('/cats/')).toBe('/cats');
+      expect(stripEndSlashes('/cats///')).toBe('/cats');
+      expect(stripEndSlashes('//cats//1//')).toBe('//cats//1');
+      expect(stripEndSlashes('///')).toBe('');
+      expect(stripEndSlashes('')).toBe('');
+    });
+  });
+
   describe('isRouteExcluded', () => {
     let adapter: NoopHttpAdapter;
 
@@ -295,6 +307,113 @@ describe('middleware utils', () => {
       it('should exclude "/x/" when "/x" is excluded too', () => {
         expect(isExcluded(['invoices', 'invoices/*'], '/invoices/')).toBe(true);
         expect(isExcluded(['invoices{/*path}'], '/invoices/')).toBe(true);
+      });
+
+      it('should drop every trailing slash, and only those, for that check', () => {
+        expect(isExcluded(['invoices/*'], '/invoices///')).toBe(false);
+        expect(isExcluded(['invoices/*'], '/invoices/abc//')).toBe(true);
+        expect(isExcluded(['invoices', 'invoices/*'], '/invoices///')).toBe(
+          true,
+        );
+      });
+    });
+    describe('when the router serves "/x/" with the first route that matches it', () => {
+      const matchingOptions = {
+        caseSensitive: true,
+        ignoreTrailingSlash: true,
+      };
+      const isExcluded = (
+        exclusions: (string | { path: string; method: RequestMethod })[],
+        servedRoutes: { path: string; method: RequestMethod }[],
+        url: string,
+        options: {
+          caseSensitive: boolean;
+          ignoreTrailingSlash: boolean;
+          removesTrailingSlash?: boolean;
+        } = matchingOptions,
+      ) => {
+        vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
+        return isMiddlewareRouteExcluded(
+          {},
+          mapToExcludeRoute(exclusions, options),
+          adapter,
+          options,
+          undefined,
+          () => mapToExcludeRoute(servedRoutes, options),
+        );
+      };
+      const reportsRoutes = [
+        { path: '/reports/{*path}', method: RequestMethod.GET },
+        { path: '/reports', method: RequestMethod.GET },
+      ];
+
+      it('should not exclude "/x/" when a route that matches "/x/" itself may serve it', () => {
+        expect(isExcluded(['reports'], reportsRoutes, '/reports/')).toBe(false);
+        expect(
+          isExcluded(
+            ['reports'],
+            [{ path: '/reports/{:id}', method: RequestMethod.GET }],
+            '/reports/',
+          ),
+        ).toBe(false);
+        expect(
+          isExcluded(
+            ['accounts/:id'],
+            [{ path: '/accounts/:id/{*path}', method: RequestMethod.GET }],
+            '/accounts/42/',
+          ),
+        ).toBe(false);
+      });
+
+      it('should still exclude "/x" and the paths only the excluded route serves', () => {
+        expect(isExcluded(['reports'], reportsRoutes, '/reports')).toBe(true);
+        expect(
+          isExcluded(
+            ['users/login'],
+            [{ path: '/users/:id', method: RequestMethod.GET }],
+            '/users/login/',
+          ),
+        ).toBe(true);
+        // The route of another method does not serve the request
+        expect(
+          isExcluded(
+            ['reports'],
+            [{ path: '/reports/{*path}', method: RequestMethod.DELETE }],
+            '/reports/',
+          ),
+        ).toBe(true);
+      });
+
+      it('should exclude "/x/" when an exclusion covers the route that matches it', () => {
+        expect(
+          isExcluded(
+            ['reports', 'reports/{*path}'],
+            reportsRoutes,
+            '/reports/',
+          ),
+        ).toBe(true);
+        // It matches "/reports/" only as "/reports" with a trailing slash,
+        // which does not cover the empty wildcard of "reports/{*path}"
+        expect(
+          isExcluded(['reports{/*path}'], reportsRoutes, '/reports/'),
+        ).toBe(false);
+        // Both conditions must hold for one exclusion
+        expect(
+          isExcluded(
+            ['reports', 'reports/{:id}/{*path}'],
+            reportsRoutes,
+            '/reports/',
+          ),
+        ).toBe(false);
+      });
+
+      it('should exclude "/x/" when the router removes the slash before it looks for a route', () => {
+        expect(
+          isExcluded(['reports'], reportsRoutes, '/reports/', {
+            ...matchingOptions,
+            removesTrailingSlash: true,
+          }),
+        ).toBe(true);
       });
     });
     describe('when an excluded route has a version that is not in the path', () => {

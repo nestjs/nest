@@ -117,15 +117,28 @@ class FilesController {
   }
 }
 
+@Controller('reports')
+class ReportsController {
+  @Get('*')
+  read() {
+    return 'read';
+  }
+
+  @Get()
+  about() {
+    return RETURN_VALUE;
+  }
+}
+
 @Module({
-  controllers: [UsersController, FilesController],
+  controllers: [UsersController, FilesController, ReportsController],
 })
 class RouteMatchingModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
-      .exclude('users/login', 'files/public')
-      .forRoutes(UsersController, FilesController);
+      .exclude('users/login', 'files/public', 'reports')
+      .forRoutes(UsersController, FilesController, ReportsController);
   }
 }
 
@@ -241,6 +254,12 @@ describe('Exclude middleware (fastify) - route matching', () => {
         .expect(200, MIDDLEWARE_VALUE);
     });
 
+    it(`should not exclude "/reports/", which the router serves with "/reports/*"`, () => {
+      return request(app.getHttpServer())
+        .get('/reports/')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+
     it(`should not exclude "/files/public/", which the router serves with "/files/*"`, () => {
       return request(app.getHttpServer())
         .get('/files/public/')
@@ -272,6 +291,12 @@ describe('Exclude middleware (fastify) - route matching', () => {
     it(`should exclude "/files/public/", which the router serves with "/files/public"`, () => {
       return request(app.getHttpServer())
         .get('/files/public/')
+        .expect(200, RETURN_VALUE);
+    });
+
+    it(`should exclude "/reports/", which the router serves with "/reports" rather than "/reports/*"`, () => {
+      return request(app.getHttpServer())
+        .get('/reports/')
         .expect(200, RETURN_VALUE);
     });
   });

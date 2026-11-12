@@ -668,7 +668,11 @@ describe('FastifyAdapter', () => {
       {
         source: 'the defaults',
         createAdapter: () => new FastifyAdapter(),
-        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+        expected: {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          removesTrailingSlash: true,
+        },
       },
       {
         source: '"routerOptions"',
@@ -676,7 +680,11 @@ describe('FastifyAdapter', () => {
           new FastifyAdapter({
             routerOptions: { caseSensitive: false, ignoreTrailingSlash: true },
           }),
-        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+        expected: {
+          caseSensitive: false,
+          ignoreTrailingSlash: true,
+          removesTrailingSlash: true,
+        },
       },
       {
         source: 'the top-level router options',
@@ -685,12 +693,20 @@ describe('FastifyAdapter', () => {
             caseSensitive: false,
             ignoreTrailingSlash: true,
           }),
-        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+        expected: {
+          caseSensitive: false,
+          ignoreTrailingSlash: true,
+          removesTrailingSlash: true,
+        },
       },
       {
         source: 'an instance created without "routerOptions"',
         createAdapter: () => new FastifyAdapter(fastify()),
-        expected: { caseSensitive: true, ignoreTrailingSlash: false },
+        expected: {
+          caseSensitive: true,
+          ignoreTrailingSlash: false,
+          removesTrailingSlash: true,
+        },
       },
       {
         source: 'the top-level router options of an instance',
@@ -698,7 +714,11 @@ describe('FastifyAdapter', () => {
           new FastifyAdapter(
             fastify({ caseSensitive: false, ignoreTrailingSlash: true }),
           ),
-        expected: { caseSensitive: false, ignoreTrailingSlash: true },
+        expected: {
+          caseSensitive: false,
+          ignoreTrailingSlash: true,
+          removesTrailingSlash: true,
+        },
       },
     ])('should follow $source', ({ createAdapter, expected }) => {
       expect(createAdapter().getRouteMatchingOptions()).toEqual(expected);

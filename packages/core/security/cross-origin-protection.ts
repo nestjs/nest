@@ -15,7 +15,10 @@ import {
 import type { IncomingHttpHeaders } from 'http';
 import { pathToRegexp } from 'path-to-regexp';
 import type { RouteInfoPathExtractor } from '../middleware/route-info-path-extractor.js';
-import { createRequestedVersionMatcher } from '../middleware/utils.js';
+import {
+  createRequestedVersionMatcher,
+  stripEndSlashes,
+} from '../middleware/utils.js';
 import type { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
 import { isRouteExcluded } from '../router/utils/index.js';
@@ -360,7 +363,7 @@ export class CrossOriginProtection<TRequest = any> {
       pathname.endsWith('/')
     ) {
       return (
-        isPathExcluded(pathname) && isPathExcluded(pathname.replace(/\/+$/, ''))
+        isPathExcluded(pathname) && isPathExcluded(stripEndSlashes(pathname))
       );
     }
     return isPathExcluded(pathname);

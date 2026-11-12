@@ -149,6 +149,20 @@ describe('RoutesMapper', () => {
           .filter(({ method }) => method === RequestMethod.DELETE),
       ).toEqual([{ path: '/test/another', method: RequestMethod.DELETE }]);
     });
+
+    it('should map the routes of every controller once', () => {
+      declareIn('/first');
+      declareIn();
+
+      expect(
+        mapper
+          .mapControllersToRouteInfo()
+          .filter(({ method }) => method === RequestMethod.DELETE),
+      ).toEqual([
+        { path: '/first/test/another', method: RequestMethod.DELETE },
+        { path: '/test/another', method: RequestMethod.DELETE },
+      ]);
+    });
   });
 
   @Controller(['test', 'test2'])

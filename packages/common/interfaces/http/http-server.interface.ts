@@ -86,6 +86,15 @@ export interface RouteMatchingOptions {
    * Whether `/users/` is served by the `/users` route.
    */
   ignoreTrailingSlash: boolean;
+  /**
+   * Whether the router removes a trailing slash from the request path before
+   * it looks for a route (e.g. Fastify), so that `/users/` is always served
+   * by the `/users` route. When `false` or not set, the router serves
+   * `/users/` with the first route that matches it (e.g. Express), which may
+   * be a route that matches `/users/` itself, such as `users/{*path}`. Only
+   * read when `ignoreTrailingSlash` is `true`.
+   */
+  removesTrailingSlash?: boolean;
 }
 
 /**
