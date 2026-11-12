@@ -1091,6 +1091,67 @@ describe('Injector', () => {
         expect(errorSpy.calledOnce).to.be.true;
         expect(errorSpy.calledWith(error)).to.be.true;
       });
+
+      it('should make "waitForDeferredLoads" reject for that context when loadProvider throws', async () => {
+        const error = new Error('Test error');
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
+
+        const contextId = { id: 2 };
+        const instanceHost = wrapper.getInstanceByContextId(contextId);
+        instanceHost.donePromise = Promise.resolve();
+
+        sinon
+          .stub(injector, 'loadProvider')
+          .callsFake(() => Promise.reject(error));
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+        });
+
+        expect(injector.hasDeferredLoads(contextId)).to.be.true;
+        await expect(
+          injector.waitForDeferredLoads(contextId),
+        ).to.be.rejectedWith(error);
+        // the instances of the context reference the provider that failed
+        expect(injector.hasDeferredLoads(contextId)).to.be.true;
+        await expect(
+          injector.waitForDeferredLoads(contextId),
+        ).to.be.rejectedWith(error);
+
+        const anotherContextId = { id: 3 };
+        expect(injector.hasDeferredLoads(anotherContextId)).to.be.false;
+        await expect(injector.waitForDeferredLoads(anotherContextId)).to
+          .eventually.be.undefined;
+      });
+
+      it('should load the provider from its host module once it is done', async () => {
+        const hostModule = { providers: new Map() } as any;
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+          host: hostModule,
+        });
+
+        const contextId = { id: 2 };
+        const instanceHost = wrapper.getInstanceByContextId(contextId);
+        instanceHost.donePromise = Promise.resolve();
+
+        const loadStub = sinon
+          .stub(injector, 'loadProvider')
+          .callsFake(() => Promise.resolve());
+
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+        });
+        await injector.waitForDeferredLoads(contextId);
+
+        expect(loadStub.calledOnce).to.be.true;
+        expect(loadStub.firstCall.args[1]).to.equal(hostModule);
+        expect(injector.hasDeferredLoads(contextId)).to.be.false;
+      });
     });
   });
 

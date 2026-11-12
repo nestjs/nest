@@ -97,6 +97,14 @@ export class Injector {
   private readonly instanceDecorator: (target: unknown) => unknown = (
     target: unknown,
   ) => target;
+  /**
+   * Per-context loads that the provider which started them could not wait
+   * for (see `resolveComponentHost`), awaited by `waitForDeferredLoads`.
+   */
+  private readonly deferredLoads = new WeakMap<
+    ContextId,
+    Set<Promise<unknown>>
+  >();
 
   constructor(
     private readonly options?: {
@@ -629,13 +637,17 @@ export class Injector {
        * instantiated beforehand.
        */
       if (instanceHost.donePromise) {
-        void instanceHost.donePromise
-          .then(() =>
-            this.loadProvider(instanceWrapper, moduleRef, resolutionContext),
-          )
-          .catch(err => {
-            instanceWrapper.settlementSignal?.error(err);
-          });
+        const deferredLoad = instanceHost.donePromise.then(() =>
+          this.loadProvider(
+            instanceWrapper,
+            instanceWrapper.host ?? moduleRef,
+            resolutionContext,
+          ),
+        );
+        void deferredLoad.catch(err => {
+          instanceWrapper.settlementSignal?.error(err);
+        });
+        this.addDeferredLoad(resolutionContext.contextId, deferredLoad);
       } else {
         /**
          * No load has ever been scheduled for this context (e.g., request-scoped
@@ -1101,12 +1113,42 @@ export class Injector {
       this.createResolutionContext(ctx, wrapper),
     );
     await this.loadEnhancersPerContext(wrapper!, ctx, wrapper);
+    if (this.hasDeferredLoads(ctx)) {
+      await this.waitForDeferredLoads(ctx);
+    }
 
     const host = wrapper!.getInstanceByContextId(
       this.getContextId(ctx, wrapper!),
       wrapper!.id,
     );
     return host && (host.instance as T);
+  }
+
+  /**
+   * Whether loads were deferred while resolving the given context (see
+   * `resolveComponentHost`) that `waitForDeferredLoads` has yet to wait for.
+   * Lets callers skip awaiting it otherwise, so that the order in which
+   * providers are constructed stays the same for every other context.
+   */
+  public hasDeferredLoads(contextId: ContextId): boolean {
+    return !!this.deferredLoads.get(contextId)?.size;
+  }
+
+  /**
+   * Waits for the loads deferred while resolving the given context (see
+   * `resolveComponentHost`), and throws if one of them failed. A failed load
+   * is kept, as instances of the context already reference the provider that
+   * it failed to instantiate.
+   */
+  public async waitForDeferredLoads(contextId: ContextId) {
+    const deferredLoads = this.deferredLoads.get(contextId);
+    if (!deferredLoads) {
+      return;
+    }
+    for (const deferredLoad of deferredLoads) {
+      await deferredLoad;
+      deferredLoads.delete(deferredLoad);
+    }
   }
 
   public async loadEnhancersPerContext(
@@ -1276,6 +1318,21 @@ export class Injector {
     void Promise.allSettled(loads).then(() =>
       this.releaseDetachedWrappers(wrapper, inquirer),
     );
+  }
+
+  private addDeferredLoad(
+    contextId: ContextId,
+    deferredLoad: Promise<unknown>,
+  ) {
+    if (contextId === STATIC_CONTEXT) {
+      return;
+    }
+    let deferredLoads = this.deferredLoads.get(contextId);
+    if (!deferredLoads) {
+      deferredLoads = new Set();
+      this.deferredLoads.set(contextId, deferredLoads);
+    }
+    deferredLoads.add(deferredLoad);
   }
 
   private getInquirerId(

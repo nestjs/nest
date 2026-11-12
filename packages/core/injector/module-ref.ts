@@ -209,6 +209,11 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
               inquirer: wrapper,
             },
           );
+          if (this.injector.hasDeferredLoads(contextId ?? STATIC_CONTEXT)) {
+            await this.injector.waitForDeferredLoads(
+              contextId ?? STATIC_CONTEXT,
+            );
+          }
           // In the static context, a request-scoped provider is a placeholder
           // that is never constructed and is shared by every caller. Unlike a
           // constructor parameter, one injected into a property (of the class
