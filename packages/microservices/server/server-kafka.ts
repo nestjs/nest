@@ -314,6 +314,25 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     );
   }
 
+  /**
+   * Whether a request may be answered on the reply topic it names. A reply is
+   * published with the credentials of this server and has no envelope, so on
+   * a topic this server handles it would run that topic's handlers as an
+   * event (unless it is skipped as one of the server's own replies, see
+   * `isOwnReply`). kafkajs also keeps state per topic in plain objects, which
+   * a topic named after an `Object.prototype` property (`__proto__`) reaches
+   * through their prototype.
+   */
+  protected canReplyOn(replyTopic: string, correlationId: unknown): boolean {
+    if (replyTopic in {}) {
+      return false;
+    }
+    return (
+      !this.getHandlerByPattern(replyTopic) ||
+      this.isOwnReply(replyTopic, correlationId, undefined)
+    );
+  }
+
   private isPatternMatch(pattern: RegExp, route: string): boolean {
     pattern.lastIndex = 0;
     const isMatch = pattern.test(route);
@@ -436,6 +455,11 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     if (!isString(replyTopic) || !KAFKA_TOPIC_NAME_REGEX.test(replyTopic)) {
       return this.logger.error(
         `The reply topic of the message is not a valid topic name, so it cannot be answered and has been dropped. Message pattern: ${packet.pattern}`,
+      );
+    }
+    if (!this.canReplyOn(replyTopic, correlationId)) {
+      return this.logger.error(
+        `The reply topic of the message is one this server does not reply on, so it cannot be answered and has been dropped. Message pattern: ${packet.pattern}`,
       );
     }
 

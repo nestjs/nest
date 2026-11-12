@@ -789,6 +789,139 @@ describe('ServerKafka', () => {
       });
     });
 
+    describe('when the reply topic is one the server does not reply on', () => {
+      const withReplyTopic = (
+        replyTopicHeader: string,
+      ): EachMessagePayload => ({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopicHeader),
+          },
+        } as KafkaMessage,
+      });
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+      let getPublisher: ReturnType<typeof vi.spyOn>;
+      let handler: ReturnType<typeof vi.fn>;
+      let otherHandler: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+        getPublisher = vi.spyOn(server, 'getPublisher');
+        handler = vi.fn();
+        otherHandler = vi.fn();
+        untypedServer.messageHandlers = objectToMap({
+          [topic]: handler,
+          'other.topic': otherHandler,
+        });
+      });
+
+      const expectDropped = () => {
+        expect(loggerErrorSpy).toHaveBeenCalledOnce();
+        expect(handler).not.toHaveBeenCalled();
+        expect(otherHandler).not.toHaveBeenCalled();
+        expect(getPublisher).not.toHaveBeenCalled();
+      };
+
+      // kafkajs keeps state per topic in plain objects
+      it.each(['__proto__', 'constructor', 'toString', 'hasOwnProperty'])(
+        'should log an error and not run the handler if it is "%s"',
+        async replyTopicHeader => {
+          await server.handleMessage(withReplyTopic(replyTopicHeader));
+
+          expectDropped();
+        },
+      );
+
+      it.each([
+        ['the topic of the request', topic],
+        ['another topic the server has a handler for', 'other.topic'],
+      ])(
+        'should log an error and not run the handler if it is %s',
+        async (_, replyTopicHeader) => {
+          await server.handleMessage(withReplyTopic(replyTopicHeader));
+
+          expectDropped();
+        },
+      );
+
+      it('should log an error if a regex handler matches it', async () => {
+        server.addHandler(/^audit\..+$/, otherHandler as any);
+
+        await server.handleMessage(withReplyTopic('audit.log'));
+
+        expectDropped();
+      });
+
+      it('should not publish NO_MESSAGE_HANDLER', async () => {
+        untypedServer.messageHandlers = objectToMap({
+          'other.topic': otherHandler,
+        });
+
+        await server.handleMessage(withReplyTopic('other.topic'));
+
+        expect(loggerErrorSpy).toHaveBeenCalledOnce();
+        expect(getPublisherSpy).not.toHaveBeenCalled();
+      });
+
+      it('should reply on a topic the server has no handler for, as a renamed reply topic is', async () => {
+        await server.handleMessage(withReplyTopic(`replies.${topic}`));
+
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+        expect(handler).toHaveBeenCalled();
+        expect(getPublisher).toHaveBeenCalledWith(
+          `replies.${topic}`,
+          replyPartition,
+          correlationId,
+          expect.any(KafkaContext),
+        );
+      });
+
+      it('should reply on "<topic>.reply" when a catch-all regex handles the topic', async () => {
+        // The server skips its own replies there
+        const catchAll = vi.fn();
+        untypedServer.messageHandlers = new Map();
+        server.addHandler(/.*/, catchAll as any);
+
+        await server.handleMessage(withReplyTopic(replyTopic));
+
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+        expect(catchAll).toHaveBeenCalled();
+        expect(getPublisher).toHaveBeenCalledWith(
+          replyTopic,
+          replyPartition,
+          correlationId,
+          expect.any(KafkaContext),
+        );
+      });
+
+      it('should not reply on a renamed reply topic that a catch-all regex handles', async () => {
+        const catchAll = vi.fn();
+        untypedServer.messageHandlers = new Map();
+        server.addHandler(/.*/, catchAll as any);
+
+        await server.handleMessage(withReplyTopic(`replies.${topic}`));
+
+        expect(loggerErrorSpy).toHaveBeenCalledOnce();
+        expect(catchAll).not.toHaveBeenCalled();
+        expect(getPublisher).not.toHaveBeenCalled();
+      });
+
+      it('should still pass the message to an event handler', async () => {
+        const eventHandler = Object.assign(vi.fn(), { isEventHandler: true });
+        untypedServer.messageHandlers = objectToMap({ [topic]: eventHandler });
+
+        await server.handleMessage(withReplyTopic('__proto__'));
+
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+        expect(eventHandler).toHaveBeenCalled();
+      });
+    });
+
     describe('when the correlation id is longer than a request id may be', () => {
       const withCorrelationId = (
         correlationIdHeader: string,
