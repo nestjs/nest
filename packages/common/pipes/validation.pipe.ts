@@ -211,6 +211,9 @@ export class ValidationPipe implements PipeTransform {
       },
     });
     if (errors.length > 0) {
+      if (isUndefined(this.validatorOptions.validationError?.value)) {
+        this.stripParentErrorValues(errors);
+      }
       throw await this.exceptionFactory(errors);
     }
     if (
@@ -326,6 +329,26 @@ export class ValidationPipe implements PipeTransform {
       }
     }
     return isChanged ? limited : validationErrors;
+  }
+
+  /**
+   * Removes the value of the errors that have children. That value is the
+   * object or array in which the children were found, so an exception
+   * factory that sends the errors would write a nested value once for each
+   * level above it. The values left are those of separate parts of the
+   * validated value.
+   */
+  protected stripParentErrorValues(validationErrors: ValidationError[]): void {
+    // Not recursive, since the validated value decides how deep errors go.
+    const pending = [validationErrors];
+    while (pending.length > 0) {
+      for (const error of pending.pop()!) {
+        if (error.children && error.children.length > 0) {
+          delete error.value;
+          pending.push(error.children);
+        }
+      }
+    }
   }
 
   protected toValidate(metadata: ArgumentMetadata): boolean {

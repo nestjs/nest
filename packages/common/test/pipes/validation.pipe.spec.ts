@@ -1055,11 +1055,9 @@ describe('ValidationPipe', () => {
         [
           {
             property: 'items',
-            value: [{ name: 1 }],
             children: [
               {
                 property: '0',
-                value: { name: 1 },
                 children: [
                   {
                     property: 'name',
@@ -1099,6 +1097,64 @@ describe('ValidationPipe', () => {
       expect(await sizeOfErrors(200)).toBeLessThan(
         3 * (await sizeOfErrors(100)),
       );
+    });
+    it('should not repeat a nested value in each of the errors above it', async () => {
+      class NestedOrder {
+        @ValidateNested({ each: true })
+        @Type(() => Item)
+        items: unknown[];
+      }
+      target = new ValidationPipe({ exceptionFactory });
+      const item = 'a'.repeat(1_000);
+      const depth = 100;
+      let items: unknown = [item];
+      for (let i = 0; i < depth; i++) {
+        items = [items];
+      }
+
+      const errors: ValidationError[] = await target
+        .transform({ items }, { type: 'body', metatype: NestedOrder })
+        .catch(err => err);
+
+      let error = errors[0];
+      for (let i = 0; i <= depth; i++) {
+        expect(error).not.toHaveProperty('value');
+        error = error.children![0];
+      }
+      expect(error.value).toBe(item);
+      expect(error.children).toEqual([]);
+      expect(JSON.stringify(errors).split(item)).toHaveLength(2);
+    });
+    it('should keep the value of an error without children', async () => {
+      class LimitedOrder {
+        @ArrayMinSize(2)
+        @ValidateNested({ each: true })
+        @Type(() => Item)
+        items: Item[];
+      }
+      target = new ValidationPipe({ exceptionFactory });
+
+      const [error]: ValidationError[] = await target
+        .transform(
+          { items: [{ name: 'a' }] },
+          { type: 'body', metatype: LimitedOrder },
+        )
+        .catch(err => err);
+      expect(error.constraints).toHaveProperty('arrayMinSize');
+      expect(error.value).toEqual([{ name: 'a' }]);
+    });
+    it('should expose the value of every error when asked to', async () => {
+      target = new ValidationPipe({
+        exceptionFactory,
+        validationError: { value: true },
+      });
+
+      const [error]: ValidationError[] = await target
+        .transform(orderOf(1), orderMetadata)
+        .catch(err => err);
+      expect(error.value).toEqual(orderOf(1).items);
+      expect(error.children![0].value).toEqual(orderOf(1).items[0]);
+      expect(error).not.toHaveProperty('target');
     });
     it('should expose the target when asked to', async () => {
       target = new ValidationPipe({
