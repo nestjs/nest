@@ -395,6 +395,117 @@ describe('FileInterceptor', () => {
       },
     );
 
+    it('should remove the file at path when the storage engine fails', async () => {
+      const error = new Error('ENOSPC');
+      const storage = {
+        _handleFile: vi.fn((_req, incoming, cb) => {
+          incoming.path = '/uploads/partial';
+          incoming.stream.resume();
+          incoming.stream.once('end', () => cb(error));
+        }),
+        _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+      };
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([file('avatar')]);
+      await expect(target.intercept(createContext(req), handler)).rejects.toBe(
+        error,
+      );
+      expect(storage._removeFile).toHaveBeenCalledWith(
+        req,
+        expect.objectContaining({ path: '/uploads/partial' }),
+        expect.any(Function),
+      );
+    });
+
+    describe('when the parser destroys the stream with an error queued behind other parts (@fastify/multipart >= 10.1.7)', () => {
+      const premature = () =>
+        Object.assign(new Error('the request was closed'), {
+          code: 'FST_MP_PREMATURE_CLOSE',
+        });
+      /**
+       * A form cut off while `avatar` is stored: the parser destroys its
+       * stream with `streamError`, and the parts iterator fails with
+       * `iteratorError` after the parts in `queued`.
+       */
+      const createCutOffRequest = (
+        streamError: Error,
+        iteratorError: Error,
+        queued: object[],
+      ) => {
+        const req = createFakeRequest([]);
+        const stream = new Readable({ read() {} });
+        stream.push('partial');
+        stream.on('error', () => undefined);
+        req.parts = () =>
+          (async function* () {
+            yield {
+              type: 'file',
+              fieldname: 'avatar',
+              filename: 'a.txt',
+              encoding: '7bit',
+              mimetype: 'text/plain',
+              file: stream,
+            };
+            yield* queued;
+            throw iteratorError;
+          })();
+        setImmediate(() => stream.destroy(streamError));
+        return req;
+      };
+      const title = {
+        type: 'field',
+        fieldname: 'title',
+        value: 'x',
+        mimetype: 'text/plain',
+        encoding: '7bit',
+        fieldnameTruncated: false,
+        valueTruncated: false,
+      };
+      // An engine that only pipes the stream: it never calls back for a
+      // stream destroyed mid-way.
+      const createPipingStorage = () => ({
+        _handleFile: vi.fn((_req, incoming) => {
+          incoming.path = '/uploads/partial';
+          incoming.stream.resume();
+        }),
+        _removeFile: vi.fn((_req, _file, cb) => cb(null)),
+      });
+
+      it('should find the error behind a field queued before it', async () => {
+        const storage = createPipingStorage();
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const error = premature();
+        const req = createCutOffRequest(error, error, [title, title]);
+
+        await expect(
+          target.intercept(createContext(req), handler),
+        ).rejects.toEqual(new BadRequestException('the request was closed'));
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          expect.objectContaining({ path: '/uploads/partial' }),
+          expect.any(Function),
+        );
+      });
+
+      it('should fail with another error the iterator fails with', async () => {
+        const storage = createPipingStorage();
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const limit = Object.assign(new Error('reach files limit'), {
+          code: 'FST_FILES_LIMIT',
+        });
+        const req = createCutOffRequest(premature(), limit, []);
+
+        await expect(
+          target.intercept(createContext(req), handler),
+        ).rejects.toEqual(new BadRequestException('Too many files'));
+        expect(storage._removeFile).toHaveBeenCalledWith(
+          req,
+          expect.objectContaining({ path: '/uploads/partial' }),
+          expect.any(Function),
+        );
+      });
+    });
+
     it('should use the storage engine from the options', async () => {
       const storage = {
         _handleFile: vi.fn((_req, incoming, cb) => {

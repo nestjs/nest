@@ -177,29 +177,34 @@ function applyFileFilter(
 const ABORTED = Symbol('aborted');
 
 /**
- * Runs the storage engine. Resolves `ABORTED` when `@fastify/multipart`
+ * Runs the storage engine, but does not wait for it once `@fastify/multipart`
  * destroys the file stream mid-way (when the client disconnects, the body is
  * malformed or a limit is hit), because a storage engine waiting for `end`
  * (or one that only `pipe()`s the stream) would otherwise never call back.
- * The actual reason is then read from the parts iterator. Since 10.1.7,
- * `@fastify/multipart` destroys the stream with that same error, and before
- * without one. A stream destroyed with any other error was destroyed by the
- * engine (e.g. by a `pipeline()` to a file that cannot be written), which
- * reports that error itself. `readAhead` reads the next part, which the
- * parse loop then takes over.
+ * Before 10.1.7, `@fastify/multipart` destroyed the stream without an
+ * error: this resolves `ABORTED` then, and the actual reason is read from
+ * the parts iterator. Since 10.1.7, it destroys the stream with an error,
+ * and the parts iterator fails once it has handed over the parts the parser
+ * had queued by then (e.g. a text field after the file). `readAhead` reads
+ * those parts ahead, one at a time (the parse loop then takes them over),
+ * and this rejects with the iterator's error once it is found. A stream
+ * destroyed by the engine (e.g. by a `pipeline()` to a file that cannot be
+ * written) is reported by the engine itself: the iterator then ends, or
+ * waits, instead of failing.
  *
  * Whatever the engine stores after an abort is removed, as multer does. The
  * file at `path` (which engines set before writing, by multer's convention)
  * is removed right away, as an engine waiting on `pipeline()` never calls
  * back for a stream destroyed after its last chunk; removing it clears
  * `path`. What the engine stored is removed once it calls back: what it
- * returned when it succeeds, and the file at `path` when it fails.
+ * returned when it succeeds, and the file at `path` when it fails, also
+ * without an abort, as multer's convention leaves that to the caller.
  */
 function storeFile(
   storage: MultipartStorageEngine,
   req: FastifyRequest,
   file: IncomingMultipartFile,
-  readAhead: () => Promise<unknown>,
+  readAhead: () => Promise<IteratorResult<unknown>>,
 ) {
   return new Promise<Partial<UploadedMultipartFile> | typeof ABORTED>(
     (resolve, reject) => {
@@ -209,12 +214,16 @@ function storeFile(
       }
       let aborted = false;
       let calledBack = false;
-      const abort = () => {
-        if (calledBack) {
+      const abort = (reason?: unknown) => {
+        if (calledBack || aborted) {
           return;
         }
         aborted = true;
-        resolve(ABORTED);
+        if (reason) {
+          reject(reason);
+        } else {
+          resolve(ABORTED);
+        }
         const partial = file as unknown as UploadedMultipartFile;
         if (partial.path) {
           removeFiles(storage, req, [partial]).catch(() => undefined);
@@ -224,23 +233,24 @@ function storeFile(
         if (stream.readableEnded) {
           return;
         }
-        const reason = stream.errored;
-        if (!reason) {
+        if (!stream.errored) {
           return abort();
         }
-        // The parts iterator fails with this very error when the parser
-        // destroyed the stream; it stays pending when the engine did.
-        readAhead().then(
-          () => undefined,
-          err => err === reason && abort(),
-        );
+        // Up to the parser's error, past the parts queued before it; the
+        // iterator ends or waits when the engine destroyed the stream.
+        const findReason = (): Promise<unknown> =>
+          readAhead().then(
+            result => !result.done && !calledBack && !aborted && findReason(),
+            err => abort(err),
+          );
+        void findReason();
       };
       stream.once('close', onClose);
       storage._handleFile(req, file, (err, info) => {
         calledBack = true;
         stream.off('close', onClose);
-        if (!aborted) {
-          return err ? reject(err) : resolve(info ?? {});
+        if (!aborted && !err) {
+          return resolve(info ?? {});
         }
         const stored = Object.assign(
           file,
@@ -249,31 +259,31 @@ function storeFile(
         if (!err || stored.path) {
           removeFiles(storage, req, [stored]).catch(() => undefined);
         }
+        if (!aborted) {
+          reject(err);
+        }
       });
     },
   );
 }
 
 /**
- * Wraps the parts iterator so that `storeFile()` can read the next part ahead
- * and the parse loop then takes that part over: an async iterator queues the
- * calls to `next()`, so calling it again would skip the part read ahead.
+ * Wraps the parts iterator so that `storeFile()` can read parts ahead and the
+ * parse loop then takes those parts over, in order: an async iterator queues
+ * the calls to `next()`, so calling it again would skip the parts read ahead.
  */
 function readingAhead<T>(iterator: AsyncIterator<T>) {
-  let partReadAhead: Promise<IteratorResult<T>> | undefined;
+  const partsReadAhead: Promise<IteratorResult<T>>[] = [];
   return {
     nextPart() {
-      const part = partReadAhead ?? iterator.next();
-      partReadAhead = undefined;
-      return part;
+      return partsReadAhead.shift() ?? iterator.next();
     },
     readAhead() {
-      if (!partReadAhead) {
-        partReadAhead = iterator.next();
-        // Rejects once the parse loop has failed for another reason
-        partReadAhead.catch(() => undefined);
-      }
-      return partReadAhead;
+      const part = iterator.next();
+      // Rejects once the parse loop has failed for another reason
+      part.catch(() => undefined);
+      partsReadAhead.push(part);
+      return part;
     },
   };
 }
