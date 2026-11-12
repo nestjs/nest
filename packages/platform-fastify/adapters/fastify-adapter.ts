@@ -1274,17 +1274,24 @@ export class FastifyAdapter<
       }
 
       try {
-        let { regexp: re } = pathToRegexp(normalizedPath);
-        re = hasEndOfStringCharacter
-          ? new RegExp(re.source + '$', re.flags)
-          : re;
-
         // A case-insensitive router lower-cases the decoded path, where some
         // characters only fold to ASCII ("%E2%84%AA", KELVIN SIGN, is routed
         // as "k"). The RegExp of @fastify/middie does not fold them, so on
         // such a router the middleware is registered for every path and the
         // path is only matched below.
         const { caseSensitive } = this.getRouteMatchingOptions();
+
+        // Such a router lower-cases the paths of its routes too, with
+        // "toLowerCase()", which the "i" flag of a RegExp does not follow for
+        // every letter ("\u0130" lower-cases to "i\u0307"), so the path of
+        // the middleware is lower-cased like the request path (see
+        // `sanitizeUrl()`)
+        let { regexp: re } = pathToRegexp(
+          caseSensitive ? normalizedPath : normalizedPath.toLowerCase(),
+        );
+        re = hasEndOfStringCharacter
+          ? new RegExp(re.source + '$', re.flags)
+          : re;
 
         const createMiddleware =
           (stripsPath: boolean) =>

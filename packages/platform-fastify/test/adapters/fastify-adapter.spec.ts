@@ -729,13 +729,16 @@ describe('FastifyAdapter', () => {
         next();
       });
 
-      const setUp = async (createAdapter: () => FastifyAdapter) => {
+      const setUp = async (
+        createAdapter: () => FastifyAdapter,
+        path = '/tasks',
+      ) => {
         adapter = createAdapter();
         const register = await adapter.createMiddlewareFactory(
           RequestMethod.ALL,
         );
-        register('/tasks', middleware);
-        adapter.get('/tasks', () => 'tasks');
+        register(path, middleware);
+        adapter.get(path, () => 'tasks');
       };
 
       afterEach(async () => {
@@ -759,6 +762,46 @@ describe('FastifyAdapter', () => {
           expect(middleware).toHaveBeenCalledOnce();
         },
       );
+
+      // The router lower-cases the paths of its routes with "toLowerCase()",
+      // which the "i" flag of a RegExp does not follow for every letter:
+      // "\u0130" lower-cases to "i\u0307", "\u1E9E" to "\u00DF" and "\u212A"
+      // (KELVIN SIGN) to "k"
+      it.each([
+        ['/\u0130adeler', '/%C4%B0adeler'],
+        ['/\u0130adeler', '/i%CC%87adeler'],
+        ['/stra\u1E9Ee', '/stra%E1%BA%9Ee'],
+        ['/stra\u1E9Ee', '/stra%C3%9Fe'],
+        ['/tas\u212As', '/tas%E2%84%AAs'],
+        ['/tas\u212As', '/tasks'],
+        ['/\u0130adeler/:Id', '/i%CC%87adeler/1'],
+      ])(
+        'should run the middleware of the "%s" route for "%s"',
+        async (path, url) => {
+          await setUp(
+            () =>
+              new FastifyAdapter({ routerOptions: { caseSensitive: false } }),
+            path,
+          );
+
+          const res = await adapter.inject({ method: 'GET', url });
+
+          expect(res.body).toBe('tasks');
+          expect(middleware).toHaveBeenCalledOnce();
+        },
+      );
+
+      it('should not lower-case the path of the middleware on a case-sensitive router', async () => {
+        await setUp(() => new FastifyAdapter(), '/\u0130adeler');
+
+        const res = await adapter.inject({
+          method: 'GET',
+          url: '/%C4%B0adeler',
+        });
+
+        expect(res.body).toBe('tasks');
+        expect(middleware).toHaveBeenCalledOnce();
+      });
 
       it('should run the middleware of the route with the top-level "caseSensitive" option', async () => {
         await setUp(() => new FastifyAdapter({ caseSensitive: false }));

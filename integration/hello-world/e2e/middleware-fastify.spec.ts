@@ -1052,6 +1052,47 @@ describe('Middleware (FastifyAdapter)', () => {
         expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE);
       });
 
+      // The router lower-cases the paths of its routes with "toLowerCase()",
+      // which the "i" flag of a RegExp does not follow for every letter:
+      // "\u0130" lower-cases to "i\u0307" and "\u1E9E" to "\u00DF"
+      it.each([
+        ['\u0130adeler', '/%C4%B0adeler'],
+        ['\u0130adeler', '/i%CC%87adeler'],
+        ['stra\u1E9Ee', '/stra%E1%BA%9Ee'],
+        ['stra\u1E9Ee', '/stra%C3%9Fe'],
+      ])('GET forRoutes(%j) (%s)', async (path, url) => {
+        @Controller(path)
+        class LocalizedController {
+          @Get()
+          findAll() {
+            return 'localized';
+          }
+        }
+
+        @Module({
+          controllers: [LocalizedController],
+        })
+        class LocalizedModule {
+          configure(consumer: MiddlewareConsumer) {
+            consumer
+              .apply((req, res, next) => res.end(MIDDLEWARE_RETURN_VALUE))
+              .forRoutes(LocalizedController);
+          }
+        }
+
+        app = (
+          await Test.createTestingModule({
+            imports: [LocalizedModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter({ routerOptions: { caseSensitive: false } }),
+        );
+        await listenOnLoopback(app);
+
+        const { payload } = await app.inject({ method: 'GET', url });
+        expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE);
+      });
+
       afterEach(async () => {
         await app.close();
       });
