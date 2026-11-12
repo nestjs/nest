@@ -1,6 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
-import { Observable } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
+import { Observable, type OperatorFunction } from 'rxjs';
 import { Inject, Injectable, Optional } from '../decorators/core/index.js';
 import { StreamableFile } from '../file-stream/index.js';
 import {
@@ -21,6 +20,73 @@ interface PlainLiteralObject {
 // We need to deduplicate them here due to the circular dependency
 // between core and common packages
 const REFLECTOR = 'Reflector';
+
+interface WaitingValue<T> {
+  value: T;
+  next?: WaitingValue<T>;
+}
+
+/**
+ * `concatMap(project)` for a `project` that returns a promise: values are
+ * projected one at a time, in order. `concatMap()` `shift()`s each waiting
+ * value off an array of all the waiting ones, so a stream that emits many
+ * values at once (e.g. `from()` an array) took time quadratic in their
+ * number, without the event loop running in between. Here they wait in a
+ * linked list.
+ */
+function concatMapAsync<T, R>(
+  project: (value: T) => Promise<R>,
+): OperatorFunction<T, R> {
+  return source =>
+    new Observable<R>(subscriber => {
+      let head: WaitingValue<T> | undefined;
+      let tail: WaitingValue<T> | undefined;
+      let isProjecting = false;
+      let isSourceComplete = false;
+
+      const projectNext = () => {
+        if (subscriber.closed) {
+          return;
+        }
+        if (!head) {
+          isProjecting = false;
+          if (isSourceComplete) {
+            subscriber.complete();
+          }
+          return;
+        }
+        const { value } = head;
+        head = head.next;
+        isProjecting = true;
+        project(value).then(
+          result => {
+            subscriber.next(result);
+            projectNext();
+          },
+          err => subscriber.error(err),
+        );
+      };
+
+      subscriber.add(
+        source.subscribe({
+          next: value => {
+            const waiting: WaitingValue<T> = { value };
+            tail = head ? (tail!.next = waiting) : (head = waiting);
+            if (!isProjecting) {
+              projectNext();
+            }
+          },
+          error: err => subscriber.error(err),
+          complete: () => {
+            isSourceComplete = true;
+            if (!isProjecting) {
+              projectNext();
+            }
+          },
+        }),
+      );
+    });
+}
 
 /**
  * @publicApi
@@ -70,8 +136,9 @@ export class StandardSchemaSerializerInterceptor implements NestInterceptor {
     return next
       .handle()
       .pipe(
-        concatMap(async (res: PlainLiteralObject | Array<PlainLiteralObject>) =>
-          this.serialize(res, schema, validateOptions),
+        concatMapAsync(
+          async (res: PlainLiteralObject | Array<PlainLiteralObject>) =>
+            this.serialize(res, schema, validateOptions),
         ),
       );
   }
