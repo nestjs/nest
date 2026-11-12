@@ -314,7 +314,7 @@ describe('middleware utils', () => {
       ]);
       it('should return true for a path with a query string', () => {
         (adapter.getRequestUrl as sinon.SinonStub).callsFake(
-          () => '/cats/3/avatar?size=1',
+          () => '/cats/3/avatar?size=1%0A',
         );
         expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).to.be
           .true;
@@ -324,6 +324,12 @@ describe('middleware utils', () => {
         '/cats/3/avatar#',
         '/cats/3/avatar?size=1#',
         'http://localhost/admin',
+        '/cats/3%0A/avatar',
+        '/cats/3%0d/avatar',
+        '/cats/3\n/avatar',
+        '/cats/3%E2%80%A8/avatar',
+        '/cats/3%e2%80%a9/avatar',
+        '/cats/3\u2028/avatar',
       ]) {
         it(`should return false for ${JSON.stringify(url)}`, () => {
           (adapter.getRequestUrl as sinon.SinonStub).callsFake(() => url);

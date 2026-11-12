@@ -186,6 +186,12 @@ export function stripEndSlashes(path: string): string {
 }
 
 /**
+ * A line terminator (LF, CR, U+2028 or U+2029) in a request path, as it is
+ * or percent-encoded.
+ */
+export const LINE_TERMINATOR = /[\n\r\u2028\u2029]|%0[ad]|%e2%80%a[89]/i;
+
+/**
  * Characters with a meaning in a route path (parameters, wildcards, groups),
  * and the "$" that marks an exact-match path.
  */
@@ -353,6 +359,14 @@ export function isMiddlewareRouteExcluded(
     queryParamsIndex >= 0
       ? originalUrl.slice(0, queryParamsIndex)
       : originalUrl;
+  // A parameter matches a line terminator here, while find-my-way (Fastify,
+  // the node adapter) matches a parameter next to text in its segment
+  // ("reports/:id.pdf") with a RegExp whose "." matches none, and serves
+  // "/reports/1%0A.pdf" with another route. No route path holds one, so the
+  // middleware runs for such a path
+  if (LINE_TERMINATOR.test(pathname)) {
+    return false;
+  }
 
   const requestMethod = RequestMethod[reqMethod as keyof typeof RequestMethod];
   const isRequestForRoute = (

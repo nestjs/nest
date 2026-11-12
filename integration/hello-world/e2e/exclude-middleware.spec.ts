@@ -9,6 +9,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import * as express from 'express';
 import { expect } from 'chai';
@@ -334,6 +335,75 @@ describe('Exclude middleware - trailing slash next to an optional-tail route (Ex
     await request(app.getHttpServer()).get('/reports/a').expect(200, 'read');
   });
 });
+
+@Controller('statements')
+class StatementsController {
+  @Get(':id.pdf')
+  published() {
+    return 'published';
+  }
+
+  @Get(':name')
+  internal() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [StatementsController],
+})
+class MixedSegmentModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
+      .exclude({ path: 'statements/:id.pdf', method: RequestMethod.GET })
+      .forRoutes(StatementsController);
+  }
+}
+
+for (const [name, createAdapter] of [
+  ['Express', () => undefined],
+  ['Fastify', () => new FastifyAdapter()],
+] as const) {
+  describe(`Exclude middleware - parameter next to text (${name})`, () => {
+    let app: INestApplication;
+
+    beforeEach(async () => {
+      const testingModule = await Test.createTestingModule({
+        imports: [MixedSegmentModule],
+      }).compile();
+      const adapter = createAdapter();
+      app = adapter
+        ? testingModule.createNestApplication(adapter)
+        : testingModule.createNestApplication();
+      await app.listen(0, '127.0.0.1');
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it(`should exclude "/statements/1.pdf" endpoint`, () => {
+      return request(app.getHttpServer())
+        .get('/statements/1.pdf')
+        .expect(200, 'published');
+    });
+
+    it(`should not exclude "/statements/drafts" endpoint`, () => {
+      return request(app.getHttpServer())
+        .get('/statements/drafts')
+        .expect(200, MIDDLEWARE_VALUE);
+    });
+
+    for (const terminator of ['%0A', '%0D', '%E2%80%A8', '%E2%80%A9']) {
+      it(`should not exclude "/statements/1${terminator}.pdf", a line terminator in the parameter`, () => {
+        return request(app.getHttpServer())
+          .get(`/statements/1${terminator}.pdf`)
+          .expect(200, MIDDLEWARE_VALUE);
+      });
+    }
+  });
+}
 
 describe('Exclude middleware - route matching', () => {
   let app: INestApplication;
