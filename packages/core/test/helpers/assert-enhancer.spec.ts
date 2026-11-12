@@ -1,8 +1,11 @@
+import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { InvalidEnhancerException } from '../../errors/exceptions/invalid-enhancer.exception';
 import {
   assertEnhancer,
   describeEnhancer,
+  warnOnInvalidFilter,
 } from '../../helpers/assert-enhancer';
 
 describe('assertEnhancer', () => {
@@ -43,5 +46,39 @@ describe('assertEnhancer', () => {
     expect(describeEnhancer({})).to.equal('an object');
     expect(describeEnhancer(Promise.resolve())).to.equal('a promise');
     expect(describeEnhancer([])).to.equal('an array');
+  });
+});
+
+describe('warnOnInvalidFilter', () => {
+  let warn: sinon.SinonStub;
+
+  beforeEach(() => {
+    warn = sinon.stub(Logger.prototype, 'warn');
+  });
+
+  afterEach(() => {
+    warn.restore();
+  });
+
+  it('should not warn for an instance or a class with a static "catch"', () => {
+    class StaticFilter {
+      static catch() {}
+    }
+    warnOnInvalidFilter({ catch: () => undefined });
+    warnOnInvalidFilter(StaticFilter);
+    expect(warn.called).to.be.false;
+  });
+
+  it('should warn for anything else, without throwing', () => {
+    class HttpExceptionFilter {
+      catch() {}
+    }
+    for (const value of [HttpExceptionFilter, {}, [], Promise.resolve()]) {
+      expect(() => warnOnInvalidFilter(value)).not.to.throw();
+    }
+    expect(warn.callCount).to.equal(4);
+    expect(warn.firstCall.args[0]).to.contain(
+      'The exception filter (class HttpExceptionFilter) doesn\'t provide the "catch" method',
+    );
   });
 });

@@ -1,4 +1,4 @@
-import { Catch, Injectable } from '@nestjs/common';
+import { Catch, Injectable, Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { GUARDS_METADATA } from '../../common/constants';
@@ -853,6 +853,29 @@ describe('DependenciesScanner', () => {
         expect(() => scanner.applyApplicationProviders()).to.throw(
           /APP_GUARD provider \(useFactory\) gives an object/,
         );
+      });
+      it('should only warn for an exception filter, and apply it as before', () => {
+        class HttpExceptionFilter {
+          catch() {}
+        }
+        mockInstance(HttpExceptionFilter);
+        untypedScanner.applicationProvidersApplyMap[0].type = APP_FILTER;
+        const applySpy = sinon.spy();
+        sinon.stub(scanner, 'getApplyProvidersMap').callsFake(() => ({
+          [APP_FILTER]: applySpy,
+        }));
+        const warn = sinon.stub(Logger.prototype, 'warn');
+
+        try {
+          expect(() => scanner.applyApplicationProviders()).not.to.throw();
+          expect(warn.calledOnce).to.be.true;
+          expect(warn.firstCall.args[0]).to.contain(
+            'The exception filter (APP_FILTER provider (useValue) gives class HttpExceptionFilter)',
+          );
+          expect(applySpy.calledWith(HttpExceptionFilter)).to.be.true;
+        } finally {
+          warn.restore();
+        }
       });
     });
     describe('when a static provider has never been instantiated', () => {

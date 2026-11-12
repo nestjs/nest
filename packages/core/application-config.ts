@@ -7,7 +7,7 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
-import { assertEnhancer } from './helpers/assert-enhancer';
+import { assertEnhancer, warnOnInvalidFilter } from './helpers/assert-enhancer';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 
@@ -72,6 +72,7 @@ export class ApplicationConfig {
   }
 
   public useGlobalFilters(...filters: ExceptionFilter[]) {
+    filters.forEach(item => item != null && warnOnInvalidFilter(item));
     this.globalFilters = this.globalFilters.concat(filters);
   }
 

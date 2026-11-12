@@ -1,17 +1,22 @@
 import {
+  ArgumentsHost,
   CanActivate,
+  Catch,
   Controller,
+  ExceptionFilter,
   Get,
   INestApplication,
   Injectable,
+  Logger,
   mixin,
   Type,
   UseGuards,
 } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { InvalidEnhancerException } from '@nestjs/core/errors/exceptions/invalid-enhancer.exception';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 
 // An abstract class used as a DI token, with the implementation provided
 // under it: what `@UseGuards()` gets is the abstract class itself.
@@ -52,6 +57,13 @@ class OpenController {
   }
 }
 
+@Catch()
+class EverythingFilter implements ExceptionFilter {
+  catch(_exception: unknown, host: ArgumentsHost) {
+    host.switchToHttp().getResponse().status(418).end();
+  }
+}
+
 const rejectionOf = (promise: Promise<unknown>) =>
   promise.then(
     () => undefined,
@@ -89,6 +101,28 @@ describe('Enhancers that are not enhancers', () => {
     expect((err as Error).message).to.match(
       /APP_GUARD provider \(useValue\) gives class/,
     );
+  });
+
+  it('should only warn when APP_FILTER gives a filter class instead of an instance', async () => {
+    const warn = sinon.stub(Logger.prototype, 'warn');
+    try {
+      const moduleRef = await Test.createTestingModule({
+        controllers: [OpenController],
+        providers: [{ provide: APP_FILTER, useValue: EverythingFilter }],
+      }).compile();
+      app = moduleRef.createNestApplication({ logger: false });
+      await app.init();
+
+      expect(
+        warn.calledWith(
+          sinon.match(
+            'The exception filter (APP_FILTER provider (useValue) gives class EverythingFilter)',
+          ),
+        ),
+      ).to.be.true;
+    } finally {
+      warn.restore();
+    }
   });
 
   it('should throw when useGlobalGuards() is given a guard class', async () => {

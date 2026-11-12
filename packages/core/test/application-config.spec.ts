@@ -1,6 +1,7 @@
-import { RequestMethod } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { ApplicationConfig } from '../application-config';
 import { InvalidEnhancerException } from '../errors/exceptions/invalid-enhancer.exception';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
@@ -69,8 +70,8 @@ describe('ApplicationConfig', () => {
   });
   describe('Filters', () => {
     it('should set global filters', () => {
-      const filters = ['test', 'test2'];
-      appConfig.useGlobalFilters(...(filters as any));
+      const filters = [{ catch: () => 1 }, { catch: () => 2 }];
+      appConfig.useGlobalFilters(...filters);
 
       expect(appConfig.getGlobalFilters()).to.be.eql(filters);
     });
@@ -138,6 +139,24 @@ describe('ApplicationConfig', () => {
       expect(() => appConfig.useGlobalInterceptors({} as any)).to.throw(
         /The interceptor \(an object\)/,
       );
+    });
+    it('should only warn for an exception filter', () => {
+      const warn = sinon.stub(Logger.prototype, 'warn');
+      class HttpExceptionFilter {
+        catch() {}
+      }
+      try {
+        appConfig.useGlobalFilters(HttpExceptionFilter as any);
+        expect(warn.calledOnce).to.be.true;
+        expect(warn.firstCall.args[0]).to.contain(
+          'The exception filter (class HttpExceptionFilter)',
+        );
+        expect(appConfig.getGlobalFilters()).to.deep.equal([
+          HttpExceptionFilter,
+        ]);
+      } finally {
+        warn.restore();
+      }
     });
     it('should accept a class that has the method as a static', () => {
       class StaticGuard {
