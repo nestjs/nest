@@ -15,6 +15,7 @@ describe('JsonSocket message parsing', () => {
     messages = [];
     socket['contentLength'] = null;
     socket['buffer'] = '';
+    socket['hasFramingError'] = false;
   });
 
   it('should parse JSON strings', () => {

@@ -151,13 +151,90 @@ describe('JsonSocket maxBufferSize', () => {
 
       expect(() => {
         socket['handleData'](packet);
-      }).toThrow(MaxPacketLengthExceededException);
+      }).toThrow(String(expectedBufferSize));
+    });
+  });
 
-      try {
-        socket['handleData'](packet);
-      } catch (err) {
-        expect(err.message).toContain(String(expectedBufferSize));
-      }
+  describe('several packets in one read', () => {
+    const maxBufferSize = 100;
+    // 60 characters of JSON text, 63 with the header
+    const body = 'x'.repeat(58);
+    const packet = `60#${JSON.stringify(body)}`;
+    // 100 characters of JSON text, exactly the limit
+    const fullBody = 'y'.repeat(98);
+    const fullPacket = `100#${JSON.stringify(fullBody)}`;
+
+    let netSocket: Socket;
+    let socket: JsonSocket;
+    let messages: unknown[];
+    let errors: unknown[];
+
+    beforeEach(() => {
+      netSocket = new Socket();
+      socket = new JsonSocket(netSocket, { maxBufferSize });
+      messages = [];
+      errors = [];
+      socket.on('message', message => messages.push(message));
+      netSocket.on('error', error => errors.push(error));
+    });
+
+    it('should accept packets within the limit that exceed it together', () => {
+      expect(() => socket['handleData'](packet.repeat(3))).not.toThrow();
+      expect(messages).toEqual([body, body, body]);
+    });
+
+    it('should accept a packet of exactly maxBufferSize with its header', () => {
+      expect(() => socket['handleData'](fullPacket)).not.toThrow();
+      expect(messages).toEqual([fullBody]);
+    });
+
+    it('should accept the start of the next packet after the end of one', () => {
+      socket['handleData'](fullPacket.substring(0, 50));
+      expect(() =>
+        socket['handleData'](
+          fullPacket.substring(50) + fullPacket.substring(0, 80),
+        ),
+      ).not.toThrow();
+      socket['handleData'](fullPacket.substring(80));
+
+      expect(messages).toEqual([fullBody, fullBody]);
+    });
+
+    it('should accept them once backpressure is released', () => {
+      socket['applyBackpressure']();
+      socket['handleData'](packet.repeat(3));
+      expect(messages).toHaveLength(0);
+
+      netSocket.emit('drain');
+
+      expect(errors).toEqual([]);
+      expect(messages).toEqual([body, body, body]);
+    });
+
+    it('should still reject a packet above the limit that follows one within it', () => {
+      expect(() =>
+        socket['handleData'](`${packet}101#${'z'.repeat(101)}`),
+      ).toThrow(MaxPacketLengthExceededException);
+      expect(messages).toEqual([body]);
+      expect(socket['buffer']).toBe('');
+    });
+
+    it('should still reject data without a header that follows a packet', () => {
+      expect(() => socket['handleData'](`${packet}${'1'.repeat(101)}`)).toThrow(
+        MaxPacketLengthExceededException,
+      );
+      expect(messages).toEqual([body]);
+    });
+
+    it('should ignore what follows once the limit was exceeded', () => {
+      expect(() => socket['handleData']('1'.repeat(101))).toThrow(
+        MaxPacketLengthExceededException,
+      );
+      socket['handleData'](packet);
+
+      expect(messages).toEqual([]);
+      expect(socket['buffer']).toBe('');
+      expect(socket['contentLength']).toBeNull();
     });
   });
 
