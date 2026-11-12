@@ -291,6 +291,110 @@ describe('ModuleRef', () => {
 
         expect(instance.dep).to.be.instanceOf(RequestDep);
       });
+
+      describe('and it is injected into a property', () => {
+        @Injectable()
+        class CreatedWithProperty {
+          @Inject(RequestDep)
+          public dep: RequestDep;
+        }
+
+        it('should reject without a context id', async () => {
+          let error: unknown;
+          try {
+            await moduleRef.create(CreatedWithProperty);
+          } catch (err) {
+            error = err;
+          }
+          expect(error).to.be.instanceOf(RequestScopedCreateException);
+        });
+
+        it('should reject with the static context id', async () => {
+          let error: unknown;
+          try {
+            await moduleRef.create(CreatedWithProperty, STATIC_CONTEXT);
+          } catch (err) {
+            error = err;
+          }
+          expect(error).to.be.instanceOf(RequestScopedCreateException);
+        });
+
+        it('should resolve with a context id', async () => {
+          const first = await moduleRef.create(
+            CreatedWithProperty,
+            createContextId(),
+          );
+          const second = await moduleRef.create(
+            CreatedWithProperty,
+            createContextId(),
+          );
+
+          expect(first.dep).to.be.instanceOf(RequestDep);
+          expect(second.dep).to.be.instanceOf(RequestDep);
+          expect(first.dep).not.to.equal(second.dep);
+        });
+      });
+
+      describe('and it is injected into a property of a dependency', () => {
+        @Injectable()
+        class StaticDep {
+          @Inject(RequestDep)
+          public dep: RequestDep;
+        }
+        @Injectable()
+        class CreatedWithNestedProperty {
+          constructor(public dep: StaticDep) {}
+        }
+
+        beforeEach(() => {
+          container.addProvider(StaticDep, module.token);
+        });
+
+        it('should reject without a context id', async () => {
+          let error: unknown;
+          try {
+            await moduleRef.create(CreatedWithNestedProperty);
+          } catch (err) {
+            error = err;
+          }
+          expect(error).to.be.instanceOf(RequestScopedCreateException);
+        });
+
+        it('should resolve with a context id', async () => {
+          const instance = await moduleRef.create(
+            CreatedWithNestedProperty,
+            createContextId(),
+          );
+
+          expect(instance.dep).to.be.instanceOf(StaticDep);
+          expect(instance.dep.dep).to.be.instanceOf(RequestDep);
+        });
+      });
+    });
+
+    it('should create a request-scoped class without a context id when its dependencies are static', async () => {
+      @Injectable()
+      class SingletonDep {}
+      container.addProvider(SingletonDep, module.token);
+      await new InstanceLoader(
+        container,
+        new Injector(),
+        new GraphInspector(container),
+      ).createInstancesOfDependencies(container.getModules());
+
+      @Injectable({ scope: Scope.REQUEST })
+      class Created {
+        @Inject(SingletonDep)
+        public dep: SingletonDep;
+
+        constructor(public ctorDep: SingletonDep) {}
+      }
+
+      const instance = await moduleRef.create(Created);
+
+      expect(instance).to.be.instanceOf(Created);
+      expect(instance.dep).to.be.instanceOf(SingletonDep);
+      expect(instance.ctorDep).to.equal(instance.dep);
     });
   });
 
