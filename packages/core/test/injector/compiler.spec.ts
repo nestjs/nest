@@ -29,6 +29,45 @@ describe('ModuleCompiler', () => {
     });
   });
 
+  describe('resolveForwardReference', () => {
+    it('should resolve a reference once and return the same module after', () => {
+      class CatsModule {}
+      const forwardRef = vi.fn(() => ({ module: CatsModule }));
+      const reference = { forwardRef };
+
+      const first = compiler.resolveForwardReference(reference);
+      expect(compiler.resolveForwardReference(reference)).toBe(first);
+      expect(forwardRef).toHaveBeenCalledOnce();
+      expect(compiler.extractMetadata(reference)).toEqual({
+        type: CatsModule,
+        dynamicMetadata: {},
+      });
+    });
+
+    it('should not remember a reference that resolves to nothing yet', () => {
+      class CatsModule {}
+      let resolved: typeof CatsModule | undefined;
+      const reference = { forwardRef: () => resolved };
+
+      expect(compiler.resolveForwardReference(reference)).toBeUndefined();
+      resolved = CatsModule;
+      expect(compiler.resolveForwardReference(reference)).toBe(CatsModule);
+    });
+
+    it('should give a reference the token of the module it resolves to', async () => {
+      class CatsModule {}
+      const dynamicModule = { module: CatsModule, providers: [] };
+      const reference = { forwardRef: () => dynamicModule };
+
+      expect((await compiler.compile(reference)).token).toBe(
+        (await compiler.compile(dynamicModule)).token,
+      );
+      expect(
+        (await compiler.compile({ forwardRef: () => CatsModule })).token,
+      ).toBe((await compiler.compile(CatsModule)).token);
+    });
+  });
+
   describe('isDynamicModule', () => {
     describe('when module is a dynamic module', () => {
       it('should return true', () => {

@@ -138,7 +138,9 @@ export class DependenciesScanner {
     ctxRegistry.push(moduleDefinition);
 
     if (this.isForwardReference(moduleDefinition)) {
-      moduleDefinition = (moduleDefinition as ForwardReference).forwardRef();
+      moduleDefinition = this.resolveForwardReference(
+        moduleDefinition as ForwardReference,
+      );
     }
     const modules = !this.isDynamicModule(
       moduleDefinition as Type<any> | DynamicModule,
@@ -204,7 +206,7 @@ export class DependenciesScanner {
     | undefined
   > {
     const moduleToAdd = this.isForwardReference(moduleDefinition)
-      ? moduleDefinition.forwardRef()
+      ? this.resolveForwardReference(moduleDefinition)
       : moduleDefinition;
 
     if (this.isInjectable(moduleToAdd)) {
@@ -477,7 +479,10 @@ export class DependenciesScanner {
       throw new CircularDependencyException(context);
     }
     if (this.isForwardReference(related)) {
-      return this.container.addImport(related.forwardRef(), token);
+      return this.container.addImport(
+        this.resolveForwardReference(related),
+        token,
+      );
     }
     await this.container.addImport(related, token);
   }
@@ -584,7 +589,7 @@ export class DependenciesScanner {
     token: string,
   ) {
     const fulfilledProvider = this.isForwardReference(toExport)
-      ? toExport.forwardRef()
+      ? this.resolveForwardReference(toExport)
       : toExport;
     this.container.addExportedProviderOrModule(fulfilledProvider, token);
   }
@@ -626,12 +631,12 @@ export class DependenciesScanner {
     overrides: ModuleOverride[],
   ): ModuleOverride | undefined {
     if (this.isForwardReference(module)) {
-      return overrides.find(moduleToOverride => {
+      const moduleRef = this.resolveForwardReference(module);
+      return overrides.find(({ moduleToReplace }) => {
         return (
-          moduleToOverride.moduleToReplace === module.forwardRef() ||
-          (
-            moduleToOverride.moduleToReplace as ForwardReference
-          ).forwardRef?.() === module.forwardRef()
+          moduleToReplace === moduleRef ||
+          (this.isForwardReference(moduleToReplace) &&
+            this.resolveForwardReference(moduleToReplace) === moduleRef)
         );
       });
     }
@@ -655,9 +660,11 @@ export class DependenciesScanner {
   > {
     return this.container.replaceModule(
       this.isForwardReference(moduleToOverride)
-        ? moduleToOverride.forwardRef()
+        ? this.resolveForwardReference(moduleToOverride)
         : moduleToOverride,
-      this.isForwardReference(newModule) ? newModule.forwardRef() : newModule,
+      this.isForwardReference(newModule)
+        ? this.resolveForwardReference(newModule)
+        : newModule,
       scope,
       insertedModules,
     );
@@ -849,6 +856,17 @@ export class DependenciesScanner {
     module: ModuleDefinition,
   ): module is ForwardReference {
     return module && !!(module as ForwardReference).forwardRef;
+  }
+
+  /**
+   * Resolves a forward reference once per container (see `ModuleCompiler`),
+   * so that the module that is scanned and imported is the one that was
+   * registered.
+   */
+  private resolveForwardReference(reference: ForwardReference) {
+    return this.container
+      .getModuleCompiler()
+      .resolveForwardReference(reference);
   }
 
   private isRequestOrTransient(scope: Scope): boolean {
