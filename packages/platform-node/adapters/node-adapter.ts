@@ -265,7 +265,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {
-        body.errorHandler(err, this.toStreamableHandlerResponse(response));
+        this.handleStreamError(body, err, response);
       });
       // pipe() leaves the source open when the client disconnects early
       finished(response, () => {
@@ -1018,6 +1018,27 @@ export class NodeAdapter extends AbstractHttpAdapter<
       // Ending would make a file that failed midway look complete
       destroy: (error?: Error) => response.destroy(error),
     };
+  }
+
+  /**
+   * Runs the error handler of a StreamableFile whose stream failed after its
+   * headers were applied, from an "error" listener, where nothing catches
+   * what the handler throws. Its send() answers in plain text (see
+   * toStreamableHandlerResponse()).
+   */
+  private handleStreamError(
+    streamable: StreamableFile,
+    err: Error,
+    response: NodeResponse,
+  ) {
+    try {
+      streamable.errorHandler(err, this.toStreamableHandlerResponse(response));
+    } catch (handlerError) {
+      this.logger.error(handlerError);
+      if (!response.writableEnded) {
+        response.destroy();
+      }
+    }
   }
 
   private setHeaderIfNotExists(

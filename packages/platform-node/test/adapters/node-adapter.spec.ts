@@ -1078,6 +1078,45 @@ describe('NodeAdapter', () => {
         expect(res.text).toBe('Bad Request');
       });
 
+      it.each(['image/', 'pdf', 'image/png'])(
+        'should answer a source that fails with a plain-text 400 (type "%s")',
+        async type => {
+          // e.g. a type built from a file name without an extension, and a
+          // file that does not exist
+          const source = new Readable({
+            read() {
+              this.destroy(new Error('ENOENT'));
+            },
+          });
+
+          const res = await replyWith(
+            new StreamableFile(source, { type }).setErrorLogger(() => {}),
+          );
+
+          expect(res.status).toBe(400);
+          expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
+          expect(res.text).toBe('Bad Request');
+        },
+      );
+
+      it('should log what the error handler throws, and destroy the response', async () => {
+        const logger = vi
+          .spyOn((adapter as any).logger, 'error')
+          .mockImplementation(() => {});
+        const handlerError = new TypeError('invalid media type');
+        const source = new Readable({
+          read() {
+            this.destroy(new Error('ENOENT'));
+          },
+        });
+        const file = new StreamableFile(source).setErrorHandler(() => {
+          throw handlerError;
+        });
+
+        await expect(replyWith(file)).rejects.toThrow('socket hang up');
+        expect(logger).toHaveBeenCalledWith(handlerError);
+      });
+
       it('should abort the response when the source fails after sending data', async () => {
         let reads = 0;
         const source = new Readable({
