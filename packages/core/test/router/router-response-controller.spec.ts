@@ -15,7 +15,10 @@ import {
 } from '../../../common';
 import { SSE_ABORT_CONTROLLER } from '../../../common/decorators/http/sse-signal.decorator';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { RouterResponseController } from '../../router/router-response-controller';
+import {
+  onceClosed,
+  RouterResponseController,
+} from '../../router/router-response-controller';
 import { SseStream } from '../../router/sse-stream';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
@@ -76,6 +79,70 @@ describe('RouterResponseController', () => {
           expect(response.json.calledWith(value)).to.be.true;
         });
       });
+    });
+  });
+
+  describe('onceClosed', () => {
+    let source: EventEmitter;
+
+    beforeEach(() => {
+      source = new EventEmitter();
+    });
+
+    it('should call every callback once the source closes, through one listener', () => {
+      const callbacks = [sinon.spy(), sinon.spy(), sinon.spy()];
+
+      callbacks.forEach(callback => onceClosed(source, callback));
+      expect(source.listenerCount('close')).to.equal(1);
+
+      source.emit('close');
+      source.emit('close');
+
+      callbacks.forEach(callback => expect(callback.calledOnce).to.be.true);
+      expect(source.listenerCount('close')).to.equal(0);
+    });
+
+    it('should not call a callback that stopped waiting', () => {
+      const first = sinon.spy();
+      const second = sinon.spy();
+
+      const stopWaiting = onceClosed(source, first);
+      onceClosed(source, second);
+      stopWaiting();
+      stopWaiting();
+      expect(source.listenerCount('close')).to.equal(1);
+
+      source.emit('close');
+
+      expect(first.called).to.be.false;
+      expect(second.calledOnce).to.be.true;
+    });
+
+    it('should leave no listener behind once nothing is waiting', () => {
+      const stopWaiting = [sinon.spy(), sinon.spy()].map(callback =>
+        onceClosed(source, callback),
+      );
+
+      stopWaiting.forEach(stop => stop());
+      expect(source.listenerCount('close')).to.equal(0);
+
+      // And wait again for a later request on the same connection
+      const callback = sinon.spy();
+      onceClosed(source, callback);
+      source.emit('close');
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('should let a callback stop waiting while the source closes', () => {
+      const stops: Array<() => void> = [];
+      const callbacks = [0, 1, 2].map(index => sinon.spy(() => stops[index]()));
+      callbacks.forEach(callback => stops.push(onceClosed(source, callback)));
+
+      source.emit('close');
+
+      callbacks.forEach(callback => expect(callback.calledOnce).to.be.true);
+      expect(source.listenerCount('close')).to.equal(0);
     });
   });
 
