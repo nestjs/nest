@@ -100,6 +100,30 @@ describe('MiddlewareModule', () => {
     });
   });
 
+  describe('resolveMiddleware', () => {
+    it('should keep the configurations in the order of the modules when a "configure" method awaits', async () => {
+      const stubContainer = new NestContainer();
+      const modules = stubContainer.getModules();
+      const addModule = (name: string, configure: () => unknown) => {
+        const moduleRef = new Module(class {}, stubContainer);
+        sinon.stub(moduleRef, 'instance').get(() => ({ configure }) as any);
+        modules.set(name, moduleRef);
+      };
+      addModule('First', () => new Promise(resolve => setTimeout(resolve, 5)));
+      addModule('Second', () => undefined);
+      addModule('Third', async () => undefined);
+
+      const middlewareContainer = new MiddlewareContainer(stubContainer);
+      (middlewareModule as any).container = stubContainer;
+      (middlewareModule as any).resolver = { resolveInstances: sinon.spy() };
+      await middlewareModule.resolveMiddleware(middlewareContainer, modules);
+
+      expect([...middlewareContainer.getConfigurations().keys()]).to.deep.equal(
+        ['First', 'Second', 'Third'],
+      );
+    });
+  });
+
   describe('registerRouteMiddleware', () => {
     class TestModule {}
 

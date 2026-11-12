@@ -31,6 +31,14 @@ export class MiddlewareContainer {
     return this.configurationSets;
   }
 
+  /**
+   * Gives the module its place among the configurations, which are kept in
+   * the order of insertion, before its configurations are known.
+   */
+  public reserveConfig(moduleKey: string) {
+    this.getTargetConfig(moduleKey);
+  }
+
   public insertConfig(
     configList: MiddlewareConfiguration[],
     moduleKey: string,
