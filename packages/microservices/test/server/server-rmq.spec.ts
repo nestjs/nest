@@ -3,9 +3,11 @@ import { of } from 'rxjs';
 import {
   CONSUMER_CANCELLED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
+  RMQ_DEFAULT_MAX_MESSAGE_SIZE,
   RMQ_DEFAULT_QUEUE,
 } from '../../constants.js';
 import { RmqContext } from '../../ctx-host/index.js';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -520,6 +522,113 @@ describe('ServerRMQ', () => {
         1,
         expect.any(RmqContext),
       );
+    });
+
+    describe('when the body exceeds "maxMessageSize"', () => {
+      // The size of '{"pattern":"test","data":"123","id":"3"}'
+      const maxMessageSize = 40;
+      const oversizedContent = () =>
+        Buffer.from(JSON.stringify({ pattern, data: '123', id: '3' }) + ' ');
+      const errorMessage = new MaxPacketLengthExceededException(
+        maxMessageSize + 1,
+      ).message;
+
+      let handler: ReturnType<typeof vi.fn>;
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        server = new ServerRMQ({ maxMessageSize });
+        untypedServer = server as any;
+        untypedServer.channel = channel;
+        sendMessageStub = vi
+          .spyOn(server, 'sendMessage')
+          .mockResolvedValue(undefined);
+        loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+        handler = vi.fn().mockResolvedValue(undefined);
+        untypedServer.messageHandlers = objectToMap({ [pattern]: handler });
+      });
+
+      it('should log and skip the message without decoding it', async () => {
+        const content = oversizedContent();
+        expect(content.length).toBe(maxMessageSize + 1);
+        const toStringSpy = vi.spyOn(content, 'toString');
+
+        await server.handleMessage({ content, properties: {} }, channel);
+
+        expect(toStringSpy).not.toHaveBeenCalled();
+        expect(handler).not.toHaveBeenCalled();
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringContaining(errorMessage),
+        );
+        expect(channel.nack).not.toHaveBeenCalled();
+        expect(sendMessageStub).not.toHaveBeenCalled();
+      });
+
+      it('should negative acknowledge it without requeue when noAck option is false', async () => {
+        untypedServer.noAck = false;
+        const message = { content: oversizedContent(), properties: {} };
+
+        await server.handleMessage(message, channel);
+
+        expect(channel.nack).toHaveBeenCalledWith(message, false, false);
+        expect(handler).not.toHaveBeenCalled();
+      });
+
+      it('should answer a request that names a reply queue with an error', async () => {
+        await server.handleMessage(
+          {
+            content: oversizedContent(),
+            properties: { replyTo: 'reply-queue', correlationId: 'abc' },
+          },
+          channel,
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(sendMessageStub).toHaveBeenCalledExactlyOnceWith(
+          { id: 'abc', err: errorMessage, status: 'error' },
+          'reply-queue',
+          'abc',
+          expect.any(RmqContext),
+        );
+      });
+
+      it('should handle a message of exactly "maxMessageSize" bytes', async () => {
+        const content = Buffer.from(
+          JSON.stringify({ pattern, data: '123', id: '3' }),
+        );
+        expect(content.length).toBe(maxMessageSize);
+
+        await server.handleMessage({ content, properties: {} }, channel);
+
+        expect(handler).toHaveBeenCalledWith('123', expect.any(RmqContext));
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+      });
+
+      it('should default to 16 MiB', () => {
+        expect(RMQ_DEFAULT_MAX_MESSAGE_SIZE).toBe(16 * 1024 * 1024);
+        expect(new ServerRMQ({})['maxMessageSize']).toBe(
+          RMQ_DEFAULT_MAX_MESSAGE_SIZE,
+        );
+      });
+
+      it.each([
+        ['NaN', NaN],
+        ['a string', '16mb'],
+      ])('should use the default for %s', (_, maxMessageSize) => {
+        expect(
+          new ServerRMQ({ maxMessageSize: maxMessageSize as number })[
+            'maxMessageSize'
+          ],
+        ).toBe(RMQ_DEFAULT_MAX_MESSAGE_SIZE);
+      });
+
+      it('should keep Infinity', () => {
+        expect(
+          new ServerRMQ({ maxMessageSize: Infinity })['maxMessageSize'],
+        ).toBe(Infinity);
+      });
     });
   });
 

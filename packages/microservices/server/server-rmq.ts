@@ -9,6 +9,7 @@ import {
   RMQ_WILDCARD_ALL,
   RMQ_WILDCARD_SINGLE,
   RMQ_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RMQ_DEFAULT_MAX_MESSAGE_SIZE,
   RMQ_DEFAULT_NOACK,
   RMQ_DEFAULT_NO_ASSERT,
   RMQ_DEFAULT_PREFETCH_COUNT,
@@ -21,6 +22,7 @@ import {
 } from '../constants.js';
 import { RmqContext } from '../ctx-host/index.js';
 import { Transport } from '../enums/index.js';
+import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
 import { RmqUrl } from '../external/rmq-url.interface.js';
 import {
@@ -68,6 +70,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
   protected readonly noAck: boolean;
+  protected readonly maxMessageSize: number;
   protected readonly queueOptions: any;
   protected readonly wildcardHandlers = new Map<string, MessageHandler>();
   protected pendingEventListeners: Array<{
@@ -81,6 +84,13 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     this.queue =
       this.getOptionsProp(this.options, 'queue') || RMQ_DEFAULT_QUEUE;
     this.noAck = this.getOptionsProp(this.options, 'noAck', RMQ_DEFAULT_NOACK);
+    const maxMessageSize = this.getOptionsProp(this.options, 'maxMessageSize');
+    // A value that is not a number (such as NaN from an unset environment
+    // variable) gets the default: no size compares greater than NaN
+    this.maxMessageSize =
+      maxMessageSize == null || isNaN(maxMessageSize)
+        ? RMQ_DEFAULT_MAX_MESSAGE_SIZE
+        : maxMessageSize;
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||
       RMQ_DEFAULT_QUEUE_OPTIONS;
@@ -350,6 +360,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       return this.setupChannel(channel, () => {});
     }
     const { content, properties } = message;
+    if (content.length > this.maxMessageSize) {
+      return this.skipOversizedMessage(message, channel);
+    }
     const rawMessage = this.parseMessageContent(content);
     const packet = await this.deserializer.deserialize(rawMessage, properties);
     const pattern = this.getPatternAsString(packet.pattern);
@@ -393,6 +406,39 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       async () =>
         this.transformToObservable(await handler(packet.data, rmqContext)),
       publish,
+    );
+  }
+
+  /**
+   * Skips a message whose body is larger than "maxMessageSize" without
+   * decoding it: JSON.parse() can take dozens of times the size of the text
+   * in memory, and V8 ends the process, instead of throwing, once the heap is
+   * exhausted. Neither amqplib nor the broker's default limit bounds the body
+   * below that.
+   */
+  protected async skipOversizedMessage(
+    message: Record<string, any>,
+    channel: any,
+  ): Promise<void> {
+    const { content, properties } = message;
+    const err = new MaxPacketLengthExceededException(content.length);
+    this.logger.error(
+      `Message skipped (queue "${this.queue}"): ${err.message}`,
+    );
+    if (!this.noAck) {
+      // Requeued, it would be delivered again
+      this.channel!.nack(message as Message, false, false);
+    }
+    if (isNil(properties?.replyTo)) {
+      return;
+    }
+    // The id and the pattern are in the body, so the sender of a request,
+    // which waits for a reply, is answered through the properties alone
+    await this.sendMessage(
+      { id: properties.correlationId, err: err.message, status: 'error' },
+      properties.replyTo,
+      properties.correlationId,
+      new RmqContext([message, channel, '']),
     );
   }
 

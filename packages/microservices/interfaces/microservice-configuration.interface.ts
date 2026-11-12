@@ -358,6 +358,16 @@ export interface RmqOptions {
      */
     wildcards?: boolean;
     /**
+     * Maximum size of a message body in bytes. The server logs and skips a
+     * larger message instead of decoding it (it is negatively acknowledged,
+     * without requeue, when "noAck" is false, and a request is answered with an
+     * error), and the client fails the request that a larger reply answers.
+     * Decoding JSON can take dozens of times the size of the body in memory,
+     * so a process with a small heap may need a lower limit.
+     * @default 16777216 (16 MiB)
+     */
+    maxMessageSize?: number;
+    /**
      * Maximum number of connection attempts.
      * Applies only to the consumer configuration.
      * -1 === infinite

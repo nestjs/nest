@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import { EMPTY, firstValueFrom } from 'rxjs';
 import { ClientRMQ } from '../../client/client-rmq.js';
+import { RMQ_DEFAULT_MAX_MESSAGE_SIZE } from '../../constants.js';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { RmqRecord } from '../../record-builders/index.js';
 
@@ -894,6 +896,76 @@ describe('ClientRMQ', function () {
         await expect(response).rejects.toBe(error);
         expect(routingMap.size).toBe(0);
         expect(responseEmitter.listenerCount(correlationId)).toBe(0);
+      });
+    });
+
+    describe('when the reply exceeds "maxMessageSize"', () => {
+      const maxMessageSize = 16;
+      const sendRequest = async (rmqClient: ClientRMQ) => {
+        const routingMap: Map<string, unknown> = Reflect.get(
+          rmqClient,
+          'routingMap',
+        );
+        const responseEmitter = new EventEmitter();
+        Object.assign(rmqClient, {
+          responseEmitter,
+          channel: { sendToQueue: vi.fn(() => ({ catch: vi.fn() })) },
+        });
+        vi.spyOn(rmqClient, 'connect').mockResolvedValue(undefined);
+
+        const response = firstValueFrom(rmqClient.send('test', 'data'));
+        await vi.waitFor(() => expect(routingMap.size).toBe(1));
+        const [correlationId] = routingMap.keys() as Iterable<string>;
+        const reply = (content: Buffer) =>
+          responseEmitter.emit(correlationId, { content, options: {} });
+        return { response, reply, routingMap, responseEmitter, correlationId };
+      };
+
+      it('should fail the request without decoding the reply', async () => {
+        const rmqClient = new ClientRMQ({ maxMessageSize });
+        const { response, reply, routingMap, responseEmitter, correlationId } =
+          await sendRequest(rmqClient);
+        const content = Buffer.from('{"response":"12"}');
+        expect(content.length).toBe(maxMessageSize + 1);
+        const toStringSpy = vi.spyOn(content, 'toString');
+
+        reply(content);
+
+        await expect(response).rejects.toBeInstanceOf(
+          MaxPacketLengthExceededException,
+        );
+        expect(toStringSpy).not.toHaveBeenCalled();
+        expect(routingMap.size).toBe(0);
+        expect(responseEmitter.listenerCount(correlationId)).toBe(0);
+      });
+
+      it('should pass on a reply of exactly "maxMessageSize" bytes', async () => {
+        const rmqClient = new ClientRMQ({ maxMessageSize });
+        const { response, reply } = await sendRequest(rmqClient);
+        const content = Buffer.from('{"response":"1"}');
+        expect(content.length).toBe(maxMessageSize);
+
+        reply(content);
+
+        await expect(response).resolves.toBe('1');
+      });
+
+      it('should default to 16 MiB', () => {
+        expect(RMQ_DEFAULT_MAX_MESSAGE_SIZE).toBe(16 * 1024 * 1024);
+        expect(new ClientRMQ({})['maxMessageSize']).toBe(
+          RMQ_DEFAULT_MAX_MESSAGE_SIZE,
+        );
+      });
+
+      it.each([
+        ['NaN', NaN],
+        ['a string', '16mb'],
+      ])('should use the default for %s', (_, maxMessageSize) => {
+        expect(
+          new ClientRMQ({ maxMessageSize: maxMessageSize as number })[
+            'maxMessageSize'
+          ],
+        ).toBe(RMQ_DEFAULT_MAX_MESSAGE_SIZE);
       });
     });
   });

@@ -15,6 +15,7 @@ import {
   CONSUMER_CANCELLED_RMQ_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
   RMQ_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RMQ_DEFAULT_MAX_MESSAGE_SIZE,
   RMQ_DEFAULT_NO_ASSERT,
   RMQ_DEFAULT_NOACK,
   RMQ_DEFAULT_PERSISTENT,
@@ -24,6 +25,7 @@ import {
   RMQ_DEFAULT_URL,
   UNBLOCKED_RMQ_MESSAGE,
 } from '../constants.js';
+import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
 import {
   IncomingResponse,
@@ -84,6 +86,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected queueOptions: Record<string, any>;
   protected replyQueue: string;
   protected noAssert: boolean;
+  protected maxMessageSize: number;
 
   constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
@@ -102,6 +105,13 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.getOptionsProp(this.options, 'noAssert') ??
       this.queueOptions.noAssert ??
       RMQ_DEFAULT_NO_ASSERT;
+    const maxMessageSize = this.getOptionsProp(this.options, 'maxMessageSize');
+    // A value that is not a number (such as NaN from an unset environment
+    // variable) gets the default: no size compares greater than NaN
+    this.maxMessageSize =
+      maxMessageSize == null || isNaN(maxMessageSize)
+        ? RMQ_DEFAULT_MAX_MESSAGE_SIZE
+        : maxMessageSize;
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -529,12 +539,20 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       }: {
         content: Buffer;
         options: Record<string, unknown>;
-      }) =>
-        this.handleMessage(
+      }) => {
+        if (content.length > this.maxMessageSize) {
+          // Decoding it could exhaust the heap, which ends the process
+          return callback({
+            err: new MaxPacketLengthExceededException(content.length),
+            isDisposed: true,
+          });
+        }
+        return this.handleMessage(
           this.parseMessageContent(content),
           options,
           callback,
         );
+      };
 
       Object.assign(message, { id: correlationId });
       // The metadata travels as headers, not in the payload

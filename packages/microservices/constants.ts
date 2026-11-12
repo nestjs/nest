@@ -22,6 +22,7 @@ export const RMQ_DEFAULT_QUEUE_OPTIONS = {};
 export const RMQ_DEFAULT_NOACK = true;
 export const RMQ_DEFAULT_PERSISTENT = false;
 export const RMQ_DEFAULT_NO_ASSERT = false;
+export const RMQ_DEFAULT_MAX_MESSAGE_SIZE = 16 * 1024 * 1024; // 16 MiB
 export const RMQ_SEPARATOR = '.';
 export const RMQ_WILDCARD_SINGLE = '*';
 export const RMQ_WILDCARD_ALL = '#';
