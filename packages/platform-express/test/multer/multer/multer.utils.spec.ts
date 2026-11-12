@@ -13,6 +13,7 @@ import {
 } from '../../../multer/multer/multer.constants';
 import {
   applyDefaultLimits,
+  closeArrayGaps,
   mergeMulterOptions,
   removeFilesOnPipeRejection,
   runMulter,
@@ -328,6 +329,60 @@ describe('runMulter', () => {
     await result;
   });
 
+  it('should close the gaps in the arrays of the body multer parsed', async () => {
+    const req: any = {};
+    await runMulter(
+      (r, _res, next) => {
+        r.body = Object.create(null);
+        r.body.tags = [];
+        r.body.tags[3] = 'b';
+        r.body.tags[1] = 'a';
+        r.body.user = Object.create(null);
+        r.body.user.ids = [];
+        r.body.user.ids[1000] = '7';
+        next();
+      },
+      req,
+      response(),
+    );
+    expect(req.body.tags).to.deep.equal(['a', 'b']);
+    expect(req.body.user.ids).to.deep.equal(['7']);
+  });
+
+  it('should close the gaps that array indexes leave, with multer', async () => {
+    const boundary = 'nestjs';
+    const body =
+      [
+        ['tags[3]', 'b'],
+        ['tags[1]', 'a'],
+        ['user[ids][1000]', '7'],
+      ]
+        .map(
+          ([name, value]) =>
+            `--${boundary}\r\n` +
+            `Content-Disposition: form-data; name="${name}"\r\n\r\n` +
+            `${value}\r\n`,
+        )
+        .join('') + `--${boundary}--\r\n`;
+    const req: any = Object.assign(Readable.from([Buffer.from(body)]), {
+      headers: {
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+        'content-length': String(Buffer.byteLength(body)),
+      },
+    });
+    await runMulter((multer as any)().none(), req, response());
+    expect(req.body.tags).to.deep.equal(['a', 'b']);
+    expect(req.body.user.ids).to.deep.equal(['7']);
+  });
+
+  it('should leave a body multer did not parse', async () => {
+    const tags = ['a'];
+    tags[3] = 'b';
+    const req: any = { body: { tags } };
+    await runMulter((_req, _res, next) => next(), req, response());
+    expect(req.body.tags).to.have.lengthOf(4);
+  });
+
   it('should stop watching the response once multer is done', async () => {
     const req = new PassThrough();
     const res = response();
@@ -335,6 +390,31 @@ describe('runMulter', () => {
     res.end();
     await tick();
     expect(req.destroyed).to.be.false;
+  });
+});
+
+describe('closeArrayGaps', () => {
+  it('should close the gaps of nested arrays and keep the order of the values', () => {
+    const inner: any[] = [];
+    inner[5] = 'z';
+    const outer: any[] = [];
+    outer[2] = { list: inner };
+    outer[0] = 'first';
+    const store = { outer, dense: ['a', 'b'], text: 'x' };
+    closeArrayGaps(store);
+    expect(store).to.deep.equal({
+      outer: ['first', { list: ['z'] }],
+      dense: ['a', 'b'],
+      text: 'x',
+    });
+  });
+
+  it('should keep arrays without gaps as they are', () => {
+    const dense = ['a', 'b'];
+    const store = { dense };
+    closeArrayGaps(store);
+    expect(store.dense).to.equal(dense);
+    expect(dense).to.deep.equal(['a', 'b']);
   });
 });
 
