@@ -4,6 +4,7 @@ import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { RedisContext } from '../../ctx-host/index.js';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
+import { MaxRedisChannelLengthExceededException } from '../../errors/max-redis-channel-length-exceeded.exception.js';
 import { ServerRedis } from '../../server/server-redis.js';
 import { objectToMap } from './utils/object-to-map.js';
 
@@ -425,6 +426,106 @@ describe('ServerRedis', () => {
         untypedServer.messageHandlers = objectToMap({
           'users.*': handler,
         });
+      });
+      describe('when a request arrives on a long channel', () => {
+        // Every reply is published on a copy of the channel, which the sender
+        // chooses among those that "users.*" matches
+        const request = (channel: string) =>
+          JSON.stringify({ id, pattern: channel, data });
+
+        it('should drop a request on a channel longer than 1024 characters', async () => {
+          const longChannel = 'users.'.padEnd(1025, 'a');
+
+          const error = await server
+            .handleMessage('users.*', request(longChannel), null, longChannel)
+            .catch(err => err);
+
+          expect(error).toBeInstanceOf(MaxRedisChannelLengthExceededException);
+          expect(handler).not.toHaveBeenCalled();
+          expect(server.getPublisher).not.toHaveBeenCalled();
+        });
+        it('should answer a request on a channel of 1024 characters', async () => {
+          const longestChannel = 'users.'.padEnd(1024, 'a');
+
+          await server.handleMessage(
+            'users.*',
+            request(longestChannel),
+            null,
+            longestChannel,
+          );
+
+          expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
+        });
+        it('should not limit the channel of a pattern without a wildcard', async () => {
+          // The channel is the handler's own pattern then
+          const longChannel = 'users.'.padEnd(1025, 'a');
+          const longHandler = vi.fn();
+          untypedServer.messageHandlers.set(longChannel, longHandler);
+
+          await server.handleMessage(
+            longChannel,
+            request(longChannel),
+            null,
+            longChannel,
+          );
+
+          expect(longHandler).toHaveBeenCalled();
+        });
+        it('should drop a request on a channel longer than a limit it is given', async () => {
+          untypedServer.options.maxWildcardChannelLength = 16;
+          const longChannel = 'users.'.padEnd(17, 'a');
+
+          const error = await server
+            .handleMessage('users.*', request(longChannel), null, longChannel)
+            .catch(err => err);
+
+          expect(error).toBeInstanceOf(MaxRedisChannelLengthExceededException);
+          expect(handler).not.toHaveBeenCalled();
+        });
+        it('should keep the default limit when given a value that is not a number', async () => {
+          // Such as Number(process.env.UNSET)
+          untypedServer.options.maxWildcardChannelLength = NaN;
+          const longChannel = 'users.'.padEnd(1025, 'a');
+
+          const error = await server
+            .handleMessage('users.*', request(longChannel), null, longChannel)
+            .catch(err => err);
+
+          expect(error).toBeInstanceOf(MaxRedisChannelLengthExceededException);
+          expect(handler).not.toHaveBeenCalled();
+        });
+        it('should dispatch an event on a long channel', async () => {
+          const longChannel = 'users.'.padEnd(1025, 'a');
+
+          await server.handleMessage(
+            'users.*',
+            JSON.stringify({ pattern: longChannel, data }),
+            null,
+            longChannel,
+          );
+
+          expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
+        });
+        it.each([
+          ['raised', 2048],
+          ['disabled', 0],
+        ])(
+          'should answer a request on a longer channel when the limit is %s',
+          async (_, maxWildcardChannelLength) => {
+            untypedServer.options.maxWildcardChannelLength =
+              maxWildcardChannelLength;
+            const longChannel = 'users.'.padEnd(2048, 'a');
+
+            await server.handleMessage(
+              'users.*',
+              request(longChannel),
+              null,
+              longChannel,
+            );
+
+            expect(handler).toHaveBeenCalled();
+          },
+        );
       });
       it.each([
         ['reply', { id, response: data, isDisposed: true }],

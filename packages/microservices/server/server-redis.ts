@@ -5,6 +5,7 @@ import {
 } from '../constants.js';
 import { RedisContext } from '../ctx-host/index.js';
 import { Transport } from '../enums/index.js';
+import { MaxRedisChannelLengthExceededException } from '../errors/max-redis-channel-length-exceeded.exception.js';
 import {
   RedisEvents,
   RedisEventsMap,
@@ -16,7 +17,7 @@ import {
   TransportId,
 } from '../interfaces/index.js';
 import { Server } from './server.js';
-import { isUndefined } from '@nestjs/common/internal';
+import { isNil, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -24,6 +25,8 @@ import { isUndefined } from '@nestjs/common/internal';
 //
 // type Redis = import('ioredis').Redis;
 type Redis = any;
+
+const DEFAULT_MAX_WILDCARD_CHANNEL_LENGTH = 1024;
 
 /**
  * @publicApi
@@ -173,6 +176,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       return this.handleEvent(channel, packet, redisCtx);
     }
     this.assertValidPacketId((packet as IncomingRequest).id);
+    this.assertWildcardChannelLength(channel, pattern);
     // With wildcards, `channel` is the subscribed pattern (e.g. "users.*") and
     // `pattern` is the concrete channel the request was published to. The
     // client waits for the reply on the concrete one, so reply there.
@@ -209,6 +213,35 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
         this.transformToObservable(await handler(packet.data, redisCtx)),
       publish,
     );
+  }
+
+  /**
+   * With wildcards, the sender of a request chooses the channel it publishes
+   * the request to among those a pattern matches, and "*" matches a run of
+   * any length. Every reply is published on a copy of that channel
+   * ("<channel>.reply"), as many times as the handler emits.
+   */
+  protected assertWildcardChannelLength(subscription: string, channel: string) {
+    const option = this.getOptionsProp(
+      this.options,
+      'maxWildcardChannelLength',
+    );
+    // A value that is not a number (NaN, "1kb") gets the default limit
+    // rather than none
+    const maxLength =
+      isNil(option) || isNaN(option)
+        ? DEFAULT_MAX_WILDCARD_CHANNEL_LENGTH
+        : option;
+    if (
+      channel !== subscription &&
+      maxLength > 0 &&
+      channel.length > maxLength
+    ) {
+      throw new MaxRedisChannelLengthExceededException(
+        channel.length,
+        maxLength,
+      );
+    }
   }
 
   /**

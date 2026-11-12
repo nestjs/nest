@@ -182,6 +182,14 @@ export interface RedisOptions {
      * Use `psubscribe`/`pmessage` to enable wildcards in the patterns
      */
     wildcards?: boolean;
+    /**
+     * With "wildcards", the maximum length, in characters, of the channel a
+     * request matched by a wildcard pattern may be published to (default:
+     * 1024). Its replies are published on a copy of that channel, which the
+     * sender chooses. A request on a longer channel is dropped and an error
+     * is logged. Set to 0 to disable.
+     */
+    maxWildcardChannelLength?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
   } & IORedisOptions;
