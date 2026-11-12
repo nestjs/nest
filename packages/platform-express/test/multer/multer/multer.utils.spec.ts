@@ -82,7 +82,11 @@ describe('mergeMulterOptions', () => {
 });
 
 describe('applyDefaultLimits', () => {
-  const defaults = { fieldNestingDepth: 32, fieldArrayIndexLimit: 1000 };
+  const defaults = {
+    fieldNestingDepth: 32,
+    fieldArrayIndexLimit: 1000,
+    parts: 1000,
+  };
 
   it('should set the field name limits when no limits are set', () => {
     const options = applyDefaultLimits({ dest: '/uploads' });
@@ -98,18 +102,35 @@ describe('applyDefaultLimits', () => {
       fileSize: 10,
       fieldNestingDepth: 0,
       fieldArrayIndexLimit: 1000,
+      parts: 1000,
     });
     expect(
       applyDefaultLimits({
-        limits: { fieldNestingDepth: Infinity, fieldArrayIndexLimit: Infinity },
+        limits: {
+          fieldNestingDepth: Infinity,
+          fieldArrayIndexLimit: Infinity,
+          parts: Infinity,
+        },
       }).limits,
-    ).toEqual({ fieldNestingDepth: Infinity, fieldArrayIndexLimit: Infinity });
+    ).toEqual({
+      fieldNestingDepth: Infinity,
+      fieldArrayIndexLimit: Infinity,
+      parts: Infinity,
+    });
+    expect(applyDefaultLimits({ limits: { parts: 5 } }).limits).toEqual({
+      ...defaults,
+      parts: 5,
+    });
   });
 
-  it('should set the field name limits that are null or undefined', () => {
+  it('should set the default limits that are null or undefined', () => {
     expect(
       applyDefaultLimits({
-        limits: { fieldNestingDepth: undefined, fieldArrayIndexLimit: null! },
+        limits: {
+          fieldNestingDepth: undefined,
+          fieldArrayIndexLimit: null!,
+          parts: undefined,
+        },
       }).limits,
     ).toEqual(defaults);
   });
@@ -134,14 +155,18 @@ describe('applyDefaultLimits', () => {
   });
 
   describe('with multer', () => {
-    /** Runs `multer(options).none()` over a body with one text field. */
-    const parseField = (options: MulterOptions, fieldName: string) => {
+    /** Runs `multer(options).none()` over a body with the given text fields. */
+    const parseFields = (options: MulterOptions, fieldNames: string[]) => {
       const boundary = 'nestjs';
       const body =
-        `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="${fieldName}"\r\n\r\n` +
-        `x\r\n` +
-        `--${boundary}--\r\n`;
+        fieldNames
+          .map(
+            name =>
+              `--${boundary}\r\n` +
+              `Content-Disposition: form-data; name="${name}"\r\n\r\n` +
+              `x\r\n`,
+          )
+          .join('') + `--${boundary}--\r\n`;
       const req = Object.assign(Readable.from([Buffer.from(body)]), {
         headers: {
           'content-type': `multipart/form-data; boundary=${boundary}`,
@@ -156,6 +181,14 @@ describe('applyDefaultLimits', () => {
         ),
       );
     };
+
+    /** Runs `multer(options).none()` over a body with one text field. */
+    const parseField = (options: MulterOptions, fieldName: string) =>
+      parseFields(options, [fieldName]);
+
+    /** `count` distinct field names. */
+    const names = (count: number) =>
+      Array.from({ length: count }, (_, i) => `f${i}`);
 
     /** Reads `a.b.b...` (`depth` times `b`) out of a parsed body. */
     const dig = (body: any, depth: number) => {
@@ -178,6 +211,54 @@ describe('applyDefaultLimits', () => {
       await expect(parseField({}, 'a[1001]')).rejects.toMatchObject({
         code: 'LIMIT_FIELD_ARRAY_INDEX',
       });
+    });
+
+    it('should reject more than 1000 parts by default', async () => {
+      expect(Object.keys(await parseFields({}, names(1000)))).toHaveLength(
+        1000,
+      );
+      await expect(parseFields({}, names(1001))).rejects.toMatchObject({
+        code: 'LIMIT_PART_COUNT',
+      });
+    });
+
+    it('should count files as parts', async () => {
+      const boundary = 'nestjs';
+      const body =
+        Array.from(
+          { length: 1001 },
+          (_, i) =>
+            `--${boundary}\r\n` +
+            `Content-Disposition: form-data; name="f"; filename="${i}.txt"\r\n` +
+            `Content-Type: text/plain\r\n\r\n` +
+            `x\r\n`,
+        ).join('') + `--${boundary}--\r\n`;
+      const req = Object.assign(Readable.from([Buffer.from(body)]), {
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`,
+          'content-length': String(Buffer.byteLength(body)),
+        },
+      });
+      await expect(
+        new Promise<void>((resolve, reject) =>
+          multer(applyDefaultLimits({})).any()(
+            req as any,
+            {} as any,
+            (err?: any) => (err ? reject(err) : resolve()),
+          ),
+        ),
+      ).rejects.toMatchObject({ code: 'LIMIT_PART_COUNT' });
+    });
+
+    it('should apply the parts limit that is set', async () => {
+      await expect(
+        parseFields({ limits: { parts: 2 } }, names(3)),
+      ).rejects.toMatchObject({ code: 'LIMIT_PART_COUNT' });
+      const body = await parseFields(
+        { limits: { parts: Infinity } },
+        names(1001),
+      );
+      expect(Object.keys(body)).toHaveLength(1001);
     });
 
     it('should apply the defaults to the limits a function returns', async () => {

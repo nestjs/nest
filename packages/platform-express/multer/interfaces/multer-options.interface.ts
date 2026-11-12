@@ -12,7 +12,11 @@ export interface MulterLimits {
   fileSize?: number;
   /** For multipart forms, the max number of file fields (Default: Infinity) */
   files?: number;
-  /** For multipart forms, the max number of parts (fields + files)(Default: Infinity) */
+  /**
+   * For multipart forms, the max number of parts (fields + files) (Default:
+   * 1000, as on Fastify, where multer's own default is Infinity). Set it to
+   * `Infinity` to lift the limit.
+   */
   parts?: number;
   /** For multipart forms, the max number of header key=> value pairs to parse Default: 2000(same as node's http). */
   headerPairs?: number;
@@ -41,7 +45,7 @@ export interface MulterOptions {
   storage?: any;
   /**
    * An object specifying the size limits of the following optional properties. This object is passed to multer
-   * and on to busboy, with `fieldNestingDepth` and `fieldArrayIndexLimit` set to their defaults when absent.
+   * and on to busboy, with `fieldNestingDepth`, `fieldArrayIndexLimit` and `parts` set to their defaults when absent.
    * The details of the busboy properties can be found on https://github.com/mscdex/busboy#busboy-methods
    *
    * Since multer 2.4.0, this can also be a function of the request that returns such an object.

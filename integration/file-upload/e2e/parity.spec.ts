@@ -434,6 +434,24 @@ describe('File upload: Express (multer), Fastify and Node parity', () => {
       });
     });
 
+    it('should reject more than 1000 parts by default', async () => {
+      const fields = (count: number) => (http: ReturnType<typeof request>) => {
+        const test = http.post('/none');
+        for (let i = 0; i < count; i++) {
+          test.field(`f${i}`, 'x');
+        }
+        return test;
+      };
+      const ok = await expectParity(fields(1000));
+      expect(ok.status).toBe(201);
+      const res = await expectParity(fields(1001));
+      expect(res.body).toEqual({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Too many parts',
+      });
+    });
+
     it('should reject a field value over fieldSize', async () => {
       const ok = await expectParity(http =>
         http.post('/text-limits').field('name', 'ab'),

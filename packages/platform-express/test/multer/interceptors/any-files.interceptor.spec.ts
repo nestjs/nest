@@ -82,6 +82,7 @@ describe('FilesInterceptor', () => {
       fileSize: 10,
       fieldNestingDepth: 32,
       fieldArrayIndexLimit: 1000,
+      parts: 1000,
     });
   });
 });

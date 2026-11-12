@@ -10,6 +10,7 @@ import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { finished } from 'stream';
 import {
   DEFAULT_FIELD_NAME_LIMITS,
+  DEFAULT_PARTS_LIMIT,
   multerExceptions,
   busboyExceptions,
 } from './multer.constants.js';
@@ -67,9 +68,10 @@ export function mergeMulterOptions(
 
 /**
  * Sets the field name limits multer leaves at `Infinity` to
- * `DEFAULT_FIELD_NAME_LIMITS` wherever they are not set. multer only checks
- * a limit that is present in `limits`, so the defaults are added to the
- * object, or to the object a function-valued `limits` returns.
+ * `DEFAULT_FIELD_NAME_LIMITS`, and `parts` to `DEFAULT_PARTS_LIMIT`,
+ * wherever they are not set. multer only checks a limit that is present in
+ * `limits`, so the defaults are added to the object, or to the object a
+ * function-valued `limits` returns.
  */
 export function applyDefaultLimits<T extends MulterOptions>(options: T): T {
   const { limits } = options;
@@ -92,6 +94,7 @@ function withDefaultLimits(
     fieldArrayIndexLimit:
       limits?.fieldArrayIndexLimit ??
       DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit,
+    parts: limits?.parts ?? DEFAULT_PARTS_LIMIT,
   };
 }
 
