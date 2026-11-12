@@ -559,6 +559,81 @@ describe('WsAdapter', () => {
       expect(logError).toHaveBeenCalledTimes(1);
     });
 
+    describe('with an asynchronous exception filter', () => {
+      // same transform WebSocketsController.subscribeMessages passes in
+      const realTransform = (data: any) =>
+        from(
+          WebSocketsController.prototype.pickResult.call(undefined, data),
+        ).pipe(mergeAll());
+      const bindFailingHandler = (
+        adapter: WsAdapter,
+        client: any,
+        filter: () => Promise<unknown>,
+      ) => {
+        const exceptionsHandler = new WsExceptionsHandler();
+        exceptionsHandler.setCustomFilters([
+          { exceptionMetatypes: [], func: filter },
+        ] as any);
+        const callback = vi.fn(async () => {
+          throw new Error('Forbidden');
+        });
+        adapter.bindMessageHandlers(
+          client,
+          [
+            {
+              message: 'known',
+              methodName: 'm',
+              callback: new WsProxy()
+                .create(callback, exceptionsHandler, 'known')
+                .bind(undefined, client),
+              isAckHandledManually: false,
+            },
+          ],
+          realTransform,
+        );
+        return callback;
+      };
+      const tick = () => new Promise(resolve => setTimeout(resolve, 5));
+
+      it('should count a message as handled until its filter is done', async () => {
+        const client = openClient();
+        const audits: Array<() => void> = [];
+        const callback = bindFailingHandler(
+          new WsAdapter(undefined, { maxConcurrentMessages: 1 }),
+          client,
+          () => new Promise<void>(resolve => audits.push(resolve)),
+        );
+
+        client.emit('message', frame({ event: 'known' }));
+        client.emit('message', frame({ event: 'known' }));
+        await tick();
+        expect(callback).toHaveBeenCalledTimes(1);
+
+        audits[0]();
+        await tick();
+        expect(callback).toHaveBeenCalledTimes(2);
+      });
+
+      it('should log a filter that rejects', async () => {
+        const unhandled: unknown[] = [];
+        config.onUnhandledError = err => unhandled.push(err);
+        const client = openClient();
+        const adapter = new WsAdapter();
+        const logError = vi
+          .spyOn(adapter['logger'], 'error')
+          .mockImplementation(() => undefined);
+        const error = new Error('audit log unreachable');
+        bindFailingHandler(adapter, client, () => Promise.reject(error));
+
+        client.emit('message', frame({ event: 'known' }));
+        await tick();
+        config.onUnhandledError = null;
+
+        expect(logError).toHaveBeenCalledWith(error);
+        expect(unhandled).toEqual([]);
+      });
+    });
+
     it('should not let an unserializable response escape as an uncaught error', async () => {
       const unhandled: unknown[] = [];
       config.onUnhandledError = err => unhandled.push(err);

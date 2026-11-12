@@ -473,7 +473,11 @@ export class WebSocketsController {
         // pattern, so add it here the same way.
         const host = new ExecutionContextHost([...args, pattern]);
         host.setType('ws');
-        exceptionFilter.handle(err as Error, host);
+        // Waited for, as WsProxy does for a message that failed later on
+        const pending = exceptionFilter.handle(err as Error, host);
+        if (pending) {
+          await pending;
+        }
       }
     };
   }

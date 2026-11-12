@@ -544,6 +544,51 @@ describe('WebSocketsController', () => {
       expect(host.switchToWs().getPattern()).toBe('ping');
     });
 
+    it('should wait for an asynchronous exception filter when the context fails to resolve', async () => {
+      class Gateway {
+        @SubscribeMessage('ping')
+        onPing() {}
+      }
+      const wrapper = new InstanceWrapper({
+        token: Gateway,
+        metatype: Gateway,
+        instance: new Gateway(),
+        isResolved: true,
+      });
+      let finishFilter!: () => void;
+      const exceptionFilter = {
+        handle: vi.fn(
+          () => new Promise<void>(resolve => (finishFilter = resolve)),
+        ),
+      };
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadEnhancersPerContext').mockRejectedValue(
+        new Error('guard failed to resolve'),
+      );
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      let settled = false;
+      const handled = instance
+        .createRequestScopedHandler(
+          wrapper,
+          { providers: new Map([[Gateway, wrapper]]) } as Module,
+          'moduleKey',
+          'onPing',
+        )({}, 'data', undefined)
+        .then(() => (settled = true));
+      await vi.waitFor(() => expect(exceptionFilter.handle).toHaveBeenCalled());
+      await new Promise(resolve => setImmediate(resolve));
+      expect(settled).toBe(false);
+
+      finishFilter();
+      await handled;
+      expect(settled).toBe(true);
+    });
+
     it('should not call the handler when a deferred load of its context fails', async () => {
       const gateway = { onMessage: vi.fn() };
       const wrapper = new InstanceWrapper({

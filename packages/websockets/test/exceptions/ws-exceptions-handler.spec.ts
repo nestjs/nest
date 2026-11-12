@@ -301,6 +301,30 @@ describe('WsExceptionsHandler', () => {
       });
     });
 
+    describe('when a custom filter catches the exception', () => {
+      it('should return the promise of an asynchronous filter', () => {
+        const pending = Promise.resolve();
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => pending },
+        ] as any);
+
+        expect(handler.handle(new WsException(''), executionContextHost)).toBe(
+          pending,
+        );
+        expect(emitStub).not.toHaveBeenCalled();
+      });
+
+      it('should return nothing for a synchronous filter', () => {
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: () => 'done' },
+        ] as any);
+
+        expect(
+          handler.handle(new WsException(''), executionContextHost),
+        ).toBeUndefined();
+      });
+    });
+
     describe('when "invokeCustomFilters" returns true', () => {
       beforeEach(() => {
         vi.spyOn(handler, 'invokeCustomFilters').mockReturnValue(true);
