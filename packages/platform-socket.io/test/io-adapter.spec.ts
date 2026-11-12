@@ -15,6 +15,33 @@ describe('IoAdapter', () => {
     adapter = new IoAdapter();
   });
 
+  describe('limits', () => {
+    it('should use the defaults for limits that are not numbers', () => {
+      const withNaN = new IoAdapter(undefined, {
+        maxConcurrentMessages: NaN,
+        maxWaitingMessages: NaN,
+      });
+
+      for (const key of [
+        'maxConcurrentMessages',
+        'maxWaitingMessages',
+      ] as const) {
+        expect(withNaN[key]).to.equal(adapter[key]);
+        expect(withNaN[key]).to.be.greaterThan(0);
+      }
+    });
+
+    it('should keep 0 and Infinity', () => {
+      const custom = new IoAdapter(undefined, {
+        maxConcurrentMessages: Infinity,
+        maxWaitingMessages: 0,
+      });
+
+      expect(custom['maxConcurrentMessages']).to.equal(Infinity);
+      expect(custom['maxWaitingMessages']).to.equal(0);
+    });
+  });
+
   describe('bindMessageHandlers', () => {
     const bindCountingHandler = (adapter: IoAdapter, socket: any) => {
       const counts = { running: 0, maxRunning: 0, handled: [] as number[] };

@@ -94,6 +94,16 @@ const PAUSED_CLIENT_PING_INTERVAL = 5000;
 // on the whole message at once, before any guard can run
 const DEFAULT_MAX_PAYLOAD = 1024 * 1024;
 
+/**
+ * A limit that is missing, or that is not a number (e.g. NaN from
+ * "Number(process.env.UNSET)"), gets its default: none of the checks on a
+ * limit trips for NaN, so keeping it would turn the limit off. 0 and
+ * Infinity are kept.
+ */
+function resolveLimit(value: number | undefined, defaultValue: number) {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
 // What ws answers on the servers it creates itself. A request left without an
 // answer keeps its connection open, and Node goes on queueing the requests
 // pipelined behind it until the heap runs out.
@@ -150,13 +160,19 @@ export class WsAdapter extends AbstractWsAdapter {
     if (options?.messageParser) {
       this.messageParser = options.messageParser;
     }
-    this.maxConcurrentMessages =
-      options?.maxConcurrentMessages ?? DEFAULT_MAX_CONCURRENT_MESSAGES;
-    this.maxSendBufferSize =
-      options?.maxSendBufferSize ?? DEFAULT_MAX_SEND_BUFFER_SIZE;
-    this.unclaimedUpgradeTimeout =
-      options?.unclaimedUpgradeTimeout ?? DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT;
-    this.maxPayload = options?.maxPayload ?? DEFAULT_MAX_PAYLOAD;
+    this.maxConcurrentMessages = resolveLimit(
+      options?.maxConcurrentMessages,
+      DEFAULT_MAX_CONCURRENT_MESSAGES,
+    );
+    this.maxSendBufferSize = resolveLimit(
+      options?.maxSendBufferSize,
+      DEFAULT_MAX_SEND_BUFFER_SIZE,
+    );
+    this.unclaimedUpgradeTimeout = resolveLimit(
+      options?.unclaimedUpgradeTimeout,
+      DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT,
+    );
+    this.maxPayload = resolveLimit(options?.maxPayload, DEFAULT_MAX_PAYLOAD);
   }
 
   public create(
@@ -178,8 +194,8 @@ export class WsAdapter extends AbstractWsAdapter {
       handleProtocols?: UpgradeHook;
     };
     // A copy, so the gateway's options are left as they are. ws reads an
-    // undefined "maxPayload" as no limit at all.
-    wsOptions.maxPayload ??= this.maxPayload;
+    // undefined (or NaN) "maxPayload" as no limit at all.
+    wsOptions.maxPayload = resolveLimit(wsOptions.maxPayload, this.maxPayload);
     this.guardUpgradeHooks(wsOptions);
     this.ensureNoNamespace(wsOptions);
 

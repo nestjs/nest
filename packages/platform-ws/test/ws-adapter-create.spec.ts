@@ -58,6 +58,40 @@ describe('WsAdapter maxPayload', () => {
     expect(await sendOfSize(1025)).to.equal(1009);
   });
 
+  it('should use the default limit for a "maxPayload" that is not a number', async () => {
+    adapter = new WsAdapter(undefined, { maxPayload: NaN });
+    server = adapter.create(0, {});
+
+    expect(await sendOfSize(limit + 1)).to.equal(1009);
+  });
+
+  it('should use the limit of the adapter for a gateway "maxPayload" that is not a number', () => {
+    adapter = new WsAdapter(createServer(), { maxPayload: 1024 });
+    const options = { path: '/live', maxPayload: NaN };
+    server = adapter.create(0, options);
+
+    expect(server.options.maxPayload).to.equal(1024);
+  });
+
+  it('should use the defaults for the other limits when they are not numbers', () => {
+    adapter = new WsAdapter(undefined, {
+      maxConcurrentMessages: NaN,
+      maxSendBufferSize: NaN,
+      unclaimedUpgradeTimeout: NaN,
+    });
+    const defaults = new WsAdapter();
+
+    for (const key of [
+      'maxConcurrentMessages',
+      'maxSendBufferSize',
+      'unclaimedUpgradeTimeout',
+    ] as const) {
+      expect(adapter[key]).to.equal(defaults[key]);
+      expect(adapter[key]).to.be.greaterThan(0);
+    }
+    server = adapter.create(0, {});
+  });
+
   it('should let the "maxPayload" of a gateway take precedence', async () => {
     adapter = new WsAdapter(undefined, { maxPayload: 1024 });
     const options = { maxPayload: 2 * limit };
