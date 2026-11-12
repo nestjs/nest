@@ -13,7 +13,7 @@ import {
   toArray,
   type Observable,
 } from 'rxjs';
-import { WebSocket } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { WsAdapter } from '../adapters/ws-adapter.js';
 import { WsProxy } from '../../websockets/context/ws-proxy.js';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler.js';
@@ -573,6 +573,155 @@ describe('WsAdapter', () => {
         await adapter.dispose();
         await new Promise(resolve => httpServer.close(resolve));
       }
+    });
+
+    it('should leave an upgrade request for another path to the other upgrade listeners', async () => {
+      const httpServer = createServer();
+      const adapter = new WsAdapter(httpServer);
+      adapter.create(0, { path: '/live' });
+      // e.g. GraphQL subscriptions served by "graphql-ws" on the same server
+      const otherServer = new WebSocketServer({ noServer: true });
+      httpServer.on('upgrade', (request, socket, head) => {
+        if (request.url === '/graphql') {
+          otherServer.handleUpgrade(request, socket, head, ws =>
+            otherServer.emit('connection', ws, request),
+          );
+        }
+      });
+      await new Promise<void>(resolve =>
+        httpServer.listen(0, '127.0.0.1', resolve),
+      );
+      const { port } = httpServer.address() as AddressInfo;
+
+      const client = new WebSocket(`ws://127.0.0.1:${port}/graphql`);
+      try {
+        await expect(
+          Promise.race([
+            once(client, 'open'),
+            once(client, 'error').then(([err]) => Promise.reject(err)),
+          ]),
+        ).resolves.toBeDefined();
+      } finally {
+        client.terminate();
+        otherServer.clients.forEach(ws => ws.terminate());
+        await adapter.dispose();
+        await new Promise(resolve => httpServer.close(resolve));
+      }
+    });
+
+    it('should close the socket of an upgrade request for another path when no other listener can claim it', async () => {
+      const httpServer = createServer();
+      const adapter = new WsAdapter(httpServer);
+      adapter.create(0, { path: '/live' });
+      await new Promise<void>(resolve =>
+        httpServer.listen(0, '127.0.0.1', resolve),
+      );
+      const { port } = httpServer.address() as AddressInfo;
+
+      const client = new WebSocket(`ws://127.0.0.1:${port}/unknown`);
+      const closed = new Promise(resolve => client.on('close', resolve));
+      const failed = new Promise(resolve => client.on('error', resolve));
+      try {
+        expect(await failed).toMatchObject({ code: 'ECONNRESET' });
+        await closed;
+      } finally {
+        await adapter.dispose();
+        await new Promise(resolve => httpServer.close(resolve));
+      }
+    });
+
+    describe('when another upgrade listener is present', () => {
+      // bytesWritten is what the connection has already been sent, for example
+      // the responses to earlier requests on a keep-alive connection
+      const upgrade = (
+        bytesWritten: number,
+        options?: { unclaimedUpgradeTimeout?: number },
+      ) => {
+        const httpServer = createServer();
+        const adapter = new WsAdapter(httpServer, options);
+        adapter.create(0, { path: '/live' });
+        // e.g. GraphQL subscriptions, which serve only their own path
+        httpServer.on('upgrade', () => undefined);
+        const socket = Object.assign(new EventEmitter(), {
+          writable: true,
+          bytesWritten,
+          destroy: vi.fn(),
+        });
+        const request = { url: '/unknown', headers: { host: 'localhost' } };
+        httpServer.emit('upgrade', request, socket, Buffer.alloc(0));
+        return { adapter, socket };
+      };
+
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should close the socket of an upgrade request that no listener claims after a delay', async () => {
+        const { adapter, socket } = upgrade(0);
+
+        expect(socket.destroy).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+
+        await adapter.dispose();
+      });
+
+      it('should wait for "unclaimedUpgradeTimeout" before closing an unclaimed socket', async () => {
+        const { adapter, socket } = upgrade(0, {
+          unclaimedUpgradeTimeout: 5000,
+        });
+
+        vi.advanceTimersByTime(4999);
+        expect(socket.destroy).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+
+        await adapter.dispose();
+      });
+
+      it('should leave an unclaimed socket open when "unclaimedUpgradeTimeout" is 0', async () => {
+        const { adapter, socket } = upgrade(0, { unclaimedUpgradeTimeout: 0 });
+
+        vi.runAllTimers();
+        expect(socket.destroy).not.toHaveBeenCalled();
+
+        await adapter.dispose();
+      });
+
+      it('should keep the socket of an upgrade request that another listener answered', async () => {
+        const { adapter, socket } = upgrade(0);
+        // the other listener's handshake response
+        socket.bytesWritten += 129;
+
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+
+        await adapter.dispose();
+      });
+
+      it('should close an unclaimed socket that arrives with bytes already written', async () => {
+        // a keep-alive connection that answered a plain request first
+        const { adapter, socket } = upgrade(124);
+
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+
+        await adapter.dispose();
+      });
+
+      it('should keep an answered socket that arrives with bytes already written', async () => {
+        const { adapter, socket } = upgrade(124);
+        socket.bytesWritten += 129;
+
+        vi.advanceTimersByTime(1000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+
+        await adapter.dispose();
+      });
     });
   });
 

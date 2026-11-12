@@ -1,6 +1,7 @@
 import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import * as http from 'http';
+import type { Socket } from 'net';
 import type { Duplex } from 'stream';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { catchError, filter, first, share, takeUntil } from 'rxjs/operators';
@@ -48,6 +49,17 @@ type WsAdapterOptions = {
    * @default 134217728 (128 MB)
    */
   maxSendBufferSize?: number;
+  /**
+   * How many milliseconds an upgrade request for a path that no gateway serves
+   * is left open when another `upgrade` listener on the same server may claim
+   * it. A socket that nothing has been written to by then is closed. Raise it
+   * when another listener answers the handshake late, for example after a slow
+   * authentication, or set it to `0` to leave such sockets to the other
+   * listeners entirely.
+   *
+   * @default 1000
+   */
+  unclaimedUpgradeTimeout?: number;
 };
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
@@ -58,6 +70,7 @@ const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 // Reading from a client stops while more than this is queued for it
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;
+const DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT = 1000;
 
 // Kept out of the class so that an adapter can be compared against it to tell
 // whether the parser in use is still the built-in one.
@@ -97,6 +110,7 @@ export class WsAdapter extends AbstractWsAdapter {
   protected messageParser: WsMessageParser = defaultMessageParser;
   protected readonly maxConcurrentMessages: number;
   protected readonly maxSendBufferSize: number;
+  protected readonly unclaimedUpgradeTimeout: number;
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
@@ -111,6 +125,8 @@ export class WsAdapter extends AbstractWsAdapter {
       options?.maxConcurrentMessages ?? DEFAULT_MAX_CONCURRENT_MESSAGES;
     this.maxSendBufferSize =
       options?.maxSendBufferSize ?? DEFAULT_MAX_SEND_BUFFER_SIZE;
+    this.unclaimedUpgradeTimeout =
+      options?.unclaimedUpgradeTimeout ?? DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT;
   }
 
   public create(
@@ -406,8 +422,33 @@ export class WsAdapter extends AbstractWsAdapter {
             break;
           }
         }
+        // Another upgrade listener on the same server (e.g. GraphQL
+        // subscriptions) may own this path, so the socket is closed only when
+        // no other listener can claim it. Node removes its own listeners from
+        // the socket before emitting "upgrade", so a connection reset on a
+        // socket that nobody claims would raise an unhandled "error" event.
         if (!isRequestDelegated) {
-          socket.destroy();
+          socket.on(ERROR_EVENT, () => socket.destroy());
+          if (httpServer.listenerCount('upgrade') <= 1) {
+            socket.destroy();
+          } else if (this.unclaimedUpgradeTimeout > 0) {
+            // A listener that claims the socket answers the handshake, so a
+            // socket nothing has been written to by then is one that nobody
+            // claimed. The HTTP server's timeouts no longer apply after
+            // "upgrade", so it would otherwise stay open until the client
+            // hangs up. engine.io handles the same case this way. The count
+            // covers the whole connection, so on a keep-alive connection it
+            // already includes the responses to earlier requests.
+            const writtenBeforeUpgrade = (socket as Socket).bytesWritten;
+            setTimeout(() => {
+              if (
+                socket.writable &&
+                (socket as Socket).bytesWritten <= writtenBeforeUpgrade
+              ) {
+                socket.destroy();
+              }
+            }, this.unclaimedUpgradeTimeout).unref();
+          }
         }
       } catch (err) {
         // Node hands the socket over without listeners of its own, and end()
