@@ -66,6 +66,39 @@ describe('PipesContextCreator', () => {
         );
         expect(creator.getPipeInstance(Pipe)).toEqual(wrapper.instance);
       });
+      it('should pick the instance from the container when the class also has a static "transform"', () => {
+        class WithStatic {
+          static transform() {
+            return 'static';
+          }
+          transform() {
+            return 'instance';
+          }
+        }
+        const wrapper = {
+          instance: new WithStatic(),
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(creator, 'getInstanceByMetatype').mockImplementation(
+          () => wrapper as any,
+        );
+        expect(creator.getPipeInstance(WithStatic)).toBe(wrapper.instance);
+      });
+      it('should return the class when only the class has a "transform"', () => {
+        class StaticOnly {
+          static transform() {
+            return 'static';
+          }
+        }
+        const wrapper = {
+          instance: new StaticOnly(),
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(creator, 'getInstanceByMetatype').mockImplementation(
+          () => wrapper as any,
+        );
+        expect(creator.getPipeInstance(StaticOnly)).toBe(StaticOnly);
+      });
       it('should return null', () => {
         vi.spyOn(creator, 'getInstanceByMetatype').mockImplementation(
           () => null!,

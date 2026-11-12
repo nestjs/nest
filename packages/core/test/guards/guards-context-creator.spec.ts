@@ -138,6 +138,45 @@ describe('GuardsContextCreator', () => {
           wrapper.instance,
         );
       });
+      it('should pick the instance from the container when the class also has a static "canActivate"', () => {
+        class WithStatic {
+          static canActivate() {
+            return 'static';
+          }
+          canActivate() {
+            return 'instance';
+          }
+        }
+        const wrapper = {
+          instance: new WithStatic(),
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(
+          guardsContextCreator,
+          'getInstanceByMetatype',
+        ).mockImplementation(() => wrapper as any);
+        expect(guardsContextCreator.getGuardInstance(WithStatic)).toBe(
+          wrapper.instance,
+        );
+      });
+      it('should return the class when only the class has a "canActivate"', () => {
+        class StaticOnly {
+          static canActivate() {
+            return 'static';
+          }
+        }
+        const wrapper = {
+          instance: new StaticOnly(),
+          getInstanceByContextId: () => wrapper,
+        };
+        vi.spyOn(
+          guardsContextCreator,
+          'getInstanceByMetatype',
+        ).mockImplementation(() => wrapper as any);
+        expect(guardsContextCreator.getGuardInstance(StaticOnly)).toBe(
+          StaticOnly,
+        );
+      });
       it('should return null', () => {
         vi.spyOn(
           guardsContextCreator,

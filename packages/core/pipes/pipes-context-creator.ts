@@ -61,19 +61,22 @@ export class PipesContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): PipeTransform | null {
-    const isObject = !!(pipe as PipeTransform).transform;
-    if (isObject) {
-      return pipe as PipeTransform;
+    if (!isFunction(pipe)) {
+      return pipe;
     }
     const instanceWrapper = this.getInstanceByMetatype(pipe as Type<unknown>);
     if (!instanceWrapper) {
-      return null;
+      return this.pickEnhancer<PipeTransform>(pipe, null, 'transform');
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
       this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
-    return instanceHost && instanceHost.instance;
+    return this.pickEnhancer<PipeTransform>(
+      pipe,
+      instanceHost && instanceHost.instance,
+      'transform',
+    );
   }
 
   public getInstanceByMetatype(
