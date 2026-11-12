@@ -21,7 +21,7 @@ import { pathToRegexp } from 'path-to-regexp';
 import { uid } from 'uid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
 import { LegacyRouteConverter } from '../router/legacy-route-converter';
-import { isRouteExcluded } from '../router/utils';
+import { isRequestMethodAll } from '../router/utils';
 
 /**
  * Compiles the given routes into exclusion matchers. Without
@@ -38,20 +38,18 @@ export const mapToExcludeRoute = (
     const path = LegacyRouteConverter.tryConvert(originalPath);
 
     try {
-      const pathRegex = compileExcludedPath(path, matchingOptions);
-      if (isString(route)) {
-        return {
-          path,
-          requestMethod: RequestMethod.ALL,
-          pathRegex,
-        };
-      }
       const excludedRoute: ExcludeRouteMetadata = {
         path,
-        requestMethod: route.method,
-        pathRegex,
+        requestMethod: isString(route) ? RequestMethod.ALL : route.method,
+        pathRegex: compileExcludedPath(path, matchingOptions),
       };
-      if (route.version) {
+      if (matchingOptions && servesTrailingSlashByAnyRoute(matchingOptions)) {
+        excludedRoute.exactPathRegex = compileExcludedPath(path, {
+          ...matchingOptions,
+          ignoreTrailingSlash: false,
+        });
+      }
+      if (!isString(route) && route.version) {
         excludedRoute.version = route.version;
       }
       return excludedRoute;
@@ -86,6 +84,59 @@ const EXACT_ROUTE_MATCHING: RouteMatchingOptions = {
 };
 
 /**
+ * Tells whether the router serves a path ending with "/" with the first
+ * route that matches it, which may be another route than the one of the path
+ * without the slash: "/x/" by "x/{*path}" rather than by "x" (Express, the
+ * node adapter). A router that removes the slash before it looks for a route
+ * (Fastify) always serves "/x/" with the "x" route.
+ */
+function servesTrailingSlashByAnyRoute(
+  matchingOptions: RouteMatchingOptions,
+): boolean {
+  return (
+    matchingOptions.ignoreTrailingSlash && !matchingOptions.removesTrailingSlash
+  );
+}
+
+/**
+ * Compiles the routes the application serves (see
+ * `MiddlewareBuilder.getServedRoutes()`) that may serve a path ending with
+ * "/" in place of the route of the path without it: those with a parameter
+ * or a wildcard ("x/{*path}", "x/{:id}"). A route without them serves "/x/"
+ * only along with "/x".
+ */
+function mapToServedRoutes(
+  routes: RouteInfo[],
+  matchingOptions: RouteMatchingOptions,
+): ExcludeRouteMetadata[] {
+  return routes
+    .filter(route => !isStaticPath(route.path))
+    .flatMap(route => {
+      const path = LegacyRouteConverter.tryConvert(route.path, { logs: false });
+      try {
+        const pathRegex = compileExcludedPath(path, matchingOptions);
+        return [{ path, requestMethod: route.method, pathRegex }];
+      } catch {
+        // A path that the router reads in another way (Fastify syntax)
+        return [];
+      }
+    });
+}
+
+/**
+ * Removes the trailing slashes of a request path in linear time: the
+ * `/\/+$/` regex is retried from every slash of the path, which takes
+ * quadratic time on a long run of slashes that does not end it.
+ */
+export function stripEndSlashes(path: string): string {
+  let end = path.length;
+  while (end > 0 && path.charCodeAt(end - 1) === 47 /* / */) {
+    end--;
+  }
+  return path.slice(0, end);
+}
+
+/**
  * Characters with a meaning in a route path (parameters, wildcards, groups),
  * and the "$" that marks an exact-match path.
  */
@@ -103,6 +154,7 @@ export const filterMiddleware = <T extends Function | Type<any> = any>(
   routes: RouteInfo[],
   httpAdapter: HttpServer,
   versioningOptions?: VersioningOptions,
+  getServedRoutes?: () => RouteInfo[],
 ) => {
   // Excluded routes must match exactly the requests the router serves with
   // them, as the middleware is skipped for every request they match. When
@@ -112,6 +164,17 @@ export const filterMiddleware = <T extends Function | Type<any> = any>(
   const matchingOptions =
     httpAdapter.getRouteMatchingOptions?.() ?? EXACT_ROUTE_MATCHING;
   const excludedRoutes = mapToExcludeRoute(routes, matchingOptions);
+  let servedRoutes: ExcludeRouteMetadata[] | undefined;
+  const getCompiledServedRoutes =
+    getServedRoutes &&
+    excludedRoutes.length > 0 &&
+    servesTrailingSlashByAnyRoute(matchingOptions)
+      ? () =>
+          (servedRoutes ??= mapToServedRoutes(
+            getServedRoutes(),
+            matchingOptions,
+          ))
+      : undefined;
   return iterate([])
     .concat(middleware)
     .filter(isFunction)
@@ -120,8 +183,9 @@ export const filterMiddleware = <T extends Function | Type<any> = any>(
         item,
         excludedRoutes,
         httpAdapter,
-        matchingOptions.ignoreTrailingSlash,
+        matchingOptions,
         versioningOptions,
+        getCompiledServedRoutes,
       ),
     )
     .toArray();
@@ -131,8 +195,9 @@ export const mapToClass = <T extends Function | Type<any>>(
   middleware: T,
   excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
-  ignoreTrailingSlash = false,
+  matchingOptions: RouteMatchingOptions | boolean = false,
   versioningOptions?: VersioningOptions,
+  getServedRoutes?: () => ExcludeRouteMetadata[],
 ) => {
   if (isMiddlewareClass(middleware)) {
     if (excludedRoutes.length <= 0) {
@@ -145,8 +210,9 @@ export const mapToClass = <T extends Function | Type<any>>(
           req,
           excludedRoutes,
           httpAdapter,
-          ignoreTrailingSlash,
+          matchingOptions,
           versioningOptions,
+          getServedRoutes,
         );
         if (isExcluded) {
           return next();
@@ -164,8 +230,9 @@ export const mapToClass = <T extends Function | Type<any>>(
           req,
           excludedRoutes,
           httpAdapter,
-          ignoreTrailingSlash,
+          matchingOptions,
           versioningOptions,
+          getServedRoutes,
         );
         if (isExcluded) {
           return next();
@@ -194,16 +261,29 @@ export function assignToken(metatype: Type<any>, token = uid(21)): Type<any> {
   return metatype;
 }
 
+/**
+ * Tells whether the request is served by one of the excluded routes, so that
+ * the middleware is skipped for it. `matchingOptions` tell how the router
+ * matches paths (`true` and `false` stand for `ignoreTrailingSlash`), and
+ * `getServedRoutes` returns the routes of the application that may serve a
+ * path ending with "/" on a router that serves it with the first route that
+ * matches it.
+ */
 export function isMiddlewareRouteExcluded(
   req: Record<string, any>,
   excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
-  ignoreTrailingSlash = false,
+  matchingOptions: RouteMatchingOptions | boolean = false,
   versioningOptions?: VersioningOptions,
+  getServedRoutes?: () => ExcludeRouteMetadata[],
 ): boolean {
   if (excludedRoutes.length <= 0) {
     return false;
   }
+  const { ignoreTrailingSlash, removesTrailingSlash } =
+    typeof matchingOptions === 'boolean'
+      ? { ignoreTrailingSlash: matchingOptions, removesTrailingSlash: false }
+      : matchingOptions;
   const reqMethod = httpAdapter.getRequestMethod!(req);
   const originalUrl = httpAdapter.getRequestUrl!(req);
   // Such request targets are routed by another path than the one matched
@@ -220,8 +300,14 @@ export function isMiddlewareRouteExcluded(
       ? originalUrl.slice(0, queryParamsIndex)
       : originalUrl;
 
-  const isRequestForRoute = (route: ExcludeRouteMetadata, path: string) =>
-    isRouteExcluded([route], path, RequestMethod[reqMethod]);
+  const requestMethod = RequestMethod[reqMethod as keyof typeof RequestMethod];
+  const isRequestForRoute = (
+    { requestMethod: routeMethod, pathRegex }: ExcludeRouteMetadata,
+    path: string,
+    regex = pathRegex,
+  ) =>
+    (isRequestMethodAll(routeMethod) || routeMethod === requestMethod) &&
+    regex.test(addLeadingSlash(path));
   const isVersionRequested = createRequestedVersionMatcher(
     req,
     versioningOptions,
@@ -235,7 +321,31 @@ export function isMiddlewareRouteExcluded(
   // which an exclusion that matches "/x/" may not cover (e.g. "x/{*path}"),
   // so the request is excluded only if its path without the slash is too
   if (ignoreTrailingSlash && pathname.length > 1 && pathname.endsWith('/')) {
-    return isExcluded(pathname) && isExcluded(pathname.replace(/\/+$/, ''));
+    const pathWithoutSlash = stripEndSlashes(pathname);
+    if (!isExcluded(pathname) || !isExcluded(pathWithoutSlash)) {
+      return false;
+    }
+    // Express and the node adapter serve "/x/" with the first route that
+    // matches it, which may be one that matches "/x/" itself ("x/{*path}",
+    // "x/{:id}") rather than the "/x" route. When the application has such
+    // a route, "/x/" is excluded only if an exclusion matches it without the
+    // optional trailing slash too, as it then covers that route
+    const isServedByAnotherRoute =
+      !removesTrailingSlash &&
+      getServedRoutes?.().some(
+        route =>
+          isRequestForRoute(route, pathname) &&
+          !isRequestForRoute(route, pathWithoutSlash),
+      );
+    if (!isServedByAnotherRoute) {
+      return true;
+    }
+    return excludedRoutes.some(
+      route =>
+        !!route.exactPathRegex &&
+        isRequestForRoute(route, pathname, route.exactPathRegex) &&
+        isVersionRequested(route),
+    );
   }
   return isExcluded(pathname);
 }

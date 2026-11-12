@@ -107,6 +107,20 @@ describe('RoutesMapper', () => {
         { path: '/test/another', method: RequestMethod.DELETE },
       ]);
     });
+
+    it('should map the routes of every controller once', () => {
+      declareIn('/first');
+      declareIn();
+
+      expect(
+        mapper
+          .mapControllersToRouteInfo()
+          .filter(({ method }) => method === RequestMethod.DELETE),
+      ).to.deep.equal([
+        { path: '/first/test/another', method: RequestMethod.DELETE },
+        { path: '/test/another', method: RequestMethod.DELETE },
+      ]);
+    });
   });
   @Controller(['test', 'test2'])
   class TestRouteWithMultiplePaths {

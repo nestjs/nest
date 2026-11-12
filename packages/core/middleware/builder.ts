@@ -26,6 +26,7 @@ const toServedPath = (mountPath: string): string =>
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
+  private servedRoutes?: RouteInfo[];
 
   constructor(
     private readonly routesMapper: RoutesMapper,
@@ -49,6 +50,20 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
   public getHttpAdapter(): HttpServer {
     return this.httpAdapter;
+  }
+
+  /**
+   * Returns the routes of the controllers of the application at the paths
+   * the router serves them at (global prefix and version included).
+   */
+  public getServedRoutes(): RouteInfo[] {
+    return (this.servedRoutes ??= this.routesMapper
+      .mapControllersToRouteInfo()
+      .flatMap(route =>
+        this.routeInfoPathExtractor
+          .extractPathsFrom(route)
+          .map(path => ({ ...route, path: toServedPath(path) })),
+      ));
   }
 
   private static readonly ConfigProxy = class implements MiddlewareConfigProxy {
@@ -101,6 +116,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           this.excludedRoutes,
           this.builder.getHttpAdapter(),
           this.routeInfoPathExtractor.getVersioningOptions(),
+          () => this.builder.getServedRoutes(),
         ),
         forRoutes,
       };

@@ -13,6 +13,14 @@ export interface ExcludeRouteMetadata {
   pathRegex: RegExp;
 
   /**
+   * Regular expression representing the route path without the optional
+   * trailing slash of `pathRegex`. Set for a router that may serve a path
+   * ending with "/" with another route than the one of the path without it
+   * (see `RouteMatchingOptions.removesTrailingSlash`).
+   */
+  exactPathRegex?: RegExp;
+
+  /**
    * HTTP request method (e.g., GET, POST).
    */
   requestMethod: RequestMethod;

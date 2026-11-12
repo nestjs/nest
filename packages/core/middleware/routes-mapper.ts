@@ -43,6 +43,24 @@ export class RoutesMapper {
     );
   }
 
+  /**
+   * Returns the routes of every controller of the application, as
+   * `forRoutes()` maps a controller.
+   */
+  public mapControllersToRouteInfo(): RouteInfo[] {
+    const controllers = new Set<Type<any>>();
+    for (const moduleRef of this.container.getModules().values()) {
+      for (const { metatype } of moduleRef.controllers.values()) {
+        if (metatype) {
+          controllers.add(metatype as Type<any>);
+        }
+      }
+    }
+    return [...controllers].flatMap(controller =>
+      this.mapRouteToRouteInfo(controller),
+    );
+  }
+
   private getRouteInfoFromPath(routePath: string): RouteInfo[] {
     const defaultRequestMethod = -1;
     return [

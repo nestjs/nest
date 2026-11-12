@@ -1165,6 +1165,7 @@ export class FastifyAdapter<
   public getRouteMatchingOptions(): {
     caseSensitive: boolean;
     ignoreTrailingSlash: boolean;
+    removesTrailingSlash: boolean;
   } {
     const initialConfig = this.instance.initialConfig as FastifyServerOptions;
     // Absent when a Fastify instance created without it is passed in
@@ -1178,6 +1179,8 @@ export class FastifyAdapter<
       ignoreTrailingSlash: !!(
         routerOptions.ignoreTrailingSlash || initialConfig.ignoreTrailingSlash
       ),
+      // find-my-way trims the slash before it looks for a route
+      removesTrailingSlash: true,
     };
   }
 

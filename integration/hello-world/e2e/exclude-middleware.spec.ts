@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   INestApplication,
   MiddlewareConsumer,
@@ -245,6 +246,92 @@ describe('Exclude middleware - trailing slash', () => {
     return request(app.getHttpServer())
       .get('/invoices/')
       .expect(200, MIDDLEWARE_VALUE);
+  });
+});
+
+@Controller('reports')
+class ReportsController {
+  // Registered first, so the router serves "/reports/" with it
+  @Get('{*path}')
+  read() {
+    return 'read';
+  }
+
+  @Get()
+  about() {
+    return RETURN_VALUE;
+  }
+}
+
+@Controller('exports')
+class ExportsController {
+  @Get()
+  list() {
+    return RETURN_VALUE;
+  }
+
+  // Serves DELETE "/exports/", which the "exports" exclusion covers too
+  @Delete('*')
+  remove() {
+    return 'removed';
+  }
+}
+
+const createOptionalTailModule = (...exclusions: string[]) => {
+  @Module({
+    controllers: [ReportsController, ExportsController],
+  })
+  class OptionalTailModule {
+    configure(consumer: MiddlewareConsumer) {
+      consumer
+        .apply((req, res, next) => res.send(MIDDLEWARE_VALUE))
+        .exclude(...exclusions)
+        .forRoutes(ReportsController, ExportsController);
+    }
+  }
+  return OptionalTailModule;
+};
+
+describe('Exclude middleware - trailing slash next to an optional-tail route (Express)', () => {
+  let app: INestApplication;
+
+  const createApp = async (...exclusions: string[]) => {
+    app = (
+      await Test.createTestingModule({
+        imports: [createOptionalTailModule(...exclusions)],
+      }).compile()
+    ).createNestApplication();
+    await app.listen(0, '127.0.0.1');
+  };
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it(`should exclude "/reports" endpoint`, async () => {
+    await createApp('reports', 'exports');
+    await request(app.getHttpServer())
+      .get('/reports')
+      .expect(200, RETURN_VALUE);
+    await request(app.getHttpServer())
+      .get('/exports')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude "/reports/", which the router serves with "/reports/{*path}"`, async () => {
+    await createApp('reports', 'exports');
+    await request(app.getHttpServer())
+      .get('/reports/')
+      .expect(200, MIDDLEWARE_VALUE);
+    await request(app.getHttpServer())
+      .delete('/exports/')
+      .expect(200, MIDDLEWARE_VALUE);
+  });
+
+  it(`should exclude "/reports/" when "/reports/{*path}" is excluded too`, async () => {
+    await createApp('reports', 'reports/{*path}');
+    await request(app.getHttpServer()).get('/reports/').expect(200, 'read');
+    await request(app.getHttpServer()).get('/reports/a').expect(200, 'read');
   });
 });
 
