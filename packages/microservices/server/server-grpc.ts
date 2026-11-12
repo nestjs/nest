@@ -870,29 +870,35 @@ export class ServerGrpc extends Server<never, never> {
       return this.runWithProcessingHooks(
         this.createProcessingContext(call, methodHandler),
         async runEndHook => {
-          try {
-            let handlerStream: Observable<any>;
+          const fail = (err: unknown) => {
             if (isResponseStream) {
-              handlerStream = this.transformToObservable(
-                await methodHandler(call),
-              );
+              call.emit('error', err);
             } else {
-              handlerStream = this.transformToObservable(
-                await methodHandler(call, callback),
-              );
+              callback(err, null);
             }
+          };
+          let handlerStream: Observable<any>;
+          try {
+            handlerStream = this.transformToObservable(
+              isResponseStream
+                ? await methodHandler(call)
+                : await methodHandler(call, callback),
+            );
+          } catch (err) {
+            // grpc-js ignores the promise returned here, so a rejection (an
+            // exception filter that throws) would go unhandled. The error has
+            // not been through the exception filters, so it is logged rather
+            // than sent to the client, as for the other kinds of call.
+            runEndHook();
+            return fail(this.toInternalError(err));
+          }
+          try {
             await lastValueFrom(handlerStream.pipe(finalize(runEndHook)), {
               defaultValue: undefined,
             });
           } catch (err) {
-            // grpc-js ignores the promise returned here, so a rejection would
-            // go unhandled and the client would never learn about the error.
-            runEndHook();
-            if (isResponseStream) {
-              call.emit('error', toSendableError(err));
-            } else {
-              callback(toSendableError(err), null);
-            }
+            // The error the exception filters answered with
+            fail(toSendableError(err));
           }
         },
         call.request,

@@ -1823,9 +1823,10 @@ describe('ServerGrpc', () => {
         );
       });
 
-      it('should run the end hook once and emit the error on the call when the handler rejects', async () => {
+      it('should run the end hook once and fail the call with a logged internal error when the handler rejects', async () => {
         const endHook = bindHooks();
         const call = createCall();
+        const loggerErrorSpy = spyOnLoggerError();
 
         await expect(
           server.createStreamCallMethod(async () => {
@@ -1833,7 +1834,52 @@ describe('ServerGrpc', () => {
           }, true)(call as any, vi.fn()),
         ).resolves.toBeUndefined();
 
+        expect(call.emit).toHaveBeenCalledExactlyOnceWith(
+          'error',
+          internalError,
+        );
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+
+      it('should pass a logged internal error to the callback when a request stream handler rejects', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+        const callback = vi.fn();
+        const loggerErrorSpy = spyOnLoggerError();
+
+        await expect(
+          server.createStreamCallMethod(async () => {
+            throw error;
+          }, false)(call as any, callback),
+        ).resolves.toBeUndefined();
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(internalError, null);
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+        expect(call.emit).not.toHaveBeenCalled();
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+
+      it('should emit the error of the handler stream on the call as it is', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+        const loggerErrorSpy = spyOnLoggerError();
+
+        await expect(
+          server.createStreamCallMethod(
+            async () => throwError(() => error),
+            true,
+          )(call as any, vi.fn()),
+        ).resolves.toBeUndefined();
+
         expect(call.emit).toHaveBeenCalledExactlyOnceWith('error', error);
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
         expect(endHook).toHaveBeenCalledExactlyOnceWith(
           server.transportId,
           call.request,
