@@ -64,6 +64,91 @@ describe('IoAdapter', () => {
       expect(counts.running).toBe(1000);
     });
 
+    describe('when messages wait for their turn', () => {
+      const connectedSocket = () => {
+        const socket = new EventEmitter() as any;
+        socket.connected = true;
+        socket.disconnect = vi.fn(() => {
+          socket.connected = false;
+          socket.emit('disconnect', 'server namespace disconnect');
+        });
+        return socket;
+      };
+      const bindPendingHandler = (adapter: IoAdapter, socket: any) => {
+        const callback = vi.fn(() => new Promise<never>(() => undefined));
+        adapter.bindMessageHandlers(
+          socket,
+          [
+            {
+              message: 'test-event',
+              methodName: 'handleTestEvent',
+              callback,
+              isAckHandledManually: false,
+            },
+          ],
+          (data: any) => from(data),
+        );
+        return callback;
+      };
+
+      it('should disconnect a client with more than "maxWaitingMessages" messages of an event waiting', () => {
+        const socket = connectedSocket();
+        const adapter = new IoAdapter(undefined, {
+          maxConcurrentMessages: 1,
+          maxWaitingMessages: 2,
+        });
+        const logWarn = vi
+          .spyOn(adapter['logger'], 'warn')
+          .mockImplementation(() => undefined);
+        const callback = bindPendingHandler(adapter, socket);
+
+        for (let i = 0; i < 3; i++) {
+          socket.emit('test-event', i);
+        }
+        expect(socket.disconnect).not.toHaveBeenCalled();
+
+        socket.emit('test-event', 3);
+        expect(socket.disconnect).toHaveBeenCalledWith(true);
+        expect(logWarn).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledTimes(1);
+      });
+
+      it('should let 10000 messages of an event wait by default', () => {
+        const socket = connectedSocket();
+        bindPendingHandler(adapter, socket);
+        vi.spyOn(adapter['logger'], 'warn').mockImplementation(() => undefined);
+
+        for (let i = 0; i < 1000 + 10000; i++) {
+          socket.emit('test-event', i);
+        }
+        expect(socket.disconnect).not.toHaveBeenCalled();
+
+        socket.emit('test-event', 'one too many');
+        expect(socket.disconnect).toHaveBeenCalledTimes(1);
+      });
+
+      it('should not let a throwing disconnect hook escape', () => {
+        const socket = connectedSocket();
+        const error = new Error('disconnect hook blew up');
+        socket.disconnect = vi.fn(() => {
+          throw error;
+        });
+        const adapter = new IoAdapter(undefined, {
+          maxConcurrentMessages: 1,
+          maxWaitingMessages: 0,
+        });
+        vi.spyOn(adapter['logger'], 'warn').mockImplementation(() => undefined);
+        const logError = vi
+          .spyOn(adapter['logger'], 'error')
+          .mockImplementation(() => undefined);
+        bindPendingHandler(adapter, socket);
+
+        socket.emit('test-event', 0);
+        expect(() => socket.emit('test-event', 1)).not.toThrow();
+        expect(logError).toHaveBeenCalledWith(error);
+      });
+    });
+
     it('should register only one disconnect listener regardless of call count', () => {
       const addListenerSpy = vi.fn();
       const fakeSocket = {

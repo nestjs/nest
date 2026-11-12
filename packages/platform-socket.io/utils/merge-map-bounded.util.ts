@@ -18,17 +18,22 @@ interface WaitingValue<T> {
  * burst costs time quadratic in its size. Here at most `concurrent` inner
  * subscriptions are active, and the values that wait for their turn are kept
  * in a linked list. `onBacklog` is told when values start and stop waiting,
- * e.g. to stop reading from the client in the meantime.
+ * e.g. to stop reading from the client in the meantime. Where reading cannot
+ * be stopped, `maxWaiting` caps the list: a value that arrives while that many
+ * wait is dropped, and `onOverflow` is called, e.g. to disconnect the client.
  */
 export function mergeMapBounded<T, R>(
   project: (value: T) => ObservableInput<R>,
   concurrent: number,
   onBacklog?: (isBacklogged: boolean) => void,
+  maxWaiting = Infinity,
+  onOverflow?: () => void,
 ): OperatorFunction<T, R> {
   return source =>
     new Observable<R>(subscriber => {
       let head: WaitingValue<T> | undefined;
       let tail: WaitingValue<T> | undefined;
+      let waiting = 0;
       let active = 0;
       let isDraining = false;
       let isSourceComplete = false;
@@ -44,6 +49,7 @@ export function mergeMapBounded<T, R>(
         while (head && active < concurrent && !subscriber.closed) {
           const { value } = head;
           head = head.next;
+          waiting--;
           if (!head) {
             // Otherwise the last value would be kept until the next one
             tail = undefined;
@@ -74,8 +80,15 @@ export function mergeMapBounded<T, R>(
       subscriber.add(
         source.subscribe({
           next: value => {
-            const waiting: WaitingValue<T> = { value };
-            tail = head ? (tail!.next = waiting) : (head = waiting);
+            // Negated, so that a limit that is not a number lets nothing wait
+            // instead of everything
+            if (!(active < concurrent) && !(waiting < maxWaiting)) {
+              onOverflow?.();
+              return;
+            }
+            const node: WaitingValue<T> = { value };
+            tail = head ? (tail!.next = node) : (head = node);
+            waiting++;
             drain();
           },
           error: err => subscriber.error(err),

@@ -167,6 +167,58 @@ describe('mergeMapBounded', () => {
     expect(onBacklog.mock.calls).toEqual([[true], [false]]);
   });
 
+  it('should drop a value and report it once "maxWaiting" values wait', () => {
+    const source$ = new Subject<number>();
+    const inners: Subject<never>[] = [];
+    const started: number[] = [];
+    const onOverflow = vi.fn();
+
+    source$
+      .pipe(
+        mergeMapBounded(
+          value => {
+            started.push(value);
+            return (inners[value] = new Subject<never>());
+          },
+          1,
+          undefined,
+          2,
+          onOverflow,
+        ),
+      )
+      .subscribe();
+
+    [0, 1, 2].forEach(value => source$.next(value));
+    expect(onOverflow).not.toHaveBeenCalled();
+
+    source$.next(3);
+    expect(onOverflow).toHaveBeenCalledTimes(1);
+
+    // a value that has started no longer waits
+    inners[0].complete();
+    source$.next(4);
+    expect(onOverflow).toHaveBeenCalledTimes(1);
+
+    inners[1].complete();
+    inners[2].complete();
+    expect(started).toEqual([0, 1, 2, 4]);
+  });
+
+  it('should let no value wait when "maxWaiting" is not a number', () => {
+    const source$ = new Subject<number>();
+    const project = vi.fn(() => new Subject<never>());
+    const onOverflow = vi.fn();
+
+    source$
+      .pipe(mergeMapBounded(project, 1, undefined, NaN, onOverflow))
+      .subscribe();
+    source$.next(0);
+    source$.next(1);
+
+    expect(project).toHaveBeenCalledTimes(1);
+    expect(onOverflow).toHaveBeenCalledTimes(1);
+  });
+
   it('should not hold values back without a limit', () => {
     const source$ = new Subject<number>();
     const project = vi.fn(() => new Subject<never>());

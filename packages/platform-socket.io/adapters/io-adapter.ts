@@ -21,6 +21,7 @@ import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
 // Kept here, like mergeMapBounded(), so that this package still loads with an
 // older `@nestjs/websockets`.
 const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
+const DEFAULT_MAX_WAITING_MESSAGES = 10000;
 
 type IoAdapterOptions = {
   /**
@@ -31,6 +32,14 @@ type IoAdapterOptions = {
    * @default 1000
    */
   maxConcurrentMessages?: number;
+  /**
+   * How many messages of one event a client may have waiting for their turn.
+   * socket.io cannot be told to stop reading from a client, so one that sends
+   * more is disconnected. Set it to `Infinity` to lift the limit.
+   *
+   * @default 10000
+   */
+  maxWaitingMessages?: number;
 };
 
 /**
@@ -39,6 +48,7 @@ type IoAdapterOptions = {
 export class IoAdapter extends AbstractWsAdapter {
   protected readonly logger = new Logger(IoAdapter.name);
   protected readonly maxConcurrentMessages: number;
+  protected readonly maxWaitingMessages: number;
   private readonly disconnectMap = new WeakMap<Socket, Observable<any>>();
 
   constructor(
@@ -48,6 +58,8 @@ export class IoAdapter extends AbstractWsAdapter {
     super(appOrHttpServer);
     this.maxConcurrentMessages =
       options?.maxConcurrentMessages ?? DEFAULT_MAX_CONCURRENT_MESSAGES;
+    this.maxWaitingMessages =
+      options?.maxWaitingMessages ?? DEFAULT_MAX_WAITING_MESSAGES;
   }
 
   public create(
@@ -86,22 +98,30 @@ export class IoAdapter extends AbstractWsAdapter {
     handlers.forEach(({ message, callback, isAckHandledManually }) => {
       const source$ = fromEvent(socket, message).pipe(
         // How many messages are pending at once is up to the client: engine.io
-        // hands over a whole polling payload before any handler can settle.
-        mergeMapBounded((payload: any) => {
-          const { data, ack } = this.mapPayload(payload);
-          // defer turns a sync throw into an error notification and catchError
-          // stops it from tearing down this event's stream, which would silence
-          // that event for the client. A handler whose error filter rethrows is
-          // an app bug, so the failure gets logged instead of dropped silently.
-          return defer(() => transform(callback(data, ack))).pipe(
-            filter((response: any) => !isNil(response)),
-            map((response: any) => [response, ack, isAckHandledManually]),
-            catchError(err => {
-              this.logger.error(err);
-              return EMPTY;
-            }),
-          );
-        }, this.maxConcurrentMessages),
+        // hands over a whole polling payload before any handler can settle,
+        // and goes on reading while the messages wait for their turn.
+        mergeMapBounded(
+          (payload: any) => {
+            const { data, ack } = this.mapPayload(payload);
+            // defer turns a sync throw into an error notification and
+            // catchError stops it from tearing down this event's stream, which
+            // would silence that event for the client. A handler whose error
+            // filter rethrows is an app bug, so the failure gets logged instead
+            // of dropped silently.
+            return defer(() => transform(callback(data, ack))).pipe(
+              filter((response: any) => !isNil(response)),
+              map((response: any) => [response, ack, isAckHandledManually]),
+              catchError(err => {
+                this.logger.error(err);
+                return EMPTY;
+              }),
+            );
+          },
+          this.maxConcurrentMessages,
+          undefined,
+          this.maxWaitingMessages,
+          () => this.disconnectOverflowingClient(socket, message),
+        ),
         takeUntil(disconnect$),
       );
       source$.subscribe(([response, ack, isAckHandledManually]) => {
@@ -121,6 +141,28 @@ export class IoAdapter extends AbstractWsAdapter {
         }
       });
     });
+  }
+
+  /**
+   * Disconnects a client with more than "maxWaitingMessages" messages of one
+   * event waiting. The whole connection is closed, not only the namespace,
+   * which the client could join again at once. The "disconnect" event ends
+   * the client's message streams, which drops the messages still waiting.
+   */
+  protected disconnectOverflowingClient(socket: Socket, message: unknown) {
+    // Called from the client's message stream, where a throw would end the
+    // process, e.g. from a disconnect hook
+    try {
+      if (!socket.connected) {
+        return;
+      }
+      this.logger.warn(
+        `Disconnecting a client with more than "maxWaitingMessages" (${this.maxWaitingMessages}) "${String(message)}" messages waiting to be handled`,
+      );
+      socket.disconnect(true);
+    } catch (err) {
+      this.logger.error(err);
+    }
   }
 
   public mapPayload(payload: unknown): { data: any; ack?: Function } {
