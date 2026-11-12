@@ -13,7 +13,7 @@ import type { Type, ExceptionFilter } from '@nestjs/common';
 export class BaseExceptionFilterContext extends ContextCreator {
   protected moduleContext: string;
 
-  constructor(private readonly container: NestContainer) {
+  constructor(protected readonly container: NestContainer) {
     super();
   }
 

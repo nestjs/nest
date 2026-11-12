@@ -137,8 +137,13 @@ class TeapotFilter implements ExceptionFilter {
 @Catch()
 @Injectable({ scope: Scope.TRANSIENT })
 class RecoveringRpcFilter implements ExceptionFilter {
+  // Field initializers run in the constructor. The prototype a missed lookup
+  // would call has no token, so this stays 'recovered' only for the instance
+  // that was actually constructed for the controller.
+  private readonly token = 'recovered';
+
   catch() {
-    return of('recovered');
+    return of(this.token);
   }
 }
 
