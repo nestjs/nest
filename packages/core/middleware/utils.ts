@@ -272,6 +272,9 @@ export const mapToClass = <T extends Function | Type<any>>(
         return super.use(...params);
       }
     };
+    // The metadata bound to the "use" method (e.g. its exception filters) is
+    // read from the method of the instance, which is now the override
+    copyMetadata(middleware.prototype.use, MiddlewareHost.prototype.use);
     return assignToken(MiddlewareHost, middleware.name);
   }
   return assignToken(
@@ -294,6 +297,15 @@ export const mapToClass = <T extends Function | Type<any>>(
     },
   );
 };
+
+function copyMetadata(source: unknown, target: object) {
+  if (!isFunction(source)) {
+    return;
+  }
+  for (const key of Reflect.getMetadataKeys(source)) {
+    Reflect.defineMetadata(key, Reflect.getMetadata(key, source), target);
+  }
+}
 
 export function isMiddlewareClass(middleware: any): middleware is Type<any> {
   const middlewareStr = middleware.toString();
