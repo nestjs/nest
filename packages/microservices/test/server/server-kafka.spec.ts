@@ -1113,6 +1113,69 @@ describe('ServerKafka', () => {
       expect(reply.headers).not.toHaveProperty(KafkaHeaders.NEST_NO_RESPONSE);
     });
 
+    it('should reply with what a stream emits before and after its first response, in order', async () => {
+      const later$ = new Subject<string>();
+      bindHandler(async () => concat(of('first', 'second'), later$), {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      later$.next('third');
+      await flushPublishes();
+      later$.next('fourth');
+      later$.complete();
+      await flushPublishes();
+
+      const replies = producerSend.mock.calls.map(
+        ([{ messages }]) => messages[0],
+      );
+      expect(replies.map(reply => reply.value)).toEqual([
+        'first',
+        'second',
+        'third',
+        'fourth',
+      ]);
+      expect(replies[3].headers).toHaveProperty(KafkaHeaders.NEST_IS_DISPOSED);
+    });
+
+    it('should reply with the error of a stream that fails after its first response', async () => {
+      const later$ = new Subject<string>();
+      bindHandler(async () => concat(of('first'), later$), {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      later$.error('failed');
+      await flushPublishes();
+
+      expect(producerSend).toHaveBeenCalledTimes(2);
+      const [reply] = producerSend.mock.calls[0][0].messages;
+      const [failure] = producerSend.mock.calls[1][0].messages;
+      expect(reply.value).toBe('first');
+      expect(failure.headers).toHaveProperty(KafkaHeaders.NEST_ERR);
+      expect(failure.headers).toHaveProperty(KafkaHeaders.NEST_IS_DISPOSED);
+    });
+
+    it('should not keep the responses of a stream once they have been passed on', async () => {
+      const later$ = new Subject<string>();
+      const sendSpy = vi.spyOn(server, 'send');
+      bindHandler(async () => concat(of('first'), later$), {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      later$.next('second');
+      await flushPublishes();
+      expect(producerSend).toHaveBeenCalledTimes(2);
+
+      // Whatever the reply stream still held would be replayed to a new
+      // subscriber. The stream is still open, so all of a long one would be.
+      const [stream$] = sendSpy.mock.calls[0];
+      const replayed = vi.fn();
+      stream$.subscribe(replayed).unsubscribe();
+      expect(replayed).not.toHaveBeenCalled();
+    });
+
     it('should log a failed publish and still run the end hook once', async () => {
       const error = new Error('broker down');
       const loggerErrorSpy = vi
