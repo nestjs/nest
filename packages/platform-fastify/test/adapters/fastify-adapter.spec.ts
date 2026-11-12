@@ -906,6 +906,62 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('all', () => {
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    const send = (method: string) =>
+      fastifyAdapter.inject({ method: method as 'GET', url: '/all' });
+
+    it('should serve the methods Fastify does not support by default', async () => {
+      fastifyAdapter.all('/all', () => 'all');
+
+      for (const method of [
+        'SEARCH',
+        'PROPFIND',
+        'PROPPATCH',
+        'MKCOL',
+        'COPY',
+        'MOVE',
+        'LOCK',
+        'UNLOCK',
+      ]) {
+        expect((await send(method)).body).to.equal('all');
+      }
+    });
+
+    it('should serve a method whose first route is registered afterwards', async () => {
+      fastifyAdapter.all('/all/*', () => 'all');
+      fastifyAdapter.search('/*', () => 'search');
+
+      const search = (url: string) =>
+        fastifyAdapter.inject({ method: 'SEARCH' as 'GET', url });
+      expect((await search('/all/1')).body).to.equal('all');
+      expect((await search('/other/1')).body).to.equal('search');
+    });
+
+    // As when the SEARCH route comes first: an @All() route already serves
+    // SEARCH on its path
+    for (const [order, registerFirst] of [
+      ['after', () => fastifyAdapter.all('/dup', () => 'all')],
+      ['before', () => fastifyAdapter.search('/dup', () => 'search')],
+    ] as const) {
+      it(`should reject a SEARCH route for the path of a route for every method registered ${order} it`, () => {
+        const registerSecond =
+          order === 'after'
+            ? () => fastifyAdapter.search('/dup', () => 'search')
+            : () => fastifyAdapter.all('/dup', () => 'all');
+
+        registerFirst();
+
+        expect(registerSecond)
+          .to.throw()
+          .with.property('code', 'FST_ERR_DUPLICATED_ROUTE');
+      });
+    }
+  });
+
   describe('useBodyParser', () => {
     const post = (contentType: string, payload: string) =>
       fastifyAdapter.inject({

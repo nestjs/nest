@@ -122,6 +122,19 @@ type VersionedRoute<TRequest, TResponse> = ((
  * ref https://github.com/fastify/middie/pull/16
  * ref https://github.com/fastify/fastify/pull/559
  */
+// The HTTP methods Nest routes requests for (see `RequestMethod`) that a
+// Fastify instance does not support until they are added to it.
+const NON_DEFAULT_HTTP_METHODS = [
+  'SEARCH',
+  'PROPFIND',
+  'PROPPATCH',
+  'MKCOL',
+  'COPY',
+  'MOVE',
+  'LOCK',
+  'UNLOCK',
+];
+
 type FastifyRawRequest<TServer extends RawServerBase> =
   RawRequestDefaultExpression<TServer> & { originalUrl?: string };
 
@@ -536,6 +549,11 @@ export class FastifyAdapter<
   }
 
   public all(...args: any[]) {
+    // Fastify registers the route for the methods the instance supports at
+    // this point. The ones it lacks by default are added first, rather than
+    // with the first route for them (see `injectRouteOptions()`), so that the
+    // route serves them as well, whether it is registered before or after.
+    NON_DEFAULT_HTTP_METHODS.forEach(method => this.addHttpMethod(method));
     const handlerRef = args[args.length - 1];
     args[args.length - 1] = this.requireNonEmptyParams(args[0], handlerRef);
     return (this.instance.all as any)(...args);
@@ -1370,9 +1388,7 @@ export class FastifyAdapter<
       handler: this.requireNonEmptyParams(args[0], handlerRef),
     };
 
-    if (this.instance.supportedMethods.indexOf(routerMethodKey) === -1) {
-      this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
-    }
+    this.addHttpMethod(routerMethodKey);
 
     if (isVersioned || hasConstraints || hasConfig || hasSchema) {
       const isPathAndRouteTuple = args.length === 2;
@@ -1402,6 +1418,12 @@ export class FastifyAdapter<
       }
     }
     return this.instance.route(routeToInject);
+  }
+
+  private addHttpMethod(method: string) {
+    if (!this.instance.supportedMethods.includes(method)) {
+      this.instance.addHttpMethod(method, { hasBody: true });
+    }
   }
 
   /**
