@@ -296,7 +296,17 @@ export class WsContextCreator {
           pipes.concat(paramPipes),
         );
       };
-      await Promise.all(paramsOptions.map(resolveParamValue));
+      const pending = paramsOptions.map(resolveParamValue);
+      try {
+        await Promise.all(pending);
+      } catch (err) {
+        // The pipes of the other parameters are still running. Answering now
+        // would free the message's slot (see "maxConcurrentMessages" of the
+        // adapters) while their work goes on, so a client could have any
+        // number of them running by sending messages that fail fast.
+        await Promise.allSettled(pending);
+        throw err;
+      }
     };
     return paramsOptions.length ? pipesFn : null;
   }
