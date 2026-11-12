@@ -22,6 +22,10 @@ import { ClientsContainer } from '../container.js';
 import { ExceptionFiltersContext } from '../context/exception-filters-context.js';
 import { RequestContextHost } from '../context/request-context-host.js';
 import { RpcContextCreator } from '../context/rpc-context-creator.js';
+import { RpcProxy } from '../context/rpc-proxy.js';
+import { BaseRpcExceptionFilter } from '../exceptions/base-rpc-exception-filter.js';
+import { KafkaRetriableException } from '../exceptions/kafka-retriable-exception.js';
+import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler.js';
 import { Transport } from '../enums/transport.enum.js';
 import {
   EventOrMessageListenerDefinition,
@@ -610,6 +614,117 @@ describe('ListenersController', () => {
 
       expect(sideEffects).toEqual(['next']);
       expect(emissions).toHaveLength(1);
+    });
+
+    describe('when the exception filter of a handler fails', () => {
+      const filterError = new Error('filter failed');
+      let unhandledRejection: ReturnType<typeof vi.fn>;
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        unhandledRejection = vi.fn();
+        process.on('unhandledRejection', unhandledRejection);
+        loggerErrorSpy = vi
+          .spyOn((BaseRpcExceptionFilter as any).logger, 'error')
+          .mockImplementation(() => {});
+      });
+      afterEach(() => {
+        process.off('unhandledRejection', unhandledRejection);
+        loggerErrorSpy.mockRestore();
+      });
+
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+      // Proxies as the context creator builds them, whose handler fails and
+      // whose filter fails in turn
+      const createFailingProxy = (filter: () => unknown) => {
+        const exceptionsHandler = new RpcExceptionsHandler();
+        exceptionsHandler.setCustomFilters([
+          { exceptionMetatypes: [], func: filter as any },
+        ]);
+        return new RpcProxy().create(async () => {
+          throw new Error('handler failed');
+        }, exceptionsHandler);
+      };
+      const createProxyChain = (
+        proxies: Array<(...args: unknown[]) => Promise<unknown>>,
+      ): MessageHandler => {
+        const [proxy, ...rest] = proxies;
+        const handler: MessageHandler = async (...args: unknown[]) =>
+          instance.forkJoinHandlersIfAttached(
+            proxy(...args) as Promise<unknown>,
+            args,
+            handler,
+          );
+        if (rest.length > 0) {
+          handler.next = createProxyChain(rest);
+        }
+        return handler;
+      };
+      const succeeding = () =>
+        new RpcProxy().create(async () => 'done', new RpcExceptionsHandler());
+
+      it.each([
+        [
+          'throws',
+          () => {
+            throw filterError;
+          },
+        ],
+        [
+          'rejects',
+          async () => {
+            throw filterError;
+          },
+        ],
+      ])(
+        'should not leave the rejection unhandled when the filter %s and the join is never subscribed',
+        async (_, filter) => {
+          // ServerTCP does not subscribe to it for a peer that is gone
+          await createProxyChain([createFailingProxy(filter), succeeding()])(
+            'data',
+          );
+          await flush();
+          await createProxyChain([succeeding(), createFailingProxy(filter)])(
+            'data',
+          );
+          await flush();
+
+          expect(unhandledRejection).not.toHaveBeenCalled();
+          expect(loggerErrorSpy).toHaveBeenCalledTimes(2);
+          expect(loggerErrorSpy).toHaveBeenCalledWith(filterError);
+        },
+      );
+
+      it('should answer the join as an unknown error', async () => {
+        const join = await createProxyChain([
+          createFailingProxy(() => {
+            throw filterError;
+          }),
+          succeeding(),
+        ])('data');
+
+        await expect(
+          lastValueFrom(instance.transformToObservable(join)),
+        ).rejects.toEqual({
+          status: 'error',
+          message: 'Internal server error',
+        });
+      });
+
+      it('should pass on an exception that returns itself from "getError"', async () => {
+        const retriable = new KafkaRetriableException('retry me');
+        const join = await createProxyChain([
+          succeeding(),
+          createFailingProxy(() => {
+            throw retriable;
+          }),
+        ])('data');
+
+        await expect(
+          lastValueFrom(instance.transformToObservable(join)),
+        ).rejects.toBe(retriable);
+        expect(loggerErrorSpy).not.toHaveBeenCalled();
+      });
     });
   });
 

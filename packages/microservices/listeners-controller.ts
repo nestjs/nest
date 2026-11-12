@@ -15,6 +15,7 @@ import { ClientsContainer } from './container.js';
 import { ExceptionFiltersContext } from './context/exception-filters-context.js';
 import { RequestContextHost } from './context/request-context-host.js';
 import { RpcContextCreator } from './context/rpc-context-creator.js';
+import { handleExceptionFilterFailure } from './context/rpc-proxy.js';
 import {
   DEFAULT_CALLBACK_METADATA,
   DEFAULT_GRPC_CALLBACK_METADATA,
@@ -231,6 +232,13 @@ export class ListenersController {
   private settleHandlerResult(
     resultOrDeferred: Promise<unknown> | Observable<unknown>,
   ): Observable<SettledHandlerResult> {
+    if (resultOrDeferred instanceof Promise) {
+      // The handler is running already, but the join only observes its
+      // promise once a transport subscribes to it, which it may never do
+      // (ServerTCP does not for a peer that is gone). The promise rejects with
+      // what an exception filter threw, which no filter has handled.
+      resultOrDeferred = resultOrDeferred.catch(handleExceptionFilterFailure);
+    }
     return this.transformToObservable(resultOrDeferred).pipe(
       defaultIfEmpty(undefined),
       map((value): SettledHandlerResult => ({ hasFailed: false, value })),
