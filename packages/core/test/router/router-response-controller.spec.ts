@@ -3,6 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import {
   concat,
   EMPTY,
+  from,
   NEVER,
   Observable,
   of,
@@ -1806,6 +1807,126 @@ data: test
           request.destroy();
         },
       );
+    });
+
+    describe('when many events wait to be written', () => {
+      class Sink extends Writable {
+        readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk.toString());
+          callback();
+        }
+      }
+
+      // More than are written in one turn of the event loop
+      const count = 5000;
+      const replay = () =>
+        from(Array.from({ length: count }, (_, i) => ({ data: String(i) })));
+      const turn = () => new Promise(resolve => setImmediate(resolve));
+
+      it('should write them in order', async () => {
+        const response = new Sink();
+        const request = new PassThrough();
+
+        await routerResponseController.sse(
+          replay(),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await vi.waitFor(() => expect(response.writableFinished).toBe(true));
+
+        expect(response.chunks.join('')).toBe(
+          '\n' +
+            Array.from(
+              { length: count },
+              (_, i) => `id: ${i + 1}\ndata: ${i}\n\n`,
+            ).join(''),
+        );
+        request.destroy();
+      });
+
+      it('should not shift each of them off a queue', async () => {
+        // Each shift() moves the events queued behind the one it removes, so
+        // writing n events that way takes time quadratic in n.
+        // Patched by hand, as vi.spyOn() calls shift() itself
+        const events = Array.from({ length: 3 }, (_, i) => ({
+          data: String(i),
+        }));
+        const shift = Array.prototype.shift;
+        const shifted: unknown[] = [];
+        Array.prototype.shift = function (this: unknown[]) {
+          const item = shift.call(this);
+          shifted.push(item);
+          return item;
+        };
+        const response = new Sink();
+        const request = new PassThrough();
+        try {
+          await routerResponseController.sse(
+            from(events),
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          );
+          await vi.waitFor(() => expect(response.writableFinished).toBe(true));
+        } finally {
+          Array.prototype.shift = shift;
+        }
+
+        expect(response.chunks.join('')).toContain('data: 2\n\n');
+        expect(shifted.filter(item => events.includes(item as any))).toEqual(
+          [],
+        );
+        request.destroy();
+      });
+
+      it('should let the event loop run before the last one is written', async () => {
+        const response = new Sink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          replay(),
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        await turn();
+        const writtenInFirstTurn = response.chunks.length;
+
+        expect(writtenInFirstTurn).toBeGreaterThan(0);
+        expect(writtenInFirstTurn).toBeLessThan(count);
+        await lifecycle;
+        request.destroy();
+      });
+
+      it('should not fall behind a producer that emits as many on every turn', async () => {
+        const producer = new Subject<MessageEvent>();
+        const response = new Sink();
+        const request = new PassThrough();
+
+        const lifecycle = routerResponseController.sse(
+          producer,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        let emitted = 0;
+        for (let i = 0; i < 16; i++) {
+          for (let j = 0; j < count; j++) {
+            producer.next({ data: String(emitted++) });
+          }
+          await turn();
+        }
+        // The first chunk is the line that follows the headers
+        const waiting = emitted - (response.chunks.length - 1);
+
+        expect(waiting).toBeLessThanOrEqual(count);
+        producer.complete();
+        await lifecycle;
+        request.destroy();
+      });
     });
 
     it('should commit headers on next tick without waiting for first emission', async () => {

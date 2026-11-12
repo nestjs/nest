@@ -10,8 +10,14 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { IncomingMessage } from 'http';
-import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
-import { catchError, concatMap, map, tap } from 'rxjs/operators';
+import {
+  EMPTY,
+  lastValueFrom,
+  Observable,
+  isObservable,
+  type OperatorFunction,
+} from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { Readable } from 'stream';
 import type { AbstractHttpAdapter } from '../adapters/http-adapter.js';
 import { MESSAGES } from '../constants.js';
@@ -145,6 +151,95 @@ function getDataLength(message: MessageEvent): number {
       getLength(message.type) +
       getLength(message.id),
   );
+}
+
+/**
+ * Waiting events written in a row before the event loop gets a turn. A write
+ * that does not back the stream up settles through `process.nextTick()` and a
+ * promise, so the events that waited would otherwise all be written before
+ * any other request is served.
+ */
+const MAX_WRITES_PER_TURN = 1024;
+
+interface WaitingValue<T> {
+  value: T;
+  next?: WaitingValue<T>;
+}
+
+/**
+ * `concatMap(write)` for the events of a client, which decides how many of
+ * them wait by not reading. `concatMap()` `shift()`s each waiting value off an
+ * array of all the waiting ones, so writing them costs time quadratic in
+ * their number. Here they wait in a linked list, and are not written in a
+ * single turn of the event loop.
+ */
+function concatMapWrites<T>(
+  write: (value: T) => Promise<void>,
+): OperatorFunction<T, never> {
+  return source =>
+    new Observable<never>(subscriber => {
+      let head: WaitingValue<T> | undefined;
+      let tail: WaitingValue<T> | undefined;
+      let isWriting = false;
+      let isYielding = false;
+      let isSourceComplete = false;
+      let writesLeftInThisTurn = MAX_WRITES_PER_TURN;
+
+      const writeNext = () => {
+        if (subscriber.closed) {
+          return;
+        }
+        if (!head) {
+          isWriting = false;
+          writesLeftInThisTurn = MAX_WRITES_PER_TURN;
+          if (isSourceComplete) {
+            subscriber.complete();
+          }
+          return;
+        }
+        const { value } = head;
+        head = head.next;
+        isWriting = true;
+        write(value).then(
+          () => {
+            if (!head || --writesLeftInThisTurn > 0) {
+              return writeNext();
+            }
+            writesLeftInThisTurn = MAX_WRITES_PER_TURN;
+            isYielding = true;
+            setImmediate(() => {
+              isYielding = false;
+              writeNext();
+            });
+          },
+          err => subscriber.error(err),
+        );
+      };
+
+      subscriber.add(
+        source.subscribe({
+          next: value => {
+            const waiting: WaitingValue<T> = { value };
+            tail = head ? (tail!.next = waiting) : (head = waiting);
+            if (isYielding) {
+              // Written in the next turn on top of those that waited before,
+              // or a producer that emits more than MAX_WRITES_PER_TURN events
+              // per turn would get ahead of a client that is reading.
+              writesLeftInThisTurn++;
+            } else if (!isWriting) {
+              writeNext();
+            }
+          },
+          error: err => subscriber.error(err),
+          complete: () => {
+            isSourceComplete = true;
+            if (!isWriting) {
+              writeNext();
+            }
+          },
+        }),
+      );
+    });
 }
 
 export interface CustomHeader {
@@ -494,7 +589,7 @@ export class RouterResponseController {
           let pendingDataLength = 0;
           const maxPendingDataLength =
             options?.maxPendingDataLength ?? DEFAULT_MAX_PENDING_DATA_LENGTH;
-          // Events wait in concatMap() while the client is not reading.
+          // Events wait in concatMapWrites() while the client is not reading.
           // Past a limit, the connection is dropped as if the client had
           // disconnected, rather than holding events for a client that may
           // never read them. An EventSource then reconnects, and sends the
@@ -539,7 +634,7 @@ export class RouterResponseController {
                 pendingDataLength += getDataLength(message);
                 dropIfNotReading();
               }),
-              concatMap(
+              concatMapWrites(
                 message =>
                   new Promise<void>((resolve, reject) => {
                     stream.writeMessage(message, err => {
