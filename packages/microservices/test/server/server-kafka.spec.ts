@@ -597,6 +597,103 @@ describe('ServerKafka', () => {
       });
     });
 
+    describe('when the reply topic is one the server does not reply on', () => {
+      const withReplyTopic = (
+        replyTopicHeader: string,
+      ): EachMessagePayload => ({
+        ...payload,
+        message: {
+          ...message,
+          headers: {
+            ...message.headers,
+            [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopicHeader),
+          },
+        } as KafkaMessage,
+      });
+      let loggerErrorStub: sinon.SinonStub;
+      let getPublisher: sinon.SinonStub;
+      let handler: sinon.SinonSpy;
+      let otherHandler: sinon.SinonSpy;
+
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(untypedServer.logger, 'error');
+        getPublisher = server.getPublisher as sinon.SinonStub;
+        handler = sinon.spy();
+        otherHandler = sinon.spy();
+        untypedServer.messageHandlers = objectToMap({
+          [topic]: handler,
+          'other.topic': otherHandler,
+        });
+      });
+
+      const expectDropped = () => {
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(handler.called).to.be.false;
+        expect(otherHandler.called).to.be.false;
+        expect(getPublisher.called).to.be.false;
+      };
+
+      // kafkajs keeps state per topic in plain objects
+      ['__proto__', 'constructor', 'toString', 'hasOwnProperty'].forEach(
+        replyTopicHeader => {
+          it(`should log an error and not run the handler if it is "${replyTopicHeader}"`, async () => {
+            await server.handleMessage(withReplyTopic(replyTopicHeader));
+
+            expectDropped();
+          });
+        },
+      );
+
+      [
+        ['the topic of the request', topic],
+        ['another topic the server has a handler for', 'other.topic'],
+      ].forEach(([description, replyTopicHeader]) => {
+        it(`should log an error and not run the handler if it is ${description}`, async () => {
+          await server.handleMessage(withReplyTopic(replyTopicHeader));
+
+          expectDropped();
+        });
+      });
+
+      it('should not publish NO_MESSAGE_HANDLER', async () => {
+        untypedServer.messageHandlers = objectToMap({
+          'other.topic': otherHandler,
+        });
+
+        await server.handleMessage(withReplyTopic('other.topic'));
+
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(getPublisherSpy.called).to.be.false;
+      });
+
+      it('should reply on a topic the server has no handler for, as a renamed reply topic is', async () => {
+        await server.handleMessage(withReplyTopic(`replies.${topic}`));
+
+        expect(loggerErrorStub.called).to.be.false;
+        expect(handler.called).to.be.true;
+        expect(
+          getPublisher.calledWith(
+            `replies.${topic}`,
+            replyPartition,
+            correlationId,
+            sinon.match.instanceOf(KafkaContext),
+          ),
+        ).to.be.true;
+      });
+
+      it('should still pass the message to an event handler', async () => {
+        const eventHandler = Object.assign(sinon.spy(), {
+          isEventHandler: true,
+        });
+        untypedServer.messageHandlers = objectToMap({ [topic]: eventHandler });
+
+        await server.handleMessage(withReplyTopic('__proto__'));
+
+        expect(loggerErrorStub.called).to.be.false;
+        expect(eventHandler.called).to.be.true;
+      });
+    });
+
     describe('when the correlation id is longer than a request id may be', () => {
       const withCorrelationId = (
         correlationIdHeader: string,
