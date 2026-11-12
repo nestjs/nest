@@ -1,9 +1,11 @@
 import {
   RequestMethod,
+  UseFilters,
   VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
+import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
 import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import { pathToRegexp } from 'path-to-regexp';
@@ -210,6 +212,32 @@ describe('middleware utils', () => {
           );
           expect(type).to.not.eql(Test);
           expect(type.name).to.eql(Test.name);
+        });
+        it('should keep the metadata of the "use" method', () => {
+          const filter = { catch() {} };
+          class WithFilter {
+            @UseFilters(filter)
+            use() {}
+          }
+          class Inherited extends WithFilter {}
+
+          for (const middleware of [WithFilter, Inherited]) {
+            const type = mapToClass(
+              middleware,
+              mapToExcludeRoute([{ path: 'foo', method: RequestMethod.ALL }]),
+              noopAdapter,
+            );
+            expect(
+              Reflect.getMetadata(EXCEPTION_FILTERS_METADATA, new type().use),
+            ).to.deep.equal([filter]);
+          }
+          // The original method keeps its own metadata only
+          expect(
+            Reflect.getMetadata(
+              EXCEPTION_FILTERS_METADATA,
+              WithFilter.prototype.use,
+            ),
+          ).to.deep.equal([filter]);
         });
       });
     });
