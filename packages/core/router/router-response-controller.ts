@@ -252,6 +252,17 @@ export class RouterResponseController {
         abortController.abort();
       };
 
+      // Unsubscribing runs the teardown of the producer, which is application
+      // code, and it is also run outside the handler's promise chain (from a
+      // socket event or a timer), where a throw would go uncaught.
+      const unsubscribe = () => {
+        try {
+          subscription?.unsubscribe();
+        } catch (err) {
+          this.logger.error(err);
+        }
+      };
+
       const endStream = () => {
         if (!stream.writableEnded) {
           stream.end();
@@ -271,7 +282,7 @@ export class RouterResponseController {
         } catch (err) {
           settled = true;
           finalize();
-          subscription?.unsubscribe();
+          unsubscribe();
           stream.unpipe(response);
           endStream();
           reject(err);
@@ -293,7 +304,7 @@ export class RouterResponseController {
 
         settled = true;
         finalize();
-        subscription?.unsubscribe();
+        unsubscribe();
         endStream();
         response.end();
         resolve();
@@ -447,7 +458,7 @@ export class RouterResponseController {
             if (request.method === 'HEAD') {
               settled = true;
               finalize();
-              subscription?.unsubscribe();
+              unsubscribe();
               endStream();
               resolve();
             }

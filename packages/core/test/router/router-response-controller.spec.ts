@@ -1325,5 +1325,74 @@ data: test
         });
       });
     });
+
+    describe('when the teardown of the producer throws', () => {
+      // Unsubscribing rethrows what the teardown throws, in a socket event
+      // or a timer, where nothing but the process would catch it.
+      const teardownError = new Error('Teardown error');
+      let loggerErrorStub: sinon.SinonStub;
+      const createResponse = () =>
+        new Writable({
+          write(_chunk, _encoding, callback) {
+            callback();
+          },
+        });
+
+      beforeEach(() => {
+        loggerErrorStub = sinon.stub(Logger.prototype, 'error');
+      });
+
+      afterEach(() => {
+        loggerErrorStub.restore();
+      });
+
+      const expectTeardownErrorLogged = () => {
+        expect(loggerErrorStub.calledOnce).to.be.true;
+        expect(loggerErrorStub.firstCall.args[0].errors).to.deep.equal([
+          teardownError,
+        ]);
+      };
+
+      it('should log the error and end the response when the client disconnects', async () => {
+        const response = createResponse();
+        const request = attachSocket(new PassThrough());
+        const result = new Observable<string>(() => () => {
+          throw teardownError;
+        });
+
+        const ssePromise = routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        // Once the producer is subscribed to
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(() => request.socket.emit('close')).not.to.throw();
+        await ssePromise;
+
+        expect(response.writableEnded).to.be.true;
+        expectTeardownErrorLogged();
+      });
+
+      it('should log the error and end the response to a HEAD request', async () => {
+        const response = createResponse();
+        const request = Object.assign(attachSocket(new PassThrough()), {
+          method: 'HEAD',
+        });
+        const result = new Observable<string>(() => () => {
+          throw teardownError;
+        });
+
+        await routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+
+        expect(response.writableEnded).to.be.true;
+        expectTeardownErrorLogged();
+      });
+    });
   });
 });
