@@ -18,6 +18,7 @@ import {
 import {
   applyDefaultLimits,
   mergeMulterOptions,
+  rejectPrototypePoisoning,
   removeFilesOnPipeRejection,
   runMulter,
 } from '../multer/multer.utils.js';
@@ -57,6 +58,7 @@ export function FileFieldsInterceptor(
         ctx.getRequest(),
         ctx.getResponse(),
       );
+      await rejectPrototypePoisoning(this.multer.storage, ctx.getRequest());
       return next
         .handle()
         .pipe(

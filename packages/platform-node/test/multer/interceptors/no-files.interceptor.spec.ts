@@ -1,4 +1,5 @@
-import { CallHandler } from '@nestjs/common';
+import { BadRequestException, CallHandler } from '@nestjs/common';
+import multer from 'multer';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { of } from 'rxjs';
 import { NoFilesInterceptor } from '../../../multer/interceptors/no-files.interceptor.js';
@@ -26,6 +27,21 @@ describe('NoFilesInterceptor', () => {
       await target.intercept(new ExecutionContextHost([]), handler);
 
       expect(noneSpy).toHaveBeenCalled();
+    });
+    it('should reject a body with a __proto__ key', async () => {
+      const target = new (NoFilesInterceptor())();
+      (target as any).multer = {
+        none: () => (req, _res, next) => {
+          req.body = Object.create(null);
+          req.body.__proto__ = { isAdmin: 'true' };
+          next();
+        },
+        storage: multer.memoryStorage(),
+      };
+      const req: any = {};
+      await expect(
+        target.intercept(new ExecutionContextHost([req, {}]), handler),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
     it('should transform exception', async () => {
       const target = new (NoFilesInterceptor())();

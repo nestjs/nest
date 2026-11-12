@@ -7,6 +7,7 @@ import {
 import { isFunction, isNil, isPlainObject } from '@nestjs/common/internal';
 import * as coreInternal from '@nestjs/core/internal';
 import { catchError, type MonoTypeOperatorFunction, throwError } from 'rxjs';
+import secureJson from 'secure-json-parse';
 import { finished } from 'stream';
 import {
   DEFAULT_FIELD_NAME_LIMITS,
@@ -246,6 +247,54 @@ function onResponseFinished(res: any, callback: () => void): () => void {
   } catch {
     return () => undefined;
   }
+}
+
+/**
+ * Fails a multipart request whose field names put a `__proto__` key, or a
+ * `constructor.prototype` path, in `req.body` (e.g. `__proto__[x]` or
+ * `constructor[prototype][x]`), as the NodeAdapter's JSON and urlencoded
+ * parsers do by default: a route handler that copies such a body onto
+ * another object (`Object.assign()`, a deep merge) would change that
+ * object's prototype. multer has no hook to refuse a field name before it
+ * appends it, so the body is checked once multer is done, and the files
+ * multer stored for the request are removed first.
+ */
+export async function rejectPrototypePoisoning(
+  storage: any,
+  req: any,
+): Promise<void> {
+  const body = req?.body;
+  // multer gives a multipart request a body without a prototype, and leaves
+  // any other body (checked by its own parser) alone.
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    Object.getPrototypeOf(body)
+  ) {
+    return;
+  }
+  try {
+    secureJson.scan(body, { protoAction: 'error', constructorAction: 'error' });
+  } catch {
+    await removeStoredFiles(storage, req);
+    throw new BadRequestException(multerExceptions.INVALID_FIELD_NAME);
+  }
+}
+
+function removeStoredFiles(storage: any, req: any): Promise<void> {
+  return Promise.all(
+    storedFiles(req).map(
+      file =>
+        new Promise<void>(resolve => {
+          try {
+            storage._removeFile(req, file, () => resolve());
+          } catch {
+            // The request fails anyway.
+            resolve();
+          }
+        }),
+    ),
+  ).then(() => undefined);
 }
 
 /**

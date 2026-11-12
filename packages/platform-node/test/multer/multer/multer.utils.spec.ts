@@ -13,6 +13,7 @@ import {
   applyDefaultLimits,
   closeArrayGaps,
   mergeMulterOptions,
+  rejectPrototypePoisoning,
   removeFilesOnPipeRejection,
   runMulter,
   transformException,
@@ -484,6 +485,83 @@ describe('runMulter', () => {
     res.end();
     await tick();
     expect(req.destroyed).toBe(false);
+  });
+});
+
+describe('rejectPrototypePoisoning', () => {
+  /** Parses a body with the given text fields and one file, with multer. */
+  const parse = async (
+    fieldNames: string[],
+    storage = multer.memoryStorage(),
+  ) => {
+    const boundary = 'nestjs';
+    const body =
+      fieldNames
+        .map(
+          name =>
+            `--${boundary}\r\n` +
+            `Content-Disposition: form-data; name="${name}"\r\n\r\n` +
+            `x\r\n`,
+        )
+        .join('') +
+      `--${boundary}\r\n` +
+      `Content-Disposition: form-data; name="f"; filename="a.txt"\r\n` +
+      `Content-Type: text/plain\r\n\r\n` +
+      `data\r\n` +
+      `--${boundary}--\r\n`;
+    const req: any = Object.assign(Readable.from([Buffer.from(body)]), {
+      headers: {
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+        'content-length': String(Buffer.byteLength(body)),
+      },
+    });
+    const instance = multer(applyDefaultLimits({ storage }));
+    await runMulter(instance.single('f'), req, {});
+    await rejectPrototypePoisoning(instance.storage, req);
+    return req;
+  };
+
+  it('should fail a body with a __proto__ key and remove the stored files', async () => {
+    for (const name of ['__proto__[x]', 'a[__proto__][x]', 'a[0][__proto__]']) {
+      const storage = multer.memoryStorage();
+      const removeFile = vi.spyOn(storage, '_removeFile');
+      await expect(parse([name], storage)).rejects.toEqual(
+        new BadRequestException('Invalid field name'),
+      );
+      expect(removeFile).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ fieldname: 'f' }),
+        expect.any(Function),
+      );
+    }
+  });
+
+  it('should fail a body with a constructor.prototype path', async () => {
+    for (const name of [
+      'constructor[prototype][x]',
+      'a[constructor][prototype][x]',
+    ]) {
+      await expect(parse([name])).rejects.toEqual(
+        new BadRequestException('Invalid field name'),
+      );
+    }
+  });
+
+  it('should accept other field names', async () => {
+    const req = await parse(['constructor', 'a[constructor]', 'prototype[x]']);
+    expect({ ...req.body }).toEqual({
+      constructor: 'x',
+      a: { constructor: 'x' },
+      prototype: { x: 'x' },
+    });
+    expect(req.file.originalname).toBe('a.txt');
+  });
+
+  it('should leave a body multer did not parse', async () => {
+    const body = JSON.parse('{"__proto__":{"x":1}}');
+    await expect(
+      rejectPrototypePoisoning(multer.memoryStorage(), { body }),
+    ).resolves.toBeUndefined();
   });
 });
 
