@@ -1193,6 +1193,146 @@ describe('Injector', () => {
     });
   });
 
+  describe('resolveComponentWrapper', () => {
+    class Target {}
+    class Host {}
+
+    const dependencyContext = { index: 0, dependencies: [] };
+    let moduleRef: Module;
+    let targetWrapper: InstanceWrapper;
+    let hostWrapper: InstanceWrapper;
+
+    beforeEach(() => {
+      moduleRef = new Module(class TestModule {}, new NestContainer());
+      moduleRef.addProvider(Target);
+      moduleRef.addProvider(Host);
+      moduleRef.addProvider({ provide: 'ALIAS', useExisting: Target });
+      moduleRef.addProvider({
+        provide: 'ALIAS_OF_ALIAS',
+        useExisting: 'ALIAS',
+      });
+
+      targetWrapper = moduleRef.providers.get(Target)!;
+      hostWrapper = moduleRef.providers.get(Host)!;
+    });
+
+    it('should return the provider registered under the token', async () => {
+      const result = await injector.resolveComponentWrapper(
+        moduleRef,
+        Target,
+        dependencyContext,
+        hostWrapper,
+        undefined,
+        0,
+      );
+
+      expect(result).toBe(targetWrapper);
+      expect(hostWrapper.getCtorMetadata()).toEqual([targetWrapper]);
+    });
+
+    it('should return the provider that an alias stands for', async () => {
+      const result = await injector.resolveComponentWrapper(
+        moduleRef,
+        'ALIAS',
+        dependencyContext,
+        hostWrapper,
+        undefined,
+        0,
+      );
+
+      expect(result).toBe(targetWrapper);
+      expect(hostWrapper.getCtorMetadata()).toEqual([targetWrapper]);
+    });
+
+    it('should return the provider that an alias of an alias stands for', async () => {
+      const result = await injector.resolveComponentWrapper(
+        moduleRef,
+        'ALIAS_OF_ALIAS',
+        dependencyContext,
+        hostWrapper,
+        undefined,
+        'property',
+      );
+
+      expect(result).toBe(targetWrapper);
+      expect(hostWrapper.getPropertiesMetadata()).toEqual([
+        { key: 'property', wrapper: targetWrapper },
+      ]);
+    });
+
+    it('should return the provider that an alias exported by an imported module stands for', async () => {
+      const consumerModuleRef = new Module(
+        class ConsumerModule {},
+        new NestContainer(),
+      );
+      consumerModuleRef.addProvider(Host);
+      consumerModuleRef.addImport(moduleRef);
+      moduleRef.addExportedProviderOrModule('ALIAS');
+      hostWrapper = consumerModuleRef.providers.get(Host)!;
+
+      const result = await injector.resolveComponentWrapper(
+        consumerModuleRef,
+        'ALIAS',
+        dependencyContext,
+        hostWrapper,
+        undefined,
+        0,
+      );
+
+      expect(result).toBe(targetWrapper);
+      expect(hostWrapper.getCtorMetadata()).toEqual([targetWrapper]);
+    });
+
+    it('should return the alias that another alias points to as its own dependency', async () => {
+      const aliasWrapper = moduleRef.providers.get('ALIAS')!;
+      const aliasOfAliasWrapper = moduleRef.providers.get('ALIAS_OF_ALIAS')!;
+
+      const result = await injector.resolveComponentWrapper(
+        moduleRef,
+        'ALIAS',
+        dependencyContext,
+        aliasOfAliasWrapper,
+        undefined,
+        0,
+      );
+
+      expect(result).toBe(aliasWrapper);
+      expect(aliasOfAliasWrapper.getCtorMetadata()).toEqual([aliasWrapper]);
+    });
+
+    it('should return an alias that was overridden as it is', async () => {
+      const aliasWrapper = moduleRef.providers.get('ALIAS')!;
+      moduleRef.replace('ALIAS', { isProvider: true, useValue: {} });
+
+      const result = await injector.resolveComponentWrapper(
+        moduleRef,
+        'ALIAS',
+        dependencyContext,
+        hostWrapper,
+        undefined,
+        0,
+      );
+
+      expect(result).toBe(aliasWrapper);
+    });
+
+    it('should return an alias that points to another one in a cycle as it is', async () => {
+      moduleRef.addProvider({ provide: 'FIRST', useExisting: 'SECOND' });
+      moduleRef.addProvider({ provide: 'SECOND', useExisting: 'FIRST' });
+
+      const result = await injector.resolveComponentWrapper(
+        moduleRef,
+        'FIRST',
+        dependencyContext,
+        hostWrapper,
+        undefined,
+        0,
+      );
+
+      expect(result).toBe(moduleRef.providers.get('FIRST'));
+    });
+  });
+
   describe('resolveComponentHost', () => {
     let module: any;
     beforeEach(() => {
