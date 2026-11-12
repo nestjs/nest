@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { inspect } from 'util';
 import { logLevel } from '../../external/kafka.interface';
 import { KafkaLogger } from '../../helpers/kafka-logger';
 
@@ -91,5 +92,73 @@ describe('KafkaLogger', () => {
     });
 
     expect(debug.calledOnce).to.be.true;
+  });
+
+  it('should log the entry as json', () => {
+    kafkaLogger({ namespace, level: logLevel.ERROR, label, log: entry });
+
+    expect(error.calledOnce).to.be.true;
+    expect(error.firstCall.args).to.deep.equal([
+      'label [namespace] message {"other":{"stuff":"here"}}',
+    ]);
+  });
+
+  describe('when the entry cannot be serialized as json', () => {
+    // kafkajs logs the error an "eachMessage" handler rejected with this way
+    const logError = (rejection: unknown) =>
+      kafkaLogger({
+        namespace,
+        level: logLevel.ERROR,
+        label,
+        log: { message: 'message', topic: 'topic', error: rejection },
+      });
+    const expectLoggedOnce = (line: string) => {
+      expect(error.calledOnce).to.be.true;
+      expect(error.firstCall.args).to.deep.equal([line]);
+    };
+
+    it('should log an entry with a circular reference', () => {
+      const circular: Record<string, unknown> = { name: 'circular' };
+      circular.self = circular;
+
+      expect(() => logError(circular)).to.not.throw();
+      expectLoggedOnce(
+        "label [namespace] message { topic: 'topic', error: <ref *1> { name: 'circular', self: [Circular *1] } }",
+      );
+    });
+
+    it('should log an entry with a BigInt value', () => {
+      expect(() => logError({ limit: BigInt(10) })).to.not.throw();
+      expectLoggedOnce(
+        "label [namespace] message { topic: 'topic', error: { limit: 10n } }",
+      );
+    });
+
+    it('should log an entry nested deeper than JSON.stringify can recurse', () => {
+      // JSON.parse accepts any depth, so a Kafka record can carry such a value
+      let nested: Record<string, unknown> = {};
+      for (let i = 0; i < 100_000; i++) {
+        nested = { a: nested };
+      }
+
+      expect(() => logError(nested)).to.not.throw();
+      expectLoggedOnce(
+        "label [namespace] message { topic: 'topic', error: { a: { a: [Object] } } }",
+      );
+    });
+
+    it('should log an entry that cannot be inspected either', () => {
+      const unreadable = {
+        toJSON: () => {
+          throw new Error('unreadable');
+        },
+        [inspect.custom]: () => {
+          throw new Error('unreadable');
+        },
+      };
+
+      expect(() => logError(unreadable)).to.not.throw();
+      expectLoggedOnce('label [namespace] message [unserializable log entry]');
+    });
   });
 });
