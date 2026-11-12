@@ -74,5 +74,63 @@ describe('SocketServerProvider', () => {
         expect(createSocketServerSpy).not.toHaveBeenCalled();
       });
     });
+
+    describe('when gateways are declared on the same namespace', () => {
+      it(`should return the host stored for that namespace`, () => {
+        const host = instance.scanForSocketServer(
+          { path, namespace: 'random' },
+          port,
+        );
+
+        expect(
+          instance.scanForSocketServer({ path, namespace: 'random' }, port),
+        ).toBe(host);
+        expect(
+          instance.scanForSocketServer({ path, namespace: '/random' }, port),
+        ).toBe(host);
+        expect(createSocketServerSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it(`should create the server of a RegExp namespace once`, () => {
+        const create = vi.spyOn(NoopAdapter.prototype, 'create');
+        const host = instance.scanForSocketServer(
+          { path, namespace: /^\/random-\d+$/ },
+          port,
+        );
+        create.mockClear();
+
+        expect(
+          instance.scanForSocketServer(
+            { path, namespace: /^\/random-\d+$/ },
+            port,
+          ),
+        ).toBe(host);
+        expect(create).not.toHaveBeenCalled();
+      });
+
+      it(`should not return the host of another namespace, path or port`, () => {
+        const host = instance.scanForSocketServer(
+          { path, namespace: 'random' },
+          port,
+        );
+
+        expect(instance.scanForSocketServer({ path }, port)).not.toBe(host);
+        expect(
+          instance.scanForSocketServer({ path, namespace: 'other' }, port),
+        ).not.toBe(host);
+        expect(
+          instance.scanForSocketServer({ path, namespace: /^\/random$/ }, port),
+        ).not.toBe(host);
+        expect(
+          instance.scanForSocketServer(
+            { path: 'localhost:3031', namespace: 'random' },
+            port,
+          ),
+        ).not.toBe(host);
+        expect(
+          instance.scanForSocketServer({ path, namespace: 'random' }, port + 1),
+        ).not.toBe(host);
+      });
+    });
   });
 });

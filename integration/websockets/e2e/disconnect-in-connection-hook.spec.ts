@@ -46,6 +46,28 @@ class ObservingGateway {
   }
 }
 
+@WebSocketGateway({ namespace: 'chat' })
+class NamespacedSyncDisconnectingGateway extends SyncDisconnectingGateway {}
+
+@WebSocketGateway({ namespace: '/chat' })
+class NamespacedObservingGateway extends ObservingGateway {}
+
+const roomNamespace = /^\/room-\d+$/;
+
+@WebSocketGateway({ namespace: roomNamespace })
+class RoomGateway {
+  handleConnection() {
+    calls.push('room connect');
+  }
+}
+
+@WebSocketGateway({ namespace: roomNamespace })
+class OtherRoomGateway {
+  handleConnection() {
+    calls.push('other room connect');
+  }
+}
+
 describe('WebSocketGateway - disconnect from the connection hook', () => {
   let app: INestApplication;
   let socket: Socket;
@@ -55,7 +77,11 @@ describe('WebSocketGateway - disconnect from the connection hook', () => {
     await app?.close();
   });
 
-  async function connect(providers: Type[], expectedDisconnects: number) {
+  async function connect(
+    providers: Type[],
+    expectedDisconnects: number,
+    namespace = '',
+  ) {
     calls.length = 0;
     let remaining = expectedDisconnects;
     const disconnectHooksCalled = new Promise<void>(resolve => {
@@ -67,7 +93,7 @@ describe('WebSocketGateway - disconnect from the connection hook', () => {
     app = testingModule.createNestApplication({ logger: false });
     await app.listen(0);
 
-    socket = io(await app.getUrl(), {
+    socket = io(`${await app.getUrl()}${namespace}`, {
       transports: ['websocket'],
       forceNew: true,
       reconnection: false,
@@ -107,5 +133,30 @@ describe('WebSocketGateway - disconnect from the connection hook', () => {
       'disconnect: server namespace disconnect',
       'observer disconnect: server namespace disconnect',
     ]);
+  });
+
+  it('should call handleDisconnect of every gateway sharing a namespace after their handleConnection', async () => {
+    await connect(
+      [NamespacedSyncDisconnectingGateway, NamespacedObservingGateway],
+      2,
+      '/chat',
+    );
+
+    expect(calls).toEqual([
+      'connect',
+      'after disconnect()',
+      'observer connect',
+      'disconnect: server namespace disconnect',
+      'observer disconnect: server namespace disconnect',
+    ]);
+  });
+
+  it('should call handleConnection of every gateway sharing a RegExp namespace', async () => {
+    await connect([RoomGateway, OtherRoomGateway], 0, '/room-1');
+    if (!socket.connected) {
+      await new Promise(resolve => socket.once('connect', resolve));
+    }
+
+    expect(calls).toEqual(['room connect', 'other room connect']);
   });
 });

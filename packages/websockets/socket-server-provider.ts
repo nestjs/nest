@@ -59,6 +59,19 @@ export class SocketServerProvider {
     port: number,
     targetServer: unknown,
   ): ServerAndEventStreamsHost {
+    // Gateways on the same namespace share one host, and with it the streams
+    // of connections and disconnections, as gateways sharing a server do.
+    // socket.io also serves a RegExp namespace from the first parent namespace
+    // created for it, so a second one would never get a connection.
+    const namespaceConfig = {
+      port,
+      path: options.path,
+      namespace: this.validateNamespace(options.namespace || ''),
+    };
+    const namespaceHost = this.socketsContainer.getOneByConfig(namespaceConfig);
+    if (namespaceHost) {
+      return namespaceHost;
+    }
     const namespaceServer = this.getServerOfNamespace(
       options,
       port,
@@ -66,10 +79,7 @@ export class SocketServerProvider {
     );
     const serverAndEventStreamsHost =
       ServerAndEventStreamsFactory.create(namespaceServer);
-    this.socketsContainer.addOne(
-      { port, path: options.path, namespace: options.namespace },
-      serverAndEventStreamsHost,
-    );
+    this.socketsContainer.addOne(namespaceConfig, serverAndEventStreamsHost);
     return serverAndEventStreamsHost;
   }
 
