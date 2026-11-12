@@ -181,13 +181,7 @@ export class WsAdapter extends AbstractWsAdapter {
     // undefined "maxPayload" as no limit at all.
     wsOptions.maxPayload ??= this.maxPayload;
     this.guardUpgradeHooks(wsOptions);
-    if (wsOptions?.namespace) {
-      const error = new Error(
-        '"WsAdapter" does not support namespaces. If you need namespaces in your project, consider using the "@nestjs/platform-socket.io" package instead.',
-      );
-      this.logger.error(error);
-      throw error;
-    }
+    this.ensureNoNamespace(wsOptions);
 
     if (port === UNDERLYING_HTTP_SERVER_PORT && this.httpServer) {
       this.ensureHttpServerExists(port, this.httpServer);
@@ -236,6 +230,35 @@ export class WsAdapter extends AbstractWsAdapter {
       }),
     );
     return wsServer;
+  }
+
+  /**
+   * Creates the server of a gateway without a port in an application without
+   * an HTTP server, such as a standalone microservice. It does not listen,
+   * so no client ever connects to it.
+   */
+  public createWithoutListener(
+    options?: Record<string, any> & {
+      namespace?: string;
+      server?: any;
+      path?: string;
+    },
+  ) {
+    const { server: _, path: __, ...wsOptions } = options ?? {};
+    this.ensureNoNamespace(wsOptions);
+    return this.bindErrorHandler(
+      new wsPackage.Server({ ...wsOptions, noServer: true }),
+    );
+  }
+
+  private ensureNoNamespace(options: { namespace?: string }) {
+    if (options.namespace) {
+      const error = new Error(
+        '"WsAdapter" does not support namespaces. If you need namespaces in your project, consider using the "@nestjs/platform-socket.io" package instead.',
+      );
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   /**

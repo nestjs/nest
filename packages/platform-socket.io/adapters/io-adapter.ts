@@ -14,7 +14,7 @@ import {
   share,
   takeUntil,
 } from 'rxjs/operators';
-import { Server, ServerOptions, Socket } from 'socket.io';
+import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
 import { hasRepeatedBinary } from '../utils/has-repeated-binary.util';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util';
 
@@ -76,7 +76,30 @@ export class IoAdapter extends AbstractWsAdapter {
         : this.createIOServer(port, opt);
   }
 
-  public createIOServer(port: number, options?: any): any {
+  /**
+   * Creates the server of a gateway without a port in an application without
+   * an HTTP server, such as a standalone microservice. It is not attached to
+   * any port, but it can still broadcast, e.g. through an adapter shared with
+   * other processes. It is created through `createIOServer()`, with
+   * `undefined` for the port, so that a subclass can set it up as any other.
+   */
+  public createWithoutListener(
+    options?: ServerOptions & { namespace?: string; server?: Server },
+  ): Server | Namespace {
+    if (!options) {
+      return this.createIOServer(undefined);
+    }
+    const { namespace, server: _, ...opt } = options;
+    const server = this.createIOServer(undefined, opt);
+    return namespace ? server.of(namespace) : server;
+  }
+
+  /**
+   * @param port `0` for the HTTP server of the application, if the adapter
+   * has one, `undefined` for a server that is not attached to any port (see
+   * `createWithoutListener()`)
+   */
+  public createIOServer(port: number | undefined, options?: any): any {
     if (this.httpServer && port === 0) {
       return new Server(this.httpServer, options);
     }
@@ -201,6 +224,15 @@ export class IoAdapter extends AbstractWsAdapter {
   }
 
   public async close(server: Server): Promise<void> {
+    if (server instanceof Server && !server.engine) {
+      // Not attached to any port (see createWithoutListener()), and close()
+      // would fail on the engine it does not have, so only the adapters of
+      // its namespaces are closed, e.g. to disconnect from a shared store
+      await Promise.allSettled(
+        [...server._nsps.values()].map(namespace => namespace.adapter.close()),
+      );
+      return;
+    }
     if (this.forceCloseConnections && server.httpServer === this.httpServer) {
       return;
     }

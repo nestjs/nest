@@ -51,6 +51,7 @@ export class SocketModule<
     const serverProvider = new SocketServerProvider(
       this.socketsContainer,
       applicationConfig,
+      !!httpServer,
     );
     this.webSocketsController = new WebSocketsController(
       serverProvider,

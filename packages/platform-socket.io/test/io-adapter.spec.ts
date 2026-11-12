@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import { config, from, mergeAll, of } from 'rxjs';
 import * as sinon from 'sinon';
+import { Namespace, Server } from 'socket.io';
 import { WsProxy } from '../../websockets/context/ws-proxy';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler';
 import { WebSocketsController } from '../../websockets/web-sockets-controller';
@@ -408,6 +409,64 @@ describe('IoAdapter', () => {
       expect(logError.secondCall.args[0]).to.be.instanceOf(RangeError);
       expect(replies).to.deep.equal(['ok']);
       expect(ack.lastCall.args).to.deep.equal(['ok']);
+    });
+  });
+
+  describe('createWithoutListener', () => {
+    it('should create a server that is not attached to any port', async () => {
+      const server = adapter.createWithoutListener() as Server;
+
+      expect(server).to.be.instanceOf(Server);
+      expect(server.engine).to.be.undefined;
+      expect(server.httpServer).to.be.undefined;
+      expect(() => server.emit('broadcast', 'to nobody')).not.to.throw();
+      await adapter.close(server);
+    });
+
+    it('should create the server through "createIOServer", so that a subclass sets it up', () => {
+      const customAdapter = new (class extends IoAdapter {
+        public createIOServer(port: number | undefined, options?: any) {
+          const server = super.createIOServer(port, options);
+          server.use((_, next) => next());
+          (server as any).setUp = true;
+          return server;
+        }
+      })();
+      const createIOServer = sinon.spy(customAdapter, 'createIOServer');
+
+      const server = customAdapter.createWithoutListener({
+        connectTimeout: 1000,
+      } as any) as any;
+
+      expect(
+        createIOServer.calledWith(
+          undefined,
+          sinon.match({ connectTimeout: 1000 }),
+        ),
+      ).to.be.true;
+      expect(server.setUp).to.be.true;
+    });
+
+    it('should return the namespace a gateway is declared on', () => {
+      const namespace = adapter.createWithoutListener({
+        namespace: '/chat',
+      } as any) as Namespace;
+
+      expect(namespace).to.be.instanceOf(Namespace);
+      expect(namespace.name).to.equal('/chat');
+    });
+
+    it('should close the adapters of the namespaces of such a server', async () => {
+      const server = adapter.createWithoutListener() as Server;
+      server.of('/chat');
+      const closeAdapters = [...server._nsps.values()].map(namespace =>
+        sinon.spy(namespace.adapter, 'close'),
+      );
+
+      await adapter.close(server);
+
+      expect(closeAdapters).to.have.length(2);
+      closeAdapters.forEach(close => expect(close.calledOnce).to.be.true);
     });
   });
 });

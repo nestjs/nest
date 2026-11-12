@@ -76,3 +76,23 @@ describe('WsAdapter maxPayload', () => {
     expect(options).to.deep.equal({ path: '/live' });
   });
 });
+
+describe('WsAdapter createWithoutListener', () => {
+  it('should create a server that does not listen', async () => {
+    const adapter = new WsAdapter();
+    const server = adapter.createWithoutListener({ path: '/live' });
+
+    expect(server.options.noServer).to.be.true;
+    expect(() => server.address()).to.throw(/noServer/);
+    await adapter.close(server);
+  });
+
+  it('should refuse a namespace, as create() does', () => {
+    const adapter = new WsAdapter();
+    sinon.stub(adapter['logger'], 'error');
+
+    expect(() =>
+      adapter.createWithoutListener({ namespace: '/chat' }),
+    ).to.throw(/does not support namespaces/);
+  });
+});
