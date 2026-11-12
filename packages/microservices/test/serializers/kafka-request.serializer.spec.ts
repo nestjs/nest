@@ -147,6 +147,51 @@ describe('KafkaRequestSerializer', () => {
     });
   });
 
+  describe('serialize an object that has other properties than a kafka message', () => {
+    // As a gateway forwards it, with a "value" its sender added
+    const order = {
+      item: 'book',
+      quantity: 1,
+      value: { item: 'book', quantity: 1000, customer: 'bob' },
+      headers: { 'x-origin': 'internal-batch' },
+      customer: 'alice',
+    };
+
+    it('should send an object with a value as the payload', async () => {
+      expect(await instance.serialize(order)).toEqual({
+        headers: {},
+        value: JSON.stringify(order),
+      });
+    });
+
+    it('should send an object with a key as the payload', async () => {
+      expect(
+        await instance.serialize({ key: 'color', setting: 'blue' }),
+      ).toEqual({
+        headers: {},
+        value: '{"key":"color","setting":"blue"}',
+      });
+    });
+
+    it('should send an object with every field of a message as a kafka message', async () => {
+      expect(
+        await instance.serialize({
+          key: '1',
+          value: { price: 100 },
+          headers: { tenant: 'custom' },
+          partition: 2,
+          timestamp: '1700000000000',
+        }),
+      ).toEqual({
+        key: '1',
+        value: '{"price":100}',
+        headers: { tenant: 'custom' },
+        partition: 2,
+        timestamp: '1700000000000',
+      });
+    });
+  });
+
   describe('serialize a kafka message whose headers are not an object', () => {
     // An echo handler returns them as the sender of the request chose them
     it.each([

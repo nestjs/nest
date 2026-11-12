@@ -12,6 +12,17 @@ import {
 // as a header of its own, at about 1 kB apiece
 const MAX_HEADER_VALUES = 10_000;
 
+// The fields of a Kafka message. An object with any other property of its own
+// is data: an object that an application forwards (`{ ...body, user }`) does
+// not become a message because the sender of the body added a "value" to it.
+const KAFKA_MESSAGE_FIELDS = [
+  'key',
+  'value',
+  'headers',
+  'partition',
+  'timestamp',
+];
+
 export interface KafkaRequest<T = any> {
   key: Buffer | string | null;
   value: T;
@@ -29,7 +40,8 @@ export class KafkaRequestSerializer implements Serializer<
     const isNotKafkaMessage =
       isNil(value) ||
       !isObject(value) ||
-      (!('key' in value) && !('value' in value));
+      (!('key' in value) && !('value' in value)) ||
+      Object.keys(value).some(field => !KAFKA_MESSAGE_FIELDS.includes(field));
 
     // Serialize a copy, headers included: ClientKafka and ServerKafka write
     // correlation metadata into the returned headers, and the caller's record
