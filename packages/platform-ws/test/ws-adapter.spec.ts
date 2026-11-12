@@ -185,6 +185,95 @@ describe('WsAdapter', () => {
         expect(client.pause.callCount).to.equal(2);
       });
 
+      describe('while it does not read from a client', () => {
+        let clock: sinon.SinonFakeTimers;
+        // one message at a time, and its handler never replies or completes
+        const bindSilentHandler = (client: any) => {
+          const replies: Subject<string>[] = [];
+          bindHandler(
+            new WsAdapter(undefined, { maxConcurrentMessages: 1 }),
+            client,
+            () => {
+              const reply$ = new Subject<string>();
+              replies.push(reply$);
+              return reply$;
+            },
+          );
+          return replies;
+        };
+        const pingableClient = () => {
+          const client = pausableClient();
+          client.ping = sinon.spy();
+          return client;
+        };
+
+        beforeEach(() => {
+          clock = sinon.useFakeTimers();
+        });
+        afterEach(() => {
+          clock.restore();
+        });
+
+        it('should ping it every 5 seconds, to find out whether it is still there', () => {
+          const client = pingableClient();
+          const replies = bindSilentHandler(client);
+
+          client.emit('message', frame({ event: 'event' }));
+          clock.tick(10_000);
+          expect(client.ping.called).to.be.false;
+
+          client.emit('message', frame({ event: 'event' }));
+          expect(client.pause.callCount).to.equal(1);
+          clock.tick(10_000);
+          expect(client.ping.callCount).to.equal(2);
+
+          // reading resumes
+          replies[0].complete();
+          expect(client.resume.callCount).to.equal(1);
+          clock.tick(10_000);
+          expect(client.ping.callCount).to.equal(2);
+          expect(clock.countTimers()).to.equal(0);
+        });
+
+        it('should not ping a client that has data queued for it', () => {
+          const client = pingableClient();
+          bindSilentHandler(client);
+          client.emit('message', frame({ event: 'event' }));
+          client.emit('message', frame({ event: 'event' }));
+
+          client.bufferedAmount = 1;
+          clock.tick(5_000);
+          expect(client.ping.called).to.be.false;
+
+          client.bufferedAmount = 0;
+          clock.tick(5_000);
+          expect(client.ping.callCount).to.equal(1);
+        });
+
+        it('should stop pinging a client that is closing', () => {
+          const client = pingableClient();
+          bindSilentHandler(client);
+          client.emit('message', frame({ event: 'event' }));
+          client.emit('message', frame({ event: 'event' }));
+
+          client.readyState = 2; // CLOSING_STATE
+          clock.tick(10_000);
+          expect(client.ping.called).to.be.false;
+          expect(clock.countTimers()).to.equal(0);
+        });
+
+        it('should stop pinging a client that has closed', () => {
+          const client = pingableClient();
+          bindSilentHandler(client);
+          client.emit('message', frame({ event: 'event' }));
+          client.emit('message', frame({ event: 'event' }));
+          expect(clock.countTimers()).to.equal(1);
+
+          client.emit('close');
+          expect(clock.countTimers()).to.equal(0);
+        });
+      });
+
       it('should close a client once more than "maxSendBufferSize" bytes are queued for it', () => {
         const client = pausableClient();
         const adapter = new WsAdapter(undefined, { maxSendBufferSize: 1024 });

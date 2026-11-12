@@ -11,7 +11,14 @@ import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-ex
 import * as http from 'http';
 import type { Socket } from 'net';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
-import { catchError, filter, first, share, takeUntil } from 'rxjs/operators';
+import {
+  catchError,
+  filter,
+  finalize,
+  first,
+  share,
+  takeUntil,
+} from 'rxjs/operators';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util';
 
 let wsPackage: any = {};
@@ -73,6 +80,10 @@ const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;
 const DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT = 1000;
+// How often a client that is not read from is pinged, to find out whether it
+// is still there. One that has left is noticed by the second ping at the
+// latest: the first may still be accepted, and answered with a reset.
+const PAUSED_CLIENT_PING_INTERVAL = 5000;
 // ws takes up to 100 MB by default, and the default parser runs JSON.parse()
 // on the whole message at once, before any guard can run
 const DEFAULT_MAX_PAYLOAD = 1024 * 1024;
@@ -220,6 +231,21 @@ export class WsAdapter extends AbstractWsAdapter {
     let isBacklogged = false;
     let pendingReplies = 0;
     let isPaused = false;
+    // A socket that is neither read from nor written to does not learn that
+    // the client has left, as the end of the connection waits behind the data
+    // not read yet, so "close" never comes. Handlers that never complete would
+    // then keep the client paused, and themselves running, for good. So a
+    // client that is not read from is pinged from time to time: the write
+    // fails once the client is gone, which closes the socket. A client with
+    // data queued for it has a write pending already.
+    let pingTimer: ReturnType<typeof setInterval> | undefined;
+    const pingPausedClient = () => {
+      if (client.readyState !== READY_STATE.OPEN_STATE) {
+        clearInterval(pingTimer);
+      } else if (!client.bufferedAmount) {
+        client.ping?.();
+      }
+    };
     const updatePaused = () => {
       const shouldPause =
         isBacklogged ||
@@ -229,6 +255,11 @@ export class WsAdapter extends AbstractWsAdapter {
         return;
       }
       isPaused = shouldPause;
+      clearInterval(pingTimer);
+      if (isPaused) {
+        pingTimer = setInterval(pingPausedClient, PAUSED_CLIENT_PING_INTERVAL);
+        pingTimer.unref?.();
+      }
       const pauseRequests =
         (this.pauseRequests.get(client) ?? 0) + (isPaused ? 1 : -1);
       this.pauseRequests.set(client, pauseRequests);
@@ -267,6 +298,7 @@ export class WsAdapter extends AbstractWsAdapter {
         },
       ),
       takeUntil(close$),
+      finalize(() => clearInterval(pingTimer)),
     );
     const onMessage = (response: any) => {
       if (client.readyState !== READY_STATE.OPEN_STATE) {
