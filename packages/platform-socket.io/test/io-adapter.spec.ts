@@ -149,6 +149,59 @@ describe('IoAdapter', () => {
       });
     });
 
+    describe('when a message refers to the same binary data more than once', () => {
+      const bindHandler = (socket: any) => {
+        const callback = vi.fn();
+        adapter.bindMessageHandlers(
+          socket,
+          [
+            {
+              message: 'upload',
+              methodName: 'upload',
+              callback,
+              isAckHandledManually: false,
+            },
+          ],
+          (data: any) => of(data),
+        );
+        return callback;
+      };
+      const connectedSocket = () => {
+        const socket = new EventEmitter() as any;
+        socket.connected = true;
+        socket.disconnect = vi.fn(() => {
+          socket.connected = false;
+          socket.emit('disconnect', 'server namespace disconnect');
+        });
+        return socket;
+      };
+
+      it('should disconnect the client without handling the message', () => {
+        const socket = connectedSocket();
+        const logWarn = vi
+          .spyOn(adapter['logger'], 'warn')
+          .mockImplementation(() => undefined);
+        const callback = bindHandler(socket);
+        const file = Buffer.from('content');
+
+        socket.emit('upload', { parts: [file, file] });
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(socket.disconnect).toHaveBeenCalledWith(true);
+        expect(logWarn).toHaveBeenCalledTimes(1);
+      });
+
+      it('should handle a message with distinct binary values', () => {
+        const socket = connectedSocket();
+        const callback = bindHandler(socket);
+
+        socket.emit('upload', { parts: [Buffer.from('a'), Buffer.from('a')] });
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(socket.disconnect).not.toHaveBeenCalled();
+      });
+    });
+
     it('should register only one disconnect listener regardless of call count', () => {
       const addListenerSpy = vi.fn();
       const fakeSocket = {

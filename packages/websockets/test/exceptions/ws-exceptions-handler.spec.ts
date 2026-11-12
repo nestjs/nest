@@ -224,6 +224,85 @@ describe('WsExceptionsHandler', () => {
       });
     });
 
+    describe('when the data of the message holds binary data', () => {
+      const binaryData = {
+        file: { name: 'a.png', content: Buffer.from('image') },
+        chunks: [new Uint8Array(4), new ArrayBuffer(4)],
+      };
+      const hostWithData = (data: unknown) =>
+        new ExecutionContextHost([client, data, pattern]);
+      let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+      beforeEach(() => {
+        loggerErrorSpy = vi
+          .spyOn((WsExceptionsHandler as any).logger, 'error')
+          .mockImplementation(() => undefined);
+      });
+      afterEach(() => {
+        loggerErrorSpy.mockRestore();
+      });
+
+      it.each([
+        ['a WsException', new WsException('Unauthorized'), 'Unauthorized'],
+        ['an unknown exception', new Error('test'), 'Internal server error'],
+      ])(
+        'should leave the data out of the cause for %s',
+        (_, exception, message) => {
+          handler.handle(exception, hostWithData(binaryData));
+
+          expect(emitStub).toHaveBeenCalledWith('exception', {
+            status: 'error',
+            message,
+            cause: { pattern },
+          });
+        },
+      );
+
+      it.each([
+        ['a Buffer', Buffer.from('x')],
+        ['an ArrayBuffer', new ArrayBuffer(1)],
+        ['a typed array', new Float32Array(1)],
+        ['a DataView', new DataView(new ArrayBuffer(1))],
+        ['a Blob', new Blob(['x'])],
+      ])('should leave out data that is %s', (_, data) => {
+        handler.handle(new WsException('Unauthorized'), hostWithData([data]));
+
+        expect(emitStub.mock.calls[0][1].cause).toEqual({ pattern });
+      });
+
+      it('should look through data nested deeper than the stack allows', () => {
+        let nested: Record<string, unknown> = { content: Buffer.from('x') };
+        for (let depth = 0; depth < 100_000; depth++) {
+          nested = { nested };
+        }
+
+        handler.handle(new WsException('Unauthorized'), hostWithData(nested));
+
+        expect(emitStub.mock.calls[0][1].cause).toEqual({ pattern });
+      });
+
+      it('should keep the data of a message without binary data', () => {
+        const data = { text: 'hello', list: [1, { a: null }] };
+        handler.handle(new WsException('Unauthorized'), hostWithData(data));
+
+        expect(emitStub.mock.calls[0][1].cause).toEqual({ pattern, data });
+      });
+
+      it('should pass the data to a custom "causeFactory" as it is', () => {
+        const causeFactory = vi.fn((pattern: string, data: unknown) => ({
+          pattern,
+          data,
+        }));
+        handler = new WsExceptionsHandler({ causeFactory });
+
+        handler.handle(
+          new WsException('Unauthorized'),
+          hostWithData(binaryData),
+        );
+
+        expect(causeFactory).toHaveBeenCalledWith(pattern, binaryData);
+      });
+    });
+
     describe('when the error payload cannot be sent with its cause', () => {
       let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
       let sendStub: ReturnType<typeof vi.fn>;

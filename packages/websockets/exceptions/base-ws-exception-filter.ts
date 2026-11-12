@@ -23,6 +23,45 @@ export interface ErrorPayload<Cause = { pattern: string; data: unknown }> {
   cause?: Cause;
 }
 
+/**
+ * Whether a value holds binary data (a Buffer, an ArrayBuffer or a view of
+ * one, or a Blob) anywhere in it. A loop with a record of what it has seen,
+ * not recursion: the value comes from the client, which decides how deep it
+ * is nested, and may refer to an object more than once.
+ */
+function holdsBinary(value: unknown): boolean {
+  const pending: unknown[] = [value];
+  const seen = new Set<object>();
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (typeof current !== 'object' || current === null) {
+      continue;
+    }
+    if (
+      current instanceof ArrayBuffer ||
+      ArrayBuffer.isView(current) ||
+      (typeof Blob !== 'undefined' && current instanceof Blob)
+    ) {
+      return true;
+    }
+    if (seen.has(current)) {
+      continue;
+    }
+    seen.add(current);
+    for (const item of Object.values(current)) {
+      pending.push(item);
+    }
+  }
+  return false;
+}
+
+/**
+ * Leaves the data out when it holds binary data, so that an error reply does
+ * not send the client's binary data back to it.
+ */
+const defaultCauseFactory = (pattern: string, data: unknown) =>
+  holdsBinary(data) ? { pattern } : { pattern, data };
+
 interface BaseWsExceptionFilterOptions {
   /**
    * When true, the data that caused the exception will be included in the response.
@@ -35,6 +74,8 @@ interface BaseWsExceptionFilterOptions {
   /**
    * A factory function that can be used to control the shape of the "cause" object.
    * This is useful when you need a custom structure for the cause object.
+   * The default one leaves the data out when it holds binary data (Buffers,
+   * ArrayBuffers or their views).
    * @default (pattern, data) => ({ pattern, data })
    */
   causeFactory?: (pattern: string, data: unknown) => Record<string, any>;
@@ -52,8 +93,7 @@ export class BaseWsExceptionFilter<
     this.options = {
       ...this.options,
       includeCause: this.options.includeCause ?? true,
-      causeFactory:
-        this.options.causeFactory ?? ((pattern, data) => ({ pattern, data })),
+      causeFactory: this.options.causeFactory ?? defaultCauseFactory,
     };
   }
 
