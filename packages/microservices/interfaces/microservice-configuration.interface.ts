@@ -123,10 +123,13 @@ export interface TcpOptions {
     deserializer?: Deserializer;
     socketClass?: Type<TcpSocket>;
     /**
-     * Maximum buffer size in characters (default: 128 * 1024 * 1024, which a
-     * string holds in 128 to 256MB). This limit prevents memory exhaustion
+     * Maximum buffer size in characters (default: 16 * 1024 * 1024, which a
+     * string holds in 16 to 32MB). This limit prevents memory exhaustion
      * when receiving large TCP messages; a packet declaring a greater length
-     * is rejected before any of it is buffered.
+     * is rejected before any of it is buffered. A complete packet is parsed
+     * in one go, which blocks the event loop meanwhile, and the parsed value
+     * can take many times the memory of its text (about 40 bytes per
+     * character for an array of small objects), so raise it with care.
      */
     maxBufferSize?: number;
     /**

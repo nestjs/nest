@@ -2,7 +2,7 @@ import { Socket } from 'net';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { JsonSocket } from '../../helpers/json-socket.js';
 
-const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
+const DEFAULT_MAX_BUFFER_SIZE = 16 * 1024 * 1024; // in characters
 
 describe('JsonSocket maxBufferSize', () => {
   describe('default maxBufferSize', () => {

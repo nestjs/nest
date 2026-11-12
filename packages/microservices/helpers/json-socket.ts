@@ -9,7 +9,11 @@ import { MessageReceiveTimeoutException } from '../errors/message-receive-timeou
 import { TcpEventsMap } from '../events/tcp.events.js';
 import { TcpSocket } from './tcp-socket.js';
 
-const DEFAULT_MAX_BUFFER_SIZE = 128 * 1024 * 1024; // in characters, 128 to 256 MBs as a string takes 1 or 2 bytes per character
+// In characters, which a string holds in 1 or 2 bytes each. A complete packet
+// is parsed in one go, and the value parsed can take far more memory than its
+// text, e.g. about 40 bytes per character for '[{"a":0},{"a":0},...]'. 16Mi
+// matches what KafkaParser accepts for a Kafka message.
+const DEFAULT_MAX_BUFFER_SIZE = 16 * 1024 * 1024;
 const DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT = 30_000;
 const DEFAULT_MESSAGE_RECEIVE_TIMEOUT = 300_000;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024; // 128 MBs in bytes
