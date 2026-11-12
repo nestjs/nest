@@ -317,7 +317,7 @@ describe('middleware utils', () => {
       ]);
       it('should return true for a path with a query string', () => {
         vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(
-          '/cats/3/avatar?size=1',
+          '/cats/3/avatar?size=1%0A',
         );
         expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(
           true,
@@ -328,6 +328,12 @@ describe('middleware utils', () => {
         '/cats/3/avatar#',
         '/cats/3/avatar?size=1#',
         'http://localhost/admin',
+        '/cats/3%0A/avatar',
+        '/cats/3%0d/avatar',
+        '/cats/3\n/avatar',
+        '/cats/3%E2%80%A8/avatar',
+        '/cats/3%e2%80%a9/avatar',
+        '/cats/3\u2028/avatar',
       ])('should return false for %j', url => {
         vi.spyOn(adapter, 'getRequestUrl').mockReturnValue(url);
         expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).toBe(

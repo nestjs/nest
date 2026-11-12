@@ -9,6 +9,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import express from 'express';
@@ -343,6 +344,75 @@ describe.each([
     });
   },
 );
+
+@Controller('statements')
+class StatementsController {
+  @Get(':id.pdf')
+  published() {
+    return 'published';
+  }
+
+  @Get(':name')
+  internal() {
+    return RETURN_VALUE;
+  }
+}
+
+@Module({
+  controllers: [StatementsController],
+})
+class MixedSegmentModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
+      .exclude({ path: 'statements/:id.pdf', method: RequestMethod.GET })
+      .forRoutes(StatementsController);
+  }
+}
+
+describe.each([
+  ['Express', () => undefined],
+  ['Fastify', () => new FastifyAdapter()],
+  ['node', () => new NodeAdapter()],
+])('Exclude middleware - parameter next to text (%s)', (_, createAdapter) => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    const testingModule = await Test.createTestingModule({
+      imports: [MixedSegmentModule],
+    }).compile();
+    const adapter = createAdapter();
+    app = adapter
+      ? testingModule.createNestApplication(adapter)
+      : testingModule.createNestApplication();
+    await listenOnLoopback(app);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it(`should exclude "/statements/1.pdf" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/statements/1.pdf')
+      .expect(200, 'published');
+  });
+
+  it(`should not exclude "/statements/drafts" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/statements/drafts')
+      .expect(200, MIDDLEWARE_VALUE);
+  });
+
+  it.each(['%0A', '%0D', '%E2%80%A8', '%E2%80%A9'])(
+    `should not exclude "/statements/1%s.pdf", a line terminator in the parameter`,
+    terminator => {
+      return request(app.getHttpServer())
+        .get(`/statements/1${terminator}.pdf`)
+        .expect(200, MIDDLEWARE_VALUE);
+    },
+  );
+});
 
 describe('Exclude middleware - route matching', () => {
   let app: INestApplication;

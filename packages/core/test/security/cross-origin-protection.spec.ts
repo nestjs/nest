@@ -596,6 +596,11 @@ describe('CrossOriginProtection', () => {
       '/hooks/a%5c..%5citems',
       '/hooks/a\\..\\items',
       '/hooks//a',
+      '/hooks/a%0A',
+      '/hooks/a%0d.pdf',
+      '/hooks/a\n',
+      '/hooks/a%E2%80%A8',
+      '/hooks/a%e2%80%a9',
       'http://app.example/webhooks',
       '',
     ])('never excludes the non-canonical path %j', url => {

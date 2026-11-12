@@ -212,10 +212,12 @@ const DENIED_MESSAGES: Record<CrossOriginDeniedReason, string> = {
  * Request paths an exclusion never applies to, because a router or a proxy
  * may resolve them to a route the exclusion was not meant for: `#` and `;`
  * (path delimiters for some routers), backslashes, empty segments, dot
- * segments, and percent-encoded `.`, `/` and `\`. Such requests are checked
- * like any other (fails closed).
+ * segments, percent-encoded `.`, `/` and `\`, and line terminators (which a
+ * parameter next to text in its segment does not match on find-my-way).
+ * Such requests are checked like any other (fails closed).
  */
-const NON_CANONICAL_PATH = /[#;\\]|\/\/|%2e|%2f|%5c|\/\.\.?(?:\/|$)/i;
+const NON_CANONICAL_PATH =
+  /[#;\\\n\r\u2028\u2029]|\/\/|%2e|%2f|%5c|%0[ad]|%e2%80%a[89]|\/\.\.?(?:\/|$)/i;
 
 /**
  * Binds {@link evaluateCrossOriginRequest} to an HTTP adapter: reads the
