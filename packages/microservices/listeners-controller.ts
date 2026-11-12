@@ -37,6 +37,7 @@ import {
 } from './context/rpc-metadata-constants';
 import { BaseRpcContext } from './ctx-host/base-rpc.context';
 import { Transport } from './enums';
+import { RpcExceptionsHandler } from './exceptions/rpc-exceptions-handler';
 import { MessageHandler, PatternMetadata, RequestContext } from './interfaces';
 import { MicroserviceEntrypointMetadata } from './interfaces/microservice-entrypoint-metadata.interface';
 import {
@@ -275,9 +276,8 @@ export class ListenersController {
     const isTreeDurable = wrapper.isDependencyTreeDurable();
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
+      let contextId: ContextId | undefined;
       try {
-        let contextId: ContextId;
-
         let [dataOrContextHost] = args;
         if (dataOrContextHost instanceof RequestContextHost) {
           contextId = this.getContextId(dataOrContextHost, isTreeDurable);
@@ -319,6 +319,14 @@ export class ListenersController {
         }
         return returnValue;
       } catch (err) {
+        const scopedExceptionFilter =
+          contextId &&
+          (await this.createScopedExceptionFilter(
+            wrapper,
+            moduleKey,
+            methodKey,
+            contextId,
+          ));
         let exceptionFilter = this.exceptionFiltersCache.get(
           instance[methodKey],
         );
@@ -332,10 +340,56 @@ export class ListenersController {
         }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        return exceptionFilter.handle(err, host);
+        return (scopedExceptionFilter || exceptionFilter).handle(err, host);
       }
     };
     return requestScopedHandler;
+  }
+
+  /**
+   * Creates the exception filters of a controller that failed to resolve for
+   * a context. Request-scoped and transient filters, the global ones
+   * included, only exist per context, where they are created after the
+   * controller, so the filters for the static context leave them out. Only
+   * the filters are created here, so that a guard or an interceptor that
+   * depends on what failed does not get in the way. When one of them fails
+   * to resolve as well, the filters for the static context are left to
+   * handle the error.
+   */
+  private async createScopedExceptionFilter(
+    wrapper: InstanceWrapper,
+    moduleKey: string,
+    methodKey: string,
+    contextId: ContextId,
+  ): Promise<RpcExceptionsHandler | undefined> {
+    const filters = (wrapper.getEnhancersMetadata() ?? []).filter(
+      enhancer => enhancer.subtype === 'filter',
+    );
+    try {
+      // Loaded one by one, as "loadEnhancersPerContext" of the supported
+      // "@nestjs/core" versions loads every enhancer of the controller
+      if (contextId !== STATIC_CONTEXT) {
+        await Promise.all(
+          filters.map(filter =>
+            this.injector.loadInjectable(
+              filter,
+              filter.host!,
+              contextId,
+              wrapper,
+            ),
+          ),
+        );
+      }
+      return this.exceptionFiltersContext.create(
+        wrapper.instance,
+        wrapper.instance[methodKey],
+        moduleKey,
+        contextId,
+        wrapper.id,
+      );
+    } catch {
+      return undefined;
+    }
   }
 
   private getContextId<T extends RequestContext = any>(

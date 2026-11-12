@@ -278,6 +278,82 @@ describe('ListenersController', () => {
       const patterns = [{}];
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
+      const createScopedWrapper = () => {
+        const filter = new InstanceWrapper({ subtype: 'filter' } as any);
+        const guard = new InstanceWrapper({ subtype: 'guard' } as any);
+        const scopedWrapper = new InstanceWrapper({
+          instance: { [methodKey]: {} },
+        });
+        sinon
+          .stub(scopedWrapper, 'getEnhancersMetadata')
+          .returns([filter, guard]);
+        return { scopedWrapper, filter };
+      };
+
+      it('should create the filters for the context of the message', async () => {
+        const error = new Error('provider failed');
+        sinon.stub(injector, 'loadPerContext').rejects(error);
+        const loadInjectable = sinon
+          .stub(injector, 'loadInjectable')
+          .resolves();
+        const { scopedWrapper, filter } = createScopedWrapper();
+        const handler = instance.createRequestScopedHandler(
+          scopedWrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+        );
+
+        await handler('data');
+
+        // Only the filters: a guard may need what failed to resolve
+        expect(loadInjectable.calledOnce).to.be.true;
+        const [enhancer, , contextId, inquirer] =
+          loadInjectable.getCall(0).args;
+        expect(enhancer).to.equal(filter);
+        expect(inquirer).to.equal(scopedWrapper);
+        expect(
+          (exceptionFiltersContext.create as sinon.SinonStub).calledWith(
+            scopedWrapper.instance,
+            scopedWrapper.instance[methodKey],
+            moduleKey,
+            contextId,
+            scopedWrapper.id,
+          ),
+        ).to.be.true;
+        expect(handleSpy.calledOnce).to.be.true;
+        expect(handleSpy.getCall(0).args[0]).to.equal(error);
+      });
+
+      it('should fall back to the static filters when the filters fail to resolve', async () => {
+        const error = new Error('provider failed');
+        sinon.stub(injector, 'loadPerContext').rejects(error);
+        sinon
+          .stub(injector, 'loadInjectable')
+          .rejects(new Error('filter failed'));
+        const { scopedWrapper } = createScopedWrapper();
+        const handler = instance.createRequestScopedHandler(
+          scopedWrapper,
+          patterns,
+          module,
+          moduleKey,
+          methodKey,
+        );
+
+        await handler('data');
+
+        const create = exceptionFiltersContext.create as sinon.SinonStub;
+        expect(create.calledOnce).to.be.true;
+        expect(create.getCall(0).args).to.deep.equal([
+          scopedWrapper.instance,
+          scopedWrapper.instance[methodKey],
+          moduleKey,
+        ]);
+        expect(handleSpy.calledOnce).to.be.true;
+        expect(handleSpy.getCall(0).args[0]).to.equal(error);
+      });
+
       it('should delegate error to exception filters', async () => {
         sinon.stub(injector, 'loadPerContext').callsFake(() => {
           throw new Error();
