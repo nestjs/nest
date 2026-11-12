@@ -1286,6 +1286,48 @@ describe('FastifyAdapter', () => {
       expect(res.body).toBe('found');
     });
 
+    // find-my-way ends a parameter name at "-", "." or "/" only
+    describe('with a parameter name the router reads otherwise', () => {
+      let warn: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+      });
+
+      it.each([
+        ['/geo/:lat,:lng', '/geo/12', '/geo/1,2', 'lat,:lng'],
+        ['/pkg/:name@:version', '/pkg/nest12', '/pkg/nest@12', 'name@:version'],
+        ['/items/:id~x', '/items/5', '/items/5~x', 'id~x'],
+      ])(
+        'should only serve the requests "%s" matches as written',
+        async (path, missUrl, url, name) => {
+          const handler = vi.fn(() => 'found');
+          fastifyAdapter.get(path, handler);
+
+          const miss = await fastifyAdapter.inject({
+            method: 'GET',
+            url: missUrl,
+          });
+          const res = await fastifyAdapter.inject({ method: 'GET', url });
+
+          expect(miss.statusCode).toBe(404);
+          expect(res.statusCode).toBe(200);
+          expect(handler).toHaveBeenCalledOnce();
+          expect(warn).toHaveBeenCalledOnce();
+          expect(warn.mock.calls[0][0]).toContain(`":${name}"`);
+        },
+      );
+
+      it.each(['/files/:name.:ext', '/ranges/:from-:to', '/a::b/:id'])(
+        'should not log anything for "%s"',
+        path => {
+          fastifyAdapter.get(path, () => 'found');
+
+          expect(warn).not.toHaveBeenCalled();
+        },
+      );
+    });
+
     // Only paths in the syntax of path-to-regexp can have middleware: no
     // route-bound middleware can be registered for these
     it.each([

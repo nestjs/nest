@@ -1458,6 +1458,16 @@ describe('Middleware (FastifyAdapter)', () => {
       }
     }
 
+    // The router reads ":lat,:lng" as one parameter
+    @Controller('geo')
+    class GeoController {
+      @Get(':lat,:lng')
+      find() {
+        handlerCalls.push('geo');
+        return 'geo';
+      }
+    }
+
     // Both parameters have the same name: the handler gets the last value
     @Controller('projects/:id/tasks')
     class TasksController {
@@ -1476,6 +1486,7 @@ describe('Middleware (FastifyAdapter)', () => {
         VersionedController,
         FilesController,
         TasksController,
+        GeoController,
       ],
     })
     class EmptyRouteParamsModule implements NestModule {
@@ -1488,6 +1499,7 @@ describe('Middleware (FastifyAdapter)', () => {
             ActionsController,
             VersionedController,
             TasksController,
+            GeoController,
           );
       }
     }
@@ -1598,6 +1610,15 @@ describe('Middleware (FastifyAdapter)', () => {
       expect(response.payload).toBe(MIDDLEWARE_RETURN_VALUE);
 
       await expectNotFound('GET', '/tenants//users/5');
+    });
+
+    it('responds with 404 to a request a route path read otherwise by the router does not match', async () => {
+      await createApp();
+
+      const response = await app.inject({ method: 'GET', url: '/geo/1,2' });
+      expect(response.payload).toBe(MIDDLEWARE_RETURN_VALUE);
+
+      await expectNotFound('GET', '/geo/12');
     });
 
     it('responds with 404 to an empty route parameter of an @All() route', async () => {
