@@ -1219,6 +1219,54 @@ describe('ServerGrpc', () => {
       details: undefined,
       metadata: undefined,
     };
+    // grpc-js converts a message that is not a string to one ("encodeURI")
+    const loneSurrogateListError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: ['document 0: ok', `document 1: Unexpected token '\ud83d'`],
+    };
+    const sendableLoneSurrogateListError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: `document 0: ok,document 1: Unexpected token '\ufffd'`,
+      details: undefined,
+      metadata: undefined,
+    };
+    const loneSurrogateCauseError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: new SyntaxError(`Unexpected token '\ud83d'`),
+    };
+    const sendableLoneSurrogateCauseError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: `SyntaxError: Unexpected token '\ufffd'`,
+      details: undefined,
+      metadata: undefined,
+    };
+    const textlessMessageError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: Object.create(null),
+    };
+    const sendableTextlessMessageError = {
+      code: GRPC_STATUS_INVALID_ARGUMENT,
+      message: 'Internal server error',
+      details: undefined,
+      metadata: undefined,
+    };
+    const nonStringMessageCases: Array<[string, unknown, unknown]> = [
+      [
+        'a list of messages',
+        loneSurrogateListError,
+        sendableLoneSurrogateListError,
+      ],
+      [
+        'an Error as the message',
+        loneSurrogateCauseError,
+        sendableLoneSurrogateCauseError,
+      ],
+      [
+        'a message without text',
+        textlessMessageError,
+        sendableTextlessMessageError,
+      ],
+    ];
 
     const createCall = () => ({
       request: {},
@@ -1233,6 +1281,7 @@ describe('ServerGrpc', () => {
     const cases: Array<[string, unknown, unknown]> = [
       ['a string', stringError, sendableStringError],
       ['a lone surrogate', loneSurrogateError, sendableLoneSurrogateError],
+      ...nonStringMessageCases,
     ];
 
     cases.forEach(([name, error, sendableError]) => {
@@ -1258,6 +1307,21 @@ describe('ServerGrpc', () => {
 
         expect(call.emit.calledOnce).to.be.true;
         expect(call.emit.firstCall.args).to.eql(['error', sendableError]);
+      });
+    });
+
+    nonStringMessageCases.forEach(([name, error]) => {
+      it(`should give grpc-js an error with ${name} whose status message it can encode`, async () => {
+        const callback = sinon.spy();
+
+        await server.createUnaryServiceMethod(() => throwError(() => error))(
+          createCall(),
+          callback,
+        );
+
+        // As grpc-js does in serverErrorToStatus() and sendStatus()
+        const [sentError] = callback.firstCall.args;
+        expect(() => encodeURI(sentError.message)).to.not.throw();
       });
     });
 
