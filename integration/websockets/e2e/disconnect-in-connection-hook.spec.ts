@@ -53,6 +53,12 @@ class NamespacedSyncDisconnectingGateway extends SyncDisconnectingGateway {}
 @WebSocketGateway({ namespace: '/chat' })
 class NamespacedObservingGateway extends ObservingGateway {}
 
+@WebSocketGateway({ namespace: '/' })
+class MainNamespaceSyncDisconnectingGateway extends SyncDisconnectingGateway {}
+
+@WebSocketGateway({ namespace: '/' })
+class MainNamespaceObservingGateway extends ObservingGateway {}
+
 const roomNamespace = /^\/room-\d+$/;
 
 @WebSocketGateway({ namespace: roomNamespace })
@@ -187,6 +193,30 @@ describe('WebSocketGateway - disconnect from the connection hook', () => {
       'observer disconnect: server namespace disconnect',
     ]);
   });
+
+  it.each([
+    [
+      'a gateway without a namespace and one on "/"',
+      [SyncDisconnectingGateway, MainNamespaceObservingGateway],
+    ],
+    [
+      'a gateway on "/" and one without a namespace',
+      [MainNamespaceSyncDisconnectingGateway, ObservingGateway],
+    ],
+  ])(
+    'should call handleDisconnect of %s after their handleConnection',
+    async (_, providers) => {
+      await connect(providers, 2);
+
+      expect(calls).toEqual([
+        'connect',
+        'after disconnect()',
+        'observer connect',
+        'disconnect: server namespace disconnect',
+        'observer disconnect: server namespace disconnect',
+      ]);
+    },
+  );
 
   it('should call handleConnection of every gateway sharing a RegExp namespace', async () => {
     await connect([RoomGateway, OtherRoomGateway], 0, {

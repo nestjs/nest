@@ -108,6 +108,25 @@ describe('SocketServerProvider', () => {
         expect(create).not.toHaveBeenCalled();
       });
 
+      it.each([
+        ['declared first', true],
+        ['declared second', false],
+      ])(
+        `should share the streams of the gateways without a namespace with a gateway on "/" %s`,
+        (_, isNamespacedFirst) => {
+          const scanRoot = () => instance.scanForSocketServer({ path }, port);
+          const scanSlash = () =>
+            instance.scanForSocketServer({ path, namespace: '/' }, port);
+          const [slashHost, rootHost] = isNamespacedFirst
+            ? [scanSlash(), scanRoot()]
+            : [scanRoot(), scanSlash()].reverse();
+
+          expect(slashHost).not.toBe(rootHost);
+          expect(slashHost.connection).toBe(rootHost.connection);
+          expect(slashHost.disconnect).toBe(rootHost.disconnect);
+        },
+      );
+
       it(`should not return the host of another namespace, path or port`, () => {
         const host = instance.scanForSocketServer(
           { path, namespace: 'random' },

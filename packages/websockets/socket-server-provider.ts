@@ -79,6 +79,16 @@ export class SocketServerProvider {
     );
     const serverAndEventStreamsHost =
       ServerAndEventStreamsFactory.create(namespaceServer);
+    // "/" is the namespace of the gateways without one, so a gateway on it
+    // shares their streams too, while it keeps the namespace as its server
+    const rootHost =
+      namespaceConfig.namespace === '/'
+        ? this.socketsContainer.getOneByConfig({ port, path: options.path })
+        : undefined;
+    if (rootHost) {
+      serverAndEventStreamsHost.connection = rootHost.connection;
+      serverAndEventStreamsHost.disconnect = rootHost.disconnect;
+    }
     this.socketsContainer.addOne(namespaceConfig, serverAndEventStreamsHost);
     return serverAndEventStreamsHost;
   }
