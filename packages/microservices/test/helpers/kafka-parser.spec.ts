@@ -238,5 +238,16 @@ describe('KafkaParser', () => {
         MaxPacketLengthExceededException,
       );
     });
+
+    it.each([NaN, Number(undefined), '16mb' as unknown as number])(
+      'should limit the message size to 16 MiB when "maxMessageSize" is %s',
+      maxMessageSize => {
+        kafkaParser = new KafkaParser({ maxMessageSize });
+        const value = { length: 16 * 1024 * 1024 + 1 };
+        expect(() => kafkaParser.parse({ value })).toThrow(
+          MaxPacketLengthExceededException,
+        );
+      },
+    );
   });
 });

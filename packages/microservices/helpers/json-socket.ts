@@ -20,6 +20,16 @@ const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024; // 128 MBs in bytes
 const DEFAULT_DRAIN_TIMEOUT = 30_000;
 const MAX_CONTENT_LENGTH_SIZE = 32; // in characters, a string length never has more than 16 digits
 
+/**
+ * A limit that is missing, or that is not a number (e.g. NaN from
+ * "Number(process.env.UNSET)", or '16mb'), gets its default. Every check on
+ * a limit is a comparison or a truthiness test, and none of them trips for
+ * NaN, so keeping it would turn the limit off.
+ */
+function resolveLimit(value: number | undefined, defaultValue: number) {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
 export interface JsonSocketOptions {
   maxBufferSize?: number;
   incompleteMessageTimeout?: number;
@@ -50,14 +60,26 @@ export class JsonSocket extends TcpSocket {
 
   constructor(socket: any, options?: JsonSocketOptions) {
     super(socket);
-    this.maxBufferSize = options?.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE;
-    this.incompleteMessageTimeout =
-      options?.incompleteMessageTimeout ?? DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT;
-    this.messageReceiveTimeout =
-      options?.messageReceiveTimeout ?? DEFAULT_MESSAGE_RECEIVE_TIMEOUT;
-    this.maxSendBufferSize =
-      options?.maxSendBufferSize ?? DEFAULT_MAX_SEND_BUFFER_SIZE;
-    this.drainTimeout = options?.drainTimeout ?? DEFAULT_DRAIN_TIMEOUT;
+    this.maxBufferSize = resolveLimit(
+      options?.maxBufferSize,
+      DEFAULT_MAX_BUFFER_SIZE,
+    );
+    this.incompleteMessageTimeout = resolveLimit(
+      options?.incompleteMessageTimeout,
+      DEFAULT_INCOMPLETE_MESSAGE_TIMEOUT,
+    );
+    this.messageReceiveTimeout = resolveLimit(
+      options?.messageReceiveTimeout,
+      DEFAULT_MESSAGE_RECEIVE_TIMEOUT,
+    );
+    this.maxSendBufferSize = resolveLimit(
+      options?.maxSendBufferSize,
+      DEFAULT_MAX_SEND_BUFFER_SIZE,
+    );
+    this.drainTimeout = resolveLimit(
+      options?.drainTimeout,
+      DEFAULT_DRAIN_TIMEOUT,
+    );
     this.pauseOnBackpressure = options?.pauseOnBackpressure ?? true;
 
     this.socket.on(TcpEventsMap.CLOSE, () => {
