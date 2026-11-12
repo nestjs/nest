@@ -3,6 +3,7 @@ import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
 import { MQTT_MAX_TOPIC_LENGTH } from '../../constants';
+import { InvalidMqttTopicNameException } from '../../errors/invalid-mqtt-topic-name.exception';
 import { MaxMqttTopicLengthExceededException } from '../../errors/max-mqtt-topic-length-exceeded.exception';
 import { MqttEventsMap } from '../../events/mqtt.events';
 import { ReadPacket } from '../../interfaces';
@@ -77,6 +78,30 @@ describe('ClientMqtt', () => {
     it('should add callback to routing map', async () => {
       client['publish'](msg, () => {});
       expect(client['routingMap'].has(id)).to.be.true;
+    });
+    describe('when a topic would hold a wildcard or the null character', () => {
+      // A pattern built from request data, such as `devices/${id}/status`
+      [
+        'devices/+/status',
+        'devices/#',
+        'devices/a+b',
+        'devices/\u0000',
+      ].forEach(pattern => {
+        it(`should fail the request on ${JSON.stringify(pattern)} without subscribing or publishing`, () => {
+          const callback = sinon.spy();
+
+          client['publish']({ pattern, data: 'data' }, callback);
+
+          expect(callback.calledOnce).to.be.true;
+          expect(callback.firstCall.args[0].err).to.be.instanceOf(
+            InvalidMqttTopicNameException,
+          );
+          expect(subscribeSpy.called).to.be.false;
+          expect(publishSpy.called).to.be.false;
+          expect(client['routingMap'].size).to.equal(0);
+          expect(client['subscriptionsCount'].size).to.equal(0);
+        });
+      });
     });
     describe('when a topic would exceed the maximum topic length', () => {
       // A pattern that leaves just enough room for "/reply"
@@ -448,6 +473,14 @@ describe('ClientMqtt', () => {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
+    });
+    ['devices/+/status', 'devices/#', 'devices/\u0000'].forEach(pattern => {
+      it(`should not publish an event on ${JSON.stringify(pattern)}`, () => {
+        expect(() =>
+          client['dispatchEvent']({ pattern, data: 'data' }),
+        ).to.throw(InvalidMqttTopicNameException);
+        expect(publishStub.called).to.be.false;
+      });
     });
     it('should not publish an event whose topic exceeds the maximum topic length', () => {
       const pattern = 'a'.repeat(MQTT_MAX_TOPIC_LENGTH + 1);
