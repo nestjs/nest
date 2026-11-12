@@ -5,7 +5,7 @@ import {
   Server as NetServer,
   Socket as NetSocket,
 } from 'net';
-import { Observable, of, tap, throwError as _throw } from 'rxjs';
+import { Observable, of, Subject, tap, throwError as _throw } from 'rxjs';
 import { CallHandler } from '../../../common/index.js';
 import { ApplicationConfig } from '../../../core/application-config.js';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
@@ -876,6 +876,271 @@ describe('ServerTCP', () => {
         const jsonSocket = server['getSocketInstance'](socket);
         expect(jsonSocket['drainTimeout']).toBe(5000);
       });
+    });
+  });
+
+  describe('maxConcurrentMessages', () => {
+    const frame = (packet: unknown) => {
+      const json = JSON.stringify(packet);
+      return `${json.length}#${json}`;
+    };
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+    const createNetSocketStub = () =>
+      Object.assign(new EventEmitter(), {
+        write: vi.fn(() => true),
+        end: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        destroy: vi.fn(),
+        writableLength: 0,
+      });
+    const createDeferredHandler = (isEventHandler = true) => {
+      const pending: Array<() => void> = [];
+      const handler = Object.assign(
+        vi.fn(() => new Promise<void>(resolve => pending.push(resolve))),
+        { isEventHandler },
+      );
+      return { handler, pending };
+    };
+    const event = { pattern: 'test', data: 'tests' };
+
+    let netSocket: ReturnType<typeof createNetSocketStub>;
+
+    const bind = (options: ConstructorParameters<typeof ServerTCP>[0]) => {
+      server = new ServerTCP(options);
+      untypedServer = server as any;
+      vi.spyOn(untypedServer, 'handleError').mockImplementation(() => {});
+      vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+      netSocket = createNetSocketStub();
+      server.bindHandler(netSocket as any);
+    };
+
+    it('should default to 1000', () => {
+      for (const maxConcurrentMessages of [undefined, NaN]) {
+        expect(
+          new ServerTCP({ maxConcurrentMessages })['maxConcurrentMessages'],
+        ).toBe(1000);
+      }
+      expect(new ServerTCP({})['maxConcurrentMessages']).toBe(1000);
+    });
+    it('should be lifted with 0', () => {
+      expect(
+        new ServerTCP({ maxConcurrentMessages: 0 })['maxConcurrentMessages'],
+      ).toBe(Infinity);
+    });
+    it('should hold the messages of a peer while that many of them are pending', async () => {
+      bind({ maxConcurrentMessages: 2 });
+      const { handler, pending } = createDeferredHandler();
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(5)));
+      await flush();
+      expect(handler).toHaveBeenCalledTimes(2);
+      // Reading goes on, so that a peer that leaves is noticed
+      expect(netSocket.pause).not.toHaveBeenCalled();
+
+      pending[0]();
+      await flush();
+      expect(handler).toHaveBeenCalledTimes(3);
+
+      while (handler.mock.calls.length < 5) {
+        pending.splice(0).forEach(resolve => resolve());
+        await flush();
+      }
+      expect(handler).toHaveBeenCalledTimes(5);
+    });
+    it('should count a request for as long as its stream is pending', async () => {
+      bind({ maxConcurrentMessages: 1 });
+      const streams: Subject<unknown>[] = [];
+      const handler = vi.fn(async () => {
+        const stream = new Subject<unknown>();
+        streams.push(stream);
+        return stream;
+      });
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit(
+        'data',
+        Buffer.from(
+          frame({ ...event, id: '1' }) +
+            frame({ ...event, id: '2' }) +
+            frame({ ...event, id: '3' }),
+        ),
+      );
+      await flush();
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      streams[0].next('reply');
+      await flush();
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      streams[0].complete();
+      await flush();
+      expect(handler).toHaveBeenCalledTimes(2);
+
+      streams[1].error(new Error('stream failed'));
+      await flush();
+      expect(handler).toHaveBeenCalledTimes(3);
+    });
+    it.each([
+      ['ended the connection', true, 2],
+      ['was disconnected', false, 1],
+    ])(
+      'should end the pending streams of a peer that %s',
+      async (_, readableEnded, expectedCalls) => {
+        bind({ maxConcurrentMessages: 1 });
+        const handler = vi.fn(async () => new Subject<unknown>());
+        untypedServer.messageHandlers = objectToMap({ test: handler });
+
+        netSocket.emit(
+          'data',
+          Buffer.from(frame({ ...event, id: '1' }) + frame(event)),
+        );
+        await flush();
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        // The stream ends with the connection, which settles the request.
+        // What a peer sent before it ended the connection is still handled.
+        Object.assign(netSocket, { destroyed: true, readableEnded });
+        netSocket.emit('close');
+        await flush();
+
+        expect(handler).toHaveBeenCalledTimes(expectedCalls);
+      },
+    );
+    it('should not count a message whose handler rejects any longer', async () => {
+      bind({ maxConcurrentMessages: 1 });
+      const handler = Object.assign(
+        vi.fn(async () => {
+          throw new Error('handler failed');
+        }),
+        { isEventHandler: true },
+      );
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(3)));
+      for (let i = 0; i < 3; i++) {
+        await flush();
+      }
+
+      expect(handler).toHaveBeenCalledTimes(3);
+    });
+    it('should not count messages that no handler is started for', async () => {
+      bind({ maxConcurrentMessages: 1 });
+      const { handler } = createDeferredHandler();
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit(
+        'data',
+        Buffer.from(
+          frame({ pattern: 'unknown' }) +
+            frame({ pattern: 'unknown', id: '1' }) +
+            frame({ pattern: 'test', id: [['nested']] }) +
+            frame(event) +
+            frame(event),
+        ),
+      );
+      for (let i = 0; i < 5; i++) {
+        await flush();
+      }
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      // The reply to the request for which there is no handler
+      expect(netSocket.write).toHaveBeenCalledOnce();
+    });
+    it('should not count a message that fails to deserialize any longer', async () => {
+      bind({ maxConcurrentMessages: 1 });
+      const { handler } = createDeferredHandler();
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+      untypedServer.deserializer = {
+        deserialize: vi
+          .fn()
+          .mockRejectedValueOnce(new Error('cannot deserialize'))
+          .mockImplementation((packet: unknown) => packet),
+      };
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(2)));
+      await flush();
+      await flush();
+
+      expect(handler).toHaveBeenCalledOnce();
+    });
+    it('should count the messages a handler is yet to be started for', async () => {
+      bind({ maxConcurrentMessages: 2 });
+      const deserializing: Array<() => void> = [];
+      untypedServer.deserializer = {
+        deserialize: (packet: unknown) =>
+          new Promise(resolve => deserializing.push(() => resolve(packet))),
+      };
+      const handler = Object.assign(vi.fn(), { isEventHandler: true });
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(5)));
+      await flush();
+      expect(deserializing).toHaveLength(2);
+
+      deserializing.forEach(resolve => resolve());
+      await flush();
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(deserializing).toHaveLength(4);
+    });
+    it('should run the processing end hook before handling the next message', async () => {
+      bind({ maxConcurrentMessages: 1 });
+      const order: string[] = [];
+      untypedServer.onProcessingEndHook = () => order.push('end hook');
+      const handler = Object.assign(
+        vi.fn(async () => {
+          order.push('handler');
+        }),
+        { isEventHandler: true },
+      );
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(2)));
+      await flush();
+      await flush();
+
+      expect(order).toEqual(['handler', 'end hook', 'handler', 'end hook']);
+    });
+    it('should count the messages of each peer separately', async () => {
+      bind({ maxConcurrentMessages: 1 });
+      const { handler } = createDeferredHandler();
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+      const otherNetSocket = createNetSocketStub();
+      server.bindHandler(otherNetSocket as any);
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(2)));
+      otherNetSocket.emit('data', Buffer.from(frame(event).repeat(2)));
+      await flush();
+
+      expect(handler).toHaveBeenCalledTimes(2);
+    });
+    it('should not handle what was held once the server is closed', async () => {
+      bind({ maxConcurrentMessages: 1 });
+      const { handler, pending } = createDeferredHandler();
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(3)));
+      await flush();
+      // The peer had ended the connection, so there is no socket left to
+      // destroy
+      Object.assign(netSocket, { destroyed: true, readableEnded: true });
+      netSocket.emit('close');
+      server.close();
+      pending[0]();
+      await flush();
+
+      expect(handler).toHaveBeenCalledOnce();
+    });
+    it('should not be applied with 0', async () => {
+      bind({ maxConcurrentMessages: 0 });
+      const { handler } = createDeferredHandler();
+      untypedServer.messageHandlers = objectToMap({ test: handler });
+
+      netSocket.emit('data', Buffer.from(frame(event).repeat(2000)));
+      await flush();
+
+      expect(handler).toHaveBeenCalledTimes(2000);
     });
   });
 });

@@ -11,6 +11,7 @@ import {
   TCP_DEFAULT_PORT,
 } from '../constants.js';
 import { getHandlerObservableNotifier } from '../context/rpc-context-creator.js';
+import { BaseRpcContext } from '../ctx-host/base-rpc.context.js';
 import { TcpContext } from '../ctx-host/tcp.context.js';
 import { Transport } from '../enums/index.js';
 import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events.js';
@@ -29,6 +30,8 @@ import {
 import { Server } from './server.js';
 import { isUndefined } from '@nestjs/common/internal';
 
+const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
+
 /**
  * @publicApi
  */
@@ -44,6 +47,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly messageReceiveTimeout?: number;
   protected readonly maxSendBufferSize?: number;
   protected readonly drainTimeout?: number;
+  protected readonly maxConcurrentMessages: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
   protected retryTimer?: ReturnType<typeof setTimeout>;
@@ -68,6 +72,18 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     TcpSocket,
     Observable<void>
   >();
+  /**
+   * How many messages of each socket are being handled.
+   */
+  protected readonly pendingMessages = new WeakMap<TcpSocket, number>();
+  /**
+   * What settles the message of a context, until a processing end hook
+   * runner takes it over (see "createProcessingEndHookRunner").
+   */
+  protected readonly pendingMessageSettlers = new WeakMap<
+    BaseRpcContext,
+    () => void
+  >();
 
   constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
@@ -90,6 +106,15 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     );
     this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
     this.drainTimeout = this.getOptionsProp(options, 'drainTimeout');
+    // Not a number gets the default as well, and 0 lifts the limit
+    const maxConcurrentMessages = this.getOptionsProp(
+      options,
+      'maxConcurrentMessages',
+    );
+    this.maxConcurrentMessages =
+      maxConcurrentMessages == null || isNaN(maxConcurrentMessages)
+        ? DEFAULT_MAX_CONCURRENT_MESSAGES
+        : maxConcurrentMessages || Infinity;
 
     this.init();
     this.initializeSerializer(options);
@@ -162,10 +187,33 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   }
 
   public async handleMessage(socket: TcpSocket, rawMessage: unknown) {
-    const packet = await this.deserializer.deserialize(rawMessage);
-    const pattern = this.getPatternAsString(packet.pattern);
+    // Up to its first "await" this runs within the "message" event, so a
+    // socket paused here emits no further message of the same read
+    const settle = this.trackPendingMessage(socket);
+    let tcpContext: TcpContext | undefined;
+    try {
+      const packet = await this.deserializer.deserialize(rawMessage);
+      const pattern = this.getPatternAsString(packet.pattern);
 
-    const tcpContext = new TcpContext([socket, pattern, packet.metadata]);
+      tcpContext = new TcpContext([socket, pattern, packet.metadata]);
+      this.pendingMessageSettlers.set(tcpContext, settle);
+      return await this.dispatchMessage(socket, packet, pattern, tcpContext);
+    } finally {
+      // A message a handler was started for is settled by its processing end
+      // hook runner (see "createProcessingEndHookRunner"), once the handler
+      // and the stream it returned are done. Any other is done with now.
+      if (!tcpContext || this.pendingMessageSettlers.delete(tcpContext)) {
+        settle();
+      }
+    }
+  }
+
+  protected dispatchMessage(
+    socket: TcpSocket,
+    packet: ReadPacket,
+    pattern: string,
+    tcpContext: TcpContext,
+  ) {
     if (isUndefined((packet as IncomingRequest).id)) {
       const handler = this.getHandlerByPattern(pattern);
       if (!handler || handler.isEventHandler) {
@@ -216,6 +264,63 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
         socket.sendMessage(outgoingResponse);
       },
     );
+  }
+
+  /**
+   * Counts a message of "socket" as pending, and asks the socket for no
+   * further messages while "maxConcurrentMessages" of them are. How many a
+   * peer sends before any of them is done is up to the peer, and each takes
+   * up memory for as long as its handler, and the stream it returned, run.
+   * Returns what to call, once, when the message is no longer pending.
+   */
+  protected trackPendingMessage(socket: TcpSocket): () => void {
+    const pending = (this.pendingMessages.get(socket) ?? 0) + 1;
+    this.pendingMessages.set(socket, pending);
+    if (pending >= this.maxConcurrentMessages) {
+      // A socket class written for an older version may lack it
+      socket.pauseMessages?.();
+    }
+
+    let isPending = true;
+    return () => {
+      if (!isPending) {
+        return;
+      }
+      isPending = false;
+      const stillPending = this.pendingMessages.get(socket)! - 1;
+      this.pendingMessages.set(socket, stillPending);
+      // Nothing more is dispatched once the server is closed, including what
+      // a socket has read but not emitted yet
+      if (
+        stillPending < this.maxConcurrentMessages &&
+        !this.isManuallyTerminated
+      ) {
+        socket.resumeMessages?.();
+      }
+    };
+  }
+
+  /**
+   * Keeps a message pending from the moment its handler is about to run until
+   * the handler, and the stream it returned, have settled, which is also when
+   * the processing end hook runs.
+   */
+  protected override createProcessingEndHookRunner(
+    context: BaseRpcContext,
+  ): () => void {
+    const runEndHook = super.createProcessingEndHookRunner(context);
+    const settle = this.pendingMessageSettlers.get(context);
+    if (!settle) {
+      return runEndHook;
+    }
+    this.pendingMessageSettlers.delete(context);
+    return () => {
+      try {
+        runEndHook();
+      } finally {
+        settle();
+      }
+    };
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {

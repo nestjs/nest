@@ -171,8 +171,21 @@ export interface TcpOptions {
      * so a peer that keeps reading is given more time, while one that stops
      * reading can no longer hold its responses, up to "maxSendBufferSize",
      * in memory indefinitely. Set to 0 to disable.
+     *
+     * It also bounds how long reading may stay suspended because of
+     * "maxConcurrentMessages" with no pending message settling.
      */
     drainTimeout?: number;
+    /**
+     * How many messages of a single peer may be handled at the same time
+     * (default: 1000). A message counts from the moment it is read until its
+     * handler, and the stream the handler returned, have settled. Later
+     * messages wait, and once more than "maxBufferSize" characters are
+     * waiting, reading from the peer is suspended. If none of its pending
+     * messages settles for "drainTimeout" after that, the connection is
+     * dropped. Set to 0 to disable.
+     */
+    maxConcurrentMessages?: number;
   };
 }
 

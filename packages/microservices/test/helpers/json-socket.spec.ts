@@ -5,6 +5,7 @@ import { IncompleteMessageTimeoutException } from '../../errors/incomplete-messa
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
 import { MaxSendBufferSizeExceededException } from '../../errors/max-send-buffer-size-exceeded.exception.js';
 import { MessageReceiveTimeoutException } from '../../errors/message-receive-timeout.exception.js';
+import { PendingMessagesTimeoutException } from '../../errors/pending-messages-timeout.exception.js';
 import { JsonSocket } from '../../helpers/json-socket.js';
 
 function makeSocketStub(): any {
@@ -548,6 +549,200 @@ describe('JsonSocket', () => {
 
       expect(received).toHaveLength(3);
       expect(socket.pause).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('pauseMessages', () => {
+    it('emits no further frame of a read until messages are resumed', () => {
+      socketStub.on('message', () => {
+        if (received.length === 2) {
+          jsonSocket.pauseMessages();
+        }
+      });
+
+      (jsonSocket as any).handleData(
+        frame({ n: 1 }) + frame({ n: 2 }) + frame({ n: 3 }) + frame({ n: 4 }),
+      );
+      expect(received).toEqual([{ n: 1 }, { n: 2 }]);
+
+      jsonSocket.resumeMessages();
+      expect(received).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }]);
+    });
+
+    it('keeps reading until more than maxBufferSize characters wait', () => {
+      const socket = makeSocketStub();
+      const jsonSocket = new JsonSocket(socket, { maxBufferSize: 100 });
+      const messages: unknown[] = [];
+      socket.on('message', (msg: unknown) => messages.push(msg));
+      const packet = frame({ text: 'x'.repeat(30) }); // 46 characters
+
+      jsonSocket.pauseMessages();
+      (jsonSocket as any).handleData(packet + packet);
+      // A peer that leaves is still noticed
+      expect(socket.pause).not.toHaveBeenCalled();
+
+      (jsonSocket as any).handleData(packet);
+      expect(socket.pause).toHaveBeenCalledOnce();
+      expect(messages).toEqual([]);
+
+      jsonSocket.resumeMessages();
+      expect(socket.resume).toHaveBeenCalledOnce();
+      expect(messages).toHaveLength(3);
+    });
+
+    it('does not time out complete frames that wait to be emitted', () => {
+      vi.useFakeTimers();
+      try {
+        const socket = makeSocketStub();
+        const jsonSocket = new JsonSocket(socket);
+        jsonSocket.pauseMessages();
+        socket.emit('data', Buffer.from(frame({ n: 1 })));
+
+        // The peer waits for its replies meanwhile
+        vi.advanceTimersByTime(600_000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not count the time messages are paused against the peer', () => {
+      vi.useFakeTimers();
+      try {
+        const socket = makeSocketStub();
+        const jsonSocket = new JsonSocket(socket, {
+          incompleteMessageTimeout: 1000,
+          messageReceiveTimeout: 3000,
+        });
+        socket.emit('data', Buffer.from('100#partial'));
+        vi.advanceTimersByTime(500);
+
+        jsonSocket.pauseMessages();
+        vi.advanceTimersByTime(10_000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+
+        jsonSocket.resumeMessages();
+        vi.advanceTimersByTime(999);
+        expect(socket.destroy).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(socket.destroy).toHaveBeenCalledOnce();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    describe('while reading is suspended', () => {
+      const packet = frame({ text: 'x'.repeat(100) });
+
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('drops a peer none of whose messages settles for drainTimeout', () => {
+        const socket = makeSocketStub();
+        const errors: string[] = [];
+        socket.on('error', (message: string) => errors.push(message));
+        const jsonSocket = new JsonSocket(socket, {
+          maxBufferSize: 100,
+          drainTimeout: 1000,
+        });
+        jsonSocket.pauseMessages();
+        (jsonSocket as any).handleData(packet);
+        expect(socket.pause).toHaveBeenCalledOnce();
+
+        // With reading suspended, a peer that left would not be noticed
+        vi.advanceTimersByTime(999);
+        expect(socket.destroy).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+
+        expect(socket.destroy).toHaveBeenCalledOnce();
+        expect(errors).toEqual([
+          new PendingMessagesTimeoutException(packet.length, 1000).message,
+        ]);
+      });
+
+      it('keeps a peer whose messages are resumed in time', () => {
+        const socket = makeSocketStub();
+        const jsonSocket = new JsonSocket(socket, {
+          maxBufferSize: 100,
+          drainTimeout: 1000,
+        });
+        jsonSocket.pauseMessages();
+        (jsonSocket as any).handleData(packet);
+        vi.advanceTimersByTime(500);
+        jsonSocket.resumeMessages();
+
+        vi.advanceTimersByTime(10_000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+      });
+
+      it('keeps the peer when drainTimeout is 0', () => {
+        const socket = makeSocketStub();
+        const jsonSocket = new JsonSocket(socket, {
+          maxBufferSize: 100,
+          drainTimeout: 0,
+        });
+        jsonSocket.pauseMessages();
+        (jsonSocket as any).handleData(packet);
+
+        vi.advanceTimersByTime(600_000);
+        expect(socket.destroy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('drops the frames waiting once the connection is torn down', () => {
+      jsonSocket.pauseMessages();
+      (jsonSocket as any).handleData(frame({ n: 1 }));
+      socketStub.destroyed = true;
+
+      jsonSocket.resumeMessages();
+      expect(received).toEqual([]);
+    });
+
+    it('still emits the frames of a peer that ended the connection after them', () => {
+      jsonSocket.pauseMessages();
+      (jsonSocket as any).handleData(frame({ n: 1 }) + frame({ n: 2 }));
+      socketStub.readableEnded = true;
+      socketStub.destroyed = true;
+      socketStub.emit('close');
+
+      jsonSocket.resumeMessages();
+      expect(received).toEqual([{ n: 1 }, { n: 2 }]);
+    });
+
+    it('emits nothing while the outgoing buffer is still backed up', () => {
+      (jsonSocket as any).handleData(frame({ n: 1 }));
+      jsonSocket.pauseMessages();
+      (jsonSocket as any).handleData(frame({ n: 2 }));
+      socketStub.write.mockReturnValue(false);
+      jsonSocket.sendMessage({ some: 'payload' });
+      expect(socketStub.pause).toHaveBeenCalledOnce();
+
+      jsonSocket.resumeMessages();
+      expect(socketStub.resume).not.toHaveBeenCalled();
+      expect(received).toEqual([{ n: 1 }]);
+
+      socketStub.emit('drain');
+      expect(socketStub.resume).toHaveBeenCalledOnce();
+      expect(received).toEqual([{ n: 1 }, { n: 2 }]);
+    });
+
+    it('emits nothing after a drain while messages are paused', () => {
+      socketStub.write.mockReturnValue(false);
+      jsonSocket.sendMessage({ some: 'payload' });
+      jsonSocket.pauseMessages();
+      socketStub.emit('drain');
+      // Reading goes on while fewer than maxBufferSize characters wait
+      expect(socketStub.resume).toHaveBeenCalledOnce();
+
+      (jsonSocket as any).handleData(frame({ n: 1 }));
+      expect(received).toEqual([]);
+
+      jsonSocket.resumeMessages();
+      expect(received).toEqual([{ n: 1 }]);
     });
   });
 
