@@ -2,8 +2,10 @@ import { Metadata } from '@grpc/grpc-js';
 import { Logger } from '@nestjs/common';
 import { EventEmitter } from 'events';
 import { join } from 'path';
-import { lastValueFrom, Observable, Subject, throwError } from 'rxjs';
+import { lastValueFrom, Observable, of, Subject, throwError } from 'rxjs';
+import { Writable } from 'stream';
 import { ClientGrpcProxy } from '../../client/index.js';
+import { GrpcStatus } from '../../enums/index.js';
 import { ReadPacket } from '../../interfaces/index.js';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception.js';
@@ -467,6 +469,83 @@ describe('ClientGrpcProxy', () => {
 
         expect(errorSpy).toHaveBeenCalledWith(upstreamError);
         expect(callMock.cancel).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('when the request stream emits null', () => {
+    const nullRequestError = {
+      code: GrpcStatus.INTERNAL,
+      details: 'The request stream emitted a null value',
+    };
+    const methodName = 'm';
+
+    // An object mode stream, like a grpc-js call: "write(null)" throws
+    function createCall() {
+      const written: unknown[] = [];
+      return Object.assign(
+        new Writable({
+          objectMode: true,
+          write(chunk, _encoding, callback) {
+            written.push(chunk);
+            callback();
+          },
+        }),
+        { written, cancel: vi.fn(), finished: false },
+      );
+    }
+
+    describe.each([
+      ['a bidirectional call', 'createStreamServiceMethod', true],
+      ['a client streaming call', 'createUnaryServiceMethod', false],
+    ] as const)('on %s', (_, factory, responseStream) => {
+      let call: ReturnType<typeof createCall>;
+      let callFn: (...args: unknown[]) => Observable<unknown>;
+      let errorSpy: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        call = createCall();
+        errorSpy = vi.fn();
+        const obj = {
+          [methodName]: Object.assign(() => call, {
+            requestStream: true,
+            responseStream,
+          }),
+        };
+        callFn = client[factory](obj, methodName);
+      });
+
+      it('should fail the call instead of writing null', () => {
+        callFn(of('a', null, 'b')).subscribe({ error: errorSpy });
+
+        expect(call.written).toEqual(['a']);
+        // The server must not take the rest of the stream for all of it
+        expect(call.writableEnded).toBe(false);
+        expect(errorSpy).toHaveBeenCalledOnce();
+        expect(errorSpy.mock.calls[0][0]).toMatchObject(nullRequestError);
+        expect(call.cancel).toHaveBeenCalled();
+      });
+
+      it('should unsubscribe from a request stream that emits null later', () => {
+        const upstream = new Subject<string | null>();
+        callFn(upstream).subscribe({ error: errorSpy });
+
+        upstream.next('a');
+        expect(errorSpy).not.toHaveBeenCalled();
+        upstream.next(null);
+
+        expect(call.written).toEqual(['a']);
+        expect(errorSpy.mock.calls[0][0]).toMatchObject(nullRequestError);
+        expect(call.cancel).toHaveBeenCalled();
+        expect(upstream.observed).toBe(false);
+      });
+
+      it('should write the other values and end the call', () => {
+        callFn(of('a', 'b')).subscribe({ error: errorSpy });
+
+        expect(call.written).toEqual(['a', 'b']);
+        expect(call.writableEnded).toBe(true);
+        expect(errorSpy).not.toHaveBeenCalled();
       });
     });
   });
