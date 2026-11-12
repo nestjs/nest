@@ -109,6 +109,10 @@ export class WsAdapter extends AbstractWsAdapter {
   protected readonly maxSendBufferSize: number;
   protected readonly unclaimedUpgradeTimeout: number;
   protected readonly maxPayload: number;
+  // How many gateways hold each client back. Gateways that share a server
+  // bind their handlers to the same client, and a single resume() undoes
+  // every pause().
+  private readonly pauseRequests = new WeakMap<object, number>();
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
@@ -211,7 +215,8 @@ export class WsAdapter extends AbstractWsAdapter {
     // ws reads everything a client sends, whether or not its messages can be
     // handled yet and whether or not it reads the replies. Reading stops while
     // messages wait for their turn, or while replies the client has not read
-    // pile up, and resumes once it has caught up.
+    // pile up, and resumes once it has caught up with every gateway whose
+    // handlers are bound to it.
     let isBacklogged = false;
     let pendingReplies = 0;
     let isPaused = false;
@@ -224,9 +229,12 @@ export class WsAdapter extends AbstractWsAdapter {
         return;
       }
       isPaused = shouldPause;
-      if (isPaused) {
+      const pauseRequests =
+        (this.pauseRequests.get(client) ?? 0) + (isPaused ? 1 : -1);
+      this.pauseRequests.set(client, pauseRequests);
+      if (isPaused && pauseRequests === 1) {
         client.pause?.();
-      } else {
+      } else if (!isPaused && pauseRequests === 0) {
         client.resume?.();
       }
     };
