@@ -4,7 +4,13 @@ import http, { IncomingMessage, ServerResponse } from 'http';
 import { connect, type AddressInfo } from 'net';
 import { brotliCompressSync, deflateSync, gzipSync } from 'zlib';
 import { UnauthorizedException } from '@nestjs/common';
-import { json, raw, text, urlencoded } from '../../body-parser/body-parser.js';
+import {
+  BodyChunks,
+  json,
+  raw,
+  text,
+  urlencoded,
+} from '../../body-parser/body-parser.js';
 
 type Middleware = ReturnType<typeof json>;
 
@@ -1170,6 +1176,102 @@ describe('body parsers', () => {
       const { req } = await send(raw(), { headers: TEXT_TYPE, body: 'hello' });
 
       expect(req.body).toBeUndefined();
+    });
+  });
+
+  // With chunked transfer encoding the client decides the size of the chunks,
+  // and Node.js emits each of them as a Buffer of its own
+  describe('with a body sent in small chunks', () => {
+    it('should parse the body', async () => {
+      const body = Buffer.from(JSON.stringify({ title: 'a'.repeat(20000) }));
+
+      const { status, req } = await send(json(), {
+        headers: JSON_TYPE,
+        body: Array.from(body, byte => Buffer.of(byte)),
+      });
+
+      expect(status).toBe(200);
+      expect(req.body).toEqual({ title: 'a'.repeat(20000) });
+    });
+
+    it('should still reject a body that goes past the limit with 413, and let go of its chunks', async () => {
+      const clear = vi.spyOn(BodyChunks.prototype, 'clear');
+
+      const { status, error } = await send(raw({ limit: 1000 }), {
+        headers: BINARY_TYPE,
+        body: Array.from({ length: 1001 }, () => Buffer.of(0x61)),
+      });
+
+      expect(status).toBe(413);
+      expectHttpError(error, 413, 'entity.too.large');
+      expect(error).toMatchObject({ limit: 1000, received: 1001 });
+      expect(clear).toHaveBeenCalledOnce();
+      clear.mockRestore();
+    });
+  });
+
+  describe('BodyChunks', () => {
+    const collect = (chunks: Buffer[]) => {
+      const bodyChunks = new BodyChunks();
+      for (const chunk of chunks) {
+        bodyChunks.push(chunk);
+      }
+      return bodyChunks;
+    };
+
+    it('should merge runs of small chunks as they arrive', () => {
+      const bytes = Buffer.alloc(100_000, 'a');
+      const bodyChunks = collect(Array.from(bytes, byte => Buffer.of(byte)));
+
+      // One Buffer per complete run of 256 chunks, and those of the last run
+      expect(bodyChunks.count).toBe(
+        Math.floor(100_000 / 256) + (100_000 % 256),
+      );
+      expect(bodyChunks.toBuffer().equals(bytes)).toBe(true);
+    });
+
+    it('should keep large chunks as they are', () => {
+      const chunks = Array.from({ length: 300 }, (_, i) =>
+        Buffer.alloc(16 * 1024, i),
+      );
+      const bodyChunks = collect(chunks);
+
+      expect(bodyChunks.count).toBe(300);
+      expect(bodyChunks.toBuffer().equals(Buffer.concat(chunks))).toBe(true);
+    });
+
+    it('should keep the bytes in order when small and large chunks are mixed', () => {
+      const small = (from: number) =>
+        Array.from({ length: 300 }, (_, i) => Buffer.from(`${from + i},`));
+      const chunks = [
+        ...small(0),
+        Buffer.alloc(300 * 1024, 'x'),
+        ...small(300),
+        Buffer.alloc(2 * 1024, 'y'),
+        ...small(600),
+      ];
+
+      const bodyChunks = collect(chunks);
+
+      expect(bodyChunks.toBuffer().equals(Buffer.concat(chunks))).toBe(true);
+    });
+
+    it('should return a single chunk as it is', () => {
+      const chunk = Buffer.from('{"a":1}');
+
+      expect(collect([chunk]).toBuffer()).toBe(chunk);
+      expect(collect([]).toBuffer()).toHaveLength(0);
+    });
+
+    it('should let go of its chunks once cleared', () => {
+      const bodyChunks = collect(
+        Array.from({ length: 1000 }, () => Buffer.of(0x61)),
+      );
+
+      bodyChunks.clear();
+
+      expect(bodyChunks.count).toBe(0);
+      expect(bodyChunks.toBuffer()).toHaveLength(0);
     });
   });
 

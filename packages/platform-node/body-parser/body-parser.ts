@@ -291,6 +291,67 @@ function getContentStream(req: IncomingMessage, inflate: boolean): Readable {
   return stream;
 }
 
+// See `BodyChunks`
+const CHUNK_RUN_LENGTH = 256;
+const LARGE_CHUNK_SIZE = 1024;
+
+/**
+ * The chunks of a body, kept until it ends. The client decides how a body is
+ * cut (down to one byte per chunk with chunked transfer encoding), and each
+ * chunk is a Buffer of its own, which takes a few hundred bytes of memory
+ * whatever it holds. Every run of `CHUNK_RUN_LENGTH` chunks is therefore
+ * merged into one Buffer as soon as it is complete, so that a pending body
+ * takes memory for its size, which the limit bounds, rather than for its
+ * number of chunks. A run whose chunks average `LARGE_CHUNK_SIZE` bytes or
+ * more is kept as it is, as merging it would save little: bodies that come
+ * in socket-sized chunks are not copied more than before.
+ *
+ * @internal
+ */
+export class BodyChunks {
+  private readonly chunks: Buffer[] = [];
+  private size = 0;
+  // The chunks at the end of `chunks` not looked at for merging yet, and
+  // their size
+  private unmerged = 0;
+  private unmergedSize = 0;
+
+  /** The number of Buffers held. */
+  public get count() {
+    return this.chunks.length;
+  }
+
+  public push(chunk: Buffer) {
+    this.chunks.push(chunk);
+    this.size += chunk.length;
+    this.unmergedSize += chunk.length;
+    if (++this.unmerged === CHUNK_RUN_LENGTH) {
+      if (this.unmergedSize < CHUNK_RUN_LENGTH * LARGE_CHUNK_SIZE) {
+        this.chunks.push(
+          Buffer.concat(this.chunks.splice(-this.unmerged), this.unmergedSize),
+        );
+      }
+      this.unmerged = 0;
+      this.unmergedSize = 0;
+    }
+  }
+
+  /** The whole body. */
+  public toBuffer(): Buffer {
+    return this.chunks.length === 1
+      ? this.chunks[0]
+      : Buffer.concat(this.chunks, this.size);
+  }
+
+  /** Lets go of the chunks. */
+  public clear() {
+    this.chunks.length = 0;
+    this.size = 0;
+    this.unmerged = 0;
+    this.unmergedSize = 0;
+  }
+}
+
 /**
  * Reads the whole (decompressed) body, enforcing the size limit, then calls
  * `parse` with it. Requests without a body, or whose content type the parser
@@ -353,7 +414,7 @@ function createReader(
       );
     }
 
-    const chunks: Buffer[] = [];
+    const chunks = new BodyChunks();
     let received = 0;
     let finished = false;
 
@@ -373,6 +434,8 @@ function createReader(
         return;
       }
       cleanup();
+      // Of no use anymore, while dump() waits for the client to end the body
+      chunks.clear();
       if (stream !== req) {
         req.unpipe();
         stream.destroy();
@@ -406,8 +469,7 @@ function createReader(
           ),
         );
       }
-      const buffer =
-        chunks.length === 1 ? chunks[0] : Buffer.concat(chunks, received);
+      const buffer = chunks.toBuffer();
       if (options.verify) {
         try {
           options.verify(req, res, buffer, charset);
