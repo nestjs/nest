@@ -1,7 +1,9 @@
+import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { BaseExceptionFilterContext } from '../../exceptions/base-exception-filter-context';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 
 export class Filter {}
 
@@ -25,6 +27,7 @@ describe('BaseExceptionFilterContext', () => {
       it('should pick instance from container', () => {
         const wrapper = {
           instance: 'test',
+          isConstructorCalled: true,
           getInstanceByContextId: () => wrapper,
         };
         sinon
@@ -35,6 +38,66 @@ describe('BaseExceptionFilterContext', () => {
       it('should return null', () => {
         sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => null!);
         expect(filter.getFilterInstance(Filter)).to.be.eql(null);
+      });
+    });
+    describe('when the filter has not been instantiated in the context', () => {
+      const contextId = { id: 1 };
+      const useWrapper = (wrapper: InstanceWrapper) =>
+        sinon.stub(filter, 'getInstanceByMetatype').returns(wrapper);
+
+      it('should return null for the placeholder of a request-scoped filter', () => {
+        // e.g. the filter of a controller that failed to resolve for the
+        // request, looked up in the static context
+        const wrapper = new InstanceWrapper({
+          metatype: Filter,
+          scope: Scope.REQUEST,
+          instance: Object.create(Filter.prototype),
+        });
+        useWrapper(wrapper);
+
+        expect(filter.getFilterInstance(Filter)).to.be.null;
+        expect(filter.getFilterInstance(Filter, contextId)).to.be.null;
+      });
+
+      it('should return null for the placeholder of a transient filter', () => {
+        const wrapper = new InstanceWrapper({
+          metatype: Filter,
+          scope: Scope.TRANSIENT,
+        });
+        useWrapper(wrapper);
+
+        expect(filter.getFilterInstance(Filter, contextId, 'host')).to.be.null;
+      });
+
+      it('should return the instance once it has been constructed', () => {
+        const wrapper = new InstanceWrapper({
+          metatype: Filter,
+          scope: Scope.REQUEST,
+        });
+        const instance = new Filter();
+        wrapper.setInstanceByContextId(contextId, {
+          instance,
+          isResolved: true,
+          isConstructorCalled: true,
+        });
+        useWrapper(wrapper);
+
+        expect(filter.getFilterInstance(Filter, contextId)).to.equal(instance);
+      });
+
+      it('should return the instance of a value or factory provider', () => {
+        const instance = { catch: () => null };
+        const valueWrapper = new InstanceWrapper({ metatype: null, instance });
+        const factoryWrapper = new InstanceWrapper({
+          metatype: () => instance,
+          inject: [],
+          instance,
+        });
+
+        const stub = useWrapper(valueWrapper);
+        expect(filter.getFilterInstance(Filter)).to.equal(instance);
+        stub.returns(factoryWrapper);
+        expect(filter.getFilterInstance(Filter)).to.equal(instance);
       });
     });
   });

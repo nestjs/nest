@@ -1,3 +1,4 @@
+import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
@@ -103,6 +104,36 @@ describe('RouterExceptionFilters', () => {
           instance,
           ...globalFilters,
         );
+      });
+    });
+    describe('when a scoped filter has not been instantiated for the request', () => {
+      it('should leave it out', () => {
+        // e.g. behind a request-scoped middleware, which does not
+        // instantiate the global enhancers of controllers
+        const contextId = { id: 4 };
+        const placeholderWrapper = new InstanceWrapper({
+          metatype: ExceptionFilter,
+          scope: Scope.REQUEST,
+          instance: Object.create(ExceptionFilter.prototype),
+        });
+        const constructedWrapper = new InstanceWrapper({
+          metatype: ExceptionFilter,
+          scope: Scope.REQUEST,
+        });
+        const instance = new ExceptionFilter();
+        constructedWrapper.setInstanceByContextId(contextId, {
+          instance,
+          isResolved: true,
+          isConstructorCalled: true,
+        });
+        sinon.stub(applicationConfig, 'getGlobalFilters').returns([]);
+        sinon
+          .stub(applicationConfig, 'getGlobalRequestFilters')
+          .callsFake(() => [placeholderWrapper, constructedWrapper]);
+
+        expect(exceptionFilter.getGlobalMetadata(contextId)).to.deep.equal([
+          instance,
+        ]);
       });
     });
   });
