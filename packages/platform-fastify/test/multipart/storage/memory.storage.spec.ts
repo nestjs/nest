@@ -20,6 +20,21 @@ describe('memoryStorage', () => {
     expect(info).toEqual({ buffer: Buffer.from('hello'), size: 5 });
   });
 
+  it('should buffer a file that arrives in one-byte chunks', async () => {
+    const content = Buffer.alloc(10_000, 'a');
+    const file = incoming('');
+    file.stream = Readable.from(Array.from(content, byte => Buffer.of(byte)));
+
+    const info = await new Promise<any>((resolve, reject) =>
+      memoryStorage()._handleFile({}, file, (err, result) =>
+        err ? reject(err) : resolve(result),
+      ),
+    );
+
+    expect(info.size).toBe(10_000);
+    expect(info.buffer.equals(content)).toBe(true);
+  });
+
   it('should report stream errors', async () => {
     const file = incoming('');
     file.stream = new Readable({
