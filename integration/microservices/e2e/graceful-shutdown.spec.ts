@@ -66,6 +66,11 @@ describe.each([
         options: { ...connection, ...options },
       } as MicroserviceOptions);
       await app.listen();
+      if (transport === Transport.NATS) {
+        // The server subscribes without waiting for the broker to register
+        // the subscriptions, so a request sent right away could find none
+        await app.unwrap<{ flush(): Promise<void> }>().flush();
+      }
       return app;
     }
 
@@ -73,6 +78,18 @@ describe.each([
       return firstValueFrom(
         client.send<string>('slow', { id, duration }).pipe(timeout(waitFor)),
       );
+    }
+
+    // The server must be closed while the handler runs, however long the
+    // message takes to arrive
+    async function handlerStarted(id: number) {
+      const deadline = Date.now() + 5000;
+      while (!events.includes(`handler ${id} started`)) {
+        if (Date.now() > deadline) {
+          throw new Error(`Handler ${id} did not start`);
+        }
+        await sleep(10);
+      }
     }
 
     beforeEach(async () => {
@@ -93,7 +110,7 @@ describe.each([
     it('should not wait for a handler in flight by default', async () => {
       const server = await createServer();
       const reply = send(1, 500, 1500).catch((err: Error) => err.name);
-      await sleep(100);
+      await handlerStarted(1);
 
       await server.close();
 
@@ -104,7 +121,7 @@ describe.each([
     it('should let a handler in flight reply before the shutdown hooks run', async () => {
       const server = await createServer({ gracefulShutdown: true });
       const reply = send(1, 500);
-      await sleep(100);
+      await handlerStarted(1);
 
       await server.close();
 
@@ -122,7 +139,7 @@ describe.each([
         gracePeriod: 30_000,
       });
       const reply = send(1, 500);
-      await sleep(100);
+      await handlerStarted(1);
 
       const closeCalledAt = Date.now();
       await server.close();
@@ -134,7 +151,7 @@ describe.each([
     it('should take no new request while it is closing', async () => {
       const server = await createServer({ gracefulShutdown: true });
       const first = send(1, 500);
-      await sleep(100);
+      await handlerStarted(1);
 
       const closing = server.close();
       await sleep(100);
@@ -157,7 +174,7 @@ describe.each([
         gracePeriod: 200,
       });
       void send(1, 3000).catch(() => undefined);
-      await sleep(100);
+      await handlerStarted(1);
 
       const closeCalledAt = Date.now();
       await server.close();
