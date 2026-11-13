@@ -99,9 +99,9 @@ The whole documentation is available as markdown, with an index at [docs.nestjs.
 ## Getting started
 
 - To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
-- 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
-- [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
-- [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
+- 要查看中文 [指南](https://github.com/nestjs/nest/blob/master/readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
+- [가이드](https://github.com/nestjs/nest/blob/master/readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
+- [ガイド](https://github.com/nestjs/nest/blob/master/readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
 
 ## Questions
 
@@ -192,4 +192,4 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
