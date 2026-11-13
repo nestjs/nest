@@ -35,6 +35,57 @@ describe('ViewRenderer', () => {
     ),
   });
 
+  /**
+   * A nunjucks-shaped engine: `compile()` returns a Template object instead
+   * of a function, and rendering goes through an `Environment` over a
+   * `FileSystemLoader`, as with the real nunjucks module.
+   */
+  const createNunjucksEngine = (
+    renderImpl?: (
+      name: string,
+      data: Record<string, any>,
+      callback: Callback,
+    ) => void,
+  ) => {
+    const loaderPaths: any[] = [];
+    const loaderOptions: any[] = [];
+    const environments: any[] = [];
+    class FileSystemLoader {
+      constructor(
+        public searchPaths: string | string[],
+        opts?: Record<string, any>,
+      ) {
+        loaderPaths.push(searchPaths);
+        loaderOptions.push(opts);
+      }
+    }
+    class Environment {
+      constructor(
+        public loader: FileSystemLoader,
+        public options: Record<string, any>,
+      ) {
+        environments.push(this);
+      }
+      render(name: string, data: Record<string, any>, callback: Callback) {
+        if (renderImpl) {
+          renderImpl(name, data, callback);
+        } else {
+          callback(null, `${name}:${data.name}`);
+        }
+      }
+    }
+    return {
+      engine: {
+        Environment,
+        FileSystemLoader,
+        compile: vi.fn(() => ({ render: () => 'compiled' })),
+      },
+      loaderPaths,
+      loaderOptions,
+      environments,
+    };
+  };
+
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'nest-view-renderer-'));
     views = join(dir, 'views');
@@ -185,6 +236,138 @@ describe('ViewRenderer', () => {
       await expect(renderer.render('index', { name: 'a' })).resolves.toBe(
         `hello a source ${file}`,
       );
+    });
+
+    it('should render with nunjucks, through an Environment over the views directories', async () => {
+      write('views/index.njk', 'Hello {{ name }}!');
+      const { engine, loaderPaths, environments } = createNunjucksEngine();
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await expect(renderer.render('index', { name: 'Nest' })).resolves.toBe(
+        'index.njk:Nest',
+      );
+      expect(engine.compile).not.toHaveBeenCalled();
+      expect(loaderPaths).toEqual([[views]]);
+      expect(environments).toHaveLength(1);
+      expect(environments[0].options).toEqual({});
+    });
+
+    it('should pass the engine options to the nunjucks Environment', async () => {
+      write('views/index.njk', 'Hello {{ name }}!');
+      const { engine, environments } = createNunjucksEngine();
+      renderer.setEngine({
+        engine: { nunjucks: engine },
+        root: views,
+        options: { autoescape: false },
+      });
+
+      await renderer.render('index', { name: 'Nest' });
+
+      expect(environments[0].options).toEqual({ autoescape: false });
+    });
+
+    it('should render every nunjucks view through one Environment', async () => {
+      write('views/index.njk', 'index');
+      write('views/admin/list.njk', 'list');
+      const { engine, environments } = createNunjucksEngine();
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await renderer.render('index', { name: 'Nest' });
+      await renderer.render('admin/list', { name: 'Nest' });
+      await renderer.render('index', { name: 'Nest' });
+
+      expect(environments).toHaveLength(1);
+    });
+
+    it('should hand the nunjucks Environment to "onConfigure" once, as @fastify/view does', async () => {
+      write('views/index.njk', 'index');
+      write('views/other.njk', 'other');
+      const { engine, environments } = createNunjucksEngine();
+      const onConfigure = vi.fn();
+      renderer.setEngine({
+        engine: { nunjucks: engine },
+        root: views,
+        options: { autoescape: false, onConfigure },
+      });
+
+      await renderer.render('index', { name: 'Nest' });
+      await renderer.render('other', { name: 'Nest' });
+
+      expect(onConfigure).toHaveBeenCalledExactlyOnceWith(environments[0]);
+      expect(environments[0].options).toEqual({ autoescape: false });
+    });
+
+    it.each([
+      ['outside production', false, {}, true],
+      ['in production', true, {}, false],
+      ['when "noCache" is set', true, { noCache: true }, true],
+    ])(
+      'should set the nunjucks loader "noCache" %s',
+      async (_case, production, options, noCache) => {
+        write('views/index.njk', 'index');
+        const { engine, loaderOptions } = createNunjucksEngine();
+        renderer.setEngine({
+          engine: { nunjucks: engine },
+          root: views,
+          production,
+          options: { ...options, watch: false },
+        });
+
+        await renderer.render('index', { name: 'Nest' });
+
+        expect(loaderOptions).toEqual([{ watch: false, noCache }]);
+      },
+    );
+
+    it('should create a new nunjucks Environment once the views directories change', async () => {
+      const other = join(dir, 'other-views');
+      write('views/index.njk', 'first');
+      write('other-views/index.njk', 'second');
+      const { engine, loaderPaths, environments } = createNunjucksEngine();
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await renderer.render('index', { name: 'Nest' });
+      renderer.setBaseViewsDir(other);
+      await renderer.render('index', { name: 'Nest' });
+
+      expect(environments).toHaveLength(2);
+      expect(loaderPaths).toEqual([[views], [other]]);
+    });
+
+    it('should render a nunjucks view in a subdirectory by its path relative to the views directory', async () => {
+      write('views/admin/list.njk', 'list');
+      const { engine } = createNunjucksEngine();
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await expect(
+        renderer.render('admin/list', { name: 'Nest' }),
+      ).resolves.toBe('admin/list.njk:Nest');
+    });
+
+    it('should look for a nunjucks view in every views directory', async () => {
+      const other = join(dir, 'other-views');
+      write('other-views/only-second.njk', 'second');
+      const { engine, loaderPaths } = createNunjucksEngine();
+      renderer.setEngine({
+        engine: { nunjucks: engine },
+        root: [views, other],
+      });
+
+      await expect(
+        renderer.render('only-second', { name: 'Nest' }),
+      ).resolves.toBe('only-second.njk:Nest');
+      expect(loaderPaths).toEqual([[views, other]]);
+    });
+
+    it('should reject with the error the nunjucks Environment passes to its callback', async () => {
+      write('views/index.njk', 'bad {{');
+      const error = new Error('template error');
+      const { engine } = createNunjucksEngine((name, data, callback) =>
+        callback(error),
+      );
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await expect(renderer.render('index')).rejects.toBe(error);
     });
 
     it('should use the promise of an engine that ignores the callback, as liquidjs does', async () => {
