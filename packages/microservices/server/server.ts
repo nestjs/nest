@@ -66,6 +66,9 @@ const JSON_TEXT = /^\s*(?:[{["\-\d]|(?:true|false|null)\s*$)/;
 // Far longer than the route of any pattern within the limits of a route, and
 // short enough for parsing it to stay cheap
 const MAX_JSON_PATTERN_LENGTH = 1024 * 1024;
+// The longest delay setTimeout() supports: it fires a longer one (e.g.
+// Infinity) after 1 ms instead
+const MAX_TIMEOUT = 2 ** 31 - 1;
 
 /**
  * @publicApi
@@ -416,17 +419,25 @@ export abstract class Server<
    * messages and before it closes its connection, so that the handlers in
    * flight can finish and publish their replies. A handler whose stream never
    * completes stays in flight, so the wait then lasts the whole period.
+   *
+   * A message counts from the moment its handling starts, once it has been
+   * deserialized. With an asynchronous deserializer, a message received right
+   * before `close()` may not be counted yet, so its handler can still run
+   * after the connection has been closed.
    */
   protected waitForHandlersInFlight(gracePeriod?: number): Promise<void> {
     if (this.handlersInFlight === 0) {
       return Promise.resolve();
     }
     // A value that is not a number (NaN, "10s") gets the default period
-    // rather than none
-    const timeout =
+    // rather than none, and a longer one than setTimeout() supports (e.g.
+    // Infinity, to wait until the handlers are done) is capped
+    const timeout = Math.min(
       isNil(gracePeriod) || isNaN(gracePeriod)
         ? DEFAULT_GRACE_PERIOD
-        : gracePeriod;
+        : gracePeriod,
+      MAX_TIMEOUT,
+    );
     return new Promise<void>(resolve => {
       const stopWaiting = () => {
         clearTimeout(timer);

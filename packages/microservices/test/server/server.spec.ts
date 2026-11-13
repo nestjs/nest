@@ -1006,6 +1006,20 @@ describe('Server', () => {
       expect(state.isOver).toBe(true);
     });
 
+    it('should keep waiting when the grace period is longer than a timer supports', async () => {
+      vi.useFakeTimers();
+      let finish!: () => void;
+      void handleEventWith(() => new Promise<void>(res => (finish = res)));
+      const { state, wait } = waitAndTrack(Infinity);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(state.isOver).toBe(false);
+
+      finish();
+      await wait;
+      expect(state.isOver).toBe(true);
+    });
+
     it('should take the whole grace period for an event handler whose stream stays open', async () => {
       vi.useFakeTimers();
       const stream$ = new Subject<string>();
