@@ -112,7 +112,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(pattern => {
       const handler = this.messageHandlers.get(pattern)!;
-      const { isEventHandler, extras } = handler;
+      const { extras } = handler;
 
       const globalSubscribeOptions = this.getOptionsProp(
         this.options,
@@ -124,7 +124,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
           : globalSubscribeOptions;
 
       mqttClient.subscribe(
-        isEventHandler ? pattern : this.getRequestPattern(pattern),
+        this.getSubscriptionTopic(pattern, handler),
         subscribeOptions,
       );
     });
@@ -137,10 +137,37 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     const mqttClient = this.mqttClient;
     this.mqttClient = null;
     this.pendingEventListeners = [];
+    if (mqttClient && this.getOptionsProp(this.options, 'gracefulShutdown')) {
+      await this.stopReceivingMessages(mqttClient);
+      await this.waitForHandlersInFlight(
+        this.getOptionsProp(this.options, 'gracePeriod'),
+      );
+    }
     // Awaited, so that a close() the caller awaits really has the connection
     // closed, as with the other transports: mqtt closes it on a later tick and
     // the broker still delivers to it until then
     await mqttClient?.endAsync();
+  }
+
+  private async stopReceivingMessages(mqttClient: MqttClient) {
+    const topics = [...this.messageHandlers].map(([pattern, handler]) =>
+      this.getSubscriptionTopic(pattern, handler),
+    );
+    // Without a connection the server receives nothing, and mqtt would keep
+    // the packet for the next connection, which end() would then wait for.
+    if (topics.length === 0 || !mqttClient.connected) {
+      return;
+    }
+    try {
+      await mqttClient.unsubscribeAsync(topics);
+    } catch {
+      // The connection was lost before the broker answered, so the server
+      // receives nothing either way.
+    }
+  }
+
+  private getSubscriptionTopic(pattern: string, handler: MessageHandler) {
+    return handler.isEventHandler ? pattern : this.getRequestPattern(pattern);
   }
 
   public async createMqttClient(): Promise<MqttClient> {
