@@ -180,6 +180,14 @@ export class ValidationPipe implements PipeTransform {
 
     const metatype = metadata.metatype;
     if (!metatype || !this.toValidate(metadata)) {
+      // Untyped inputs skip the class-validation path below, so strip here too
+      if (
+        metadata.type !== 'custom' &&
+        value !== null &&
+        typeof value === 'object'
+      ) {
+        this.stripProtoKeys(value);
+      }
       return this.isTransformEnabled
         ? this.transformPrimitive(value, metadata)
         : value;

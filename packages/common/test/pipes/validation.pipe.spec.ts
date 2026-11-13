@@ -1044,6 +1044,58 @@ describe('ValidationPipe', () => {
           ).toBeUndefined();
         });
       });
+      describe('when the input is an untyped object', () => {
+        const pollutedJson =
+          '{"name":"x","__proto__":{"polluted":"yes"},"constructor":{"prototype":{"polluted":"yes"}}}';
+        const expectStripped = (result: any) => {
+          const ownKeys = Object.getOwnPropertyNames(result);
+          expect(ownKeys).not.toContain('__proto__');
+          expect(ownKeys).not.toContain('constructor');
+          expect(ownKeys).not.toContain('prototype');
+          expect(result.name).toBe('x');
+        };
+
+        it('should strip prototype-pollution keys (native metatype)', async () => {
+          target = new ValidationPipe();
+          // JSON.parse creates `__proto__`/`constructor` as own enumerable keys
+          const result: any = await target.transform(JSON.parse(pollutedJson), {
+            type: 'body',
+            metatype: Object,
+            data: '',
+          });
+          expectStripped(result);
+        });
+        it('should strip prototype-pollution keys when metatype is undefined', async () => {
+          // e.g. SWC builds or no `emitDecoratorMetadata`
+          target = new ValidationPipe();
+          const result: any = await target.transform(JSON.parse(pollutedJson), {
+            type: 'body',
+            metatype: undefined,
+            data: '',
+          });
+          expectStripped(result);
+        });
+        it('should strip prototype-pollution keys from array items', async () => {
+          target = new ValidationPipe();
+          const result: any = await target.transform(
+            JSON.parse(`[${pollutedJson}]`),
+            { type: 'body', metatype: Array, data: '' },
+          );
+          expect(result).toHaveLength(1);
+          expectStripped(result[0]);
+        });
+        it('should leave custom decorator values untouched', async () => {
+          target = new ValidationPipe();
+          const value = JSON.parse(pollutedJson);
+          const result: any = await target.transform(value, {
+            type: 'custom',
+            metatype: undefined,
+            data: '',
+          });
+          expect(result).toBe(value);
+          expect(Object.getOwnPropertyNames(result)).toContain('__proto__');
+        });
+      });
       describe('otherwise', () => {
         it('should not reject', async () => {
           target = new ValidationPipe();
