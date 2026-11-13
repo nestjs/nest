@@ -78,6 +78,27 @@ describe('ServerTCP', () => {
 
       expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
+    it('should destroy a connection accepted once the server is closing, such as a TLS handshake that ended late', () => {
+      const netSocket = { on: vi.fn(), destroy: vi.fn() };
+      untypedServer.isManuallyTerminated = true;
+
+      server.bindHandler(netSocket as any);
+
+      expect(netSocket.destroy).toHaveBeenCalledOnce();
+      expect(untypedServer.getSocketInstance).not.toHaveBeenCalled();
+      expect(untypedServer.boundSockets.size).toBe(0);
+    });
+    it('should forget a bound socket once it closes', () => {
+      const emitter = new EventEmitter();
+      const boundSocket = { on: emitter.on.bind(emitter) };
+      untypedServer.getSocketInstance.mockImplementation(() => boundSocket);
+
+      server.bindHandler(null!);
+      expect(untypedServer.boundSockets.has(boundSocket)).toBe(true);
+
+      emitter.emit('close');
+      expect(untypedServer.boundSockets.size).toBe(0);
+    });
   });
   describe('close', () => {
     const tcpServer = { close: vi.fn() };
@@ -96,6 +117,181 @@ describe('ServerTCP', () => {
 
       expect(openSocket.destroy).toHaveBeenCalled();
       expect(untypedServer.openSockets.size).toEqual(0);
+    });
+    it('should neither wait nor return a promise without "gracefulShutdown"', () => {
+      const waitSpy = vi.spyOn(untypedServer, 'waitForHandlersInFlight');
+
+      expect(server.close()).toBeUndefined();
+      expect(waitSpy).not.toHaveBeenCalled();
+    });
+
+    describe('with "gracefulShutdown"', () => {
+      const nextTick = () =>
+        new Promise<void>(resolve => process.nextTick(resolve));
+
+      function createGracefulServer(options: Record<string, unknown> = {}) {
+        const gracefulServer = new ServerTCP({
+          gracefulShutdown: true,
+          ...options,
+        });
+        const netServer = { close: vi.fn() };
+        Object.assign(gracefulServer, { server: netServer });
+        const waitSpy = vi
+          .spyOn(gracefulServer as any, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+        // A connection as "bindHandler" leaves it
+        const connect = ({ pendingMessages = 0, closesOnEnd = true } = {}) => {
+          const netSocket = Object.assign(new EventEmitter(), {
+            destroy: vi.fn(() => void netSocket.emit('close')),
+            destroySoon: vi.fn(
+              () => closesOnEnd && void netSocket.emit('close'),
+            ),
+          });
+          const socket = {
+            netSocket,
+            once: netSocket.once.bind(netSocket),
+          };
+          const {
+            boundSockets,
+            openSockets,
+            pendingMessages: pending,
+          } = gracefulServer as any;
+          boundSockets.add(socket);
+          openSockets.add(netSocket);
+          pending.set(socket, pendingMessages);
+          netSocket.on('close', () => {
+            boundSockets.delete(socket);
+            openSockets.delete(netSocket);
+          });
+          return netSocket;
+        };
+        return { gracefulServer, netServer, waitSpy, connect };
+      }
+
+      it('should stop accepting connections before it waits', async () => {
+        const { gracefulServer, netServer, waitSpy } = createGracefulServer();
+
+        const closing = gracefulServer.close();
+
+        expect(netServer.close).toHaveBeenCalledOnce();
+        expect(waitSpy).not.toHaveBeenCalled();
+        await closing;
+      });
+
+      it('should close the connections with nothing in flight right away and keep the others open', async () => {
+        const { gracefulServer, waitSpy, connect } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        const idle = connect();
+        const busy = connect({ pendingMessages: 1 });
+
+        const closing = gracefulServer.close();
+        await nextTick();
+
+        expect(idle.destroySoon).toHaveBeenCalledOnce();
+        expect(busy.destroySoon).not.toHaveBeenCalled();
+        expect(busy.destroy).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+      });
+
+      it('should let the reply written on the next tick out before it closes a connection that looks idle', () => {
+        const { gracefulServer, connect } = createGracefulServer();
+        const idle = connect();
+
+        void gracefulServer.close();
+
+        expect(idle.destroySoon).not.toHaveBeenCalled();
+        expect(idle.destroy).not.toHaveBeenCalled();
+      });
+
+      it('should close the other connections once the handlers in flight are done', async () => {
+        const { gracefulServer, waitSpy, connect } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        const busy = connect({ pendingMessages: 1 });
+
+        const closing = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+        expect(busy.destroySoon).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+
+        expect(busy.destroySoon).toHaveBeenCalledOnce();
+        expect((gracefulServer as any).openSockets.size).toBe(0);
+      });
+
+      it('should not close a connection that became idle after the call before the handlers in flight are done', async () => {
+        const { gracefulServer, waitSpy, connect } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        const busy = connect({ pendingMessages: 1 });
+
+        const closing = gracefulServer.close();
+        // Its handler settles right away, and its reply is yet to be written
+        (gracefulServer as any).pendingMessages.set(
+          [...(gracefulServer as any).boundSockets][0],
+          0,
+        );
+        await nextTick();
+
+        expect(busy.destroySoon).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+        expect(busy.destroySoon).toHaveBeenCalledOnce();
+      });
+
+      it('should wait for "gracePeriod" at most', async () => {
+        const { gracefulServer, waitSpy } = createGracefulServer({
+          gracePeriod: 500,
+        });
+
+        await gracefulServer.close();
+
+        expect(waitSpy).toHaveBeenCalledExactlyOnceWith(500);
+      });
+
+      it('should destroy a connection whose peer does not read once the period is over', async () => {
+        const { gracefulServer, connect } = createGracefulServer({
+          gracePeriod: 50,
+        });
+        const stuck = connect({ pendingMessages: 1, closesOnEnd: false });
+
+        const closeCalledAt = Date.now();
+        await gracefulServer.close();
+
+        expect(stuck.destroySoon).toHaveBeenCalledOnce();
+        expect(stuck.destroy).toHaveBeenCalledOnce();
+        expect(Date.now() - closeCalledAt).toBeGreaterThanOrEqual(45);
+        expect((gracefulServer as any).openSockets.size).toBe(0);
+      });
+
+      it('should destroy at once what is still open when the handlers took the whole period', async () => {
+        const { gracefulServer, waitSpy, connect } = createGracefulServer({
+          gracePeriod: 30,
+        });
+        waitSpy.mockImplementation(
+          () => new Promise<void>(resolve => setTimeout(resolve, 40)),
+        );
+        const stuck = connect({ pendingMessages: 1, closesOnEnd: false });
+
+        await gracefulServer.close();
+
+        expect(stuck.destroy).toHaveBeenCalledOnce();
+      });
+
+      it('should destroy a connection that was never bound, such as a TLS handshake under way', async () => {
+        const { gracefulServer } = createGracefulServer();
+        const handshaking = { destroy: vi.fn(), on: vi.fn() };
+        (gracefulServer as any).openSockets.add(handshaking);
+
+        await gracefulServer.close();
+
+        expect(handshaking.destroy).toHaveBeenCalledOnce();
+      });
     });
     describe('when TLS is enabled', () => {
       it('should destroy connections whose handshake is not over yet', async () => {
@@ -125,6 +321,42 @@ describe('ServerTCP', () => {
           tlsServer.close();
 
           expect(socket.destroyed).toBe(true);
+          await clientClosed;
+        } finally {
+          socket.destroy();
+          client.destroy();
+        }
+      });
+      it('should destroy them with "gracefulShutdown" as well, by the time close() resolves', async () => {
+        const tlsServer = new ServerTCP({
+          host: '127.0.0.1',
+          port: 0,
+          tlsOptions: {},
+          gracefulShutdown: true,
+          gracePeriod: 30_000,
+        });
+        await new Promise<void>((resolve, reject) =>
+          tlsServer.listen(err => (err ? reject(err) : resolve())),
+        );
+        const netServer = tlsServer.unwrap<NetServer>();
+        const accepted = new Promise<NetSocket>(resolve =>
+          netServer.once('connection', resolve),
+        );
+        const client = createConnection(
+          (netServer.address() as AddressInfo).port,
+          '127.0.0.1',
+        );
+        client.on('error', () => {});
+        const clientClosed = new Promise(resolve =>
+          client.once('close', resolve),
+        );
+        const socket = await accepted;
+        try {
+          const closeCalledAt = Date.now();
+          await tlsServer.close();
+
+          expect(socket.destroyed).toBe(true);
+          expect(Date.now() - closeCalledAt).toBeLessThan(5000);
           await clientClosed;
         } finally {
           socket.destroy();
@@ -281,6 +513,18 @@ describe('ServerTCP', () => {
       socket = {
         sendMessage: vi.fn(),
       };
+    });
+    it('should not dispatch a message once the server is closing', async () => {
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({ [msg.pattern]: handler });
+      const trackSpy = vi.spyOn(untypedServer, 'trackPendingMessage');
+      untypedServer.isManuallyTerminated = true;
+
+      await server.handleMessage(socket, msg);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(trackSpy).not.toHaveBeenCalled();
+      expect(socket.sendMessage).not.toHaveBeenCalled();
     });
     it('should send NO_MESSAGE_HANDLER error if key does not exists in handlers object', async () => {
       await server.handleMessage(socket, msg);

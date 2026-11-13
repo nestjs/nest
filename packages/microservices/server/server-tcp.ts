@@ -5,6 +5,7 @@ import { isObservable, Observable, of, ReplaySubject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
+  DEFAULT_GRACE_PERIOD,
   ECONNREFUSED,
   NO_MESSAGE_HANDLER,
   TCP_DEFAULT_HOST,
@@ -28,7 +29,7 @@ import {
   TransportId,
 } from '../interfaces/microservice-configuration.interface.js';
 import { Server } from './server.js';
-import { isUndefined } from '@nestjs/common/internal';
+import { isNil, isUndefined } from '@nestjs/common/internal';
 
 const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 
@@ -63,6 +64,11 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
    * shutdown and handlers keep running on already established connections.
    */
   protected readonly openSockets = new Set<Socket>();
+  /**
+   * Sockets bound by "bindHandler" that are still open, which are the ones
+   * requests and events arrive on.
+   */
+  protected readonly boundSockets = new Set<TcpSocket>();
   /**
    * Notifiers that emit once a socket bound by "bindHandler" can no longer be
    * written to. They replay, so that a response stream that only starts after
@@ -160,7 +166,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.server.listen(this.port, this.host, () => settleListenCallback());
   }
 
-  public close() {
+  public close(): void | Promise<void> {
     this.isManuallyTerminated = true;
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
@@ -168,14 +174,26 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     }
 
     this.server.close();
-    this.closeOpenSockets();
     this.pendingEventListeners = [];
+    if (this.getOptionsProp(this.options, 'gracefulShutdown')) {
+      return this.closeOpenSocketsGracefully();
+    }
+    this.closeOpenSockets();
   }
 
   public bindHandler(socket: Socket) {
     this.trackOpenSocket(socket);
+    if (this.isManuallyTerminated) {
+      // A TLS handshake that was under way when the server was closed
+      socket.destroy();
+      return;
+    }
 
     const readSocket = this.getSocketInstance(socket);
+    this.boundSockets.add(readSocket);
+    readSocket.on(TcpEventsMap.CLOSE, () =>
+      this.boundSockets.delete(readSocket),
+    );
     this.trackDisconnect(readSocket);
     readSocket.on('message', (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg).catch(err => this.handleError(err)),
@@ -187,6 +205,10 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   }
 
   public async handleMessage(socket: TcpSocket, rawMessage: unknown) {
+    if (this.isManuallyTerminated) {
+      // A connection kept open for the replies it is owed takes no more work
+      return;
+    }
     // Up to its first "await" this runs within the "message" event, so a
     // socket paused here emits no further message of the same read
     const settle = this.trackPendingMessage(socket);
@@ -439,6 +461,60 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected closeOpenSockets() {
     this.openSockets.forEach(socket => socket.destroy());
     this.openSockets.clear();
+  }
+
+  /**
+   * Closes the connections that have nothing in flight right away, as
+   * "closeOpenSockets" does, and the others once their requests and events
+   * have been handled. Everything is closed "gracePeriod" after the call at
+   * the latest.
+   */
+  protected async closeOpenSocketsGracefully() {
+    const gracePeriod = this.getOptionsProp(this.options, 'gracePeriod');
+    const closeBy =
+      Date.now() +
+      (isNil(gracePeriod) || isNaN(gracePeriod)
+        ? DEFAULT_GRACE_PERIOD
+        : gracePeriod);
+    const idleSockets = [...this.boundSockets].filter(
+      socket => !this.pendingMessages.get(socket),
+    );
+    // The reply of a handler that has just settled is written on the next tick
+    await new Promise<void>(resolve => process.nextTick(resolve));
+    idleSockets.forEach(socket => this.endSocket(socket));
+
+    await this.waitForHandlersInFlight(gracePeriod);
+    this.boundSockets.forEach(socket => this.endSocket(socket));
+    await this.waitForBoundSocketsToClose(closeBy - Date.now());
+    // What is left is a TLS handshake under way, or a peer that does not read
+    this.closeOpenSockets();
+  }
+
+  /**
+   * Closes the socket once what was written to it has been sent, so that the
+   * last replies reach the peer.
+   */
+  protected endSocket(socket: TcpSocket) {
+    socket.netSocket.destroySoon();
+  }
+
+  protected waitForBoundSocketsToClose(timeout: number): Promise<void> {
+    const sockets = [...this.boundSockets];
+    if (sockets.length === 0 || timeout <= 0) {
+      return Promise.resolve();
+    }
+    return new Promise<void>(resolve => {
+      let open = sockets.length;
+      const timer = setTimeout(resolve, timeout);
+      sockets.forEach(socket =>
+        socket.once(TcpEventsMap.CLOSE, () => {
+          if (--open === 0) {
+            clearTimeout(timer);
+            resolve();
+          }
+        }),
+      );
+    });
   }
 
   /**
