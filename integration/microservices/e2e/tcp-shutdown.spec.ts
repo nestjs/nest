@@ -179,15 +179,23 @@ describe('TCP transport shutdown with "gracefulShutdown"', () => {
 
   /**
    * Opens a connection, waits until the server has bound it, and collects the
-   * messages the server sends over it.
+   * messages the server sends over it. With the certificate of the server, the
+   * connection is a TLS one.
    */
-  async function connect(secure = false) {
+  async function connect(certificate?: string) {
+    const secure = certificate !== undefined;
     const server = app!.unwrap<net.Server>();
     const bound = new Promise<void>(resolve =>
       server.once(secure ? 'secureConnection' : 'connection', () => resolve()),
     );
     const socket = secure
-      ? tls.connect({ port, host: '127.0.0.1', rejectUnauthorized: false })
+      ? tls.connect({
+          port,
+          host: '127.0.0.1',
+          // The name the test certificate is issued to
+          servername: 'localhost',
+          ca: certificate,
+        })
       : net.createConnection(port, '127.0.0.1');
     sockets.push(socket);
     socket.on('error', () => {});
@@ -399,11 +407,12 @@ describe('TCP transport shutdown with "gracefulShutdown"', () => {
         path.join(import.meta.dirname, '../src/tcp-tls', file),
         'utf8',
       );
+    const certificate = read('ca.cert.pem');
     const server = await createServer({
       gracefulShutdown: true,
-      tlsOptions: { key: read('privkey.pem'), cert: read('ca.cert.pem') },
+      tlsOptions: { key: read('privkey.pem'), cert: certificate },
     });
-    const { replies, closed, request } = await connect(true);
+    const { replies, closed, request } = await connect(certificate);
     request(1, 500);
     await handlerStarted(1);
 
