@@ -836,6 +836,225 @@ describe('Server', () => {
     });
   });
 
+  describe('waitForHandlersInFlight', () => {
+    const context = new BaseRpcContext([]);
+    const eventPattern = 'test_event';
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+    let server: TestServer;
+    let untypedServer: any;
+
+    beforeEach(() => {
+      // The count lives in the instance
+      server = new TestServer();
+      untypedServer = server as any;
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function handleEventWith(handler: () => unknown) {
+      untypedServer.messageHandlers = new Map([
+        [eventPattern, Object.assign(handler, { isEventHandler: true })],
+      ]);
+      return server.handleEvent(
+        eventPattern,
+        { pattern: eventPattern, data: null },
+        context,
+      );
+    }
+
+    function waitAndTrack(gracePeriod?: number) {
+      const state = { isOver: false };
+      const wait = untypedServer
+        .waitForHandlersInFlight(gracePeriod)
+        .then(() => (state.isOver = true));
+      return { state, wait };
+    }
+
+    it('should resolve at once when nothing is being handled', async () => {
+      await expect(
+        untypedServer.waitForHandlersInFlight(60_000),
+      ).resolves.toBeUndefined();
+    });
+
+    it('should wait for an event handler that is still running', async () => {
+      let finish!: () => void;
+      void handleEventWith(() => new Promise<void>(res => (finish = res)));
+      const { state, wait } = waitAndTrack();
+
+      await flush();
+      expect(state.isOver).toBe(false);
+
+      finish();
+      await wait;
+      expect(state.isOver).toBe(true);
+    });
+
+    it('should wait for the stream an event handler returned', async () => {
+      const stream$ = new Subject<string>();
+      await handleEventWith(async () => stream$);
+      const { state, wait } = waitAndTrack();
+
+      stream$.next('value');
+      await flush();
+      expect(state.isOver).toBe(false);
+
+      stream$.complete();
+      await wait;
+      expect(state.isOver).toBe(true);
+    });
+
+    it('should wait until the last reply of a request has been published', async () => {
+      const endHook = vi.fn();
+      untypedServer.onProcessingEndHook = endHook;
+      let publish!: () => void;
+      const respond = vi.fn(() => new Promise<void>(res => (publish = res)));
+
+      await untypedServer.handleRequest(
+        context,
+        async () => of('reply'),
+        respond,
+      );
+      const { state, wait } = waitAndTrack();
+      await flush();
+
+      // The handler is done, its reply is not out yet
+      expect(endHook).toHaveBeenCalledOnce();
+      expect(respond).toHaveBeenCalledExactlyOnceWith({
+        response: 'reply',
+        isDisposed: true,
+      });
+      expect(state.isOver).toBe(false);
+
+      publish();
+      await wait;
+      expect(state.isOver).toBe(true);
+    });
+
+    it('should stop counting a request whose reply cannot be published', async () => {
+      vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+      const respond = vi.fn().mockRejectedValue(new Error('closed'));
+
+      await untypedServer.handleRequest(
+        context,
+        async () => of('reply'),
+        respond,
+      );
+
+      await expect(
+        untypedServer.waitForHandlersInFlight(60_000),
+      ).resolves.toBeUndefined();
+      // The reply, then the error that takes its place
+      expect(respond).toHaveBeenCalledTimes(2);
+    });
+
+    it('should stop counting an event handler that throws', async () => {
+      await expect(
+        handleEventWith(async () => {
+          throw new Error('failed');
+        }),
+      ).rejects.toThrow('failed');
+
+      await expect(
+        untypedServer.waitForHandlersInFlight(60_000),
+      ).resolves.toBeUndefined();
+    });
+
+    it('should wait for every handler in flight', async () => {
+      let finishFirst!: () => void;
+      let finishSecond!: () => void;
+      void handleEventWith(() => new Promise<void>(res => (finishFirst = res)));
+      void handleEventWith(
+        () => new Promise<void>(res => (finishSecond = res)),
+      );
+      const { state, wait } = waitAndTrack();
+
+      finishFirst();
+      await flush();
+      expect(state.isOver).toBe(false);
+
+      finishSecond();
+      await wait;
+      expect(state.isOver).toBe(true);
+    });
+
+    it('should stop waiting after the grace period', async () => {
+      vi.useFakeTimers();
+      void handleEventWith(() => new Promise<void>(() => {}));
+      const { state } = waitAndTrack(5000);
+
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(state.isOver).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(state.isOver).toBe(true);
+    });
+
+    it.each([
+      ['no period is given', undefined],
+      ['the period is not a number', Number(undefined)],
+    ])('should wait for 10 seconds when %s', async (_case, gracePeriod) => {
+      vi.useFakeTimers();
+      void handleEventWith(() => new Promise<void>(() => {}));
+      const { state } = waitAndTrack(gracePeriod);
+
+      await vi.advanceTimersByTimeAsync(9999);
+      expect(state.isOver).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(state.isOver).toBe(true);
+    });
+
+    it('should keep waiting when the grace period is longer than a timer supports', async () => {
+      vi.useFakeTimers();
+      let finish!: () => void;
+      void handleEventWith(() => new Promise<void>(res => (finish = res)));
+      const { state, wait } = waitAndTrack(Infinity);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(state.isOver).toBe(false);
+
+      finish();
+      await wait;
+      expect(state.isOver).toBe(true);
+    });
+
+    it('should take the whole grace period for an event handler whose stream stays open', async () => {
+      vi.useFakeTimers();
+      const stream$ = new Subject<string>();
+      await handleEventWith(async () => stream$);
+      const { state } = waitAndTrack(5000);
+
+      stream$.next('value');
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(state.isOver).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(state.isOver).toBe(true);
+    });
+
+    it('should take the whole grace period for a request whose response stream stays open', async () => {
+      vi.useFakeTimers();
+      const response$ = new Subject<string>();
+      const respond = vi.fn();
+      await untypedServer.handleRequest(
+        context,
+        async () => response$,
+        respond,
+      );
+      const { state } = waitAndTrack(5000);
+
+      response$.next('first');
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(respond).toHaveBeenCalledExactlyOnceWith({ response: 'first' });
+      expect(state.isOver).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(state.isOver).toBe(true);
+    });
+  });
+
   describe('runWithProcessingHooks', () => {
     const context = new BaseRpcContext([]);
 

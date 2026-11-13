@@ -74,15 +74,15 @@ describe('ServerNats', () => {
     });
 
     describe('when "gracefulShutdown" is true', () => {
-      const waitForGracePeriod = vi.fn();
-      const subscriptions = [
-        { unsubscribe: vi.fn() },
-        { unsubscribe: vi.fn() },
-      ];
+      let subscriptions: Array<{ unsubscribe: ReturnType<typeof vi.fn> }>;
       beforeEach(() => {
-        (server as any).subscriptions = subscriptions;
-        (server as any).waitForGracePeriod = waitForGracePeriod;
-        (server as any).options.gracefulShutdown = true;
+        natsClient.close.mockClear();
+        subscriptions = [{ unsubscribe: vi.fn() }, { unsubscribe: vi.fn() }];
+        untypedServer.subscriptions = subscriptions;
+        untypedServer.options.gracefulShutdown = true;
+      });
+      afterEach(() => {
+        vi.useRealTimers();
       });
 
       it('should unsubscribe all subscriptions', async () => {
@@ -92,22 +92,104 @@ describe('ServerNats', () => {
         }
       });
 
-      it('should call "waitForGracePeriod"', async () => {
+      it('should unsubscribe, wait for the handlers in flight, then close the connection', async () => {
+        const waitSpy = vi
+          .spyOn(untypedServer, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+
         await server.close();
-        expect(waitForGracePeriod).toHaveBeenCalled();
+
+        const [unsubscribed] =
+          subscriptions[1].unsubscribe.mock.invocationCallOrder;
+        const [waited] = waitSpy.mock.invocationCallOrder;
+        const [closed] = natsClient.close.mock.invocationCallOrder;
+        expect(unsubscribed).toBeLessThan(waited);
+        expect(waited).toBeLessThan(closed);
+      });
+
+      it('should wait for "gracePeriod" at most', async () => {
+        const waitSpy = vi
+          .spyOn(untypedServer, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+        untypedServer.options.gracePeriod = 500;
+
+        await server.close();
+
+        expect(waitSpy).toHaveBeenCalledExactlyOnceWith(500);
+      });
+
+      it('should close without waiting when no handler is in flight', async () => {
+        // With fake timers a fixed wait would never end
+        vi.useFakeTimers();
+        untypedServer.options.gracePeriod = 60_000;
+
+        await server.close();
+
+        expect(natsClient.close).toHaveBeenCalledOnce();
+      });
+
+      it('should close as soon as the handler in flight is done', async () => {
+        vi.useFakeTimers();
+        untypedServer.options.gracePeriod = 60_000;
+        let finish!: () => void;
+        untypedServer.messageHandlers = new Map([
+          [
+            'slow',
+            Object.assign(() => new Promise<void>(res => (finish = res)), {
+              isEventHandler: true,
+            }),
+          ],
+        ]);
+        void server.handleEvent(
+          'slow',
+          { pattern: 'slow', data: null },
+          new BaseRpcContext([]),
+        );
+
+        const closing = server.close();
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(natsClient.close).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+        expect(natsClient.close).toHaveBeenCalledOnce();
+      });
+
+      it('should close after "gracePeriod" when a handler is still running', async () => {
+        vi.useFakeTimers();
+        untypedServer.options.gracePeriod = 5000;
+        untypedServer.messageHandlers = new Map([
+          [
+            'stuck',
+            Object.assign(() => new Promise<void>(() => {}), {
+              isEventHandler: true,
+            }),
+          ],
+        ]);
+        void server.handleEvent(
+          'stuck',
+          { pattern: 'stuck', data: null },
+          new BaseRpcContext([]),
+        );
+
+        const closing = server.close();
+        await vi.advanceTimersByTimeAsync(4999);
+        expect(natsClient.close).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        await closing;
+        expect(natsClient.close).toHaveBeenCalledOnce();
       });
     });
 
     describe('when "gracefulShutdown" is false', () => {
-      const waitForGracePeriod = vi.fn();
       const subscriptions = [
         { unsubscribe: vi.fn() },
         { unsubscribe: vi.fn() },
       ];
       beforeEach(() => {
-        (server as any).subscriptions = subscriptions;
-        (server as any).waitForGracePeriod = waitForGracePeriod;
-        (server as any).options.gracefulShutdown = false;
+        untypedServer.subscriptions = subscriptions;
+        untypedServer.options.gracefulShutdown = false;
       });
       it('should not unsubscribe all subscriptions', async () => {
         await server.close();
@@ -116,9 +198,12 @@ describe('ServerNats', () => {
         }
       });
 
-      it('should not call "waitForGracePeriod"', async () => {
+      it('should not wait for the handlers in flight', async () => {
+        const waitSpy = vi.spyOn(untypedServer, 'waitForHandlersInFlight');
+
         await server.close();
-        expect(waitForGracePeriod).not.toHaveBeenCalled();
+
+        expect(waitSpy).not.toHaveBeenCalled();
       });
     });
   });

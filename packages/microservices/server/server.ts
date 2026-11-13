@@ -18,6 +18,7 @@ import {
   mergeMap,
 } from 'rxjs/operators';
 import {
+  DEFAULT_GRACE_PERIOD,
   EVENT_HANDLER_REPLY_DEPRECATED,
   NO_EVENT_HANDLER,
   UNSERIALIZABLE_PATTERN,
@@ -49,6 +50,7 @@ import {
 } from '../utils/index.js';
 import { ITransportServer, Logger, type LoggerService } from '@nestjs/common';
 import {
+  isNil,
   isNumber,
   isString,
   loadPackage,
@@ -64,6 +66,9 @@ const JSON_TEXT = /^\s*(?:[{["\-\d]|(?:true|false|null)\s*$)/;
 // Far longer than the route of any pattern within the limits of a route, and
 // short enough for parsing it to stay cheap
 const MAX_JSON_PATTERN_LENGTH = 1024 * 1024;
+// The longest delay setTimeout() supports: it fires a longer one (e.g.
+// Infinity) after 1 ms instead
+const MAX_TIMEOUT = 2 ** 31 - 1;
 
 /**
  * @publicApi
@@ -107,6 +112,12 @@ export abstract class Server<
     context: BaseRpcContext,
   ) => void;
   protected _status$ = new ReplaySubject<Status>(1);
+  /**
+   * Requests and events being handled. A request stays counted until its last
+   * reply has been published.
+   */
+  private handlersInFlight = 0;
+  private readonly handlersInFlightListeners = new Set<() => void>();
 
   /**
    * Returns an observable that emits status changes.
@@ -222,6 +233,9 @@ export abstract class Server<
     // The requester is answered with an error in place of a final reply that
     // cannot be published only once, as that error may fail to publish too
     let isFallbackQueued = false;
+    // The response stream has settled, so the queue holds its last reply
+    let isStreamSettled = false;
+    const settleHandlerInFlight = this.trackHandlerInFlight();
     const scheduleOnNextTick = (data: WritePacket) => {
       if (data.isDisposed && dataQueue.length > nextIndex) {
         dataQueue[dataQueue.length - 1].isDisposed = true;
@@ -255,6 +269,9 @@ export abstract class Server<
           dataQueue.length = 0;
           nextIndex = 0;
           isProcessing = false;
+          if (isStreamSettled) {
+            settleHandlerInFlight();
+          }
         });
       }
     };
@@ -264,7 +281,10 @@ export abstract class Server<
           scheduleOnNextTick({ err });
           return EMPTY;
         }),
-        finalize(() => scheduleOnNextTick({ isDisposed: true })),
+        finalize(() => {
+          isStreamSettled = true;
+          scheduleOnNextTick({ isDisposed: true });
+        }),
       )
       .subscribe((response: any) => scheduleOnNextTick({ response }));
   }
@@ -375,14 +395,77 @@ export abstract class Server<
     endHookContext: BaseRpcContext = context,
   ) {
     return this.onProcessingStartHook(this.transportId!, context, async () => {
+      const settleHandlerInFlight = this.trackHandlerInFlight();
       const runEndHook = this.createProcessingEndHookRunner(endHookContext);
-      try {
-        await fn(runEndHook);
-      } catch (err) {
+      const end = () => {
         runEndHook();
+        settleHandlerInFlight();
+      };
+      try {
+        await fn(end);
+      } catch (err) {
+        end();
         throw err;
       }
     });
+  }
+
+  /**
+   * Resolves once no request or event is being handled, or after
+   * `gracePeriod` milliseconds, whichever comes first. The period is 10
+   * seconds unless a number is given.
+   *
+   * A transport calls it from `close()`, after it has stopped receiving
+   * messages and before it closes its connection, so that the handlers in
+   * flight can finish and publish their replies. A handler whose stream never
+   * completes stays in flight, so the wait then lasts the whole period.
+   *
+   * A message counts from the moment its handling starts, once it has been
+   * deserialized. With an asynchronous deserializer, a message received right
+   * before `close()` may not be counted yet, so its handler can still run
+   * after the connection has been closed.
+   */
+  protected waitForHandlersInFlight(gracePeriod?: number): Promise<void> {
+    if (this.handlersInFlight === 0) {
+      return Promise.resolve();
+    }
+    // A value that is not a number (NaN, "10s") gets the default period
+    // rather than none, and a longer one than setTimeout() supports (e.g.
+    // Infinity, to wait until the handlers are done) is capped
+    const timeout = Math.min(
+      isNil(gracePeriod) || isNaN(gracePeriod)
+        ? DEFAULT_GRACE_PERIOD
+        : gracePeriod,
+      MAX_TIMEOUT,
+    );
+    return new Promise<void>(resolve => {
+      const stopWaiting = () => {
+        clearTimeout(timer);
+        this.handlersInFlightListeners.delete(stopWaiting);
+        resolve();
+      };
+      const timer = setTimeout(stopWaiting, timeout);
+      this.handlersInFlightListeners.add(stopWaiting);
+    });
+  }
+
+  /**
+   * Counts a handler as in flight until the returned function is called.
+   * Calling it again does nothing.
+   */
+  private trackHandlerInFlight(): () => void {
+    this.handlersInFlight++;
+    let isSettled = false;
+    return () => {
+      if (isSettled) {
+        return;
+      }
+      isSettled = true;
+      this.handlersInFlight--;
+      if (this.handlersInFlight === 0) {
+        this.handlersInFlightListeners.forEach(listener => listener());
+      }
+    };
   }
 
   /**

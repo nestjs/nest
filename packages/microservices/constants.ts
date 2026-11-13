@@ -73,5 +73,6 @@ export const UNBLOCKED_RMQ_MESSAGE = 'RMQ broker has unblocked the connection.';
 export const CONSUMER_CANCELLED_RMQ_MESSAGE =
   'RMQ broker has cancelled the consumer. Trying to consume again.';
 
-export const NATS_DEFAULT_GRACE_PERIOD = 10000;
+export const DEFAULT_GRACE_PERIOD = 10000;
+export const NATS_DEFAULT_GRACE_PERIOD = DEFAULT_GRACE_PERIOD;
 export const UNSERIALIZABLE_PATTERN = '[UNSERIALIZABLE_PATTERN]';

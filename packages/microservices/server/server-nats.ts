@@ -1,10 +1,6 @@
 import { isObject, isUndefined } from '@nestjs/common/internal';
 import { EventEmitter } from 'events';
-import {
-  NATS_DEFAULT_GRACE_PERIOD,
-  NATS_DEFAULT_URL,
-  NO_MESSAGE_HANDLER,
-} from '../constants.js';
+import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants.js';
 import { NatsContext } from '../ctx-host/nats.context.js';
 import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer.js';
 import { Transport } from '../enums/index.js';
@@ -97,19 +93,6 @@ export class ServerNats<
     }
   }
 
-  private async waitForGracePeriod() {
-    const gracePeriod = this.getOptionsProp(
-      this.options,
-      'gracePeriod',
-      NATS_DEFAULT_GRACE_PERIOD,
-    );
-    await new Promise<void>(res => {
-      setTimeout(() => {
-        res();
-      }, gracePeriod);
-    });
-  }
-
   public async close() {
     if (!this.natsClient) {
       return;
@@ -117,7 +100,9 @@ export class ServerNats<
     const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
     if (graceful) {
       this.subscriptions.forEach(sub => sub.unsubscribe());
-      await this.waitForGracePeriod();
+      await this.waitForHandlersInFlight(
+        this.getOptionsProp(this.options, 'gracePeriod'),
+      );
     }
     // Reset first, so that the status updates do not take this close for a
     // connection that gave up
