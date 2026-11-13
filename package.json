@@ -137,7 +137,7 @@
     "lerna-changelog": "2.2.0",
     "light-my-request": "6.8.0",
     "lint-staged": "17.6.0",
-    "markdown-table": "2.0.0",
+    "markdown-table": "3.1.0",
     "mongoose": "9.12.0",
     "mqtt": "5.16.1",
     "multer": "2.5.0",
