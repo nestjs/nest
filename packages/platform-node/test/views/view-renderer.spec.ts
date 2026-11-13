@@ -35,6 +35,51 @@ describe('ViewRenderer', () => {
     ),
   });
 
+  /**
+   * A nunjucks-shaped engine: `compile()` returns a Template object instead
+   * of a function, and rendering goes through an `Environment` over a
+   * `FileSystemLoader`, as with the real nunjucks module.
+   */
+  const createNunjucksEngine = (
+    renderImpl?: (
+      name: string,
+      data: Record<string, any>,
+      callback: Callback,
+    ) => void,
+  ) => {
+    const loaderPaths: any[] = [];
+    const environments: any[] = [];
+    class FileSystemLoader {
+      constructor(public searchPaths: string | string[]) {
+        loaderPaths.push(searchPaths);
+      }
+    }
+    class Environment {
+      constructor(
+        public loader: FileSystemLoader,
+        public options: Record<string, any>,
+      ) {
+        environments.push(this);
+      }
+      render(name: string, data: Record<string, any>, callback: Callback) {
+        if (renderImpl) {
+          renderImpl(name, data, callback);
+        } else {
+          callback(null, `${name}:${data.name}`);
+        }
+      }
+    }
+    return {
+      engine: {
+        Environment,
+        FileSystemLoader,
+        compile: vi.fn(() => ({ render: () => 'compiled' })),
+      },
+      loaderPaths,
+      environments,
+    };
+  };
+
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'nest-view-renderer-'));
     views = join(dir, 'views');
@@ -185,6 +230,70 @@ describe('ViewRenderer', () => {
       await expect(renderer.render('index', { name: 'a' })).resolves.toBe(
         `hello a source ${file}`,
       );
+    });
+
+    it('should render with nunjucks, through an Environment over the views directories', async () => {
+      write('views/index.njk', 'Hello {{ name }}!');
+      const { engine, loaderPaths, environments } = createNunjucksEngine();
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await expect(renderer.render('index', { name: 'Nest' })).resolves.toBe(
+        'index.njk:Nest',
+      );
+      expect(engine.compile).not.toHaveBeenCalled();
+      expect(loaderPaths).toEqual([[views]]);
+      expect(environments).toHaveLength(1);
+      expect(environments[0].options).toEqual({});
+    });
+
+    it('should pass the engine options to the nunjucks Environment', async () => {
+      write('views/index.njk', 'Hello {{ name }}!');
+      const { engine, environments } = createNunjucksEngine();
+      renderer.setEngine({
+        engine: { nunjucks: engine },
+        root: views,
+        options: { autoescape: false },
+      });
+
+      await renderer.render('index', { name: 'Nest' });
+
+      expect(environments[0].options).toEqual({ autoescape: false });
+    });
+
+    it('should render a nunjucks view in a subdirectory by its path relative to the views directory', async () => {
+      write('views/admin/list.njk', 'list');
+      const { engine } = createNunjucksEngine();
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await expect(
+        renderer.render('admin/list', { name: 'Nest' }),
+      ).resolves.toBe('admin/list.njk:Nest');
+    });
+
+    it('should look for a nunjucks view in every views directory', async () => {
+      const other = join(dir, 'other-views');
+      write('other-views/only-second.njk', 'second');
+      const { engine, loaderPaths } = createNunjucksEngine();
+      renderer.setEngine({
+        engine: { nunjucks: engine },
+        root: [views, other],
+      });
+
+      await expect(
+        renderer.render('only-second', { name: 'Nest' }),
+      ).resolves.toBe('only-second.njk:Nest');
+      expect(loaderPaths).toEqual([[views, other]]);
+    });
+
+    it('should reject with the error the nunjucks Environment passes to its callback', async () => {
+      write('views/index.njk', 'bad {{');
+      const error = new Error('template error');
+      const { engine } = createNunjucksEngine((name, data, callback) =>
+        callback(error),
+      );
+      renderer.setEngine({ engine: { nunjucks: engine }, root: views });
+
+      await expect(renderer.render('index')).rejects.toBe(error);
     });
 
     it('should use the promise of an engine that ignores the callback, as liquidjs does', async () => {
