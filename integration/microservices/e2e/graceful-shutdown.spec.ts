@@ -28,6 +28,11 @@ describe.each([
     transport: Transport.NATS,
     connection: { servers: 'nats://0.0.0.0:4222' },
   },
+  {
+    name: 'MQTT',
+    transport: Transport.MQTT,
+    connection: { url: 'mqtt://0.0.0.0:1883' },
+  },
 ] as const)(
   '$name transport (graceful shutdown)',
   ({ transport, connection }) => {
@@ -70,6 +75,19 @@ describe.each([
         // The server subscribes without waiting for the broker to register
         // the subscriptions, so a request sent right away could find none
         await app.unwrap<{ flush(): Promise<void> }>().flush();
+      }
+      if (transport === Transport.MQTT) {
+        // Same here. The broker answers the packets of a connection in order,
+        // so once it has acknowledged this message, it has registered them
+        await app
+          .unwrap<{
+            publishAsync(
+              topic: string,
+              message: string,
+              options: { qos: number },
+            ): Promise<unknown>;
+          }>()
+          .publishAsync('graceful-shutdown/ready', '', { qos: 1 });
       }
       return app;
     }
@@ -155,8 +173,9 @@ describe.each([
 
       const closing = server.close();
       await sleep(100);
-      // Redis leaves the request unanswered, NATS rejects it for lack of a
-      // subscriber. Either way it must not reach the server that is closing.
+      // Redis and MQTT leave the request unanswered, NATS rejects it for lack
+      // of a subscriber. Either way it must not reach the server that is
+      // closing.
       const second = send(2, 0, 1000).then(
         () => 'answered',
         () => 'not answered',
