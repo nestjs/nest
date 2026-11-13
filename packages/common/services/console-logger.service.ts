@@ -115,7 +115,7 @@ export interface ConsoleLoggerOptions {
   showHidden?: boolean;
   /**
    * The length at which input values are split across multiple lines. Set to Infinity to format the input as a single line (in combination with "compact" set to true).
-   * Default Infinity when "compact" is true, 80 otherwise.
+   * Default Infinity when "compact" is enabled, or when colors are off and "compact" isn't explicitly false; 80 otherwise.
    * When `json` is enabled, colors are disabled, and `compact` is set to true, only applies to Map, Set and Error values, which are inspected; everything else is serialized as JSON.
    */
   breakLength?: number;
