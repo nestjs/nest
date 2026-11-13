@@ -24,8 +24,10 @@ import {
  * Any engine exposing Express' `__express(path, data, callback)`, a
  * `renderFile()` or a `compile()` function works (ejs, pug, handlebars, eta,
  * ...). nunjucks renders through an `Environment` over the views directories,
- * so its includes and layouts resolve there, as with `@fastify/view`. An Express-style engine name works too: `app.setViewEngine('ejs')`,
- * with the directory set through `app.setBaseViewsDir()`.
+ * so its includes and layouts resolve there, and `options.onConfigure(env)`
+ * can add filters and globals to it, as with `@fastify/view`. An
+ * Express-style engine name works too: `app.setViewEngine('ejs')`, with the
+ * directory set through `app.setBaseViewsDir()`.
  *
  * @publicApi
  */
@@ -115,9 +117,12 @@ export class ViewRenderer {
   private engineOptions: Record<string, any> = {};
   private production = process.env.NODE_ENV === 'production';
   private readonly cache = new Map<string, RenderFn>();
+  // Shared by all views, so that a layout is compiled once for all of them
+  private nunjucksEnv?: any;
 
   public setEngine(options: NodeViewOptions | string) {
     this.cache.clear();
+    this.nunjucksEnv = undefined;
     if (typeof options === 'string') {
       // Express style: the engine module is loaded on first render
       this.engineName = options;
@@ -144,6 +149,7 @@ export class ViewRenderer {
 
   public setBaseViewsDir(path: string | string[]) {
     this.cache.clear();
+    this.nunjucksEnv = undefined;
     this.roots = ([] as string[]).concat(path).map(dir => resolve(dir));
   }
 
@@ -211,10 +217,7 @@ export class ViewRenderer {
       // views directories instead, as @fastify/view does: includes and
       // layouts then resolve through the loader, by the view's path relative
       // to the directory it was found in.
-      const env = new module.Environment(
-        new module.FileSystemLoader(this.roots),
-        this.engineOptions,
-      );
+      const env = (this.nunjucksEnv ??= this.createNunjucksEnvironment(module));
       const name = this.relativeViewName(file);
       return data => promisify(callback => env.render(name, data, callback));
     }
@@ -252,6 +255,27 @@ export class ViewRenderer {
       );
     }
     return this.engine;
+  }
+
+  /**
+   * Creates the environment as `nunjucks.configure()` does, without replacing
+   * nunjucks' global one, and hands it to `onConfigure()` to add filters and
+   * globals, as `@fastify/view` does. Outside production, the loader reads
+   * the templates again on every render.
+   */
+  private createNunjucksEnvironment(module: any) {
+    const { onConfigure, watch, noCache, ...options } = this.engineOptions;
+    const env = new module.Environment(
+      new module.FileSystemLoader(this.roots, {
+        watch,
+        noCache: noCache ?? !this.production,
+      }),
+      options,
+    );
+    if (typeof onConfigure === 'function') {
+      onConfigure(env);
+    }
+    return env;
   }
 
   /**
