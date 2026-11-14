@@ -6,8 +6,9 @@
  * hands to applications (the consumer and producer of `KafkaContext`,
  * `ClientKafka` and `unwrap()`): receiving with `eachMessage`, committing and
  * seeking offsets, and sending. Everything else is kafkajs as it is: the
- * admin client and transactions keep string offsets, and the methods and
- * `run()` options that only kafka-core has are missing or ignored.
+ * admin client, transactions and the payloads of instrumentation events
+ * keep string offsets, and the methods and `run()` options that only
+ * kafka-core has are missing or ignored.
  */
 export function adaptKafkajsClient(kafka: any) {
   return {

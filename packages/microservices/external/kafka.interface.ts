@@ -1150,8 +1150,11 @@ export interface KafkaMessage {
   headers: RecordHeaders;
   isControlRecord: boolean;
   batchContext: RecordBatchContext;
-  /** This message's on-wire size, after decompression. */
-  byteSize: number;
+  /**
+   * This message's on-wire size, after decompression. Unset on kafkajs, which
+   * reports a size only for messages in the legacy MessageSet format.
+   */
+  byteSize?: number;
 }
 
 export interface ProducerRecord {

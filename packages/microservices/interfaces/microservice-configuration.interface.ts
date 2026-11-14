@@ -468,8 +468,11 @@ export interface KafkaOptions {
   options?: {
     /**
      * The client library to run on. Defaults to `@cookiemonsterdev/kafka-core`
-     * when it is installed, otherwise `kafkajs`, whose support is deprecated.
-     * On either, offsets and timestamps are bigint values.
+     * when it is installed, otherwise `kafkajs`, whose support is deprecated
+     * (the deprecation warning is logged only when Nest falls back to it).
+     * On either, received messages, committed and sought offsets, and send
+     * results use bigint offsets and timestamps. On kafkajs, the admin client,
+     * transactions and event payloads keep its string offsets.
      */
     driver?: KafkaDriver;
     /**
