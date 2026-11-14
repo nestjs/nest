@@ -60,8 +60,9 @@ export function getKafkaIdentity(
 }
 
 /**
- * Creates the client of a Kafka server or client: kafkajs as it always was,
- * or kafka-core when the `driver` option or the installed packages say so.
+ * Creates the client of a Kafka server or client: kafkajs, from the options
+ * as given, or kafka-core when the `driver` option or the installed packages
+ * say so.
  *
  * When the `driver` option names kafka-core, it discovers a `kafka.config.*`
  * file if the options give no brokers, or reads the one `client.config` points
@@ -148,7 +149,7 @@ const importKafkajs = () => import('kafkajs');
 
 /**
  * Loads the package the `driver` option names. Without one, kafkajs when it is
- * installed, as before kafka-core was supported, otherwise kafka-core.
+ * installed, otherwise kafka-core.
  */
 async function loadKafkaPackage(
   driver: KafkaDriver | undefined,
@@ -192,7 +193,7 @@ function warnOfKafkajs(logger: LoggerService) {
 
 /**
  * Merges the client options with a config file. Without brokers in either,
- * the transport connects to the default broker, as it always has.
+ * the transport connects to the default broker.
  */
 async function resolveKafkaConfig(
   kafkaPackage: any,

@@ -73,9 +73,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected postfixId: string;
 
   /**
-   * Typed as the options of kafkajs, as they were before kafka-core was
-   * supported, so that subclasses keep compiling. On kafka-core, they hold the
-   * options of kafka-core.
+   * Typed as the options of kafkajs, the default driver, so that subclasses
+   * keep compiling. With `driver: 'kafka-core'`, they hold the options of
+   * kafka-core.
    */
   protected readonly options: Required<KafkaOptions>['options'];
 

@@ -12,7 +12,7 @@ import { loadPackageCached, isUndefined } from '@nestjs/common/internal';
 
 /**
  * The protocol of a Kafka package loaded already, kafka-core first. Without
- * one, kafkajs, which the assigner loaded before kafka-core was supported.
+ * one, kafkajs, which is reported as missing when it cannot be loaded.
  */
 function loadAssignerProtocol(): typeof AssignerProtocol {
   try {
@@ -33,8 +33,8 @@ export class KafkaReplyPartitionAssigner {
     private readonly config: {
       cluster: Cluster;
     },
-    // The one of the package ClientKafka runs on. kafka-core and kafkajs
-    // encode the same consumer protocol.
+    // The AssignerProtocol of the package ClientKafka runs on. kafka-core and
+    // kafkajs encode the same consumer protocol.
     private readonly assignerProtocol: typeof AssignerProtocol = loadAssignerProtocol(),
   ) {}
 
