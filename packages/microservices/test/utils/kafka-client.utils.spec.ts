@@ -124,6 +124,18 @@ describe('createKafkaClient', () => {
       );
     });
 
+    it('should keep a group id from the options over the config file', async () => {
+      resolveKafkaConfigAsync.mockResolvedValue({
+        config: { brokers: ['file:9092'] },
+        fileConfig: { consumer: { groupId: 'file-group' } },
+      });
+
+      // The option equals the default, so only the options tell it was set
+      const result = await create({ consumer: { groupId: 'nestjs-group' } });
+
+      expect(result.identity.groupId).toBe('nestjs-group-server');
+    });
+
     it('should keep the brokers and ids a subclass set over the config file', async () => {
       resolveKafkaConfigAsync.mockResolvedValue({
         config: { brokers: ['file:9092'], clientId: 'file-app' },

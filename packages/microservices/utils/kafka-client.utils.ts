@@ -122,7 +122,9 @@ export async function createKafkaClient({
         : identity.clientId,
     groupId:
       identity.groupId === defaults.groupId
-        ? (fileConfig.consumer?.groupId || KAFKA_DEFAULT_GROUP) + postfixId
+        ? (options.consumer?.groupId ||
+            fileConfig.consumer?.groupId ||
+            KAFKA_DEFAULT_GROUP) + postfixId
         : identity.groupId,
   };
   const client = kafkaPackage.Kafka.from(fileConfig, {
