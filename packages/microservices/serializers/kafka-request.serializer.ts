@@ -23,6 +23,20 @@ const KAFKA_MESSAGE_FIELDS = [
   'timestamp',
 ];
 
+// On kafka-core, offsets and timestamps are bigint values, which
+// JSON.stringify() rejects, so a payload that carries one gets it as a
+// decimal string. A replacer slows down every call, so it only serves the
+// payloads that need it.
+const stringifyJson = (value: unknown): string => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return JSON.stringify(value, (_key, nested: unknown) =>
+      typeof nested === 'bigint' ? nested.toString() : nested,
+    );
+  }
+};
+
 export interface KafkaRequest<T = any> {
   key: Buffer | string | null;
   value: T;
@@ -80,7 +94,7 @@ export class KafkaRequestSerializer implements Serializer<
       return isPlainObject(value) ||
         Array.isArray(value) ||
         value.toString == Object.prototype.toString // Prevent default [object Object] behavior
-        ? JSON.stringify(value)
+        ? stringifyJson(value)
         : value.toString();
     } else if (isUndefined(value)) {
       return null;

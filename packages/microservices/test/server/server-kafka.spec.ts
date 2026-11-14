@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { Logger } from '@nestjs/common';
 import { concat, EMPTY, of, Subject, throwError } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
@@ -12,6 +15,7 @@ import {
   KafkaMessage,
 } from '../../external/kafka.interface.js';
 import { ServerKafka } from '../../server/index.js';
+import { isKafkaCoreSupported } from '../utils/kafka-core-support.js';
 import { objectToMap } from './utils/object-to-map.js';
 
 class NoopLogger extends Logger {
@@ -1558,6 +1562,15 @@ describe('ServerKafka', () => {
     });
   });
 
+  it('should create a kafkajs client when the driver option says so', async () => {
+    server = new ServerKafka({ driver: 'kafkajs', client: { brokers: [] } });
+
+    const kafkaClient = await server.createClient();
+
+    expect(kafkaClient.consumer).toBeTypeOf('function');
+    expect(kafkaClient.producer).toBeTypeOf('function');
+  });
+
   describe('createClient', () => {
     it('should accept a custom logCreator in client options', async () => {
       const logCreatorSpy = vi.fn(() => 'test');
@@ -1576,6 +1589,77 @@ describe('ServerKafka', () => {
       logger.info({ namespace: '', level: 1, log: 'test' });
 
       expect(logCreatorSpy).toHaveBeenCalled();
+    });
+
+    it('should run on kafkajs, as it always has, when kafkajs is installed', async () => {
+      const kafkajs = await import('kafkajs');
+      server = new ServerKafka({ client: { brokers: ['broker:9092'] } });
+
+      expect(await server.createClient()).toBeInstanceOf(kafkajs.Kafka);
+    });
+
+    it.skipIf(!isKafkaCoreSupported)(
+      'should run on kafka-core when the driver option names it',
+      async () => {
+        const kafkaCore = await import('@cookiemonsterdev/kafka-core');
+        server = new ServerKafka({
+          driver: 'kafka-core',
+          client: { brokers: ['broker:9092'] },
+        });
+
+        expect(await server.createClient()).toBeInstanceOf(kafkaCore.Kafka);
+        expect((server as any).brokers).toEqual(['broker:9092']);
+      },
+    );
+
+    describe.skipIf(!isKafkaCoreSupported)('with a kafka.config.* file', () => {
+      let configDir: string;
+      let configPath: string;
+
+      beforeEach(() => {
+        configDir = mkdtempSync(join(tmpdir(), 'nest-kafka-config-'));
+        configPath = join(configDir, 'kafka.config.json');
+        writeFileSync(
+          configPath,
+          JSON.stringify({
+            client: { brokers: ['file-broker:9092'], clientId: 'file-app' },
+            consumer: { groupId: 'file-group' },
+          }),
+        );
+      });
+
+      afterEach(() => rmSync(configDir, { recursive: true, force: true }));
+
+      it('should connect with the brokers and ids of the file', async () => {
+        server = new ServerKafka({
+          driver: 'kafka-core',
+          client: { config: configPath },
+        });
+
+        await server.createClient();
+
+        expect((server as any).brokers).toEqual(['file-broker:9092']);
+        expect((server as any).clientId).toBe('file-app-server');
+        expect((server as any).groupId).toBe('file-group-server');
+      });
+
+      it('should keep a client id that a subclass set over the file', async () => {
+        class CustomServerKafka extends ServerKafka {
+          constructor(options: ConstructorParameters<typeof ServerKafka>[0]) {
+            super(options);
+            this.clientId = 'custom-client';
+          }
+        }
+        server = new CustomServerKafka({
+          driver: 'kafka-core',
+          client: { config: configPath },
+        });
+
+        await server.createClient();
+
+        expect((server as any).clientId).toBe('custom-client');
+        expect((server as any).groupId).toBe('file-group-server');
+      });
     });
   });
 });

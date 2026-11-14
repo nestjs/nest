@@ -2,6 +2,8 @@ import type { InjectionToken, Type } from '@nestjs/common';
 import { TlsOptions } from 'tls';
 import { Transport } from '../enums/transport.enum.js';
 import { ChannelOptions } from '../external/grpc-options.interface.js';
+import type * as KafkaCore from '../external/kafka-core.interface.js';
+import type { KafkaDriverTypes } from './kafka-driver-types.interface.js';
 import {
   ConsumerConfig,
   ConsumerRunConfig,
@@ -454,29 +456,94 @@ export interface KafkaParserConfig {
 }
 
 /**
+ * The Kafka client library a Kafka server or client runs on.
+ *
  * @publicApi
  */
-export interface KafkaOptions {
+export type KafkaDriver = keyof KafkaDriverTypes;
+
+/**
+ * The options of a Kafka server or client that do not depend on its client
+ * library.
+ *
+ * @publicApi
+ */
+export interface KafkaTransportOptions {
+  /**
+   * Defaults to `"-server"` on server side and `"-client"` on client side.
+   */
+  postfixId?: string;
+  serializer?: Serializer;
+  deserializer?: Deserializer;
+  parser?: KafkaParserConfig;
+  producerOnlyMode?: boolean;
+}
+
+/**
+ * The options of a Kafka server or client that runs on kafkajs, whose support
+ * is deprecated.
+ *
+ * @publicApi
+ */
+export interface KafkajsTransportOptions extends KafkaTransportOptions {
+  /**
+   * The client library to run on. Without it, kafkajs when it is installed
+   * (logging a deprecation warning), otherwise `@cookiemonsterdev/kafka-core`.
+   * Set `'kafkajs'` to keep kafkajs without the warning. To run on kafka-core,
+   * type the options as `KafkaOptions<'kafka-core'>`.
+   */
+  driver?: 'kafkajs';
+  client?: KafkaConfig;
+  consumer?: ConsumerConfig;
+  /**
+   * Options passed to KafkaJS consumer.run().
+   * Note: `partitionsConsumedConcurrently` (KafkaJS parameter) controls
+   * concurrent processing at the partition level (not topic level).
+   */
+  run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
+  subscribe?: Omit<ConsumerSubscribeTopics, 'topics'>;
+  producer?: ProducerConfig;
+  send?: Omit<ProducerRecord, 'topic' | 'messages'>;
+}
+
+/**
+ * The options of a Kafka server or client that runs on
+ * `@cookiemonsterdev/kafka-core`. Offsets and timestamps are bigint values.
+ *
+ * @publicApi
+ */
+export interface KafkaCoreTransportOptions extends KafkaTransportOptions {
+  /**
+   * The client library to run on.
+   */
+  driver: 'kafka-core';
+  /**
+   * Without `brokers`, or with `config` set, the options are merged with a
+   * `kafka.config.*` file.
+   */
+  client?: KafkaCore.KafkaConfig;
+  consumer?: KafkaCore.ConsumerConfig;
+  /**
+   * Options passed to the consumer.run() of kafka-core.
+   * Note: `partitionsConsumedConcurrently` controls concurrent processing at
+   * the partition level (not topic level).
+   */
+  run?: Omit<KafkaCore.ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
+  subscribe?: Omit<KafkaCore.ConsumerSubscribeTopics, 'topics'>;
+  producer?: KafkaCore.ProducerConfig;
+  send?: Omit<KafkaCore.ProducerRecord, 'topic' | 'messages'>;
+}
+
+/**
+ * The options of the Kafka transport. They default to those of kafkajs:
+ * `KafkaOptions<'kafka-core'>` types them for kafka-core. The two are not a
+ * union, which would leave the callbacks of kafkajs options untyped.
+ *
+ * @publicApi
+ */
+export interface KafkaOptions<TDriver extends KafkaDriver = 'kafkajs'> {
   transport?: Transport.KAFKA;
-  options?: {
-    /**
-     * Defaults to `"-server"` on server side and `"-client"` on client side.
-     */
-    postfixId?: string;
-    client?: KafkaConfig;
-    consumer?: ConsumerConfig;
-    /**
-     * Options passed to KafkaJS consumer.run().
-     * Note: `partitionsConsumedConcurrently` (KafkaJS parameter) controls
-     * concurrent processing at the partition level (not topic level).
-     */
-    run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
-    subscribe?: Omit<ConsumerSubscribeTopics, 'topics'>;
-    producer?: ProducerConfig;
-    send?: Omit<ProducerRecord, 'topic' | 'messages'>;
-    serializer?: Serializer;
-    deserializer?: Deserializer;
-    parser?: KafkaParserConfig;
-    producerOnlyMode?: boolean;
-  };
+  options?: TDriver extends 'kafka-core'
+    ? KafkaCoreTransportOptions
+    : KafkajsTransportOptions;
 }

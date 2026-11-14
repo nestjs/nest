@@ -3,6 +3,7 @@ export * from './client-kafka-proxy.interface.js';
 export * from './client-metadata.interface.js';
 export * from './custom-transport-strategy.interface.js';
 export * from './deserializer.interface.js';
+export * from './kafka-driver-types.interface.js';
 export * from './message-handler.interface.js';
 export * from './microservice-configuration.interface.js';
 export * from './packet.interface.js';

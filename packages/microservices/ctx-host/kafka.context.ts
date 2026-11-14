@@ -1,26 +1,29 @@
-import {
-  Consumer,
-  KafkaMessage,
-  Producer,
-} from '../external/kafka.interface.js';
+import { KafkaDriverTypes } from '../interfaces/kafka-driver-types.interface.js';
+import { KafkaDriver } from '../interfaces/microservice-configuration.interface.js';
 import { PacketMetadata } from '../interfaces/packet.interface.js';
 import { BaseRpcContext } from './base-rpc.context.js';
 
-type KafkaContextArgs = [
-  message: KafkaMessage,
+type KafkaContextArgs<TDriver extends KafkaDriver> = [
+  message: KafkaDriverTypes[TDriver]['message'],
   partition: number,
   topic: string,
-  consumer: Consumer,
+  consumer: KafkaDriverTypes[TDriver]['consumer'],
   heartbeat: () => Promise<void>,
-  producer: Producer,
+  producer: KafkaDriverTypes[TDriver]['producer'],
   metadata?: PacketMetadata,
 ];
 
 /**
+ * The context of a Kafka message. Its message, consumer and producer are those
+ * of the client library the server runs on: use `KafkaContext<'kafka-core'>`
+ * on kafka-core, whose offsets and timestamps are bigint values.
+ *
  * @publicApi
  */
-export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
-  constructor(args: KafkaContextArgs) {
+export class KafkaContext<
+  TDriver extends KafkaDriver = 'kafkajs',
+> extends BaseRpcContext<KafkaContextArgs<TDriver>> {
+  constructor(args: KafkaContextArgs<TDriver>) {
     super(args);
   }
 

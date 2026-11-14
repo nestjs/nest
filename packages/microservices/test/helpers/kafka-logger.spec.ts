@@ -48,6 +48,19 @@ describe('KafkaLogger', () => {
     );
   });
 
+  it('should leave out the namespace of an entry that has none', () => {
+    kafkaLogger({
+      namespace: undefined,
+      level: logLevel.WARN,
+      label: 'WARN',
+      log: entry,
+    });
+
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      'WARN message {"other":{"stuff":"here"}}',
+    );
+  });
+
   it('nothing', () => {
     kafkaLogger({
       namespace,

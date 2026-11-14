@@ -44,9 +44,12 @@ export const KafkaLogger =
     }
 
     const { message, ...others } = log;
+    // kafka-core logs some entries, such as the partitioner warning, from its
+    // root logger, which has no namespace
+    const scope = namespace ? ` [${namespace}]` : '';
     if (logger[loggerMethod]) {
       logger[loggerMethod](
-        `${label} [${namespace}] ${message} ${stringifyLogEntry(others)}`,
+        `${label}${scope} ${message} ${stringifyLogEntry(others)}`,
       );
     }
   };

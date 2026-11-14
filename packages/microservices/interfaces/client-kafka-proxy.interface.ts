@@ -1,23 +1,23 @@
 import { ClientProxy } from '../client/index.js';
 import { KafkaStatus } from '../events/index.js';
-import {
-  Consumer,
-  Producer,
-  TopicPartitionOffsetAndMetadata,
-} from '../external/kafka.interface.js';
+import { KafkaDriverTypes } from './kafka-driver-types.interface.js';
+import { KafkaDriver } from './microservice-configuration.interface.js';
 
-export interface ClientKafkaProxy extends Omit<
-  ClientProxy<never, KafkaStatus>,
-  'on'
-> {
+/**
+ * A Kafka client. Its consumer and producer are those of the client library it
+ * runs on: use `ClientKafkaProxy<'kafka-core'>` on kafka-core.
+ */
+export interface ClientKafkaProxy<
+  TDriver extends KafkaDriver = 'kafkajs',
+> extends Omit<ClientProxy<never, KafkaStatus>, 'on'> {
   /**
    * Reference to the Kafka consumer instance.
    */
-  consumer: Consumer | null;
+  consumer: KafkaDriverTypes[TDriver]['consumer'] | null;
   /**
    * Reference to the Kafka producer instance.
    */
-  producer: Producer | null;
+  producer: KafkaDriverTypes[TDriver]['producer'] | null;
   /**
    * Subscribes to messages that match the pattern.
    * Required for message-driven communication style between microservices.
@@ -30,6 +30,6 @@ export interface ClientKafkaProxy extends Omit<
    * @param topicPartitions Array of topic partitions with their offsets and metadata
    */
   commitOffsets(
-    topicPartitions: TopicPartitionOffsetAndMetadata[],
+    topicPartitions: KafkaDriverTypes[TDriver]['topicPartitionOffsetAndMetadata'][],
   ): Promise<void>;
 }

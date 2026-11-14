@@ -7,13 +7,7 @@ import {
   Observable,
   Subject,
 } from 'rxjs';
-import {
-  KAFKA_DEFAULT_BROKER,
-  KAFKA_DEFAULT_CLIENT,
-  KAFKA_DEFAULT_GROUP,
-  NO_EVENT_HANDLER,
-  NO_MESSAGE_HANDLER,
-} from '../constants.js';
+import { NO_EVENT_HANDLER, NO_MESSAGE_HANDLER } from '../constants.js';
 import { KafkaContext } from '../ctx-host/index.js';
 import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer.js';
 import { KafkaHeaders, Transport } from '../enums/index.js';
@@ -22,17 +16,15 @@ import { KafkaRetriableException } from '../exceptions/index.js';
 import {
   BrokersFunction,
   Consumer,
-  ConsumerConfig,
   EachMessagePayload,
   IHeaders,
   Kafka,
-  KafkaConfig,
   KafkaMessage,
   Message,
   Producer,
   RecordMetadata,
 } from '../external/kafka.interface.js';
-import { KafkaLogger, KafkaParser } from '../helpers/index.js';
+import { KafkaParser } from '../helpers/index.js';
 import {
   KafkaOptions,
   MessageHandler,
@@ -41,6 +33,10 @@ import {
   TransportId,
 } from '../interfaces/index.js';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
+import {
+  createKafkaClient,
+  getKafkaIdentity,
+} from '../utils/kafka-client.utils.js';
 import { toPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { Server } from './server.js';
 import { Logger } from '@nestjs/common';
@@ -74,34 +70,38 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  protected postfixId: string;
 
-  constructor(protected readonly options: Required<KafkaOptions>['options']) {
+  /**
+   * Typed as the options of kafkajs, the default driver, so that subclasses
+   * keep compiling. With `driver: 'kafka-core'`, they hold the options of
+   * kafka-core.
+   */
+  protected readonly options: Required<KafkaOptions>['options'];
+
+  constructor(options: Required<KafkaOptions<'kafka-core'>>['options']);
+  constructor(options: Required<KafkaOptions>['options']);
+  constructor(
+    options:
+      | Required<KafkaOptions>['options']
+      | Required<KafkaOptions<'kafka-core'>>['options'],
+  ) {
     super();
+    this.options = options as Required<KafkaOptions>['options'];
 
-    const clientOptions = this.getOptionsProp(
-      this.options,
-      'client',
-      {} as KafkaConfig,
-    );
-    const consumerOptions = this.getOptionsProp(
-      this.options,
-      'consumer',
-      {} as ConsumerConfig,
-    );
-    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-server');
-
-    this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
+    this.postfixId = this.getOptionsProp(this.options, 'postfixId', '-server');
 
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
-    this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
+    const identity = getKafkaIdentity(this.options ?? {}, this.postfixId);
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
 
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
-    this.initializeSerializer(options);
-    this.initializeDeserializer(options);
+    this.initializeSerializer(this.options);
+    this.initializeDeserializer(this.options);
   }
 
   public addHandler(
@@ -231,17 +231,22 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async createClient<T = any>(): Promise<T> {
-    const kafkaPackage = await this.loadPackage(
-      'kafkajs',
-      ServerKafka.name,
-      () => import('kafkajs'),
-    );
-    return new kafkaPackage.Kafka({
-      logCreator: KafkaLogger.bind(null, this.logger),
-      ...this.options.client,
-      clientId: this.clientId,
-      brokers: this.brokers,
-    } as KafkaConfig) as T;
+    const { client, identity } = await createKafkaClient({
+      options: this.options,
+      identity: {
+        brokers: this.brokers,
+        clientId: this.clientId,
+        groupId: this.groupId,
+      },
+      postfixId: this.postfixId,
+      logger: this.logger,
+      loadPackage: (name, loader) =>
+        this.loadPackage(name, ServerKafka.name, loader),
+    });
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
+    return client as T;
   }
 
   public async bindEvents(consumer: Consumer) {

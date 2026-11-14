@@ -6,33 +6,23 @@ import {
   Subject,
 } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
-import {
-  KAFKA_DEFAULT_BROKER,
-  KAFKA_DEFAULT_CLIENT,
-  KAFKA_DEFAULT_GROUP,
-} from '../constants.js';
 import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer.js';
 import { KafkaHeaders } from '../enums/index.js';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception.js';
 import { InvalidMessageException } from '../errors/invalid-message.exception.js';
 import { KafkaStatus } from '../events/index.js';
+import type { AssignerProtocol } from '../external/kafka-core.interface.js';
 import {
   BrokersFunction,
   Consumer,
-  ConsumerConfig,
   ConsumerGroupJoinEvent,
   EachMessagePayload,
   Kafka,
-  KafkaConfig,
   KafkaMessage,
   Producer,
   TopicPartitionOffsetAndMetadata,
 } from '../external/kafka.interface.js';
-import {
-  KafkaLogger,
-  KafkaParser,
-  KafkaReplyPartitionAssigner,
-} from '../helpers/index.js';
+import { KafkaParser, KafkaReplyPartitionAssigner } from '../helpers/index.js';
 import {
   ClientKafkaProxy,
   IncomingResponse,
@@ -47,10 +37,14 @@ import {
   KafkaRequest,
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer.js';
+import {
+  createKafkaClient,
+  getKafkaIdentity,
+} from '../utils/kafka-client.utils.js';
 import { hasPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
-import { loadPackage, isNil, isUndefined } from '@nestjs/common/internal';
+import { isNil, isUndefined, loadPackage } from '@nestjs/common/internal';
 
 /**
  * The consumer and producer created by a single `connect()` attempt, kept so a
@@ -78,6 +72,8 @@ export class ClientKafka
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  protected postfixId: string;
+  protected assignerProtocol?: typeof AssignerProtocol;
   protected producerOnlyMode: boolean;
   protected _consumer: Consumer | null = null;
   protected _producer: Producer | null = null;
@@ -100,37 +96,40 @@ export class ClientKafka
     return this._producer;
   }
 
-  constructor(protected readonly options: Required<KafkaOptions>['options']) {
-    super();
+  /**
+   * Typed as the options of kafkajs, the default driver, so that subclasses
+   * keep compiling. With `driver: 'kafka-core'`, they hold the options of
+   * kafka-core.
+   */
+  protected readonly options: Required<KafkaOptions>['options'];
 
-    const clientOptions = this.getOptionsProp(
-      this.options,
-      'client',
-      {} as KafkaConfig,
-    );
-    const consumerOptions = this.getOptionsProp(
-      this.options,
-      'consumer',
-      {} as ConsumerConfig,
-    );
-    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
+  constructor(options: Required<KafkaOptions<'kafka-core'>>['options']);
+  constructor(options: Required<KafkaOptions>['options']);
+  constructor(
+    options:
+      | Required<KafkaOptions>['options']
+      | Required<KafkaOptions<'kafka-core'>>['options'],
+  ) {
+    super();
+    this.options = options as Required<KafkaOptions>['options'];
+
+    this.postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
     this.producerOnlyMode = this.getOptionsProp(
       this.options,
       'producerOnlyMode',
       false,
     );
 
-    this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
-
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
-    this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
+    const identity = getKafkaIdentity(this.options ?? {}, this.postfixId);
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
-    this.initializeSerializer(options);
-    this.initializeDeserializer(options);
+    this.initializeSerializer(this.options);
+    this.initializeDeserializer(this.options);
   }
 
   public subscribeToResponseOf(pattern: unknown): void {
@@ -233,7 +232,8 @@ export class ClientKafka
       const partitionAssigners = [
         (
           config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[1],
-        ) => new KafkaReplyPartitionAssigner(this, config),
+        ) =>
+          new KafkaReplyPartitionAssigner(this, config, this.assignerProtocol),
       ];
 
       const consumerOptions = {
@@ -283,20 +283,23 @@ export class ClientKafka
   }
 
   public async createClient<T = any>(): Promise<T> {
-    const kafkaPackage = await loadPackage(
-      'kafkajs',
-      ClientKafka.name,
-      () => import('kafkajs'),
-    );
-
-    const kafkaConfig: KafkaConfig = {
-      logCreator: KafkaLogger.bind(null, this.logger),
-      ...this.options.client,
-      brokers: this.brokers,
-      clientId: this.clientId,
-    };
-
-    return new kafkaPackage.Kafka(kafkaConfig);
+    const { client, identity, assignerProtocol } = await createKafkaClient({
+      options: this.options,
+      identity: {
+        brokers: this.brokers,
+        clientId: this.clientId,
+        groupId: this.groupId,
+      },
+      postfixId: this.postfixId,
+      logger: this.logger,
+      loadPackage: (name, loader) =>
+        loadPackage(name, ClientKafka.name, loader),
+    });
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
+    this.assignerProtocol = assignerProtocol;
+    return client as T;
   }
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
