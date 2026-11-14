@@ -3,6 +3,7 @@
 import * as Kafka from 'kafkajs';
 import { ClientKafka } from '../../client/client-kafka.js';
 import { KafkaReplyPartitionAssigner } from '../../helpers/kafka-reply-partition-assigner.js';
+import { isKafkaCoreSupported } from '../utils/kafka-core-support.js';
 
 describe('kafka reply partition assigner', () => {
   let cluster, topics, metadata, assigner, client;
@@ -456,5 +457,46 @@ describe('kafka reply partition assigner', () => {
     expect(defaultAssigner.protocol({ topics }).metadata).toEqual(
       assigner.protocol({ topics }).metadata,
     );
+  });
+
+  // During a rolling switch, a reply group holds members on both packages
+  describe.skipIf(!isKafkaCoreSupported)('with kafka-core members', () => {
+    let kafkaCoreAssigner: KafkaReplyPartitionAssigner;
+
+    beforeEach(async () => {
+      const { AssignerProtocol } = await import('@cookiemonsterdev/kafka-core');
+      kafkaCoreAssigner = new KafkaReplyPartitionAssigner(
+        client,
+        { cluster },
+        AssignerProtocol,
+      );
+    });
+
+    it('should encode the same member metadata as kafkajs', () => {
+      client.consumerAssignments = { 'topic-A': 0 };
+
+      expect(kafkaCoreAssigner.protocol({ topics }).metadata).toEqual(
+        assigner.protocol({ topics }).metadata,
+      );
+    });
+
+    it('should assign the same partitions as kafkajs', async () => {
+      metadata['topic-A'] = [{ partitionId: 0 }, { partitionId: 1 }];
+      metadata['topic-B'] = [{ partitionId: 0 }];
+      const members = [
+        {
+          memberId: 'kafkajs-member',
+          metadata: assigner.protocol({ topics }).metadata,
+        },
+        {
+          memberId: 'kafka-core-member',
+          metadata: kafkaCoreAssigner.protocol({ topics }).metadata,
+        },
+      ];
+
+      expect(await kafkaCoreAssigner.assign({ members, topics })).toEqual(
+        await assigner.assign({ members, topics }),
+      );
+    });
   });
 });

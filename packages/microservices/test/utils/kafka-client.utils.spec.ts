@@ -269,6 +269,34 @@ describe('createKafkaClient', () => {
     });
   });
 
+  describe('on a Node.js release older than kafka-core needs', () => {
+    const versions = process.versions;
+
+    beforeEach(() => {
+      Object.defineProperty(process, 'versions', {
+        value: { ...versions, node: '22.14.0' },
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(process, 'versions', {
+        value: versions,
+        configurable: true,
+      });
+    });
+
+    it('should explain why kafka-core does not load', async () => {
+      vi.mocked(tryLoadPackage).mockResolvedValue(null);
+      vi.mocked(loadPackage).mockRejectedValue(new Error('missing'));
+
+      await expect(create({})).rejects.toThrow('missing');
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+        '"@cookiemonsterdev/kafka-core" needs Node.js 24 or newer. Upgrade Node.js, or install kafkajs.',
+      );
+    });
+  });
+
   it('should report kafka-core as missing when neither package is installed', async () => {
     vi.mocked(tryLoadPackage).mockResolvedValue(null);
     vi.mocked(loadPackage).mockRejectedValue(new Error('missing'));
