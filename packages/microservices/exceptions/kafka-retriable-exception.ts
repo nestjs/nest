@@ -3,7 +3,7 @@ import { RpcException } from './rpc-exception.js';
 /**
  * Exception that instructs Kafka driver to instead of introspecting
  * error processing flow and sending serialized error message to the consumer,
- * force bubble it up to the "eachMessage" callback of the underlying "kafkajs" package
+ * force bubble it up to the "eachMessage" callback of the underlying Kafka client
  * (even if interceptors are applied, or an observable stream is returned from the message handler).
  *
  * A transient exception that if retried may succeed.

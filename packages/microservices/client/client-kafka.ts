@@ -6,33 +6,23 @@ import {
   Subject,
 } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
-import {
-  KAFKA_DEFAULT_BROKER,
-  KAFKA_DEFAULT_CLIENT,
-  KAFKA_DEFAULT_GROUP,
-} from '../constants.js';
 import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer.js';
 import { KafkaHeaders } from '../enums/index.js';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception.js';
 import { InvalidMessageException } from '../errors/invalid-message.exception.js';
 import { KafkaStatus } from '../events/index.js';
 import {
+  AssignerProtocol,
   BrokersFunction,
   Consumer,
-  ConsumerConfig,
   ConsumerGroupJoinEvent,
   EachMessagePayload,
   Kafka,
-  KafkaConfig,
   KafkaMessage,
   Producer,
   TopicPartitionOffsetAndMetadata,
 } from '../external/kafka.interface.js';
-import {
-  KafkaLogger,
-  KafkaParser,
-  KafkaReplyPartitionAssigner,
-} from '../helpers/index.js';
+import { KafkaParser, KafkaReplyPartitionAssigner } from '../helpers/index.js';
 import {
   ClientKafkaProxy,
   IncomingResponse,
@@ -47,10 +37,14 @@ import {
   KafkaRequest,
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer.js';
+import {
+  createKafkaClient,
+  getKafkaIdentity,
+} from '../utils/kafka-client.utils.js';
 import { hasPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { ClientProxy } from './client-proxy.js';
 import { Logger } from '@nestjs/common';
-import { loadPackage, isNil, isUndefined } from '@nestjs/common/internal';
+import { isNil, isUndefined, loadPackage } from '@nestjs/common/internal';
 
 /**
  * The consumer and producer created by a single `connect()` attempt, kept so a
@@ -75,9 +69,11 @@ export class ClientKafka
   protected initialized: Promise<void> | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
-  protected brokers: string[] | BrokersFunction;
+  protected brokers: readonly string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  protected postfixId: string;
+  protected assignerProtocol?: typeof AssignerProtocol;
   protected producerOnlyMode: boolean;
   protected _consumer: Consumer | null = null;
   protected _producer: Producer | null = null;
@@ -103,30 +99,19 @@ export class ClientKafka
   constructor(protected readonly options: Required<KafkaOptions>['options']) {
     super();
 
-    const clientOptions = this.getOptionsProp(
-      this.options,
-      'client',
-      {} as KafkaConfig,
-    );
-    const consumerOptions = this.getOptionsProp(
-      this.options,
-      'consumer',
-      {} as ConsumerConfig,
-    );
-    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
+    this.postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
     this.producerOnlyMode = this.getOptionsProp(
       this.options,
       'producerOnlyMode',
       false,
     );
 
-    this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
-
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
-    this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
+    const identity = getKafkaIdentity(this.options ?? {}, this.postfixId);
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
     this.initializeSerializer(options);
@@ -233,7 +218,8 @@ export class ClientKafka
       const partitionAssigners = [
         (
           config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[1],
-        ) => new KafkaReplyPartitionAssigner(this, config),
+        ) =>
+          new KafkaReplyPartitionAssigner(this, config, this.assignerProtocol),
       ];
 
       const consumerOptions = {
@@ -246,10 +232,10 @@ export class ClientKafka
         this.client!.consumer(consumerOptions);
       this.registerConsumerEventListeners();
 
-      // Set member assignments on join and rebalance
-      this._consumer.on(
-        this._consumer.events.GROUP_JOIN,
-        this.setConsumerAssignments.bind(this),
+      // Set member assignments on join and rebalance. kafka-core types the
+      // payload of every event as unknown.
+      this._consumer.on(this._consumer.events.GROUP_JOIN, event =>
+        this.setConsumerAssignments(event as ConsumerGroupJoinEvent),
       );
       await this._consumer.connect();
       await this.bindTopics();
@@ -283,20 +269,23 @@ export class ClientKafka
   }
 
   public async createClient<T = any>(): Promise<T> {
-    const kafkaPackage = await loadPackage(
-      'kafkajs',
-      ClientKafka.name,
-      () => import('kafkajs'),
-    );
-
-    const kafkaConfig: KafkaConfig = {
-      logCreator: KafkaLogger.bind(null, this.logger),
-      ...this.options.client,
-      brokers: this.brokers,
-      clientId: this.clientId,
-    };
-
-    return new kafkaPackage.Kafka(kafkaConfig);
+    const { client, identity, assignerProtocol } = await createKafkaClient({
+      options: this.options,
+      identity: {
+        brokers: this.brokers,
+        clientId: this.clientId,
+        groupId: this.groupId,
+      },
+      postfixId: this.postfixId,
+      logger: this.logger,
+      loadPackage: (name, loader) =>
+        loadPackage(name, ClientKafka.name, loader),
+    });
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
+    this.assignerProtocol = assignerProtocol;
+    return client as T;
   }
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
@@ -310,7 +299,7 @@ export class ClientKafka
           }),
         );
       } catch (err) {
-        // A rejection would make kafkajs redeliver the message forever
+        // A rejection would make the Kafka client redeliver the message forever
         this.logger.error(
           `Message skipped (topic "${payload.topic}", partition ${payload.partition}, offset ${payload.message.offset}): ${err.message}`,
         );
@@ -327,7 +316,7 @@ export class ClientKafka
         return callback?.({ err, isDisposed: true });
       }
       const correlationId = rawMessage.headers![KafkaHeaders.CORRELATION_ID];
-      // kafkajs decodes an empty header value as null
+      // A header without a value is not the id of a pending request
       if (isNil(correlationId)) {
         return;
       }

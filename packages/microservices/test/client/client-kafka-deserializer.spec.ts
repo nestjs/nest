@@ -10,13 +10,16 @@ describe('ClientKafka custom deserializer failures', () => {
   const partition = 0;
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
   const error = new Error('deserializer failed');
-  const message: KafkaMessage = {
+  const message: Omit<KafkaMessage, 'headers'> = {
     key: Buffer.from('test-key'),
-    offset: '0',
-    size: 12,
+    offset: 0n,
+    byteSize: 12,
     value: Buffer.from('test-message'),
-    timestamp: new Date().toISOString(),
+    timestamp: BigInt(Date.now()),
     attributes: 1,
+    magicByte: 2,
+    isControlRecord: false,
+    batchContext: {} as KafkaMessage['batchContext'],
   };
   const payload: EachMessagePayload = {
     topic,

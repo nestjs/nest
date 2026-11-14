@@ -61,6 +61,25 @@ describe('KafkaRequestSerializer', () => {
       });
     });
 
+    it('bigint', async () => {
+      expect(await instance.serialize(42n)).toEqual({
+        headers: {},
+        value: '42',
+      });
+    });
+
+    it('object with bigint offsets', async () => {
+      expect(
+        await instance.serialize({
+          offsets: [9007199254740993n],
+          timestamp: 1700000000000n,
+        }),
+      ).toEqual({
+        headers: {},
+        value: '{"offsets":["9007199254740993"],"timestamp":"1700000000000"}',
+      });
+    });
+
     it('complex object with .toString()', async () => {
       class Complex {
         private readonly name = 'complex';
@@ -218,7 +237,7 @@ describe('KafkaRequestSerializer', () => {
   });
 
   describe('serialize a kafka message with many header values', () => {
-    // kafkajs encodes each of them as a header, at about 1 kB apiece
+    // kafka-core encodes each of them as a header, at about 1 kB apiece
     it('should send 10000 header values', () => {
       const headers = { repeated: new Array(9_999).fill(''), single: '' };
 

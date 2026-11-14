@@ -1,4 +1,7 @@
-import { Producer } from 'kafkajs';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import type { Producer } from '@cookiemonsterdev/kafka-core';
 import { lastValueFrom, Observable } from 'rxjs';
 import { ClientKafka } from '../../client/client-kafka.js';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
@@ -10,6 +13,7 @@ import {
   EachMessagePayload,
   KafkaMessage,
 } from '../../external/kafka.interface.js';
+import { isKafkaCoreSupported } from '../utils/kafka-core-support.js';
 
 describe('ClientKafka', () => {
   const topic = 'test.topic';
@@ -18,26 +22,29 @@ describe('ClientKafka', () => {
   const replyPartition = '0';
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
   const key = 'test-key';
-  const offset = '0';
-  const timestamp = new Date().toISOString();
+  const offset = 0n;
+  const timestamp = BigInt(Date.now());
   const attributes = 1;
   const messageValue = 'test-message';
   const heartbeat = async () => {};
   const pause = () => () => {};
 
-  const message: KafkaMessage = {
+  const message: Omit<KafkaMessage, 'headers'> = {
     key: Buffer.from(key),
     offset,
-    size: messageValue.length,
+    byteSize: messageValue.length,
     value: Buffer.from(messageValue),
     timestamp,
     attributes,
+    magicByte: 2,
+    isControlRecord: false,
+    batchContext: {} as KafkaMessage['batchContext'],
   };
 
   const deserializedMessage: any = {
     key,
     offset,
-    size: messageValue.length,
+    byteSize: messageValue.length,
     value: messageValue,
     timestamp,
     attributes,
@@ -227,7 +234,17 @@ describe('ClientKafka', () => {
       .mockImplementation(() => kafkaClient);
   });
 
-  describe('createClient', () => {
+  it('should create a kafkajs client when the driver option says so', async () => {
+    client = new ClientKafka({ driver: 'kafkajs', client: { brokers: [] } });
+
+    const kafkaClient = await client.createClient();
+
+    expect(kafkaClient.consumer).toBeTypeOf('function');
+    expect(kafkaClient.producer).toBeTypeOf('function');
+    expect((client as any).assignerProtocol.MemberMetadata).toBeDefined();
+  });
+
+  describe.skipIf(!isKafkaCoreSupported)('createClient', () => {
     beforeEach(() => {
       client = new ClientKafka({});
     });
@@ -249,6 +266,50 @@ describe('ClientKafka', () => {
       logger.info({ namespace: '', level: 1, log: 'test' });
 
       expect(logCreatorSpy).toHaveBeenCalled();
+    });
+
+    describe('with a kafka.config.* file', () => {
+      let configDir: string;
+      let configPath: string;
+
+      beforeEach(() => {
+        configDir = mkdtempSync(join(tmpdir(), 'nest-kafka-config-'));
+        configPath = join(configDir, 'kafka.config.json');
+        writeFileSync(
+          configPath,
+          JSON.stringify({
+            client: { brokers: ['file-broker:9092'], clientId: 'file-app' },
+            consumer: { groupId: 'file-group' },
+          }),
+        );
+      });
+
+      afterEach(() => rmSync(configDir, { recursive: true, force: true }));
+
+      it('should connect with the brokers and ids of the file', async () => {
+        client = new ClientKafka({ client: { config: configPath } });
+
+        await client.createClient();
+
+        expect((client as any).brokers).toEqual(['file-broker:9092']);
+        expect((client as any).clientId).toBe('file-app-client');
+        expect((client as any).groupId).toBe('file-group-client');
+      });
+
+      it('should keep a client id that a subclass set over the file', async () => {
+        class CustomClientKafka extends ClientKafka {
+          constructor(options: ConstructorParameters<typeof ClientKafka>[0]) {
+            super(options);
+            this.clientId = 'custom-client';
+          }
+        }
+        client = new CustomClientKafka({ client: { config: configPath } });
+
+        await client.createClient();
+
+        expect((client as any).clientId).toBe('custom-client');
+        expect((client as any).groupId).toBe('file-group-client');
+      });
     });
   });
 
@@ -589,7 +650,7 @@ describe('ClientKafka', () => {
       await client.connect();
 
       const consumerAssignments: ConsumerGroupJoinEvent = {
-        id: 'id',
+        id: 1,
         type: 'type',
         timestamp: 1234567890,
         payload: {
@@ -621,7 +682,7 @@ describe('ClientKafka', () => {
       await client.connect();
 
       const consumerAssignments: ConsumerGroupJoinEvent = {
-        id: 'id',
+        id: 1,
         type: 'type',
         timestamp: 1234567890,
         payload: {
@@ -799,7 +860,7 @@ describe('ClientKafka', () => {
       });
 
       it('should log and skip the message, and fail the pending request', async () => {
-        // A rejection would make kafkajs redeliver the message
+        // A rejection would make kafka-core redeliver the message
         await expect(subscription(payload)).resolves.toBeUndefined();
 
         expect(loggerErrorSpy).toHaveBeenCalledOnce();

@@ -1,5 +1,7 @@
 import { ClientKafka } from '../client/client-kafka.js';
+import { KAFKA_CORE_PACKAGE } from '../constants.js';
 import {
+  AssignerProtocol,
   Cluster,
   GroupMember,
   GroupMemberAssignment,
@@ -8,7 +10,21 @@ import {
 } from '../external/kafka.interface.js';
 import { loadPackageCached, isUndefined } from '@nestjs/common/internal';
 
-let kafkaPackage: any = {};
+/**
+ * The protocol of a Kafka package loaded already, kafka-core first. Without
+ * one, kafkajs, which the assigner loaded before kafka-core was supported.
+ */
+function loadAssignerProtocol(): typeof AssignerProtocol {
+  for (const packageName of [KAFKA_CORE_PACKAGE, 'kafkajs']) {
+    try {
+      return loadPackageCached(packageName).AssignerProtocol;
+    } catch {
+      // Not loaded
+    }
+  }
+  return loadPackageCached('kafkajs', KafkaReplyPartitionAssigner.name)
+    .AssignerProtocol;
+}
 
 export class KafkaReplyPartitionAssigner {
   readonly name = 'NestReplyPartitionAssigner';
@@ -19,13 +35,10 @@ export class KafkaReplyPartitionAssigner {
     private readonly config: {
       cluster: Cluster;
     },
-  ) {
-    // ClientKafka loads kafkajs (createClient()) before it creates the assigner
-    kafkaPackage = loadPackageCached(
-      'kafkajs',
-      KafkaReplyPartitionAssigner.name,
-    );
-  }
+    // The one of the package ClientKafka runs on. kafka-core and kafkajs
+    // encode the same consumer protocol.
+    private readonly assignerProtocol: typeof AssignerProtocol = loadAssignerProtocol(),
+  ) {}
 
   /**
    * This process can result in imbalanced assignments
@@ -35,10 +48,9 @@ export class KafkaReplyPartitionAssigner {
    * @returns {array} object partitions per topic per member
    */
   public async assign(group: {
-    members: GroupMember[];
-    topics: string[];
+    members: readonly GroupMember[];
+    topics: readonly string[];
   }): Promise<GroupMemberAssignment[]> {
-    kafkaPackage = await kafkaPackage;
     const assignment = {};
     const previousAssignment = {};
 
@@ -153,28 +165,24 @@ export class KafkaReplyPartitionAssigner {
     // encode the end result
     return Object.keys(assignment).map(memberId => ({
       memberId,
-      memberAssignment: kafkaPackage.AssignerProtocol.MemberAssignment.encode({
+      memberAssignment: this.assignerProtocol.MemberAssignment.encode({
         version: this.version,
         assignment: assignment[memberId],
       }),
     }));
   }
 
-  public protocol(subscription: {
-    topics: string[];
-    userData: Buffer;
-  }): GroupState {
-    const stringifiedUserData = JSON.stringify({
-      previousAssignment: this.getPreviousAssignment(),
-    });
-    subscription.userData = Buffer.from(stringifiedUserData);
+  public protocol(subscription: { topics: readonly string[] }): GroupState {
+    const userData = Buffer.from(
+      JSON.stringify({ previousAssignment: this.getPreviousAssignment() }),
+    );
 
     return {
       name: this.name,
-      metadata: kafkaPackage.AssignerProtocol.MemberMetadata.encode({
+      metadata: this.assignerProtocol.MemberMetadata.encode({
         version: this.version,
         topics: subscription.topics,
-        userData: subscription.userData,
+        userData,
       }),
     };
   }
@@ -184,11 +192,9 @@ export class KafkaReplyPartitionAssigner {
   }
 
   public decodeMember(member: GroupMember) {
-    // kafkaPackage must be resolved before calling this method
-    // (it is resolved in assign() which calls decodeMember)
     let memberMetadata: MemberMetadata;
     try {
-      memberMetadata = kafkaPackage.AssignerProtocol.MemberMetadata.decode(
+      memberMetadata = this.assignerProtocol.MemberMetadata.decode(
         member.memberMetadata,
       ) as MemberMetadata;
     } catch {

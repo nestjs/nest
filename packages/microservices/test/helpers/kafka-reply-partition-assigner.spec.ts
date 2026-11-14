@@ -1,3 +1,5 @@
+// kafkajs loads on every Node.js release the framework supports, and encodes
+// the same consumer protocol as kafka-core
 import * as Kafka from 'kafkajs';
 import { ClientKafka } from '../../client/client-kafka.js';
 import { KafkaReplyPartitionAssigner } from '../../helpers/kafka-reply-partition-assigner.js';
@@ -12,7 +14,11 @@ describe('kafka reply partition assigner', () => {
     metadata = {};
     cluster = { findTopicPartitionMetadata: topic => metadata[topic] };
     client = new ClientKafka({});
-    assigner = new KafkaReplyPartitionAssigner(client, { cluster });
+    assigner = new KafkaReplyPartitionAssigner(
+      client,
+      { cluster },
+      Kafka.AssignerProtocol,
+    );
     topics = ['topic-A', 'topic-B'];
 
     getConsumerAssignments = vi.spyOn(client, 'getConsumerAssignments');
@@ -440,5 +446,15 @@ describe('kafka reply partition assigner', () => {
         }),
       });
     });
+  });
+
+  it('should default to the protocol of a Kafka package', () => {
+    const defaultAssigner = new KafkaReplyPartitionAssigner(client, {
+      cluster,
+    });
+
+    expect(defaultAssigner.protocol({ topics }).metadata).toEqual(
+      assigner.protocol({ topics }).metadata,
+    );
   });
 });

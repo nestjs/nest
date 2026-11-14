@@ -48,6 +48,19 @@ describe('KafkaLogger', () => {
     );
   });
 
+  it('should leave out the namespace of an entry that has none', () => {
+    kafkaLogger({
+      namespace: undefined,
+      level: logLevel.WARN,
+      label: 'WARN',
+      log: entry,
+    });
+
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      'WARN message {"other":{"stuff":"here"}}',
+    );
+  });
+
   it('nothing', () => {
     kafkaLogger({
       namespace,
@@ -101,7 +114,7 @@ describe('KafkaLogger', () => {
   });
 
   describe('when the entry cannot be serialized as json', () => {
-    // kafkajs logs the error an "eachMessage" handler rejected with this way
+    // kafka-core logs the error an "eachMessage" handler rejected with this way
     const logError = (rejection: unknown) =>
       kafkaLogger({
         namespace,

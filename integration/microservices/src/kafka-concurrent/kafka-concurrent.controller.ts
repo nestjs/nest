@@ -8,7 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
-import { PartitionerArgs } from 'kafkajs';
+import type { PartitionerArgs } from '@cookiemonsterdev/kafka-core';
 import { Observable } from 'rxjs';
 import { SumDto } from './dto/sum.dto.js';
 

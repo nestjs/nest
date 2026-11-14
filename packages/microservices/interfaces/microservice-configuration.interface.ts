@@ -454,11 +454,24 @@ export interface KafkaParserConfig {
 }
 
 /**
+ * The Kafka client library a Kafka server or client runs on.
+ *
+ * @publicApi
+ */
+export type KafkaDriver = 'kafka-core' | 'kafkajs';
+
+/**
  * @publicApi
  */
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
+    /**
+     * The client library to run on. Defaults to `@cookiemonsterdev/kafka-core`
+     * when it is installed, otherwise `kafkajs`, whose support is deprecated.
+     * On either, offsets and timestamps are bigint values.
+     */
+    driver?: KafkaDriver;
     /**
      * Defaults to `"-server"` on server side and `"-client"` on client side.
      */
@@ -466,8 +479,8 @@ export interface KafkaOptions {
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
     /**
-     * Options passed to KafkaJS consumer.run().
-     * Note: `partitionsConsumedConcurrently` (KafkaJS parameter) controls
+     * Options passed to the consumer.run() of the Kafka client.
+     * Note: `partitionsConsumedConcurrently` (a Kafka client parameter) controls
      * concurrent processing at the partition level (not topic level).
      */
     run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;

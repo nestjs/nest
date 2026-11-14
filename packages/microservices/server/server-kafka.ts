@@ -7,13 +7,7 @@ import {
   Observable,
   Subject,
 } from 'rxjs';
-import {
-  KAFKA_DEFAULT_BROKER,
-  KAFKA_DEFAULT_CLIENT,
-  KAFKA_DEFAULT_GROUP,
-  NO_EVENT_HANDLER,
-  NO_MESSAGE_HANDLER,
-} from '../constants.js';
+import { NO_EVENT_HANDLER, NO_MESSAGE_HANDLER } from '../constants.js';
 import { KafkaContext } from '../ctx-host/index.js';
 import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer.js';
 import { KafkaHeaders, Transport } from '../enums/index.js';
@@ -22,17 +16,15 @@ import { KafkaRetriableException } from '../exceptions/index.js';
 import {
   BrokersFunction,
   Consumer,
-  ConsumerConfig,
   EachMessagePayload,
   IHeaders,
   Kafka,
-  KafkaConfig,
   KafkaMessage,
   Message,
   Producer,
   RecordMetadata,
 } from '../external/kafka.interface.js';
-import { KafkaLogger, KafkaParser } from '../helpers/index.js';
+import { KafkaParser } from '../helpers/index.js';
 import {
   KafkaOptions,
   MessageHandler,
@@ -41,6 +33,10 @@ import {
   TransportId,
 } from '../interfaces/index.js';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
+import {
+  createKafkaClient,
+  getKafkaIdentity,
+} from '../utils/kafka-client.utils.js';
 import { toPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { Server } from './server.js';
 import { Logger } from '@nestjs/common';
@@ -48,8 +44,9 @@ import { isNil, isString } from '@nestjs/common/internal';
 
 // Topic names the broker accepts
 const KAFKA_TOPIC_NAME_REGEX = /^[a-zA-Z0-9._-]{1,249}$/;
-// The errors kafkajs tells by their name and never retries: a message handler
-// that rejects with one of them stops the consumer, which is not restarted
+// The errors the Kafka client tells by their name and never retries: a message
+// handler that rejects with one of them stops the consumer, which is not
+// restarted
 const KAFKA_UNRECOVERABLE_ERRORS = [
   'RangeError',
   'ReferenceError',
@@ -61,8 +58,8 @@ const KAFKA_UNRECOVERABLE_ERRORS = [
  * @publicApi
  */
 export class ServerKafka extends Server<never, KafkaStatus> {
-  // `handleEvent` awaits the stream, so the rejection reaches kafkajs, which
-  // logs it. A second report here would duplicate it.
+  // `handleEvent` awaits the stream, so the rejection reaches the Kafka client,
+  // which logs it. A second report here would duplicate it.
   public override readonly propagatesEventHandlerErrors = true;
   public transportId: TransportId = Transport.KAFKA;
 
@@ -71,32 +68,22 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected consumer: Consumer | null = null;
   protected producer: Producer | null = null;
   protected parser: KafkaParser | null = null;
-  protected brokers: string[] | BrokersFunction;
+  protected brokers: readonly string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  protected postfixId: string;
 
   constructor(protected readonly options: Required<KafkaOptions>['options']) {
     super();
 
-    const clientOptions = this.getOptionsProp(
-      this.options,
-      'client',
-      {} as KafkaConfig,
-    );
-    const consumerOptions = this.getOptionsProp(
-      this.options,
-      'consumer',
-      {} as ConsumerConfig,
-    );
-    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-server');
-
-    this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
+    this.postfixId = this.getOptionsProp(this.options, 'postfixId', '-server');
 
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
-    this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
+    const identity = getKafkaIdentity(this.options ?? {}, this.postfixId);
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
 
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
@@ -231,17 +218,22 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async createClient<T = any>(): Promise<T> {
-    const kafkaPackage = await this.loadPackage(
-      'kafkajs',
-      ServerKafka.name,
-      () => import('kafkajs'),
-    );
-    return new kafkaPackage.Kafka({
-      logCreator: KafkaLogger.bind(null, this.logger),
-      ...this.options.client,
-      clientId: this.clientId,
-      brokers: this.brokers,
-    } as KafkaConfig) as T;
+    const { client, identity } = await createKafkaClient({
+      options: this.options,
+      identity: {
+        brokers: this.brokers,
+        clientId: this.clientId,
+        groupId: this.groupId,
+      },
+      postfixId: this.postfixId,
+      logger: this.logger,
+      loadPackage: (name, loader) =>
+        this.loadPackage(name, ServerKafka.name, loader),
+    });
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
+    return client as T;
   }
 
   public async bindEvents(consumer: Consumer) {
@@ -319,7 +311,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
    * published with the credentials of this server and has no envelope, so on
    * a topic this server handles it would run that topic's handlers as an
    * event (unless it is skipped as one of the server's own replies, see
-   * `isOwnReply`). kafkajs also keeps state per topic in plain objects, which
+   * `isOwnReply`). The Kafka client also keeps state per topic in plain objects, which
    * a topic named after an `Object.prototype` property (`__proto__`) reaches
    * through their prototype.
    */
@@ -354,13 +346,13 @@ export class ServerKafka extends Server<never, KafkaStatus> {
    * Returns what the `eachMessage` callback rejects with when handling a
    * message failed with `err`.
    *
-   * kafkajs delivers a message again when its handler rejects, and restarts
+   * The Kafka client delivers a message again when its handler rejects, and restarts
    * the consumer once the retries are exhausted, except for the errors it
    * takes for a bug in its own code: one message failing with one of those
    * would leave the consumer stopped, for every topic. An exception filter
    * that throws (as one written for HTTP does when given an RPC context) or
    * that passes on the handler's own error rejects with such an error, so it
-   * reaches kafkajs as a plain error with the same message and stack, and the
+   * reaches the Kafka client as a plain error with the same message and stack, and the
    * original error as its cause.
    */
   private toRetriableError(err: any): unknown {
@@ -410,7 +402,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         }),
       );
     } catch (err) {
-      // A rejection would make kafkajs redeliver the message forever
+      // A rejection would make the Kafka client redeliver the message forever
       return this.logger.error(
         `Message skipped (topic "${channel}", partition ${payload.partition}, offset ${payload.message.offset}): ${err.message}`,
       );
@@ -444,12 +436,12 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     try {
       this.assertValidPacketId(correlationId);
     } catch (err) {
-      // A rejection would make kafkajs redeliver the message forever
+      // A rejection would make the Kafka client redeliver the message forever
       return this.logger.error(
         `The correlation id of the message is not valid (${err.message}), so it cannot be answered and has been dropped. Message pattern: ${packet.pattern}`,
       );
     }
-    // The sender picks the reply topic. kafkajs keeps every topic a producer
+    // The sender picks the reply topic. The Kafka client keeps every topic a producer
     // is asked to send to, so one it cannot encode (such as a name longer
     // than a Kafka string) would fail every later reply of the producer too.
     if (!isString(replyTopic) || !KAFKA_TOPIC_NAME_REGEX.test(replyTopic)) {
@@ -508,7 +500,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     );
   }
 
-  // A retriable exception makes kafkajs redeliver the message, and it is the
+  // A retriable exception makes the Kafka client redeliver the message, and it is the
   // redelivered message that gets answered
   protected override shouldAnswerRejectedRequest(err: unknown): boolean {
     return !(err instanceof KafkaRetriableException);
@@ -533,7 +525,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   /**
    * Subscribes to the response of a request and settles once it emits, fails
    * or completes. A retriable exception that comes before any value rejects,
-   * which makes kafkajs deliver the message again; otherwise it resolves with
+   * which makes the Kafka client deliver the message again; otherwise it resolves with
    * the stream to reply with.
    *
    * That stream is subscribed to after the response, so it replays what the
@@ -668,10 +660,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
    * one without the reply headers (see `handleMessage`).
    *
    * The returned promise settles once the stream the handler returns
-   * completes, and kafkajs only then moves on to the next message of the
+   * completes, and the Kafka client only then moves on to the next message of the
    * partition, so a handler whose stream does not complete holds the
    * partition. A handler that fails (as when a guard or a pipe rejects the
-   * message) rejects into kafkajs, which does not commit the message and
+   * message) rejects into the Kafka client, which does not commit the message and
    * delivers it again: it retries it, and once its retries are exhausted it
    * restarts the consumer from the last committed offset. Handlers of topics
    * that other producers write to should complete their streams, and should

@@ -28,14 +28,15 @@ export class KafkaParser {
   }
 
   public parse<T = any>(data: any): T {
-    // kafkajs inflates a compressed batch without any limit, so the size of a
-    // message on the wire does not bound the size of what is decoded here
+    // The Kafka client does not bound the decompressed size of a message, so
+    // its size on the wire does not bound what is decoded here
     const messageSize = this.getMessageSize(data);
     if (messageSize > this.maxMessageSize) {
       throw new MaxPacketLengthExceededException(messageSize);
     }
 
-    // Clone object to as modifying the original one would break KafkaJS retries
+    // Clone the object, as modifying the original would break the Kafka
+    // client's retries
     const result = {
       ...data,
       headers: { ...data.headers },
@@ -97,7 +98,7 @@ export class KafkaParser {
       (data.key?.length ?? 0) +
       (this.keepBinary ? 0 : (data.value?.length ?? 0));
     for (const [name, value] of Object.entries(data.headers ?? {})) {
-      // kafkajs collects the values of a repeated header in an array
+      // The Kafka client collects the values of a repeated header in an array
       const values: any[] = Array.isArray(value) ? value : [value];
       size += name.length;
       for (const headerValue of values) {

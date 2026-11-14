@@ -1,7 +1,7 @@
 /**
- * Do NOT add NestJS logic to this interface.  It is meant to ONLY represent the types for the kafkajs package.
+ * Do NOT add NestJS logic to this interface.  It is meant to ONLY represent the types for the @cookiemonsterdev/kafka-core package.
  *
- * @see https://github.com/tulios/kafkajs/blob/master/types/index.d.ts
+ * @see https://github.com/cookieMonsterDev/kafka/tree/master/packages/core
  *
  * @publicApi
  *
@@ -11,85 +11,106 @@
 import * as net from 'net';
 import * as tls from 'tls';
 
-type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
-type XOR<T, U> = T | U extends object
-  ? (Without<T, U> & U) | (Without<U, T> & T)
-  : T | U;
+type ValueOf<T> = T[keyof T];
 
 export declare class Kafka {
-  constructor(config: KafkaConfig);
+  /**
+   * Options left unset are filled from a `kafka.config.*` file, as set by
+   * {@link KafkaConfig.config}.
+   */
+  constructor(config?: KafkaConfig);
   producer(config?: ProducerConfig): Producer;
   consumer(config: ConsumerConfig): Consumer;
   admin(config?: AdminConfig): Admin;
   logger(): Logger;
+  /**
+   * Reports where each `KafkaConfig` key's value came from: the call, a
+   * `kafka.config.*` file, or neither (the default). Carries no values.
+   */
+  configSource(): KafkaConfigSource;
+  /**
+   * Async sibling of `new Kafka()`, and the recommended way to build a client
+   * from a `kafka.config.*` file: it loads any config file with dynamic
+   * `import()`, including one that uses top-level `await`.
+   */
+  static fromConfig(
+    overrides?: KafkaConfig,
+    options?: { cwd?: string },
+  ): Promise<Kafka>;
+  /**
+   * Builds a client from a `kafka.config.*` file the caller already loaded,
+   * without discovering or reading the file again.
+   */
+  static from(fileConfig: KafkaFileConfig, overrides?: KafkaConfig): Kafka;
 }
 
-export type BrokersFunction = () => string[] | Promise<string[]>;
+/** Resolves bootstrap brokers at connect time as `host:port` strings. */
+export type BrokersFunction = () =>
+  readonly string[] | Promise<readonly string[]>;
 
-type SaslAuthenticationRequest = {
-  encode: () => Buffer | Promise<Buffer>;
-};
-type SaslAuthenticationResponse<ParseResult> = {
-  decode: (rawResponse: Buffer) => Buffer | Promise<Buffer>;
-  parse: (data: Buffer) => ParseResult;
-};
-
-type Authenticator = {
-  authenticate: () => Promise<void>;
-};
-
-export type SaslAuthenticateArgs<ParseResult> = {
-  request: SaslAuthenticationRequest;
-  response?: SaslAuthenticationResponse<ParseResult>;
-};
-
-type AuthenticationProviderArgs = {
+export interface AuthenticationProviderArgs {
   host: string;
   port: number;
   logger: Logger;
-  saslAuthenticate: <ParseResult>(
-    args: SaslAuthenticateArgs<ParseResult>,
-  ) => Promise<ParseResult | void>;
-};
+  saslAuthenticate: <Decoded, ParseResult = Decoded>(args: {
+    request: {
+      encode(): Buffer | Promise<Buffer>;
+    };
+    response?: {
+      decode(rawResponse: Buffer): Promise<Decoded>;
+      parse(data: Decoded): Promise<ParseResult>;
+    };
+  }) => Promise<ParseResult | undefined>;
+}
 
-type Mechanism = {
+export interface SaslAuthenticationProvider {
+  authenticate(): Promise<void>;
+}
+
+/** Custom SASL mechanism with a user-supplied authenticator. */
+export type SaslMechanismProvider = {
   mechanism: string;
-  authenticationProvider: (args: AuthenticationProviderArgs) => Authenticator;
+  authenticationProvider: (
+    args: AuthenticationProviderArgs,
+  ) => SaslAuthenticationProvider;
 };
-
-export interface KafkaConfig {
-  brokers: string[] | BrokersFunction;
-  ssl?: tls.ConnectionOptions | boolean;
-  sasl?: SASLOptions | Mechanism;
-  clientId?: string;
-  connectionTimeout?: number;
-  authenticationTimeout?: number;
-  reauthenticationThreshold?: number;
-  requestTimeout?: number;
-  enforceRequestTimeout?: boolean;
-  retry?: RetryOptions;
-  socketFactory?: ISocketFactory;
-  logLevel?: logLevel;
-  logCreator?: logCreator;
-}
-
-export interface ISocketFactoryArgs {
-  host: string;
-  port: number;
-  ssl: tls.ConnectionOptions;
-  onConnect: () => void;
-}
-
-export type ISocketFactory = (args: ISocketFactoryArgs) => net.Socket;
 
 export interface OauthbearerProviderResponse {
   value: string;
 }
 
-type SASLMechanismOptionsMap = {
+/**
+ * SASL/SCRAM password login, or delegation-token login (KIP-48), where
+ * `tokenId` is the username and `tokenHmac` the password.
+ */
+export type ScramSaslOptions =
+  | { username: string; password: string }
+  | { tokenId: string; tokenHmac: Buffer | string };
+
+/** One GSS/RFC 4752 round presented to a {@link GssTokenProvider}. */
+export interface GssTokenChallenge {
+  /** Broker token from the previous round, or `null` on the first call. */
+  serverToken: Buffer | null;
+  host: string;
+  port: number;
+  serviceName: string;
+  principal?: string;
+}
+
+export interface GssTokenStep {
+  token: Buffer;
+  /** When true, this token is the last the client sends. */
+  complete: boolean;
+}
+
+export type GssTokenProvider = (
+  challenge: GssTokenChallenge,
+) => Promise<GssTokenStep>;
+
+type SaslMechanismOptionsMap = {
   plain: { username: string; password: string };
-  'scram-sha-256': { username: string; password: string };
-  'scram-sha-512': { username: string; password: string };
+  'scram-sha-256': ScramSaslOptions;
+  'scram-sha-512': ScramSaslOptions;
   aws: {
     authorizationIdentity: string;
     accessKeyId: string;
@@ -99,70 +120,288 @@ type SASLMechanismOptionsMap = {
   oauthbearer: {
     oauthBearerProvider: () => Promise<OauthbearerProviderResponse>;
   };
+  /**
+   * SASL/GSSAPI (Kerberos). Supply `gssProvider` or install the optional
+   * `kerberos` package. `serviceName` defaults to `kafka`.
+   */
+  gssapi: {
+    serviceName?: string;
+    principal?: string;
+    keytab?: string;
+    krb5?: string;
+    authorizationIdentity?: string;
+    gssProvider?: GssTokenProvider;
+  };
 };
 
-export type SASLMechanism = keyof SASLMechanismOptionsMap;
-type SASLMechanismOptions<T> = T extends SASLMechanism
-  ? { mechanism: T } & SASLMechanismOptionsMap[T]
+export type SaslMechanism = keyof SaslMechanismOptionsMap;
+type SaslMechanismOptions<T> = T extends SaslMechanism
+  ? { mechanism: T } & SaslMechanismOptionsMap[T]
   : never;
-export type SASLOptions = SASLMechanismOptions<SASLMechanism>;
+export type SaslOptions = SaslMechanismOptions<SaslMechanism>;
+export type SASLOptions = SaslOptions;
+
+export interface SocketFactoryArgs {
+  host: string;
+  port: number;
+  ssl?: tls.ConnectionOptions | null;
+  onConnect: () => void;
+  /** TLS SNI when `host` is an IP (the original broker hostname). */
+  servername?: string;
+}
+
+export type SocketFactory = (args: SocketFactoryArgs) => net.Socket;
+
+/** How bootstrap hostnames are resolved before a TCP/TLS connect. */
+export type ClientDnsLookup = 'useAllDnsIps' | 'canonicalBootstrap';
+
+export type MetadataRecovery = 'rebootstrap' | 'none';
+
+export interface RetryOptions {
+  maxRetryTime?: number;
+  initialRetryTime?: number;
+  factor?: number;
+  multiplier?: number;
+  retries?: number;
+}
+
+export type ConsumerRetryOptions = RetryOptions & {
+  restartOnFailure?: (error: Error) => Promise<boolean>;
+};
+
+export type KafkaMetricAttributes = Record<
+  string,
+  string | number | boolean | undefined
+>;
+
+export interface KafkaCounter {
+  add(value: number, attributes?: KafkaMetricAttributes): void;
+}
+
+export interface KafkaHistogram {
+  record(value: number, attributes?: KafkaMetricAttributes): void;
+}
+
+export interface KafkaUpDownCounter {
+  add(value: number, attributes?: KafkaMetricAttributes): void;
+}
+
+/** Subset of the OpenTelemetry `Meter` API. */
+export interface KafkaMeter {
+  createCounter(
+    name: string,
+    options?: { description?: string; unit?: string },
+  ): KafkaCounter;
+  createHistogram(
+    name: string,
+    options?: { description?: string; unit?: string },
+  ): KafkaHistogram;
+  createUpDownCounter(
+    name: string,
+    options?: { description?: string; unit?: string },
+  ): KafkaUpDownCounter;
+}
+
+export interface KafkaMetricsConfig {
+  meter: KafkaMeter;
+}
+
+/** `true` loads the global OpenTelemetry meter; `{ meter }` supplies one. */
+export type KafkaMetrics = boolean | KafkaMetricsConfig;
+
+export interface ConnectOptions {
+  signal?: AbortSignal;
+}
+
+export interface KafkaConfig {
+  /**
+   * Bootstrap servers as `host:port`, or a function that returns them.
+   * Optional only because a `kafka.config.*` file can supply it instead; if
+   * neither resolves brokers, the constructor throws.
+   */
+  brokers?: readonly string[] | BrokersFunction;
+  ssl?: tls.ConnectionOptions | boolean;
+  sasl?: SaslOptions | SaslMechanismProvider;
+  clientId?: string;
+  connectionTimeout?: number;
+  /**
+   * Close idle broker sockets after this many milliseconds. Default 540_000.
+   * `0` disables idle close.
+   */
+  connectionsMaxIdleMs?: number;
+  socketConnectionSetupTimeoutMaxMs?: number;
+  clientDnsLookup?: ClientDnsLookup;
+  reconnectBackoffMs?: number;
+  reconnectBackoffMaxMs?: number;
+  authenticationTimeout?: number;
+  reauthenticationThreshold?: number;
+  requestTimeout?: number;
+  enforceRequestTimeout?: boolean;
+  /**
+   * KIP-1102: `'rebootstrap'` (the default) reconnects to the original
+   * bootstrap brokers once the known brokers are exhausted; `'none'` keeps
+   * retrying the known brokers.
+   */
+  metadataRecovery?: MetadataRecovery;
+  retry?: RetryOptions;
+  socketFactory?: SocketFactory;
+  logLevel?: LogLevel;
+  logCreator?: LogCreator;
+  /** Client-side metrics. Off by default. */
+  metrics?: KafkaMetrics;
+  /** KIP-714: push client metrics to the broker. Default true. */
+  enableMetricsPush?: boolean;
+  /**
+   * Whether `new Kafka()` reads a `kafka.config.*` file. Omitted (the
+   * default): discover only when {@link KafkaConfig.brokers} is absent, so a
+   * call that already passes `brokers` never touches the filesystem. `true`:
+   * always discover and merge the file under whatever options this call
+   * passes. `false`: never discover. A string: an explicit path, resolved
+   * against `cwd` — a path that does not exist is a hard error, never a silent
+   * fallback.
+   *
+   * `new Kafka()` loads the file synchronously: a `kafka.config.json`
+   * silently, a TS/JS file with a one-time `config.sync-load-deprecated`
+   * warning, since that sync path is deprecated. Prefer
+   * `await Kafka.fromConfig()`, which loads any config file asynchronously.
+   */
+  config?: boolean | string;
+}
 
 export interface ProducerConfig {
-  createPartitioner?: ICustomPartitioner;
+  createPartitioner?: CustomPartitioner;
   retry?: RetryOptions;
   metadataMaxAge?: number;
   allowAutoTopicCreation?: boolean;
+  /** Defaults to false. */
   idempotent?: boolean;
   transactionalId?: string;
   transactionTimeout?: number;
-  maxInFlightRequests?: number;
+  /** Default 5. `null` uncaps in-flight requests. */
+  maxInFlightRequests?: number | null;
+  /** Default acks for `send`/`sendBatch` calls that omit `acks`. */
+  acks?: number;
+  /** Default compression for `send`/`sendBatch` calls that omit it. */
+  compression?: CompressionTypes;
+  compressionLevel?: number;
+  /**
+   * Delay in ms to wait for more records before sending a Produce request.
+   * Default 5. `0` sends immediately (one Produce per `send()`).
+   */
+  lingerMs?: number;
+  /**
+   * Flush threshold, in record key and value bytes, for the linger buffer,
+   * counted across all topics and partitions. Ignored when `lingerMs` is 0.
+   * Default 16384; `0` does not flush by size.
+   */
+  batchSize?: number;
+  /**
+   * Max bytes of linger-buffered records waiting to be sent. Unset or 0 means
+   * unlimited.
+   */
+  bufferMemory?: number;
+  /**
+   * End-to-end deadline for one `send`/`sendBatch` call, across `lingerMs`,
+   * any `bufferMemory` wait and every retry; the call then rejects with
+   * `KafkaDeliveryTimeoutError`. Default 120_000; 0 disables it.
+   */
+  deliveryTimeoutMs?: number;
+  /**
+   * Cap, in bytes, on the uncompressed records of one Produce request. A
+   * larger record rejects with `KafkaMessageTooLargeError`. Default 1_048_576.
+   */
+  maxRequestSize?: number;
+  hooks?: ProducerHooks;
 }
+
+export type HeaderValue = Buffer | string | null;
+
+export interface RecordHeaders {
+  [key: string]: HeaderValue | HeaderValue[];
+}
+
+export type IHeaders = RecordHeaders;
 
 export interface Message {
   key?: Buffer | string | null;
   value: Buffer | string | null;
   partition?: number;
-  headers?: IHeaders;
-  timestamp?: string;
+  headers?: RecordHeaders;
+  /** Milliseconds since epoch. Defaults to the time the message is sent. */
+  timestamp?: number;
+}
+
+export interface NodeLatencyReader {
+  latencyFor(nodeId: number): number | undefined;
 }
 
 export interface PartitionerArgs {
   topic: string;
-  partitionMetadata: PartitionMetadata[];
+  partitionMetadata: readonly PartitionMetadata[];
   message: Message;
+  nodeLatency?: NodeLatencyReader;
 }
 
-export type ICustomPartitioner = () => (args: PartitionerArgs) => number;
-export type DefaultPartitioner = ICustomPartitioner;
-export type LegacyPartitioner = ICustomPartitioner;
+export interface PartitionerBatchArgs {
+  topic: string;
+  partitionMetadata: readonly PartitionMetadata[];
+  nodeLatency?: NodeLatencyReader;
+}
 
-export let Partitioners: {
-  DefaultPartitioner: DefaultPartitioner;
-  LegacyPartitioner: LegacyPartitioner;
-  /**
-   * @deprecated Use DefaultPartitioner instead
-   *
-   * The JavaCompatiblePartitioner was renamed DefaultPartitioner
-   * and made to be the default in 2.0.0.
-   */
-  JavaCompatiblePartitioner: DefaultPartitioner;
-};
+export interface Partitioner {
+  (args: PartitionerArgs): number;
+  /** Called when the producer starts grouping a new batch for a topic. */
+  onNewBatch?: (args: PartitionerBatchArgs) => void;
+}
 
-export type PartitionMetadata = {
+export type CustomPartitioner = () => Partitioner;
+
+export interface StickyPartitionerOptions {
+  adaptive?: boolean;
+}
+
+export declare const Partitioners: Readonly<{
+  DefaultPartitioner: CustomPartitioner;
+  LegacyPartitioner: CustomPartitioner;
+  StickyPartitioner: (options?: StickyPartitionerOptions) => Partitioner;
+}>;
+
+export interface PartitionMetadata {
   partitionErrorCode: number;
+  partitionId: number;
+  leader: number;
+  leaderEpoch?: number;
+  replicas: number[];
+  isr: number[];
+  offlineReplicas?: number[];
+}
+
+export interface TopicPartitionInfo {
+  topic: string;
   partitionId: number;
   leader: number;
   replicas: number[];
   isr: number[];
-  offlineReplicas?: number[];
-};
-
-export interface IHeaders {
-  [key: string]: Buffer | string | (Buffer | string)[] | undefined;
+  offlineReplicas: number[];
 }
 
+/**
+ * Offset reset policy (`auto.offset.reset`). `by_duration:` takes an ISO-8601
+ * duration (KIP-1106).
+ */
+export type AutoOffsetReset =
+  'earliest' | 'latest' | 'none' | `by_duration:${string}`;
+
+export type GroupProtocol = 'classic' | 'consumer';
+
+export type GroupRemoteAssignor = 'uniform' | 'range';
+
 export interface ConsumerConfig {
-  groupId: string;
+  /**
+   * Required to use {@link Consumer.subscribe}. Optional for
+   * {@link Consumer.assign} unless offsets are committed.
+   */
+  groupId?: string;
   partitionAssigners?: PartitionAssigner[];
   metadataMaxAge?: number;
   sessionTimeout?: number;
@@ -172,13 +411,95 @@ export interface ConsumerConfig {
   minBytes?: number;
   maxBytes?: number;
   maxWaitTimeInMs?: number;
-  retry?: RetryOptions & {
-    restartOnFailure?: (err: Error) => Promise<boolean>;
-  };
+  retry?: ConsumerRetryOptions;
   allowAutoTopicCreation?: boolean;
   maxInFlightRequests?: number;
   readUncommitted?: boolean;
   rackId?: string;
+  /** Static membership id (KIP-345). */
+  groupInstanceId?: string;
+  /** Default offset reset policy for subscriptions that omit one. */
+  autoOffsetReset?: AutoOffsetReset;
+  /**
+   * Group membership protocol. `'classic'` (default) uses JoinGroup/SyncGroup;
+   * `'consumer'` opts into KIP-848 (Kafka 4.0+), under which
+   * `partitionAssigners`, `sessionTimeout` and `heartbeatInterval` are unused.
+   */
+  groupProtocol?: GroupProtocol;
+  /** Server-side assignor, used only when `groupProtocol` is `'consumer'`. */
+  groupRemoteAssignor?: GroupRemoteAssignor;
+  hooks?: ConsumerHooks;
+  /** Verify each fetched record batch's CRC. Default `true`. */
+  checkCrcs?: boolean;
+}
+
+/** ShareFetch v2 acquire mode (KIP-1206): `0` batch-optimized, `1` limited. */
+export type ShareAcquireMode = 0 | 1;
+
+export interface ShareConsumerConfig {
+  groupId: string;
+  heartbeatInterval?: number;
+  maxWaitTimeInMs?: number;
+  minBytes?: number;
+  maxBytes?: number;
+  maxRecords?: number;
+  batchSize?: number;
+  shareAcquireMode?: ShareAcquireMode;
+  rackId?: string;
+  retry?: ConsumerRetryOptions;
+  metadataMaxAge?: number;
+  allowAutoTopicCreation?: boolean;
+  maxInFlightRequests?: number;
+}
+
+export interface AdminConfig {
+  retry?: RetryOptions;
+  /**
+   * KIP-919: talk to the KRaft controller quorum instead of discovering
+   * brokers. Requires Kafka 3.7+.
+   */
+  bootstrapControllers?: readonly string[] | BrokersFunction;
+}
+
+/**
+ * Shape of a `kafka.config.*` file's default export. Unknown sections are
+ * accepted so that a file written for a newer client still loads.
+ */
+export interface KafkaFileConfig {
+  client?: Omit<KafkaConfig, 'brokers' | 'config'> & {
+    brokers?: KafkaConfig['brokers'];
+  };
+  producer?: ProducerConfig;
+  consumer?: Omit<ConsumerConfig, 'groupId'> & { groupId?: string };
+  shareConsumer?: Omit<ShareConsumerConfig, 'groupId'> & { groupId?: string };
+  admin?: AdminConfig;
+  [key: string]: unknown;
+}
+
+/**
+ * A non-fatal event raised while discovering or loading a `kafka.config.*`
+ * file.
+ */
+export interface ConfigDiagnostic {
+  code:
+    | 'config.loaded'
+    | 'config.multiple-candidates'
+    | 'config.transform-fallback'
+    | 'config.sync-load-deprecated';
+  level: 'info' | 'warn';
+  message: string;
+  path?: string;
+  [key: string]: unknown;
+}
+
+export type ConfigKeySource = 'explicit' | 'file' | 'default';
+
+export type KafkaConfigKey = Exclude<keyof KafkaConfig, 'config'>;
+
+export interface KafkaConfigSource {
+  /** Absolute path of the config file that was used, or `null`. */
+  path: string | null;
+  keys: Readonly<Record<KafkaConfigKey, ConfigKeySource>>;
 }
 
 export type PartitionAssigner = (config: {
@@ -187,99 +508,195 @@ export type PartitionAssigner = (config: {
   logger: Logger;
 }) => Assigner;
 
+/** Partitions per topic. */
+export type MemberAssignment = Record<string, number[]>;
+
+export interface GroupMember {
+  memberId: string;
+  memberMetadata: Buffer;
+  groupInstanceId?: string | null;
+}
+
+export interface GroupMemberAssignment {
+  memberId: string;
+  memberAssignment: Buffer;
+}
+
+export interface GroupState {
+  name: string;
+  metadata: Buffer;
+}
+
+export interface Assigner {
+  name: string;
+  version: number;
+  /** Classic eager (revoke all) vs incremental cooperative (KIP-429). */
+  readonly protocolType?: 'eager' | 'cooperative';
+  assign: (group: {
+    members: readonly GroupMember[];
+    topics: readonly string[];
+  }) => Promise<GroupMemberAssignment[]>;
+  protocol: (subscription: { topics: readonly string[] }) => GroupState;
+  onAssignment?: (assignment: MemberAssignment) => void;
+}
+
+export declare const PartitionAssigners: Readonly<{
+  roundRobin: PartitionAssigner;
+  range: PartitionAssigner;
+  sticky: PartitionAssigner;
+  cooperativeSticky: PartitionAssigner;
+}>;
+
+export interface EncodedMemberMetadata {
+  version: number;
+  topics: readonly string[];
+  userData?: Buffer;
+}
+
+export interface DecodedMemberMetadata {
+  version: number;
+  topics: string[];
+  userData: Buffer;
+}
+
+export type MemberMetadata = DecodedMemberMetadata;
+
+export interface EncodedMemberAssignment {
+  version: number;
+  assignment: MemberAssignment;
+  userData?: Buffer;
+}
+
+export interface DecodedMemberAssignment {
+  version: number;
+  assignment: MemberAssignment;
+  userData: Buffer;
+}
+
+export declare const AssignerProtocol: Readonly<{
+  MemberMetadata: Readonly<{
+    encode(metadata: EncodedMemberMetadata): Buffer;
+    decode(buffer: Buffer): DecodedMemberMetadata;
+  }>;
+  MemberAssignment: Readonly<{
+    encode(assignment: EncodedMemberAssignment): Buffer;
+    decode(buffer: Buffer): DecodedMemberAssignment | null;
+  }>;
+}>;
+
+export interface BrokerApiVersion {
+  minVersion?: number;
+  maxVersion: number;
+}
+
+export type BrokerVersions = Readonly<
+  Record<number, BrokerApiVersion | undefined>
+>;
+
+export interface ClusterMetadataBroker {
+  nodeId: number;
+  host: string;
+  port: number;
+  rack: string | null;
+}
+
+export interface ClusterMetadataTopic {
+  topicErrorCode: number;
+  topic: string | null;
+  topicId?: Buffer;
+  isInternal: boolean;
+  partitionMetadata: PartitionMetadata[];
+  topicAuthorizedOperations?: number;
+}
+
+export interface ClusterMetadata {
+  throttleTime: number;
+  clientSideThrottleTime: number;
+  brokers: ClusterMetadataBroker[];
+  clusterId: string | null;
+  controllerId: number;
+  topicMetadata: ClusterMetadataTopic[];
+  clusterAuthorizedOperations?: number;
+  errorCode?: number;
+}
+
+/**
+ * The connection and metadata methods of a broker. Its protocol request
+ * methods are kafka-core internals and are not represented here.
+ */
+export interface Broker {
+  isConnected(): boolean;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  apiVersions(): Promise<BrokerVersions>;
+  metadata(topics?: string[]): Promise<ClusterMetadata>;
+}
+
 export interface CoordinatorMetadata {
   errorCode: number;
+  errorMessage: string | null;
   coordinator: {
     nodeId: number;
     host: string;
     port: number;
   };
+  throttleTime: number;
+  clientSideThrottleTime: number;
 }
 
-export type Cluster = {
-  getNodeIds(): number[];
-  metadata(): Promise<BrokerMetadata>;
-  removeBroker(options: { host: string; port: number }): void;
-  addMultipleTargetTopics(topics: string[]): Promise<void>;
+export interface FetchTopicsOffsetTopic {
+  topic: string;
+  partitions: readonly { partition: number }[];
+  fromBeginning?: boolean;
+  fromTimestamp?: bigint;
+}
+
+export interface Cluster {
   isConnected(): boolean;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
+  clientInstanceId(): Buffer | null;
+  removeBroker(options: { host: string; port: number }): void;
   refreshMetadata(): Promise<void>;
   refreshMetadataIfNecessary(): Promise<void>;
+  metadata(options?: {
+    topics?: readonly string[];
+    forceRefresh?: boolean;
+  }): Promise<ClusterMetadata | null>;
   addTargetTopic(topic: string): Promise<void>;
+  addMultipleTargetTopics(topics: readonly string[]): Promise<void>;
+  getNodeIds(): string[];
   findBroker(node: { nodeId: string }): Promise<Broker>;
   findControllerBroker(): Promise<Broker>;
   findTopicPartitionMetadata(topic: string): PartitionMetadata[];
+  findTopicId(topic: string): Buffer | undefined;
   findLeaderForPartitions(
     topic: string,
-    partitions: number[],
-  ): { [leader: string]: number[] };
-  findGroupCoordinator(group: { groupId: string }): Promise<Broker>;
+    partitions: readonly number[],
+  ): Record<number, number[]>;
+  findGroupCoordinator(group: {
+    groupId: string;
+    coordinatorType?: number;
+  }): Promise<Broker>;
   findGroupCoordinatorMetadata(group: {
     groupId: string;
+    coordinatorType?: number;
   }): Promise<CoordinatorMetadata>;
-  defaultOffset(config: { fromBeginning: boolean }): number;
+  defaultOffset(config: { fromBeginning?: boolean }): bigint;
   fetchTopicsOffset(
-    topics: Array<
-      {
-        topic: string;
-        partitions: Array<{ partition: number }>;
-      } & XOR<{ fromBeginning: boolean }, { fromTimestamp: number }>
-    >,
+    topics: readonly FetchTopicsOffsetTopic[],
   ): Promise<TopicOffsets[]>;
-};
-
-export type Assignment = { [topic: string]: number[] };
-
-export type GroupMember = { memberId: string; memberMetadata: Buffer };
-
-export type GroupMemberAssignment = {
-  memberId: string;
-  memberAssignment: Buffer;
-};
-
-export type GroupState = { name: string; metadata: Buffer };
-
-export type Assigner = {
-  name: string;
-  version: number;
-  assign(group: {
-    members: GroupMember[];
-    topics: string[];
-  }): Promise<GroupMemberAssignment[]>;
-  protocol(subscription: { topics: string[] }): GroupState;
-};
-
-export interface RetryOptions {
-  maxRetryTime?: number;
-  initialRetryTime?: number;
-  factor?: number;
-  multiplier?: number;
-  retries?: number;
-  restartOnFailure?: (e: Error) => Promise<boolean>;
-}
-
-export interface AdminConfig {
-  retry?: RetryOptions;
-}
-
-export interface ITopicConfig {
-  topic: string;
-  numPartitions?: number;
-  replicationFactor?: number;
-  replicaAssignment?: object[];
-  configEntries?: IResourceConfigEntry[];
-}
-
-export interface ITopicPartitionConfig {
-  topic: string;
-  count: number;
-  assignments?: Array<Array<number>>;
-}
-
-export interface ITopicMetadata {
-  name: string;
-  partitions: PartitionMetadata[];
+  committedOffsets(group: {
+    groupId: string;
+  }): Record<string, Record<string, bigint>>;
+  markOffsetAsCommitted(offset: {
+    groupId: string;
+    topic: string;
+    partition: number;
+    offset: bigint;
+  }): void;
+  listTopics(): Promise<string[]>;
+  partitionsFor(topic: string): Promise<TopicPartitionInfo[]>;
 }
 
 export enum AclResourceTypes {
@@ -297,6 +714,8 @@ export enum ConfigResourceTypes {
   TOPIC = 2,
   BROKER = 4,
   BROKER_LOGGER = 8,
+  CLIENT_METRICS = 16,
+  GROUP = 32,
 }
 
 export enum ConfigSource {
@@ -340,71 +759,220 @@ export enum ResourcePatternTypes {
   PREFIXED = 4,
 }
 
+export interface ReplicaAssignment {
+  partition: number;
+  replicas: number[];
+}
+
+export interface ResourceConfigEntry {
+  name: string;
+  value: string;
+}
+
+export interface TopicConfig {
+  topic: string;
+  numPartitions?: number;
+  replicationFactor?: number;
+  replicaAssignment?: ReplicaAssignment[];
+  configEntries?: ResourceConfigEntry[];
+}
+
+export interface TopicPartitionConfig {
+  topic: string;
+  count: number;
+  assignments?: number[][];
+}
+
+export interface TopicMetadata {
+  name: string;
+  topicId?: Buffer;
+  partitions: PartitionMetadata[];
+}
+
+export type ITopicMetadata = TopicMetadata;
+
+/** An offset as a `bigint`, an integer `number` or a numeric string. */
+export type OffsetInput = bigint | number | string;
+
+export interface SeekEntry {
+  partition: number;
+  offset: bigint;
+}
+
+export interface SeekInput {
+  partition: number;
+  offset: OffsetInput;
+}
+
+export interface TopicOffset {
+  partition: number;
+  offset: bigint;
+  high: bigint;
+  low: bigint;
+}
+
+export interface FetchOffsetsPartition {
+  partition: number;
+  offset: bigint;
+  metadata: string | null;
+}
+
+export interface ClusterDescription {
+  brokers: { nodeId: number; host: string; port: number }[];
+  controller: number | null;
+  clusterId: string | null;
+}
+
 export interface ResourceConfigQuery {
   type: ConfigResourceTypes;
   name: string;
   configNames?: string[];
 }
 
-export interface ConfigEntries {
-  configName: string;
-  configValue: string;
-  isDefault: boolean;
-  configSource: ConfigSource;
-  isSensitive: boolean;
-  readOnly: boolean;
-  configSynonyms: ConfigSynonyms[];
-}
-
-export interface ConfigSynonyms {
-  configName: string;
-  configValue: string;
-  configSource: ConfigSource;
-}
-
-export interface DescribeConfigResponse {
-  resources: {
-    configEntries: ConfigEntries[];
-    errorCode: number;
-    errorMessage: string;
-    resourceName: string;
-    resourceType: ConfigResourceTypes;
-  }[];
-  throttleTime: number;
-}
-
-export interface IResourceConfigEntry {
-  name: string;
-  value: string;
-}
-
-export interface IResourceConfig {
+export interface ResourceConfig {
   type: ConfigResourceTypes;
   name: string;
-  configEntries: IResourceConfigEntry[];
+  configEntries: ResourceConfigEntry[];
 }
 
-type ValueOf<T> = T[keyof T];
+export interface DescribeConfigsSynonym {
+  configName: string;
+  configValue: string | null;
+  configSource: number;
+}
 
-export type AdminEvents = {
-  CONNECT: 'admin.connect';
-  DISCONNECT: 'admin.disconnect';
-  REQUEST: 'admin.network.request';
-  REQUEST_TIMEOUT: 'admin.network.request_timeout';
-  REQUEST_QUEUE_SIZE: 'admin.network.request_queue_size';
-};
+export interface DescribeConfigsEntry {
+  configName: string;
+  configValue: string | null;
+  readOnly: boolean;
+  isDefault: boolean;
+  configSource: number;
+  isSensitive: boolean;
+  configSynonyms: DescribeConfigsSynonym[];
+  configType?: number;
+  documentation?: string | null;
+}
+
+export interface DescribeConfigsResourceResult {
+  errorCode: number;
+  errorMessage: string | null;
+  resourceType: number;
+  resourceName: string;
+  configEntries: DescribeConfigsEntry[];
+}
+
+export interface AlterConfigsResourceResult {
+  errorCode: number;
+  errorMessage: string | null;
+  resourceType: number;
+  resourceName: string;
+}
+
+export interface Acl {
+  principal: string;
+  host: string;
+  operation: AclOperationTypes;
+  permissionType: AclPermissionTypes;
+}
+
+export interface AclResource {
+  resourceType: AclResourceTypes;
+  resourceName: string;
+  resourcePatternType: ResourcePatternTypes;
+}
+
+export type AclEntry = Acl & AclResource;
+
+export interface AclFilter {
+  resourceType: AclResourceTypes;
+  resourceName?: string;
+  resourcePatternType: ResourcePatternTypes;
+  principal?: string;
+  host?: string;
+  operation: AclOperationTypes;
+  permissionType: AclPermissionTypes;
+}
+
+export interface DescribeAclResource {
+  resourceType: number;
+  resourceName: string;
+  resourcePatternType: number;
+  acls: {
+    principal: string;
+    host: string;
+    operation: number;
+    permissionType: number;
+  }[];
+}
+
+export interface MatchingAcl {
+  errorCode: number;
+  errorMessage: string | null;
+  resourceType: number;
+  resourceName: string;
+  resourcePatternType: number;
+  principal: string;
+  host: string;
+  operation: number;
+  permissionType: number;
+}
+
+export interface DeleteAclFilterResponses {
+  errorCode: number;
+  errorMessage: string | null;
+  matchingAcls: MatchingAcl[];
+}
+
+export interface GroupOverview {
+  groupId: string;
+  protocolType: string;
+}
+
+export interface DeleteGroupsResult {
+  groupId: string;
+  errorCode: number;
+  error?: KafkaProtocolError;
+}
+
+export interface MemberDescription {
+  clientHost: string;
+  clientId: string;
+  memberId: string;
+  memberAssignment: Buffer;
+  memberMetadata: Buffer;
+}
+
+export type ConsumerGroupState =
+  | 'Unknown'
+  | 'PreparingRebalance'
+  | 'CompletingRebalance'
+  | 'Stable'
+  | 'Dead'
+  | 'Empty';
+
+export interface GroupDescription {
+  groupId: string;
+  members: MemberDescription[];
+  protocol: string;
+  protocolType: string;
+  state: string;
+}
+
+export interface GroupDescriptions {
+  groups: (GroupDescription & { errorCode: number })[];
+}
 
 export interface InstrumentationEvent<T> {
-  id: string;
-  type: string;
-  timestamp: number;
-  payload: T;
+  readonly id: number;
+  readonly timestamp: number;
+  readonly type: string;
+  readonly payload: T;
 }
 
-export type RemoveInstrumentationEventListener<T> = () => void;
+export type RemoveInstrumentationEventListener = () => void;
 
-export type ConnectEvent = InstrumentationEvent<null>;
-export type DisconnectEvent = InstrumentationEvent<null>;
+export type ConnectEvent = InstrumentationEvent<Record<string, never>>;
+export type DisconnectEvent = InstrumentationEvent<Record<string, never>>;
 export type RequestEvent = InstrumentationEvent<{
   apiKey: number;
   apiName: string;
@@ -426,8 +994,8 @@ export type RequestTimeoutEvent = InstrumentationEvent<{
   clientId: string;
   correlationId: number;
   createdAt: number;
-  pendingDuration: number;
-  sentAt: number;
+  pendingDuration: number | null;
+  sentAt: number | null;
 }>;
 export type RequestQueueSizeEvent = InstrumentationEvent<{
   broker: string;
@@ -435,185 +1003,90 @@ export type RequestQueueSizeEvent = InstrumentationEvent<{
   queueSize: number;
 }>;
 
-export type SeekEntry = PartitionOffset;
+export type AdminEvents = Readonly<{
+  CONNECT: 'admin.connect';
+  DISCONNECT: 'admin.disconnect';
+  REQUEST: 'admin.network.request';
+  REQUEST_TIMEOUT: 'admin.network.request_timeout';
+  REQUEST_QUEUE_SIZE: 'admin.network.request_queue_size';
+}>;
 
-export type FetchOffsetsPartition = PartitionOffset & {
-  metadata: string | null;
-};
-export interface Acl {
-  principal: string;
-  host: string;
-  operation: AclOperationTypes;
-  permissionType: AclPermissionTypes;
-}
+export type AdminEventName = ValueOf<AdminEvents>;
 
-export interface AclResource {
-  resourceType: AclResourceTypes;
-  resourceName: string;
-  resourcePatternType: ResourcePatternTypes;
-}
-
-export type AclEntry = Acl & AclResource;
-
-export type DescribeAclResource = AclResource & {
-  acls: Acl[];
-};
-
-export interface DescribeAclResponse {
-  throttleTime: number;
-  errorCode: number;
-  errorMessage?: string;
-  resources: DescribeAclResource[];
-}
-
-export interface AclFilter {
-  resourceType: AclResourceTypes;
-  resourceName?: string;
-  resourcePatternType: ResourcePatternTypes;
-  principal?: string;
-  host?: string;
-  operation: AclOperationTypes;
-  permissionType: AclPermissionTypes;
-}
-
-export interface MatchingAcl {
-  errorCode: number;
-  errorMessage?: string;
-  resourceType: AclResourceTypes;
-  resourceName: string;
-  resourcePatternType: ResourcePatternTypes;
-  principal: string;
-  host: string;
-  operation: AclOperationTypes;
-  permissionType: AclPermissionTypes;
-}
-
-export interface DeleteAclFilterResponses {
-  errorCode: number;
-  errorMessage?: string;
-  matchingAcls: MatchingAcl[];
-}
-
-export interface DeleteAclResponse {
-  throttleTime: number;
-  filterResponses: DeleteAclFilterResponses[];
-}
-
-export type Admin = {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  listTopics(): Promise<string[]>;
-  createTopics(options: {
+export interface Admin {
+  connect: (options?: ConnectOptions) => Promise<void>;
+  disconnect: (options?: ConnectOptions) => Promise<void>;
+  clientInstanceId: () => Buffer | null;
+  listTopics: () => Promise<string[]>;
+  createTopics: (options: {
+    topics: TopicConfig[];
     validateOnly?: boolean;
+    timeout?: number;
     waitForLeaders?: boolean;
+  }) => Promise<boolean>;
+  deleteTopics: (options: {
+    topics: string[];
     timeout?: number;
-    topics: ITopicConfig[];
-  }): Promise<boolean>;
-  deleteTopics(options: { topics: string[]; timeout?: number }): Promise<void>;
-  createPartitions(options: {
+  }) => Promise<void>;
+  createPartitions: (options: {
+    topicPartitions: TopicPartitionConfig[];
     validateOnly?: boolean;
     timeout?: number;
-    topicPartitions: ITopicPartitionConfig[];
-  }): Promise<boolean>;
-  fetchTopicMetadata(options?: {
-    topics: string[];
-  }): Promise<{ topics: Array<ITopicMetadata> }>;
-  fetchOffsets(options: {
+  }) => Promise<void>;
+  fetchTopicMetadata: (options?: {
+    topics?: string[];
+  }) => Promise<{ topics: TopicMetadata[] }>;
+  describeCluster: () => Promise<ClusterDescription>;
+  deleteTopicRecords: (options: {
+    topic: string;
+    partitions: SeekInput[];
+  }) => Promise<void>;
+  fetchOffsets: (options: {
     groupId: string;
     topics?: string[];
     resolveOffsets?: boolean;
-  }): Promise<Array<{ topic: string; partitions: FetchOffsetsPartition[] }>>;
-  fetchTopicOffsets(
+  }) => Promise<{ topic: string; partitions: FetchOffsetsPartition[] }[]>;
+  fetchTopicOffsets: (topic: string) => Promise<TopicOffset[]>;
+  fetchTopicOffsetsByTimestamp: (
     topic: string,
-  ): Promise<Array<SeekEntry & { high: string; low: string }>>;
-  fetchTopicOffsetsByTimestamp(
-    topic: string,
-    timestamp?: number,
-  ): Promise<Array<SeekEntry>>;
-  describeCluster(): Promise<{
-    brokers: Array<{ nodeId: number; host: string; port: number }>;
-    controller: number | null;
-    clusterId: string;
-  }>;
-  setOffsets(options: {
+    timestamp?: OffsetInput,
+  ) => Promise<SeekEntry[]>;
+  setOffsets: (options: {
     groupId: string;
     topic: string;
-    partitions: SeekEntry[];
-  }): Promise<void>;
-  resetOffsets(options: {
+    partitions: SeekInput[];
+  }) => Promise<void>;
+  resetOffsets: (options: {
     groupId: string;
     topic: string;
-    earliest: boolean;
-  }): Promise<void>;
-  describeConfigs(configs: {
+    earliest?: boolean;
+  }) => Promise<void>;
+  describeConfigs: (options: {
     resources: ResourceConfigQuery[];
-    includeSynonyms: boolean;
-  }): Promise<DescribeConfigResponse>;
-  alterConfigs(configs: {
-    validateOnly: boolean;
-    resources: IResourceConfig[];
-  }): Promise<any>;
-  listGroups(): Promise<{ groups: GroupOverview[] }>;
-  deleteGroups(groupIds: string[]): Promise<DeleteGroupsResult[]>;
-  describeGroups(groupIds: string[]): Promise<GroupDescriptions>;
-  describeAcls(options: AclFilter): Promise<DescribeAclResponse>;
-  deleteAcls(options: { filters: AclFilter[] }): Promise<DeleteAclResponse>;
-  createAcls(options: { acl: AclEntry[] }): Promise<boolean>;
-  deleteTopicRecords(options: {
-    topic: string;
-    partitions: SeekEntry[];
-  }): Promise<void>;
-  logger(): Logger;
-  on(
-    eventName: AdminEvents['CONNECT'],
-    listener: (event: ConnectEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: AdminEvents['DISCONNECT'],
-    listener: (event: DisconnectEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: AdminEvents['REQUEST'],
-    listener: (event: RequestEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: AdminEvents['REQUEST_QUEUE_SIZE'],
-    listener: (event: RequestQueueSizeEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: AdminEvents['REQUEST_TIMEOUT'],
-    listener: (event: RequestTimeoutEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ValueOf<AdminEvents>,
-    listener: (event: InstrumentationEvent<any>) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
+    includeSynonyms?: boolean;
+    includeDocumentation?: boolean;
+  }) => Promise<{ resources: DescribeConfigsResourceResult[] }>;
+  alterConfigs: (options: {
+    resources: ResourceConfig[];
+    validateOnly?: boolean;
+  }) => Promise<{ resources: AlterConfigsResourceResult[] }>;
+  listGroups: () => Promise<{ groups: GroupOverview[] }>;
+  describeGroups: (groupIds: string[]) => Promise<GroupDescriptions>;
+  deleteGroups: (groupIds: string[]) => Promise<DeleteGroupsResult[]>;
+  createAcls: (options: { acl: AclEntry[] }) => Promise<boolean>;
+  describeAcls: (
+    options: AclFilter,
+  ) => Promise<{ resources: DescribeAclResource[] }>;
+  deleteAcls: (options: {
+    filters: AclFilter[];
+  }) => Promise<{ filterResponses: DeleteAclFilterResponses[] }>;
+  on: (
+    eventName: AdminEventName,
+    listener: (event: InstrumentationEvent<unknown>) => void | Promise<void>,
+  ) => RemoveInstrumentationEventListener;
+  logger: () => Logger;
   readonly events: AdminEvents;
-};
-
-export let PartitionAssigners: { roundRobin: PartitionAssigner };
-
-export interface ISerializer<T> {
-  encode(value: T): Buffer;
-  decode(buffer: Buffer): T | null;
 }
-
-export type MemberMetadata = {
-  version: number;
-  topics: string[];
-  userData: Buffer;
-};
-
-export type MemberAssignment = {
-  version: number;
-  assignment: Assignment;
-  userData: Buffer;
-};
-
-export let AssignerProtocol: {
-  MemberMetadata: ISerializer<MemberMetadata>;
-  MemberAssignment: ISerializer<MemberAssignment>;
-};
 
 export enum logLevel {
   NOTHING = 0,
@@ -623,154 +1096,127 @@ export enum logLevel {
   DEBUG = 5,
 }
 
+export type LogLevel = logLevel;
+
 export interface LogEntry {
-  namespace: string;
-  level: logLevel;
+  namespace: string | undefined;
+  level: LogLevel;
   label: string;
-  log: LoggerEntryContent;
-}
-
-export interface LoggerEntryContent {
-  readonly timestamp: string;
-  readonly message: string;
-  [key: string]: any;
-}
-
-export type logCreator = (logLevel: logLevel) => (entry: LogEntry) => void;
-
-export type Logger = {
-  info: (message: string, extra?: object) => void;
-  error: (message: string, extra?: object) => void;
-  warn: (message: string, extra?: object) => void;
-  debug: (message: string, extra?: object) => void;
-
-  namespace: (namespace: string, logLevel?: logLevel) => Logger;
-  setLogLevel: (logLevel: logLevel) => void;
-};
-
-export interface BrokerMetadata {
-  brokers: Array<{ nodeId: number; host: string; port: number; rack?: string }>;
-  topicMetadata: Array<{
-    topicErrorCode: number;
-    topic: string;
-    partitionMetadata: PartitionMetadata[];
-  }>;
-}
-
-export interface ApiVersions {
-  [apiKey: number]: {
-    minVersion: number;
-    maxVersion: number;
+  log: {
+    timestamp: string;
+    logger: string;
+    message: string;
+    [key: string]: unknown;
   };
 }
 
-export type Broker = {
-  isConnected(): boolean;
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  apiVersions(): Promise<ApiVersions>;
-  metadata(topics: string[]): Promise<BrokerMetadata>;
-  describeGroups: (options: { groupIds: string[] }) => Promise<any>;
-  offsetCommit(request: {
-    groupId: string;
-    groupGenerationId: number;
-    memberId: string;
-    retentionTime?: number;
-    topics: TopicOffsets[];
-  }): Promise<any>;
-  offsetFetch(request: { groupId: string; topics: TopicOffsets[] }): Promise<{
-    responses: TopicOffsets[];
-  }>;
-  fetch(request: {
-    replicaId?: number;
-    isolationLevel?: number;
-    maxWaitTime?: number;
-    minBytes?: number;
-    maxBytes?: number;
-    topics: Array<{
-      topic: string;
-      partitions: Array<{
-        partition: number;
-        fetchOffset: string;
-        maxBytes: number;
-      }>;
-    }>;
-    rackId?: string;
-  }): Promise<any>;
-  produce(request: {
-    topicData: Array<{
-      topic: string;
-      partitions: Array<{
-        partition: number;
-        firstSequence?: number;
-        messages: Message[];
-      }>;
-    }>;
-    transactionalId?: string;
-    producerId?: number;
-    producerEpoch?: number;
-    acks?: number;
-    timeout?: number;
-    compression?: CompressionTypes;
-  }): Promise<any>;
-};
+export type LogCreator = (logLevel: LogLevel) => (entry: LogEntry) => void;
+export type logCreator = LogCreator;
 
-interface MessageSetEntry {
-  key: Buffer | null;
-  value: Buffer | null;
-  timestamp: string;
-  attributes: number;
-  offset: string;
-  size: number;
-  headers?: never;
+export interface Logger {
+  info(message: string, extra?: Record<string, unknown>): void;
+  error(message: string, extra?: Record<string, unknown>): void;
+  warn(message: string, extra?: Record<string, unknown>): void;
+  debug(message: string, extra?: Record<string, unknown>): void;
+  namespace(namespace: string, logLevel?: LogLevel | null): Logger;
+  setLogLevel(newLevel: LogLevel): void;
 }
 
-interface RecordBatchEntry {
-  key: Buffer | null;
-  value: Buffer | null;
-  timestamp: string;
-  attributes: number;
-  offset: string;
-  headers: IHeaders;
-  size?: never;
+export type TimestampType = -1 | 0 | 1;
+
+export interface RecordBatchContext {
+  firstOffset: bigint;
+  firstTimestamp: bigint;
+  partitionLeaderEpoch: number;
+  inTransaction: boolean;
+  isControlBatch: boolean;
+  lastOffsetDelta: number;
+  producerId: bigint;
+  producerEpoch: number;
+  firstSequence: number;
+  maxTimestamp: bigint;
+  timestampType: TimestampType;
+  magicByte: number;
 }
 
-export type KafkaMessage = MessageSetEntry | RecordBatchEntry;
+/** Decoded record from a Fetch response. */
+export interface KafkaMessage {
+  magicByte: number;
+  attributes: number;
+  timestamp: bigint;
+  offset: bigint;
+  key: Buffer | null;
+  value: Buffer | null;
+  headers: RecordHeaders;
+  isControlRecord: boolean;
+  batchContext: RecordBatchContext;
+  /** This message's on-wire size, after decompression. */
+  byteSize: number;
+}
 
 export interface ProducerRecord {
   topic: string;
-  messages: Message[];
+  messages: readonly Message[];
   acks?: number;
   timeout?: number;
   compression?: CompressionTypes;
+  compressionLevel?: number;
 }
-
-export type RecordMetadata = {
-  topicName: string;
-  partition: number;
-  errorCode: number;
-  offset?: string;
-  timestamp?: string;
-  baseOffset?: string;
-  logAppendTime?: string;
-  logStartOffset?: string;
-};
 
 export interface TopicMessages {
   topic: string;
-  messages: Message[];
+  messages: readonly Message[];
 }
 
 export interface ProducerBatch {
   acks?: number;
   timeout?: number;
   compression?: CompressionTypes;
-  topicMessages?: TopicMessages[];
+  compressionLevel?: number;
+  topicMessages?: readonly TopicMessages[];
+}
+
+export interface RecordMetadata {
+  topicName: string;
+  partition: number;
+  errorCode: number;
+  baseOffset: bigint;
+  logAppendTime: bigint;
+  logStartOffset: bigint;
+}
+
+export interface ProducerSendHookEvent {
+  topicMessages: readonly TopicMessages[];
+  acks: number;
+  timeout: number;
+  compression?: CompressionTypes;
+}
+
+/** Exactly one of `metadata` (on success) and `error` is set. */
+export interface ProducerAckHookEvent extends ProducerSendHookEvent {
+  metadata?: RecordMetadata[];
+  error?: unknown;
+}
+
+export type ProducerSendHook = (
+  event: ProducerSendHookEvent,
+) => void | Promise<void>;
+export type ProducerAckHook = (
+  event: ProducerAckHookEvent,
+) => void | Promise<void>;
+
+/**
+ * Hooks run in registration order, each awaited before the next; a hook that
+ * throws is logged and never fails the send.
+ */
+export interface ProducerHooks {
+  onSend?: readonly ProducerSendHook[];
+  onAck?: readonly ProducerAckHook[];
 }
 
 export interface PartitionOffset {
   partition: number;
-  offset: string;
+  offset: bigint;
 }
 
 export interface TopicOffsets {
@@ -782,137 +1228,104 @@ export interface Offsets {
   topics: TopicOffsets[];
 }
 
-type Sender = {
-  send(record: ProducerRecord): Promise<RecordMetadata[]>;
-  sendBatch(batch: ProducerBatch): Promise<RecordMetadata[]>;
-};
+export interface OffsetsByTopicPartition {
+  topics: TopicOffsets[];
+}
 
-export type ProducerEvents = {
+export type ProducerEvents = Readonly<{
   CONNECT: 'producer.connect';
   DISCONNECT: 'producer.disconnect';
   REQUEST: 'producer.network.request';
   REQUEST_TIMEOUT: 'producer.network.request_timeout';
   REQUEST_QUEUE_SIZE: 'producer.network.request_queue_size';
-};
+}>;
 
-export type Producer = Sender & {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  isIdempotent(): boolean;
-  readonly events: ProducerEvents;
-  on(
-    eventName: ProducerEvents['CONNECT'],
-    listener: (event: ConnectEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ProducerEvents['DISCONNECT'],
-    listener: (event: DisconnectEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ProducerEvents['REQUEST'],
-    listener: (event: RequestEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ProducerEvents['REQUEST_QUEUE_SIZE'],
-    listener: (event: RequestQueueSizeEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ProducerEvents['REQUEST_TIMEOUT'],
-    listener: (event: RequestTimeoutEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ValueOf<ProducerEvents>,
-    listener: (event: InstrumentationEvent<any>) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  transaction(): Promise<Transaction>;
-  logger(): Logger;
-};
+export type ProducerEventName = ValueOf<ProducerEvents>;
 
-export type Transaction = Sender & {
-  sendOffsets(offsets: Offsets & { consumerGroupId: string }): Promise<void>;
+export interface Transaction {
+  send(
+    record: ProducerRecord & { signal?: AbortSignal },
+  ): Promise<RecordMetadata[]>;
+  sendBatch(
+    batch: ProducerBatch & { signal?: AbortSignal },
+  ): Promise<RecordMetadata[]>;
+  sendOffsets(options: {
+    consumerGroupId: string;
+    topics: readonly TopicOffsets[];
+  }): Promise<void>;
   commit(): Promise<void>;
   abort(): Promise<void>;
   isActive(): boolean;
-};
+}
 
-export type ConsumerGroup = {
-  groupId: string;
-  generationId: number;
-  memberId: string;
-  coordinator: Broker;
-};
+export interface Producer {
+  connect: (options?: ConnectOptions) => Promise<void>;
+  disconnect: (options?: ConnectOptions) => Promise<void>;
+  isIdempotent: () => boolean;
+  readonly events: ProducerEvents;
+  on: (
+    eventName: ProducerEventName,
+    listener: (event: InstrumentationEvent<unknown>) => void | Promise<void>,
+  ) => RemoveInstrumentationEventListener;
+  send: (
+    record: ProducerRecord & { signal?: AbortSignal },
+  ) => Promise<RecordMetadata[]>;
+  sendBatch: (
+    batch: ProducerBatch & { signal?: AbortSignal },
+  ) => Promise<RecordMetadata[]>;
+  /** Sends any linger-buffered records immediately. */
+  flush: () => Promise<void>;
+  transaction: () => Promise<Transaction>;
+  listTopics: () => Promise<string[]>;
+  partitionsFor: (topic: string) => Promise<TopicPartitionInfo[]>;
+  clientInstanceId: () => Buffer | null;
+  logger: () => Logger;
+}
 
-export type MemberDescription = {
-  clientHost: string;
-  clientId: string;
-  memberId: string;
-  memberAssignment: Buffer;
-  memberMetadata: Buffer;
-};
+export interface TopicPartitions {
+  topic: string;
+  partitions: number[];
+}
 
-// See https://github.com/apache/kafka/blob/2.4.0/clients/src/main/java/org/apache/kafka/common/ConsumerGroupState.java#L25
-export type ConsumerGroupState =
-  | 'Unknown'
-  | 'PreparingRebalance'
-  | 'CompletingRebalance'
-  | 'Stable'
-  | 'Dead'
-  | 'Empty';
-
-export type GroupDescription = {
-  groupId: string;
-  members: MemberDescription[];
-  protocol: string;
-  protocolType: string;
-  state: ConsumerGroupState;
-};
-
-export type GroupDescriptions = {
-  groups: GroupDescription[];
-};
-
-export type TopicPartitions = { topic: string; partitions: number[] };
-
-export type TopicPartition = {
+export interface TopicPartition {
   topic: string;
   partition: number;
-};
-export type TopicPartitionOffset = TopicPartition & {
-  offset: string;
-};
-export type TopicPartitionOffsetAndMetadata = TopicPartitionOffset & {
+}
+
+export interface TopicPartitionOffset extends TopicPartition {
+  offset: bigint;
+}
+
+export interface TopicPartitionOffsetAndMetadata extends TopicPartitionOffset {
   metadata?: string | null;
-};
+}
 
-export type Batch = {
-  topic: string;
-  partition: number;
-  highWatermark: string;
-  messages: KafkaMessage[];
+/** Messages from a single fetch response partition. */
+export interface Batch {
+  readonly topic: string;
+  readonly partition: number;
+  readonly highWatermark: bigint;
+  readonly fetchedOffset: bigint;
+  readonly rawMessages: readonly KafkaMessage[];
+  readonly messagesWithinOffset: KafkaMessage[];
+  readonly messages: KafkaMessage[];
   isEmpty(): boolean;
-  firstOffset(): string | null;
-  lastOffset(): string;
-  offsetLag(): string;
-  offsetLagLow(): string;
-};
+  isEmptyIncludingFiltered(): boolean;
+  isEmptyDueToFiltering(): boolean;
+  isEmptyControlRecord(): boolean;
+  isEmptyDueToLogCompactedMessages(): boolean;
+  firstOffset(): bigint | null;
+  lastOffset(): bigint;
+  offsetLag(): bigint;
+  offsetLagLow(): bigint;
+}
 
-export type GroupOverview = {
-  groupId: string;
-  protocolType: string;
-};
-
-export type DeleteGroupsResult = {
-  groupId: string;
-  errorCode?: number;
-  error?: KafkaJSProtocolError;
-};
-
-export type ConsumerEvents = {
+export type ConsumerEvents = Readonly<{
   HEARTBEAT: 'consumer.heartbeat';
   COMMIT_OFFSETS: 'consumer.commit_offsets';
   GROUP_JOIN: 'consumer.group_join';
-  FETCH_START: 'consumer.fetch_start';
   FETCH: 'consumer.fetch';
+  FETCH_START: 'consumer.fetch_start';
   START_BATCH_PROCESS: 'consumer.start_batch_process';
   END_BATCH_PROCESS: 'consumer.end_batch_process';
   CONNECT: 'consumer.connect';
@@ -924,7 +1337,10 @@ export type ConsumerEvents = {
   REQUEST: 'consumer.network.request';
   REQUEST_TIMEOUT: 'consumer.network.request_timeout';
   REQUEST_QUEUE_SIZE: 'consumer.network.request_queue_size';
-};
+}>;
+
+export type ConsumerEventName = ValueOf<ConsumerEvents>;
+
 export type ConsumerHeartbeatEvent = InstrumentationEvent<{
   groupId: string;
   memberId: string;
@@ -936,39 +1352,37 @@ export type ConsumerCommitOffsetsEvent = InstrumentationEvent<{
   groupGenerationId: number;
   topics: TopicOffsets[];
 }>;
-export interface IMemberAssignment {
-  [key: string]: number[];
-}
 export type ConsumerGroupJoinEvent = InstrumentationEvent<{
   duration: number;
   groupId: string;
   isLeader: boolean;
-  leaderId: string;
-  groupProtocol: string;
-  memberId: string;
-  memberAssignment: IMemberAssignment;
+  leaderId: string | null;
+  groupProtocol: string | null;
+  memberId: string | null;
+  memberAssignment: MemberAssignment;
 }>;
-export type ConsumerFetchStartEvent = InstrumentationEvent<{ nodeId: number }>;
+export type ConsumerFetchStartEvent = InstrumentationEvent<{ nodeId: string }>;
 export type ConsumerFetchEvent = InstrumentationEvent<{
   numberOfBatches: number;
   duration: number;
-  nodeId: number;
+  nodeId: string;
 }>;
 interface IBatchProcessEvent {
   topic: string;
   partition: number;
-  highWatermark: string;
-  offsetLag: string;
-  offsetLagLow: string;
+  highWatermark: bigint;
+  offsetLag: bigint;
+  offsetLagLow: bigint;
   batchSize: number;
-  firstOffset: string;
-  lastOffset: string;
+  firstOffset: bigint | null;
+  lastOffset: bigint;
 }
 export type ConsumerStartBatchProcessEvent =
   InstrumentationEvent<IBatchProcessEvent>;
 export type ConsumerEndBatchProcessEvent = InstrumentationEvent<
   IBatchProcessEvent & { duration: number }
 >;
+export type ConsumerStopEvent = InstrumentationEvent<Record<string, never>>;
 export type ConsumerCrashEvent = InstrumentationEvent<{
   error: Error;
   groupId: string;
@@ -976,155 +1390,168 @@ export type ConsumerCrashEvent = InstrumentationEvent<{
 }>;
 export type ConsumerRebalancingEvent = InstrumentationEvent<{
   groupId: string;
-  memberId: string;
+  memberId: string | null;
 }>;
 export type ConsumerReceivedUnsubscribedTopicsEvent = InstrumentationEvent<{
   groupId: string;
-  generationId: number;
-  memberId: string;
+  generationId: number | null;
+  memberId: string | null;
   assignedTopics: string[];
   topicsSubscribed: string[];
   topicsNotSubscribed: string[];
 }>;
 
-export interface OffsetsByTopicPartition {
-  topics: TopicOffsets[];
-}
-
 export interface EachMessagePayload {
   topic: string;
   partition: number;
   message: KafkaMessage;
-  heartbeat(): Promise<void>;
-  pause(): () => void;
+  heartbeat: () => Promise<void>;
+  pause: () => () => void;
 }
 
 export interface EachBatchPayload {
   batch: Batch;
-  resolveOffset(offset: string): void;
-  heartbeat(): Promise<void>;
-  pause(): () => void;
-  commitOffsetsIfNecessary(offsets?: Offsets): Promise<void>;
-  uncommittedOffsets(): OffsetsByTopicPartition;
-  isRunning(): boolean;
-  isStale(): boolean;
+  resolveOffset: (offset: bigint) => void;
+  heartbeat: () => Promise<void>;
+  pause: () => () => void;
+  commitOffsetsIfNecessary: (offsets?: Offsets) => Promise<void>;
+  uncommittedOffsets: () => OffsetsByTopicPartition;
+  isRunning: () => boolean;
+  isStale: () => boolean;
 }
-
-/**
- * Type alias to keep compatibility with @types/kafkajs
- * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/712ad9d59ccca6a3cc92f347fea0d1c7b02f5eeb/types/kafkajs/index.d.ts#L321-L325
- */
-export type ConsumerEachMessagePayload = EachMessagePayload;
-
-/**
- * Type alias to keep compatibility with @types/kafkajs
- * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/712ad9d59ccca6a3cc92f347fea0d1c7b02f5eeb/types/kafkajs/index.d.ts#L327-L336
- */
-export type ConsumerEachBatchPayload = EachBatchPayload;
 
 export type EachBatchHandler = (payload: EachBatchPayload) => Promise<void>;
 export type EachMessageHandler = (payload: EachMessagePayload) => Promise<void>;
 
-export type ConsumerRunConfig = {
+/**
+ * Called with only the partitions moving in that rebalance step. An error it
+ * throws is logged and does not abort the rebalance.
+ */
+export type RebalanceListener = (
+  topicPartitions: TopicPartition[],
+) => void | Promise<void>;
+
+export interface ConsumerRunConfig {
   autoCommit?: boolean;
+  /**
+   * When both this and `autoCommitThreshold` are unset, offsets are committed
+   * once after each fetched batch is processed.
+   */
   autoCommitInterval?: number | null;
   autoCommitThreshold?: number | null;
   eachBatchAutoResolve?: boolean;
   partitionsConsumedConcurrently?: number;
-  eachBatch?: EachBatchHandler;
-  eachMessage?: EachMessageHandler;
-};
+  /** Max queued and in-flight batches prefetched per broker node. */
+  prefetchMaxBatches?: number;
+  /** Max queued and in-flight record bytes prefetched per broker node. */
+  prefetchMaxBytes?: number;
+  /**
+   * Caps how many records of a fetched batch are delivered to the handler per
+   * processing cycle (Java's `max.poll.records`). Defaults to `500` for
+   * `eachMessage`; unlimited for `eachBatch` unless set.
+   */
+  maxRecords?: number;
+  eachBatch?: EachBatchHandler | null;
+  eachMessage?: EachMessageHandler | null;
+  signal?: AbortSignal;
+  onPartitionsRevoked?: RebalanceListener;
+  onPartitionsAssigned?: RebalanceListener;
+  /** Called instead of `onPartitionsRevoked` when the assignment was lost. */
+  onPartitionsLost?: RebalanceListener;
+}
 
-export type ConsumerSubscribeTopics = {
-  topics: (string | RegExp)[];
+export interface ConsumerSubscribeTopics {
+  topics: readonly (string | RegExp)[];
   fromBeginning?: boolean;
-};
+  /** Wins over `fromBeginning` when set. `none` throws instead of resetting. */
+  autoOffsetReset?: AutoOffsetReset;
+}
 
-export type Consumer = {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  subscribe(subscription: ConsumerSubscribeTopics): Promise<void>;
-  stop(): Promise<void>;
-  run(config?: ConsumerRunConfig): Promise<void>;
-  commitOffsets(
-    topicPartitions: Array<TopicPartitionOffsetAndMetadata>,
-  ): Promise<void>;
-  seek(topicPartitionOffset: TopicPartitionOffset): void;
-  describeGroup(): Promise<GroupDescription>;
-  pause(topics: Array<{ topic: string; partitions?: number[] }>): void;
-  paused(): TopicPartitions[];
-  resume(topics: Array<{ topic: string; partitions?: number[] }>): void;
-  on(
-    eventName: ConsumerEvents['HEARTBEAT'],
-    listener: (event: ConsumerHeartbeatEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['COMMIT_OFFSETS'],
-    listener: (event: ConsumerCommitOffsetsEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['GROUP_JOIN'],
-    listener: (event: ConsumerGroupJoinEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['FETCH_START'],
-    listener: (event: ConsumerFetchStartEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['FETCH'],
-    listener: (event: ConsumerFetchEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['START_BATCH_PROCESS'],
-    listener: (event: ConsumerStartBatchProcessEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['END_BATCH_PROCESS'],
-    listener: (event: ConsumerEndBatchProcessEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['CONNECT'],
-    listener: (event: ConnectEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['DISCONNECT'],
-    listener: (event: DisconnectEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['STOP'],
-    listener: (event: InstrumentationEvent<null>) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['CRASH'],
-    listener: (event: ConsumerCrashEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['REBALANCING'],
-    listener: (event: ConsumerRebalancingEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['RECEIVED_UNSUBSCRIBED_TOPICS'],
-    listener: (event: ConsumerReceivedUnsubscribedTopicsEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['REQUEST'],
-    listener: (event: RequestEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['REQUEST_TIMEOUT'],
-    listener: (event: RequestTimeoutEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ConsumerEvents['REQUEST_QUEUE_SIZE'],
-    listener: (event: RequestQueueSizeEvent) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  on(
-    eventName: ValueOf<ConsumerEvents>,
-    listener: (event: InstrumentationEvent<any>) => void,
-  ): RemoveInstrumentationEventListener<typeof eventName>;
-  logger(): Logger;
+export interface ConsumerSubscribeTopic {
+  topic: string | RegExp;
+  fromBeginning?: boolean;
+  /** Wins over `fromBeginning` when set. `none` throws instead of resetting. */
+  autoOffsetReset?: AutoOffsetReset;
+}
+
+/** Exactly one of `message` (`eachMessage` mode) and `batch` is set. */
+export interface OnConsumeEvent {
+  topic: string;
+  partition: number;
+  message?: KafkaMessage;
+  batch?: Batch;
+}
+
+export type OnConsumeHook = (event: OnConsumeEvent) => void | Promise<void>;
+
+export interface OnCommitEvent {
+  groupId: string;
+  memberId: string;
+  groupGenerationId: number;
+  topics: TopicOffsets[];
+  error?: unknown;
+}
+
+export type OnCommitHook = (event: OnCommitEvent) => void | Promise<void>;
+
+/**
+ * Hooks run in registration order, each awaited before the next; a hook that
+ * throws is logged and never fails consumption or the commit.
+ */
+export interface ConsumerHooks {
+  onConsume?: readonly OnConsumeHook[];
+  onCommit?: readonly OnCommitHook[];
+}
+
+export interface Consumer {
+  connect: (options?: ConnectOptions) => Promise<void>;
+  disconnect: (options?: ConnectOptions) => Promise<void>;
+  subscribe: (
+    subscription: ConsumerSubscribeTopics | ConsumerSubscribeTopic,
+  ) => Promise<void>;
+  /**
+   * Assigns exact partitions with no group membership. Mutually exclusive
+   * with {@link Consumer.subscribe}.
+   */
+  assign: (
+    topicPartitions: readonly { topic: string; partition: number }[],
+  ) => Promise<void>;
+  stop: () => Promise<void>;
+  run: (config?: ConsumerRunConfig) => Promise<void>;
+  /** Cannot run alongside {@link Consumer.run}. */
+  stream: (
+    config?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>,
+  ) => AsyncIterableIterator<Batch>;
+  commitOffsets: (
+    topicPartitions: readonly TopicPartitionOffsetAndMetadata[],
+  ) => Promise<void>;
+  seek: (topicPartitionOffset: {
+    topic: string;
+    partition: number;
+    offset: bigint | number | string;
+  }) => void;
+  describeGroup: () => Promise<GroupDescription>;
+  /** A partition with no committed offset comes back with `offset: -1n`. */
+  committed: (
+    topicPartitions: readonly TopicPartition[],
+  ) => Promise<TopicPartitionOffsetAndMetadata[]>;
+  /** `null` when the partition is not assigned to this consumer. */
+  position: (topicPartition: TopicPartition) => bigint | null;
+  /** `null` when the partition is not assigned or its lag is not known yet. */
+  currentLag: (topicPartition: TopicPartition) => bigint | null;
+  listTopics: () => Promise<string[]>;
+  partitionsFor: (topic: string) => Promise<TopicPartitionInfo[]>;
+  clientInstanceId: () => Buffer | null;
+  pause: (topics: readonly { topic: string; partitions?: number[] }[]) => void;
+  paused: () => TopicPartitions[];
+  resume: (topics: readonly { topic: string; partitions?: number[] }[]) => void;
+  on: (
+    eventName: ConsumerEventName,
+    listener: (event: InstrumentationEvent<unknown>) => void | Promise<void>,
+  ) => RemoveInstrumentationEventListener;
   readonly events: ConsumerEvents;
-};
+  logger: () => Logger;
+}
 
 export enum CompressionTypes {
   None = 0,
@@ -1134,192 +1561,351 @@ export enum CompressionTypes {
   ZSTD = 4,
 }
 
-export let CompressionCodecs: {
-  [CompressionTypes.GZIP]: () => any;
-  [CompressionTypes.Snappy]: () => any;
-  [CompressionTypes.LZ4]: () => any;
-  [CompressionTypes.ZSTD]: () => any;
+export type CompressionType = CompressionTypes;
+
+export interface CompressionCodec {
+  compress(
+    encoder: { readonly buffer: Buffer },
+    level?: number,
+  ): Promise<Buffer>;
+  decompress(buffer: Buffer): Promise<Buffer>;
+}
+
+export type CompressionCodecFactory = () => CompressionCodec;
+
+export declare const CompressionCodecs: Record<number, CompressionCodecFactory>;
+
+export type KafkaErrorName =
+  | 'KafkaError'
+  | 'KafkaNonRetriableError'
+  | 'KafkaProtocolError'
+  | 'KafkaOffsetOutOfRange'
+  | 'KafkaMemberIdRequired'
+  | 'KafkaNumberOfRetriesExceeded'
+  | 'KafkaConnectionError'
+  | 'KafkaConnectionClosedError'
+  | 'KafkaRequestTimeoutError'
+  | 'KafkaMetadataNotLoaded'
+  | 'KafkaTopicMetadataNotLoaded'
+  | 'KafkaStaleTopicMetadataAssignment'
+  | 'KafkaDeleteGroupsError'
+  | 'KafkaServerDoesNotSupportApiKey'
+  | 'KafkaBrokerNotFound'
+  | 'KafkaPartialMessageError'
+  | 'KafkaSASLAuthenticationError'
+  | 'KafkaGroupCoordinatorNotFound'
+  | 'KafkaNotImplemented'
+  | 'KafkaTimeout'
+  | 'KafkaLockTimeout'
+  | 'KafkaDeliveryTimeoutError'
+  | 'KafkaMessageTooLargeError'
+  | 'KafkaUnsupportedMagicByteInMessageSet'
+  | 'KafkaCorruptRecordError'
+  | 'KafkaDeleteTopicRecordsError'
+  | 'KafkaInvariantViolation'
+  | 'KafkaInvalidVarIntError'
+  | 'KafkaInvalidLongError'
+  | 'KafkaCreateTopicError'
+  | 'KafkaAggregateError'
+  | 'KafkaFetcherRebalanceError'
+  | 'KafkaNoBrokerAvailableError'
+  | 'KafkaAlterPartitionReassignmentsError'
+  | 'KafkaUpdateFeaturesError'
+  | 'KafkaConfigError'
+  | 'KafkaConfigRequiresAsyncError';
+
+export interface KafkaErrorOptions {
+  retriable?: boolean;
+  cause?: unknown;
+}
+
+type ErrorLike = {
+  message: string;
+  helpUrl?: string;
+  stack?: string;
 };
 
-export declare class KafkaJSError extends Error {
-  readonly message: Error['message'];
-  readonly name: string;
+export declare class KafkaError extends Error {
+  readonly name: KafkaErrorName;
   readonly retriable: boolean;
-  readonly helpUrl?: string;
-  readonly cause?: Error;
-
-  constructor(e: Error | string, metadata?: KafkaJSErrorMetadata);
+  readonly helpUrl: string | undefined;
+  readonly cause: unknown;
+  constructor(e: string | ErrorLike, options?: KafkaErrorOptions);
 }
 
-export declare class KafkaJSNonRetriableError extends KafkaJSError {
-  constructor(e: Error | string);
+export declare class KafkaNonRetriableError extends KafkaError {
+  constructor(e: string | ErrorLike, options?: { cause?: unknown });
 }
 
-export declare class KafkaJSProtocolError extends KafkaJSError {
-  readonly code: number;
-  readonly type: string;
-  constructor(e: Error | string);
+export interface CurrentLeader {
+  leaderId: number;
+  leaderEpoch: number;
 }
 
-export declare class KafkaJSOffsetOutOfRange extends KafkaJSProtocolError {
-  readonly topic: string;
-  readonly partition: number;
-  constructor(e: Error | string, metadata?: KafkaJSOffsetOutOfRangeMetadata);
+export interface NodeEndpoint {
+  nodeId: number;
+  host: string;
+  port: number;
+  rack: string | null;
 }
 
-export declare class KafkaJSNumberOfRetriesExceeded extends KafkaJSNonRetriableError {
-  readonly stack: string;
-  readonly retryCount: number;
-  readonly retryTime: number;
-  constructor(
-    e: Error | string,
-    metadata?: KafkaJSNumberOfRetriesExceededMetadata,
-  );
-}
-
-export declare class KafkaJSConnectionError extends KafkaJSError {
-  readonly broker: string;
-  constructor(e: Error | string, metadata?: KafkaJSConnectionErrorMetadata);
-}
-
-export declare class KafkaJSRequestTimeoutError extends KafkaJSError {
-  readonly broker: string;
-  readonly correlationId: number;
-  readonly createdAt: number;
-  readonly sentAt: number;
-  readonly pendingDuration: number;
-  constructor(e: Error | string, metadata?: KafkaJSRequestTimeoutErrorMetadata);
-}
-
-export declare class KafkaJSMetadataNotLoaded extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSTopicMetadataNotLoaded extends KafkaJSMetadataNotLoaded {
-  readonly topic: string;
-  constructor(
-    e: Error | string,
-    metadata?: KafkaJSTopicMetadataNotLoadedMetadata,
-  );
-}
-
-export declare class KafkaJSStaleTopicMetadataAssignment extends KafkaJSError {
-  readonly topic: string;
-  readonly unknownPartitions: number;
-  constructor(
-    e: Error | string,
-    metadata?: KafkaJSStaleTopicMetadataAssignmentMetadata,
-  );
-}
-
-export declare class KafkaJSServerDoesNotSupportApiKey extends KafkaJSNonRetriableError {
-  readonly apiKey: number;
-  readonly apiName: string;
-  constructor(
-    e: Error | string,
-    metadata?: KafkaJSServerDoesNotSupportApiKeyMetadata,
-  );
-}
-
-export declare class KafkaJSBrokerNotFound extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSPartialMessageError extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSSASLAuthenticationError extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSGroupCoordinatorNotFound extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSNotImplemented extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSTimeout extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSLockTimeout extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSUnsupportedMagicByteInMessageSet extends KafkaJSError {
-  constructor();
-}
-
-export declare class KafkaJSDeleteGroupsError extends KafkaJSError {
-  readonly groups: DeleteGroupsResult[];
-  constructor(e: Error | string, groups?: KafkaJSDeleteGroupsErrorGroups[]);
-}
-
-export declare class KafkaJSDeleteTopicRecordsError extends KafkaJSError {
-  constructor(metadata: KafkaJSDeleteTopicRecordsErrorTopic);
-}
-
-export interface KafkaJSDeleteGroupsErrorGroups {
-  groupId: string;
-  errorCode: number;
-  error: KafkaJSError;
-}
-
-export interface KafkaJSDeleteTopicRecordsErrorTopic {
-  topic: string;
-  partitions: KafkaJSDeleteTopicRecordsErrorPartition[];
-}
-
-export interface KafkaJSDeleteTopicRecordsErrorPartition {
-  partition: number;
-  offset: string;
-  error: KafkaJSError;
-}
-
-export interface KafkaJSErrorMetadata {
+export interface KafkaProtocolErrorOptions {
   retriable?: boolean;
   topic?: string;
-  partitionId?: number;
-  metadata?: PartitionMetadata;
+  partition?: number;
+  currentLeader?: CurrentLeader;
+  nodeEndpoints?: readonly NodeEndpoint[];
 }
 
-export interface KafkaJSOffsetOutOfRangeMetadata {
-  topic: string;
+export declare class KafkaProtocolError extends KafkaError {
+  readonly type: string | undefined;
+  readonly code: number | undefined;
+  readonly topic: string | undefined;
+  readonly partition: number | undefined;
+  readonly currentLeader: CurrentLeader | undefined;
+  readonly nodeEndpoints: readonly NodeEndpoint[] | undefined;
+  constructor(
+    e: ErrorLike & { retriable?: boolean; type?: string; code?: number },
+    options?: KafkaProtocolErrorOptions,
+  );
+}
+
+export declare class KafkaOffsetOutOfRange extends KafkaProtocolError {
+  constructor(
+    e: ConstructorParameters<typeof KafkaProtocolError>[0],
+    options: KafkaProtocolErrorOptions,
+  );
+}
+
+export declare class KafkaMemberIdRequired extends KafkaProtocolError {
+  readonly memberId: string | undefined;
+  constructor(
+    e: ConstructorParameters<typeof KafkaProtocolError>[0],
+    options: { memberId?: string },
+  );
+}
+
+export declare class KafkaNumberOfRetriesExceeded extends KafkaNonRetriableError {
+  readonly retryCount: number;
+  readonly retryTime: number;
+  constructor(e: ErrorLike, options: { retryCount: number; retryTime: number });
+}
+
+export declare class KafkaConnectionError extends KafkaError {
+  readonly broker: string | undefined;
+  readonly code: string | undefined;
+  constructor(
+    e: string | ErrorLike,
+    options?: { broker?: string; code?: string },
+  );
+}
+
+export declare class KafkaConnectionClosedError extends KafkaConnectionError {
+  readonly host: string | undefined;
+  readonly port: number | undefined;
+  constructor(
+    e: string | ErrorLike,
+    options?: { host?: string; port?: number },
+  );
+}
+
+export declare class KafkaRequestTimeoutError extends KafkaError {
+  readonly broker: string | undefined;
+  readonly correlationId: number | undefined;
+  readonly createdAt: number | undefined;
+  readonly sentAt: number | undefined;
+  readonly pendingDuration: number | undefined;
+  constructor(
+    e: string | ErrorLike,
+    options?: {
+      broker?: string;
+      correlationId?: number;
+      createdAt?: number;
+      sentAt?: number;
+      pendingDuration?: number;
+    },
+  );
+}
+
+export declare class KafkaMetadataNotLoaded extends KafkaError {}
+
+export declare class KafkaTopicMetadataNotLoaded extends KafkaMetadataNotLoaded {
+  readonly topic: string | undefined;
+  constructor(e: string | ErrorLike, options?: { topic?: string });
+}
+
+export declare class KafkaStaleTopicMetadataAssignment extends KafkaError {
+  readonly topic: string | undefined;
+  readonly unknownPartitions: unknown;
+  constructor(
+    e: string | ErrorLike,
+    options?: { topic?: string; unknownPartitions?: unknown },
+  );
+}
+
+export interface DeleteGroupError {
+  groupId: string;
+  errorCode?: number;
+  error?: KafkaError;
+}
+
+export declare class KafkaDeleteGroupsError extends KafkaError {
+  readonly groups: readonly DeleteGroupError[];
+  constructor(e: string | ErrorLike, groups?: readonly DeleteGroupError[]);
+}
+
+export interface KafkaServerDoesNotSupportApiKeyOptions {
+  apiKey?: number;
+  apiName?: string;
+  brokerMinVersion?: number;
+  brokerMaxVersion?: number;
+  implementedVersions?: readonly number[];
+}
+
+export declare class KafkaServerDoesNotSupportApiKey extends KafkaNonRetriableError {
+  readonly apiKey: number | undefined;
+  readonly apiName: string | undefined;
+  readonly brokerMinVersion: number | undefined;
+  readonly brokerMaxVersion: number | undefined;
+  readonly implementedVersions: readonly number[] | undefined;
+  constructor(
+    e: string | ErrorLike,
+    options?: KafkaServerDoesNotSupportApiKeyOptions,
+  );
+}
+
+export declare class KafkaBrokerNotFound extends KafkaError {}
+
+export declare class KafkaPartialMessageError extends KafkaNonRetriableError {}
+
+export declare class KafkaSASLAuthenticationError extends KafkaNonRetriableError {}
+
+export declare class KafkaGroupCoordinatorNotFound extends KafkaNonRetriableError {}
+
+export declare class KafkaNotImplemented extends KafkaNonRetriableError {}
+
+export declare class KafkaTimeout extends KafkaNonRetriableError {}
+
+export declare class KafkaLockTimeout extends KafkaTimeout {}
+
+/** `deliveryTimeoutMs` elapsed before a produce settled. */
+export declare class KafkaDeliveryTimeoutError extends KafkaTimeout {
+  readonly deliveryTimeoutMs: number;
+  constructor(deliveryTimeoutMs: number);
+}
+
+export interface KafkaMessageTooLargeErrorOptions {
+  size: number;
+  maxRequestSize: number;
+  topic?: string;
+}
+
+/** Raised client-side, before the record reaches the network. */
+export declare class KafkaMessageTooLargeError extends KafkaNonRetriableError {
+  readonly size: number;
+  readonly maxRequestSize: number;
+  readonly topic: string | undefined;
+  constructor(options: KafkaMessageTooLargeErrorOptions);
+}
+
+export declare class KafkaUnsupportedMagicByteInMessageSet extends KafkaNonRetriableError {}
+
+export declare class KafkaCorruptRecordError extends KafkaNonRetriableError {
+  readonly expectedCrc: number;
+  readonly computedCrc: number;
+  constructor(
+    message: string,
+    options: { expectedCrc: number; computedCrc: number },
+  );
+}
+
+export interface DeleteTopicRecordPartition {
   partition: number;
+  error?: { retriable?: boolean };
+  [key: string]: unknown;
 }
 
-export interface KafkaJSNumberOfRetriesExceededMetadata {
-  retryCount: number;
-  retryTime: number;
+export declare class KafkaDeleteTopicRecordsError extends KafkaError {
+  readonly partitions: readonly DeleteTopicRecordPartition[];
+  constructor(options: { partitions: readonly DeleteTopicRecordPartition[] });
 }
 
-export interface KafkaJSConnectionErrorMetadata {
-  broker?: string;
-  code?: string;
+export declare class KafkaInvariantViolation extends KafkaNonRetriableError {
+  constructor(e: string | ErrorLike);
 }
 
-export interface KafkaJSRequestTimeoutErrorMetadata {
-  broker: string;
-  clientId: string;
-  correlationId: number;
-  createdAt: number;
-  sentAt: number;
-  pendingDuration: number;
+export declare class KafkaInvalidVarIntError extends KafkaNonRetriableError {}
+
+export declare class KafkaInvalidLongError extends KafkaNonRetriableError {}
+
+export declare class KafkaCreateTopicError extends KafkaProtocolError {
+  readonly topic: string;
+  constructor(
+    e: ConstructorParameters<typeof KafkaProtocolError>[0],
+    topicName: string,
+  );
 }
 
-export interface KafkaJSTopicMetadataNotLoadedMetadata {
-  topic: string;
+export declare class KafkaAlterPartitionReassignmentsError extends KafkaProtocolError {
+  readonly topic: string;
+  readonly partition: number;
+  constructor(
+    e: ConstructorParameters<typeof KafkaProtocolError>[0],
+    topicName: string,
+    partition: number,
+  );
 }
 
-export interface KafkaJSStaleTopicMetadataAssignmentMetadata {
-  topic: string;
-  unknownPartitions: PartitionMetadata[];
+export declare class KafkaUpdateFeaturesError extends KafkaProtocolError {
+  readonly feature: string;
+  constructor(
+    e: ConstructorParameters<typeof KafkaProtocolError>[0],
+    feature: string,
+  );
 }
 
-export interface KafkaJSServerDoesNotSupportApiKeyMetadata {
-  apiKey: number;
-  apiName: string;
+export declare class KafkaAggregateError extends Error {
+  readonly name: KafkaErrorName;
+  readonly errors: readonly unknown[];
+  constructor(message: string, errors: readonly unknown[]);
+}
+
+export declare class KafkaFetcherRebalanceError extends Error {
+  readonly name: KafkaErrorName;
+}
+
+export declare class KafkaNoBrokerAvailableError extends KafkaError {
+  constructor();
+}
+
+export type KafkaConfigErrorTag =
+  | 'MissingBrokers'
+  | 'ConfigFileNotFound'
+  | 'ConfigLoadError'
+  | 'ConfigFileInvalid'
+  | 'UnsupportedExtension';
+
+export interface KafkaConfigErrorOptions {
+  path?: string;
+  cause?: unknown;
+}
+
+/** Raised while discovering, loading, parsing or resolving a config file. */
+export declare class KafkaConfigError extends KafkaNonRetriableError {
+  readonly tag: KafkaConfigErrorTag;
+  readonly path: string | undefined;
+  constructor(
+    tag: KafkaConfigErrorTag,
+    message: string,
+    options?: KafkaConfigErrorOptions,
+  );
+}
+
+/**
+ * A config file uses top-level `await`, so it cannot be loaded synchronously;
+ * use `Kafka.fromConfig()` instead of `new Kafka()`.
+ */
+export declare class KafkaConfigRequiresAsyncError extends KafkaNonRetriableError {
+  readonly path: string;
+  constructor(path: string, options?: { cause?: unknown });
 }

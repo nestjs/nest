@@ -1,7 +1,7 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { Admin, ITopicMetadata, Kafka } from 'kafkajs';
+import type { Admin } from '@cookiemonsterdev/kafka-core';
 import request from 'supertest';
 import * as util from 'util';
 import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller.js';
@@ -60,6 +60,8 @@ describe.skip('Kafka concurrent', function () {
   };
 
   it(`Create kafka topics/partitions`, async () => {
+    // Loaded here, as kafka-core requires Node.js 24 and CI also runs older ones
+    const { Kafka } = await import('@cookiemonsterdev/kafka-core');
     const kafka = new Kafka({
       clientId: 'concurrent-test-admin',
       brokers: ['localhost:9092'],
@@ -68,9 +70,7 @@ describe.skip('Kafka concurrent', function () {
     admin = kafka.admin();
     await admin.connect();
 
-    let topicMetadata: {
-      topics: ITopicMetadata[];
-    };
+    let topicMetadata: Awaited<ReturnType<Admin['fetchTopicMetadata']>>;
 
     try {
       topicMetadata = await admin.fetchTopicMetadata({
