@@ -11,8 +11,8 @@ import { KafkaHeaders } from '../enums/index.js';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception.js';
 import { InvalidMessageException } from '../errors/invalid-message.exception.js';
 import { KafkaStatus } from '../events/index.js';
+import type { AssignerProtocol } from '../external/kafka-core.interface.js';
 import {
-  AssignerProtocol,
   BrokersFunction,
   Consumer,
   ConsumerGroupJoinEvent,
@@ -69,7 +69,7 @@ export class ClientKafka
   protected initialized: Promise<void> | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
-  protected brokers: readonly string[] | BrokersFunction;
+  protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
   protected postfixId: string;
@@ -96,8 +96,22 @@ export class ClientKafka
     return this._producer;
   }
 
-  constructor(protected readonly options: Required<KafkaOptions>['options']) {
+  /**
+   * Typed as the options of kafkajs, as they were before kafka-core was
+   * supported, so that subclasses keep compiling. On kafka-core, they hold the
+   * options of kafka-core.
+   */
+  protected readonly options: Required<KafkaOptions>['options'];
+
+  constructor(options: Required<KafkaOptions<'kafka-core'>>['options']);
+  constructor(options: Required<KafkaOptions>['options']);
+  constructor(
+    options:
+      | Required<KafkaOptions>['options']
+      | Required<KafkaOptions<'kafka-core'>>['options'],
+  ) {
     super();
+    this.options = options as Required<KafkaOptions>['options'];
 
     this.postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
     this.producerOnlyMode = this.getOptionsProp(
@@ -114,8 +128,8 @@ export class ClientKafka
     this.groupId = identity.groupId;
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
-    this.initializeSerializer(options);
-    this.initializeDeserializer(options);
+    this.initializeSerializer(this.options);
+    this.initializeDeserializer(this.options);
   }
 
   public subscribeToResponseOf(pattern: unknown): void {
@@ -232,10 +246,10 @@ export class ClientKafka
         this.client!.consumer(consumerOptions);
       this.registerConsumerEventListeners();
 
-      // Set member assignments on join and rebalance. kafka-core types the
-      // payload of every event as unknown.
-      this._consumer.on(this._consumer.events.GROUP_JOIN, event =>
-        this.setConsumerAssignments(event as ConsumerGroupJoinEvent),
+      // Set member assignments on join and rebalance
+      this._consumer.on(
+        this._consumer.events.GROUP_JOIN,
+        this.setConsumerAssignments.bind(this),
       );
       await this._consumer.connect();
       await this.bindTopics();
@@ -299,7 +313,7 @@ export class ClientKafka
           }),
         );
       } catch (err) {
-        // A rejection would make the Kafka client redeliver the message forever
+        // A rejection would make kafkajs redeliver the message forever
         this.logger.error(
           `Message skipped (topic "${payload.topic}", partition ${payload.partition}, offset ${payload.message.offset}): ${err.message}`,
         );
@@ -316,7 +330,7 @@ export class ClientKafka
         return callback?.({ err, isDisposed: true });
       }
       const correlationId = rawMessage.headers![KafkaHeaders.CORRELATION_ID];
-      // A header without a value is not the id of a pending request
+      // kafkajs decodes an empty header value as null
       if (isNil(correlationId)) {
         return;
       }

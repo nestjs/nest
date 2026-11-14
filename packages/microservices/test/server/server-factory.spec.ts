@@ -7,7 +7,6 @@ import { ServerNats } from '../../server/server-nats.js';
 import { ServerRedis } from '../../server/server-redis.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
 import { ServerTCP } from '../../server/server-tcp.js';
-import { isKafkaCoreSupported } from '../utils/kafka-core-support.js';
 
 describe('ServerFactory', () => {
   describe('create', () => {
@@ -166,18 +165,15 @@ describe('ServerFactory', () => {
         ).resolves.toBeUndefined();
       });
 
-      it.skipIf(!isKafkaCoreSupported)(
-        'should let the kafka server create a client',
-        async () => {
-          const server = ServerFactory.create({
-            transport: Transport.KAFKA,
-          }) as ServerKafka;
+      it('should let the kafka server create a client', async () => {
+        const server = ServerFactory.create({
+          transport: Transport.KAFKA,
+        }) as ServerKafka;
 
-          const client = await server.createClient();
+        const client = await server.createClient();
 
-          expect(client.consumer).toBeTypeOf('function');
-        },
-      );
+        expect(client.consumer).toBeTypeOf('function');
+      });
 
       it('should let the rmq server set up a channel', async () => {
         const server = ServerFactory.create({

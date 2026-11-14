@@ -1,7 +1,7 @@
 import { ClientKafka } from '../client/client-kafka.js';
 import { KAFKA_CORE_PACKAGE } from '../constants.js';
+import type { AssignerProtocol } from '../external/kafka-core.interface.js';
 import {
-  AssignerProtocol,
   Cluster,
   GroupMember,
   GroupMemberAssignment,
@@ -170,17 +170,21 @@ export class KafkaReplyPartitionAssigner {
     }));
   }
 
-  public protocol(subscription: { topics: readonly string[] }): GroupState {
-    const userData = Buffer.from(
-      JSON.stringify({ previousAssignment: this.getPreviousAssignment() }),
-    );
+  public protocol(subscription: {
+    topics: readonly string[];
+    userData?: Buffer;
+  }): GroupState {
+    const stringifiedUserData = JSON.stringify({
+      previousAssignment: this.getPreviousAssignment(),
+    });
+    subscription.userData = Buffer.from(stringifiedUserData);
 
     return {
       name: this.name,
       metadata: this.assignerProtocol.MemberMetadata.encode({
         version: this.version,
         topics: subscription.topics,
-        userData,
+        userData: subscription.userData,
       }),
     };
   }

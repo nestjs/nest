@@ -480,17 +480,40 @@ describe('kafka reply partition assigner', () => {
       );
     });
 
+    it('should read the previous assignment of a member on the other package', () => {
+      client.consumerAssignments = { 'topic-A': 1 };
+      const previousAssignment = { 'topic-A': 1 };
+      const kafkajsMember = {
+        memberId: 'kafkajs-member',
+        memberMetadata: assigner.protocol({ topics }).metadata,
+      };
+      const kafkaCoreMember = {
+        memberId: 'kafka-core-member',
+        memberMetadata: kafkaCoreAssigner.protocol({ topics }).metadata,
+      };
+
+      expect(kafkaCoreAssigner.decodeMember(kafkajsMember)).toEqual({
+        memberId: 'kafkajs-member',
+        previousAssignment,
+      });
+      expect(assigner.decodeMember(kafkaCoreMember)).toEqual({
+        memberId: 'kafka-core-member',
+        previousAssignment,
+      });
+    });
+
     it('should assign the same partitions as kafkajs', async () => {
       metadata['topic-A'] = [{ partitionId: 0 }, { partitionId: 1 }];
       metadata['topic-B'] = [{ partitionId: 0 }];
+      client.consumerAssignments = { 'topic-A': 1 };
       const members = [
         {
           memberId: 'kafkajs-member',
-          metadata: assigner.protocol({ topics }).metadata,
+          memberMetadata: assigner.protocol({ topics }).metadata,
         },
         {
           memberId: 'kafka-core-member',
-          metadata: kafkaCoreAssigner.protocol({ topics }).metadata,
+          memberMetadata: kafkaCoreAssigner.protocol({ topics }).metadata,
         },
       ];
 

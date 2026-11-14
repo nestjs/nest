@@ -48,7 +48,7 @@ describe('createKafkaClient', () => {
     vi.mocked(loadPackage).mockReset();
     vi.mocked(tryLoadPackage).mockReset();
     vi.mocked(tryLoadPackage).mockImplementation(async name =>
-      name === 'kafkajs' ? kafkajs : kafkaCore,
+      name === 'kafkajs' ? kafkajs : null,
     );
   });
 
@@ -65,6 +65,15 @@ describe('createKafkaClient', () => {
     });
 
   describe('on kafka-core', () => {
+    beforeEach(() => {
+      vi.mocked(loadPackage).mockResolvedValue(kafkaCore);
+    });
+
+    const createOnKafkaCore = (
+      options: Record<string, any>,
+      identity?: KafkaClientIdentity,
+    ) => create({ driver: 'kafka-core', ...options }, identity);
+
     it('should create the client from the options it passes to kafka-core', async () => {
       const client = { brokers: ['broker:9092'], clientId: 'app' };
       resolveKafkaConfigAsync.mockResolvedValue({
@@ -77,7 +86,7 @@ describe('createKafkaClient', () => {
         groupId: 'nestjs-group-server',
       };
 
-      const result = await create({ client }, identity);
+      const result = await createOnKafkaCore({ client }, identity);
 
       expect(resolveKafkaConfigAsync).toHaveBeenCalledExactlyOnceWith(
         client,
@@ -108,7 +117,7 @@ describe('createKafkaClient', () => {
         fileConfig,
       });
 
-      const result = await create({});
+      const result = await createOnKafkaCore({});
 
       expect(result.identity).toEqual({
         brokers: ['file:9092'],
@@ -131,7 +140,9 @@ describe('createKafkaClient', () => {
       });
 
       // The option equals the default, so only the options tell it was set
-      const result = await create({ consumer: { groupId: 'nestjs-group' } });
+      const result = await createOnKafkaCore({
+        consumer: { groupId: 'nestjs-group' },
+      });
 
       expect(result.identity.groupId).toBe('nestjs-group-server');
     });
@@ -147,7 +158,7 @@ describe('createKafkaClient', () => {
         groupId: 'custom-group',
       };
 
-      const result = await create({}, identity);
+      const result = await createOnKafkaCore({}, identity);
 
       expect(result.identity).toEqual(identity);
     });
@@ -157,7 +168,7 @@ describe('createKafkaClient', () => {
         new KafkaConfigError('MissingBrokers'),
       );
 
-      const result = await create({ client: { config: false } });
+      const result = await createOnKafkaCore({ client: { config: false } });
 
       expect(result.identity).toEqual(defaultIdentity);
       expect(from).toHaveBeenCalledExactlyOnceWith(
@@ -173,7 +184,7 @@ describe('createKafkaClient', () => {
       );
       resolveKafkaConfigAsync.mockRejectedValue(error);
 
-      await expect(create({})).rejects.toBe(error);
+      await expect(createOnKafkaCore({})).rejects.toBe(error);
     });
 
     it.each([
@@ -185,7 +196,7 @@ describe('createKafkaClient', () => {
     ])('should reject on %s', async (_, error) => {
       resolveKafkaConfigAsync.mockRejectedValue(error);
 
-      await expect(create({})).rejects.toBe(error);
+      await expect(createOnKafkaCore({})).rejects.toBe(error);
     });
 
     it('should log the diagnostics of the config file', async () => {
@@ -197,20 +208,19 @@ describe('createKafkaClient', () => {
         },
       );
 
-      await create({});
+      await createOnKafkaCore({});
 
       expect(logger.log).toHaveBeenCalledExactlyOnceWith('Loaded kafka config');
       expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Two config files');
     });
 
     it('should load kafka-core when the driver option names it', async () => {
-      vi.mocked(loadPackage).mockResolvedValue(kafkaCore);
       resolveKafkaConfigAsync.mockResolvedValue({
         config: { brokers: ['broker:9092'] },
         fileConfig: null,
       });
 
-      await create({ driver: 'kafka-core' });
+      await createOnKafkaCore({});
 
       expect(loadPackage).toHaveBeenCalledExactlyOnceWith(
         '@cookiemonsterdev/kafka-core',
@@ -222,16 +232,13 @@ describe('createKafkaClient', () => {
   });
 
   describe('on kafkajs', () => {
-    it('should create the client from the options and the identity', async () => {
+    it('should create the client from the options and the identity, as before kafka-core', async () => {
       vi.mocked(loadPackage).mockResolvedValue(kafkajs);
 
       const identity = { ...defaultIdentity, brokers: ['broker:9092'] };
 
       const result = await create(
-        {
-          driver: 'kafkajs',
-          client: { brokers: ['broker:9092'], ssl: true, config: false },
-        },
+        { driver: 'kafkajs', client: { brokers: ['broker:9092'], ssl: true } },
         identity,
       );
 
@@ -241,32 +248,44 @@ describe('createKafkaClient', () => {
         brokers: ['broker:9092'],
         clientId: 'nestjs-consumer-server',
       });
+      expect(result.client).toBeInstanceOf(KafkaJs);
       expect(result.identity).toBe(identity);
       expect(result.assignerProtocol).toBe(AssignerProtocol);
-      expect((result.client as any).producer).toBeTypeOf('function');
       expect(resolveKafkaConfigAsync).not.toHaveBeenCalled();
+      expect(logger.warn).not.toHaveBeenCalled();
     });
 
-    it('should reject a config file option', async () => {
-      vi.mocked(loadPackage).mockResolvedValue(kafkajs);
-
-      await expect(
-        create({ driver: 'kafkajs', client: { config: true } }),
-      ).rejects.toThrow('"client.config" option needs');
-    });
-
-    it('should fall back to kafkajs, with a warning, when kafka-core is not installed', async () => {
-      vi.mocked(tryLoadPackage).mockImplementation(async name =>
-        name === 'kafkajs' ? kafkajs : null,
-      );
-
+    it('should run on kafkajs, with a one-time warning, when it is installed and no driver is set', async () => {
       await create({});
       await create({});
 
       expect(KafkaJs).toHaveBeenCalledTimes(2);
+      expect(tryLoadPackage).not.toHaveBeenCalledWith(
+        '@cookiemonsterdev/kafka-core',
+        expect.anything(),
+      );
       expect(logger.warn).toHaveBeenCalledOnce();
       expect(logger.warn.mock.calls[0][0]).toContain('deprecated');
     });
+  });
+
+  it('should run on kafka-core when kafkajs is not installed and no driver is set', async () => {
+    vi.mocked(tryLoadPackage).mockResolvedValue(null);
+    vi.mocked(loadPackage).mockResolvedValue(kafkaCore);
+    resolveKafkaConfigAsync.mockResolvedValue({
+      config: { brokers: ['broker:9092'] },
+      fileConfig: null,
+    });
+
+    const result = await create({ client: { brokers: ['broker:9092'] } });
+
+    expect(result.client).toBe('kafka-core client');
+    // Only the driver option opts into config files
+    expect(resolveKafkaConfigAsync).toHaveBeenCalledExactlyOnceWith(
+      { config: false, brokers: ['broker:9092'] },
+      expect.anything(),
+    );
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   describe('on a Node.js release older than kafka-core needs', () => {

@@ -5,30 +5,33 @@ import {
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP,
 } from '../constants.js';
-import {
+import type {
   AssignerProtocol,
-  BrokersFunction,
   ConfigDiagnostic,
-  KafkaConfig,
+  KafkaConfig as KafkaCoreConfig,
   KafkaFileConfig,
-} from '../external/kafka.interface.js';
+} from '../external/kafka-core.interface.js';
+import { BrokersFunction } from '../external/kafka.interface.js';
 import { KafkaLogger } from '../helpers/kafka-logger.js';
 import {
   KafkaDriver,
   KafkaOptions,
 } from '../interfaces/microservice-configuration.interface.js';
-import { adaptKafkajsClient } from './kafkajs-adapter.utils.js';
 import { LoggerService } from '@nestjs/common';
 import { tryLoadPackage } from '@nestjs/common/internal';
 
 /** The brokers and ids a Kafka server or client connects with. */
 export interface KafkaClientIdentity {
-  brokers: readonly string[] | BrokersFunction;
+  brokers: string[] | BrokersFunction;
   clientId: string;
   groupId: string;
 }
 
 export interface CreateKafkaClientOptions {
+  /**
+   * The options of the transport, typed as those of kafkajs. On kafka-core,
+   * they hold the options of kafka-core.
+   */
   options: Required<KafkaOptions>['options'];
   /** The brokers and ids the transport set up in its constructor. */
   identity: KafkaClientIdentity;
@@ -57,15 +60,16 @@ export function getKafkaIdentity(
 }
 
 /**
- * Creates the client of a Kafka server or client, on kafka-core or, when the
- * `driver` option or the installed packages say so, on kafkajs, adapted to
- * the bigint offsets and timestamps of kafka-core.
+ * Creates the client of a Kafka server or client: kafkajs as it always was,
+ * or kafka-core when the `driver` option or the installed packages say so.
  *
- * kafka-core discovers a `kafka.config.*` file when the options give no
- * brokers, or when `client.config` is `true` or a path. The file then fills in
- * the options left out, and replaces the brokers and ids the transport
- * defaulted. Ids that come from the options, or that a subclass set, are kept.
- * The ids of the file get the postfix of the transport too.
+ * When the `driver` option names kafka-core, it discovers a `kafka.config.*`
+ * file if the options give no brokers, or reads the one `client.config` points
+ * to. Run on kafka-core only because kafkajs is missing, it reads a file only
+ * when `client.config` asks for one. The file then fills in the options left
+ * out, and replaces the brokers and ids the transport defaulted. Ids that come
+ * from the options, or that a subclass set, are kept. The ids of the file get
+ * the postfix of the transport too.
  *
  * @returns The client, the brokers and ids it connects with, and the
  * `AssignerProtocol` of the package it runs on.
@@ -88,34 +92,32 @@ export async function createKafkaClient({
   );
   const logCreator = KafkaLogger.bind(null, logger);
   if (driver === 'kafkajs') {
-    const { config, ...clientOptions } = options.client ?? {};
-    if (config) {
-      throw new Error(
-        `The "client.config" option needs the "${KAFKA_CORE_PACKAGE}" package: kafkajs does not read kafka.config files.`,
-      );
-    }
-    const kafka = new kafkaPackage.Kafka({
+    const client = new kafkaPackage.Kafka({
       logCreator,
-      ...clientOptions,
+      ...options.client,
       brokers: identity.brokers,
       clientId: identity.clientId,
     });
     return {
-      client: adaptKafkajsClient(kafka),
+      client,
       identity,
       assignerProtocol: kafkaPackage.AssignerProtocol,
     };
   }
 
+  // On kafka-core, the options are those of kafka-core (see `options`)
+  const clientOptions = (options.client ?? {}) as KafkaCoreConfig;
+  const isKafkaCoreChosen = (options.driver as KafkaDriver) === 'kafka-core';
   const { config, fileConfig } = await resolveKafkaConfig(
     kafkaPackage,
-    options.client ?? {},
+    isKafkaCoreChosen ? clientOptions : { config: false, ...clientOptions },
     logger,
   );
   const defaults = getKafkaIdentity({}, postfixId);
   const resolvedIdentity: KafkaClientIdentity = {
     brokers: isDefaultBrokers(identity.brokers)
-      ? config.brokers!
+      ? // Nest never mutates them, as it never mutated those of kafkajs
+        (config.brokers as KafkaClientIdentity['brokers'])
       : identity.brokers,
     clientId:
       identity.clientId === defaults.clientId
@@ -145,8 +147,8 @@ const importKafkaCore = () => import('@cookiemonsterdev/kafka-core');
 const importKafkajs = () => import('kafkajs');
 
 /**
- * Loads the package the `driver` option names. Without one, kafka-core when
- * it is installed and loads (it needs Node.js 24), otherwise kafkajs.
+ * Loads the package the `driver` option names. Without one, kafkajs when it is
+ * installed, as before kafka-core was supported, otherwise kafka-core.
  */
 async function loadKafkaPackage(
   driver: KafkaDriver | undefined,
@@ -160,17 +162,13 @@ async function loadKafkaPackage(
     };
   }
   if (!driver) {
-    const kafkaCore = await tryLoadPackage(KAFKA_CORE_PACKAGE, importKafkaCore);
-    if (kafkaCore) {
-      return { driver: 'kafka-core', kafkaPackage: kafkaCore };
-    }
     const kafkajs = await tryLoadPackage('kafkajs', importKafkajs);
     if (kafkajs) {
       warnOfKafkajs(logger);
       return { driver: 'kafkajs', kafkaPackage: kafkajs };
     }
   }
-  if (Number(process.versions.node.split('.')[0]) < KAFKA_CORE_MIN_NODE_MAJOR) {
+  if (!isKafkaCoreSupportedNode()) {
     logger.error(
       `"${KAFKA_CORE_PACKAGE}" needs Node.js ${KAFKA_CORE_MIN_NODE_MAJOR} or newer. Upgrade Node.js, or install kafkajs.`,
     );
@@ -188,7 +186,7 @@ function warnOfKafkajs(logger: LoggerService) {
   }
   hasWarnedOfKafkajs = true;
   logger.warn(
-    `Running on kafkajs, whose support is deprecated and will be removed in the next major version. Switch to "${KAFKA_CORE_PACKAGE}", which needs Node.js ${KAFKA_CORE_MIN_NODE_MAJOR} or newer.`,
+    `Running on kafkajs, whose support is deprecated and will be removed in the next major version. Switch to "${KAFKA_CORE_PACKAGE}" (Node.js ${KAFKA_CORE_MIN_NODE_MAJOR} or newer) with the "driver" option, or set it to "kafkajs" to keep kafkajs.`,
   );
 }
 
@@ -198,9 +196,9 @@ function warnOfKafkajs(logger: LoggerService) {
  */
 async function resolveKafkaConfig(
   kafkaPackage: any,
-  clientOptions: KafkaConfig,
+  clientOptions: KafkaCoreConfig,
   logger: LoggerService,
-): Promise<{ config: KafkaConfig; fileConfig: KafkaFileConfig }> {
+): Promise<{ config: KafkaCoreConfig; fileConfig: KafkaFileConfig }> {
   const onDiagnostic = ({ level, message }: ConfigDiagnostic) =>
     level === 'warn' ? logger.warn(message) : logger.log(message);
   try {
@@ -230,5 +228,12 @@ function isDefaultBrokers(brokers: KafkaClientIdentity['brokers']) {
     Array.isArray(brokers) &&
     brokers.length === 1 &&
     brokers[0] === KAFKA_DEFAULT_BROKER
+  );
+}
+
+/** Whether this Node.js release is one that kafka-core runs on. */
+export function isKafkaCoreSupportedNode(): boolean {
+  return (
+    Number(process.versions.node.split('.')[0]) >= KAFKA_CORE_MIN_NODE_MAJOR
   );
 }

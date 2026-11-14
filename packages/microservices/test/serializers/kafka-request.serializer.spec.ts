@@ -237,7 +237,7 @@ describe('KafkaRequestSerializer', () => {
   });
 
   describe('serialize a kafka message with many header values', () => {
-    // kafka-core encodes each of them as a header, at about 1 kB apiece
+    // kafkajs encodes each of them as a header, at about 1 kB apiece
     it('should send 10000 header values', () => {
       const headers = { repeated: new Array(9_999).fill(''), single: '' };
 

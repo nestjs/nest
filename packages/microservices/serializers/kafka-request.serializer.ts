@@ -8,8 +8,8 @@ import {
   isUndefined,
 } from '@nestjs/common/internal';
 
-// The Kafka client encodes each value of the headers (a repeated header has
-// several) as a header of its own, at about 1 kB apiece
+// kafkajs encodes each value of the headers (a repeated header has several)
+// as a header of its own, at about 1 kB apiece
 const MAX_HEADER_VALUES = 10_000;
 
 // The fields of a Kafka message. An object with any other property of its own
@@ -23,9 +23,10 @@ const KAFKA_MESSAGE_FIELDS = [
   'timestamp',
 ];
 
-// Offsets and timestamps are bigint values, which JSON.stringify()
-// rejects, so a payload that carries one gets it as a decimal string. A
-// replacer slows down every call, so it only serves the payloads that need it.
+// On kafka-core, offsets and timestamps are bigint values, which
+// JSON.stringify() rejects, so a payload that carries one gets it as a
+// decimal string. A replacer slows down every call, so it only serves the
+// payloads that need it.
 const stringifyJson = (value: unknown): string => {
   try {
     return JSON.stringify(value);

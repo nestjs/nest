@@ -114,7 +114,7 @@ describe('KafkaLogger', () => {
   });
 
   describe('when the entry cannot be serialized as json', () => {
-    // kafka-core logs the error an "eachMessage" handler rejected with this way
+    // kafkajs logs the error an "eachMessage" handler rejected with this way
     const logError = (rejection: unknown) =>
       kafkaLogger({
         namespace,

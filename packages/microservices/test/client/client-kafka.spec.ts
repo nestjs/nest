@@ -1,9 +1,10 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import type { Producer } from '@cookiemonsterdev/kafka-core';
+import { Producer } from 'kafkajs';
 import { lastValueFrom, Observable } from 'rxjs';
 import { ClientKafka } from '../../client/client-kafka.js';
+import { isKafkaCoreSupported } from '../utils/kafka-core-support.js';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaHeaders } from '../../enums/index.js';
 import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception.js';
@@ -13,7 +14,6 @@ import {
   EachMessagePayload,
   KafkaMessage,
 } from '../../external/kafka.interface.js';
-import { isKafkaCoreSupported } from '../utils/kafka-core-support.js';
 
 describe('ClientKafka', () => {
   const topic = 'test.topic';
@@ -22,29 +22,26 @@ describe('ClientKafka', () => {
   const replyPartition = '0';
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
   const key = 'test-key';
-  const offset = 0n;
-  const timestamp = BigInt(Date.now());
+  const offset = '0';
+  const timestamp = new Date().toISOString();
   const attributes = 1;
   const messageValue = 'test-message';
   const heartbeat = async () => {};
   const pause = () => () => {};
 
-  const message: Omit<KafkaMessage, 'headers'> = {
+  const message: KafkaMessage = {
     key: Buffer.from(key),
     offset,
-    byteSize: messageValue.length,
+    size: messageValue.length,
     value: Buffer.from(messageValue),
     timestamp,
     attributes,
-    magicByte: 2,
-    isControlRecord: false,
-    batchContext: {} as KafkaMessage['batchContext'],
   };
 
   const deserializedMessage: any = {
     key,
     offset,
-    byteSize: messageValue.length,
+    size: messageValue.length,
     value: messageValue,
     timestamp,
     attributes,
@@ -244,7 +241,7 @@ describe('ClientKafka', () => {
     expect((client as any).assignerProtocol.MemberMetadata).toBeDefined();
   });
 
-  describe.skipIf(!isKafkaCoreSupported)('createClient', () => {
+  describe('createClient', () => {
     beforeEach(() => {
       client = new ClientKafka({});
     });
@@ -268,7 +265,28 @@ describe('ClientKafka', () => {
       expect(logCreatorSpy).toHaveBeenCalled();
     });
 
-    describe('with a kafka.config.* file', () => {
+    it('should run on kafkajs, as it always has, when kafkajs is installed', async () => {
+      const kafkajs = await import('kafkajs');
+      client = new ClientKafka({ client: { brokers: ['broker:9092'] } });
+
+      expect(await client.createClient()).toBeInstanceOf(kafkajs.Kafka);
+    });
+
+    it.skipIf(!isKafkaCoreSupported)(
+      'should run on kafka-core when the driver option names it',
+      async () => {
+        const kafkaCore = await import('@cookiemonsterdev/kafka-core');
+        client = new ClientKafka({
+          driver: 'kafka-core',
+          client: { brokers: ['broker:9092'] },
+        });
+
+        expect(await client.createClient()).toBeInstanceOf(kafkaCore.Kafka);
+        expect((client as any).brokers).toEqual(['broker:9092']);
+      },
+    );
+
+    describe.skipIf(!isKafkaCoreSupported)('with a kafka.config.* file', () => {
       let configDir: string;
       let configPath: string;
 
@@ -287,7 +305,10 @@ describe('ClientKafka', () => {
       afterEach(() => rmSync(configDir, { recursive: true, force: true }));
 
       it('should connect with the brokers and ids of the file', async () => {
-        client = new ClientKafka({ client: { config: configPath } });
+        client = new ClientKafka({
+          driver: 'kafka-core',
+          client: { config: configPath },
+        });
 
         await client.createClient();
 
@@ -303,7 +324,10 @@ describe('ClientKafka', () => {
             this.clientId = 'custom-client';
           }
         }
-        client = new CustomClientKafka({ client: { config: configPath } });
+        client = new CustomClientKafka({
+          driver: 'kafka-core',
+          client: { config: configPath },
+        });
 
         await client.createClient();
 
@@ -650,7 +674,7 @@ describe('ClientKafka', () => {
       await client.connect();
 
       const consumerAssignments: ConsumerGroupJoinEvent = {
-        id: 1,
+        id: 'id',
         type: 'type',
         timestamp: 1234567890,
         payload: {
@@ -682,7 +706,7 @@ describe('ClientKafka', () => {
       await client.connect();
 
       const consumerAssignments: ConsumerGroupJoinEvent = {
-        id: 1,
+        id: 'id',
         type: 'type',
         timestamp: 1234567890,
         payload: {
@@ -860,7 +884,7 @@ describe('ClientKafka', () => {
       });
 
       it('should log and skip the message, and fail the pending request', async () => {
-        // A rejection would make kafka-core redeliver the message
+        // A rejection would make kafkajs redeliver the message
         await expect(subscription(payload)).resolves.toBeUndefined();
 
         expect(loggerErrorSpy).toHaveBeenCalledOnce();

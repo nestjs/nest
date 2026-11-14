@@ -15,8 +15,8 @@ import {
   KafkaMessage,
 } from '../../external/kafka.interface.js';
 import { ServerKafka } from '../../server/index.js';
-import { objectToMap } from './utils/object-to-map.js';
 import { isKafkaCoreSupported } from '../utils/kafka-core-support.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -30,21 +30,18 @@ describe('ServerKafka', () => {
   const replyPartition = '0';
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
   const key = '1';
-  const timestamp = BigInt(Date.now());
+  const timestamp = new Date().toISOString();
   const messageValue = 'test-message';
   const heartbeat = async () => {};
   const pause = () => () => {};
 
-  const eventMessage: Omit<KafkaMessage, 'headers'> = {
+  const eventMessage: KafkaMessage = {
     key: Buffer.from(key),
-    offset: 0n,
-    byteSize: messageValue.length,
+    offset: '0',
+    size: messageValue.length,
     value: Buffer.from(messageValue),
     timestamp,
     attributes: 1,
-    magicByte: 2,
-    isControlRecord: false,
-    batchContext: {} as KafkaMessage['batchContext'],
   };
   const eventPayload: EachMessagePayload = {
     topic,
@@ -406,9 +403,9 @@ describe('ServerKafka', () => {
         await expect(server.getMessageHandler()(null!)).rejects.toBe(error);
       });
 
-      // kafka-core does not retry these, and leaves the consumer stopped
+      // kafkajs does not retry these, and leaves the consumer stopped
       it.each([TypeError, RangeError, ReferenceError, SyntaxError])(
-        'should reject with an error kafka-core retries when "handleMessage" rejects with a %o',
+        'should reject with an error kafkajs retries when "handleMessage" rejects with a %o',
         async ErrorType => {
           const error = new ErrorType('handler failed');
           vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
@@ -425,7 +422,7 @@ describe('ServerKafka', () => {
         },
       );
 
-      it('should reject with an error kafka-core retries when an event handler fails with a TypeError', async () => {
+      it('should reject with an error kafkajs retries when an event handler fails with a TypeError', async () => {
         // What a filter written for HTTP throws when given the RPC context
         const error = new TypeError('response.status is not a function');
         untypedServer.messageHandlers = objectToMap({
@@ -834,7 +831,7 @@ describe('ServerKafka', () => {
         expect(getPublisher).not.toHaveBeenCalled();
       };
 
-      // kafka-core keeps state per topic in plain objects
+      // kafkajs keeps state per topic in plain objects
       it.each(['__proto__', 'constructor', 'toString', 'hasOwnProperty'])(
         'should log an error and not run the handler if it is "%s"',
         async replyTopicHeader => {
@@ -957,7 +954,7 @@ describe('ServerKafka', () => {
         untypedServer.messageHandlers = objectToMap({ [topic]: handler });
         const handleEventSpy = vi.spyOn(server, 'handleEvent');
 
-        // A rejection would make kafka-core redeliver the message
+        // A rejection would make kafkajs redeliver the message
         await expect(
           server.handleMessage(withCorrelationId('a'.repeat(257))),
         ).resolves.toBeUndefined();
@@ -1046,7 +1043,7 @@ describe('ServerKafka', () => {
         .spyOn(untypedServer.logger, 'error')
         .mockImplementation(() => {});
 
-      // A rejection would make kafka-core redeliver the message
+      // A rejection would make kafkajs redeliver the message
       await expect(server.handleMessage(payload)).resolves.toBeUndefined();
 
       expect(loggerErrorSpy).toHaveBeenCalledOnce();
@@ -1100,7 +1097,7 @@ describe('ServerKafka', () => {
         isEventHandler: true,
       });
 
-      // A rejection would make kafka-core redeliver a message that was handled.
+      // A rejection would make kafkajs redeliver a message that was handled.
       await server.handleEvent(topic, { pattern: topic, data: null }, context);
 
       expect(endHook).toHaveBeenCalledOnce();
@@ -1112,7 +1109,7 @@ describe('ServerKafka', () => {
         { isEventHandler: true },
       );
 
-      // The rejection has to travel on so that kafka-core can report it.
+      // The rejection has to travel on so that kafkajs can report it.
       await expect(
         server.handleEvent(topic, { pattern: topic, data: null }, context),
       ).rejects.toThrow('failed');
@@ -1236,7 +1233,7 @@ describe('ServerKafka', () => {
         { isEventHandler: false },
       );
 
-      // The rejection has to travel on so that kafka-core redelivers the message.
+      // The rejection has to travel on so that kafkajs redelivers the message.
       await expect(server.handleMessage(payload)).rejects.toThrow(
         KafkaRetriableException,
       );
@@ -1257,7 +1254,7 @@ describe('ServerKafka', () => {
         { isEventHandler: false },
       );
 
-      // The rejection has to travel on so that kafka-core redelivers the message.
+      // The rejection has to travel on so that kafkajs redelivers the message.
       await expect(server.handleMessage(payload)).rejects.toThrow(
         KafkaRetriableException,
       );
@@ -1574,7 +1571,7 @@ describe('ServerKafka', () => {
     expect(kafkaClient.producer).toBeTypeOf('function');
   });
 
-  describe.skipIf(!isKafkaCoreSupported)('createClient', () => {
+  describe('createClient', () => {
     it('should accept a custom logCreator in client options', async () => {
       const logCreatorSpy = vi.fn(() => 'test');
       const logCreator = () => logCreatorSpy;
@@ -1594,7 +1591,28 @@ describe('ServerKafka', () => {
       expect(logCreatorSpy).toHaveBeenCalled();
     });
 
-    describe('with a kafka.config.* file', () => {
+    it('should run on kafkajs, as it always has, when kafkajs is installed', async () => {
+      const kafkajs = await import('kafkajs');
+      server = new ServerKafka({ client: { brokers: ['broker:9092'] } });
+
+      expect(await server.createClient()).toBeInstanceOf(kafkajs.Kafka);
+    });
+
+    it.skipIf(!isKafkaCoreSupported)(
+      'should run on kafka-core when the driver option names it',
+      async () => {
+        const kafkaCore = await import('@cookiemonsterdev/kafka-core');
+        server = new ServerKafka({
+          driver: 'kafka-core',
+          client: { brokers: ['broker:9092'] },
+        });
+
+        expect(await server.createClient()).toBeInstanceOf(kafkaCore.Kafka);
+        expect((server as any).brokers).toEqual(['broker:9092']);
+      },
+    );
+
+    describe.skipIf(!isKafkaCoreSupported)('with a kafka.config.* file', () => {
       let configDir: string;
       let configPath: string;
 
@@ -1613,7 +1631,10 @@ describe('ServerKafka', () => {
       afterEach(() => rmSync(configDir, { recursive: true, force: true }));
 
       it('should connect with the brokers and ids of the file', async () => {
-        server = new ServerKafka({ client: { config: configPath } });
+        server = new ServerKafka({
+          driver: 'kafka-core',
+          client: { config: configPath },
+        });
 
         await server.createClient();
 
@@ -1629,7 +1650,10 @@ describe('ServerKafka', () => {
             this.clientId = 'custom-client';
           }
         }
-        server = new CustomServerKafka({ client: { config: configPath } });
+        server = new CustomServerKafka({
+          driver: 'kafka-core',
+          client: { config: configPath },
+        });
 
         await server.createClient();
 

@@ -4,7 +4,7 @@ import { logLevel } from '../external/kafka.interface.js';
 /**
  * Serializes the details of a log entry. JSON.stringify() throws on circular
  * references, on BigInt values and on values nested deeper than it can
- * recurse, so such an entry is formatted with inspect() instead. The Kafka client logs
+ * recurse, so such an entry is formatted with inspect() instead. kafkajs logs
  * from inside its own error handling (such as the error an `eachMessage`
  * handler rejected with), where an exception thrown by the logger would take
  * the place of the error being handled and stop the consumer for good.
