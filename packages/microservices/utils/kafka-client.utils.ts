@@ -1,4 +1,5 @@
 import {
+  KAFKA_CORE_MIN_NODE_MAJOR,
   KAFKA_CORE_PACKAGE,
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -169,9 +170,9 @@ async function loadKafkaPackage(
       return { driver: 'kafkajs', kafkaPackage: kafkajs };
     }
   }
-  if (Number(process.versions.node.split('.')[0]) < 24) {
+  if (Number(process.versions.node.split('.')[0]) < KAFKA_CORE_MIN_NODE_MAJOR) {
     logger.error(
-      `"${KAFKA_CORE_PACKAGE}" needs Node.js 24 or newer. Upgrade Node.js, or install kafkajs.`,
+      `"${KAFKA_CORE_PACKAGE}" needs Node.js ${KAFKA_CORE_MIN_NODE_MAJOR} or newer. Upgrade Node.js, or install kafkajs.`,
     );
   }
   // Also reports kafka-core as the package to install when neither loads
@@ -187,7 +188,7 @@ function warnOfKafkajs(logger: LoggerService) {
   }
   hasWarnedOfKafkajs = true;
   logger.warn(
-    `Running on kafkajs, whose support is deprecated and will be removed in the next major version. Switch to "${KAFKA_CORE_PACKAGE}", which needs Node.js 24 or newer.`,
+    `Running on kafkajs, whose support is deprecated and will be removed in the next major version. Switch to "${KAFKA_CORE_PACKAGE}", which needs Node.js ${KAFKA_CORE_MIN_NODE_MAJOR} or newer.`,
   );
 }
 

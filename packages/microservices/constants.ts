@@ -12,6 +12,7 @@ export const KAFKA_DEFAULT_BROKER = 'localhost:9092';
 export const KAFKA_DEFAULT_CLIENT = 'nestjs-consumer';
 export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
 export const KAFKA_CORE_PACKAGE = '@cookiemonsterdev/kafka-core';
+export const KAFKA_CORE_MIN_NODE_MAJOR = 24;
 export const MQTT_SEPARATOR = '/';
 export const MQTT_WILDCARD_SINGLE = '+';
 export const MQTT_WILDCARD_ALL = '#';

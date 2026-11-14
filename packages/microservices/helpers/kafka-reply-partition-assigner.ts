@@ -15,15 +15,13 @@ import { loadPackageCached, isUndefined } from '@nestjs/common/internal';
  * one, kafkajs, which the assigner loaded before kafka-core was supported.
  */
 function loadAssignerProtocol(): typeof AssignerProtocol {
-  for (const packageName of [KAFKA_CORE_PACKAGE, 'kafkajs']) {
-    try {
-      return loadPackageCached(packageName).AssignerProtocol;
-    } catch {
-      // Not loaded
-    }
+  try {
+    return loadPackageCached(KAFKA_CORE_PACKAGE).AssignerProtocol;
+  } catch {
+    // kafka-core is not loaded: load kafkajs, or report it as missing
+    return loadPackageCached('kafkajs', KafkaReplyPartitionAssigner.name)
+      .AssignerProtocol;
   }
-  return loadPackageCached('kafkajs', KafkaReplyPartitionAssigner.name)
-    .AssignerProtocol;
 }
 
 export class KafkaReplyPartitionAssigner {
