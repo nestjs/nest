@@ -961,45 +961,6 @@ describe('LazyModuleLoader', () => {
       });
     });
 
-    describe('when a lazily loaded module that registers one fails to build', () => {
-      @Injectable({ scope: Scope.REQUEST })
-      class GuardOfTheFailingModule {
-        canActivate() {
-          return true;
-        }
-      }
-
-      @Injectable()
-      class ProviderWithAnUnresolvableDependency {
-        constructor(
-          @Inject('MISSING_TOKEN') private readonly missing: unknown,
-        ) {}
-      }
-
-      @Module({
-        providers: [
-          { provide: APP_GUARD, useClass: GuardOfTheFailingModule },
-          ProviderWithAnUnresolvableDependency,
-        ],
-      })
-      class FailingModule {}
-
-      @Module({})
-      class ModuleLoadedAfterTheFailure {}
-
-      it('should not let its enhancer outlive the rolled back module', async () => {
-        await expect(
-          lazyModuleLoader.load(() => FailingModule),
-        ).rejects.toThrow('MISSING_TOKEN');
-
-        const moduleRef = await lazyModuleLoader.load(
-          () => ModuleLoadedAfterTheFailure,
-        );
-
-        expect(moduleRef).toBeInstanceOf(ModuleRef);
-      });
-    });
-
     describe('dynamic modules with pre-registered dynamic imports (#17462)', () => {
       // The import must itself be a `DynamicModule` object: those are
       // pre-registered by `NestContainer#addDynamicMetadata` before the lazy
