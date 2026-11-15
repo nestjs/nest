@@ -179,6 +179,26 @@ describe('KafkaParser', () => {
       });
     });
 
+    it('should decode each value of a repeated header', () => {
+      expect(
+        kafkaParser.parse({
+          headers: {
+            text: [Buffer.from('a'), Buffer.from('b,c')],
+            json: [Buffer.from('{"prop":"value"}'), Buffer.from('[1,2]')],
+            binary: [Buffer.from([0, 1]), Buffer.from('text')],
+          },
+          value: null,
+        }),
+      ).toEqual({
+        headers: {
+          text: ['a', 'b,c'],
+          json: [{ prop: 'value' }, [1, 2]],
+          binary: [Buffer.from([0, 1]), 'text'],
+        },
+        value: null,
+      });
+    });
+
     describe('when the message exceeds "maxMessageSize"', () => {
       beforeEach(() => {
         kafkaParser = new KafkaParser({ maxMessageSize: 16 });
