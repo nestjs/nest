@@ -1,5 +1,6 @@
 import {
   CallHandler,
+  Controller,
   DynamicModule,
   ExecutionContext,
   Global,
@@ -11,6 +12,7 @@ import {
   Type,
   UseInterceptors,
 } from '@nestjs/common';
+import { APP_GUARD } from '../../../constants.js';
 import { DiscoverableMetaHostCollection } from '../../../discovery/discoverable-meta-host-collection.js';
 import {
   LazyModuleLoader,
@@ -890,6 +892,72 @@ describe('LazyModuleLoader', () => {
 
         await lazyModuleLoader.load(() => LazyGlobalModule);
         expect(globalConstructionsCount).toBe(1);
+      });
+    });
+
+    describe('when a request-scoped global enhancer is registered', () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class ScopedGuard {
+        canActivate() {
+          return true;
+        }
+      }
+
+      @Controller()
+      class EagerlyScannedController {}
+
+      @Controller()
+      class LazilyLoadedController {}
+
+      @Module({
+        controllers: [EagerlyScannedController],
+        providers: [{ provide: APP_GUARD, useClass: ScopedGuard }],
+      })
+      class RootModule {}
+
+      @Module({ controllers: [LazilyLoadedController] })
+      class LazyControllerModule {}
+
+      const getControllerWrapper = async (
+        moduleClass: Type<unknown>,
+        controllerClass: Type<unknown>,
+      ) => {
+        const { token } = await (
+          lazyModuleLoader as any
+        ).moduleCompiler.compile(moduleClass);
+        return modulesContainer.get(token)!.controllers.get(controllerClass)!;
+      };
+
+      beforeEach(async () => {
+        await dependenciesScanner.scan(RootModule);
+        await instanceLoader.createInstancesOfDependencies();
+      });
+
+      it('should bind it to the controllers of a lazily loaded module', async () => {
+        await lazyModuleLoader.load(() => LazyControllerModule);
+
+        const eagerController = await getControllerWrapper(
+          RootModule,
+          EagerlyScannedController,
+        );
+        const lazyController = await getControllerWrapper(
+          LazyControllerModule,
+          LazilyLoadedController,
+        );
+
+        expect(eagerController.getEnhancersMetadata()).toHaveLength(1);
+        expect(lazyController.getEnhancersMetadata()).toHaveLength(1);
+      });
+
+      it('should mark the lazily loaded controller as non-static', async () => {
+        await lazyModuleLoader.load(() => LazyControllerModule);
+
+        const lazyController = await getControllerWrapper(
+          LazyControllerModule,
+          LazilyLoadedController,
+        );
+
+        expect(lazyController.isDependencyTreeStatic()).toBe(false);
       });
     });
 

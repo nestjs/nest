@@ -104,6 +104,7 @@ export class LazyModuleLoader {
       await this.dependenciesScanner.scanModulesForDependencies(
         lazyModulesContainer,
       );
+      this.dependenciesScanner.addScopedEnhancersMetadata(lazyModulesContainer);
       await this.instanceLoader.createInstancesOfDependencies(
         lazyModulesContainer,
       );
