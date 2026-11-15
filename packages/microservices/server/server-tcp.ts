@@ -7,6 +7,7 @@ import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
   DEFAULT_GRACE_PERIOD,
   ECONNREFUSED,
+  MAX_TIMEOUT,
   NO_MESSAGE_HANDLER,
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
@@ -505,7 +506,8 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     }
     return new Promise<void>(resolve => {
       let open = sockets.length;
-      const timer = setTimeout(resolve, timeout);
+      // "gracePeriod" can be longer than a timer supports (e.g. Infinity)
+      const timer = setTimeout(resolve, Math.min(timeout, MAX_TIMEOUT));
       sockets.forEach(socket =>
         socket.once(TcpEventsMap.CLOSE, () => {
           if (--open === 0) {

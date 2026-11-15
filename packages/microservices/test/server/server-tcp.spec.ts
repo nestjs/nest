@@ -269,6 +269,35 @@ describe('ServerTCP', () => {
         expect((gracefulServer as any).openSockets.size).toBe(0);
       });
 
+      it.each([
+        ['Infinity', Infinity],
+        ['2 ** 31', 2 ** 31],
+      ])(
+        'should keep waiting for a connection to close when "gracePeriod" is %s, longer than a timer supports',
+        async (_, gracePeriod) => {
+          const { gracefulServer, connect } = createGracefulServer({
+            gracePeriod,
+          });
+          const flushing = connect({ pendingMessages: 1, closesOnEnd: false });
+
+          let isClosed = false;
+          const closing = Promise.resolve(gracefulServer.close()).then(
+            () => (isClosed = true),
+          );
+          // A delay that does not fit in a timer fires after 1 ms
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          expect(flushing.destroySoon).toHaveBeenCalledOnce();
+          expect(flushing.destroy).not.toHaveBeenCalled();
+          expect(isClosed).toBe(false);
+
+          flushing.emit('close');
+          await closing;
+
+          expect(flushing.destroy).not.toHaveBeenCalled();
+        },
+      );
+
       it('should destroy at once what is still open when the handlers took the whole period', async () => {
         const { gracefulServer, waitSpy, connect } = createGracefulServer({
           gracePeriod: 30,

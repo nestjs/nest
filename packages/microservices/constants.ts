@@ -75,4 +75,7 @@ export const CONSUMER_CANCELLED_RMQ_MESSAGE =
 
 export const DEFAULT_GRACE_PERIOD = 10000;
 export const NATS_DEFAULT_GRACE_PERIOD = DEFAULT_GRACE_PERIOD;
+// The longest delay setTimeout() supports: it fires a longer one (e.g.
+// Infinity) after 1 ms instead
+export const MAX_TIMEOUT = 2 ** 31 - 1;
 export const UNSERIALIZABLE_PATTERN = '[UNSERIALIZABLE_PATTERN]';

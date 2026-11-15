@@ -401,6 +401,23 @@ describe('TCP transport shutdown with "gracefulShutdown"', () => {
     expect(replies[0].response).toHaveLength(size);
   });
 
+  it('should send a large reply in full when "gracePeriod" is longer than a timer supports', async () => {
+    const size = 8 * 1024 * 1024;
+    const server = await createServer({
+      gracefulShutdown: true,
+      gracePeriod: Infinity,
+    });
+    const { replies, closed, request } = await connect();
+    request(1, 200, size);
+    await handlerStarted(1);
+
+    await server.close();
+    await closed;
+
+    expect(replies).toHaveLength(1);
+    expect(replies[0].response).toHaveLength(size);
+  });
+
   it('should let a handler in flight reply over TLS', async () => {
     const read = (file: string) =>
       fs.readFileSync(

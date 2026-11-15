@@ -20,6 +20,7 @@ import {
 import {
   DEFAULT_GRACE_PERIOD,
   EVENT_HANDLER_REPLY_DEPRECATED,
+  MAX_TIMEOUT,
   NO_EVENT_HANDLER,
   UNSERIALIZABLE_PATTERN,
 } from '../constants.js';
@@ -66,9 +67,6 @@ const JSON_TEXT = /^\s*(?:[{["\-\d]|(?:true|false|null)\s*$)/;
 // Far longer than the route of any pattern within the limits of a route, and
 // short enough for parsing it to stay cheap
 const MAX_JSON_PATTERN_LENGTH = 1024 * 1024;
-// The longest delay setTimeout() supports: it fires a longer one (e.g.
-// Infinity) after 1 ms instead
-const MAX_TIMEOUT = 2 ** 31 - 1;
 
 /**
  * @publicApi
