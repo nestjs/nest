@@ -720,7 +720,8 @@ export class DependenciesScanner {
     iterate(this.applicationProvidersApplyMap)
       .filter(wrapper => this.isRequestOrTransient(wrapper.scope!))
       .forEach(({ moduleKey, providerKey }) => {
-        const { injectables } = this.container.getModules().get(moduleKey)!;
+        const modulesContainer = this.container.getModules();
+        const { injectables } = modulesContainer.get(moduleKey)!;
         const instanceWrapper = injectables.get(providerKey);
 
         const iterableIterator = modules.values();
