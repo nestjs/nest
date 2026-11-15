@@ -712,19 +712,20 @@ export class DependenciesScanner {
 
   /**
    * Add either request or transient globally scoped enhancers
-   * to the controllers and entry providers of the given modules
+   * to the controllers and entry providers of the given modules,
+   * or of every registered module when none are given
    */
-  public addScopedEnhancersMetadata(
-    modules: Map<string, Module> = this.container.getModules(),
-  ) {
+  public addScopedEnhancersMetadata(modules?: Map<string, Module>) {
+    const modulesContainer = this.container.getModules();
+    const modulesToWire = modules ?? modulesContainer;
+
     iterate(this.applicationProvidersApplyMap)
       .filter(wrapper => this.isRequestOrTransient(wrapper.scope!))
       .forEach(({ moduleKey, providerKey }) => {
-        const modulesContainer = this.container.getModules();
         const { injectables } = modulesContainer.get(moduleKey)!;
         const instanceWrapper = injectables.get(providerKey);
 
-        const iterableIterator = modules.values();
+        const iterableIterator = modulesToWire.values();
         iterate(iterableIterator)
           .map(moduleRef =>
             Array.from<InstanceWrapper>(moduleRef.controllers.values()).concat(
