@@ -2,6 +2,7 @@ import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
 import { Observable, defer, from, isObservable } from 'rxjs';
 import { mergeAll } from 'rxjs/operators';
+import { getClassRef } from '../helpers/class-ref-registry.js';
 import { destroyUnsentBody } from '../helpers/destroy-unsent-body.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import type { CallHandler, ContextType } from '@nestjs/common';
@@ -42,7 +43,7 @@ export class InterceptorsConsumer {
   ): ExecutionContextHost {
     return new ExecutionContextHost(
       args,
-      instance.constructor as Type<unknown>,
+      getClassRef(instance) as Type<unknown>,
       callback,
     );
   }

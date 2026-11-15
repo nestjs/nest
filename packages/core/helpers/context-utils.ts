@@ -174,7 +174,7 @@ export class ContextUtils {
     instance?: object,
     callback?: Function,
   ): (args: unknown[]) => ExecutionContextHost {
-    const type = instance && (instance.constructor as Type<unknown>);
+    const type = instance && (getClassRef(instance) as Type<unknown>);
     return (args: unknown[]) => {
       const ctx = new ExecutionContextHost(args, type, callback);
       ctx.setType(contextType);
