@@ -354,6 +354,63 @@ describe('ClientKafka', () => {
       });
     });
 
+    it('should stop a connect() that is still waiting for the consumer', async () => {
+      let resolveConsumerConnect!: () => void;
+      connect.mockImplementationOnce(
+        () => new Promise<void>(resolve => (resolveConsumerConnect = resolve)),
+      );
+
+      const attempt = client.connect();
+      // Let the attempt reach the (pending) consumer connection.
+      await new Promise(process.nextTick);
+      await client.close();
+      resolveConsumerConnect();
+
+      await expect(attempt).rejects.toThrow('Connection closed');
+      // The attempt stops before it creates and connects a producer.
+      expect(producerStub).not.toHaveBeenCalled();
+      expect(untypedClient._consumer).toBeNull();
+      expect(untypedClient._producer).toBeNull();
+      expect(untypedClient.initialized).toBeNull();
+    });
+
+    it('should not create the producer when close() happens before it', async () => {
+      let resolveBindTopics!: () => void;
+      vi.spyOn(client, 'bindTopics').mockImplementation(
+        () => new Promise<void>(resolve => (resolveBindTopics = resolve)),
+      );
+
+      const attempt = client.connect();
+      await new Promise(process.nextTick);
+      await client.close();
+      resolveBindTopics();
+
+      await expect(attempt).rejects.toThrow('Connection closed');
+      expect(producerStub).not.toHaveBeenCalled();
+      expect(untypedClient.client).toBeNull();
+      expect(untypedClient.initialized).toBeNull();
+    });
+
+    it('should connect on a later attempt after close() stopped one', async () => {
+      let resolveConsumerConnect!: () => void;
+      connect.mockImplementationOnce(
+        () => new Promise<void>(resolve => (resolveConsumerConnect = resolve)),
+      );
+
+      const stoppedAttempt = client.connect();
+      await new Promise(process.nextTick);
+      await client.close();
+      resolveConsumerConnect();
+      await expect(stoppedAttempt).rejects.toThrow('Connection closed');
+
+      const connection = await client.connect();
+
+      expect(createClientStub).toHaveBeenCalledTimes(2);
+      expect(consumerStub).toHaveBeenCalledTimes(2);
+      expect(producerStub).toHaveBeenCalledOnce();
+      expect(connection).toEqual(producerStub());
+    });
+
     it('should fail every pending request when a callback throws', async () => {
       const loggerErrorSpy = vi
         .spyOn(untypedClient.logger, 'error')
@@ -674,6 +731,26 @@ describe('ClientKafka', () => {
         fromBeginning: true,
       });
       expect(run).toHaveBeenCalledOnce();
+    });
+
+    it('should not start the consumer when the client is closed while subscribing', async () => {
+      untypedClient.responsePatterns = [replyTopic];
+      const consumer = kafkaClient.consumer();
+      untypedClient._consumer = consumer;
+      let resolveSubscribe!: () => void;
+      subscribe.mockImplementation(
+        () => new Promise<void>(resolve => (resolveSubscribe = resolve)),
+      );
+
+      const binding = client.bindTopics();
+      await new Promise(process.nextTick);
+      // `close()` resets the consumer while the subscription is in flight.
+      untypedClient._consumer = null;
+      resolveSubscribe();
+      await binding;
+
+      expect(subscribe).toHaveBeenCalledOnce();
+      expect(run).not.toHaveBeenCalled();
     });
   });
 

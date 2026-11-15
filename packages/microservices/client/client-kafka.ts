@@ -60,6 +60,11 @@ import { loadPackage, isNil, isUndefined } from '@nestjs/common/internal';
 interface KafkaConnectionAttempt {
   consumer?: Consumer;
   producer?: Producer;
+  /**
+   * Set by `close()` while the attempt has not finished, so it stops at its
+   * next step instead of reading the state that `close()` resets.
+   */
+  aborted?: boolean;
 }
 
 /**
@@ -73,6 +78,11 @@ export class ClientKafka
   protected client: Kafka | null = null;
   protected parser: KafkaParser | null = null;
   protected initialized: Promise<void> | null = null;
+  /**
+   * The `connect()` attempt that has not finished yet, so `close()` can stop
+   * it before it reads the state that `close()` resets.
+   */
+  protected connectionAttempt: KafkaConnectionAttempt | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
   protected brokers: string[] | BrokersFunction;
@@ -139,6 +149,12 @@ export class ClientKafka
   }
 
   public async close(): Promise<void> {
+    // An attempt that is still connecting has to stop at its next step
+    // instead of reading the state that is reset below.
+    if (this.connectionAttempt) {
+      this.connectionAttempt.aborted = true;
+      this.connectionAttempt = null;
+    }
     this.handleClose();
     try {
       // Both clients have to be disconnected even if one of them fails, so a
@@ -189,15 +205,20 @@ export class ClientKafka
       return this.initialized.then(() => this._producer!);
     }
     const attempt: KafkaConnectionAttempt = {};
-    const initialized = this.initializeClientAndConnections(attempt).catch(
-      async err => {
+    this.connectionAttempt = attempt;
+    const initialized = this.initializeClientAndConnections(attempt)
+      .then(() => {
+        if (this.connectionAttempt === attempt) {
+          this.connectionAttempt = null;
+        }
+      })
+      .catch(async err => {
         // A rejected attempt must not be cached: the next `connect()` call
         // has to try again once the broker is reachable, instead of failing
         // forever with the error of the first attempt.
         await this.discardPartialConnection(attempt, initialized);
         throw err;
-      },
-    );
+      });
     this.initialized = initialized;
     return initialized.then(() => this._producer!);
   }
@@ -213,6 +234,9 @@ export class ClientKafka
     attempt: KafkaConnectionAttempt,
     initialized: Promise<void>,
   ): Promise<void> {
+    if (this.connectionAttempt === attempt) {
+      this.connectionAttempt = null;
+    }
     if (this.initialized === initialized) {
       this._consumer = null;
       this._producer = null;
@@ -225,10 +249,24 @@ export class ClientKafka
     ]);
   }
 
+  /**
+   * Stops an attempt at its next step when `close()` has already reset the
+   * state it would assign to. The attempt owns the instances it created, so
+   * `discardPartialConnection()` still disconnects them.
+   */
+  private throwIfAborted(attempt: KafkaConnectionAttempt): void {
+    if (attempt.aborted) {
+      throw new Error('Connection closed');
+    }
+  }
+
   private async initializeClientAndConnections(
     attempt: KafkaConnectionAttempt,
   ): Promise<void> {
-    this.client = await this.createClient();
+    const client = await this.createClient();
+    this.throwIfAborted(attempt);
+    this.client = client;
+
     if (!this.producerOnlyMode) {
       const partitionAssigners = [
         (
@@ -242,41 +280,51 @@ export class ClientKafka
         groupId: this.groupId,
       };
 
-      this._consumer = attempt.consumer =
-        this.client!.consumer(consumerOptions);
+      const consumer = (attempt.consumer = client.consumer(consumerOptions));
+      this._consumer = consumer;
       this.registerConsumerEventListeners();
 
       // Set member assignments on join and rebalance
-      this._consumer.on(
-        this._consumer.events.GROUP_JOIN,
+      consumer.on(
+        consumer.events.GROUP_JOIN,
         this.setConsumerAssignments.bind(this),
       );
-      await this._consumer.connect();
+      await consumer.connect();
+      this.throwIfAborted(attempt);
       await this.bindTopics();
+      this.throwIfAborted(attempt);
     }
 
-    this._producer = attempt.producer = this.client!.producer(
+    const producer = (attempt.producer = client.producer(
       this.options.producer || {},
-    );
+    ));
+    this._producer = producer;
     this.registerProducerEventListeners();
-    await this._producer.connect();
+    await producer.connect();
+    this.throwIfAborted(attempt);
   }
 
   public async bindTopics(): Promise<void> {
-    if (!this._consumer) {
+    const consumer = this._consumer;
+    if (!consumer) {
       throw Error('No consumer initialized');
     }
 
     const consumerSubscribeOptions = this.options.subscribe || {};
 
     if (this.responsePatterns.length > 0) {
-      await this._consumer.subscribe({
+      await consumer.subscribe({
         ...consumerSubscribeOptions,
         topics: this.responsePatterns,
       });
+      if (this._consumer !== consumer) {
+        // The client was closed (or reconnected) while subscribing, so this
+        // consumer must not be started.
+        return;
+      }
     }
 
-    await this._consumer.run({
+    await consumer.run({
       ...(this.options.run || {}),
       eachMessage: this.createResponseCallback(),
     });
