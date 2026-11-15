@@ -245,23 +245,6 @@ export class DependenciesScanner {
 
   public removeModules(modules: Iterable<Module>) {
     this.container.removeModules(modules);
-    this.forgetApplicationProvidersOfRemovedModules();
-  }
-
-  /**
-   * Drop the global enhancers declared by modules that are no longer
-   * registered, so that a later lookup of their host module does not fail
-   */
-  private forgetApplicationProvidersOfRemovedModules() {
-    const modules = this.container.getModules();
-    const remaining = this.applicationProvidersApplyMap.filter(
-      ({ moduleKey }) => modules.has(moduleKey),
-    );
-    if (remaining.length === this.applicationProvidersApplyMap.length) {
-      return;
-    }
-    this.applicationProvidersApplyMap.length = 0;
-    this.applicationProvidersApplyMap.push(...remaining);
   }
 
   public async scanModulesForDependencies(
@@ -739,8 +722,13 @@ export class DependenciesScanner {
     iterate(this.applicationProvidersApplyMap)
       .filter(wrapper => this.isRequestOrTransient(wrapper.scope!))
       .forEach(({ moduleKey, providerKey }) => {
-        const { injectables } = modulesContainer.get(moduleKey)!;
-        const instanceWrapper = injectables.get(providerKey);
+        // The map outlives the modules: a lazily loaded module that failed to
+        // build was rolled back, but the enhancers it declared are still here
+        const enhancerHostModule = modulesContainer.get(moduleKey);
+        if (!enhancerHostModule) {
+          return;
+        }
+        const instanceWrapper = enhancerHostModule.injectables.get(providerKey);
 
         const iterableIterator = modulesToWire.values();
         iterate(iterableIterator)
