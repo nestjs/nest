@@ -471,8 +471,11 @@ export class NodeResponse<
     if (body === undefined || body === null) {
       this.end();
     } else if (typeof body === 'string') {
-      if (!this.hasHeader('Content-Type')) {
+      const type = this.getHeader('Content-Type');
+      if (type === undefined) {
         this.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      } else if (typeof type === 'string') {
+        this.set('Content-Type', type);
       }
       endWithBody(this, body);
     } else if (ArrayBuffer.isView(body)) {

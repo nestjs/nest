@@ -1218,6 +1218,25 @@ describe('NodeResponse', () => {
       },
     );
 
+    it.each([
+      ['text/html', 'text/html; charset=utf-8'],
+      ['application/json', 'application/json; charset=utf-8'],
+      ['text/plain; charset=latin1', 'text/plain; charset=latin1'],
+      ['application/vnd.api+json', 'application/vnd.api+json'],
+      ['unknown', 'unknown'],
+    ])(
+      'should send a string with the charset of a Content-Type "%s" set through setHeader()',
+      async (type, sent) => {
+        const response = await respond((req, res) => {
+          res.setHeader('Content-Type', type);
+          res.send('zażółć');
+        });
+
+        expect(response.headers['content-type']).toBe(sent);
+        expect(response.body.toString()).toBe('zażółć');
+      },
+    );
+
     it.each([undefined, null])(
       'should end the response without a body for %s',
       async body => {
