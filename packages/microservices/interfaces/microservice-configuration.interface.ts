@@ -464,6 +464,20 @@ export interface RmqOptions {
      * @default -1
      */
     maxConnectionAttempts?: number;
+    /**
+     * When enabled, closing the server first cancels its consumer, then waits
+     * for the requests and events being handled, for "gracePeriod" at most,
+     * before it closes its channel and its connection.
+     * Applies only to the consumer configuration.
+     * @default false
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled.
+     * @default 10000
+     */
+    gracePeriod?: number;
   };
 }
 

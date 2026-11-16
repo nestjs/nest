@@ -8,14 +8,28 @@ import {
   ClientOptions,
   ClientProxy,
   ClientProxyFactory,
+  Ctx,
   MessagePattern,
   MicroserviceOptions,
+  Payload,
+  RmqContext,
   Transport,
 } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
+import { connect } from 'amqplib';
+import { randomUUID } from 'crypto';
 import { firstValueFrom, timeout } from 'rxjs';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const RMQ_URL = 'amqp://0.0.0.0:5672';
+// A request left in a queue would reach the server of a later test, so each
+// test gets its own queue, which the broker deletes once it is unused
+const createRmqOptions = () => ({
+  urls: [RMQ_URL],
+  queue: `graceful-shutdown-${randomUUID()}`,
+  queueOptions: { durable: true, expires: 60_000 },
+});
 
 describe.each([
   {
@@ -33,12 +47,18 @@ describe.each([
     transport: Transport.MQTT,
     connection: { url: 'mqtt://0.0.0.0:1883' },
   },
+  {
+    name: 'RMQ',
+    transport: Transport.RMQ,
+    connection: createRmqOptions,
+  },
 ] as const)(
   '$name transport (graceful shutdown)',
-  ({ transport, connection }) => {
+  ({ transport, connection: getConnection }) => {
     let events: string[];
     let app: INestMicroservice | undefined;
     let client: ClientProxy;
+    let connection: Record<string, unknown>;
 
     @Injectable()
     class Resources implements OnApplicationShutdown {
@@ -112,6 +132,8 @@ describe.each([
 
     beforeEach(async () => {
       events = [];
+      connection =
+        typeof getConnection === 'function' ? getConnection() : getConnection;
       client = ClientProxyFactory.create({
         transport,
         options: connection,
@@ -173,9 +195,9 @@ describe.each([
 
       const closing = server.close();
       await sleep(100);
-      // Redis and MQTT leave the request unanswered, NATS rejects it for lack
-      // of a subscriber. Either way it must not reach the server that is
-      // closing.
+      // Redis, MQTT and RabbitMQ leave the request unanswered, NATS rejects it
+      // for lack of a subscriber. Either way it must not reach the server that
+      // is closing.
       const second = send(2, 0, 1000).then(
         () => 'answered',
         () => 'not answered',
@@ -203,3 +225,73 @@ describe.each([
     });
   },
 );
+
+describe('RMQ transport (graceful shutdown) with "noAck: false"', () => {
+  let events: string[];
+  let app: INestMicroservice | undefined;
+  let client: ClientProxy;
+
+  @Controller()
+  class AcknowledgingController {
+    @MessagePattern('slow')
+    async slow(@Payload() duration: number, @Ctx() context: RmqContext) {
+      const log = events;
+      log.push('handler started');
+      await sleep(duration);
+      context.getChannelRef().ack(context.getMessage());
+      log.push('handler acknowledged');
+      return 'reply';
+    }
+  }
+
+  async function countMessagesLeft(queue: string) {
+    const connection = await connect(RMQ_URL);
+    try {
+      const channel = await connection.createChannel();
+      const { messageCount } = await channel.checkQueue(queue);
+      return messageCount;
+    } finally {
+      await connection.close();
+    }
+  }
+
+  afterEach(async () => {
+    await client.close();
+    await app?.close();
+    app = undefined;
+  });
+
+  it('should let a handler in flight acknowledge its message before the channel is closed', async () => {
+    events = [];
+    const options = createRmqOptions();
+    client = ClientProxyFactory.create({ transport: Transport.RMQ, options });
+    await client.connect();
+    const module = await Test.createTestingModule({
+      controllers: [AcknowledgingController],
+    }).compile();
+    app = module.createNestMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: { ...options, noAck: false, gracefulShutdown: true },
+    });
+    await app.listen();
+
+    const reply = firstValueFrom(
+      client.send<string>('slow', 500).pipe(timeout(5000)),
+    );
+    const deadline = Date.now() + 5000;
+    while (!events.includes('handler started')) {
+      if (Date.now() > deadline) {
+        throw new Error('The handler did not start');
+      }
+      await sleep(10);
+    }
+
+    await app.close();
+
+    await expect(reply).resolves.toBe('reply');
+    expect(events).toEqual(['handler started', 'handler acknowledged']);
+    // An unacknowledged message goes back to the queue when its channel
+    // closes, for another instance to handle again
+    await expect(countMessagesLeft(options.queue)).resolves.toBe(0);
+  });
+});
