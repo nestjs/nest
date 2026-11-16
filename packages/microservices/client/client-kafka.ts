@@ -147,33 +147,30 @@ export class ClientKafka
 
   public async close(): Promise<void> {
     this.handleClose();
-    // Invalidate an in-flight `connect()` before its instances are torn down,
-    // so the attempt stops at its next step instead of continuing on a closed
-    // client.
+    // Reset first, so that an in-flight `connect()` stops at its next step,
+    // and a `connect()` issued while the clients disconnect starts a new
+    // attempt that this close leaves alone. It also keeps a later `connect()`
+    // from handing back the closed producer when a disconnect throws.
+    const producer = this._producer;
+    const consumer = this._consumer;
+    this._producer = null;
+    this._consumer = null;
+    this.initialized = null;
+    this.client = null;
     this.connectionAttempt = null;
-    try {
-      // Both clients have to be disconnected even if one of them fails, so a
-      // consumer does not stay in its group when the producer cannot be closed.
-      const results = await Promise.allSettled([
-        this._producer?.disconnect(),
-        this._consumer?.disconnect(),
-      ]);
-      const [failure, ...otherFailures] = results.filter(
-        (result): result is PromiseRejectedResult =>
-          result.status === 'rejected',
-      );
-      otherFailures.forEach(({ reason }) => this.logger.error(reason));
-      if (failure) {
-        throw failure.reason;
-      }
-    } finally {
-      // The state must be reset even when a disconnect throws, otherwise a
-      // later `connect()` reuses the cached `initialized` promise and hands
-      // back the closed producer.
-      this._producer = null;
-      this._consumer = null;
-      this.initialized = null;
-      this.client = null;
+
+    // Both clients have to be disconnected even if one of them fails, so a
+    // consumer does not stay in its group when the producer cannot be closed.
+    const results = await Promise.allSettled([
+      producer?.disconnect(),
+      consumer?.disconnect(),
+    ]);
+    const [failure, ...otherFailures] = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    otherFailures.forEach(({ reason }) => this.logger.error(reason));
+    if (failure) {
+      throw failure.reason;
     }
   }
 
@@ -220,8 +217,9 @@ export class ClientKafka
    * Tears down whatever a failed connection attempt managed to create, so a
    * consumer that joined its group before the producer failed does not stay
    * behind when the next attempt creates a new one. The client's state is only
-   * reset if no newer attempt has replaced it in the meantime (e.g., `close()`
-   * followed by `connect()` while the failed attempt was still pending).
+   * reset if neither `close()` nor a newer attempt has taken it over in the
+   * meantime (e.g., `close()` followed by `connect()` while the failed attempt
+   * was still pending).
    */
   private async discardPartialConnection(
     attempt: KafkaConnectionAttempt,
@@ -300,7 +298,6 @@ export class ClientKafka
     const producer = (attempt.producer = client.producer(
       this.options.producer || {},
     ));
-    this.assertConnectionIsActive(attempt);
     this._producer = producer;
     this.registerProducerEventListeners();
     await producer.connect();
@@ -533,7 +530,7 @@ export class ClientKafka
       ...(this.options.send || {}),
     };
 
-    return this._producer!.send(message);
+    return this.producer.send(message);
   }
 
   protected getReplyTopicPartition(topic: string): string {
@@ -582,7 +579,7 @@ export class ClientKafka
             ...(this.options.send || {}),
           };
 
-          return this._producer!.send(message);
+          return this.producer.send(message);
         })
         .catch(err => errorCallback(err));
 
