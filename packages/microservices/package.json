@@ -45,7 +45,7 @@
     "@nestjs/core": "12.5.0"
   },
   "peerDependencies": {
-    "@cookiemonsterdev/kafka-core": "^2.8.0",
+    "@cookiemonsterdev/kafka-core": "^2.8.1",
     "@grpc/grpc-js": "*",
     "@nats-io/transport-node": "*",
     "@nestjs/common": "^12.0.0",
