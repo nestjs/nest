@@ -182,7 +182,7 @@ describe('ServerFactory', () => {
         const channel = {
           assertQueue: vi.fn(() => ({ queue: 'default' })),
           prefetch: vi.fn(),
-          consume: vi.fn(),
+          consume: vi.fn(() => ({ consumerTag: 'amq.ctag-test' })),
         };
         const callback = vi.fn();
 
