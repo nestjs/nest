@@ -274,6 +274,7 @@ describe('ServerMqtt', () => {
         });
         const client = {
           connected: true,
+          options: { resubscribe: true },
           on: vi.fn(),
           subscribe: vi.fn(),
           unsubscribeAsync: vi.fn().mockResolvedValue(undefined),
@@ -397,6 +398,16 @@ describe('ServerMqtt', () => {
         expect(client.unsubscribeAsync).not.toHaveBeenCalled();
         expect(waitSpy).toHaveBeenCalledOnce();
         expect(client.endAsync).toHaveBeenCalledOnce();
+      });
+
+      it('should keep mqtt from resubscribing on a reconnect when closed while disconnected', async () => {
+        const { gracefulServer, client } = createGracefulServer();
+        client.connected = false;
+
+        await gracefulServer.close();
+
+        expect(client.options.resubscribe).toBe(false);
+        expect(client.unsubscribeAsync).not.toHaveBeenCalled();
       });
 
       it('should not unsubscribe when there is no handler', async () => {

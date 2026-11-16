@@ -150,19 +150,22 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   }
 
   private async stopReceivingMessages(mqttClient: MqttClient) {
+    // On a reconnect, mqtt subscribes again to every topic it has not
+    // unsubscribed from. Turned off, as the client is discarded after close().
+    mqttClient.options.resubscribe = false;
     const topics = [...this.messageHandlers].map(([pattern, handler]) =>
       this.getSubscriptionTopic(pattern, handler),
     );
-    // Without a connection the server receives nothing, and mqtt would keep
-    // the packet for the next connection, which end() would then wait for.
+    // While disconnected, mqtt would keep the packet for the next connection,
+    // which end() would then wait for. That connection does not resubscribe.
     if (topics.length === 0 || !mqttClient.connected) {
       return;
     }
     try {
       await mqttClient.unsubscribeAsync(topics);
     } catch {
-      // The connection was lost before the broker answered, so the server
-      // receives nothing either way.
+      // The connection was lost before the broker answered. The next one does
+      // not resubscribe either.
     }
   }
 
