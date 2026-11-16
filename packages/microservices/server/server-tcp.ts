@@ -320,6 +320,16 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       ) {
         socket.resumeMessages?.();
       }
+      // A graceful close ends each connection once its own messages are done
+      if (
+        stillPending === 0 &&
+        this.isManuallyTerminated &&
+        this.getOptionsProp(this.options, 'gracefulShutdown')
+      ) {
+        // The replies of a stream that has just settled are written over the
+        // next ticks (see "Server#send")
+        setImmediate(() => this.endSocketIfIdle(socket));
+      }
     };
   }
 
@@ -471,20 +481,20 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
    * the latest.
    */
   protected async closeOpenSocketsGracefully() {
-    const gracePeriod = this.getOptionsProp(this.options, 'gracePeriod');
-    const closeBy =
-      Date.now() +
-      (isNil(gracePeriod) || isNaN(gracePeriod)
-        ? DEFAULT_GRACE_PERIOD
-        : gracePeriod);
+    const gracePeriod = this.getGracePeriod();
+    const closeBy = Date.now() + gracePeriod;
     const idleSockets = [...this.boundSockets].filter(
       socket => !this.pendingMessages.get(socket),
     );
-    // The reply of a handler that has just settled is written on the next tick
-    await new Promise<void>(resolve => process.nextTick(resolve));
-    idleSockets.forEach(socket => this.endSocket(socket));
+    // The replies of a stream that has just settled are written over the next
+    // ticks (see "Server#send")
+    await new Promise<void>(resolve => setImmediate(resolve));
+    idleSockets.forEach(socket => this.endSocketIfIdle(socket));
 
+    // The others are ended as their own messages are done (see
+    // "trackPendingMessage")
     await this.waitForHandlersInFlight(gracePeriod);
+    // Every handler is done, or the period is over
     this.boundSockets.forEach(socket => this.endSocket(socket));
     await this.waitForBoundSocketsToClose(closeBy - Date.now());
     // What is left is a TLS handshake under way, or a peer that does not read
@@ -497,6 +507,31 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
    */
   protected endSocket(socket: TcpSocket) {
     socket.netSocket.destroySoon();
+  }
+
+  /**
+   * Ends the socket unless it has closed already or a message of it is being
+   * handled.
+   */
+  protected endSocketIfIdle(socket: TcpSocket) {
+    if (this.boundSockets.has(socket) && !this.pendingMessages.get(socket)) {
+      this.endSocket(socket);
+    }
+  }
+
+  /**
+   * "gracePeriod" as "waitForHandlersInFlight" reads it: a value that is not a
+   * number gets the default, a string such as "5000" (e.g. from an environment
+   * variable) is a number, and a longer one than a timer supports is capped.
+   */
+  protected getGracePeriod(): number {
+    const gracePeriod = this.getOptionsProp(this.options, 'gracePeriod');
+    return Math.min(
+      isNil(gracePeriod) || isNaN(gracePeriod)
+        ? DEFAULT_GRACE_PERIOD
+        : Number(gracePeriod),
+      MAX_TIMEOUT,
+    );
   }
 
   protected waitForBoundSocketsToClose(timeout: number): Promise<void> {

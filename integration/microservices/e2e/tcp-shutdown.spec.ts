@@ -351,6 +351,41 @@ describe('TCP transport shutdown with "gracefulShutdown"', () => {
     expect(busy.replies).toHaveLength(1);
   });
 
+  it('should close each connection once its own handlers are done, rather than once every handler is', async () => {
+    const server = await createServer({
+      gracefulShutdown: true,
+      gracePeriod: 5000,
+    });
+    const fast = await connect();
+    const slow = await connect();
+    void fast.closed.then(() => events.push('fast connection closed'));
+    void slow.closed.then(() => events.push('slow connection closed'));
+    // The slow one first, so that both are running when the server is closed
+    slow.request(2, 800);
+    await handlerStarted(2);
+    fast.request(1, 100);
+    await handlerStarted(1);
+
+    events.push('closing');
+    await server.close();
+    await Promise.all([fast.closed, slow.closed]);
+
+    expect(events.slice(0, 6)).toEqual([
+      'handler 2 started',
+      'handler 1 started',
+      'closing',
+      'handler 1 finished',
+      'fast connection closed',
+      'handler 2 finished',
+    ]);
+    expect(fast.replies).toEqual([
+      { id: '1', response: 'reply 1', isDisposed: true },
+    ]);
+    expect(slow.replies).toEqual([
+      { id: '2', response: 'reply 2', isDisposed: true },
+    ]);
+  });
+
   it('should refuse new connections while it waits', async () => {
     const server = await createServer({ gracefulShutdown: true });
     const { request } = await connect();

@@ -128,6 +128,8 @@ describe('ServerTCP', () => {
     describe('with "gracefulShutdown"', () => {
       const nextTick = () =>
         new Promise<void>(resolve => process.nextTick(resolve));
+      const immediate = () =>
+        new Promise<void>(resolve => setImmediate(resolve));
 
       function createGracefulServer(options: Record<string, unknown> = {}) {
         const gracefulServer = new ServerTCP({
@@ -150,20 +152,23 @@ describe('ServerTCP', () => {
           const socket = {
             netSocket,
             once: netSocket.once.bind(netSocket),
+            sendMessage: vi.fn(),
           };
-          const {
-            boundSockets,
-            openSockets,
-            pendingMessages: pending,
-          } = gracefulServer as any;
+          const { boundSockets, openSockets } = gracefulServer as any;
           boundSockets.add(socket);
           openSockets.add(netSocket);
-          pending.set(socket, pendingMessages);
+          const settlers = Array.from({ length: pendingMessages }, () =>
+            (gracefulServer as any).trackPendingMessage(socket),
+          );
           netSocket.on('close', () => {
             boundSockets.delete(socket);
             openSockets.delete(netSocket);
           });
-          return netSocket;
+          return Object.assign(netSocket, {
+            socket,
+            // Its oldest message pending is done with
+            settleMessage: () => settlers.shift()!(),
+          });
         };
         return { gracefulServer, netServer, waitSpy, connect };
       }
@@ -186,7 +191,7 @@ describe('ServerTCP', () => {
         const busy = connect({ pendingMessages: 1 });
 
         const closing = gracefulServer.close();
-        await nextTick();
+        await immediate();
 
         expect(idle.destroySoon).toHaveBeenCalledOnce();
         expect(busy.destroySoon).not.toHaveBeenCalled();
@@ -196,14 +201,88 @@ describe('ServerTCP', () => {
         await closing;
       });
 
-      it('should let the reply written on the next tick out before it closes a connection that looks idle', () => {
+      it('should let the replies written over the next ticks out before it closes a connection that looks idle', async () => {
         const { gracefulServer, connect } = createGracefulServer();
         const idle = connect();
 
-        void gracefulServer.close();
+        const closing = gracefulServer.close();
+        expect(idle.destroySoon).not.toHaveBeenCalled();
+        await nextTick();
 
         expect(idle.destroySoon).not.toHaveBeenCalled();
         expect(idle.destroy).not.toHaveBeenCalled();
+        await closing;
+      });
+
+      it('should write every value of a stream that settles as it is called before it closes the connection', async () => {
+        const { gracefulServer, waitSpy, connect } = createGracefulServer();
+        // The real wait, which lasts until the replies are written
+        waitSpy.mockRestore();
+        const connection = connect();
+        const stream = new Subject<number>();
+        (gracefulServer as any).messageHandlers = objectToMap({
+          stream: vi.fn(async () => stream),
+        });
+        await gracefulServer.handleMessage(connection.socket as any, {
+          pattern: 'stream',
+          data: null,
+          id: '1',
+        });
+
+        [1, 2, 3].forEach(value => stream.next(value));
+        stream.complete();
+        await gracefulServer.close();
+
+        const { sendMessage } = connection.socket;
+        expect(sendMessage.mock.calls.map(([packet]) => packet)).toEqual([
+          { id: '1', response: 1 },
+          { id: '1', response: 2 },
+          { id: '1', response: 3, isDisposed: true },
+        ]);
+        const lastWrite = Math.max(...sendMessage.mock.invocationCallOrder);
+        expect(connection.destroySoon).toHaveBeenCalled();
+        connection.destroySoon.mock.invocationCallOrder.forEach(order =>
+          expect(order).toBeGreaterThan(lastWrite),
+        );
+      });
+
+      it('should close a connection once its own messages are done and their replies written, while others are still handled', async () => {
+        const { gracefulServer, waitSpy, connect } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        const done = connect({ pendingMessages: 2 });
+        const busy = connect({ pendingMessages: 1 });
+
+        const closing = gracefulServer.close();
+        await immediate();
+        done.settleMessage();
+        await immediate();
+        expect(done.destroySoon).not.toHaveBeenCalled();
+
+        done.settleMessage();
+        await nextTick();
+        // Its last replies are yet to be written
+        expect(done.destroySoon).not.toHaveBeenCalled();
+        await immediate();
+
+        expect(done.destroySoon).toHaveBeenCalledOnce();
+        expect(busy.destroySoon).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+        expect(done.destroySoon).toHaveBeenCalledOnce();
+        expect(busy.destroySoon).toHaveBeenCalledOnce();
+      });
+
+      it('should keep a connection whose messages are done open while the server is not closing', async () => {
+        const { connect } = createGracefulServer();
+        const connection = connect({ pendingMessages: 1 });
+
+        connection.settleMessage();
+        await immediate();
+
+        expect(connection.destroySoon).not.toHaveBeenCalled();
+        expect(connection.destroy).not.toHaveBeenCalled();
       });
 
       it('should close the other connections once the handlers in flight are done', async () => {
@@ -223,27 +302,6 @@ describe('ServerTCP', () => {
         expect((gracefulServer as any).openSockets.size).toBe(0);
       });
 
-      it('should not close a connection that became idle after the call before the handlers in flight are done', async () => {
-        const { gracefulServer, waitSpy, connect } = createGracefulServer();
-        let finish!: () => void;
-        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
-        const busy = connect({ pendingMessages: 1 });
-
-        const closing = gracefulServer.close();
-        // Its handler settles right away, and its reply is yet to be written
-        (gracefulServer as any).pendingMessages.set(
-          [...(gracefulServer as any).boundSockets][0],
-          0,
-        );
-        await nextTick();
-
-        expect(busy.destroySoon).not.toHaveBeenCalled();
-
-        finish();
-        await closing;
-        expect(busy.destroySoon).toHaveBeenCalledOnce();
-      });
-
       it('should wait for "gracePeriod" at most', async () => {
         const { gracefulServer, waitSpy } = createGracefulServer({
           gracePeriod: 500,
@@ -253,6 +311,43 @@ describe('ServerTCP', () => {
 
         expect(waitSpy).toHaveBeenCalledExactlyOnceWith(500);
       });
+
+      it('should read a "gracePeriod" given as a string, e.g. from an environment variable, as a number', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+        try {
+          const { gracefulServer, waitSpy, connect } = createGracefulServer({
+            gracePeriod: '5000',
+          });
+          const stuck = connect({ pendingMessages: 1, closesOnEnd: false });
+
+          const closing = gracefulServer.close();
+          await immediate();
+          expect(stuck.destroySoon).toHaveBeenCalledOnce();
+
+          await vi.advanceTimersByTimeAsync(4999);
+          expect(stuck.destroy).not.toHaveBeenCalled();
+          await vi.advanceTimersByTimeAsync(1);
+          expect(stuck.destroy).toHaveBeenCalledOnce();
+
+          await closing;
+          expect(waitSpy).toHaveBeenCalledExactlyOnceWith(5000);
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it.each([undefined, null, NaN, '10s'])(
+        'should wait for the default period when "gracePeriod" is %s',
+        async gracePeriod => {
+          const { gracefulServer, waitSpy } = createGracefulServer({
+            gracePeriod,
+          });
+
+          await gracefulServer.close();
+
+          expect(waitSpy).toHaveBeenCalledExactlyOnceWith(10000);
+        },
+      );
 
       it('should destroy a connection whose peer does not read once the period is over', async () => {
         const { gracefulServer, connect } = createGracefulServer({
