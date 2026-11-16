@@ -153,13 +153,16 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async close(): Promise<void> {
-    // The consumer goes first: disconnecting it waits for the running message
-    // handlers, which send their replies through the producer. The producer is
-    // disconnected even when the consumer fails to.
+    // The consumer goes first. Its callbacks can finish before the response
+    // streams and queued publishes, so allow those to drain before closing
+    // the producer. The producer is disconnected even if the consumer fails.
     let consumerFailed = false;
     let consumerError: unknown;
     try {
       await this.consumer?.disconnect();
+      if (this.producer) {
+        await this.waitForHandlersInFlight();
+      }
     } catch (err) {
       consumerFailed = true;
       consumerError = err;
