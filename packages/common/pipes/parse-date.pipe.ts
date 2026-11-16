@@ -35,6 +35,8 @@ export interface ParseDatePipeOptions {
   exceptionFactory?: (error: string) => any;
 }
 
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
 /**
  * @publicApi
  */
@@ -80,10 +82,31 @@ export class ParseDatePipe implements PipeTransform {
         ? new Date(value)
         : new Date(NaN);
 
-    if (isNaN(transformedValue.getTime())) {
+    if (
+      isNaN(transformedValue.getTime()) ||
+      (isString(value) && this.hasDayPastMonthEnd(value))
+    ) {
       throw this.exceptionFactory('Validation failed (invalid date format)');
     }
 
     return transformedValue;
+  }
+
+  /**
+   * `new Date()` rolls a day past the end of its month into the next month
+   * ("2024-02-30" becomes March 1), so an ISO date's day is checked against
+   * the length of its month.
+   */
+  protected hasDayPastMonthEnd(value: string): boolean {
+    const match = /^\s*([+-]\d{6}|\d{4})-(\d{2})-(\d{2})(?!\d)/.exec(value);
+    if (!match) {
+      return false;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    const daysInMonth =
+      month === 2 && isLeapYear ? 29 : DAYS_IN_MONTH[month - 1];
+    return Number(match[3]) > daysInMonth;
   }
 }
