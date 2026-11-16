@@ -264,6 +264,22 @@ export interface MqttOptions {
      * @default -1
      */
     maxConnectionAttempts?: number;
+    /**
+     * When enabled, closing the server first stops receiving messages, then
+     * waits for the requests and events being handled, for "gracePeriod" at
+     * most, before it closes its connection. Applies only to the server
+     * configuration. With a persistent session ("clean: false", plus a
+     * "sessionExpiryInterval" on MQTT 5), unsubscribing removes the
+     * subscriptions from the session, so QoS 1 and 2 messages published to a
+     * non-shared subscription while the instance restarts are not queued for
+     * it. (default: false)
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled. (default: 10000)
+     */
+    gracePeriod?: number;
   };
 }
 
