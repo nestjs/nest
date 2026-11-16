@@ -584,6 +584,52 @@ describe('ServerRMQ', () => {
         await Promise.all([first, second]);
       });
 
+      it('should not close the connection under the channel that an overlapping close() is closing', async () => {
+        const { gracefulServer, channel, connection, waitSpy } =
+          createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        let channelClosed!: () => void;
+        channel.close.mockReturnValue(
+          new Promise<void>(res => (channelClosed = res)),
+        );
+
+        const first = gracefulServer.close();
+        const second = gracefulServer.close();
+        finish();
+        await new Promise(resolve => setImmediate(resolve));
+
+        // amqplib settles the channel close on the broker's reply, which
+        // never arrives once the connection is closed
+        expect(channel.close).toHaveBeenCalledOnce();
+        expect(connection.close).not.toHaveBeenCalled();
+
+        channelClosed();
+        await Promise.all([first, second]);
+
+        expect(connection.close).toHaveBeenCalledOnce();
+      });
+
+      it('should wait for the handlers only once the broker has cancelled the consumer', async () => {
+        const { gracefulServer, consumerChannel, waitSpy } =
+          createGracefulServer();
+        let cancelled!: () => void;
+        consumerChannel.cancel.mockReturnValue(
+          new Promise<void>(res => (cancelled = res)),
+        );
+
+        const closing = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+
+        // Until then, the broker still delivers messages to the server
+        expect(waitSpy).not.toHaveBeenCalled();
+
+        cancelled();
+        await closing;
+
+        expect(waitSpy).toHaveBeenCalledOnce();
+      });
+
       it('should close a server that never listened', async () => {
         const neverListened = new ServerRMQ({ gracefulShutdown: true });
 
@@ -1280,6 +1326,22 @@ describe('ServerRMQ', () => {
           undefined,
         );
         channel.cancel = vi.fn().mockResolvedValue(undefined);
+      });
+
+      it('should not consume when it starts closing while the channel is set up', async () => {
+        let assertQueue!: () => void;
+        channel.assertQueue = vi.fn(
+          () => new Promise(res => (assertQueue = () => res({ queue }))),
+        );
+
+        // As the channel wrapper does on a reconnection
+        const settingUp = server.setupChannel(channel, () => null);
+        const closing = server.close();
+        assertQueue();
+        await settingUp;
+        await closing;
+
+        expect(channel.consume).not.toHaveBeenCalled();
       });
 
       it('should cancel the consumer under the tag the broker replied with', async () => {

@@ -67,6 +67,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   protected channel: ChannelWrapper | null = null;
   protected consumer: { channel: Channel; consumerTag: string } | null = null;
   protected isClosing = false;
+  private pendingClose: Promise<void> | null = null;
   protected connectionAttempts = 0;
   protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
@@ -110,7 +111,17 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
   }
 
-  public async close(): Promise<void> {
+  public close(): Promise<void> {
+    // A close() that overlaps another one waits for it: closing the
+    // connection while the first one waits for its channel to close would
+    // leave that close() pending for good
+    this.pendingClose ??= this.closeChannelAndConnection().finally(() => {
+      this.pendingClose = null;
+    });
+    return this.pendingClose;
+  }
+
+  private async closeChannelAndConnection(): Promise<void> {
     // A reconnection from here on must not set the channel up, and so
     // consume, again
     this.isClosing = true;
@@ -361,6 +372,10 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
+    // close() may have started while the channel was being set up
+    if (this.isClosing) {
+      return;
+    }
     // The broker names the consumer when no "consumerTag" is configured
     const { consumerTag } = await channel.consume(
       createdQueue,

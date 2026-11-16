@@ -294,4 +294,37 @@ describe('RMQ transport (graceful shutdown) with "noAck: false"', () => {
     // closes, for another instance to handle again
     await expect(countMessagesLeft(options.queue)).resolves.toBe(0);
   });
+
+  it('should settle a close() that overlaps the first one', async () => {
+    events = [];
+    const options = createRmqOptions();
+    client = ClientProxyFactory.create({ transport: Transport.RMQ, options });
+    await client.connect();
+    const module = await Test.createTestingModule({
+      controllers: [AcknowledgingController],
+    }).compile();
+    app = module.createNestMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: { ...options, noAck: false, gracefulShutdown: true },
+    });
+    await app.listen();
+
+    const reply = firstValueFrom(
+      client.send<string>('slow', 500).pipe(timeout(5000)),
+    );
+    const deadline = Date.now() + 5000;
+    while (!events.includes('handler started')) {
+      if (Date.now() > deadline) {
+        throw new Error('The handler did not start');
+      }
+      await sleep(10);
+    }
+
+    const closed = Promise.all([app.close(), app.close()]).then(() => 'closed');
+
+    await expect(
+      Promise.race([closed, sleep(5000).then(() => 'still pending')]),
+    ).resolves.toBe('closed');
+    await expect(reply).resolves.toBe('reply');
+  });
 });
