@@ -1,10 +1,26 @@
-import { Module } from '@nestjs/common';
+import { Controller, Get, Injectable, Module } from '@nestjs/common';
 import * as internal from '@nestjs/common/internal';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { NestFactory } from '../nest-factory.js';
 
 @Module({})
 class TestModule {}
+
+@Injectable()
+class TestService {}
+
+@Controller()
+class TestController {
+  @Get()
+  hello() {
+    return 'hello';
+  }
+}
+
+const rootModuleOf = (app: { get: Function }) =>
+  [...(app as any).container.getModules().values()]
+    .map(moduleRef => moduleRef.metatype)
+    .find(metatype => metatype.name === 'AppModule');
 
 describe('NestFactory', () => {
   describe('create()', () => {
@@ -40,6 +56,107 @@ describe('NestFactory', () => {
       await app.close();
 
       expect(requestedPackages).toContain('@nestjs/microservices');
+    });
+  });
+
+  describe('when passed module metadata', () => {
+    it('should create an application from the metadata', async () => {
+      const app = await NestFactory.create(
+        { controllers: [TestController], providers: [TestService] },
+        new FastifyAdapter(),
+        { logger: false },
+      );
+      await app.init();
+
+      const response = await app.getHttpAdapter().getInstance().inject({
+        method: 'GET',
+        url: '/',
+      });
+      expect(response.payload).toBe('hello');
+      expect(app.get(TestService)).toBeInstanceOf(TestService);
+      expect(rootModuleOf(app)).toBeDefined();
+
+      await app.close();
+    });
+
+    it('should create an application context from the metadata', async () => {
+      const context = await NestFactory.createApplicationContext(
+        { providers: [TestService] },
+        { logger: false },
+      );
+
+      expect(context.get(TestService)).toBeInstanceOf(TestService);
+      await context.close();
+    });
+
+    it('should resolve a promise of the metadata', async () => {
+      const context = await NestFactory.createApplicationContext(
+        Promise.resolve({ providers: [TestService] }),
+        { logger: false },
+      );
+
+      expect(context.get(TestService)).toBeInstanceOf(TestService);
+      await context.close();
+    });
+
+    it('should accept imports in the metadata', async () => {
+      @Module({ providers: [TestService], exports: [TestService] })
+      class FeatureModule {}
+
+      const context = await NestFactory.createApplicationContext(
+        { imports: [FeatureModule] },
+        { logger: false },
+      );
+
+      expect(context.get(TestService)).toBeInstanceOf(TestService);
+      await context.close();
+    });
+
+    it('should reject an unknown metadata key', async () => {
+      await expect(
+        NestFactory.createApplicationContext(
+          { controller: [TestController] } as any,
+          { logger: false, abortOnError: false },
+        ),
+      ).rejects.toThrow(/Invalid property 'controller'/);
+    });
+
+    it('should reject a module namespace object', async () => {
+      const namespace = Object.assign(Object.create(null), {
+        TestModule,
+      });
+
+      await expect(
+        NestFactory.createApplicationContext(namespace, {
+          logger: false,
+          abortOnError: false,
+        }),
+      ).rejects.toThrow(/Invalid property 'TestModule'/);
+    });
+
+    it('should create a microservice from the metadata', async () => {
+      const app = await NestFactory.createMicroservice(
+        { providers: [TestService] },
+        { logger: false },
+      );
+
+      expect(app.get(TestService)).toBeInstanceOf(TestService);
+      await app.close();
+    });
+
+    it('should create a distinct root module for each call', async () => {
+      const first = await NestFactory.createApplicationContext(
+        { providers: [TestService] },
+        { logger: false },
+      );
+      const second = await NestFactory.createApplicationContext(
+        { providers: [TestService] },
+        { logger: false },
+      );
+
+      expect(rootModuleOf(first)).not.toBe(rootModuleOf(second));
+      await first.close();
+      await second.close();
     });
   });
 });
