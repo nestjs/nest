@@ -186,6 +186,18 @@ export interface TcpOptions {
      * dropped. Set to 0 to disable.
      */
     maxConcurrentMessages?: number;
+    /**
+     * When enabled, closing the server keeps the connections that have
+     * requests or events being handled open until those are done, for
+     * "gracePeriod" at most, and takes no further message from them. The
+     * other connections are closed right away. (default: false)
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds before every
+     * connection is closed. (default: 10000)
+     */
+    gracePeriod?: number;
   };
 }
 
