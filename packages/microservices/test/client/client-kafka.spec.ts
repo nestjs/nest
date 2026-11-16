@@ -538,6 +538,187 @@ describe('ClientKafka', () => {
         // The stale attempt still disconnects the consumer it created.
         expect(firstDisconnect).toHaveBeenCalledOnce();
       });
+
+      it('should stop the attempt when close() runs while the consumer connects', async () => {
+        let releaseConsumerConnect!: () => void;
+        const consumerDisconnect = vi.fn().mockResolvedValue(undefined);
+        const createConsumer = consumerStub.getMockImplementation()!;
+        consumerStub.mockImplementationOnce(() => ({
+          ...createConsumer(),
+          connect: () =>
+            new Promise<void>(resolve => (releaseConsumerConnect = resolve)),
+          disconnect: consumerDisconnect,
+        }));
+
+        const connecting = client.connect();
+        // Let the attempt reach the (pending) consumer connection.
+        await new Promise(process.nextTick);
+        await client.close();
+        releaseConsumerConnect();
+
+        await expect(connecting).rejects.toThrow('Connection closed');
+        expect(producerStub).not.toHaveBeenCalled();
+        expect(consumerDisconnect).toHaveBeenCalled();
+        expect(untypedClient._consumer).toBeNull();
+        expect(untypedClient._producer).toBeNull();
+        expect(untypedClient.client).toBeNull();
+      });
+
+      it('should stop the attempt when close() runs while the Kafka client is created', async () => {
+        let releaseCreateClient!: () => void;
+        createClientStub.mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              releaseCreateClient = () => resolve(kafkaClient);
+            }),
+        );
+
+        const connecting = client.connect();
+        await new Promise(process.nextTick);
+        await client.close();
+        releaseCreateClient();
+
+        await expect(connecting).rejects.toThrow('Connection closed');
+        expect(consumerStub).not.toHaveBeenCalled();
+        expect(producerStub).not.toHaveBeenCalled();
+        expect(untypedClient.client).toBeNull();
+      });
+
+      it('should stop the attempt when close() runs while the consumer starts running', async () => {
+        let releaseRun!: () => void;
+        const consumerDisconnect = vi.fn().mockResolvedValue(undefined);
+        const createConsumer = consumerStub.getMockImplementation()!;
+        consumerStub.mockImplementationOnce(() => ({
+          ...createConsumer(),
+          run: () => new Promise<void>(resolve => (releaseRun = resolve)),
+          disconnect: consumerDisconnect,
+        }));
+        // The real `bindTopics()`, which starts the consumer.
+        bindTopicsStub.mockRestore();
+
+        const connecting = client.connect();
+        // Let the attempt reach the (pending) consumer run.
+        await new Promise(process.nextTick);
+        await client.close();
+        releaseRun();
+
+        await expect(connecting).rejects.toThrow('Connection closed');
+        expect(producerStub).not.toHaveBeenCalled();
+        expect(consumerDisconnect).toHaveBeenCalled();
+        expect(untypedClient._consumer).toBeNull();
+        expect(untypedClient._producer).toBeNull();
+        expect(untypedClient.client).toBeNull();
+      });
+
+      it('should stop the attempt when close() runs while the producer connects', async () => {
+        let releaseProducerConnect!: () => void;
+        const producerDisconnect = vi.fn().mockResolvedValue(undefined);
+        const createProducer = producerStub.getMockImplementation()!;
+        producerStub.mockImplementationOnce(() => ({
+          ...createProducer(),
+          connect: () =>
+            new Promise<void>(resolve => (releaseProducerConnect = resolve)),
+          disconnect: producerDisconnect,
+        }));
+
+        const connecting = client.connect();
+        // Let the attempt reach the (pending) producer connection.
+        await new Promise(process.nextTick);
+        await client.close();
+        releaseProducerConnect();
+
+        await expect(connecting).rejects.toThrow('Connection closed');
+        expect(producerDisconnect).toHaveBeenCalled();
+        // The consumer that joined its group is torn down as well.
+        expect(disconnect).toHaveBeenCalled();
+        expect(untypedClient._consumer).toBeNull();
+        expect(untypedClient._producer).toBeNull();
+        expect(untypedClient.client).toBeNull();
+      });
+
+      it('should connect after close() stopped a pending attempt', async () => {
+        let releaseConsumerConnect!: () => void;
+        const createConsumer = consumerStub.getMockImplementation()!;
+        consumerStub.mockImplementationOnce(() => ({
+          ...createConsumer(),
+          connect: () =>
+            new Promise<void>(resolve => (releaseConsumerConnect = resolve)),
+        }));
+
+        const stopped = client.connect();
+        await new Promise(process.nextTick);
+        await client.close();
+        const connection = await client.connect();
+        const consumer = untypedClient._consumer;
+        const producer = untypedClient._producer;
+
+        releaseConsumerConnect();
+        await expect(stopped).rejects.toThrow('Connection closed');
+
+        expect(connection).toEqual(producerStub());
+        expect(untypedClient._consumer).toBe(consumer);
+        expect(untypedClient._producer).toBe(producer);
+        expect(untypedClient.initialized).not.toBeNull();
+        expect(untypedClient.client).not.toBeNull();
+      });
+
+      it('should keep an attempt started while close() disconnects the clients', async () => {
+        let releaseStaleConnect!: () => void;
+        let releaseCloseDisconnect!: () => void;
+        let releaseProducerConnect!: () => void;
+        const createConsumer = consumerStub.getMockImplementation()!;
+        const createProducer = producerStub.getMockImplementation()!;
+        consumerStub.mockImplementationOnce(() => ({
+          ...createConsumer(),
+          connect: () =>
+            new Promise<void>(resolve => (releaseStaleConnect = resolve)),
+          // Only the disconnect issued by close() is held, the stale attempt
+          // tears its consumer down right away.
+          disconnect: vi
+            .fn()
+            .mockImplementationOnce(
+              () =>
+                new Promise<void>(
+                  resolve => (releaseCloseDisconnect = resolve),
+                ),
+            )
+            .mockResolvedValue(undefined),
+        }));
+        producerStub.mockImplementationOnce(() => ({
+          ...createProducer(),
+          connect: () =>
+            new Promise<void>(resolve => (releaseProducerConnect = resolve)),
+        }));
+
+        const stale = client.connect();
+        const stopped = expect(stale).rejects.toThrow('Connection closed');
+        // Let the stale attempt reach the (pending) consumer connection.
+        await new Promise(process.nextTick);
+        const closing = client.close();
+        releaseStaleConnect();
+        await stopped;
+
+        const connecting = client.connect();
+        const initialized = untypedClient.initialized;
+        // Let the new attempt reach the (pending) producer connection.
+        await new Promise(process.nextTick);
+        const consumer = consumerStub.mock.results[1].value;
+        const producer = producerStub.mock.results[0].value;
+        releaseCloseDisconnect();
+        await closing;
+
+        expect(untypedClient._consumer).toBe(consumer);
+        expect(untypedClient._producer).toBe(producer);
+        expect(untypedClient.client).toBe(kafkaClient);
+        expect(untypedClient.initialized).toBe(initialized);
+
+        releaseProducerConnect();
+        expect(await connecting).toBe(producer);
+        expect(untypedClient._consumer).toBe(consumer);
+        expect(untypedClient._producer).toBe(producer);
+        expect(untypedClient.initialized).toBe(initialized);
+        expect(disconnect).not.toHaveBeenCalled();
+      });
     });
 
     describe('producer only mode', () => {
@@ -563,6 +744,31 @@ describe('ClientKafka', () => {
 
         expect(bindTopicsStub).not.toHaveBeenCalled();
         expect(connection).toEqual(producerStub());
+      });
+
+      it('should stop the attempt when close() runs while the producer connects', async () => {
+        let releaseProducerConnect!: () => void;
+        const producerDisconnect = vi.fn().mockResolvedValue(undefined);
+        const createProducer = producerStub.getMockImplementation()!;
+        producerStub.mockImplementationOnce(() => ({
+          ...createProducer(),
+          connect: () =>
+            new Promise<void>(resolve => (releaseProducerConnect = resolve)),
+          disconnect: producerDisconnect,
+        }));
+
+        const connecting = client.connect();
+        // Let the attempt reach the (pending) producer connection.
+        await new Promise(process.nextTick);
+        await client.close();
+        releaseProducerConnect();
+
+        await expect(connecting).rejects.toThrow('Connection closed');
+        expect(consumerStub).not.toHaveBeenCalled();
+        expect(producerDisconnect).toHaveBeenCalled();
+        expect(untypedClient._producer).toBeNull();
+        expect(untypedClient.initialized).toBeNull();
+        expect(untypedClient.client).toBeNull();
       });
 
       it('should expect the connection to be reused', async () => {
@@ -674,6 +880,25 @@ describe('ClientKafka', () => {
         fromBeginning: true,
       });
       expect(run).toHaveBeenCalledOnce();
+    });
+
+    it('should reject when close() runs while the consumer subscribes', async () => {
+      let releaseSubscribe!: () => void;
+      const consumer = {
+        ...kafkaClient.consumer(),
+        subscribe: () =>
+          new Promise<void>(resolve => (releaseSubscribe = resolve)),
+      };
+      untypedClient.responsePatterns = [replyTopic];
+      untypedClient._consumer = consumer;
+
+      const binding = client.bindTopics();
+      await new Promise(process.nextTick);
+      await client.close();
+      releaseSubscribe();
+
+      await expect(binding).rejects.toThrow('Connection closed');
+      expect(run).not.toHaveBeenCalled();
     });
   });
 
