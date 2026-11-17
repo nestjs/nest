@@ -35,7 +35,7 @@ cd my-api
 npm run start:dev
 ```
 
-Add `--minimal` to start from a single file. An application can be this small, and `npx tsx src/main.ts` runs it with no build step:
+Add `--minimal` to start from a single file. An application can be this small:
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
@@ -55,7 +55,7 @@ await app.listen(3000);
 
 The object passed to `NestFactory.create()` is the root module's metadata, so `imports` and `providers` work there too. Move it into a `@Module()` class when the root module needs middleware, or for `nest generate` to register what it creates.
 
-tsx doesn't emit decorator metadata, which constructor injection by type and `ValidationPipe` rely on. Once the application uses them, run it with the Nest CLI, or with tsc or SWC and `emitDecoratorMetadata` enabled.
+Run it with `npm run start:dev`, like any other Nest project. The Nest CLI compiles it with the decorator metadata that constructor injection by type and `ValidationPipe` rely on. Tools that don't emit that metadata, such as `tsx`, leave injected dependencies `undefined`.
 
 ## First-party packages
 
