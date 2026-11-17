@@ -19,7 +19,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@apollo/server": "5.5.1",
+    "@apollo/server": "5.5.2",
     "@nestjs/apollo": "14.2.0",
     "@nestjs/common": "12.5.0",
     "@nestjs/core": "12.5.0",
@@ -29,7 +29,7 @@
     "class-validator": "0.15.1",
     "graphql": "17.1.0",
     "graphql-query-complexity": "2.0.0",
-    "graphql-subscriptions": "3.0.0",
+    "graphql-subscriptions": "3.1.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },
