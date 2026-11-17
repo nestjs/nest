@@ -2,6 +2,7 @@ import type { InjectionToken, Type } from '@nestjs/common';
 import { TlsOptions } from 'tls';
 import { Transport } from '../enums/transport.enum.js';
 import { ChannelOptions } from '../external/grpc-options.interface.js';
+import type { KafkaDriver } from './kafka-driver-types.interface.js';
 import {
   ConsumerConfig,
   ConsumerRunConfig,
@@ -10,6 +11,7 @@ import {
   ProducerConfig,
   ProducerRecord,
 } from '../external/kafka.interface.js';
+import type * as Platformatic from '../external/platformatic-kafka.interface.js';
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface.js';
 import { IORedisOptions } from '../external/redis.interface.js';
 import {
@@ -496,39 +498,106 @@ export interface KafkaParserConfig {
 }
 
 /**
+ * The options of a Kafka server or client that do not depend on its client
+ * library.
+ *
  * @publicApi
  */
-export interface KafkaOptions {
-  transport?: Transport.KAFKA;
-  options?: {
+export interface KafkaTransportOptions {
+  /**
+   * Defaults to `"-server"` on server side and `"-client"` on client side.
+   */
+  postfixId?: string;
+  serializer?: Serializer;
+  deserializer?: Deserializer;
+  parser?: KafkaParserConfig;
+  producerOnlyMode?: boolean;
+  /**
+   * The longest time in milliseconds that closing the server waits, once
+   * its consumer has disconnected, for the requests and events still being
+   * handled (e.g., the rest of a stream that a handler returned, or a reply
+   * still being serialized or published) before it disconnects its
+   * producer. Set it to `0` to disconnect the producer without waiting.
+   * Applies only to the server.
+   * @default 10000
+   */
+  gracePeriod?: number;
+}
+
+/**
+ * The options of a Kafka server or client that runs on kafkajs.
+ *
+ * @publicApi
+ */
+export interface KafkajsTransportOptions extends KafkaTransportOptions {
+  /**
+   * The client library to run on. Defaults to `'kafkajs'`. To run on
+   * `@platformatic/kafka`, type the options as `KafkaOptions<'platformatic'>`.
+   */
+  driver?: 'kafkajs';
+  client?: KafkaConfig;
+  consumer?: ConsumerConfig;
+  /**
+   * Options passed to KafkaJS consumer.run().
+   * Note: `partitionsConsumedConcurrently` (KafkaJS parameter) controls
+   * concurrent processing at the partition level (not topic level).
+   */
+  run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
+  subscribe?: Omit<ConsumerSubscribeTopics, 'topics'>;
+  producer?: ProducerConfig;
+  send?: Omit<ProducerRecord, 'topic' | 'messages'>;
+}
+
+/**
+ * The options of a Kafka server or client that runs on `@platformatic/kafka`.
+ * Offsets and timestamps are bigint values.
+ *
+ * @publicApi
+ */
+export interface PlatformaticKafkaTransportOptions extends KafkaTransportOptions {
+  /**
+   * The client library to run on.
+   */
+  driver: 'platformatic';
+  /**
+   * Options shared by the consumer and the producer. `bootstrapBrokers`
+   * defaults to `["localhost:9092"]`.
+   */
+  client?: Partial<Platformatic.BaseOptions>;
+  consumer?: Partial<Platformatic.ConsumerOwnOptions>;
+  /**
+   * Options of the loop that hands the messages to the handlers.
+   */
+  run?: {
     /**
-     * Defaults to `"-server"` on server side and `"-client"` on client side.
+     * Whether the offset of a message is committed once its handler has
+     * settled. Without it, commit the offsets through the consumer.
+     * @default true
      */
-    postfixId?: string;
-    client?: KafkaConfig;
-    consumer?: ConsumerConfig;
-    /**
-     * Options passed to KafkaJS consumer.run().
-     * Note: `partitionsConsumedConcurrently` (KafkaJS parameter) controls
-     * concurrent processing at the partition level (not topic level).
-     */
-    run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
-    subscribe?: Omit<ConsumerSubscribeTopics, 'topics'>;
-    producer?: ProducerConfig;
-    send?: Omit<ProducerRecord, 'topic' | 'messages'>;
-    serializer?: Serializer;
-    deserializer?: Deserializer;
-    parser?: KafkaParserConfig;
-    producerOnlyMode?: boolean;
-    /**
-     * The longest time in milliseconds that closing the server waits, once
-     * its consumer has disconnected, for the requests and events still being
-     * handled (e.g., the rest of a stream that a handler returned, or a reply
-     * still being serialized or published) before it disconnects its
-     * producer. Set it to `0` to disconnect the producer without waiting.
-     * Applies only to the server.
-     * @default 10000
-     */
-    gracePeriod?: number;
+    autoCommit?: boolean;
   };
+  /**
+   * The consumer starts from the committed offsets. `fallbackMode`, for a
+   * partition without a committed offset, defaults to `'latest'`.
+   */
+  subscribe?: Pick<Platformatic.StreamOptions, 'fallbackMode'>;
+  /** Options of the producer, the defaults of every send. */
+  producer?: Platformatic.ProduceOptions;
+  /** Options of each send, over those of the producer. */
+  send?: Platformatic.ProduceOptions;
+}
+
+/**
+ * The options of the Kafka transport. They default to those of kafkajs:
+ * `KafkaOptions<'platformatic'>` types them for `@platformatic/kafka`. The two
+ * are not a union, which would leave the callbacks of kafkajs options
+ * untyped.
+ *
+ * @publicApi
+ */
+export interface KafkaOptions<TDriver extends KafkaDriver = 'kafkajs'> {
+  transport?: Transport.KAFKA;
+  options?: TDriver extends 'platformatic'
+    ? PlatformaticKafkaTransportOptions
+    : KafkajsTransportOptions;
 }

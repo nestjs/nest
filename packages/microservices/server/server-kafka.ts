@@ -7,13 +7,7 @@ import {
   Observable,
   Subject,
 } from 'rxjs';
-import {
-  KAFKA_DEFAULT_BROKER,
-  KAFKA_DEFAULT_CLIENT,
-  KAFKA_DEFAULT_GROUP,
-  NO_EVENT_HANDLER,
-  NO_MESSAGE_HANDLER,
-} from '../constants.js';
+import { NO_EVENT_HANDLER, NO_MESSAGE_HANDLER } from '../constants.js';
 import { KafkaContext } from '../ctx-host/index.js';
 import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer.js';
 import { KafkaHeaders, Transport } from '../enums/index.js';
@@ -22,17 +16,16 @@ import { KafkaRetriableException } from '../exceptions/index.js';
 import {
   BrokersFunction,
   Consumer,
-  ConsumerConfig,
   EachMessagePayload,
   IHeaders,
   Kafka,
-  KafkaConfig,
   KafkaMessage,
   Message,
   Producer,
   RecordMetadata,
 } from '../external/kafka.interface.js';
-import { KafkaLogger, KafkaParser } from '../helpers/index.js';
+import { KafkaParser } from '../helpers/index.js';
+import { unwrapKafkaInstance } from '../helpers/platformatic-kafka-client.js';
 import {
   KafkaOptions,
   MessageHandler,
@@ -41,6 +34,10 @@ import {
   TransportId,
 } from '../interfaces/index.js';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
+import {
+  createKafkaClient,
+  getKafkaIdentity,
+} from '../utils/kafka-client.utils.js';
 import { toPacketMetadata } from '../utils/packet-metadata.utils.js';
 import { Server } from './server.js';
 import { Logger } from '@nestjs/common';
@@ -75,33 +72,36 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected clientId: string;
   protected groupId: string;
 
-  constructor(protected readonly options: Required<KafkaOptions>['options']) {
+  /**
+   * Typed as the options of kafkajs, the default driver, so that subclasses
+   * keep compiling. With `driver: 'platformatic'`, they hold the options of
+   * `@platformatic/kafka`.
+   */
+  protected readonly options: Required<KafkaOptions>['options'];
+
+  constructor(options: Required<KafkaOptions<'platformatic'>>['options']);
+  constructor(options: Required<KafkaOptions>['options']);
+  constructor(
+    options:
+      | Required<KafkaOptions>['options']
+      | Required<KafkaOptions<'platformatic'>>['options'],
+  ) {
     super();
+    this.options = options as Required<KafkaOptions>['options'];
 
-    const clientOptions = this.getOptionsProp(
-      this.options,
-      'client',
-      {} as KafkaConfig,
-    );
-    const consumerOptions = this.getOptionsProp(
-      this.options,
-      'consumer',
-      {} as ConsumerConfig,
-    );
     const postfixId = this.getOptionsProp(this.options, 'postfixId', '-server');
-
-    this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
-    this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
+    const identity = getKafkaIdentity(this.options ?? {}, postfixId);
+    this.brokers = identity.brokers;
+    this.clientId = identity.clientId;
+    this.groupId = identity.groupId;
 
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
-    this.initializeSerializer(options);
-    this.initializeDeserializer(options);
+    this.initializeSerializer(this.options);
+    this.initializeDeserializer(this.options);
   }
 
   public addHandler(
@@ -237,17 +237,14 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async createClient<T = any>(): Promise<T> {
-    const kafkaPackage = await this.loadPackage(
-      'kafkajs',
-      ServerKafka.name,
-      () => import('kafkajs'),
-    );
-    return new kafkaPackage.Kafka({
-      logCreator: KafkaLogger.bind(null, this.logger),
-      ...this.options.client,
-      clientId: this.clientId,
+    return (await createKafkaClient({
+      options: this.options,
       brokers: this.brokers,
-    } as KafkaConfig) as T;
+      clientId: this.clientId,
+      logger: this.logger,
+      loadPackage: (name, loader) =>
+        this.loadPackage(name, ServerKafka.name, loader),
+    })) as T;
   }
 
   public async bindEvents(consumer: Consumer) {
@@ -434,9 +431,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       rawMessage,
       payload.partition,
       payload.topic,
-      this.consumer!,
+      unwrapKafkaInstance(this.consumer!),
       payload.heartbeat,
-      this.producer!,
+      unwrapKafkaInstance(this.producer!),
       this.readMetadata(payload.message.headers),
     ]);
     const handler = this.getHandlerByPattern(packet.pattern);
@@ -526,7 +523,11 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         'Not initialized. Please call the "listen"/"startAllMicroservices" method before accessing the server.',
       );
     }
-    return [this.client, this.consumer, this.producer] as T;
+    return [
+      this.client,
+      unwrapKafkaInstance(this.consumer),
+      unwrapKafkaInstance(this.producer),
+    ] as T;
   }
 
   public on<
