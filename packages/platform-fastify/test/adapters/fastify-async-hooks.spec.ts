@@ -89,6 +89,64 @@ describe('FastifyAdapter async lifecycle hooks', () => {
     expect(responseHook).toHaveBeenCalledOnce();
   });
 
+  it('adds no onResponse hook to the routes until one is set', async () => {
+    await adapter.getInstance().ready();
+    expect(
+      adapter.getInstance().printRoutes({ includeHooks: true }),
+    ).not.toContain('onResponse');
+  });
+
+  it('adds the onResponse hook once and runs the last one set', async () => {
+    const replaced = vi.fn((_request, _reply, done) => done());
+    const responseHook = vi.fn((_request, _reply, done) => done());
+    adapter.setOnResponseHook(replaced);
+    adapter.setOnResponseHook(responseHook);
+    expect((await adapter.getInstance().inject('/test')).statusCode).toBe(200);
+    await new Promise(resolve => setImmediate(resolve));
+    expect(replaced).not.toHaveBeenCalled();
+    expect(responseHook).toHaveBeenCalledOnce();
+    expect(
+      adapter
+        .getInstance()
+        .printRoutes({ includeHooks: true })
+        .match(/onResponse/g),
+    ).toHaveLength(2); // GET and its implicit HEAD route
+  });
+
+  it('does not reach the route when an onRequest hook fails', async () => {
+    const handler = vi.fn(() => 'ok');
+    adapter.get('/guarded', handler);
+    adapter.setOnRequestHook((_request, _reply, done) =>
+      done(new Error('Hook failed')),
+    );
+    const response = await adapter.getInstance().inject('/guarded');
+    expect(response.statusCode).toBe(500);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('stops after an onRequest hook that sent the reply', async () => {
+    const handler = vi.fn(() => 'ok');
+    adapter.get('/sent', handler);
+    adapter.setOnRequestHook((_request, reply, done) => {
+      reply.code(202).send('early');
+      done();
+    });
+    const response = await adapter.getInstance().inject('/sent');
+    expect(response.statusCode).toBe(202);
+    expect(response.payload).toBe('early');
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('still answers a 503 while shutting down after an async onRequest hook', async () => {
+    const hook = vi.fn(async () => {});
+    adapter.setOnRequestHook(hook);
+    (adapter as any).return503OnClosing = true;
+    (adapter as any).isShuttingDown = true;
+    const response = await adapter.getInstance().inject('/test');
+    expect(hook).toHaveBeenCalledOnce();
+    expect(response.statusCode).toBe(503);
+  });
+
   it('routes synchronous hook throws through the Fastify error handler', async () => {
     adapter.setOnRequestHook(() => {
       throw new Error('Synchronous hook failure');
