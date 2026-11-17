@@ -14,7 +14,7 @@ import {
 import type { ApplicationConfig, ContextId } from '@nestjs/core';
 import {
   ContextUtils,
-  ExecutionContextHost,
+  type ExecutionContextHost,
   FORBIDDEN_MESSAGE,
   type GuardsConsumer,
   type GuardsContextCreator,
@@ -201,12 +201,13 @@ export class RpcContextCreator {
         return executePipeline();
       }
 
-      const executionContext = new ExecutionContextHost(
-        args,
-        instance.constructor as any,
+      // The context factory resolves the class through the class-ref
+      // registry, as the guards and interceptors do
+      const executionContext = this.contextUtils.getContextFactory(
+        contextType,
+        instance,
         callback,
-      );
-      executionContext.setType(contextType);
+      )(args);
 
       // With no interceptors registered, `InterceptorsConsumer#intercept`
       // resolves to whatever the handler returned rather than to an observable,

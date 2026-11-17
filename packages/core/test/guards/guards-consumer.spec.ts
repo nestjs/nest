@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { registerClassRef } from '../../helpers/class-ref-registry.js';
 import { GuardsConsumer } from '../../guards/guards-consumer.js';
 import { AsyncLocalStorage } from 'async_hooks';
 
@@ -111,6 +112,37 @@ describe('GuardsConsumer', () => {
     describe('when result is Promise', () => {
       it('should await promise', async () => {
         expect(await consumer.pickResult(Promise.resolve(true))).toBe(true);
+      });
+    });
+  });
+  describe('createContext', () => {
+    it('should return execution context object', () => {
+      const instance = { constructor: {} };
+      const callback = () => null;
+      const context = consumer.createContext([], instance, callback);
+
+      expect(context.getClass()).toEqual(instance.constructor);
+      expect(context.getHandler()).toEqual(callback);
+    });
+    describe('when a mixin helper overwrote the "constructor" of the host prototype', () => {
+      class Mixin {
+        public mixedIn() {}
+      }
+      class Host {
+        public own() {}
+      }
+      // What the TypeScript handbook's `applyMixins()` does
+      Object.defineProperties(
+        Host.prototype,
+        Object.getOwnPropertyDescriptors(Mixin.prototype),
+      );
+      registerClassRef(Host);
+
+      it('should return the registered class, not the overwritten "constructor"', () => {
+        const context = consumer.createContext([], new Host(), () => null);
+
+        expect(Host.prototype.constructor).toBe(Mixin);
+        expect(context.getClass()).toBe(Host);
       });
     });
   });
