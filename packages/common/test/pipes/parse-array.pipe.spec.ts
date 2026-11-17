@@ -120,6 +120,30 @@ describe('ParseArrayPipe', () => {
         );
       });
 
+      it('should honor an empty separator for string items', async () => {
+        target = new ParseArrayPipe({ separator: '', items: String });
+
+        expect(await target.transform('abc', {} as ArgumentMetadata)).toEqual([
+          'a',
+          'b',
+          'c',
+        ]);
+      });
+
+      it('should honor an empty separator for numeric items', async () => {
+        target = new ParseArrayPipe({ separator: '', items: Number });
+
+        expect(await target.transform('123', {} as ArgumentMetadata)).toEqual([
+          1, 2, 3,
+        ]);
+      });
+
+      it('should split an empty string with an empty separator into no items', async () => {
+        target = new ParseArrayPipe({ separator: '' });
+
+        expect(await target.transform('', {} as ArgumentMetadata)).toEqual([]);
+      });
+
       describe('and type is specified', () => {
         it('should parse & validate the array', async () => {
           target = new ParseArrayPipe({ separator: '.', items: Number });

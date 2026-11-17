@@ -111,7 +111,7 @@ export class ParseArrayPipe implements PipeTransform {
         try {
           value = value
             .trim()
-            .split(this.options.separator || DEFAULT_ARRAY_SEPARATOR);
+            .split(this.options.separator ?? DEFAULT_ARRAY_SEPARATOR);
         } catch {
           throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
         }
