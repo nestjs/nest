@@ -136,30 +136,34 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   public async close(): Promise<void> {
     this.closeCount++;
     this.handleClose();
-    try {
-      // The channel goes first, as amqplib settles its close on the broker's
-      // reply, which never arrives once the connection is closed. The
-      // connection is still closed when the channel close fails, otherwise it
-      // stays open after close() reported the error.
-      const results = [
-        ...(await Promise.allSettled([this.channel?.close()])),
-        ...(await Promise.allSettled([this.client?.close()])),
-      ];
-      const [failure, ...otherFailures] = results.filter(
-        (result): result is PromiseRejectedResult =>
-          result.status === 'rejected',
-      );
-      otherFailures.forEach(({ reason }) => this.logger.error(reason));
-      if (failure) {
-        throw failure.reason;
-      }
-    } finally {
-      // The state must be reset even when a close fails, otherwise a later
-      // connect() reuses the stale channel and connection.
-      this.channel = null;
-      this.client = null;
-      this.isInitialConnect = true;
-      this.pendingEventListeners = [];
+
+    // Reset first, so that an in-flight `connect()` stops at its next step,
+    // and a `connect()` issued while the channel and connection close starts
+    // a new attempt that this close leaves alone. It also keeps a later
+    // `connect()` from reusing stale channel or connection references.
+    const channel = this.channel;
+    const client = this.client;
+    this.channel = null;
+    this.client = null;
+    this.connectionPromise = null;
+    this.isInitialConnect = true;
+    this.pendingEventListeners = [];
+
+    // The channel goes first, as amqplib settles its close on the broker's
+    // reply, which never arrives once the connection is closed. The
+    // connection is still closed when the channel close fails, otherwise it
+    // stays open after close() reported the error.
+    const results = [
+      ...(await Promise.allSettled([channel?.close()])),
+      ...(await Promise.allSettled([client?.close()])),
+    ];
+    const [failure, ...otherFailures] = results.filter(
+      (result): result is PromiseRejectedResult =>
+        result.status === 'rejected',
+    );
+    otherFailures.forEach(({ reason }) => this.logger.error(reason));
+    if (failure) {
+      throw failure.reason;
     }
   }
 
@@ -200,6 +204,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         throw new Error('Connection closed');
       }
     }
+    const closeCount = this.closeCount;
     this.client = this.createClient();
 
     this.registerErrorListener(this.client);
@@ -228,15 +233,20 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.connection$ = new ReplaySubject(1);
     source$.subscribe(this.connection$);
     const client = this.client;
-    const connectionPromise = this.convertConnectionToPromise().catch(
-      async err => {
+    const connectionPromise = this.convertConnectionToPromise()
+      .then(result => {
+        if (this.closeCount !== closeCount) {
+          throw new Error('Connection closed');
+        }
+        return result;
+      })
+      .catch(async err => {
         // A rejected attempt must not be cached: the next `connect()` call
         // has to try again once the broker is reachable, instead of failing
         // forever with the error of the first attempt.
         await this.discardPartialConnection(client);
         throw err;
-      },
-    );
+      });
     this.connectionPromise = connectionPromise;
 
     return connectionPromise;
@@ -269,7 +279,10 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   public createChannel(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.channel = this.client!.createChannel({
+      if (!this.client) {
+        return reject(new Error('Connection closed'));
+      }
+      this.channel = this.client.createChannel({
         json: false,
         setup: (channel: Channel) => this.setupChannel(channel, resolve),
       });

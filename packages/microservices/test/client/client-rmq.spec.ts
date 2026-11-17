@@ -179,6 +179,77 @@ describe('ClientRMQ', function () {
         // The stale attempt still closes the manager it created.
         expect(firstClose).toHaveBeenCalledOnce();
       });
+
+      it('should stop the attempt when close() runs while connecting', async () => {
+        let resolveAttempt!: () => void;
+        vi.spyOn(client, 'convertConnectionToPromise').mockImplementation(
+          () => new Promise<void>(resolve => (resolveAttempt = resolve)),
+        );
+
+        const connecting = client.connect();
+        await client.close();
+        resolveAttempt();
+
+        await expect(connecting).rejects.toThrow('Connection closed');
+        expect(untypedClient.client).toBeNull();
+        expect(untypedClient.connectionPromise).toBeNull();
+        expect(untypedClient.channel).toBeNull();
+        expect(close).toHaveBeenCalled();
+      });
+
+      it('should keep an attempt started while close() disconnects the client', async () => {
+        let releaseCloseDisconnect!: () => void;
+        let releaseSecondConnect!: () => void;
+        const firstClose = vi
+          .fn()
+          .mockImplementation(
+            () =>
+              new Promise<void>(resolve => (releaseCloseDisconnect = resolve)),
+          );
+        const secondClose = vi.fn().mockResolvedValue(undefined);
+        createClientStub
+          .mockImplementationOnce(() => ({
+            addListener: () => ({}),
+            removeListener: () => ({}),
+            close: firstClose,
+          }))
+          .mockImplementationOnce(() => ({
+            addListener: () => ({}),
+            removeListener: () => ({}),
+            close: secondClose,
+          }));
+
+        vi.spyOn(client, 'convertConnectionToPromise')
+          .mockResolvedValueOnce(undefined)
+          .mockImplementationOnce(
+            () => new Promise<void>(resolve => (releaseSecondConnect = resolve)),
+          );
+
+        await client.connect();
+        const closing = client.close();
+        await new Promise(process.nextTick);
+        const connecting = client.connect();
+        const secondClient = untypedClient.client;
+        const secondConnectionPromise = untypedClient.connectionPromise;
+
+        releaseCloseDisconnect();
+        await closing;
+
+        expect(untypedClient.client).toBe(secondClient);
+        expect(untypedClient.connectionPromise).toBe(secondConnectionPromise);
+
+        releaseSecondConnect();
+        await connecting;
+
+        expect(untypedClient.client).toBe(secondClient);
+        expect(untypedClient.connectionPromise).toBe(secondConnectionPromise);
+        expect(secondClose).not.toHaveBeenCalled();
+      });
+
+      it('should reject createChannel when client is already closed', async () => {
+        untypedClient.client = null;
+        await expect(client.createChannel()).rejects.toThrow('Connection closed');
+      });
     });
   });
 
