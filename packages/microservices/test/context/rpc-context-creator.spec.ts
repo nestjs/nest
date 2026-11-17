@@ -754,6 +754,39 @@ describe('RpcContextCreator', () => {
       expect(capturedContext.getType()).toBe('rpc');
     });
 
+    it('should provide the registered class to the hook when the "constructor" of the controller prototype was overwritten', async () => {
+      class Mixin {}
+      class MixedIn {
+        handle() {
+          return of('handled');
+        }
+      }
+      // What mixin helpers copying every property of the prototype do
+      MixedIn.prototype.constructor = Mixin;
+      new InstanceWrapper({ metatype: MixedIn });
+
+      let capturedClass: unknown;
+      const hookFn = (ctx: any, next: () => Observable<unknown>) => {
+        capturedClass = ctx.getClass();
+        return next();
+      };
+      const creator = makeCreatorWithHooks([hookFn]);
+
+      const controller = new MixedIn();
+      const proxy = creator.create(
+        controller,
+        controller.handle,
+        module,
+        'handle',
+      );
+      const result = await proxy('data');
+
+      await expect(firstValueFrom(result as Observable<unknown>)).resolves.toBe(
+        'handled',
+      );
+      expect(capturedClass).toBe(MixedIn);
+    });
+
     it('should simulate ALS context available in guard (AsyncLocalStorage scenario)', async () => {
       const store = new Map<string, string>();
       let correlationIdInGuard: string | undefined;
