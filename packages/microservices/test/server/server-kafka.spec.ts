@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { concat, EMPTY, of, Subject, throwError } from 'rxjs';
-import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { DEFAULT_GRACE_PERIOD, NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
@@ -186,15 +186,26 @@ describe('ServerKafka', () => {
   });
 
   describe('close', () => {
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+    let requestPayload: EachMessagePayload;
     let consumer: { disconnect: ReturnType<typeof vi.fn> };
-    let producer: { disconnect: ReturnType<typeof vi.fn> };
+    let producer: {
+      disconnect: ReturnType<typeof vi.fn>;
+      send: ReturnType<typeof vi.fn>;
+    };
     beforeEach(() => {
+      requestPayload = { ...payload, message: { ...message } };
       consumer = { disconnect: vi.fn() };
-      producer = { disconnect: vi.fn() };
+      producer = {
+        disconnect: vi.fn(),
+        send: vi.fn().mockResolvedValue([]),
+      };
       untypedServer.consumer = consumer;
       untypedServer.producer = producer;
       untypedServer.client = client;
+      untypedServer.logger = new NoopLogger();
     });
+    afterEach(() => vi.useRealTimers());
     it('should close server', async () => {
       await server.close();
 
@@ -219,6 +230,139 @@ describe('ServerKafka', () => {
       await closing;
       expect(producer.disconnect).toHaveBeenCalledOnce();
     });
+    it('should publish the remaining response stream before disconnecting', async () => {
+      const responses = new Subject<string>();
+      server.addHandler(topic, () => concat(of('first'), responses));
+      // The eachMessage callback settles after the first value, before the
+      // response stream and its publishes have finished.
+      await server.handleMessage(requestPayload);
+      await flush();
+      const closing = server.close();
+      await flush();
+      const disconnectedEarly = producer.disconnect.mock.calls.length > 0;
+
+      responses.next('last');
+      responses.complete();
+      await closing;
+      await flush();
+
+      expect(disconnectedEarly).toBe(false);
+      expect(
+        producer.send.mock.calls.map(([record]) => record.messages[0].value),
+      ).toEqual(['first', 'last']);
+    });
+
+    it('should publish a response still being serialized before disconnecting', async () => {
+      let finishSerialization!: () => void;
+      const serialization = new Promise<void>(resolve => {
+        finishSerialization = resolve;
+      });
+      untypedServer.serializer = {
+        serialize: async (value: string) => {
+          await serialization;
+          return { value, headers: {} };
+        },
+      };
+      server.addHandler(topic, () => 'result');
+      await server.handleMessage(requestPayload);
+      await flush();
+      const closing = server.close();
+      await flush();
+      const disconnectedEarly = producer.disconnect.mock.calls.length > 0;
+
+      finishSerialization();
+      await closing;
+      await flush();
+
+      expect(disconnectedEarly).toBe(false);
+      expect(producer.send).toHaveBeenCalledOnce();
+    });
+
+    it('should wait for a pending publish before disconnecting', async () => {
+      let finishPublish!: () => void;
+      producer.send.mockReturnValue(
+        new Promise<void>(resolve => {
+          finishPublish = resolve;
+        }),
+      );
+      server.addHandler(topic, () => 'result');
+      await server.handleMessage(requestPayload);
+      await flush();
+      const closing = server.close();
+      await flush();
+      const disconnectedEarly = producer.disconnect.mock.calls.length > 0;
+
+      finishPublish();
+      await closing;
+
+      expect(disconnectedEarly).toBe(false);
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+    });
+
+    it('should bound the wait for a stream that never completes and close again immediately', async () => {
+      vi.useFakeTimers();
+      const responses = new Subject<string>();
+      server.addHandler(topic, () => concat(of('first'), responses));
+      await server.handleMessage(requestPayload);
+      const closing = server.close();
+      await vi.advanceTimersByTimeAsync(DEFAULT_GRACE_PERIOD - 1);
+      const disconnectedEarly = producer.disconnect.mock.calls.length > 0;
+      await vi.advanceTimersByTimeAsync(1);
+      await closing;
+
+      let closedAgain = false;
+      const secondClose = server.close().then(() => (closedAgain = true));
+      await vi.advanceTimersByTimeAsync(0);
+      const closedAgainImmediately = closedAgain;
+      // Settle the test even if a repeated close incorrectly waits again.
+      await vi.advanceTimersByTimeAsync(DEFAULT_GRACE_PERIOD);
+      await secondClose;
+      responses.complete();
+
+      expect(disconnectedEarly).toBe(false);
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+      expect(closedAgainImmediately).toBe(true);
+    });
+
+    it('should wait for "gracePeriod" at most when the option is set', async () => {
+      vi.useFakeTimers();
+      untypedServer.options.gracePeriod = 500;
+      const responses = new Subject<string>();
+      server.addHandler(topic, () => concat(of('first'), responses));
+      await server.handleMessage(requestPayload);
+      const closing = server.close();
+      await vi.advanceTimersByTimeAsync(499);
+      const disconnectedEarly = producer.disconnect.mock.calls.length > 0;
+      await vi.advanceTimersByTimeAsync(1);
+      await closing;
+      responses.complete();
+
+      expect(disconnectedEarly).toBe(false);
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+    });
+
+    it('should not wait for the pending replies when "gracePeriod" is 0', async () => {
+      vi.useFakeTimers();
+      untypedServer.options.gracePeriod = 0;
+      const responses = new Subject<string>();
+      server.addHandler(topic, () => concat(of('first'), responses));
+      await server.handleMessage(requestPayload);
+      const closing = server.close();
+      await vi.advanceTimersByTimeAsync(0);
+      await closing;
+      responses.complete();
+
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+    });
+
+    it('should close without a grace timer when no replies are pending', async () => {
+      vi.useFakeTimers();
+      await server.close();
+
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
     it('should disconnect the producer and reset the clients when the consumer fails to disconnect', async () => {
       const error = new Error('consumer');
       consumer.disconnect.mockRejectedValue(error);
