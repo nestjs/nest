@@ -324,6 +324,37 @@ describe('ServerKafka', () => {
       expect(closedAgainImmediately).toBe(true);
     });
 
+    it('should wait for "gracePeriod" at most when the option is set', async () => {
+      vi.useFakeTimers();
+      untypedServer.options.gracePeriod = 500;
+      const responses = new Subject<string>();
+      server.addHandler(topic, () => concat(of('first'), responses));
+      await server.handleMessage(requestPayload);
+      const closing = server.close();
+      await vi.advanceTimersByTimeAsync(499);
+      const disconnectedEarly = producer.disconnect.mock.calls.length > 0;
+      await vi.advanceTimersByTimeAsync(1);
+      await closing;
+      responses.complete();
+
+      expect(disconnectedEarly).toBe(false);
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+    });
+
+    it('should not wait for the pending replies when "gracePeriod" is 0', async () => {
+      vi.useFakeTimers();
+      untypedServer.options.gracePeriod = 0;
+      const responses = new Subject<string>();
+      server.addHandler(topic, () => concat(of('first'), responses));
+      await server.handleMessage(requestPayload);
+      const closing = server.close();
+      await vi.advanceTimersByTimeAsync(0);
+      await closing;
+      responses.complete();
+
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+    });
+
     it('should close without a grace timer when no replies are pending', async () => {
       vi.useFakeTimers();
       await server.close();
