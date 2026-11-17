@@ -81,7 +81,7 @@
     "uuid": "14.0.3"
   },
   "devDependencies": {
-    "@apollo/server": "5.5.1",
+    "@apollo/server": "5.5.2",
     "@as-integrations/express5": "1.1.2",
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-angular": "21.2.4",
@@ -122,7 +122,7 @@
     "fastify-plugin": "6.0.1",
     "find-my-way": "9.10.0",
     "graphql": "17.1.0",
-    "graphql-subscriptions": "3.0.0",
+    "graphql-subscriptions": "3.1.0",
     "gulp": "5.0.1",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
