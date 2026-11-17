@@ -43,6 +43,11 @@ export interface WsHandlerMetadata {
   ) => WsParamProperties[];
 }
 
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  value !== null &&
+  (typeof value === 'object' || typeof value === 'function') &&
+  typeof (value as PromiseLike<unknown>).then === 'function';
+
 export class WsContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly wsParamsFactory = new WsParamsFactory();
@@ -126,7 +131,8 @@ export class WsContextCreator {
 
     const handler = (initialArgs: unknown[], args: unknown[]) => async () => {
       if (fnApplyPipes) {
-        await fnApplyPipes(initialArgs, ...args);
+        const pendingPipes = fnApplyPipes(initialArgs, ...args);
+        pendingPipes && (await pendingPipes);
         return callback.apply(instance, initialArgs);
       }
       return callback.apply(instance, args);
@@ -282,29 +288,44 @@ export class WsContextCreator {
   public createPipesFn(
     pipes: PipeTransform[],
     paramsOptions: (ParamProperties & { metatype?: unknown })[],
-  ) {
-    const pipesFn = async (args: unknown[], ...params: unknown[]) => {
-      const resolveParamValue = async (
-        param: ParamProperties & { metatype?: unknown },
-      ) => {
-        const {
-          index,
-          extractValue,
-          type,
-          data,
-          metatype,
-          pipes: paramPipes,
-          schema,
-        } = param;
-        const value = extractValue(...params);
+  ):
+    | ((args: unknown[], ...params: unknown[]) => Promise<unknown> | undefined)
+    | null {
+    if (!paramsOptions.length) {
+      return null;
+    }
+    // Which pipes a param runs through is fixed for the handler, so it is
+    // worked out once here rather than on every call.
+    const params = paramsOptions.map(
+      ({
+        index,
+        extractValue,
+        type,
+        data,
+        metatype,
+        pipes: paramPipes,
+        schema,
+      }) => ({
+        index,
+        extractValue,
+        metadata: { metatype, type, data, schema } as ArgumentMetadata,
+        pipes: pipes.concat(paramPipes),
+      }),
+    );
 
-        args[index] = await this.getParamValue(
-          value,
-          { metatype, type, data, schema } as ArgumentMetadata,
-          pipes.concat(paramPipes),
-        );
-      };
-      const pending = paramsOptions.map(resolveParamValue);
+    const applyPipes = async (
+      args: unknown[],
+      param: (typeof params)[number],
+      value: unknown,
+    ) => {
+      args[param.index] = await this.getParamValue(
+        value,
+        param.metadata,
+        param.pipes,
+      );
+    };
+
+    const settle = async (pending: Promise<void>[]) => {
       try {
         await Promise.all(pending);
       } catch (err) {
@@ -316,7 +337,28 @@ export class WsContextCreator {
         throw err;
       }
     };
-    return paramsOptions.length ? pipesFn : null;
+
+    return (args: unknown[], ...extractArgs: unknown[]) => {
+      // A value no pipe runs on is final once extracted and needs no promise,
+      // unless it is a thenable, which getParamValue() has always settled.
+      // The rest, and any extractor that throws, go through one
+      // Promise.all() in param order, as before.
+      let pending: Promise<void>[] | undefined;
+      for (let i = 0; i < params.length; i++) {
+        const param = params[i];
+        try {
+          const value = param.extractValue(...extractArgs);
+          if (param.pipes.length > 0 || isThenable(value)) {
+            (pending ??= []).push(applyPipes(args, param, value));
+          } else {
+            args[param.index] = value;
+          }
+        } catch (err) {
+          (pending ??= []).push(Promise.reject(err));
+        }
+      }
+      return pending && settle(pending);
+    };
   }
 
   public async getParamValue<T>(
