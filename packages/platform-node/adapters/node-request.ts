@@ -443,9 +443,7 @@ export class NodeResponse<
     }
     // Before any header, in case it throws (a BigInt, a circular reference)
     const text = JSON.stringify(body);
-    if (!this.hasHeader('Content-Type')) {
-      this.setHeader('Content-Type', 'application/json; charset=utf-8');
-    }
+    setTextContentType(this, 'application/json; charset=utf-8');
     if (this.send !== NodeResponse.prototype.send) {
       // Through the res.send() a middleware wrapped, with the serialized body,
       // as Express' res.json() does
@@ -471,12 +469,7 @@ export class NodeResponse<
     if (body === undefined || body === null) {
       this.end();
     } else if (typeof body === 'string') {
-      const type = this.getHeader('Content-Type');
-      if (type === undefined) {
-        this.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      } else if (typeof type === 'string') {
-        this.set('Content-Type', type);
-      }
+      setTextContentType(this, 'text/plain; charset=utf-8');
       endWithBody(this, body);
     } else if (ArrayBuffer.isView(body)) {
       if (!this.hasHeader('Content-Type')) {
@@ -814,6 +807,28 @@ export function toBytes(view: ArrayBufferView): Uint8Array {
   return view instanceof Uint8Array
     ? view
     : new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+}
+
+/**
+ * Sets the `Content-Type` of a text body: `fallback` when there is none, and
+ * the charset `set()` adds for a MIME type set through `setHeader()`. A value
+ * with a charset, or without a `/`, is sent as it is.
+ */
+function setTextContentType(
+  response: NodeResponse<IncomingMessage>,
+  fallback: string,
+) {
+  const type = response.getHeader('Content-Type');
+  if (type === undefined) {
+    response.setHeader('Content-Type', fallback);
+  } else if (
+    typeof type === 'string' &&
+    type.includes('/') &&
+    // mime-types only spots a lowercase "charset"
+    !/;\s*charset\s*=/i.test(type)
+  ) {
+    response.set('Content-Type', type);
+  }
 }
 
 // With an explicit "Content-Length", which Node.js leaves out in answer to
