@@ -1,6 +1,13 @@
 import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
-import { Observable, defer, from, isObservable } from 'rxjs';
+import {
+  Observable,
+  type ObservableInput,
+  type Subscriber,
+  from,
+  isObservable,
+  of,
+} from 'rxjs';
 import { mergeAll } from 'rxjs/operators';
 import { getClassRef } from '../helpers/class-ref-registry.js';
 import { destroyUnsentBody } from '../helpers/destroy-unsent-body.js';
@@ -23,17 +30,35 @@ export class InterceptorsConsumer {
     const context = this.createContext(args, instance, callback);
     context.setType<TContext>(type!);
 
-    const nextFn = async (i = 0) => {
-      if (i >= interceptors.length) {
-        return defer(bindAsyncScope(() => this.transformDeferred(next)));
+    // Subscribes one level of the chain: the next interceptor, or the route
+    // handler behind the last one. An Observable the interceptor returns is
+    // subscribed directly, anything else (a Promise of one) is flattened.
+    const subscribeLevel = (i: number, subscriber: Subscriber<unknown>) => {
+      let result: unknown;
+      try {
+        result =
+          i >= interceptors.length
+            ? this.transformDeferred(next)
+            : interceptors[i].intercept(context, createHandler(i + 1));
+        return isObservable(result)
+          ? result.subscribe(subscriber)
+          : from(Promise.resolve(result) as Promise<ObservableInput<unknown>>)
+              .pipe(mergeAll())
+              .subscribe(subscriber);
+      } catch (err) {
+        subscriber.error(err);
+        return undefined;
       }
-      const handler: CallHandler = {
-        handle: () =>
-          defer(bindAsyncScope(() => nextFn(i + 1))).pipe(mergeAll()),
-      };
-      return interceptors[i].intercept(context, handler);
     };
-    return defer(() => nextFn()).pipe(mergeAll());
+    const createHandler = (i: number): CallHandler => ({
+      handle: () => {
+        const scope = createAsyncScope();
+        return new Observable(subscriber =>
+          scope(() => subscribeLevel(i, subscriber)),
+        );
+      },
+    });
+    return new Observable(subscriber => subscribeLevel(0, subscriber));
   }
 
   public createContext(
@@ -50,8 +75,8 @@ export class InterceptorsConsumer {
 
   public transformDeferred(next: () => Promise<any>): Observable<any> {
     // Call next() eagerly here — this method is invoked inside
-    // defer(bindAsyncScope(...)), so the async context (e.g. AsyncLocalStorage)
-    // is correctly inherited. Deferring next() into the subscriber function would
+    // inside the scope of the last handle() call, so the async context (e.g.
+    // AsyncLocalStorage) is correctly inherited. Deferring next() into the subscriber function would
     // lose that context because the subscriber is called outside the bound scope.
     const nextPromise = next();
     return new Observable(subscriber => {
@@ -72,9 +97,7 @@ export class InterceptorsConsumer {
           // "isObservable()" also recognises Observables created by another copy
           // of rxjs, which are not instances of the "Observable" class imported here
           const isDeferred = res instanceof Promise || isObservable(res);
-          innerSub = from(isDeferred ? res : Promise.resolve(res)).subscribe(
-            subscriber,
-          );
+          innerSub = (isDeferred ? from(res) : of(res)).subscribe(subscriber);
         })
         .catch(err => {
           if (!subscriber.closed) {
@@ -90,13 +113,14 @@ export class InterceptorsConsumer {
 }
 
 /**
- * Same as `AsyncResource.bind(fn)`: the resource is created here, so `fn` runs
- * in this call's async context (AsyncLocalStorage stores included) each time it
- * is invoked. `AsyncResource.bind()` also defines a deprecated `asyncResource`
- * accessor on every function it returns, which makes it about 25 times slower,
- * and this runs once per interceptor, plus once, on every request.
+ * Like `AsyncResource.bind(fn)`, but the returned function takes the `fn` to
+ * run: the resource is created here, so `fn` runs in this call's async context
+ * (AsyncLocalStorage stores included) each time it is invoked.
+ * `AsyncResource.bind()` also defines a deprecated `asyncResource` accessor on
+ * every function it returns, which makes it about 25 times slower, and this
+ * runs once per interceptor on every request.
  */
-function bindAsyncScope<T>(fn: () => T): () => T {
-  const resource = new AsyncResource(fn.name || 'bound-anonymous-fn');
-  return () => resource.runInAsyncScope(fn);
+function createAsyncScope(): <T>(fn: () => T) => T {
+  const resource = new AsyncResource('interceptor-scope');
+  return fn => resource.runInAsyncScope(fn);
 }
