@@ -306,6 +306,76 @@ describe('RouterExplorer', () => {
       );
       expect(routeHandler).toHaveBeenCalledWith('req', 'res');
     });
+
+    it('should assign handler.name and preserve rawPath when instanceWrapper is provided with onRouteTriggered', async () => {
+      const get = vi.fn();
+      const onRouteTriggered = vi.fn();
+      const instance = new TestRoute();
+      const routeHandler = Object.assign(vi.fn(), { version: '1' });
+      container.setHttpAdapter({ getOnRouteTriggered: () => onRouteTriggered });
+
+      routerBuilder.registerResolvedRoute(
+        { get } as any,
+        {
+          ...createResolvedRoute(instance, routeHandler),
+          path: '/global/normalized',
+          rawPath: '/global/raw',
+          instanceWrapper: { name: TestRoute.name },
+        } as any,
+      );
+
+      expect(get).toHaveBeenCalledWith(
+        '/global/normalized',
+        expect.any(Function),
+      );
+      const handler = get.mock.calls[0][1];
+      expect(handler.name).toBe('TestRoute.getTest');
+      expect(handler.version).toBe('1');
+      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
+
+      await handler('req', 'res');
+      expect(onRouteTriggered).toHaveBeenCalledWith(
+        RequestMethod.GET,
+        '/global/raw',
+      );
+    });
+
+    it('should copy metadata and assign handler.name on the non-onRouteTriggered branch', () => {
+      const get = vi.fn();
+      const instance = new TestRoute();
+      const routeHandler = Object.assign(vi.fn(), { version: '1' });
+      container.setHttpAdapter({});
+
+      routerBuilder.registerResolvedRoute(
+        { get } as any,
+        {
+          ...createResolvedRoute(instance, routeHandler),
+          instanceWrapper: { name: TestRoute.name },
+        } as any,
+      );
+
+      const handler = get.mock.calls[0][1];
+      expect(handler).toBe(routeHandler);
+      expect(handler.name).toBe('TestRoute.getTest');
+      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
+    });
+
+    it('should handle omitted instanceWrapper gracefully on the non-onRouteTriggered branch', () => {
+      const get = vi.fn();
+      const instance = new TestRoute();
+      const routeHandler = vi.fn();
+      container.setHttpAdapter({});
+
+      routerBuilder.registerResolvedRoute(
+        { get } as any,
+        createResolvedRoute(instance, routeHandler),
+      );
+
+      const handler = get.mock.calls[0][1];
+      expect(handler).toBe(routeHandler);
+      expect(handler.name).not.toBe('undefined.getTest');
+      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
+    });
   });
 
   describe('extractRouterPath', () => {

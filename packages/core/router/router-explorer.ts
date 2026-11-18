@@ -247,24 +247,15 @@ export class RouterExplorer {
         };
 
         if (!deferRegistration) {
-          this.copyMetadataToCallback(targetCallback, routeHandler);
-
-          const httpAdapter = this.container.getHttpAdapterRef();
-          const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
-          let handler = routeHandler;
-          if (onRouteTriggered) {
-            // Adapters read route options (e.g. the version) from the handler
-            handler = Object.assign((...args: unknown[]) => {
-              onRouteTriggered(requestMethod, path);
-              return routeHandler(...args);
-            }, routeHandler);
-            this.copyMetadataToCallback(targetCallback, handler);
-          }
-          Object.defineProperty(handler, 'name', {
-            configurable: true,
-            value: `${instanceWrapper.name}.${methodName}`,
-          });
-          routerMethodRef(normalizedPath, handler);
+          this.registerHandlerOnRouter(
+            routerMethodRef,
+            requestMethod,
+            normalizedPath,
+            path,
+            targetCallback,
+            routeHandler,
+            `${instanceWrapper.name}.${methodName}`,
+          );
         }
 
         onRouteResolved?.({
@@ -322,24 +313,54 @@ export class RouterExplorer {
     const routerMethodRef = this.routerMethodFactory
       .get(router, route.method)
       .bind(router);
-
-    this.copyMetadataToCallback(route.targetCallback, route.handler);
-    const normalizedPath = route.path;
     const rawPath = route.rawPath ?? route.path;
+    const handlerName =
+      typeof route.instanceWrapper?.name === 'string' &&
+      route.instanceWrapper.name.length > 0 &&
+      route.methodName
+        ? `${route.instanceWrapper.name}.${route.methodName}`
+        : undefined;
+
+    this.registerHandlerOnRouter(
+      routerMethodRef,
+      route.method,
+      route.path,
+      rawPath,
+      route.targetCallback,
+      route.handler,
+      handlerName,
+    );
+  }
+
+  private registerHandlerOnRouter(
+    routerMethodRef: (path: string, callback: any) => unknown,
+    requestMethod: RequestMethod,
+    normalizedPath: string,
+    rawPath: string,
+    targetCallback: RouterProxyCallback,
+    baseHandler: Function,
+    handlerName?: string,
+  ): void {
+    this.copyMetadataToCallback(targetCallback, baseHandler);
 
     const httpAdapter = this.container.getHttpAdapterRef();
-    const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
+    const onRouteTriggered = httpAdapter?.getOnRouteTriggered?.();
+    let handler = baseHandler;
     if (onRouteTriggered) {
       // Adapters read route options (e.g. the version) from the handler
-      const handler = Object.assign((...args: unknown[]) => {
-        onRouteTriggered(route.method, rawPath);
-        return route.handler(...args);
-      }, route.handler);
-      this.copyMetadataToCallback(route.targetCallback, handler);
-      routerMethodRef(normalizedPath, handler);
-    } else {
-      routerMethodRef(normalizedPath, route.handler);
+      handler = Object.assign((...args: unknown[]) => {
+        onRouteTriggered(requestMethod, rawPath);
+        return baseHandler(...args);
+      }, baseHandler);
+      this.copyMetadataToCallback(targetCallback, handler);
     }
+    if (handlerName) {
+      Object.defineProperty(handler, 'name', {
+        configurable: true,
+        value: handlerName,
+      });
+    }
+    routerMethodRef(normalizedPath, handler);
   }
 
   private applyHostFilter(
