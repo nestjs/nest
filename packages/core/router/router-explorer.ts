@@ -208,19 +208,20 @@ export class RouterExplorer {
       routePathMetadata.versioningOptions;
     let routeHandler = this.applyHostFilter(host, proxy);
 
-    paths.forEach(path => {
-      if (
-        isVersioned &&
-        routePathMetadata.versioningOptions!.type !== VersioningType.URI
-      ) {
-        // All versioning (except for URI Versioning) is done via the "Version Filter"
-        routeHandler = this.applyVersionFilter(
-          router,
-          routePathMetadata,
-          routeHandler,
-        );
-      }
+    if (
+      paths.length > 0 &&
+      isVersioned &&
+      routePathMetadata.versioningOptions!.type !== VersioningType.URI
+    ) {
+      // All versioning (except for URI Versioning) is done via the "Version Filter"
+      routeHandler = this.applyVersionFilter(
+        router,
+        routePathMetadata,
+        routeHandler,
+      );
+    }
 
+    paths.forEach(path => {
       routePathMetadata.methodPath = path;
       const pathsToRegister = this.routePathFactory.create(
         routePathMetadata,

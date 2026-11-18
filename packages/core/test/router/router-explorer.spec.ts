@@ -270,6 +270,121 @@ describe('RouterExplorer', () => {
       );
       expect(routeHandler).toHaveBeenCalledWith('req', 'res');
     });
+
+    it('should apply non-URI version filter only once across multi-path routes', () => {
+      const get = vi.fn();
+      const extractor = vi.fn(() => '1');
+      const applyVersionFilter = vi.fn(
+        (handler: Function, version: unknown, options: any) =>
+          (req: any, res: any, next: any) => {
+            if (options.extractor(req) === version) {
+              return handler(req, res, next);
+            }
+          },
+      );
+      const router = { get, applyVersionFilter };
+      const instance = new TestRoute();
+      const proxy = vi.fn();
+      container.setHttpAdapter({});
+      vi.spyOn(routerBuilder as any, 'createCallbackProxy').mockReturnValue(
+        proxy,
+      );
+
+      (routerBuilder as any).applyCallbackToRouter(
+        router,
+        {
+          path: ['first', 'second'],
+          requestMethod: RequestMethod.GET,
+          targetCallback: instance.getTestUsingArray,
+          methodName: 'getTestUsingArray',
+          version: '1',
+        },
+        {
+          id: 'test-route',
+          instance,
+          name: TestRoute.name,
+          isDependencyTreeStatic: () => true,
+        } as any,
+        '',
+        {
+          ctrlPath: 'global',
+          methodVersion: '1',
+          versioningOptions: {
+            type: VersioningType.CUSTOM,
+            extractor,
+          },
+        },
+        '',
+      );
+
+      expect(applyVersionFilter).toHaveBeenCalledOnce();
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(get.mock.calls[0][1]).toBe(get.mock.calls[1][1]);
+
+      const secondPathHandler = get.mock.calls[1][1];
+      secondPathHandler({ headers: {} }, 'res', vi.fn());
+      expect(extractor).toHaveBeenCalledOnce();
+      expect(proxy).toHaveBeenCalledOnce();
+    });
+
+    it('should skip applyVersionFilter for URI versioning and empty path lists', () => {
+      const get = vi.fn();
+      const applyVersionFilter = vi.fn((handler: Function) => handler);
+      const instance = new TestRoute();
+      container.setHttpAdapter({});
+      vi.spyOn(routerBuilder as any, 'createCallbackProxy').mockReturnValue(
+        vi.fn(),
+      );
+      const instanceWrapper = {
+        id: 'test-route',
+        instance,
+        name: TestRoute.name,
+        isDependencyTreeStatic: () => true,
+      } as any;
+
+      (routerBuilder as any).applyCallbackToRouter(
+        { get, applyVersionFilter },
+        {
+          path: ['first', 'second'],
+          requestMethod: RequestMethod.GET,
+          targetCallback: instance.getTestUsingArray,
+          methodName: 'getTestUsingArray',
+          version: '1',
+        },
+        instanceWrapper,
+        '',
+        {
+          ctrlPath: 'global',
+          methodVersion: '1',
+          versioningOptions: { type: VersioningType.URI },
+        },
+        '',
+      );
+      expect(applyVersionFilter).not.toHaveBeenCalled();
+
+      (routerBuilder as any).applyCallbackToRouter(
+        { get, applyVersionFilter },
+        {
+          path: [],
+          requestMethod: RequestMethod.GET,
+          targetCallback: instance.getTestUsingArray,
+          methodName: 'getTestUsingArray',
+          version: '1',
+        },
+        instanceWrapper,
+        '',
+        {
+          ctrlPath: 'global',
+          methodVersion: '1',
+          versioningOptions: {
+            type: VersioningType.HEADER,
+            header: 'X-API-Version',
+          },
+        },
+        '',
+      );
+      expect(applyVersionFilter).not.toHaveBeenCalled();
+    });
   });
 
   describe('registerResolvedRoute', () => {
