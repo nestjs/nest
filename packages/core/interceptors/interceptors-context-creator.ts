@@ -122,11 +122,18 @@ export class InterceptorsContextCreator extends ContextCreator {
       return [] as unknown[] as T;
     }
     const globalInterceptors = this.config.getGlobalInterceptors() as T;
+    // Module-scoped interceptors run after the global ones and before any
+    // `@UseInterceptors()` metadata (see `ContextCreator#createContext`).
+    const moduleInterceptors = this.config.getModuleInterceptors(
+      this.moduleContext,
+    ) as T;
     if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalInterceptors;
+      return globalInterceptors.concat(moduleInterceptors) as T;
     }
-    const scopedInterceptorWrappers =
-      this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
+    const scopedInterceptorWrappers = [
+      ...this.config.getGlobalRequestInterceptors(),
+      ...this.config.getModuleRequestInterceptors(this.moduleContext),
+    ] as InstanceWrapper[];
     const scopedInterceptors = iterate(scopedInterceptorWrappers)
       .map(wrapper =>
         wrapper.getInstanceByContextId(
@@ -144,6 +151,9 @@ export class InterceptorsContextCreator extends ContextCreator {
       })
       .toArray();
 
-    return globalInterceptors.concat(scopedInterceptors) as T;
+    return globalInterceptors.concat(
+      moduleInterceptors,
+      scopedInterceptors,
+    ) as T;
   }
 }

@@ -123,11 +123,16 @@ export class GuardsContextCreator extends ContextCreator {
       return [] as unknown[] as T;
     }
     const globalGuards = this.config.getGlobalGuards() as T;
+    // Module-scoped guards run after the global ones and before any
+    // `@UseGuards()` metadata (see `ContextCreator#createContext`).
+    const moduleGuards = this.config.getModuleGuards(this.moduleContext) as T;
     if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalGuards;
+      return globalGuards.concat(moduleGuards) as T;
     }
-    const scopedGuardWrappers =
-      this.config.getGlobalRequestGuards() as InstanceWrapper[];
+    const scopedGuardWrappers = [
+      ...this.config.getGlobalRequestGuards(),
+      ...this.config.getModuleRequestGuards(this.moduleContext),
+    ] as InstanceWrapper[];
     const scopedGuards = iterate(scopedGuardWrappers)
       .map(wrapper =>
         wrapper.getInstanceByContextId(
@@ -145,6 +150,6 @@ export class GuardsContextCreator extends ContextCreator {
       })
       .toArray();
 
-    return globalGuards.concat(scopedGuards) as T;
+    return globalGuards.concat(moduleGuards, scopedGuards) as T;
   }
 }

@@ -215,9 +215,29 @@ describe('InterceptorsContextCreator', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global interceptors', () => {
         const expectedResult = applicationConfig.getGlobalInterceptors();
-        expect(interceptorsContextCreator.getGlobalMetadata()).toBe(
+        expect(interceptorsContextCreator.getGlobalMetadata()).toEqual(
           expectedResult,
         );
+      });
+      it('should append the module interceptors of the current module after the global ones', () => {
+        const globalInterceptor = { intercept: () => null };
+        const moduleInterceptor = { intercept: () => null };
+        const otherModuleInterceptor = { intercept: () => null };
+        applicationConfig.addGlobalInterceptor(globalInterceptor as any);
+        applicationConfig.addModuleInterceptor(
+          'test',
+          moduleInterceptor as any,
+        );
+        applicationConfig.addModuleInterceptor(
+          'other',
+          otherModuleInterceptor as any,
+        );
+        (interceptorsContextCreator as any).moduleContext = 'test';
+
+        expect(interceptorsContextCreator.getGlobalMetadata()).toEqual([
+          globalInterceptor,
+          moduleInterceptor,
+        ]);
       });
     });
     describe('otherwise', () => {
