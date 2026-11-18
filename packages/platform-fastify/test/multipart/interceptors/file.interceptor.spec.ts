@@ -9,6 +9,7 @@ import { EventEmitter, once } from 'events';
 import { Readable, Writable } from 'stream';
 import { FileInterceptor } from '../../../multipart/interceptors/file.interceptor.js';
 import { MISSING_PLUGIN_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
+import { MultipartError } from '../../../multipart/multipart/multipart.error.js';
 import {
   createContext,
   createFakeRequest,
@@ -87,7 +88,9 @@ describe('FileInterceptor', () => {
       await expect(
         target.intercept(createContext(req), handler),
       ).rejects.toEqual(
-        new BadRequestException('Unexpected file field - avatar'),
+        new BadRequestException('Unexpected file field - avatar', {
+          cause: new MultipartError('LIMIT_UNEXPECTED_FILE', 'avatar'),
+        }),
       );
     });
 
@@ -96,7 +99,11 @@ describe('FileInterceptor', () => {
       const req = createFakeRequest([{ ...file('avatar'), truncated: true }]);
       await expect(
         target.intercept(createContext(req), handler),
-      ).rejects.toEqual(new PayloadTooLargeException('File too large'));
+      ).rejects.toEqual(
+        new PayloadTooLargeException('File too large', {
+          cause: new MultipartError('LIMIT_FILE_SIZE', 'avatar'),
+        }),
+      );
     });
 
     it('should fail with an actionable message when the plugin is missing', async () => {
@@ -321,7 +328,14 @@ describe('FileInterceptor', () => {
 
           await expect(
             target.intercept(createContext(req), handler),
-          ).rejects.toEqual(new BadRequestException('the request was closed'));
+          ).rejects.toEqual(
+            new BadRequestException('the request was closed', {
+              cause: expect.objectContaining({
+                message: 'the request was closed',
+                code: 'FST_MP_PREMATURE_CLOSE',
+              }),
+            }),
+          );
           await vi.waitFor(() =>
             expect(storage._removeFile).toHaveBeenCalledWith(
               req,
@@ -479,7 +493,9 @@ describe('FileInterceptor', () => {
 
         await expect(
           target.intercept(createContext(req), handler),
-        ).rejects.toEqual(new BadRequestException('the request was closed'));
+        ).rejects.toEqual(
+          new BadRequestException('the request was closed', { cause: error }),
+        );
         expect(storage._removeFile).toHaveBeenCalledWith(
           req,
           expect.objectContaining({ path: '/uploads/partial' }),
@@ -497,7 +513,13 @@ describe('FileInterceptor', () => {
 
         await expect(
           target.intercept(createContext(req), handler),
-        ).rejects.toEqual(new BadRequestException('Too many files'));
+        ).rejects.toEqual(
+          new BadRequestException('Too many files', {
+            cause: new MultipartError('LIMIT_FILE_COUNT', undefined, {
+              cause: limit,
+            }),
+          }),
+        );
         expect(storage._removeFile).toHaveBeenCalledWith(
           req,
           expect.objectContaining({ path: '/uploads/partial' }),

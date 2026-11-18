@@ -9,6 +9,7 @@ import { Readable } from 'stream';
 import { lastValueFrom, of, throwError } from 'rxjs';
 import { FileStreamInterceptor } from '../../../multipart/interceptors/file-stream.interceptor.js';
 import { UPLOAD_DISCARDED_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
+import { MultipartError } from '../../../multipart/multipart/multipart.error.js';
 import {
   createContext,
   createFakeRequest,
@@ -91,7 +92,11 @@ describe('FileStreamInterceptor', () => {
       for await (const _ of req.file.stream) {
         // consume
       }
-    }).rejects.toEqual(new PayloadTooLargeException('File too large'));
+    }).rejects.toEqual(
+      new PayloadTooLargeException('File too large', {
+        cause: new MultipartError('LIMIT_FILE_SIZE', 'upload'),
+      }),
+    );
   });
 
   it('should fail the stream once the file goes over fileSize', async () => {
@@ -106,7 +111,11 @@ describe('FileStreamInterceptor', () => {
       for await (const _ of req.file.stream) {
         // consume
       }
-    }).rejects.toEqual(new PayloadTooLargeException('File too large'));
+    }).rejects.toEqual(
+      new PayloadTooLargeException('File too large', {
+        cause: new MultipartError('LIMIT_FILE_SIZE', 'upload'),
+      }),
+    );
   });
 
   it('should apply the field name limits to the fields before the file', async () => {
@@ -122,7 +131,9 @@ describe('FileStreamInterceptor', () => {
         handler,
       ),
     ).rejects.toEqual(
-      new BadRequestException('Field name nesting too deep - a[b][c]'),
+      new BadRequestException('Field name nesting too deep - a[b][c]', {
+        cause: new MultipartError('LIMIT_FIELD_NESTING', 'a[b][c]'),
+      }),
     );
     await expect(
       target.intercept(
@@ -133,7 +144,9 @@ describe('FileStreamInterceptor', () => {
         handler,
       ),
     ).rejects.toEqual(
-      new BadRequestException('Field name array index too large - a[3]'),
+      new BadRequestException('Field name array index too large - a[3]', {
+        cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', 'a[3]'),
+      }),
     );
   });
 
@@ -148,7 +161,9 @@ describe('FileStreamInterceptor', () => {
         handler,
       ),
     ).rejects.toEqual(
-      new BadRequestException('Field name array index too large - a[1001]'),
+      new BadRequestException('Field name array index too large - a[1001]', {
+        cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', 'a[1001]'),
+      }),
     );
   });
 
@@ -157,7 +172,11 @@ describe('FileStreamInterceptor', () => {
     const req = createFakeRequest([file('other')]);
     await expect(
       target.intercept(createContext(req, createReply()), handler),
-    ).rejects.toEqual(new BadRequestException('Unexpected file field - other'));
+    ).rejects.toEqual(
+      new BadRequestException('Unexpected file field - other', {
+        cause: new MultipartError('LIMIT_UNEXPECTED_FILE', 'other'),
+      }),
+    );
   });
 
   describe('when the handler leaves the stream unread', () => {
