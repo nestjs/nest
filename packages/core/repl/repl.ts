@@ -29,6 +29,11 @@ export async function repl(
     ...replOptions,
   });
   assignToObject(replServer.context, replContext.globalScope);
+  // The ".clear" command replaces the context with an empty one, without the
+  // native functions, the modules and the providers
+  replServer.on('reset', context =>
+    assignToObject(context, replContext.globalScope),
+  );
 
   defineDefaultCommandsOnRepl(replServer);
 
