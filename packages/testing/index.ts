@@ -5,7 +5,7 @@
  * MIT Licensed
  */
 
-export * from './interfaces/index.js';
+export type * from './interfaces/index.js';
 export * from './services/capturing-logger.service.js';
 export * from './test.js';
 export * from './testing-module.js';

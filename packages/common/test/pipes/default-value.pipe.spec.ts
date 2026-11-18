@@ -39,6 +39,35 @@ describe('DefaultValuePipe', () => {
         });
       });
 
+      it('should preserve the length of an array containing only empty slots', () => {
+        const slots = new Array<string>(7);
+        const result = new DefaultValuePipe(slots).transform(undefined);
+
+        expect(result).not.toBe(slots);
+        expect(result).toHaveLength(7);
+        expect(Object.keys(result)).toEqual([]);
+      });
+
+      it('should preserve trailing empty slots when copying an array', () => {
+        const slots = new Array<string>(7);
+        slots[1] = 'open';
+        const result = new DefaultValuePipe(slots).transform(undefined);
+
+        expect(result).not.toBe(slots);
+        expect(result).toHaveLength(7);
+        expect(Object.keys(result)).toEqual(['1']);
+        expect(result[1]).toBe('open');
+      });
+
+      it('should preserve the length of a nested sparse array', () => {
+        const defaults = { slots: new Array<string>(7) };
+        const result = new DefaultValuePipe(defaults).transform(undefined);
+
+        expect(result.slots).not.toBe(defaults.slots);
+        expect(result.slots).toHaveLength(7);
+        expect(Object.keys(result.slots)).toEqual([]);
+      });
+
       it('should keep symbol keys and a null prototype', () => {
         const ne = Symbol('ne');
         const where = Object.assign(Object.create(null), {

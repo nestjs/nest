@@ -338,6 +338,31 @@ describe('ContextUtils', () => {
       expect(ctx.getType()).toBe('rpc');
       expect(ctx.getClass()).toBeFalsy();
     });
+    describe('when a mixin helper overwrote the "constructor" of the host prototype', () => {
+      class Mixin {
+        public mixedIn() {}
+      }
+      class Host {
+        public own() {}
+      }
+      // What the TypeScript handbook's `applyMixins()` does
+      Object.defineProperties(
+        Host.prototype,
+        Object.getOwnPropertyDescriptors(Mixin.prototype),
+      );
+      registerClassRef(Host);
+
+      it('should return the registered class, not the overwritten "constructor"', () => {
+        const context = contextUtils.getContextFactory(
+          'http',
+          new Host(),
+          () => null,
+        )([]);
+
+        expect(Host.prototype.constructor).toBe(Mixin);
+        expect(context.getClass()).toBe(Host);
+      });
+    });
   });
 
   describe('reflectPassthrough', () => {

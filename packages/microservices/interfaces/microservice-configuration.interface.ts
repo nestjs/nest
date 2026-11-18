@@ -464,6 +464,20 @@ export interface RmqOptions {
      * @default -1
      */
     maxConnectionAttempts?: number;
+    /**
+     * When enabled, closing the server first cancels its consumer, then waits
+     * for the requests and events being handled, for "gracePeriod" at most,
+     * before it closes its channel and its connection.
+     * Applies only to the consumer configuration.
+     * @default false
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled.
+     * @default 10000
+     */
+    gracePeriod?: number;
   };
 }
 
@@ -506,5 +520,15 @@ export interface KafkaOptions {
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
     producerOnlyMode?: boolean;
+    /**
+     * The longest time in milliseconds that closing the server waits, once
+     * its consumer has disconnected, for the requests and events still being
+     * handled (e.g., the rest of a stream that a handler returned, or a reply
+     * still being serialized or published) before it disconnects its
+     * producer. Set it to `0` to disconnect the producer without waiting.
+     * Applies only to the server.
+     * @default 10000
+     */
+    gracePeriod?: number;
   };
 }
