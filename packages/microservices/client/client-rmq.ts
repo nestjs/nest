@@ -158,8 +158,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       ...(await Promise.allSettled([client?.close()])),
     ];
     const [failure, ...otherFailures] = results.filter(
-      (result): result is PromiseRejectedResult =>
-        result.status === 'rejected',
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
     );
     otherFailures.forEach(({ reason }) => this.logger.error(reason));
     if (failure) {
@@ -191,11 +190,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     if (this.client) {
       return this.connectionPromise;
     }
+    const closeCount = this.closeCount;
     if (!rmqPackage) {
       // Only the first connection waits for the packages. Another connect()
       // or a close() call may run in the meantime, so the state is checked
       // again once they are loaded.
-      const closeCount = this.closeCount;
       await this.loadRmqPackage();
       if (this.client) {
         return this.connectionPromise;
@@ -204,35 +203,40 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         throw new Error('Connection closed');
       }
     }
-    const closeCount = this.closeCount;
     this.client = this.createClient();
+    const client = this.client;
 
-    this.registerErrorListener(this.client);
-    this.registerDisconnectListener(this.client);
-    this.registerConnectListener(this.client);
-    this.registerBlockedListener(this.client);
-    this.registerUnblockedListener(this.client);
+    this.registerErrorListener(client);
+    this.registerDisconnectListener(client);
+    this.registerConnectListener(client);
+    this.registerBlockedListener(client);
+    this.registerUnblockedListener(client);
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.client!.on(event, callback),
+      client.on(event, callback),
     );
 
     this.responseEmitter = new EventEmitter();
     this.responseEmitter.setMaxListeners(0);
 
-    const connect$ = this.connect$(this.client);
-    const withDisconnect$ = this.mergeDisconnectEvent(
-      this.client,
-      connect$,
-    ).pipe(switchMap(() => this.createChannel()));
+    const connect$ = this.connect$(client);
+    const withDisconnect$ = this.mergeDisconnectEvent(client, connect$).pipe(
+      switchMap(() => {
+        // A manager closed during its handshake still emits "connect": by
+        // then the client may be a newer attempt's manager, not this one.
+        if (this.client !== client) {
+          throw new Error('Connection closed');
+        }
+        return this.createChannel();
+      }),
+    );
 
-    const withReconnect$ = fromEvent(this.client, RmqEventsMap.CONNECT).pipe(
+    const withReconnect$ = fromEvent(client, RmqEventsMap.CONNECT).pipe(
       skip(1),
     );
     const source$ = merge(withDisconnect$, withReconnect$);
 
     this.connection$ = new ReplaySubject(1);
     source$.subscribe(this.connection$);
-    const client = this.client;
     const connectionPromise = this.convertConnectionToPromise()
       .then(result => {
         if (this.closeCount !== closeCount) {
@@ -439,6 +443,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   public registerDisconnectListener(client: AmqpConnectionManager): void {
     client.addListener(RmqEventsMap.DISCONNECT, (err: any) => {
+      // The state belongs to the current client: a manager that `close()` or
+      // a newer attempt has replaced must not touch it.
+      if (client !== this.client) {
+        return;
+      }
       this._status$.next(RmqStatus.DISCONNECTED);
 
       if (!this.isInitialConnect) {
@@ -453,7 +462,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       // A reply to the direct reply-to queue goes only to the channel that
       // sent the request, and that channel is gone with the connection: the
       // pending requests would wait forever.
-      if (client === this.client && this.replyQueue === REPLY_QUEUE) {
+      if (this.replyQueue === REPLY_QUEUE) {
         this.handleClose();
       }
 
@@ -464,6 +473,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   private registerConnectListener(client: AmqpConnectionManager): void {
     client.addListener(RmqEventsMap.CONNECT, () => {
+      // A manager closed during its handshake still emits "connect", which
+      // would turn the first "connect" of the next attempt into a reconnect.
+      if (client !== this.client) {
+        return;
+      }
       this._status$.next(RmqStatus.CONNECTED);
       this.logger.log('Successfully connected to RMQ broker');
 
