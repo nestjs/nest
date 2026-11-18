@@ -164,7 +164,8 @@ export class WebSocketsController {
     const { instance } = instanceWrapper;
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const isStatic = instanceWrapper.isDependencyTreeStatic();
-    const hasGlobalScopedEnhancers = this.getGlobalScopedEnhancers().length > 0;
+    const hasGlobalScopedEnhancers =
+      this.getGlobalScopedEnhancers(moduleKey).length > 0;
     const moduleRef = this.container.getModuleByKey(moduleKey)!;
     const messageHandlers = nativeMessageHandlers.map(
       ({ callback, isAckHandledManually, message, methodName }) => ({
@@ -428,11 +429,11 @@ export class WebSocketsController {
     const collection = moduleRef.providers;
     const isStatic = instanceWrapper.isDependencyTreeStatic();
     const isTreeDurable = isStatic
-      ? this.areGlobalScopedEnhancersDurable()
+      ? this.areGlobalScopedEnhancersDurable(moduleKey)
       : instanceWrapper.isDependencyTreeDurable();
     const scopedEnhancers = [
       ...(isStatic ? instanceWrapper.getEnhancersMetadata() || [] : []),
-      ...this.getGlobalScopedEnhancers(),
+      ...this.getGlobalScopedEnhancers(moduleKey),
     ];
     const pattern =
       Reflect.getMetadata(MESSAGE_METADATA, instance[methodName]) ?? 'unknown';
@@ -503,7 +504,7 @@ export class WebSocketsController {
     const collection = moduleRef.providers;
     const isStatic = instanceWrapper.isDependencyTreeStatic();
     const isTreeDurable = isStatic
-      ? this.areGlobalScopedEnhancersDurable()
+      ? this.areGlobalScopedEnhancersDurable(moduleKey)
       : instanceWrapper.isDependencyTreeDurable();
     const targetCallback = instance[methodName];
     const connectionHookCalls = this.getConnectionHookCalls(instanceWrapper);
@@ -633,8 +634,8 @@ export class WebSocketsController {
   // A default-scoped gateway is resolved per connection only for its global
   // scoped enhancers, so their trees decide whether the context is durable
   // (mirrors InstanceWrapper#isDependencyTreeDurable).
-  private areGlobalScopedEnhancersDurable(): boolean {
-    const scopedEnhancers = this.getGlobalScopedEnhancers().filter(
+  private areGlobalScopedEnhancersDurable(moduleKey?: string): boolean {
+    const scopedEnhancers = this.getGlobalScopedEnhancers(moduleKey).filter(
       wrapper => !wrapper.isDependencyTreeStatic(),
     );
     return (
@@ -713,11 +714,19 @@ export class WebSocketsController {
     }
   }
 
-  private getGlobalScopedEnhancers(): InstanceWrapper[] {
+  private getGlobalScopedEnhancers(moduleKey?: string): InstanceWrapper[] {
+    const moduleScopedEnhancers = moduleKey
+      ? [
+          ...this.config.getModuleRequestGuards(moduleKey),
+          ...this.config.getModuleRequestPipes(moduleKey),
+          ...this.config.getModuleRequestInterceptors(moduleKey),
+        ]
+      : [];
     return [
       ...this.config.getGlobalRequestGuards(),
       ...this.config.getGlobalRequestPipes(),
       ...this.config.getGlobalRequestInterceptors(),
+      ...moduleScopedEnhancers,
     ];
   }
 

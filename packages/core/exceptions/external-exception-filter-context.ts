@@ -53,11 +53,16 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       return [] as any[] as T;
     }
     const globalFilters = this.config.getGlobalFilters() as T;
+    // Module-scoped filters run after the global ones (and, after the
+    // `reverse()` in `create()`, before them when an exception is handled).
+    const moduleFilters = this.config.getModuleFilters(this.moduleContext) as T;
     if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalFilters;
+      return globalFilters.concat(moduleFilters) as T;
     }
-    const scopedFilterWrappers =
-      this.config.getGlobalRequestFilters() as InstanceWrapper[];
+    const scopedFilterWrappers = [
+      ...this.config.getGlobalRequestFilters(),
+      ...this.config.getModuleRequestFilters(this.moduleContext),
+    ] as InstanceWrapper[];
     const scopedFilters = iterate(scopedFilterWrappers)
       .map(wrapper => ({
         wrapper,
@@ -73,6 +78,6 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       .map(({ host }) => host.instance)
       .toArray();
 
-    return globalFilters.concat(scopedFilters) as T;
+    return globalFilters.concat(moduleFilters, scopedFilters) as T;
   }
 }

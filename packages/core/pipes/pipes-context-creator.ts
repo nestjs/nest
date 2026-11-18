@@ -114,11 +114,16 @@ export class PipesContextCreator extends ContextCreator {
       return [] as unknown[] as T;
     }
     const globalPipes = this.config.getGlobalPipes() as T;
+    // Module-scoped pipes run after the global ones and before any
+    // `@UsePipes()` metadata (see `ContextCreator#createContext`).
+    const modulePipes = this.config.getModulePipes(this.moduleContext) as T;
     if (contextId === STATIC_CONTEXT && !inquirerId) {
-      return globalPipes;
+      return globalPipes.concat(modulePipes) as T;
     }
-    const scopedPipeWrappers =
-      this.config.getGlobalRequestPipes() as InstanceWrapper[];
+    const scopedPipeWrappers = [
+      ...this.config.getGlobalRequestPipes(),
+      ...this.config.getModuleRequestPipes(this.moduleContext),
+    ] as InstanceWrapper[];
     const scopedPipes = iterate(scopedPipeWrappers)
       .map(wrapper =>
         wrapper.getInstanceByContextId(
@@ -136,7 +141,7 @@ export class PipesContextCreator extends ContextCreator {
       })
       .toArray();
 
-    return globalPipes.concat(scopedPipes) as T;
+    return globalPipes.concat(modulePipes, scopedPipes) as T;
   }
 
   public setModuleContext(context: string) {

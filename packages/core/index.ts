@@ -13,6 +13,10 @@ export {
   APP_GUARD,
   APP_INTERCEPTOR,
   APP_PIPE,
+  MODULE_FILTER,
+  MODULE_GUARD,
+  MODULE_INTERCEPTOR,
+  MODULE_PIPE,
 } from './constants.js';
 export * from './discovery/index.js';
 export * from './exceptions/index.js';

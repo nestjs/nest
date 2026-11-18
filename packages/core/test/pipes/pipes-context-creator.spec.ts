@@ -162,7 +162,18 @@ describe('PipesContextCreator', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global pipes', () => {
         const expectedResult = applicationConfig.getGlobalPipes();
-        expect(creator.getGlobalMetadata()).toBe(expectedResult);
+        expect(creator.getGlobalMetadata()).toEqual(expectedResult);
+      });
+      it('should append the module pipes of the current module after the global ones', () => {
+        const globalPipe = { transform: () => null };
+        const modulePipe = { transform: () => null };
+        const otherModulePipe = { transform: () => null };
+        applicationConfig.addGlobalPipe(globalPipe as any);
+        applicationConfig.addModulePipe('test', modulePipe as any);
+        applicationConfig.addModulePipe('other', otherModulePipe as any);
+        (creator as any).moduleContext = 'test';
+
+        expect(creator.getGlobalMetadata()).toEqual([globalPipe, modulePipe]);
       });
     });
     describe('otherwise', () => {

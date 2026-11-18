@@ -175,7 +175,21 @@ describe('ExternalExceptionFilterContext', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global filters', () => {
         const expectedResult = applicationConfig.getGlobalFilters();
-        expect(exceptionFilter.getGlobalMetadata()).toBe(expectedResult);
+        expect(exceptionFilter.getGlobalMetadata()).toEqual(expectedResult);
+      });
+      it('should append the module filters of the current module after the global ones', () => {
+        const globalFilter = { catch: () => null };
+        const moduleFilter = { catch: () => null };
+        const otherModuleFilter = { catch: () => null };
+        applicationConfig.addGlobalFilter(globalFilter as any);
+        applicationConfig.addModuleFilter('test', moduleFilter as any);
+        applicationConfig.addModuleFilter('other', otherModuleFilter as any);
+        exceptionFilter['moduleContext'] = 'test';
+
+        expect(exceptionFilter.getGlobalMetadata()).toEqual([
+          globalFilter,
+          moduleFilter,
+        ]);
       });
     });
     describe('otherwise', () => {

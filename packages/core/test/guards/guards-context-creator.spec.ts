@@ -307,7 +307,29 @@ describe('GuardsContextCreator', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global guards', () => {
         const expectedResult = applicationConfig.getGlobalGuards();
-        expect(guardsContextCreator.getGlobalMetadata()).toBe(expectedResult);
+        expect(guardsContextCreator.getGlobalMetadata()).toEqual(
+          expectedResult,
+        );
+      });
+      it('should append the module guards of the current module after the global ones', () => {
+        const globalGuard = { canActivate: () => true };
+        const moduleGuard = { canActivate: () => true };
+        const otherModuleGuard = { canActivate: () => true };
+        applicationConfig.addGlobalGuard(globalGuard as any);
+        applicationConfig.addModuleGuard('test', moduleGuard as any);
+        applicationConfig.addModuleGuard('other', otherModuleGuard as any);
+        guardsContextCreator['moduleContext'] = 'test';
+
+        expect(guardsContextCreator.getGlobalMetadata()).toEqual([
+          globalGuard,
+          moduleGuard,
+        ]);
+      });
+      it('should not include module guards when there is no module context', () => {
+        const moduleGuard = { canActivate: () => true };
+        applicationConfig.addModuleGuard('test', moduleGuard as any);
+
+        expect(guardsContextCreator.getGlobalMetadata()).toEqual([]);
       });
     });
     describe('otherwise', () => {
@@ -331,6 +353,26 @@ describe('GuardsContextCreator', () => {
         expect(guardsContextCreator.getGlobalMetadata({ id: 3 })).toEqual(
           expect.arrayContaining([instance, ...globalGuards]),
         );
+      });
+      it('should include request-scoped module guards of the current module only', () => {
+        const instanceWrapper = new InstanceWrapper();
+        const moduleInstance = 'request-scoped-module-guard';
+        const otherInstanceWrapper = new InstanceWrapper();
+        const otherInstance = 'request-scoped-other-module-guard';
+        applicationConfig.addModuleRequestGuard('test', instanceWrapper);
+        applicationConfig.addModuleRequestGuard('other', otherInstanceWrapper);
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () => ({ instance: moduleInstance }) as any,
+        );
+        vi.spyOn(
+          otherInstanceWrapper,
+          'getInstanceByContextId',
+        ).mockImplementation(() => ({ instance: otherInstance }) as any);
+        guardsContextCreator['moduleContext'] = 'test';
+
+        const result = guardsContextCreator.getGlobalMetadata({ id: 3 });
+        expect(result).toEqual(expect.arrayContaining([moduleInstance]));
+        expect(result).not.toEqual(expect.arrayContaining([otherInstance]));
       });
       it('should throw when a constructed scoped guard has no "canActivate"', () => {
         class AbstractGuard {}
