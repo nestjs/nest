@@ -1,5 +1,5 @@
-export * from './gateway-metadata.interface.js';
-export * from './hooks/index.js';
-export * from './server-and-event-streams-host.interface.js';
-export * from './web-socket-server.interface.js';
-export * from './ws-response.interface.js';
+export type * from './gateway-metadata.interface.js';
+export type * from './hooks/index.js';
+export type * from './server-and-event-streams-host.interface.js';
+export type * from './web-socket-server.interface.js';
+export type * from './ws-response.interface.js';
