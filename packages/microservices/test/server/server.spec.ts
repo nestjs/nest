@@ -1055,6 +1055,26 @@ describe('Server', () => {
     });
   });
 
+  describe('normalizeGracePeriod', () => {
+    it.each([
+      [undefined, 10000],
+      [null, 10000],
+      [NaN, 10000],
+      ['10s', 10000],
+      [{}, 10000],
+      [5000, 5000],
+      ['5000', 5000],
+      [0, 0],
+      ['', 0],
+      [[], 0],
+      [-1, -1],
+      [true, 1],
+      [Infinity, 2 ** 31 - 1],
+    ])('should read %o as %o', (gracePeriod, expected) => {
+      expect(untypedServer.normalizeGracePeriod(gracePeriod)).toBe(expected);
+    });
+  });
+
   describe('runWithProcessingHooks', () => {
     const context = new BaseRpcContext([]);
 

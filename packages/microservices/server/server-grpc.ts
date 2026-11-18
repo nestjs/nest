@@ -16,12 +16,7 @@ import {
   tap,
   throwIfEmpty,
 } from 'rxjs/operators';
-import {
-  DEFAULT_GRACE_PERIOD,
-  GRPC_DEFAULT_PROTO_LOADER,
-  GRPC_DEFAULT_URL,
-  MAX_TIMEOUT,
-} from '../constants.js';
+import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
 import { GrpcMethodStreamingType } from '../decorators/index.js';
 import { GrpcStatus, Transport } from '../enums/index.js';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception.js';
@@ -944,25 +939,12 @@ export class ServerGrpc extends Server<never, never> {
   }
 
   /**
-   * Resolves the bounded shutdown grace period in milliseconds, falling back
-   * to `DEFAULT_GRACE_PERIOD` for invalid values and clamping to `[0, MAX_TIMEOUT]`.
+   * "gracePeriod" as every transport reads it (see "normalizeGracePeriod").
    */
   protected getGracePeriod(): number {
-    const gracePeriod: unknown = this.getOptionsProp(
-      this.options,
-      'gracePeriod',
+    return this.normalizeGracePeriod(
+      this.getOptionsProp(this.options, 'gracePeriod'),
     );
-    if (
-      typeof gracePeriod !== 'number' &&
-      (!isString(gracePeriod) || gracePeriod.trim() === '')
-    ) {
-      return DEFAULT_GRACE_PERIOD;
-    }
-    const parsed = Number(gracePeriod);
-    if (Number.isNaN(parsed)) {
-      return DEFAULT_GRACE_PERIOD;
-    }
-    return Math.min(Math.max(parsed, 0), MAX_TIMEOUT);
   }
 
   public close(): Promise<void> {
@@ -1015,13 +997,13 @@ export class ServerGrpc extends Server<never, never> {
         }
       };
 
-      const abortWithForceShutdown = (message: string, cause: unknown) => {
+      // Not logged, as close() rejects with it
+      const abortWithForceShutdown = (cause: unknown) => {
         if (settled) {
           return;
         }
         settled = true;
         cleanupTimer();
-        this.logger.error(message, cause);
         try {
           grpcClient.forceShutdown();
         } catch (forceErr) {
@@ -1037,10 +1019,7 @@ export class ServerGrpc extends Server<never, never> {
             return;
           }
           if (error) {
-            abortWithForceShutdown(
-              `ServerGrpc (${this.url}) graceful shutdown failed; calling forceShutdown().`,
-              error,
-            );
+            abortWithForceShutdown(error);
             return;
           }
           settled = true;
@@ -1048,14 +1027,11 @@ export class ServerGrpc extends Server<never, never> {
           resolve();
         });
       } catch (syncError) {
-        abortWithForceShutdown(
-          `ServerGrpc (${this.url}) tryShutdown threw synchronously; calling forceShutdown().`,
-          syncError,
-        );
+        abortWithForceShutdown(syncError);
         return;
       }
 
-      // Synchronous mock or fast callback may settle during tryShutdown()
+      // tryShutdown() calls back at once when there is nothing to wait for
       if (!settled) {
         timer = setTimeout(shutdownTimeout, gracePeriod);
       }

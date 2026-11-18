@@ -2998,8 +2998,8 @@ describe('ServerGrpc', () => {
         expect(errorSpy).not.toHaveBeenCalled();
       });
 
-      it.each([undefined, null, '', '   ', NaN, 'invalid', true, [], {}])(
-        'should fall back to DEFAULT_GRACE_PERIOD (10000ms) for invalid gracePeriod: %p',
+      it.each([undefined, null, NaN, 'invalid', {}])(
+        'should fall back to DEFAULT_GRACE_PERIOD (10000ms) when gracePeriod is %o',
         async invalidGracePeriod => {
           vi.useFakeTimers();
           const grpcClient = {
@@ -3045,8 +3045,9 @@ describe('ServerGrpc', () => {
         expect(untypedServer.getGracePeriod()).toBe(2 ** 31 - 1);
       });
 
-      it.each([0, -50])(
-        'should call forceShutdown immediately without tryShutdown when gracePeriod is %s',
+      // A blank string reads as 0, as on the other transports
+      it.each([0, -50, '', '   '])(
+        'should call forceShutdown immediately without tryShutdown when gracePeriod is %o',
         async gracePeriod => {
           const grpcClient = {
             forceShutdown: vi.fn(),
@@ -3086,7 +3087,8 @@ describe('ServerGrpc', () => {
         await expect(closePromise).rejects.toThrow(shutdownError);
         expect(vi.getTimerCount()).toBe(0);
         expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
-        expect(errorSpy).toHaveBeenCalledOnce();
+        // close() rejects with the error, so it is not logged as well
+        expect(errorSpy).not.toHaveBeenCalled();
       });
 
       it('should call forceShutdown and reject when tryShutdown throws synchronously', async () => {
@@ -3108,7 +3110,7 @@ describe('ServerGrpc', () => {
         await expect(server.close()).rejects.toThrow(syncError);
         expect(vi.getTimerCount()).toBe(0);
         expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
-        expect(errorSpy).toHaveBeenCalledOnce();
+        expect(errorSpy).not.toHaveBeenCalled();
       });
 
       it('should coalesce concurrent close calls and preserve a subsequent client', async () => {

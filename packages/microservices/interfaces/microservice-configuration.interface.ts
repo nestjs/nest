@@ -78,14 +78,18 @@ export interface GrpcOptions {
     protoLoader?: string;
     packageDefinition?: any;
     /**
-     * When enabled, closing the server drains active RPCs via `tryShutdown()`
-     * for up to `gracePeriod` milliseconds before calling `forceShutdown()`.
+     * When enabled, closing the server stops accepting calls and waits for
+     * the calls in progress to finish ("tryShutdown()"), for "gracePeriod" at
+     * most, before it cancels those still running ("forceShutdown()").
+     * Applies only to the server.
      * @default false
      */
     gracefulShutdown?: boolean;
     /**
-     * With `gracefulShutdown`, the longest time in milliseconds to wait for
-     * `tryShutdown()` before calling `forceShutdown()`.
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the calls in progress before cancelling those still running. Set it to
+     * 0 to cancel them at once, or to a larger value to wait longer (e.g.,
+     * for long-running streams). Applies only to the server.
      * @default 10000
      */
     gracePeriod?: number;

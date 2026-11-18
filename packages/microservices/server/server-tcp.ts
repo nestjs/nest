@@ -5,7 +5,6 @@ import { isObservable, Observable, of, ReplaySubject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
-  DEFAULT_GRACE_PERIOD,
   ECONNREFUSED,
   MAX_TIMEOUT,
   NO_MESSAGE_HANDLER,
@@ -30,7 +29,7 @@ import {
   TransportId,
 } from '../interfaces/microservice-configuration.interface.js';
 import { Server } from './server.js';
-import { isNil, isUndefined } from '@nestjs/common/internal';
+import { isUndefined } from '@nestjs/common/internal';
 
 const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 
@@ -520,17 +519,11 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   }
 
   /**
-   * "gracePeriod" as "waitForHandlersInFlight" reads it: a value that is not a
-   * number gets the default, a string such as "5000" (e.g. from an environment
-   * variable) is a number, and a longer one than a timer supports is capped.
+   * "gracePeriod" as every transport reads it (see "normalizeGracePeriod").
    */
   protected getGracePeriod(): number {
-    const gracePeriod = this.getOptionsProp(this.options, 'gracePeriod');
-    return Math.min(
-      isNil(gracePeriod) || isNaN(gracePeriod)
-        ? DEFAULT_GRACE_PERIOD
-        : Number(gracePeriod),
-      MAX_TIMEOUT,
+    return this.normalizeGracePeriod(
+      this.getOptionsProp(this.options, 'gracePeriod'),
     );
   }
 
