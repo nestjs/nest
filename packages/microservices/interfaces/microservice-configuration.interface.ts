@@ -77,7 +77,22 @@ export interface GrpcOptions {
     package: string | string[];
     protoLoader?: string;
     packageDefinition?: any;
+    /**
+     * When enabled, closing the server stops accepting calls and waits for
+     * the calls in progress to finish ("tryShutdown()"), for "gracePeriod" at
+     * most, before it cancels those still running ("forceShutdown()").
+     * Applies only to the server.
+     * @default false
+     */
     gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the calls in progress before cancelling those still running. Set it to
+     * 0 to cancel them at once, or to a larger value to wait longer (e.g.,
+     * for long-running streams). Applies only to the server.
+     * @default 10000
+     */
+    gracePeriod?: number;
     /**
      * Maximum number of responses of a streaming call that may wait for a
      * client that is not reading them (default: 1000). A handler's Observable

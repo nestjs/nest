@@ -1,6 +1,7 @@
 import { BadRequestException, type CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
 import { NoFilesInterceptor } from '../../../multipart/interceptors/no-files.interceptor.js';
+import { MultipartError } from '../../../multipart/multipart/multipart.error.js';
 import {
   createContext,
   createFakeRequest,
@@ -77,7 +78,9 @@ describe('NoFilesInterceptor', () => {
           jsonField('b', text(512 * 1024 + 1)),
         ]),
       ).rejects.toEqual(
-        new BadRequestException('JSON field values too large - b'),
+        new BadRequestException('JSON field values too large - b', {
+          cause: new MultipartError('LIMIT_JSON_FIELDS_SIZE', 'b'),
+        }),
       );
     });
 
@@ -93,7 +96,9 @@ describe('NoFilesInterceptor', () => {
           limits,
         }),
       ).rejects.toEqual(
-        new BadRequestException('JSON field values too large - c'),
+        new BadRequestException('JSON field values too large - c', {
+          cause: new MultipartError('LIMIT_JSON_FIELDS_SIZE', 'c'),
+        }),
       );
       expect(
         Object.keys(
@@ -118,7 +123,9 @@ describe('NoFilesInterceptor', () => {
         value = { a: value };
       }
       await expect(parse([jsonField('deep', value)])).rejects.toEqual(
-        new BadRequestException('JSON field values too large - deep'),
+        new BadRequestException('JSON field values too large - deep', {
+          cause: new MultipartError('LIMIT_JSON_FIELDS_SIZE', 'deep'),
+        }),
       );
     });
 
@@ -146,7 +153,9 @@ describe('NoFilesInterceptor', () => {
     const target = new (NoFilesInterceptor())();
     const req = createFakeRequest([file('avatar')]);
     await expect(target.intercept(createContext(req), handler)).rejects.toEqual(
-      new BadRequestException('Unexpected file field - avatar'),
+      new BadRequestException('Unexpected file field - avatar', {
+        cause: new MultipartError('LIMIT_UNEXPECTED_FILE', 'avatar'),
+      }),
     );
   });
 
@@ -161,13 +170,21 @@ describe('NoFilesInterceptor', () => {
         ),
         handler,
       ),
-    ).rejects.toEqual(new BadRequestException('Field value too long - a'));
+    ).rejects.toEqual(
+      new BadRequestException('Field value too long - a', {
+        cause: new MultipartError('LIMIT_FIELD_VALUE', 'a'),
+      }),
+    );
     await expect(
       target.intercept(
         createContext(createFakeRequest([field('abcd', 'x')])),
         handler,
       ),
-    ).rejects.toEqual(new BadRequestException('Field name too long'));
+    ).rejects.toEqual(
+      new BadRequestException('Field name too long', {
+        cause: new MultipartError('LIMIT_FIELD_KEY'),
+      }),
+    );
   });
 
   it("should check text fields in multer's order", async () => {
@@ -182,14 +199,22 @@ describe('NoFilesInterceptor', () => {
         ),
         handler,
       ),
-    ).rejects.toEqual(new BadRequestException('Field value too long - abcd'));
+    ).rejects.toEqual(
+      new BadRequestException('Field value too long - abcd', {
+        cause: new MultipartError('LIMIT_FIELD_VALUE', 'abcd'),
+      }),
+    );
     // The size limit applies to the name as it arrived, before decoding.
     await expect(
       target.intercept(
         createContext(createFakeRequest([field('a%22', 'x')])),
         handler,
       ),
-    ).rejects.toEqual(new BadRequestException('Field name too long'));
+    ).rejects.toEqual(
+      new BadRequestException('Field name too long', {
+        cause: new MultipartError('LIMIT_FIELD_KEY'),
+      }),
+    );
   });
 
   const intercept = (target: any, fieldname: string) => {
@@ -203,7 +228,9 @@ describe('NoFilesInterceptor', () => {
     }))();
     expect(await intercept(target, 'a[b]')).toEqual({ a: { b: 'x' } });
     await expect(intercept(target, 'a[b][c]')).rejects.toEqual(
-      new BadRequestException('Field name nesting too deep - a[b][c]'),
+      new BadRequestException('Field name nesting too deep - a[b][c]', {
+        cause: new MultipartError('LIMIT_FIELD_NESTING', 'a[b][c]'),
+      }),
     );
   });
 
@@ -213,10 +240,14 @@ describe('NoFilesInterceptor', () => {
     }))();
     expect(await intercept(target, 'a')).toEqual({ a: 'x' });
     await expect(intercept(target, 'a[b]')).rejects.toEqual(
-      new BadRequestException('Field name nesting too deep - a[b]'),
+      new BadRequestException('Field name nesting too deep - a[b]', {
+        cause: new MultipartError('LIMIT_FIELD_NESTING', 'a[b]'),
+      }),
     );
     await expect(intercept(target, 'a[]')).rejects.toEqual(
-      new BadRequestException('Field name nesting too deep - a[]'),
+      new BadRequestException('Field name nesting too deep - a[]', {
+        cause: new MultipartError('LIMIT_FIELD_NESTING', 'a[]'),
+      }),
     );
   });
 
@@ -227,7 +258,9 @@ describe('NoFilesInterceptor', () => {
     expect(await intercept(target, 'a[2]')).toEqual({ a: ['x'] });
     for (const name of ['a[3]', 'a[b][3]', 'a[3][b]', 'a[0][3]', 'a[3][]']) {
       await expect(intercept(target, name)).rejects.toEqual(
-        new BadRequestException(`Field name array index too large - ${name}`),
+        new BadRequestException(`Field name array index too large - ${name}`, {
+          cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', name),
+        }),
       );
     }
   });
@@ -238,7 +271,9 @@ describe('NoFilesInterceptor', () => {
     }))();
     expect(await intercept(target, 'a[0]')).toEqual({ a: ['x'] });
     await expect(intercept(target, 'a[1]')).rejects.toEqual(
-      new BadRequestException('Field name array index too large - a[1]'),
+      new BadRequestException('Field name array index too large - a[1]', {
+        cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', 'a[1]'),
+      }),
     );
   });
 
@@ -266,7 +301,9 @@ describe('NoFilesInterceptor', () => {
     );
     const name = 'a' + '[b]'.repeat(33);
     await expect(intercept(target, name)).rejects.toEqual(
-      new BadRequestException(`Field name nesting too deep - ${name}`),
+      new BadRequestException(`Field name nesting too deep - ${name}`, {
+        cause: new MultipartError('LIMIT_FIELD_NESTING', name),
+      }),
     );
   });
 
@@ -274,14 +311,18 @@ describe('NoFilesInterceptor', () => {
     const target = new (NoFilesInterceptor())();
     expect((await intercept(target, 'a[1000]')).a).toEqual(['x']);
     await expect(intercept(target, 'a[1001]')).rejects.toEqual(
-      new BadRequestException('Field name array index too large - a[1001]'),
+      new BadRequestException('Field name array index too large - a[1001]', {
+        cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', 'a[1001]'),
+      }),
     );
   });
 
   it('should apply the default field name limits to limits resolved per request', async () => {
     const target = new (NoFilesInterceptor({ limits: () => ({}) }))();
     await expect(intercept(target, 'a[1001]')).rejects.toEqual(
-      new BadRequestException('Field name array index too large - a[1001]'),
+      new BadRequestException('Field name array index too large - a[1001]', {
+        cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', 'a[1001]'),
+      }),
     );
   });
 
@@ -307,15 +348,21 @@ describe('NoFilesInterceptor', () => {
     }))();
     // Too long, too deep and over the index limit: the size is reported.
     await expect(intercept(target, 'a[b][c][9]x')).rejects.toEqual(
-      new BadRequestException('Field name too long'),
+      new BadRequestException('Field name too long', {
+        cause: new MultipartError('LIMIT_FIELD_KEY'),
+      }),
     );
     // Too deep and over the index limit: the depth is reported.
     await expect(intercept(target, 'a[b][9]')).rejects.toEqual(
-      new BadRequestException('Field name nesting too deep - a[b][9]'),
+      new BadRequestException('Field name nesting too deep - a[b][9]', {
+        cause: new MultipartError('LIMIT_FIELD_NESTING', 'a[b][9]'),
+      }),
     );
     // The depth and the index are checked on the decoded name.
     await expect(intercept(target, 'a%22[9]')).rejects.toEqual(
-      new BadRequestException('Field name array index too large - a"[9]'),
+      new BadRequestException('Field name array index too large - a"[9]', {
+        cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', 'a"[9]'),
+      }),
     );
   });
 
@@ -324,7 +371,9 @@ describe('NoFilesInterceptor', () => {
       limits: () => ({ fieldNestingDepth: 0, fieldArrayIndexLimit: 0 }),
     }))();
     await expect(intercept(target, 'a[b]')).rejects.toEqual(
-      new BadRequestException('Field name nesting too deep - a[b]'),
+      new BadRequestException('Field name nesting too deep - a[b]', {
+        cause: new MultipartError('LIMIT_FIELD_NESTING', 'a[b]'),
+      }),
     );
   });
 
@@ -344,14 +393,20 @@ describe('NoFilesInterceptor', () => {
     const nameless = { ...file('x', '', ''), fieldname: undefined as any };
     await expect(
       target.intercept(createContext(createFakeRequest([nameless])), handler),
-    ).rejects.toEqual(new BadRequestException('Field name missing'));
+    ).rejects.toEqual(
+      new BadRequestException('Field name missing', {
+        cause: new MultipartError('MISSING_FIELD_NAME'),
+      }),
+    );
   });
 
   it('should reject names that would pollute a prototype', async () => {
     const target = new (NoFilesInterceptor())();
     const req = createFakeRequest([field('__proto__[x]', '1')]);
     await expect(target.intercept(createContext(req), handler)).rejects.toEqual(
-      new BadRequestException('Invalid field name - __proto__[x]'),
+      new BadRequestException('Invalid field name - __proto__[x]', {
+        cause: new MultipartError('INVALID_FIELD_NAME', '__proto__[x]'),
+      }),
     );
     expect(({} as any).x).toBeUndefined();
   });
