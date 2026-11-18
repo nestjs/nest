@@ -51,6 +51,30 @@ describe('ConfigurableModuleBuilder', () => {
         'folder: forRootAsync',
       );
     });
+
+    it.each([undefined, null, 42])(
+      'should pass %s options through when setExtras is configured',
+      input => {
+        const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
+          new ConfigurableModuleBuilder()
+            .setExtras(
+              { isGlobal: false },
+              (definition, extras: { isGlobal: boolean }) => ({
+                ...definition,
+                global: extras.isGlobal,
+              }),
+            )
+            .build();
+
+        const definition = ConfigurableModuleClass.register(input as any);
+
+        expect(definition.global).toBe(false);
+        expect(definition.providers).toContainEqual({
+          provide: MODULE_OPTIONS_TOKEN,
+          useValue: input,
+        });
+      },
+    );
   });
   describe('setClassMethodName', () => {
     it('should set static class method name and return typed builder', () => {
