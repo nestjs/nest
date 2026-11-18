@@ -158,7 +158,9 @@ from the main (upstream) repository:
 
 ## <a name="development"></a> Development Setup
 
-You will need [Node.js](https://nodejs.org) version >= 20.
+You will need [Node.js](https://nodejs.org) version `^22.12.0`, `^24.0.0` or `>= 26` (the
+versions supported by the test runner). On older versions, such as Node.js 20, the development
+dependencies do not install correctly and the unit tests cannot run.
 
 1. After cloning the repo, run:
 
