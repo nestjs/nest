@@ -77,7 +77,18 @@ export interface GrpcOptions {
     package: string | string[];
     protoLoader?: string;
     packageDefinition?: any;
+    /**
+     * When enabled, closing the server drains active RPCs via `tryShutdown()`
+     * for up to `gracePeriod` milliseconds before calling `forceShutdown()`.
+     * @default false
+     */
     gracefulShutdown?: boolean;
+    /**
+     * With `gracefulShutdown`, the longest time in milliseconds to wait for
+     * `tryShutdown()` before calling `forceShutdown()`.
+     * @default 10000
+     */
+    gracePeriod?: number;
     /**
      * Maximum number of responses of a streaming call that may wait for a
      * client that is not reading them (default: 1000). A handler's Observable
