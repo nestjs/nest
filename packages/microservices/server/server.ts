@@ -427,15 +427,7 @@ export abstract class Server<
     if (this.handlersInFlight === 0) {
       return Promise.resolve();
     }
-    // A value that is not a number (NaN, "10s") gets the default period
-    // rather than none, and a longer one than setTimeout() supports (e.g.
-    // Infinity, to wait until the handlers are done) is capped
-    const timeout = Math.min(
-      isNil(gracePeriod) || isNaN(gracePeriod)
-        ? DEFAULT_GRACE_PERIOD
-        : gracePeriod,
-      MAX_TIMEOUT,
-    );
+    const timeout = this.normalizeGracePeriod(gracePeriod);
     return new Promise<void>(resolve => {
       const stopWaiting = () => {
         clearTimeout(timer);
@@ -445,6 +437,22 @@ export abstract class Server<
       const timer = setTimeout(stopWaiting, timeout);
       this.handlersInFlightListeners.add(stopWaiting);
     });
+  }
+
+  /**
+   * Reads `gracePeriod` the same way for every transport: a value that is not
+   * a number (NaN, "10s") gets the default period rather than none, a string
+   * such as "5000" (e.g. from an environment variable) is a number, and a
+   * longer one than a timer supports (e.g. Infinity, to wait until the
+   * handlers are done) is capped.
+   */
+  protected normalizeGracePeriod(gracePeriod: unknown): number {
+    return Math.min(
+      isNil(gracePeriod) || isNaN(gracePeriod as number)
+        ? DEFAULT_GRACE_PERIOD
+        : Number(gracePeriod),
+      MAX_TIMEOUT,
+    );
   }
 
   /**

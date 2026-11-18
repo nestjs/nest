@@ -66,23 +66,31 @@ export function transformException(
     error = new MultipartError(
       fastifyMultipartErrorCodes[error.code],
       error.part?.fieldname,
+      { cause: error },
     );
   }
+  // Keep the error as the cause, as platform-express does, so that an
+  // exception filter can read its code and field. A `@fastify/multipart`
+  // limit error is reported as the `MultipartError` above, with the multer
+  // code, which keeps the plugin's error as its own cause.
+  const options = { cause: error };
   if (error instanceof MultipartError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return new PayloadTooLargeException(error.message);
+      return new PayloadTooLargeException(error.message, options);
     }
     return new BadRequestException(
       error.field ? `${error.message} - ${error.field}` : error.message,
+      options,
     );
   }
   if (error.code && fastifyMultipartBadRequestCodes.includes(error.code)) {
-    return new BadRequestException(error.message);
+    return new BadRequestException(error.message, options);
   }
   const message = error.message ?? '';
   if (message === fastifyBusboyMessages.BOUNDARY_NOT_FOUND) {
     return new BadRequestException(
       busboyExceptions.MULTIPART_BOUNDARY_NOT_FOUND,
+      options,
     );
   }
   if (
@@ -91,6 +99,7 @@ export function transformException(
   ) {
     return new BadRequestException(
       busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FORM,
+      options,
     );
   }
   return error;
