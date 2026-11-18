@@ -4,6 +4,7 @@ import { adapters, createApp } from '../src/adapters.js';
 import {
   RootCatchAllModule,
   RootOptionalGroupModule,
+  RouterModuleOptionalGroupModule,
   WildcardsModule,
 } from '../src/wildcards/wildcards.module.js';
 
@@ -133,6 +134,23 @@ describe.each(adapters('express', 'node'))(
         expect(withLocale.body).toEqual({ locale: 'en' });
         expect(withLocale.headers['x-middleware']).toBe('ran');
         expect(doubleSlash.status).toBe(404);
+      });
+    });
+
+    describe('an optional group as the path of a RouterModule route', () => {
+      beforeEach(async () => {
+        app = await createApp(name, RouterModuleOptionalGroupModule);
+      });
+
+      it('should match the routes of the module with and without the group', async () => {
+        expect((await get('/cats')).body).toEqual({ lang: null });
+        expect((await get('/en/cats')).body).toEqual({ lang: 'en' });
+        expect((await get('//cats')).status).toBe(404);
+      });
+
+      it('should match the routes of a child module with and without the group', async () => {
+        expect((await get('/v1/dogs')).body).toEqual({ lang: null });
+        expect((await get('/v1/en/dogs')).body).toEqual({ lang: 'en' });
       });
     });
   },
