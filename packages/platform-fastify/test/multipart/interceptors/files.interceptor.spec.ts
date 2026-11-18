@@ -1,6 +1,7 @@
 import { BadRequestException, type CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
 import { FilesInterceptor } from '../../../multipart/interceptors/files.interceptor.js';
+import { MultipartError } from '../../../multipart/multipart/multipart.error.js';
 import { createContext, createFakeRequest, file } from '../fake-request.js';
 
 describe('FilesInterceptor', () => {
@@ -35,7 +36,9 @@ describe('FilesInterceptor', () => {
     const req = createFakeRequest([file('docs'), file('docs')]);
 
     await expect(target.intercept(createContext(req), handler)).rejects.toEqual(
-      new BadRequestException('Unexpected file field - docs'),
+      new BadRequestException('Unexpected file field - docs', {
+        cause: new MultipartError('LIMIT_UNEXPECTED_FILE', 'docs'),
+      }),
     );
     expect(storage._removeFile).toHaveBeenCalledTimes(1);
     expect(req.raw.unpipe).toHaveBeenCalled();

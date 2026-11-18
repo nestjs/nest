@@ -53,6 +53,9 @@ export class DefaultValuePipe<T = any, R = any> implements PipeTransform<
       isArray ? [] : Object.create(Object.getPrototypeOf(value)),
       value,
     );
+    if (isArray) {
+      copy.length = value.length;
+    }
     copies.set(value, copy);
     for (const key of Reflect.ownKeys(copy)) {
       copy[key] = this.copyDefaultValue(copy[key], copies);

@@ -1,2 +1,2 @@
-export * from './controller-metadata.interface.js';
-export * from './controller.interface.js';
+export type * from './controller-metadata.interface.js';
+export type * from './controller.interface.js';
