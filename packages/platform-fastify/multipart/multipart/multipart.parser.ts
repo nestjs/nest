@@ -715,7 +715,9 @@ export async function processStream(
       // as the chunk at hand goes before the part reaches this loop.
       const rejectFile = () =>
         stream.destroy(
-          new PayloadTooLargeException(multerExceptions.LIMIT_FILE_SIZE),
+          new PayloadTooLargeException(multerExceptions.LIMIT_FILE_SIZE, {
+            cause: new MultipartError('LIMIT_FILE_SIZE', part.fieldname),
+          }),
         );
       if (stream.truncated) {
         rejectFile();
