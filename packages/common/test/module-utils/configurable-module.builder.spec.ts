@@ -53,7 +53,7 @@ describe('ConfigurableModuleBuilder', () => {
     });
 
     it.each([undefined, null, 42])(
-      'should preserve %p options without throwing when setExtras is configured',
+      'should pass %s options through when setExtras is configured',
       input => {
         const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
           new ConfigurableModuleBuilder()
