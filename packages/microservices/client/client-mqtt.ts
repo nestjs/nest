@@ -52,11 +52,14 @@ type MqttClient = any;
 export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
+  // The reply channels whose subscription MQTT has not acknowledged yet
+  protected readonly pendingSubscriptions = new Set<string>();
   protected readonly url: string;
   /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
   protected mqttClient: MqttClient | null = null;
   protected connectionPromise: Promise<any> | null = null;
   private closeCount = 0;
+  private closeEpoch = 0;
   protected isInitialConnection = false;
   protected isReconnecting = false;
   protected pendingEventListeners: Array<{
@@ -94,11 +97,13 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       this.connectionPromise = null;
       this.isInitialConnection = false;
       this.subscriptionsCount.clear();
+      this.pendingSubscriptions.clear();
       this.pendingEventListeners = [];
     }
   }
 
   public handleClose() {
+    this.closeEpoch++;
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
       const callbacks = [...this.routingMap.values()];
@@ -114,6 +119,8 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         }
       }
     }
+    this.subscriptionsCount.clear();
+    this.pendingSubscriptions.clear();
   }
 
   public async connect(): Promise<any> {
@@ -189,6 +196,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     // the reply channels again
     this.isInitialConnection = false;
     this.subscriptionsCount.clear();
+    this.pendingSubscriptions.clear();
   }
 
   public mergeCloseEvent<T = any>(
@@ -384,11 +392,11 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         this.routingMap.delete(packet.id);
       };
 
+      const publishEpoch = this.closeEpoch;
       const publishPacket = () => {
-        if (!isCounted) {
+        if (!isCounted || publishEpoch !== this.closeEpoch) {
           return;
         }
-        this.routingMap.set(packet.id, callback);
 
         try {
           const options =
@@ -405,7 +413,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
             serializedPacket,
             this.mergePacketOptions(options, metadata),
             (err?: Error) => {
-              if (err && isCounted) {
+              if (err && isCounted && publishEpoch === this.closeEpoch) {
                 undoBookkeeping();
                 callback({ err });
               }
@@ -430,12 +438,23 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         this.routingMap.delete(packet.id);
       };
 
-      if (subscriptionsCount <= 0) {
+      // Register before subscribing so handleClose() can evict pre-SUBACK callers
+      this.routingMap.set(packet.id, callback);
+
+      if (
+        subscriptionsCount <= 0 ||
+        this.pendingSubscriptions.has(responseChannel)
+      ) {
+        this.pendingSubscriptions.add(responseChannel);
         this.mqttClient!.subscribe(responseChannel, (err: any) => {
+          if (!isCounted || publishEpoch !== this.closeEpoch) {
+            return;
+          }
           if (err) {
             undoBookkeeping();
             return callback({ err });
           }
+          this.pendingSubscriptions.delete(responseChannel);
           publishPacket();
         });
       } else {
@@ -473,11 +492,14 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   }
 
   protected unsubscribeFromChannel(channel: string) {
-    const subscriptionCount = this.subscriptionsCount.get(channel)!;
+    const subscriptionCount = this.subscriptionsCount.get(channel);
+    if (subscriptionCount === undefined) {
+      return;
+    }
     this.setSubscriptionsCount(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
-      this.mqttClient!.unsubscribe(channel);
+      this.mqttClient?.unsubscribe(channel);
     }
   }
 
@@ -491,6 +513,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       this.subscriptionsCount.set(channel, count);
     } else {
       this.subscriptionsCount.delete(channel);
+      this.pendingSubscriptions.delete(channel);
     }
   }
 

@@ -281,6 +281,31 @@ describe('ClientRedis', () => {
         expect(client['pendingSubscriptions'].size).toBe(0);
         expect(publishSpy).not.toHaveBeenCalled();
       });
+
+      it('should fail pre-SUBACK callers once on handleClose and ignore late subscribe errors or cleared subClient', () => {
+        const callbacks: Array<(err?: Error) => void> = [];
+        subscribeSpy.mockImplementation((_name, fn) => {
+          callbacks.push((err?: Error) => fn(err));
+        });
+
+        const cb = vi.fn();
+        const dispose = client['publish'](msg, cb);
+
+        client.handleClose();
+        expect(cb).toHaveBeenCalledExactlyOnceWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(client['pendingSubscriptions'].size).toBe(0);
+
+        // Simulate RxJS teardown after close() cleared subClient
+        untypedClient.subClient = null;
+        expect(() => dispose()).not.toThrow();
+
+        // Late subscribe failure must not double-invoke callback or publish
+        callbacks[0](new Error('late sub failure'));
+        expect(cb).toHaveBeenCalledOnce();
+        expect(publishSpy).not.toHaveBeenCalled();
+      });
     });
     describe('dispose callback', () => {
       let assignStub: ReturnType<typeof vi.fn>,

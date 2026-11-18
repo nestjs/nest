@@ -240,6 +240,45 @@ describe('ClientMqtt', () => {
         expect(publishSpy).toHaveBeenCalledTimes(2);
         expect(client['subscriptionsCount'].get(`${pattern}/reply`)).toBe(1);
       });
+
+      it('should wait for pendingSubscriptions and fail pre-SUBACK callers on handleClose without throwing on cleared client', () => {
+        let seq = 0;
+        assignStub.mockImplementation(packet =>
+          Object.assign(packet as object, { id: `id-${++seq}` }),
+        );
+        const confirmations: Array<(err?: Error) => void> = [];
+        subscribeSpy.mockImplementation((_name, fn) => {
+          confirmations.push((err?: Error) => fn(err));
+        });
+
+        const cb1 = vi.fn();
+        const cb2 = vi.fn();
+        const dispose1 = client['publish']({ ...msg }, cb1);
+        client['publish']({ ...msg }, cb2);
+
+        expect(subscribeSpy).toHaveBeenCalledTimes(2);
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['pendingSubscriptions'].has(`${pattern}/reply`)).toBe(
+          true,
+        );
+
+        client.handleClose();
+        expect(cb1).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(cb2).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(client['pendingSubscriptions'].size).toBe(0);
+
+        untypedClient.mqttClient = null;
+        expect(() => dispose1()).not.toThrow();
+
+        confirmations.forEach(confirm => confirm(new Error('late suback')));
+        expect(cb1).toHaveBeenCalledOnce();
+        expect(cb2).toHaveBeenCalledOnce();
+        expect(publishSpy).not.toHaveBeenCalled();
+      });
     });
     describe('dispose callback', () => {
       let getResponsePatternStub: ReturnType<typeof vi.fn>;
