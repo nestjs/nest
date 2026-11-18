@@ -313,22 +313,15 @@ export class RouterExplorer {
     const routerMethodRef = this.routerMethodFactory
       .get(router, route.method)
       .bind(router);
-    const rawPath = route.rawPath ?? route.path;
-    const handlerName =
-      typeof route.instanceWrapper?.name === 'string' &&
-      route.instanceWrapper.name.length > 0 &&
-      route.methodName
-        ? `${route.instanceWrapper.name}.${route.methodName}`
-        : undefined;
 
     this.registerHandlerOnRouter(
       routerMethodRef,
       route.method,
       route.path,
-      rawPath,
+      route.rawPath ?? route.path,
       route.targetCallback,
       route.handler,
-      handlerName,
+      `${route.instanceWrapper.name}.${route.methodName}`,
     );
   }
 
@@ -339,12 +332,12 @@ export class RouterExplorer {
     rawPath: string,
     targetCallback: RouterProxyCallback,
     baseHandler: Function,
-    handlerName?: string,
+    handlerName: string,
   ): void {
     this.copyMetadataToCallback(targetCallback, baseHandler);
 
     const httpAdapter = this.container.getHttpAdapterRef();
-    const onRouteTriggered = httpAdapter?.getOnRouteTriggered?.();
+    const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
     let handler = baseHandler;
     if (onRouteTriggered) {
       // Adapters read route options (e.g. the version) from the handler
@@ -354,12 +347,10 @@ export class RouterExplorer {
       }, baseHandler);
       this.copyMetadataToCallback(targetCallback, handler);
     }
-    if (handlerName) {
-      Object.defineProperty(handler, 'name', {
-        configurable: true,
-        value: handlerName,
-      });
-    }
+    Object.defineProperty(handler, 'name', {
+      configurable: true,
+      value: handlerName,
+    });
     routerMethodRef(normalizedPath, handler);
   }
 

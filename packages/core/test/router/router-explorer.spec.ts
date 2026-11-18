@@ -280,6 +280,7 @@ describe('RouterExplorer', () => {
         handler,
         targetCallback: instance.getTest,
         methodName: 'getTest',
+        instanceWrapper: { name: TestRoute.name },
       }) as any;
 
     it('should register a route-triggered wrapper with the route metadata and version', async () => {
@@ -307,7 +308,7 @@ describe('RouterExplorer', () => {
       expect(routeHandler).toHaveBeenCalledWith('req', 'res');
     });
 
-    it('should assign handler.name and preserve rawPath when instanceWrapper is provided with onRouteTriggered', async () => {
+    it('should name the route-triggered wrapper and report the raw path', async () => {
       const get = vi.fn();
       const onRouteTriggered = vi.fn();
       const instance = new TestRoute();
@@ -320,7 +321,6 @@ describe('RouterExplorer', () => {
           ...createResolvedRoute(instance, routeHandler),
           path: '/global/normalized',
           rawPath: '/global/raw',
-          instanceWrapper: { name: TestRoute.name },
         } as any,
       );
 
@@ -340,27 +340,7 @@ describe('RouterExplorer', () => {
       );
     });
 
-    it('should copy metadata and assign handler.name on the non-onRouteTriggered branch', () => {
-      const get = vi.fn();
-      const instance = new TestRoute();
-      const routeHandler = Object.assign(vi.fn(), { version: '1' });
-      container.setHttpAdapter({});
-
-      routerBuilder.registerResolvedRoute(
-        { get } as any,
-        {
-          ...createResolvedRoute(instance, routeHandler),
-          instanceWrapper: { name: TestRoute.name },
-        } as any,
-      );
-
-      const handler = get.mock.calls[0][1];
-      expect(handler).toBe(routeHandler);
-      expect(handler.name).toBe('TestRoute.getTest');
-      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
-    });
-
-    it('should handle omitted instanceWrapper gracefully on the non-onRouteTriggered branch', () => {
+    it('should name the handler when no route triggered hook is set', () => {
       const get = vi.fn();
       const instance = new TestRoute();
       const routeHandler = vi.fn();
@@ -373,7 +353,7 @@ describe('RouterExplorer', () => {
 
       const handler = get.mock.calls[0][1];
       expect(handler).toBe(routeHandler);
-      expect(handler.name).not.toBe('undefined.getTest');
+      expect(handler.name).toBe('TestRoute.getTest');
       expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
     });
   });
