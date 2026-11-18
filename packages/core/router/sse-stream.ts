@@ -217,26 +217,25 @@ export class SseStream extends Transform {
     message: MessageEvent,
     cb: (error: Error | null | undefined) => void,
   ) {
-    let event = message;
-    if (isNil(message.id) && !isCommentOnly(message)) {
-      this.lastEventId!++;
-      // The generated id goes on a copy: the message can be the handler's own
-      // object, emitted more than once or frozen. Fields are copied one by one,
-      // as a spread would drop the getters of an event implemented as a class.
-      event = {
-        type: message.type,
-        id: this.lastEventId!.toString(),
-        retry: message.retry,
-        comment: message.comment,
-        data: message.data,
-      };
-    }
-
-    // Formatted before writing: a throw inside _transform would leave the
-    // stream stuck mid-write, while an error passed to the callback lets the
-    // caller report it and end the response.
+    // Reading event fields can throw too. Prepare the entire chunk before
+    // writing and report any failure through the callback.
     let chunk: string;
     try {
+      let event = message;
+      if (isNil(message.id) && !isCommentOnly(message)) {
+        this.lastEventId!++;
+        // The generated id goes on a copy: the message can be the handler's own
+        // object, emitted more than once or frozen. Fields are copied one by one,
+        // as a spread would drop the getters of an event implemented as a class.
+        event = {
+          type: message.type,
+          id: this.lastEventId!.toString(),
+          retry: message.retry,
+          comment: message.comment,
+          data: message.data,
+        };
+      }
+
       chunk = formatMessage(event);
     } catch (err) {
       process.nextTick(cb, err as Error);

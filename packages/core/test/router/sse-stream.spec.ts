@@ -235,6 +235,30 @@ data: hello
     expect(sink.content).toBe(['', 'id: 1', 'data: after', '', ''].join('\n'));
   });
 
+  it.each(['id', 'type', 'retry', 'comment', 'data'])(
+    'passes a throwing %s getter to the callback and keeps writing',
+    async field => {
+      const sse = new SseStream();
+      const sink = new Sink();
+      sse.pipe(sink);
+      const expectedError = new Error(`Cannot read ${field}`);
+      const message = Object.defineProperty({}, field, {
+        get() {
+          throw expectedError;
+        },
+      });
+
+      const error = await new Promise<Error | null | undefined>(resolve =>
+        sse.writeMessage(message, resolve),
+      );
+      sse.writeMessage({ data: 'after' }, noop);
+      sse.end();
+      await written(sink);
+
+      expect(error).toBe(expectedError);
+      expect(sink.content).toContain('data: after\n\n');
+    },
+  );
   it('does not write headers eagerly in pipe()', () => {
     const sse = new SseStream();
     let writeHeadCalled = false;
