@@ -89,14 +89,7 @@ describe('FastifyAdapter async lifecycle hooks', () => {
     expect(responseHook).toHaveBeenCalledOnce();
   });
 
-  it('adds no onResponse hook to the routes until one is set', async () => {
-    await adapter.getInstance().ready();
-    expect(
-      adapter.getInstance().printRoutes({ includeHooks: true }),
-    ).not.toContain('onResponse');
-  });
-
-  it('adds the onResponse hook once and runs the last one set', async () => {
+  it('runs the last onResponse hook set, from a single hook', async () => {
     const replaced = vi.fn((_request, _reply, done) => done());
     const responseHook = vi.fn((_request, _reply, done) => done());
     adapter.setOnResponseHook(replaced);
@@ -111,6 +104,15 @@ describe('FastifyAdapter async lifecycle hooks', () => {
         .printRoutes({ includeHooks: true })
         .match(/onResponse/g),
     ).toHaveLength(2); // GET and its implicit HEAD route
+  });
+
+  it('accepts an onResponse hook set once the instance is ready', async () => {
+    await adapter.getInstance().ready();
+    const responseHook = vi.fn((_request, _reply, done) => done());
+    adapter.setOnResponseHook(responseHook);
+    expect((await adapter.getInstance().inject('/test')).statusCode).toBe(200);
+    await new Promise(resolve => setImmediate(resolve));
+    expect(responseHook).toHaveBeenCalledOnce();
   });
 
   it('does not reach the route when an onRequest hook fails', async () => {

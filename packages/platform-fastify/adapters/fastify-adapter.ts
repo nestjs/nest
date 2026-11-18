@@ -343,7 +343,6 @@ export class FastifyAdapter<
     reply: TReply,
     done: (err?: Error) => void,
   ) => void;
-  private isOnResponseHookRegistered = false;
   private isMiddieRegistered: boolean;
   private multipartMode: 'auto' | 'eager' | 'off' = 'auto';
   private multipartOptions: FastifyMultipartOptions = {};
@@ -531,6 +530,19 @@ export class FastifyAdapter<
         this.runRequestSteps(request as TRequest, reply as TReply, done);
       }
     });
+
+    this.instance.addHook('onResponse', (request, reply, done) => {
+      if (this.onResponseHook) {
+        this.runLifecycleHook(
+          this.onResponseHook,
+          request as TRequest,
+          reply as TReply,
+          done,
+        );
+      } else {
+        done();
+      }
+    });
   }
 
   /**
@@ -675,23 +687,6 @@ export class FastifyAdapter<
       done: (err?: Error) => void,
     ) => void | Promise<void>,
   ) {
-    // Added on first use: a route with an `onResponse` hook makes Fastify
-    // time and watch every response, even when the hook has nothing to run
-    if (!this.isOnResponseHookRegistered) {
-      this.instance.addHook('onResponse', (request, reply, done) => {
-        if (this.onResponseHook) {
-          this.runLifecycleHook(
-            this.onResponseHook,
-            request as TRequest,
-            reply as TReply,
-            done,
-          );
-        } else {
-          done();
-        }
-      });
-      this.isOnResponseHookRegistered = true;
-    }
     this.onResponseHook = hook;
   }
 
