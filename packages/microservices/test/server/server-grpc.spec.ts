@@ -2913,6 +2913,243 @@ describe('ServerGrpc', () => {
 
       expect(untypedServer.grpcClient).toBeNull();
     });
+
+    describe('bounded gracePeriod shutdown', () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should clear timer and resolve when tryShutdown completes before gracePeriod', async () => {
+        vi.useFakeTimers();
+        let capturedCb: ((err?: Error) => void) | undefined;
+        const grpcClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn((cb: (err?: Error) => void) => {
+            capturedCb = cb;
+          }),
+        };
+        untypedServer.grpcClient = grpcClient;
+        untypedServer.options.gracefulShutdown = true;
+        untypedServer.options.gracePeriod = 500;
+
+        const closePromise = server.close();
+        expect(vi.getTimerCount()).toBe(1);
+
+        capturedCb!();
+        await closePromise;
+
+        expect(vi.getTimerCount()).toBe(0);
+        expect(grpcClient.forceShutdown).not.toHaveBeenCalled();
+        expect(untypedServer.grpcClient).toBeNull();
+      });
+
+      it('should not leak a timer when tryShutdown invokes its callback synchronously', async () => {
+        vi.useFakeTimers();
+        const grpcClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn((cb: () => void) => cb()),
+        };
+        untypedServer.grpcClient = grpcClient;
+        untypedServer.options.gracefulShutdown = true;
+        untypedServer.options.gracePeriod = 500;
+
+        await server.close();
+
+        expect(vi.getTimerCount()).toBe(0);
+        expect(grpcClient.forceShutdown).not.toHaveBeenCalled();
+      });
+
+      it('should warn, call forceShutdown, resolve on timeout, and ignore late callbacks', async () => {
+        vi.useFakeTimers();
+        let capturedCb: ((err?: Error) => void) | undefined;
+        const grpcClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn((cb: (err?: Error) => void) => {
+            capturedCb = cb;
+          }),
+        };
+        const logger = new NoopLogger();
+        const warnSpy = vi.spyOn(logger, 'warn');
+        const errorSpy = vi.spyOn(logger, 'error');
+        untypedServer.logger = logger;
+        untypedServer.grpcClient = grpcClient;
+        untypedServer.options.gracefulShutdown = true;
+        untypedServer.options.gracePeriod = 500;
+
+        let settled = false;
+        const closePromise = server.close().then(() => {
+          settled = true;
+        });
+
+        await vi.advanceTimersByTimeAsync(499);
+        expect(settled).toBe(false);
+        expect(grpcClient.forceShutdown).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        await closePromise;
+
+        expect(settled).toBe(true);
+        expect(warnSpy).toHaveBeenCalledOnce();
+        expect(warnSpy.mock.calls[0][0]).toContain('500ms');
+        expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+
+        capturedCb!(new Error('late error'));
+        expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+
+      it.each([undefined, null, NaN, 'invalid', {}])(
+        'should fall back to DEFAULT_GRACE_PERIOD (10000ms) when gracePeriod is %o',
+        async invalidGracePeriod => {
+          vi.useFakeTimers();
+          const grpcClient = {
+            forceShutdown: vi.fn(),
+            tryShutdown: vi.fn(),
+          };
+          untypedServer.logger = new NoopLogger();
+          untypedServer.grpcClient = grpcClient;
+          untypedServer.options.gracefulShutdown = true;
+          untypedServer.options.gracePeriod = invalidGracePeriod as any;
+
+          const closePromise = server.close();
+
+          await vi.advanceTimersByTimeAsync(9999);
+          expect(grpcClient.forceShutdown).not.toHaveBeenCalled();
+
+          await vi.advanceTimersByTimeAsync(1);
+          await closePromise;
+          expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+        },
+      );
+
+      it('should coerce numeric string gracePeriod and cap values above MAX_TIMEOUT', async () => {
+        vi.useFakeTimers();
+        const grpcClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn(),
+        };
+        untypedServer.logger = new NoopLogger();
+        untypedServer.grpcClient = grpcClient;
+        untypedServer.options.gracefulShutdown = true;
+        untypedServer.options.gracePeriod = '250' as any;
+
+        const closePromise = server.close();
+        await vi.advanceTimersByTimeAsync(249);
+        expect(grpcClient.forceShutdown).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+        await closePromise;
+        expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+
+        expect(untypedServer.getGracePeriod()).toBe(250);
+        untypedServer.options.gracePeriod = Infinity;
+        expect(untypedServer.getGracePeriod()).toBe(2 ** 31 - 1);
+      });
+
+      // A blank string reads as 0, as on the other transports
+      it.each([0, -50, '', '   '])(
+        'should call forceShutdown immediately without tryShutdown when gracePeriod is %o',
+        async gracePeriod => {
+          const grpcClient = {
+            forceShutdown: vi.fn(),
+            tryShutdown: vi.fn(),
+          };
+          untypedServer.grpcClient = grpcClient;
+          untypedServer.options.gracefulShutdown = true;
+          untypedServer.options.gracePeriod = gracePeriod;
+
+          await server.close();
+
+          expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+          expect(grpcClient.tryShutdown).not.toHaveBeenCalled();
+        },
+      );
+
+      it('should clear timer, call forceShutdown, and reject when tryShutdown fails before deadline', async () => {
+        vi.useFakeTimers();
+        const shutdownError = new Error('shutdown failed');
+        let capturedCb: ((err?: Error) => void) | undefined;
+        const grpcClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn((cb: (err?: Error) => void) => {
+            capturedCb = cb;
+          }),
+        };
+        const logger = new NoopLogger();
+        const errorSpy = vi.spyOn(logger, 'error');
+        untypedServer.logger = logger;
+        untypedServer.grpcClient = grpcClient;
+        untypedServer.options.gracefulShutdown = true;
+        untypedServer.options.gracePeriod = 5000;
+
+        const closePromise = server.close();
+        capturedCb!(shutdownError);
+
+        await expect(closePromise).rejects.toThrow(shutdownError);
+        expect(vi.getTimerCount()).toBe(0);
+        expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+        // close() rejects with the error, so it is not logged as well
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+
+      it('should call forceShutdown and reject when tryShutdown throws synchronously', async () => {
+        vi.useFakeTimers();
+        const syncError = new Error('sync shutdown failure');
+        const grpcClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn(() => {
+            throw syncError;
+          }),
+        };
+        const logger = new NoopLogger();
+        const errorSpy = vi.spyOn(logger, 'error');
+        untypedServer.logger = logger;
+        untypedServer.grpcClient = grpcClient;
+        untypedServer.options.gracefulShutdown = true;
+        untypedServer.options.gracePeriod = 5000;
+
+        await expect(server.close()).rejects.toThrow(syncError);
+        expect(vi.getTimerCount()).toBe(0);
+        expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+
+      it('should coalesce concurrent close calls and preserve a subsequent client', async () => {
+        let capturedCb: ((err?: Error) => void) | undefined;
+        const firstClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn((cb: (err?: Error) => void) => {
+            capturedCb = cb;
+          }),
+        };
+        const secondClient = {
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn(),
+        };
+        untypedServer.grpcClient = firstClient;
+        untypedServer.options.gracefulShutdown = true;
+        untypedServer.options.gracePeriod = 5000;
+
+        const close1 = server.close();
+        const close2 = server.close();
+        untypedServer.grpcClient = secondClient;
+
+        expect(firstClient.tryShutdown).toHaveBeenCalledOnce();
+
+        let bothResolved = false;
+        const allClosed = Promise.all([close1, close2]).then(() => {
+          bothResolved = true;
+        });
+
+        await Promise.resolve();
+        expect(bothResolved).toBe(false);
+
+        capturedCb!();
+        await allClosed;
+
+        expect(bothResolved).toBe(true);
+        expect(untypedServer.grpcClient).toBe(secondClient);
+      });
+    });
   });
 
   describe('deserialize', () => {
