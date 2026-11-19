@@ -72,6 +72,31 @@ describe('ServerMqtt', () => {
 
       expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
+    it('should close the created client and skip startup when closed before createMqttClient resolves', async () => {
+      let resolveClient!: (value: any) => void;
+      const pendingClient = {
+        endAsync: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+      vi.spyOn(server, 'createMqttClient').mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+      const startSpy = vi.spyOn(server, 'start').mockImplementation(() => {});
+
+      const listenPromise = server.listen(callbackSpy);
+      await server.close();
+      resolveClient(pendingClient);
+      await listenPromise;
+
+      expect(pendingClient.endAsync).toHaveBeenCalledOnce();
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(untypedServer.mqttClient).toBeNull();
+      expect(callbackSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
     it('should bind the callback with "once"', async () => {
       await server.listen(callbackSpy);
 
