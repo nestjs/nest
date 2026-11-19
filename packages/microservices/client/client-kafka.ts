@@ -489,20 +489,17 @@ export class ClientKafka
         return;
       }
       this._status$.next(KafkaStatus.STOPPED);
+      // A stopped consumer reads no more replies. kafkajs also stops (and
+      // leaves the group) before it reports a crash, restarting or not, so
+      // this covers a crash as well.
       this.handleClose();
     });
-    consumer.on(
-      consumer.events.CRASH,
-      (event?: { payload?: { restart?: boolean } }) => {
-        if (consumer !== this._consumer) {
-          return;
-        }
-        this._status$.next(KafkaStatus.CRASHED);
-        if (!event?.payload?.restart) {
-          this.handleClose();
-        }
-      },
-    );
+    consumer.on(consumer.events.CRASH, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.CRASHED);
+    });
   }
 
   protected registerProducerEventListeners() {
@@ -578,9 +575,7 @@ export class ClientKafka
     const packet = this.assignPacketId(partialPacket);
     this.routingMap.set(packet.id, callback);
 
-    let isDisposed = false;
     const cleanup = () => {
-      isDisposed = true;
       this.pendingRequestPartitions.delete(packet.id);
       this.routingMap.delete(packet.id);
     };
@@ -600,7 +595,8 @@ export class ClientKafka
 
       Promise.resolve(this.serializer.serialize(packet.data, { pattern }))
         .then((serializedRequest: KafkaRequest) => {
-          if (isDisposed || !this.routingMap.has(packet.id)) {
+          // Torn down or failed (e.g., by a rebalance) while serializing
+          if (!this.routingMap.has(packet.id)) {
             return;
           }
           // Ahead of the reply headers, which no metadata entry may replace
@@ -622,7 +618,7 @@ export class ClientKafka
           return this.producer.send(message);
         })
         .catch(err => {
-          if (!isDisposed && this.routingMap.has(packet.id)) {
+          if (this.routingMap.has(packet.id)) {
             errorCallback(err);
           }
         });

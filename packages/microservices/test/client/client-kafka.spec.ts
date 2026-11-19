@@ -424,7 +424,7 @@ describe('ClientKafka', () => {
       expect(registeredEvents).toContain('consumer.crash');
     });
 
-    it('should fail pending requests on STOP and non-restarting CRASH, but ignore restarting CRASH or stale consumers', () => {
+    it('should fail pending requests once the reply consumer stops, but not for a replaced consumer', () => {
       const listeners = new Map<string, Function>();
       const fakeConsumer = {
         events: {
@@ -442,24 +442,16 @@ describe('ClientKafka', () => {
       untypedClient._consumer = fakeConsumer;
       untypedClient.registerConsumerEventListeners();
 
-      const pendingRestart = vi.fn();
-      untypedClient.routingMap.set('req-restart', pendingRestart);
+      const pending = vi.fn();
+      untypedClient.routingMap.set('req', pending);
+      // On a crash, kafkajs stops the consumer before it emits CRASH, even
+      // when it restarts it afterwards
+      listeners.get('consumer.stop')!();
       listeners.get('consumer.crash')!({ payload: { restart: true } });
-      expect(pendingRestart).not.toHaveBeenCalled();
-      expect(untypedClient.routingMap.has('req-restart')).toBe(true);
-
-      listeners.get('consumer.crash')!({ payload: { restart: false } });
-      expect(pendingRestart).toHaveBeenCalledWith({
+      expect(pending).toHaveBeenCalledExactlyOnceWith({
         err: expect.objectContaining({ message: 'Connection closed' }),
       });
       expect(untypedClient.routingMap.size).toBe(0);
-
-      const pendingStop = vi.fn();
-      untypedClient.routingMap.set('req-stop', pendingStop);
-      listeners.get('consumer.stop')!();
-      expect(pendingStop).toHaveBeenCalledWith({
-        err: expect.objectContaining({ message: 'Connection closed' }),
-      });
 
       const activeClientCallback = vi.fn();
       untypedClient._consumer = { ...fakeConsumer };
