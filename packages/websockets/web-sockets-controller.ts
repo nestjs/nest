@@ -593,6 +593,8 @@ export class WebSocketsController {
           isStatic ? STATIC_CONTEXT : contextId,
           instanceWrapper.id,
         );
+        // A filter is not the hook: the disconnect hook does not wait for it
+        markConnectionHookAsCalled?.();
         await this.handleLifecycleHookError(
           exceptionFilter,
           methodName,
@@ -719,7 +721,7 @@ export class WebSocketsController {
     try {
       const pending = exceptionFilter.handle(err as Error, host);
       if (isFunction((pending as Promise<unknown>)?.then)) {
-        return (pending as Promise<unknown>).catch(filterError =>
+        return Promise.resolve(pending).catch(filterError =>
           this.logger.error(filterError),
         );
       }

@@ -1491,6 +1491,29 @@ describe('WebSocketsController', () => {
         );
         expect(calls).toEqual(['handleDisconnect']);
       });
+
+      it('should not wait for an asynchronous filter of the connection hook to call the disconnect hook', async () => {
+        gateway.handleConnection = () => {
+          throw new Error('Unauthorized');
+        };
+        // A filter that never settles, e.g. one waiting for an acknowledgement
+        // from the client that has just left
+        const exceptionFilter = {
+          handle: vi.fn(() => new Promise(() => undefined)),
+        };
+        vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+          exceptionFilter as any,
+        );
+        void createHandler('handleConnection')(client);
+        const disconnected = createHandler('handleDisconnect')(client);
+
+        resolveGateway();
+        await disconnected;
+
+        expect(exceptionFilter.handle).toHaveBeenCalled();
+        expect(calls).toEqual(['handleDisconnect']);
+        expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
+      });
     });
   });
   describe('createStaticEventHandler', () => {
@@ -1680,6 +1703,29 @@ describe('WebSocketsController', () => {
         )!({}),
       ).resolves.toBeUndefined();
       expect(logError.mock.calls).toEqual([[filterError], [filterError]]);
+    });
+
+    it('should log a rejection of a filter that returns a thenable without catch()', async () => {
+      const filterError = new Error('filter failed');
+      exceptionFilter.handle.mockImplementation(() => ({
+        then: (_: unknown, reject: (reason: unknown) => void) =>
+          reject(filterError),
+      }));
+      const logError = vi
+        .spyOn(untypedInstance.logger, 'error')
+        .mockImplementation(() => undefined);
+      const gateway = {
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      };
+
+      await instance.createStaticEventHandler(
+        gateway,
+        'moduleKey',
+        'handleConnection',
+      )!({});
+      expect(logError).toHaveBeenCalledExactlyOnceWith(filterError);
     });
 
     it('should delegate errors to the filters of the gateway that inherits the hook', () => {
