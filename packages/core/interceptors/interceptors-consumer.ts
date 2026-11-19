@@ -74,10 +74,10 @@ export class InterceptorsConsumer {
   }
 
   public transformDeferred(next: () => Promise<any>): Observable<any> {
-    // Call next() eagerly here — this method is invoked inside
-    // inside the scope of the last handle() call, so the async context (e.g.
-    // AsyncLocalStorage) is correctly inherited. Deferring next() into the subscriber function would
-    // lose that context because the subscriber is called outside the bound scope.
+    // Call next() eagerly here — this method is invoked inside the scope of the
+    // last handle() call, so the async context (e.g. AsyncLocalStorage) is
+    // correctly inherited. Deferring next() into the subscriber function would
+    // lose that context because the subscriber is called outside that scope.
     const nextPromise = next();
     return new Observable(subscriber => {
       let innerSub: { unsubscribe(): void } | undefined;
