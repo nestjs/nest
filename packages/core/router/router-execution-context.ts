@@ -746,14 +746,11 @@ export class RouterExecutionContext {
     ): any => {
       if (
         !isResponseHandled &&
+        handlerStreams.length === 0 &&
         !isThenable(result) &&
         !isObservable(result) &&
         !(result instanceof StreamableFile) &&
-        handlerStreams.length === 0 &&
-        (result === null ||
-          typeof result !== 'object' ||
-          result.constructor === Object ||
-          Array.isArray(result))
+        !isStreamingBody(result)
       ) {
         this.responseController.applySync(result, res, httpStatusCode);
         return;
