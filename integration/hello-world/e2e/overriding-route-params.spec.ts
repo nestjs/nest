@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   ValidationPipe,
 } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
@@ -29,6 +30,11 @@ class CrudController {
   find(@Query('page', ParseIntPipe) page): object {
     return { page };
   }
+
+  @Get('report/latest')
+  report(@Res({ passthrough: true }) res): object {
+    return { from: 'parent' };
+  }
 }
 
 @Controller('items')
@@ -41,6 +47,12 @@ class ItemsController extends CrudController {
   @Get(':id')
   override find(@Param('id') id) {
     return { id };
+  }
+
+  // Sends the response itself, after Nest would have sent the return value
+  @Get('report/latest')
+  override report(@Res() res): any {
+    setTimeout(() => res.status(200).send({ from: 'child' }), 10);
   }
 }
 
@@ -83,6 +95,13 @@ describe('Overriding method with its own param decorators', () => {
         .get('/items/42?page=7')
         .expect(200)
         .expect({ id: '42' });
+    });
+
+    it('should leave the response to the handler of a plain @Res()', () => {
+      return request(app.getHttpServer())
+        .get('/items/report/latest')
+        .expect(200)
+        .expect({ from: 'child' });
     });
 
     afterEach(async () => {
@@ -128,6 +147,15 @@ describe('Overriding method with its own param decorators', () => {
       });
       expect(statusCode).toBe(200);
       expect(JSON.parse(payload)).toEqual({ id: '42' });
+    });
+
+    it('should leave the response to the handler of a plain @Res()', async () => {
+      const { statusCode, payload } = await app.inject({
+        method: 'GET',
+        url: '/items/report/latest',
+      });
+      expect(statusCode).toBe(200);
+      expect(JSON.parse(payload)).toEqual({ from: 'child' });
     });
 
     afterEach(async () => {
