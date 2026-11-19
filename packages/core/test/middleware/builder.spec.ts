@@ -9,6 +9,7 @@ import {
   Put,
   RequestMethod,
   Version,
+  VERSION_NEUTRAL,
   VersioningType,
 } from '../../../common/index.js';
 import { MiddlewareConfigProxy } from '../../../common/interfaces/index.js';
@@ -412,6 +413,36 @@ describe('MiddlewareBuilder', () => {
         { path: '/api/health/{*path}', method: -1 },
         { path: '/health/ready', method: -1 },
         { path: '/health', method: -1 },
+      ]);
+    });
+
+    it('should also exclude the route of the default version for a route without a version', () => {
+      const appConfig = new ApplicationConfig();
+      appConfig.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+      });
+      builder = new MiddlewareBuilder(
+        new RoutesMapper(new NestContainer(), appConfig),
+        new NoopHttpAdapter({}),
+        new RouteInfoPathExtractor(appConfig),
+      );
+      const proxy: any = builder.apply().exclude(
+        'cats',
+        { path: 'dogs', method: RequestMethod.GET },
+        {
+          path: 'birds',
+          method: RequestMethod.GET,
+          version: VERSION_NEUTRAL,
+        },
+      );
+
+      expect(proxy.getExcludedRoutes()).toEqual([
+        { path: '/cats', method: -1 },
+        { path: '/v1/cats', method: -1 },
+        { path: '/dogs', method: RequestMethod.GET },
+        { path: '/v1/dogs', method: RequestMethod.GET },
+        { path: '/birds', method: RequestMethod.GET, version: VERSION_NEUTRAL },
       ]);
     });
 

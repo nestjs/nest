@@ -554,6 +554,22 @@ describe('CrossOriginProtection', () => {
       expect(isExcluded(protection, '/api/v2/webhooks')).toBe(false);
     });
 
+    it('also excludes the route of the default version for a route without a version (URI versioning)', () => {
+      const protection = createProtection(
+        [{ path: 'webhooks', method: RequestMethod.POST }],
+        config => {
+          config.setGlobalPrefix('api');
+          config.enableVersioning({
+            type: VersioningType.URI,
+            defaultVersion: '1',
+          });
+        },
+      );
+      expect(isExcluded(protection, '/api/v1/webhooks')).toBe(true);
+      expect(isExcluded(protection, '/api/webhooks')).toBe(true);
+      expect(isExcluded(protection, '/api/v2/webhooks')).toBe(false);
+    });
+
     it('only excludes the requests for the version of RouteInfo.version (header versioning)', () => {
       const protection = createProtection(
         [{ path: 'webhooks', method: RequestMethod.POST, version: '1' }],
