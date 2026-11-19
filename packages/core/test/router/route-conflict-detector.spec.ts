@@ -551,6 +551,104 @@ describe('RouteConflictDetector', () => {
       expect(regExpPairs).toHaveLength(2);
     });
 
+    it.each([
+      [':tenant.example.com', 'admin.example.com'],
+      ['admin.example.com', ':tenant.example.com'],
+      ['{www.}example.com', 'www.example.com'],
+      [':tenant.example.com', 'ADMIN.example.com'],
+      ['{www.}example.com', ':tenant.example.com'],
+      ['Admin.example.com', 'admin.example.com'],
+      [/^www\./, '{www.}example.com'],
+    ])(
+      'should detect host overlap between %s and %s, which match a host in common',
+      (earlierHost, laterHost) => {
+        const conflicts = RouteConflictDetector.detect(
+          [
+            makeResolvedRoute({ path: '/users', host: earlierHost }),
+            makeResolvedRoute({
+              path: '/users',
+              host: laterHost,
+              methodName: 'findAll',
+            }),
+          ],
+          undefined,
+        );
+
+        expect(conflicts).toHaveLength(1);
+        expect(conflicts[0].kind).toBe('shadow');
+      },
+    );
+
+    it.each([
+      [':tenant.example.com', 'example.com'],
+      [':tenant.example.com', 'admin.example.org'],
+      [':tenant.example.com', ':tenant.example.org'],
+      ['api.:region.example.com', 'admin.:region.example.com'],
+      ['{www.}example.com', 'api-:id.example.com'],
+      ['{www.}example.com', 'api.:region.example.com'],
+      [/^api\./, '{www.}example.com'],
+      [/^admin\.example\.com$/, ':tenant.example.org'],
+      [':tenant.app.example.com', /^(www\.)?example\.com$/],
+    ])(
+      'should not flag the hosts %s and %s, which match no host in common',
+      (earlierHost, laterHost) => {
+        const conflicts = RouteConflictDetector.detect(
+          [
+            makeResolvedRoute({ path: '/users', host: earlierHost }),
+            makeResolvedRoute({ path: '/users', host: laterHost }),
+          ],
+          undefined,
+        );
+
+        expect(conflicts).toHaveLength(0);
+      },
+    );
+
+    it.each([
+      [':tenant.example.com', ':account.example.com'],
+      [':tenant.example.com', /\.example\.com$/],
+      [/\.example\.com$/, ':tenant.example.com'],
+      ['Admin.example.com', /^Admin\./],
+    ])(
+      'should take the hosts %s and %s to overlap',
+      (earlierHost, laterHost) => {
+        const conflicts = RouteConflictDetector.detect(
+          [
+            makeResolvedRoute({ path: '/users', host: earlierHost }),
+            makeResolvedRoute({ path: '/users', host: laterHost }),
+          ],
+          undefined,
+        );
+
+        expect(conflicts).toHaveLength(1);
+      },
+    );
+
+    it('should read each distinct host once per run', () => {
+      const toComparableHost = vi.spyOn(
+        RouteConflictDetector as any,
+        'toComparableHost',
+      );
+      try {
+        RouteConflictDetector.detect(
+          [
+            ...Array.from({ length: 5 }, (_, index) =>
+              makeResolvedRoute({
+                path: `/users/${index}`,
+                host: ':tenant.example.com',
+              }),
+            ),
+            makeResolvedRoute({ path: '/users/0', host: 'admin.example.com' }),
+          ],
+          undefined,
+        );
+
+        expect(toComparableHost).toHaveBeenCalledTimes(2);
+      } finally {
+        toComparableHost.mockRestore();
+      }
+    });
+
     it('should classify identical host arrays declared in different order as a duplicate', () => {
       const earlierRoute = makeResolvedRoute({
         path: '/users/me',

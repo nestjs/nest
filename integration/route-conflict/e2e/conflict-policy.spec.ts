@@ -6,6 +6,7 @@ import {
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
+import { HostPatternModule } from '../src/host-pattern/host-pattern.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
@@ -256,6 +257,53 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
       );
       await listenOnLoopback(app);
       expect(capture.warnings).toHaveLength(0);
+    });
+  });
+
+  describe('host pattern fixture', () => {
+    let app: INestApplication | undefined;
+
+    afterEach(async () => {
+      if (app) {
+        await app.close();
+        app = undefined;
+      }
+    });
+
+    it('with no policy, `admin.example.com` is silently routed to `:tenant.example.com`', async () => {
+      const capture = createCaptureLogger();
+      app = await buildApp(HostPatternModule, {}, capture);
+      await listenOnLoopback(app);
+
+      const response = await request(app.getHttpServer())
+        .get('/users')
+        .set('Host', 'admin.example.com');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ from: 'tenant' });
+    });
+
+    it('with shadow=warn, the shadowed host-bound route is reported', async () => {
+      const capture = createCaptureLogger();
+      app = await buildApp(
+        HostPatternModule,
+        { routeConflictPolicy: { shadow: 'warn' } },
+        capture,
+      );
+      await listenOnLoopback(app);
+
+      expect(capture.warnings).toHaveLength(1);
+      expect(capture.warnings[0]).toContain('AdminController#findAll');
+      expect(capture.warnings[0]).toContain('TenantController#findAll');
+    });
+
+    it('with shadow=error, bootstrap is aborted', async () => {
+      const capture = createCaptureLogger();
+      const builtApp = await buildApp(
+        HostPatternModule,
+        { routeConflictPolicy: { shadow: 'error' } },
+        capture,
+      );
+      await expect(builtApp.init()).rejects.toThrow();
     });
   });
 });
