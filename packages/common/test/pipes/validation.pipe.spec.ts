@@ -1388,6 +1388,47 @@ describe('ValidationPipe', () => {
         'active.nested': [nestedMessage],
       });
     });
+    it('should not follow a cycle under a property that a condition rules out', async () => {
+      const cyclic = new WithNested();
+      cyclic.nested = cyclic as unknown as Nested;
+
+      class WithSkippedCycle {
+        @Transform(() => cyclic)
+        @ValidateIf(() => false)
+        @ValidateNested()
+        public skipped: WithNested;
+      }
+
+      target = new ValidationPipe();
+      const value = { skipped: {} };
+      expect(
+        await target.transform(value, {
+          ...nestedMetadata,
+          metatype: WithSkippedCycle,
+        }),
+      ).toBe(value);
+    });
+    it('should not follow a cycle that "stopAtFirstError" keeps class-validator from', async () => {
+      const cyclic = new WithNested();
+      cyclic.nested = cyclic as unknown as Nested;
+
+      class WithStoppedCycle {
+        @Transform(() => cyclic)
+        @IsString()
+        @ValidateNested()
+        public stopped: WithNested;
+      }
+
+      target = new ValidationPipe({ stopAtFirstError: true });
+      await expect(
+        target.transform(
+          { stopped: {} },
+          { ...nestedMetadata, metatype: WithStoppedCycle },
+        ),
+      ).rejects.toHaveProperty('response.message', [
+        'stopped must be a string',
+      ]);
+    });
     it('should preserve single getter evaluation on a non-circular DTO without own object properties', async () => {
       let reads = 0;
       class WithNestedGetter {
