@@ -10,9 +10,19 @@ import {
   ReplaySubject,
   Subject,
 } from 'rxjs';
-import { distinctUntilChanged, map, mergeMap, take } from 'rxjs/operators';
+import {
+  distinctUntilChanged,
+  map,
+  mergeMap,
+  take,
+  timeout,
+} from 'rxjs/operators';
 import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer.js';
 import { InvalidMessageException } from '../errors/invalid-message.exception.js';
+import {
+  ClientRequestTimeoutException,
+  MaxPendingRequestsExceededException,
+} from '../exceptions/index.js';
 import {
   ClientOptions,
   KafkaOptions,
@@ -44,6 +54,9 @@ export abstract class ClientProxy<
   protected serializer: ProducerSerializer;
   protected deserializer: ProducerDeserializer;
   protected _status$ = new ReplaySubject<Status>(1);
+  protected requestTimeout = 0;
+  protected maxPendingRequests = 0;
+  protected pendingRequests = 0;
 
   /**
    * Returns an observable that emits status changes.
@@ -91,15 +104,67 @@ export abstract class ClientProxy<
     if (isNil(pattern) || isNil(data)) {
       return _throw(() => new InvalidMessageException());
     }
-    return defer(async () => this.connect()).pipe(
-      mergeMap(
-        () =>
-          new Observable((observer: Observer<TResult>) => {
-            const callback = this.createObserver(observer);
-            return this.publish(this.createPacket(pattern, data), callback);
-          }),
-      ),
-    );
+    return new Observable<TResult>((observer: Observer<TResult>) => {
+      if (
+        this.maxPendingRequests > 0 &&
+        this.pendingRequests >= this.maxPendingRequests
+      ) {
+        observer.error(
+          new MaxPendingRequestsExceededException(this.maxPendingRequests),
+        );
+        return;
+      }
+
+      this.pendingRequests++;
+      let isReleased = false;
+      const release = () => {
+        if (!isReleased) {
+          isReleased = true;
+          this.pendingRequests--;
+        }
+      };
+
+      const inner$ = defer(async () => this.connect()).pipe(
+        mergeMap(
+          () =>
+            new Observable<TResult>((innerObserver: Observer<TResult>) => {
+              const callback = this.createObserver(innerObserver);
+              return this.publish(this.createPacket(pattern, data), callback);
+            }),
+        ),
+      );
+
+      const bounded$ =
+        this.requestTimeout > 0
+          ? inner$.pipe(
+              timeout({
+                each: this.requestTimeout,
+                with: () =>
+                  _throw(
+                    () =>
+                      new ClientRequestTimeoutException(this.requestTimeout),
+                  ),
+              }),
+            )
+          : inner$;
+
+      const subscription = bounded$.subscribe({
+        next: value => observer.next(value),
+        error: err => {
+          release();
+          observer.error(err);
+        },
+        complete: () => {
+          release();
+          observer.complete();
+        },
+      });
+
+      return () => {
+        release();
+        subscription.unsubscribe();
+      };
+    });
   }
 
   /**
@@ -266,5 +331,29 @@ export abstract class ClientProxy<
           | RmqOptions['options']
           | KafkaOptions['options'])!.deserializer) ||
       new IncomingResponseDeserializer();
+  }
+
+  protected initializeRequestOptions(options: ClientOptions['options']) {
+    const requestOptions = options as
+      | RedisOptions['options']
+      | NatsOptions['options']
+      | MqttOptions['options']
+      | TcpClientOptions['options']
+      | RmqOptions['options']
+      | KafkaOptions['options'];
+    const rawTimeout = requestOptions?.requestTimeout;
+    const rawMaxPending = requestOptions?.maxPendingRequests;
+    this.requestTimeout =
+      typeof rawTimeout === 'number' &&
+      Number.isFinite(rawTimeout) &&
+      rawTimeout > 0
+        ? rawTimeout
+        : 0;
+    this.maxPendingRequests =
+      typeof rawMaxPending === 'number' &&
+      Number.isFinite(rawMaxPending) &&
+      rawMaxPending > 0
+        ? rawMaxPending
+        : 0;
   }
 }

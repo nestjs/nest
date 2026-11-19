@@ -50,6 +50,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeRequestOptions(options);
   }
 
   public getRequestPattern(pattern: string): string {
@@ -264,9 +265,14 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
   public getClientOptions(): Partial<RedisOptions['options']> {
     const retryStrategy = (times: number) => this.createRetryStrategy(times);
+    const {
+      requestTimeout: _requestTimeout,
+      maxPendingRequests: _maxPendingRequests,
+      ...redisOptions
+    } = this.options || {};
 
     return {
-      ...(this.options || {}),
+      ...redisOptions,
       retryStrategy,
     };
   }

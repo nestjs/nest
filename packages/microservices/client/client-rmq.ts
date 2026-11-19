@@ -131,6 +131,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeRequestOptions(options);
   }
 
   public async close(): Promise<void> {

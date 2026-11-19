@@ -138,6 +138,7 @@ export class ClientKafka
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeRequestOptions(options);
   }
 
   public subscribeToResponseOf(pattern: unknown): void {

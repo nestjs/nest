@@ -55,6 +55,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     super();
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeRequestOptions(options);
   }
 
   public async close() {
@@ -146,10 +147,14 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       await (this.deserializer as any).init();
     }
 
-    const options = this.options || ({} as NatsOptions);
+    const {
+      requestTimeout: _requestTimeout,
+      maxPendingRequests: _maxPendingRequests,
+      ...natsOptions
+    } = this.options || ({} as Required<NatsOptions>['options']);
     return natsPackage.connect({
       servers: NATS_DEFAULT_URL,
-      ...options,
+      ...natsOptions,
     });
   }
 

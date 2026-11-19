@@ -251,6 +251,22 @@ export interface RedisOptions {
     gracePeriod?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    /**
+     * Maximum time in milliseconds to wait for `connect()` and each response
+     * emission from `send()` before failing with
+     * `ClientRequestTimeoutException`. Applies only to the client.
+     * Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    requestTimeout?: number;
+    /**
+     * Maximum number of concurrent in-flight `send()` requests allowed on this
+     * client. Applies only to the client. Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    maxPendingRequests?: number;
   } & IORedisOptions;
 }
 
@@ -307,6 +323,22 @@ export interface MqttOptions {
      * the requests and events being handled. (default: 10000)
      */
     gracePeriod?: number;
+    /**
+     * Maximum time in milliseconds to wait for `connect()` and each response
+     * emission from `send()` before failing with
+     * `ClientRequestTimeoutException`. Applies only to the client.
+     * Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    requestTimeout?: number;
+    /**
+     * Maximum number of concurrent in-flight `send()` requests allowed on this
+     * client. Applies only to the client. Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    maxPendingRequests?: number;
   };
 }
 
@@ -364,6 +396,22 @@ export interface NatsOptions {
      * the requests and events being handled. (default: 10000)
      */
     gracePeriod?: number;
+    /**
+     * Maximum time in milliseconds to wait for `connect()` and each response
+     * emission from `send()` before failing with
+     * `ClientRequestTimeoutException`. Applies only to the client.
+     * Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    requestTimeout?: number;
+    /**
+     * Maximum number of concurrent in-flight `send()` requests allowed on this
+     * client. Applies only to the client. Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    maxPendingRequests?: number;
     [key: string]: any;
   };
 }
@@ -493,6 +541,22 @@ export interface RmqOptions {
      * @default 10000
      */
     gracePeriod?: number;
+    /**
+     * Maximum time in milliseconds to wait for `connect()` and each response
+     * emission from `send()` before failing with
+     * `ClientRequestTimeoutException`. Applies only to the client.
+     * Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    requestTimeout?: number;
+    /**
+     * Maximum number of concurrent in-flight `send()` requests allowed on this
+     * client. Applies only to the client. Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    maxPendingRequests?: number;
   };
 }
 
@@ -545,5 +609,21 @@ export interface KafkaOptions {
      * @default 10000
      */
     gracePeriod?: number;
+    /**
+     * Maximum time in milliseconds to wait for `connect()` and each response
+     * emission from `send()` before failing with
+     * `ClientRequestTimeoutException`. Applies only to the client.
+     * Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    requestTimeout?: number;
+    /**
+     * Maximum number of concurrent in-flight `send()` requests allowed on this
+     * client. Applies only to the client. Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    maxPendingRequests?: number;
   };
 }

@@ -1,5 +1,15 @@
 import { firstValueFrom, Observable } from 'rxjs';
+import { ClientKafka } from '../../client/client-kafka.js';
+import { ClientMqtt } from '../../client/client-mqtt.js';
+import { ClientNats } from '../../client/client-nats.js';
 import { ClientProxy } from '../../client/client-proxy.js';
+import { ClientRedis } from '../../client/client-redis.js';
+import { ClientRMQ } from '../../client/client-rmq.js';
+import { ClientTCP } from '../../client/client-tcp.js';
+import {
+  ClientRequestTimeoutException,
+  MaxPendingRequestsExceededException,
+} from '../../exceptions/index.js';
 import { ReadPacket } from '../../interfaces/index.js';
 
 class TestClientProxy extends ClientProxy {
@@ -379,6 +389,192 @@ describe('ClientProxy', function () {
   describe('routingMap', () => {
     it('should be a Map instance', () => {
       expect(client['routingMap']).toBeInstanceOf(Map);
+    });
+  });
+
+  describe('requestTimeout and maxPendingRequests', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should fail with ClientRequestTimeoutException and invoke publish teardown when response times out', async () => {
+      vi.useFakeTimers();
+      client['initializeRequestOptions']({ requestTimeout: 250 } as any);
+      const teardown = vi.fn();
+      vi.spyOn(client, 'publish').mockReturnValue(teardown);
+
+      const errorSpy = vi.fn();
+      client.send('pattern', 'data').subscribe({ error: errorSpy });
+
+      await vi.advanceTimersByTimeAsync(249);
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(teardown).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy.mock.calls[0][0]).toBeInstanceOf(
+        ClientRequestTimeoutException,
+      );
+      expect(errorSpy.mock.calls[0][0].timeoutMs).toBe(250);
+      expect(teardown).toHaveBeenCalledTimes(1);
+      expect(client['pendingRequests']).toBe(0);
+    });
+
+    it('should fail with ClientRequestTimeoutException when connect() hangs', async () => {
+      vi.useFakeTimers();
+      client['initializeRequestOptions']({ requestTimeout: 100 } as any);
+      vi.spyOn(client, 'connect').mockReturnValue(new Promise(() => {}));
+
+      const errorSpy = vi.fn();
+      client.send('pattern', 'data').subscribe({ error: errorSpy });
+
+      await vi.advanceTimersByTimeAsync(100);
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy.mock.calls[0][0]).toBeInstanceOf(
+        ClientRequestTimeoutException,
+      );
+      expect(client['pendingRequests']).toBe(0);
+    });
+
+    it('should refresh timeout on each emission for multi-emission streams', async () => {
+      vi.useFakeTimers();
+      client['initializeRequestOptions']({ requestTimeout: 100 } as any);
+      let emitReply!: (packet: any) => void;
+      vi.spyOn(client, 'publish').mockImplementation((_packet, cb) => {
+        emitReply = cb;
+        return () => {};
+      });
+
+      const received: any[] = [];
+      const errorSpy = vi.fn();
+      const completeSpy = vi.fn();
+      client.send('stream', 'data').subscribe({
+        next: val => received.push(val),
+        error: errorSpy,
+        complete: completeSpy,
+      });
+
+      await vi.advanceTimersByTimeAsync(80);
+      emitReply({ response: 'chunk-1' });
+      await vi.advanceTimersByTimeAsync(80);
+      emitReply({ response: 'chunk-2', isDisposed: true });
+
+      expect(received).toEqual(['chunk-1', 'chunk-2']);
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(completeSpy).toHaveBeenCalledTimes(1);
+      expect(client['pendingRequests']).toBe(0);
+    });
+
+    it('should enforce maxPendingRequests before connect() and decrement before observer.error() so retries succeed', async () => {
+      client['initializeRequestOptions']({ maxPendingRequests: 1 } as any);
+      let resolveConnect!: () => void;
+      const connectSpy = vi
+        .spyOn(client, 'connect')
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>(resolve => {
+              resolveConnect = resolve;
+            }),
+        )
+        .mockResolvedValue(undefined);
+
+      let firstCallback!: (packet: any) => void;
+      vi.spyOn(client, 'publish').mockImplementation((_packet, cb) => {
+        firstCallback = cb;
+        return () => {};
+      });
+
+      // First request increments pendingRequests synchronously before connect() settles
+      let retryResult: any;
+      const sub1 = client.send('p1', 'd1').subscribe({
+        error: () => {
+          // Immediate retry inside error handler must see decremented pendingRequests
+          client.send('p-retry', 'd-retry').subscribe({
+            next: val => (retryResult = val),
+          });
+        },
+      });
+      expect(client['pendingRequests']).toBe(1);
+
+      // Second concurrent request fails immediately without calling connect()
+      const err2 = vi.fn();
+      client.send('p2', 'd2').subscribe({ error: err2 });
+      expect(err2).toHaveBeenCalledTimes(1);
+      expect(err2.mock.calls[0][0]).toBeInstanceOf(
+        MaxPendingRequestsExceededException,
+      );
+      expect(err2.mock.calls[0][0].maxPendingRequests).toBe(1);
+      expect(connectSpy).toHaveBeenCalledTimes(1);
+
+      // Resolve first connect() and fail first request -> retry succeeds
+      resolveConnect();
+      await new Promise(resolve => setImmediate(resolve));
+      firstCallback({ err: new Error('boom') });
+      await new Promise(resolve => setImmediate(resolve));
+      firstCallback({ response: 'recovered', isDisposed: true });
+
+      expect(retryResult).toBe('recovered');
+      expect(client['pendingRequests']).toBe(0);
+      sub1.unsubscribe();
+    });
+
+    it('should decrement pendingRequests on caller unsubscribe', () => {
+      client['initializeRequestOptions']({ maxPendingRequests: 1 } as any);
+      vi.spyOn(client, 'connect').mockReturnValue(new Promise(() => {}));
+
+      const sub = client.send('p1', 'd1').subscribe();
+      expect(client['pendingRequests']).toBe(1);
+
+      sub.unsubscribe();
+      expect(client['pendingRequests']).toBe(0);
+    });
+
+    it('should initialize request options across all 6 non-gRPC clients and strip them from Redis options without mutating input', () => {
+      const redisInput = {
+        host: '127.0.0.1',
+        requestTimeout: 500,
+        maxPendingRequests: 10,
+      };
+      const redisClient = new ClientRedis(redisInput);
+      const tcpClient = new ClientTCP({
+        requestTimeout: 500,
+        maxPendingRequests: 10,
+      });
+      const mqttClient = new ClientMqtt({
+        requestTimeout: 500,
+        maxPendingRequests: 10,
+      });
+      const natsClient = new ClientNats({
+        requestTimeout: 500,
+        maxPendingRequests: 10,
+      });
+      const rmqClient = new ClientRMQ({
+        requestTimeout: 500,
+        maxPendingRequests: 10,
+      });
+      const kafkaClient = new ClientKafka({
+        requestTimeout: 500,
+        maxPendingRequests: 10,
+      });
+
+      for (const c of [
+        redisClient,
+        tcpClient,
+        mqttClient,
+        natsClient,
+        rmqClient,
+        kafkaClient,
+      ]) {
+        expect(c['requestTimeout']).toBe(500);
+        expect(c['maxPendingRequests']).toBe(10);
+      }
+
+      const redisSdkOptions = redisClient.getClientOptions();
+      expect(redisSdkOptions).not.toHaveProperty('requestTimeout');
+      expect(redisSdkOptions).not.toHaveProperty('maxPendingRequests');
+      // Input options object must not be mutated
+      expect(redisInput.requestTimeout).toBe(500);
+      expect(redisInput.maxPendingRequests).toBe(10);
     });
   });
 });

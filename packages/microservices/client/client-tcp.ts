@@ -61,6 +61,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeRequestOptions(options);
   }
 
   public connect(): Promise<any> {

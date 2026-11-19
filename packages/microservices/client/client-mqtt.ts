@@ -70,6 +70,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeRequestOptions(options);
   }
 
   public getRequestPattern(pattern: string): string {
@@ -213,7 +214,12 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     mqttPackage ??= loadPackageSync('mqtt', ClientMqtt.name, () =>
       createRequire(import.meta.url)('mqtt'),
     );
-    return mqttPackage.connect(this.url, this.options as MqttOptions);
+    const {
+      requestTimeout: _requestTimeout,
+      maxPendingRequests: _maxPendingRequests,
+      ...mqttOptions
+    } = this.options || {};
+    return mqttPackage.connect(this.url, mqttOptions as MqttOptions);
   }
 
   public registerErrorListener(client: MqttClient) {

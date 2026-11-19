@@ -79,5 +79,21 @@ export interface TcpClientOptions {
      * dropped once this limit is passed. Set to 0 to disable.
      */
     maxSendBufferSize?: number;
+    /**
+     * Maximum time in milliseconds to wait for `connect()` and each response
+     * emission from `send()` before failing with
+     * `ClientRequestTimeoutException`. Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    requestTimeout?: number;
+    /**
+     * Maximum number of concurrent in-flight `send()` requests allowed on this
+     * client. Additional subscriptions fail immediately with
+     * `MaxPendingRequestsExceededException`. Set to `0` or omit to disable.
+     *
+     * @default 0
+     */
+    maxPendingRequests?: number;
   };
 }
