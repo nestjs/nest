@@ -687,6 +687,20 @@ describe('RouteTable', () => {
       },
     );
 
+    it('should keep the optional captures of a route when an earlier route has the shape of a shorter variant', () => {
+      table.add('GET', '/reports/:name.:ext/meta', handler());
+      const optional = handler();
+      table.add('GET', '/reports/:name{.:locale}.:ext', optional);
+
+      const found = table.lookup('GET', '/reports/report.en.json');
+      expect(found?.handlers).toEqual([optional]);
+      expect(found?.params).toEqual({
+        name: 'report',
+        locale: 'en',
+        ext: 'json',
+      });
+    });
+
     it('should keep optional captures when the shared routes name their parameters differently', () => {
       table.add('GET', '/reports/:file.:format', handler());
       table.add('GET', '/reports/:name{.:locale}.:ext', handler());

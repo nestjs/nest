@@ -516,8 +516,14 @@ export class RouteTable {
           recordMatcher = matcher;
         }
       }
+      // A variant without some of the route's groups, with a parameter next
+      // to text or another parameter in a segment ("/:name.:ext" of
+      // "/:name{.:locale}.:ext"), may win over a longer variant in
+      // find-my-way when an earlier route put its node in the tree first:
+      // its captures then come from the route's own pattern. The variant with
+      // every group, and the other ones, keep find-my-way's.
       let paramsMatcher: ParamsMatcher | undefined;
-      if (expanded!.length > 1) {
+      if (variant !== variants[0] && variant.hasMixedSegment) {
         let index = 0;
         const tokens = variant.tokens.map(token =>
           token.type === 'param'
@@ -796,6 +802,18 @@ export class RouteTable {
         Object.assign(params, result.params);
         continue;
       }
+      // See `RouteTable.add()`
+      const paramsMatcher = record.paramsMatchers[h];
+      if (paramsMatcher !== undefined) {
+        const result = paramsMatcher(values, wildcard);
+        if (result) {
+          params = result.params;
+          if (paramsByHandler !== undefined) {
+            paramsByHandler[h] = params;
+          }
+          continue;
+        }
+      }
       const names = record.paramNames[h];
       const last = names.length - 1;
       for (let i = 0; i <= last; i++) {
@@ -803,14 +821,6 @@ export class RouteTable {
           wildcard !== undefined && i === last
             ? wildcard
             : values[positionalName(i)];
-      }
-      // A shared shorter variant can lose optional captures; use the full
-      // pattern for that handler.
-      if (paramsByHandler !== undefined) {
-        const result = record.paramsMatchers[h]?.(values, wildcard);
-        if (result) {
-          paramsByHandler[h] = result.params;
-        }
       }
     }
     return {
