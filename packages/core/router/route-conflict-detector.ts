@@ -63,6 +63,15 @@ interface ComparablePath {
   leadingText: string;
 }
 
+/**
+ * A string host as one segment per combination of its optional groups, and
+ * the text every host it matches ends with.
+ */
+interface ComparableHost {
+  variants: ComparableSegment[];
+  trailingText: string;
+}
+
 // Each optional group doubles the number of path variants to compare
 const MAX_EXPANDED_GROUPS = 6;
 
@@ -204,7 +213,7 @@ export class RouteConflictDetector {
       ]),
     );
     // ... and each string host, the first time a pair of routes needs it
-    const comparableHosts = new Map<string, ComparableSegment[]>();
+    const comparableHosts = new Map<string, ComparableHost>();
     const comparableHostOf = (host: string) => {
       let comparableHost = comparableHosts.get(host);
       if (!comparableHost) {
@@ -576,7 +585,7 @@ export class RouteConflictDetector {
   private static hostsCanOverlap(
     leftHost: ResolvedRoute['host'],
     rightHost: ResolvedRoute['host'],
-    comparableHostOf: (host: string) => ComparableSegment[],
+    comparableHostOf: (host: string) => ComparableHost,
   ): boolean {
     if (leftHost === undefined || rightHost === undefined) return true;
 
@@ -597,7 +606,7 @@ export class RouteConflictDetector {
   private static hostValuesCanMatchSameRequest(
     leftValue: string | RegExp,
     rightValue: string | RegExp,
-    comparableHostOf: (host: string) => ComparableSegment[],
+    comparableHostOf: (host: string) => ComparableHost,
   ): boolean {
     if (leftValue instanceof RegExp && rightValue instanceof RegExp) {
       return true;
@@ -606,23 +615,30 @@ export class RouteConflictDetector {
       return RouteConflictDetector.regExpCanMatchHost(
         leftValue,
         rightValue as string,
-        comparableHostOf(rightValue as string),
+        comparableHostOf(rightValue as string).variants,
       );
     }
     if (rightValue instanceof RegExp) {
       return RouteConflictDetector.regExpCanMatchHost(
         rightValue,
         leftValue,
-        comparableHostOf(leftValue),
+        comparableHostOf(leftValue).variants,
       );
     }
     if (leftValue === rightValue) {
       return true;
     }
-    const leftVariants = comparableHostOf(leftValue);
-    const rightVariants = comparableHostOf(rightValue);
-    return leftVariants.some(leftVariant =>
-      rightVariants.some(rightVariant =>
+    const leftHost = comparableHostOf(leftValue);
+    const rightHost = comparableHostOf(rightValue);
+    // Rules out most pairs before comparing every pair of variants
+    if (
+      !leftHost.trailingText.endsWith(rightHost.trailingText) &&
+      !rightHost.trailingText.endsWith(leftHost.trailingText)
+    ) {
+      return false;
+    }
+    return leftHost.variants.some(leftVariant =>
+      rightHost.variants.some(rightVariant =>
         RouteConflictDetector.segmentsCanOverlap(leftVariant, rightVariant),
       ),
     );
@@ -659,23 +675,32 @@ export class RouteConflictDetector {
    * compared as one segment per combination of its optional groups, as
    * paths are, so a group does not hide the text around it.
    */
-  private static toComparableHost(host: string): ComparableSegment[] {
+  private static toComparableHost(host: string): ComparableHost {
     const tokens = RouteConflictDetector.parseTokens(host);
     if (!tokens) {
-      return [{ kind: 'literal', value: host.toLowerCase() }];
+      const value = host.toLowerCase();
+      return { variants: [{ kind: 'literal', value }], trailingText: value };
     }
     if (RouteConflictDetector.countGroups(tokens) > MAX_EXPANDED_GROUPS) {
       // Too many variants to compare: taken to match any host
-      return [{ kind: 'wildcard', value: host }];
+      return {
+        variants: [{ kind: 'wildcard', value: host }],
+        trailingText: '',
+      };
     }
-    return RouteConflictDetector.expandGroups(tokens).map(variant =>
-      variant.every(token => token.type === 'text')
-        ? { kind: 'literal', value: joinText(variant).toLowerCase() }
-        : RouteConflictDetector.toComparableSegment({
-            kind: 'mixed',
-            value: stringify(new TokenData(variant)).toLowerCase(),
-          }),
-    );
+    return {
+      variants: RouteConflictDetector.expandGroups(tokens).map(variant =>
+        variant.every(token => token.type === 'text')
+          ? { kind: 'literal', value: joinText(variant).toLowerCase() }
+          : RouteConflictDetector.toComparableSegment({
+              kind: 'mixed',
+              value: stringify(new TokenData(variant)).toLowerCase(),
+            }),
+      ),
+      trailingText: joinText(
+        tokens.slice(tokens.findLastIndex(token => token.type !== 'text') + 1),
+      ).toLowerCase(),
+    };
   }
 
   private static routesAreIdentical(
