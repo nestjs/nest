@@ -388,7 +388,6 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         if (!isCounted) {
           return;
         }
-        this.routingMap.set(packet.id, callback);
 
         try {
           const options =
@@ -430,8 +429,16 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         this.routingMap.delete(packet.id);
       };
 
+      // Registered before the subscription is acknowledged, so that
+      // `handleClose()` fails a request that still waits for it as well
+      this.routingMap.set(packet.id, callback);
+
       if (subscriptionsCount <= 0) {
         this.mqttClient!.subscribe(responseChannel, (err: any) => {
+          if (!isCounted) {
+            // Torn down meanwhile (e.g., failed by `handleClose()`)
+            return;
+          }
           if (err) {
             undoBookkeeping();
             return callback({ err });
