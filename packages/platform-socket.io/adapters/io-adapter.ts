@@ -6,6 +6,7 @@ import { defer, EMPTY, fromEvent, Observable } from 'rxjs';
 import {
   catchError,
   filter,
+  finalize,
   first,
   map,
   share,
@@ -23,8 +24,13 @@ import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
 // older `@nestjs/websockets`.
 const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 const DEFAULT_MAX_WAITING_MESSAGES = 10000;
+const DEFAULT_GRACE_PERIOD = 10000;
+const MAX_TIMEOUT = 2_147_483_647;
 
-type IoAdapterOptions = {
+/**
+ * @publicApi
+ */
+export type IoAdapterOptions = {
   /**
    * How many messages of one event a client may have handled at the same
    * time. Later ones wait for their turn. Set it to `Infinity` to lift the
@@ -41,6 +47,23 @@ type IoAdapterOptions = {
    * @default 10000
    */
   maxWaitingMessages?: number;
+  /**
+   * When `true`, `close()` rejects new connections, stops accepting new events
+   * on connected sockets without firing `disconnect`, waits up to
+   * `gracePeriod` milliseconds for in-flight handlers to finish, and closes
+   * underlying Engine.IO transports via `socket.conn.close()` so clients can
+   * reconnect automatically.
+   *
+   * @default false
+   */
+  gracefulShutdown?: boolean;
+  /**
+   * Maximum time in milliseconds to wait for active message handlers to finish
+   * during graceful shutdown before closing remaining clients.
+   *
+   * @default 10000
+   */
+  gracePeriod?: number;
 };
 
 /**
@@ -60,7 +83,13 @@ export class IoAdapter extends AbstractWsAdapter {
   protected readonly logger = new Logger(IoAdapter.name);
   protected readonly maxConcurrentMessages: number;
   protected readonly maxWaitingMessages: number;
+  protected readonly gracefulShutdown: boolean;
+  protected readonly gracePeriod: number;
   private readonly disconnectMap = new WeakMap<Socket, Observable<any>>();
+  private readonly closingSockets = new WeakSet<Socket>();
+  private readonly activeHandlers = new WeakMap<Socket, number>();
+  private readonly drainWaiters = new WeakMap<Socket, Set<() => void>>();
+  private readonly closingServers = new WeakMap<Server, Promise<void>>();
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
@@ -75,6 +104,12 @@ export class IoAdapter extends AbstractWsAdapter {
       options?.maxWaitingMessages,
       DEFAULT_MAX_WAITING_MESSAGES,
     );
+    this.gracefulShutdown = Boolean(options?.gracefulShutdown);
+    const rawGracePeriod = resolveLimit(
+      options?.gracePeriod,
+      DEFAULT_GRACE_PERIOD,
+    );
+    this.gracePeriod = Math.min(Math.max(0, rawGracePeriod), MAX_TIMEOUT);
   }
 
   public create(
@@ -138,6 +173,7 @@ export class IoAdapter extends AbstractWsAdapter {
 
     handlers.forEach(({ message, callback, isAckHandledManually }) => {
       const source$ = fromEvent(socket, message).pipe(
+        filter(() => !this.closingSockets.has(socket)),
         // No Socket.IO client sends a message that refers to the same binary
         // value more than once, so the client is disconnected
         filter((payload: unknown) => {
@@ -161,13 +197,17 @@ export class IoAdapter extends AbstractWsAdapter {
             // would silence that event for the client. A handler whose error
             // filter rethrows is an app bug, so the failure gets logged instead
             // of dropped silently.
-            return defer(() => transform(callback(data, ack))).pipe(
+            return defer(() => {
+              this.incrementActiveHandlers(socket);
+              return transform(callback(data, ack));
+            }).pipe(
               filter((response: any) => !isNil(response)),
               map((response: any) => [response, ack, isAckHandledManually]),
               catchError(err => {
                 this.logger.error(err);
                 return EMPTY;
               }),
+              finalize(() => this.decrementActiveHandlers(socket)),
             );
           },
           this.maxConcurrentMessages,
@@ -246,20 +286,177 @@ export class IoAdapter extends AbstractWsAdapter {
     client.once(DISCONNECT_EVENT, (reason: string) => callback(reason));
   }
 
-  public async close(server: Server): Promise<void> {
-    if (server instanceof Server && !server.engine) {
+  public async close(server: Server | Namespace): Promise<void> {
+    const rootServer = this.resolveRootServer(server);
+    if (rootServer instanceof Server && !rootServer.engine) {
       // Not attached to any port (see createWithoutListener()), and close()
       // would fail on the engine it does not have, so only the adapters of
       // its namespaces are closed, e.g. to disconnect from a shared store
       await Promise.allSettled(
-        [...server._nsps.values()].map(namespace => namespace.adapter.close()),
+        [...rootServer._nsps.values()].map(namespace =>
+          namespace.adapter.close(),
+        ),
       );
       return;
     }
-    if (this.forceCloseConnections && server.httpServer === this.httpServer) {
+
+    if (!this.gracefulShutdown) {
+      if (
+        this.forceCloseConnections &&
+        (server as Server).httpServer === this.httpServer
+      ) {
+        return;
+      }
+      return super.close(server);
+    }
+
+    const existingClose = this.closingServers.get(rootServer);
+    if (existingClose) {
+      return existingClose;
+    }
+
+    const closePromise = this.closeGracefully(rootServer);
+    this.closingServers.set(rootServer, closePromise);
+    return closePromise;
+  }
+
+  private resolveRootServer(server: Server | Namespace): Server {
+    if (server instanceof Server) {
+      return server;
+    }
+    return ((server as any)?.server ?? server) as Server;
+  }
+
+  private incrementActiveHandlers(socket: Socket) {
+    this.activeHandlers.set(socket, (this.activeHandlers.get(socket) ?? 0) + 1);
+  }
+
+  private decrementActiveHandlers(socket: Socket) {
+    const next = (this.activeHandlers.get(socket) ?? 0) - 1;
+    if (next > 0) {
+      this.activeHandlers.set(socket, next);
+      return;
+    }
+    this.activeHandlers.delete(socket);
+    const waiters = this.drainWaiters.get(socket);
+    if (waiters) {
+      this.drainWaiters.delete(socket);
+      waiters.forEach(resolve => resolve());
+    }
+  }
+
+  private async closeGracefully(rootServer: Server): Promise<void> {
+    // Reject new Engine.IO handshakes while draining active handlers
+    if (rootServer.engine?.opts) {
+      rootServer.engine.opts.allowRequest = (_req, callback) => {
+        callback('Server is shutting down', false);
+      };
+    }
+
+    const sockets = new Set<Socket>();
+    if (rootServer._nsps) {
+      for (const namespace of rootServer._nsps.values()) {
+        for (const socket of namespace.sockets.values()) {
+          sockets.add(socket);
+        }
+      }
+    }
+
+    for (const socket of sockets) {
+      this.closingSockets.add(socket);
+    }
+
+    if (sockets.size > 0) {
+      await this.drainSockets(sockets);
+    }
+
+    for (const socket of sockets) {
+      if (socket.connected) {
+        if (typeof socket.conn?.close === 'function') {
+          // Close the underlying Engine.IO transport without sending a
+          // Socket.IO DISCONNECT packet so clients reconnect automatically
+          socket.conn.close();
+        } else {
+          socket.disconnect(true);
+        }
+      }
+    }
+
+    if (
+      this.forceCloseConnections &&
+      rootServer.httpServer === this.httpServer
+    ) {
+      if (rootServer._nsps) {
+        await Promise.allSettled(
+          [...rootServer._nsps.values()].map(namespace =>
+            namespace.adapter.close(),
+          ),
+        );
+      }
       return;
     }
 
-    return super.close(server);
+    return super.close(rootServer);
+  }
+
+  private async drainSockets(sockets: Set<Socket>): Promise<void> {
+    const cleanups: Array<() => void> = [];
+
+    const waitForDrain = (socket: Socket): Promise<void> => {
+      if (!this.activeHandlers.get(socket) || !socket.connected) {
+        return Promise.resolve();
+      }
+      return new Promise<void>(resolve => {
+        let settled = false;
+        const done = () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          socket.removeListener?.(DISCONNECT_EVENT, done);
+          const set = this.drainWaiters.get(socket);
+          set?.delete(done);
+          if (set?.size === 0) {
+            this.drainWaiters.delete(socket);
+          }
+          resolve();
+        };
+        let waiters = this.drainWaiters.get(socket);
+        if (!waiters) {
+          waiters = new Set();
+          this.drainWaiters.set(socket, waiters);
+        }
+        waiters.add(done);
+        socket.once?.(DISCONNECT_EVENT, done);
+        cleanups.push(done);
+      });
+    };
+
+    const drainPromises = [...sockets].map(waitForDrain);
+    let graceTimer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<void>(resolve => {
+      graceTimer = setTimeout(() => {
+        let remaining = 0;
+        for (const socket of sockets) {
+          if ((this.activeHandlers.get(socket) ?? 0) > 0) {
+            remaining++;
+          }
+        }
+        if (remaining > 0) {
+          this.logger.warn(
+            `Graceful shutdown timed out after ${this.gracePeriod}ms; forcibly closing ${remaining} Socket.IO client(s) with active handlers.`,
+          );
+        }
+        resolve();
+      }, this.gracePeriod);
+      graceTimer.unref?.();
+    });
+
+    try {
+      await Promise.race([Promise.all(drainPromises), timeoutPromise]);
+    } finally {
+      clearTimeout(graceTimer);
+      cleanups.forEach(fn => fn());
+    }
   }
 }
