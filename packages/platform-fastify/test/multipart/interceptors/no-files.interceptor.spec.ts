@@ -117,14 +117,14 @@ describe('NoFilesInterceptor', () => {
       ).toEqual({ a: 'x'.repeat(100) });
     });
 
-    it('should reject a value nested too deep to be measured', async () => {
-      let value: any = {};
-      for (let i = 0; i < 100_000; i++) {
-        value = { a: value };
-      }
-      await expect(parse([jsonField('deep', value)])).rejects.toEqual(
-        new BadRequestException('JSON field values too large - deep', {
-          cause: new MultipartError('LIMIT_JSON_FIELDS_SIZE', 'deep'),
+    it('should reject a value that cannot be serialized to be measured', async () => {
+      // A value nested deeper than JSON.stringify can recurse cannot be
+      // measured before Node.js 26, which serializes values of any depth. A
+      // BigInt cannot be serialized on any version.
+      const value = { a: 10n };
+      await expect(parse([jsonField('big', value)])).rejects.toEqual(
+        new BadRequestException('JSON field values too large - big', {
+          cause: new MultipartError('LIMIT_JSON_FIELDS_SIZE', 'big'),
         }),
       );
     });

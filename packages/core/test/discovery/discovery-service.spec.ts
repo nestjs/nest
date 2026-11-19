@@ -281,6 +281,38 @@ describe('DiscoveryService', () => {
       expect(providers).toHaveLength(1);
       expect(providers).toContain(instanceWrapper);
     });
+
+    it('should discover providers that inherit a custom discovery decorator', () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      class BaseService {}
+      class ChildService extends BaseService {}
+
+      const module1 = new Module(class Module1 {}, modulesContainer as any);
+      const instanceWrapper = new InstanceWrapper({
+        name: 'ChildService',
+        token: ChildService,
+        metatype: ChildService,
+      });
+
+      DiscoverableMetaHostCollection.inspectProvider(
+        modulesContainer,
+        instanceWrapper,
+      );
+
+      module1.providers.set(ChildService, instanceWrapper);
+      modulesContainer.set('Module1', module1);
+
+      const providers = discoveryService.getProviders({
+        metadataKey: TestDecorator.KEY,
+      });
+
+      expect(providers).toEqual([instanceWrapper]);
+      expect(
+        discoveryService.getMetadataByDecorator(TestDecorator, instanceWrapper),
+      ).toEqual({});
+    });
   });
 
   describe('getControllers', () => {

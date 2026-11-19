@@ -626,6 +626,43 @@ describe('ClientRMQ', function () {
       expect(consumingChannel.consume).toHaveBeenCalledTimes(2);
     });
 
+    it('should fail pending requests on direct reply-to consumer cancel', () => {
+      const pendingCallback = vi.fn();
+      rmqClient['routingMap'].set('req-1', pendingCallback);
+      const handleCloseSpy = vi.spyOn(rmqClient, 'handleClose');
+
+      onMessage(null);
+
+      expect(handleCloseSpy).toHaveBeenCalledTimes(1);
+      expect(pendingCallback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(rmqClient['routingMap'].size).toBe(0);
+    });
+
+    it('should keep pending requests when cancelling a custom reply queue consumer', async () => {
+      const customClient = new ClientRMQ({ replyQueue: 'custom.reply.queue' });
+      vi.spyOn(customClient['logger'], 'error').mockImplementation(() => {});
+      let customOnMessage!: (msg: any) => void;
+      const customChannel = {
+        consume: vi.fn((_queue, fn) => {
+          customOnMessage = fn;
+          return Promise.resolve({});
+        }),
+      };
+      await customClient.consumeChannel(customChannel as any);
+
+      const pendingCallback = vi.fn();
+      customClient['routingMap'].set('req-1', pendingCallback);
+      const handleCloseSpy = vi.spyOn(customClient, 'handleClose');
+
+      customOnMessage(null);
+
+      expect(handleCloseSpy).not.toHaveBeenCalled();
+      expect(pendingCallback).not.toHaveBeenCalled();
+      expect(customClient['routingMap'].size).toBe(1);
+    });
+
     it('should ignore a message no request waits for', () => {
       const msg = {
         properties: { correlationId: 'unknown' },
