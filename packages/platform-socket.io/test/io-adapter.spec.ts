@@ -425,21 +425,23 @@ describe('IoAdapter', () => {
         (data: any) => of(data),
       );
 
-      const depth = 100_000;
-      const deep = JSON.parse(`${'['.repeat(depth)}${']'.repeat(depth)}`);
+      // JSON.stringify throws on a BigInt on every Node.js version. A value
+      // nested deeper than it can recurse is not enough: from Node.js 26 on,
+      // it serializes values of any depth.
+      const unserializable = { limit: 10n };
       const ack = vi.fn((payload: any) => JSON.stringify(payload));
 
-      socket.emit('echo', deep);
+      socket.emit('echo', unserializable);
       socket.emit('echo', 'ok');
-      socket.emit('echo-ack', deep, ack);
+      socket.emit('echo-ack', unserializable, ack);
       socket.emit('echo-ack', 'ok', ack);
       await new Promise(resolve => setTimeout(resolve, 5));
       config.onUnhandledError = null;
 
       expect(unhandled).toEqual([]);
       expect(logError).toHaveBeenCalledTimes(2);
-      expect(logError.mock.calls[0][0]).toBeInstanceOf(RangeError);
-      expect(logError.mock.calls[1][0]).toBeInstanceOf(RangeError);
+      expect(logError.mock.calls[0][0]).toBeInstanceOf(TypeError);
+      expect(logError.mock.calls[1][0]).toBeInstanceOf(TypeError);
       expect(replies).toEqual(['ok']);
       expect(ack).toHaveBeenLastCalledWith('ok');
     });

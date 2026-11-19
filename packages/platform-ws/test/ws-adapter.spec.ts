@@ -654,25 +654,27 @@ describe('WsAdapter', () => {
           {
             message: 'echo',
             methodName: 'echo',
-            callback: (data: any) => ({ event: 'echo', data }),
+            // JSON.stringify throws on a BigInt on every Node.js version. A
+            // value nested deeper than it can recurse is not enough: from
+            // Node.js 26 on, it serializes values of any depth.
+            callback: (data: any) => ({
+              event: 'echo',
+              data: data === 'unserializable' ? { limit: 10n } : data,
+            }),
             isAckHandledManually: false,
           },
         ],
         (data: any) => of(data),
       );
 
-      // JSON.parse accepts this, JSON.stringify overflows the stack on it
-      const depth = 100_000;
-      client.emit('message', {
-        data: `{"event":"echo","data":${'['.repeat(depth)}${']'.repeat(depth)}}`,
-      });
+      client.emit('message', frame({ event: 'echo', data: 'unserializable' }));
       client.emit('message', frame({ event: 'echo', data: 'ok' }));
       await new Promise(resolve => setTimeout(resolve, 5));
       config.onUnhandledError = null;
 
       expect(unhandled).toEqual([]);
       expect(logError).toHaveBeenCalledTimes(1);
-      expect(logError.mock.calls[0][0]).toBeInstanceOf(RangeError);
+      expect(logError.mock.calls[0][0]).toBeInstanceOf(TypeError);
       expect(replies).toEqual([{ event: 'echo', data: 'ok' }]);
     });
 

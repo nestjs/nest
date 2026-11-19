@@ -172,7 +172,7 @@ export class DiscoverableMetaHostCollection {
   private static getMetaKeysByInstanceWrapper(
     instanceWrapper: InstanceWrapper<any>,
   ) {
-    return this.metaHostLinks.get(
+    let target: Function | undefined =
       // NOTE: Regarding the ternary statement below,
       // - The condition `!wrapper.metatype` is needed because when we use `useValue`
       // the value of `wrapper.metatype` will be `null`.
@@ -185,7 +185,14 @@ export class DiscoverableMetaHostCollection {
       // we must defer it as much we can.
       !instanceWrapper.metatype || instanceWrapper.inject
         ? (instanceWrapper.instance?.constructor ?? instanceWrapper.metatype)
-        : instanceWrapper.metatype,
-    );
+        : instanceWrapper.metatype;
+
+    // A subclass inherits the metadata of its parent classes' decorators
+    const metaKeys = new Set<string>();
+    while (target && target !== Function.prototype) {
+      this.metaHostLinks.get(target)?.forEach(key => metaKeys.add(key));
+      target = Object.getPrototypeOf(target);
+    }
+    return metaKeys.size > 0 ? metaKeys : undefined;
   }
 }
