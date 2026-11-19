@@ -1,6 +1,8 @@
 import { ExceptionsHandler } from '../exceptions/exceptions-handler.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 
+const noop = () => {};
+
 export type RouterProxyCallback = <TRequest, TResponse>(
   req: TRequest,
   res: TResponse,
@@ -25,7 +27,7 @@ export class RouterProxy {
         ) {
           const then = (result as PromiseLike<unknown>).then;
           if (typeof then === 'function') {
-            return then.call(result, undefined, (e: any) => {
+            return then.call(result, noop, (e: any) => {
               const host = new ExecutionContextHost([req, res, next]);
               exceptionsHandler.next(e, host);
               return res;

@@ -15,17 +15,15 @@ export class PipesConsumer {
     metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ) {
+    const token = this.paramsTokenFactory.exchangeEnumForString(
+      metadata.type as any as RouteParamtypes,
+    );
     const resolvedMetadata =
-      typeof metadata.type === 'string' && Object.isFrozen(metadata)
+      metadata.type === token && Object.isFrozen(metadata)
         ? metadata
         : {
             metatype: metadata.metatype,
-            type:
-              typeof metadata.type === 'string'
-                ? metadata.type
-                : this.paramsTokenFactory.exchangeEnumForString(
-                    metadata.type as any as RouteParamtypes,
-                  ),
+            type: token,
             data: metadata.data,
             schema: metadata.schema,
           };

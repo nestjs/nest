@@ -755,7 +755,8 @@ export class RouterExecutionContext {
           result.constructor === Object ||
           Array.isArray(result))
       ) {
-        return this.responseController.applySync(result, res, httpStatusCode);
+        this.responseController.applySync(result, res, httpStatusCode);
+        return;
       }
       return handleAsyncResponse(
         result,
