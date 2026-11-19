@@ -423,6 +423,43 @@ describe('ClientKafka', () => {
       expect(registeredEvents).toContain('consumer.stop');
       expect(registeredEvents).toContain('consumer.crash');
     });
+
+    it('should fail pending requests once the reply consumer stops, but not for a replaced consumer', () => {
+      const listeners = new Map<string, Function>();
+      const fakeConsumer = {
+        events: {
+          CONNECT: 'consumer.connect',
+          DISCONNECT: 'consumer.disconnect',
+          REBALANCING: 'consumer.rebalancing',
+          STOP: 'consumer.stop',
+          CRASH: 'consumer.crash',
+        },
+        on: vi.fn((event: string, fn: Function) => {
+          listeners.set(event, fn);
+        }),
+      };
+
+      untypedClient._consumer = fakeConsumer;
+      untypedClient.registerConsumerEventListeners();
+
+      const pending = vi.fn();
+      untypedClient.routingMap.set('req', pending);
+      // On a crash, kafkajs stops the consumer before it emits CRASH, even
+      // when it restarts it afterwards
+      listeners.get('consumer.stop')!();
+      listeners.get('consumer.crash')!({ payload: { restart: true } });
+      expect(pending).toHaveBeenCalledExactlyOnceWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(untypedClient.routingMap.size).toBe(0);
+
+      const activeClientCallback = vi.fn();
+      untypedClient._consumer = { ...fakeConsumer };
+      untypedClient.routingMap.set('req-new', activeClientCallback);
+      listeners.get('consumer.stop')!();
+      expect(activeClientCallback).not.toHaveBeenCalled();
+      expect(untypedClient.routingMap.has('req-new')).toBe(true);
+    });
   });
 
   describe('connect', () => {
@@ -849,6 +886,58 @@ describe('ClientKafka', () => {
       expect(client['consumerAssignments']).toEqual({
         'topic-b': 3,
       });
+    });
+
+    it('should fail only pending requests whose reply partition was lost on rebalance', async () => {
+      await client.connect();
+
+      const lostCallback = vi.fn();
+      const droppedTopicCallback = vi.fn();
+      const retainedCallback = vi.fn();
+
+      untypedClient.routingMap.set('lost', lostCallback);
+      untypedClient.pendingRequestPartitions.set('lost', {
+        replyTopic: 'topic-a.reply',
+        replyPartition: 0,
+      });
+      untypedClient.routingMap.set('dropped-topic', droppedTopicCallback);
+      untypedClient.pendingRequestPartitions.set('dropped-topic', {
+        replyTopic: 'topic-gone.reply',
+        replyPartition: 0,
+      });
+      untypedClient.routingMap.set('retained', retainedCallback);
+      untypedClient.pendingRequestPartitions.set('retained', {
+        replyTopic: 'topic-a.reply',
+        replyPartition: 2,
+      });
+
+      client['setConsumerAssignments']({
+        id: 'id',
+        type: 'type',
+        timestamp: 1234567890,
+        payload: {
+          duration: 20,
+          groupId: 'group-id',
+          isLeader: true,
+          leaderId: 'member-1',
+          groupProtocol: 'RoundRobin',
+          memberId: 'member-1',
+          memberAssignment: {
+            'topic-a.reply': [1, 2],
+          },
+        },
+      });
+
+      expect(lostCallback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(droppedTopicCallback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(retainedCallback).not.toHaveBeenCalled();
+      expect(untypedClient.routingMap.has('retained')).toBe(true);
+      expect(untypedClient.routingMap.has('lost')).toBe(false);
+      expect(untypedClient.routingMap.has('dropped-topic')).toBe(false);
     });
   });
 
@@ -1552,6 +1641,51 @@ describe('ClientKafka', () => {
       it('should remove callback from routing map', async () => {
         expect(client['routingMap'].has(correlationId)).toBe(false);
         expect(client['routingMap'].size).toEqual(0);
+      });
+
+      it('should skip producer.send and errorCallback if disposed before async serialize settles', async () => {
+        let resolveSerialize!: (val: any) => void;
+        let rejectSerialize!: (err: Error) => void;
+        const serializeSpy = vi
+          .spyOn(untypedClient.serializer, 'serialize')
+          .mockImplementationOnce(
+            () =>
+              new Promise(resolve => {
+                resolveSerialize = resolve;
+              }),
+          )
+          .mockImplementationOnce(
+            () =>
+              new Promise((_, reject) => {
+                rejectSerialize = reject;
+              }),
+          );
+        const sendSpy = vi.fn();
+        const producerSpy = vi
+          .spyOn(client as any, '_producer', 'get')
+          .mockReturnValue({ send: sendSpy });
+
+        const cb1 = vi.fn();
+        const dispose1 = client['publish'](readPacket, cb1);
+        dispose1();
+        resolveSerialize({ value: 'ok', headers: {} });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(sendSpy).not.toHaveBeenCalled();
+        expect(cb1).not.toHaveBeenCalled();
+
+        const cb2 = vi.fn();
+        const dispose2 = client['publish'](readPacket, cb2);
+        dispose2();
+        rejectSerialize(new Error('late serialize error'));
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(cb2).not.toHaveBeenCalled();
+
+        serializeSpy.mockRestore();
+        producerSpy.mockRestore();
       });
     });
   });
