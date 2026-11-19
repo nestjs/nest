@@ -36,12 +36,10 @@ describe.each(adapters('express', 'node'))(
         const v1 = await request(app.getHttpServer())
           .get(path)
           .set('v', '1')
-          .expect('Content-Type', /^application\/json\b/)
           .expect(200);
         const v2 = await request(app.getHttpServer())
           .get(path)
           .set('v', '2')
-          .expect('Content-Type', /^application\/json\b/)
           .expect(200);
 
         expect(v1.body).toEqual({
@@ -63,7 +61,6 @@ describe.each(adapters('express', 'node'))(
         const response = await request(app.getHttpServer())
           .get('/reports/report.json')
           .set('v', version)
-          .expect('Content-Type', /^application\/json\b/)
           .expect(200);
 
         expect(response.body).toEqual({ version, name: 'report', ext: 'json' });

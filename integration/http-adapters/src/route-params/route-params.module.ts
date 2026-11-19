@@ -23,7 +23,8 @@ export class UsersV2Controller {
 export class ReportsV1Controller {
   @Get(':name.:ext')
   find(@Param() params: Record<string, string>) {
-    return { version: '1', ...params };
+    const response: Record<string, string> = { version: '1', ...params };
+    return response;
   }
 }
 
@@ -31,7 +32,8 @@ export class ReportsV1Controller {
 export class ReportsV2Controller {
   @Get(':name{.:locale}.:ext')
   find(@Param() params: Record<string, string>) {
-    return { version: '2', ...params };
+    const response: Record<string, string> = { version: '2', ...params };
+    return response;
   }
 }
 
