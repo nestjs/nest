@@ -593,7 +593,12 @@ export class WebSocketsController {
           isStatic ? STATIC_CONTEXT : contextId,
           instanceWrapper.id,
         );
-        this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
+        await this.handleLifecycleHookError(
+          exceptionFilter,
+          methodName,
+          args,
+          err,
+        );
       } finally {
         // The hook threw, or is not going to be called at all
         markConnectionHookAsCalled?.();
@@ -673,7 +678,12 @@ export class WebSocketsController {
           STATIC_CONTEXT,
           instanceWrapperId,
         );
-        this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
+        return this.handleLifecycleHookError(
+          exceptionFilter,
+          methodName,
+          args,
+          err,
+        );
       };
       try {
         const result = hook.apply(instance, args);
@@ -681,7 +691,7 @@ export class WebSocketsController {
           ? (result as Promise<unknown>).catch(handleError)
           : result;
       } catch (err) {
-        handleError(err);
+        return handleError(err);
       }
     };
   }
@@ -707,7 +717,12 @@ export class WebSocketsController {
     // uncaught exception or an unhandled rejection. It is logged instead, as
     // the adapters do for message handlers.
     try {
-      exceptionFilter.handle(err as Error, host);
+      const pending = exceptionFilter.handle(err as Error, host);
+      if (isFunction((pending as Promise<unknown>)?.then)) {
+        return (pending as Promise<unknown>).catch(filterError =>
+          this.logger.error(filterError),
+        );
+      }
     } catch (filterError) {
       this.logger.error(filterError);
     }
