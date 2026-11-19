@@ -106,7 +106,7 @@ export class RoutePathFactory {
   public getVersion(metadata: RoutePathMetadata) {
     // The version will be either the path version or the controller version,
     // with the pathVersion taking priority.
-    return metadata.methodVersion || metadata.controllerVersion;
+    return metadata.methodVersion ?? metadata.controllerVersion;
   }
 
   public getVersionPrefix(versioningOptions: VersioningOptions): string {
