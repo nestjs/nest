@@ -9,13 +9,17 @@ import type { StreamableFile, Type } from '@nestjs/common';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 
+export interface HandlerObservableNotifier {
+  subscribe(listener: () => void): { unsubscribe(): void };
+}
+
 export type HandleResponseFn = HandlerResponseBasicFn | HandleSseResponseFn;
 
 export type HandlerResponseBasicFn = <TResult, TResponse>(
   result: TResult,
   res: TResponse,
   req?: any,
-  handlerObservable$?: Observable<unknown>,
+  handlerObservable$?: HandlerObservableNotifier,
   handlerStreams?: (StreamableFile | StreamingBody)[],
 ) => any;
 
