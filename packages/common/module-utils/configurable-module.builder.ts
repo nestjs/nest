@@ -70,11 +70,16 @@ export class ConfigurableModuleBuilder<
   ) => DynamicModule;
 
   protected readonly logger = new Logger(ConfigurableModuleBuilder.name);
+  protected readonly options: ConfigurableModuleBuilderOptions;
 
   constructor(
-    protected readonly options: ConfigurableModuleBuilderOptions = {},
+    options: ConfigurableModuleBuilderOptions = {},
     parentBuilder?: ConfigurableModuleBuilder<ModuleOptions>,
   ) {
+    // "build()" stores the generated injection token in the options, so a
+    // builder created by the caller works on a copy of the caller's object.
+    // Builders derived from it keep sharing that copy, and so the token.
+    this.options = parentBuilder ? options : { ...options };
     if (parentBuilder) {
       this.staticMethodKey = parentBuilder.staticMethodKey as StaticMethodKey;
       this.factoryClassMethodKey =

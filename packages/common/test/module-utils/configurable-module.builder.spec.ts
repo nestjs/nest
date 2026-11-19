@@ -182,5 +182,31 @@ describe('ConfigurableModuleBuilder', () => {
         );
       }
     });
+
+    it('should not mutate the options passed to the builder', () => {
+      const options = { alwaysTransient: true };
+
+      new ConfigurableModuleBuilder(options).build();
+
+      expect(options).toEqual({ alwaysTransient: true });
+    });
+
+    it('should generate a distinct token for each builder created with the same options', () => {
+      const options = {};
+
+      const first = new ConfigurableModuleBuilder(options).build();
+      const second = new ConfigurableModuleBuilder(options).build();
+
+      expect(first.MODULE_OPTIONS_TOKEN).not.toBe(second.MODULE_OPTIONS_TOKEN);
+    });
+
+    it('should share the token between builders derived from the same builder', () => {
+      const builder = new ConfigurableModuleBuilder();
+
+      const root = builder.setClassMethodName('forRoot').build();
+      const feature = builder.setClassMethodName('forFeature').build();
+
+      expect(root.MODULE_OPTIONS_TOKEN).toBe(feature.MODULE_OPTIONS_TOKEN);
+    });
   });
 });
