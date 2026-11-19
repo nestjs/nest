@@ -3,7 +3,7 @@ import { AbstractWsAdapter } from '@nestjs/websockets';
 import * as http from 'http';
 import type { Socket } from 'net';
 import type { Duplex } from 'stream';
-import { EMPTY, fromEvent, Observable } from 'rxjs';
+import { defer, EMPTY, fromEvent, Observable } from 'rxjs';
 import {
   catchError,
   filter,
@@ -41,7 +41,10 @@ type UpgradeListener = (
 type UpgradeHook = (...args: any[]) => any;
 type WsData = string | Buffer | ArrayBuffer | Buffer[];
 type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
-type WsAdapterOptions = {
+/**
+ * @publicApi
+ */
+export type WsAdapterOptions = {
   messageParser?: WsMessageParser;
   /**
    * How many messages a client may have handled at the same time. Later ones
@@ -76,6 +79,25 @@ type WsAdapterOptions = {
    * @default 1048576 (1 MB)
    */
   maxPayload?: number;
+  /**
+   * When `true`, `close()` stops accepting new connections (an upgrade request
+   * on a server shared with the HTTP adapter gets HTTP 503, a dedicated port
+   * stops listening), ignores new messages from connected clients, waits up to
+   * `gracePeriod` milliseconds for in-flight message handlers and pending
+   * replies to finish, and closes each socket with code 1001 ("Going Away").
+   * Sockets still open once `gracePeriod` has passed are terminated.
+   *
+   * @default false
+   */
+  gracefulShutdown?: boolean;
+  /**
+   * Maximum time in milliseconds to wait for active message handlers, pending
+   * replies, and clean WebSocket close handshakes during graceful shutdown
+   * before forcibly terminating remaining clients.
+   *
+   * @default 10000
+   */
+  gracePeriod?: number;
 };
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
@@ -94,6 +116,10 @@ const PAUSED_CLIENT_PING_INTERVAL = 5000;
 // ws takes up to 100 MB by default, and the default parser runs JSON.parse()
 // on the whole message at once, before any guard can run
 const DEFAULT_MAX_PAYLOAD = 1024 * 1024;
+const DEFAULT_GRACE_PERIOD = 10000;
+const MAX_TIMEOUT = 2_147_483_647;
+const WS_GOING_AWAY_CODE = 1001;
+const WS_GOING_AWAY_REASON = 'Going Away';
 
 /**
  * A limit that is missing, or that is not a number (e.g. NaN from
@@ -151,6 +177,8 @@ export class WsAdapter extends AbstractWsAdapter {
   protected readonly maxSendBufferSize: number;
   protected readonly unclaimedUpgradeTimeout: number;
   protected readonly maxPayload: number;
+  protected readonly gracefulShutdown: boolean;
+  protected readonly gracePeriod: number;
   // How many gateways hold each client back. Gateways that share a server
   // bind their handlers to the same client, and a single resume() undoes
   // every pause().
@@ -158,6 +186,11 @@ export class WsAdapter extends AbstractWsAdapter {
   // Upgrade requests whose "handleProtocols" threw, which ws goes on to
   // complete anyway
   private readonly refusedUpgrades = new WeakSet<object>();
+  private readonly closingServers = new WeakSet<object>();
+  private readonly clientClosing = new WeakSet<object>();
+  private readonly clientActiveHandlers = new WeakMap<object, number>();
+  private readonly clientPendingReplies = new WeakMap<object, number>();
+  private readonly clientDrainWaiters = new WeakMap<object, Set<() => void>>();
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
@@ -181,6 +214,12 @@ export class WsAdapter extends AbstractWsAdapter {
       DEFAULT_UNCLAIMED_UPGRADE_TIMEOUT,
     );
     this.maxPayload = resolveLimit(options?.maxPayload, DEFAULT_MAX_PAYLOAD);
+    this.gracefulShutdown = Boolean(options?.gracefulShutdown);
+    const rawGracePeriod = resolveLimit(
+      options?.gracePeriod,
+      DEFAULT_GRACE_PERIOD,
+    );
+    this.gracePeriod = Math.min(Math.max(0, rawGracePeriod), MAX_TIMEOUT);
   }
 
   public create(
@@ -446,22 +485,32 @@ export class WsAdapter extends AbstractWsAdapter {
       // ws still emits what a client sent before it got the close frame, e.g.
       // after handleConnection() called client.close(). Like socket.io does
       // for a disconnected socket, drop those instead of handling them.
-      filter(() => client.readyState === READY_STATE.OPEN_STATE),
+      filter(
+        () =>
+          !this.clientClosing.has(client) &&
+          client.readyState === READY_STATE.OPEN_STATE,
+      ),
       filter(() => this.ensureSendBufferWithinLimit(client)),
       // How many messages are pending at once is up to the client: ws emits
       // all the messages of a read before any handler can settle.
       mergeMapBounded(
         data =>
-          this.bindMessageHandler(data, handlersMap, transform).pipe(
-            filter(result => !isNil(result)),
-            // a handler that rejects through an error filter that rethrows
-            // would error the client's stream and silence every later message;
-            // that rethrow is an app bug, so it gets logged, not dropped silently
-            catchError(err => {
-              this.logger.error(err);
-              return EMPTY;
-            }),
-          ),
+          defer(() => {
+            this.incrementClientWork(client, this.clientActiveHandlers);
+            return this.bindMessageHandler(data, handlersMap, transform).pipe(
+              filter(result => !isNil(result)),
+              // a handler that rejects through an error filter that rethrows
+              // would error the client's stream and silence every later message;
+              // that rethrow is an app bug, so it gets logged, not dropped silently
+              catchError(err => {
+                this.logger.error(err);
+                return EMPTY;
+              }),
+              finalize(() =>
+                this.decrementClientWork(client, this.clientActiveHandlers),
+              ),
+            );
+          }),
         this.maxConcurrentMessages,
         backlogged => {
           isBacklogged = backlogged;
@@ -487,10 +536,18 @@ export class WsAdapter extends AbstractWsAdapter {
         return;
       }
       pendingReplies++;
-      client.send(payload, () => {
+      this.incrementClientWork(client, this.clientPendingReplies);
+      let replySettled = false;
+      const settleReply = () => {
+        if (replySettled) {
+          return;
+        }
+        replySettled = true;
         pendingReplies--;
+        this.decrementClientWork(client, this.clientPendingReplies);
         updatePaused();
-      });
+      };
+      client.send(payload, settleReply);
       if (this.ensureSendBufferWithinLimit(client)) {
         updatePaused();
       }
@@ -579,15 +636,153 @@ export class WsAdapter extends AbstractWsAdapter {
   }
 
   public async close(server: any) {
+    if (!this.gracefulShutdown) {
+      const closeEventSignal = new Promise((resolve, reject) =>
+        server.close((err: Error) => (err ? reject(err) : resolve(undefined))),
+      );
+      if (server.clients) {
+        for (const ws of server.clients) {
+          ws.terminate();
+        }
+      }
+      await closeEventSignal;
+      return;
+    }
+
+    this.closingServers.add(server);
     const closeEventSignal = new Promise((resolve, reject) =>
       server.close((err: Error) => (err ? reject(err) : resolve(undefined))),
     );
-    if (server.clients) {
-      for (const ws of server.clients) {
-        ws.terminate();
-      }
+    const clients: any[] = server.clients ? [...server.clients] : [];
+    if (clients.length > 0) {
+      await this.drainAndCloseClients(clients);
     }
     await closeEventSignal;
+  }
+
+  private incrementClientWork(
+    client: object,
+    counter: WeakMap<object, number>,
+  ) {
+    counter.set(client, (counter.get(client) ?? 0) + 1);
+  }
+
+  private decrementClientWork(
+    client: object,
+    counter: WeakMap<object, number>,
+  ) {
+    const next = (counter.get(client) ?? 0) - 1;
+    if (next > 0) {
+      counter.set(client, next);
+      return;
+    }
+    counter.delete(client);
+    if (this.getClientWorkCount(client) === 0) {
+      const waiters = this.clientDrainWaiters.get(client);
+      if (waiters) {
+        this.clientDrainWaiters.delete(client);
+        waiters.forEach(resolve => resolve());
+      }
+    }
+  }
+
+  private getClientWorkCount(client: object): number {
+    return (
+      (this.clientActiveHandlers.get(client) ?? 0) +
+      (this.clientPendingReplies.get(client) ?? 0)
+    );
+  }
+
+  private async drainAndCloseClients(clients: any[]): Promise<void> {
+    const cleanups: Array<() => void> = [];
+    let timedOut = false;
+
+    const waitForClose = (ws: any): Promise<void> => {
+      if (ws.readyState === READY_STATE.CLOSED_STATE) {
+        return Promise.resolve();
+      }
+      return new Promise<void>(resolve => {
+        const onClose = () => resolve();
+        ws.once(CLOSE_EVENT, onClose);
+        cleanups.push(() => ws.removeListener(CLOSE_EVENT, onClose));
+      });
+    };
+
+    const waitForDrain = (ws: any): Promise<void> => {
+      if (
+        this.getClientWorkCount(ws) === 0 ||
+        ws.readyState === READY_STATE.CLOSED_STATE
+      ) {
+        return Promise.resolve();
+      }
+      return new Promise<void>(resolve => {
+        let settled = false;
+        const done = () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          ws.removeListener(CLOSE_EVENT, done);
+          const set = this.clientDrainWaiters.get(ws);
+          set?.delete(done);
+          if (set?.size === 0) {
+            this.clientDrainWaiters.delete(ws);
+          }
+          resolve();
+        };
+        let waiters = this.clientDrainWaiters.get(ws);
+        if (!waiters) {
+          waiters = new Set();
+          this.clientDrainWaiters.set(ws, waiters);
+        }
+        waiters.add(done);
+        ws.once(CLOSE_EVENT, done);
+        cleanups.push(done);
+      });
+    };
+
+    const clientPromises = clients.map(async ws => {
+      this.clientClosing.add(ws);
+      await waitForDrain(ws);
+      if (timedOut) {
+        return;
+      }
+      if (ws.readyState === READY_STATE.OPEN_STATE) {
+        const closed = waitForClose(ws);
+        ws.close(WS_GOING_AWAY_CODE, WS_GOING_AWAY_REASON);
+        await closed;
+      } else if (ws.readyState === READY_STATE.CLOSING_STATE) {
+        await waitForClose(ws);
+      }
+    });
+
+    let graceTimer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<void>(resolve => {
+      graceTimer = setTimeout(() => {
+        timedOut = true;
+        let terminated = 0;
+        for (const ws of clients) {
+          if (ws.readyState !== READY_STATE.CLOSED_STATE) {
+            terminated++;
+            ws.terminate();
+          }
+        }
+        if (terminated > 0) {
+          this.logger.warn(
+            `Graceful shutdown timed out after ${this.gracePeriod}ms; forcibly terminating ${terminated} remaining WebSocket client(s).`,
+          );
+        }
+        resolve();
+      }, this.gracePeriod);
+      graceTimer.unref?.();
+    });
+
+    try {
+      await Promise.race([Promise.all(clientPromises), timeoutPromise]);
+    } finally {
+      clearTimeout(graceTimer);
+      cleanups.forEach(fn => fn());
+    }
   }
 
   public async dispose() {
@@ -638,6 +833,11 @@ export class WsAdapter extends AbstractWsAdapter {
         let isRequestDelegated = false;
         for (const wsServer of wsServersCollection) {
           if (pathname === wsServer.path) {
+            if (this.closingServers.has(wsServer)) {
+              this.abortUpgrade(socket, 503);
+              isRequestDelegated = true;
+              break;
+            }
             wsServer.handleUpgrade(request, socket, head, (ws: any) => {
               client = ws;
               wsServer.emit('connection', ws, request);
