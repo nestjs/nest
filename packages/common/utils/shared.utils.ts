@@ -28,8 +28,15 @@ export const addLeadingSlash = (path?: string): string =>
       : path
     : '';
 
-export const normalizePath = (path?: string): string =>
-  path ? ('/' + path.replace(/\/+$/, '')).replace(/\/+/g, '/') : '/';
+export const normalizePath = (path?: string): string => {
+  if (!path) {
+    return '/';
+  }
+  const normalized = ('/' + path.replace(/\/+$/, '')).replace(/\/+/g, '/');
+  // An optional group that starts with a slash ("{/:lang}") already holds the
+  // leading slash, and adding one would make it required (see addLeadingSlash)
+  return path.startsWith('{/') ? normalized.slice(1) : normalized;
+};
 
 export const stripEndSlash = (path: string): string =>
   path.endsWith('/') ? path.slice(0, -1) : path;

@@ -158,7 +158,7 @@ from the main (upstream) repository:
 
 ## <a name="development"></a> Development Setup
 
-You will need [Node.js](https://nodejs.org) version >= 20.
+You will need [Node.js](https://nodejs.org) version 22.12 or newer, which the test tooling (Vitest) requires. The published packages themselves support Node.js >= 20.
 
 1. After cloning the repo, run:
 

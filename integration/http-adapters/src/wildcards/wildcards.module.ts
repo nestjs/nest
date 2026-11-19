@@ -6,6 +6,7 @@ import {
   NestModule,
   Param,
 } from '@nestjs/common';
+import { RouterModule } from '@nestjs/core';
 import { markMiddleware } from '../adapters.js';
 
 @Controller('admin')
@@ -107,3 +108,41 @@ export class RootOptionalGroupModule implements NestModule {
     consumer.apply(markMiddleware).forRoutes(LocaleController);
   }
 }
+
+@Controller('cats')
+export class OptionalGroupCatsController {
+  @Get()
+  index(@Param('lang') lang: string | undefined) {
+    return { lang: lang ?? null };
+  }
+}
+
+@Module({ controllers: [OptionalGroupCatsController] })
+export class OptionalGroupCatsModule {}
+
+@Controller('dogs')
+export class OptionalGroupDogsController {
+  @Get()
+  index(@Param('lang') lang: string | undefined) {
+    return { lang: lang ?? null };
+  }
+}
+
+@Module({ controllers: [OptionalGroupDogsController] })
+export class OptionalGroupDogsModule {}
+
+// The optional group is the path of a RouterModule route, not of a controller
+@Module({
+  imports: [
+    OptionalGroupCatsModule,
+    OptionalGroupDogsModule,
+    RouterModule.register([
+      { path: '{/:lang}', module: OptionalGroupCatsModule },
+      {
+        path: 'v1',
+        children: [{ path: '{/:lang}', module: OptionalGroupDogsModule }],
+      },
+    ]),
+  ],
+})
+export class RouterModuleOptionalGroupModule {}

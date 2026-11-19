@@ -11,8 +11,9 @@ export class MultipartError extends Error {
   constructor(
     readonly code: MultipartErrorCode,
     readonly field?: string,
+    options?: ErrorOptions,
   ) {
-    super(multerExceptions[code]);
+    super(multerExceptions[code], options);
     this.name = 'MultipartError';
   }
 }

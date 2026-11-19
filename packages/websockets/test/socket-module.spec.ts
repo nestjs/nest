@@ -93,4 +93,63 @@ describe('SocketModule', () => {
       expect(applicationConfig.getIoAdapter()).toBe(adapter);
     });
   });
+
+  describe('close', () => {
+    it('should reject new clients before closing servers and call dispose()', async () => {
+      socketModule.acceptClients();
+      const order: string[] = [];
+      const rejectClientsSpy = vi
+        .spyOn(socketModule, 'rejectClients')
+        .mockImplementation(() => {
+          order.push('rejectClients');
+          socketModule['isAcceptingClients'] = false;
+        });
+
+      const adapter = new PresetAdapter();
+      vi.spyOn(adapter, 'close').mockImplementation(async () => {
+        expect(socketModule['isAcceptingClients']).toBe(false);
+        order.push('adapter.close');
+      });
+      vi.spyOn(adapter, 'dispose').mockImplementation(async () => {
+        order.push('adapter.dispose');
+      });
+      applicationConfig.setIoAdapter(adapter);
+
+      const server = { id: 'ws-server' };
+      socketModule['socketsContainer'].addOne({ port: 0 }, { server } as any);
+
+      await socketModule.close();
+
+      expect(rejectClientsSpy).toHaveBeenCalledTimes(1);
+      expect(socketModule['isAcceptingClients']).toBe(false);
+      expect(order).toEqual([
+        'rejectClients',
+        'adapter.close',
+        'adapter.dispose',
+      ]);
+      expect(socketModule['socketsContainer'].getAll().size).toBe(0);
+    });
+
+    it('should not throw when a custom adapter does not implement dispose()', async () => {
+      socketModule.acceptClients();
+      const rejectClientsSpy = vi.spyOn(socketModule, 'rejectClients');
+
+      const customAdapter = {
+        create: vi.fn(),
+        bindClientConnect: vi.fn(),
+        bindMessageHandlers: vi.fn(),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      applicationConfig.setIoAdapter(customAdapter as any);
+
+      const server = { id: 'custom-server' };
+      socketModule['socketsContainer'].addOne({ port: 0 }, { server } as any);
+
+      await expect(socketModule.close()).resolves.toBeUndefined();
+      expect(rejectClientsSpy).toHaveBeenCalledTimes(1);
+      expect(socketModule['isAcceptingClients']).toBe(false);
+      expect(customAdapter.close).toHaveBeenCalledWith(server);
+      expect(socketModule['socketsContainer'].getAll().size).toBe(0);
+    });
+  });
 });

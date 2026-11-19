@@ -49,13 +49,20 @@ export class DefaultValuePipe<T = any, R = any> implements PipeTransform<
     if (copies.has(value)) {
       return copies.get(value) as V;
     }
-    const copy = Object.assign(
-      isArray ? [] : Object.create(Object.getPrototypeOf(value)),
-      value,
-    );
+    const copy = isArray
+      ? new Array(value.length)
+      : Object.create(Object.getPrototypeOf(value));
     copies.set(value, copy);
-    for (const key of Reflect.ownKeys(copy)) {
-      copy[key] = this.copyDefaultValue(copy[key], copies);
+    for (const key of Reflect.ownKeys(value as object)) {
+      if (!Object.prototype.propertyIsEnumerable.call(value, key)) {
+        continue;
+      }
+      Object.defineProperty(copy, key, {
+        value: this.copyDefaultValue(Reflect.get(value as object, key), copies),
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
     }
     return copy;
   }

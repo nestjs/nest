@@ -11,4 +11,4 @@ export * from './decorators/index.js';
 export * from './errors/index.js';
 export * from './exceptions/index.js';
 export { MessageMappingProperties } from './gateway-metadata-explorer.js';
-export * from './interfaces/index.js';
+export type * from './interfaces/index.js';

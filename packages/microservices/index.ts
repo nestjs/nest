@@ -14,7 +14,7 @@ export * from './enums/index.js';
 export * from './events/index.js';
 export * from './exceptions/index.js';
 export * from './helpers/index.js';
-export * from './interfaces/index.js';
+export type * from './interfaces/index.js';
 export * from './module/index.js';
 export * from './nest-microservice.js';
 export * from './record-builders/index.js';

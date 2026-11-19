@@ -76,6 +76,10 @@ export class ClientKafka
   protected connectionAttempt: KafkaConnectionAttempt | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
+  protected readonly pendingRequestPartitions = new Map<
+    string,
+    { replyTopic: string; replyPartition: number }
+  >();
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
@@ -180,6 +184,7 @@ export class ClientKafka
   }
 
   public handleClose() {
+    this.pendingRequestPartitions.clear();
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
       const callbacks = [...this.routingMap.values()];
@@ -456,24 +461,44 @@ export class ClientKafka
   }
 
   protected registerConsumerEventListeners() {
-    if (!this._consumer) {
+    const consumer = this._consumer;
+    if (!consumer) {
       return;
     }
-    this._consumer.on(this._consumer.events.CONNECT, () =>
-      this._status$.next(KafkaStatus.CONNECTED),
-    );
-    this._consumer.on(this._consumer.events.DISCONNECT, () =>
-      this._status$.next(KafkaStatus.DISCONNECTED),
-    );
-    this._consumer.on(this._consumer.events.REBALANCING, () =>
-      this._status$.next(KafkaStatus.REBALANCING),
-    );
-    this._consumer.on(this._consumer.events.STOP, () =>
-      this._status$.next(KafkaStatus.STOPPED),
-    );
-    this._consumer.on(this._consumer.events.CRASH, () =>
-      this._status$.next(KafkaStatus.CRASHED),
-    );
+    consumer.on(consumer.events.CONNECT, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.CONNECTED);
+    });
+    consumer.on(consumer.events.DISCONNECT, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.DISCONNECTED);
+    });
+    consumer.on(consumer.events.REBALANCING, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.REBALANCING);
+    });
+    consumer.on(consumer.events.STOP, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.STOPPED);
+      // A stopped consumer reads no more replies. kafkajs also stops (and
+      // leaves the group) before it reports a crash, restarting or not, so
+      // this covers a crash as well.
+      this.handleClose();
+    });
+    consumer.on(consumer.events.CRASH, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.CRASHED);
+    });
   }
 
   protected registerProducerEventListeners() {
@@ -549,7 +574,10 @@ export class ClientKafka
     const packet = this.assignPacketId(partialPacket);
     this.routingMap.set(packet.id, callback);
 
-    const cleanup = () => this.routingMap.delete(packet.id);
+    const cleanup = () => {
+      this.pendingRequestPartitions.delete(packet.id);
+      this.routingMap.delete(packet.id);
+    };
     const errorCallback = (err: unknown) => {
       cleanup();
       callback({ err });
@@ -559,9 +587,17 @@ export class ClientKafka
       const pattern = this.normalizePattern(partialPacket.pattern);
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
+      this.pendingRequestPartitions.set(packet.id, {
+        replyTopic,
+        replyPartition: Number(replyPartition),
+      });
 
       Promise.resolve(this.serializer.serialize(packet.data, { pattern }))
         .then((serializedRequest: KafkaRequest) => {
+          // Torn down or failed (e.g., by a rebalance) while serializing
+          if (!this.routingMap.has(packet.id)) {
+            return;
+          }
           // Ahead of the reply headers, which no metadata entry may replace
           const serializedPacket = this.mergeMetadata(
             serializedRequest,
@@ -580,7 +616,11 @@ export class ClientKafka
 
           return this.connectedProducer.send(message);
         })
-        .catch(err => errorCallback(err));
+        .catch(err => {
+          if (this.routingMap.has(packet.id)) {
+            errorCallback(err);
+          }
+        });
 
       return cleanup;
     } catch (err) {
@@ -640,6 +680,26 @@ export class ClientKafka
     }
 
     this.consumerAssignments = consumerAssignments;
+
+    if (this.pendingRequestPartitions.size > 0) {
+      const err = new Error('Connection closed');
+      for (const [id, { replyTopic, replyPartition }] of this
+        .pendingRequestPartitions) {
+        const assignedPartitions = data.payload.memberAssignment[replyTopic];
+        if (!assignedPartitions?.includes(replyPartition)) {
+          this.pendingRequestPartitions.delete(id);
+          const callback = this.routingMap.get(id);
+          if (callback) {
+            this.routingMap.delete(id);
+            try {
+              callback({ err });
+            } catch (callbackErr) {
+              this.logger.error(callbackErr);
+            }
+          }
+        }
+      }
+    }
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {

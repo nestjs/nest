@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from 'node:util';
 import {
   ConsoleLogger,
   Logger,
@@ -134,9 +135,9 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `Object(${Object.keys(error).length})`,
         );
-        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
-          `randomError: \x1b[33mtrue`,
-        );
+        expect(
+          stripVTControlCharacters(processStderrWriteSpy.mock.calls[0][0]),
+        ).toContain('randomError: true');
       });
 
       it('should print one error with stacktrace and context to the console', () => {

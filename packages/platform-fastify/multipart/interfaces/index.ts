@@ -1,3 +1,3 @@
-export * from './files-upload-module.interface.js';
-export * from './multipart-file.interface.js';
-export * from './multipart-options.interface.js';
+export type * from './files-upload-module.interface.js';
+export type * from './multipart-file.interface.js';
+export type * from './multipart-options.interface.js';

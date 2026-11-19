@@ -240,6 +240,31 @@ describe('ClientMqtt', () => {
         expect(publishSpy).toHaveBeenCalledTimes(2);
         expect(client['subscriptionsCount'].get(`${pattern}/reply`)).toBe(1);
       });
+
+      it('should fail a request that waits for the acknowledgement on close', async () => {
+        let confirmSubscription: (err?: Error) => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          confirmSubscription = err => fn(err);
+        });
+        const error = vi.fn();
+        client.send(pattern, 'data').subscribe({ error });
+        await vi.waitFor(() => expect(subscribeSpy).toHaveBeenCalled());
+
+        client.handleClose();
+        // mqtt.js still answers the subscription (or fails it) afterwards
+        confirmSubscription();
+        confirmSubscription(new Error('Connection closed'));
+
+        expect(error).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ message: 'Connection closed' }),
+        );
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].size).toBe(0);
+        expect(unsubscribeSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}/reply`,
+        );
+      });
     });
     describe('dispose callback', () => {
       let getResponsePatternStub: ReturnType<typeof vi.fn>;

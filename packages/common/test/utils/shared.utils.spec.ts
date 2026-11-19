@@ -188,6 +188,15 @@ describe('Shared utils', () => {
       expect(normalizePath(null!)).toEqual('/');
       expect(normalizePath(undefined)).toEqual('/');
     });
+    it('should not add a leading slash before an optional group that starts with one', () => {
+      expect(normalizePath('{/:lang}')).toEqual('{/:lang}');
+      expect(normalizePath('{/:lang}/cats/')).toEqual('{/:lang}/cats');
+      expect(normalizePath('{/:lang}//cats')).toEqual('{/:lang}/cats');
+    });
+    it('should keep the leading slash of other paths that start with a group', () => {
+      expect(normalizePath('{:lang}')).toEqual('/{:lang}');
+      expect(normalizePath('/{/:lang}')).toEqual('/{/:lang}');
+    });
   });
 
   describe('isNil', () => {
