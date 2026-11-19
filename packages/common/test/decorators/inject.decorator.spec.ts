@@ -53,6 +53,26 @@ describe('@Inject', () => {
     });
   });
 
+  describe('when used on a constructor parameter of a subclass', () => {
+    class ParentTest {
+      constructor(@Inject('parent1') param1, @Inject('parent2') param2) {}
+    }
+
+    class ChildTest extends ParentTest {
+      constructor(@Inject('child') param) {
+        super(param, undefined);
+      }
+    }
+
+    it('should not inherit the parent constructor params metadata', () => {
+      const metadata = Reflect.getMetadata(
+        SELF_DECLARED_DEPS_METADATA,
+        ChildTest,
+      );
+      expect(metadata).toEqual([{ index: 0, param: 'child' }]);
+    });
+  });
+
   describe('when used on a property redeclared by a subclass', () => {
     class ParentTest {
       @Inject('parent') property;

@@ -671,9 +671,9 @@ export class Injector {
   /**
    * Returns the class in the prototype chain that declares the constructor
    * `type` is instantiated with. A subclass without its own constructor
-   * inherits both the parent's parameter types and its `@Optional()` flags,
-   * while a subclass that redeclares the constructor must not inherit the
-   * parent's flags, as its parameters are unrelated to the parent's.
+   * inherits the parent's parameter types, `@Inject()` tokens, and
+   * `@Optional()` flags, while a subclass that redeclares the constructor
+   * must not inherit them, as its parameters are unrelated to the parent's.
    */
   private getConstructorOwner(
     type: Type<unknown> | Function,
@@ -693,7 +693,8 @@ export class Injector {
   }
 
   public reflectSelfParams(type: Type<unknown> | Function): any[] {
-    return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
+    const ctorOwner = this.getConstructorOwner(type);
+    return Reflect.getOwnMetadata(SELF_DECLARED_DEPS_METADATA, ctorOwner) || [];
   }
 
   public async resolveSingleParam<T>(
