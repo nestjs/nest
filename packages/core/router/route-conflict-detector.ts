@@ -203,6 +203,16 @@ export class RouteConflictDetector {
         RouteConflictDetector.toComparablePath(route.path),
       ]),
     );
+    // ... and each string host, the first time a pair of routes needs it
+    const comparableHosts = new Map<string, ComparableSegment[]>();
+    const comparableHostOf = (host: string) => {
+      let comparableHost = comparableHosts.get(host);
+      if (!comparableHost) {
+        comparableHost = RouteConflictDetector.toComparableHost(host);
+        comparableHosts.set(host, comparableHost);
+      }
+      return comparableHost;
+    };
 
     RouteConflictDetector.forEachUniquePair(
       routes,
@@ -228,6 +238,7 @@ export class RouteConflictDetector {
           !RouteConflictDetector.hostsCanOverlap(
             earlierRoute.host,
             laterRoute.host,
+            comparableHostOf,
           )
         ) {
           return;
@@ -565,6 +576,7 @@ export class RouteConflictDetector {
   private static hostsCanOverlap(
     leftHost: ResolvedRoute['host'],
     rightHost: ResolvedRoute['host'],
+    comparableHostOf: (host: string) => ComparableSegment[],
   ): boolean {
     if (leftHost === undefined || rightHost === undefined) return true;
 
@@ -576,6 +588,7 @@ export class RouteConflictDetector {
         RouteConflictDetector.hostValuesCanMatchSameRequest(
           leftValue,
           rightValue,
+          comparableHostOf,
         ),
       ),
     );
@@ -584,65 +597,80 @@ export class RouteConflictDetector {
   private static hostValuesCanMatchSameRequest(
     leftValue: string | RegExp,
     rightValue: string | RegExp,
+    comparableHostOf: (host: string) => ComparableSegment[],
   ): boolean {
-    const leftIsRegExp = leftValue instanceof RegExp;
-    const rightIsRegExp = rightValue instanceof RegExp;
-    if (leftIsRegExp && rightIsRegExp) return true;
-    // A string host is a path-to-regexp pattern, as the router matches it
-    // (`:tenant.example.com`, `{www.}example.com`), so it is compared by the
-    // hosts it matches rather than by its text.
-    const leftIsPattern =
-      !leftIsRegExp && RouteConflictDetector.isHostPattern(leftValue);
-    const rightIsPattern =
-      !rightIsRegExp && RouteConflictDetector.isHostPattern(rightValue);
-    if (leftIsPattern && rightIsPattern) {
-      // Overlap unless the text they start or end with tells them apart
-      // (`:tenant.example.com` and `:tenant.example.org`)
-      return RouteConflictDetector.segmentsCanOverlap(
-        RouteConflictDetector.toComparableSegment({
-          kind: 'mixed',
-          value: (leftValue as string).toLowerCase(),
-        }),
-        RouteConflictDetector.toComparableSegment({
-          kind: 'mixed',
-          value: (rightValue as string).toLowerCase(),
-        }),
-      );
-    }
-    // As with two RegExps, whether a RegExp and a pattern share a host
-    // cannot be told without matching them, so they are taken to overlap
-    if ((leftIsRegExp && rightIsPattern) || (rightIsRegExp && leftIsPattern)) {
+    if (leftValue instanceof RegExp && rightValue instanceof RegExp) {
       return true;
     }
-    if (leftIsRegExp || leftIsPattern) {
-      return RouteConflictDetector.hostMatches(leftValue, rightValue as string);
+    if (leftValue instanceof RegExp) {
+      return RouteConflictDetector.regExpCanMatchHost(
+        leftValue,
+        comparableHostOf(rightValue as string),
+      );
     }
-    if (rightIsRegExp || rightIsPattern) {
-      return RouteConflictDetector.hostMatches(rightValue, leftValue as string);
+    if (rightValue instanceof RegExp) {
+      return RouteConflictDetector.regExpCanMatchHost(
+        rightValue,
+        comparableHostOf(leftValue),
+      );
     }
-    return leftValue === rightValue;
+    if (leftValue === rightValue) {
+      return true;
+    }
+    const leftVariants = comparableHostOf(leftValue);
+    const rightVariants = comparableHostOf(rightValue);
+    return leftVariants.some(leftVariant =>
+      rightVariants.some(rightVariant =>
+        RouteConflictDetector.segmentsCanOverlap(leftVariant, rightVariant),
+      ),
+    );
   }
 
-  private static isHostPattern(host: string): boolean {
-    const tokens = RouteConflictDetector.parseTokens(host);
-    return !!tokens && tokens.some(token => token.type !== 'text');
-  }
-
-  private static hostMatches(
-    hostMatcher: string | RegExp,
-    hostname: string,
+  /**
+   * As with two RegExps, whether a RegExp and a host pattern share a host
+   * cannot be told without matching them, so they are taken to overlap.
+   */
+  private static regExpCanMatchHost(
+    regExp: RegExp,
+    hostVariants: ComparableSegment[],
   ): boolean {
-    if (hostMatcher instanceof RegExp) {
+    return hostVariants.some(variant => {
+      if (variant.kind !== 'literal') {
+        return true;
+      }
       // Reset lastIndex before calling test() to guard against RegExps with
       // the `g` or `y` flags: those are stateful and would produce
       // inconsistent results (false negatives) when the same instance is
       // reused across the multiple pair comparisons that a single detect()
       // run performs.
-      hostMatcher.lastIndex = 0;
-      return hostMatcher.test(hostname);
+      regExp.lastIndex = 0;
+      return regExp.test(variant.value);
+    });
+  }
+
+  /**
+   * A string host is a path-to-regexp pattern, which the router matches
+   * case-insensitively (`:tenant.example.com`, `{www.}example.com`). It is
+   * compared as one segment per combination of its optional groups, as
+   * paths are, so a group does not hide the text around it.
+   */
+  private static toComparableHost(host: string): ComparableSegment[] {
+    const tokens = RouteConflictDetector.parseTokens(host);
+    if (!tokens) {
+      return [{ kind: 'literal', value: host.toLowerCase() }];
     }
-    // Compiled as the router compiles it (see `applyHostFilter`)
-    return pathToRegexp(hostMatcher).regexp.test(hostname);
+    if (RouteConflictDetector.countGroups(tokens) > MAX_EXPANDED_GROUPS) {
+      // Too many variants to compare: taken to match any host
+      return [{ kind: 'wildcard', value: host }];
+    }
+    return RouteConflictDetector.expandGroups(tokens).map(variant =>
+      variant.every(token => token.type === 'text')
+        ? { kind: 'literal', value: joinText(variant).toLowerCase() }
+        : RouteConflictDetector.toComparableSegment({
+            kind: 'mixed',
+            value: stringify(new TokenData(variant)).toLowerCase(),
+          }),
+    );
   }
 
   private static routesAreIdentical(

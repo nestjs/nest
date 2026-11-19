@@ -556,8 +556,11 @@ describe('RouteConflictDetector', () => {
       ['admin.example.com', ':tenant.example.com'],
       ['{www.}example.com', 'www.example.com'],
       [':tenant.example.com', 'ADMIN.example.com'],
+      ['{www.}example.com', ':tenant.example.com'],
+      ['Admin.example.com', 'admin.example.com'],
+      [/^www\./, '{www.}example.com'],
     ])(
-      'should detect host overlap between %s and %s when a host pattern matches the other host',
+      'should detect host overlap between %s and %s, which match a host in common',
       (earlierHost, laterHost) => {
         const conflicts = RouteConflictDetector.detect(
           [
@@ -581,6 +584,9 @@ describe('RouteConflictDetector', () => {
       [':tenant.example.com', 'admin.example.org'],
       [':tenant.example.com', ':tenant.example.org'],
       ['api.:region.example.com', 'admin.:region.example.com'],
+      ['{www.}example.com', 'api-:id.example.com'],
+      ['{www.}example.com', 'api.:region.example.com'],
+      [/^api\./, '{www.}example.com'],
     ])(
       'should not flag the hosts %s and %s, which match no host in common',
       (earlierHost, laterHost) => {
@@ -614,6 +620,31 @@ describe('RouteConflictDetector', () => {
         expect(conflicts).toHaveLength(1);
       },
     );
+
+    it('should read each distinct host once per run', () => {
+      const toComparableHost = vi.spyOn(
+        RouteConflictDetector as any,
+        'toComparableHost',
+      );
+      try {
+        RouteConflictDetector.detect(
+          [
+            ...Array.from({ length: 5 }, (_, index) =>
+              makeResolvedRoute({
+                path: `/users/${index}`,
+                host: ':tenant.example.com',
+              }),
+            ),
+            makeResolvedRoute({ path: '/users/0', host: 'admin.example.com' }),
+          ],
+          undefined,
+        );
+
+        expect(toComparableHost).toHaveBeenCalledTimes(2);
+      } finally {
+        toComparableHost.mockRestore();
+      }
+    });
 
     it('should classify identical host arrays declared in different order as a duplicate', () => {
       const earlierRoute = makeResolvedRoute({
