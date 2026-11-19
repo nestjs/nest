@@ -1181,4 +1181,188 @@ describe('WsAdapter', () => {
       });
     });
   });
+
+  describe('gracefulShutdown', () => {
+    const createMockSocket = (readyState = 1) => {
+      const ws = Object.assign(new EventEmitter(), {
+        readyState,
+        bufferedAmount: 0,
+        send: vi.fn((_payload: string, cb?: () => void) => cb?.()),
+        close: vi.fn((_code?: number, _reason?: string) => {
+          ws.readyState = 3;
+          ws.emit('close');
+        }),
+        terminate: vi.fn(() => {
+          ws.readyState = 3;
+          ws.emit('close');
+        }),
+      });
+      return ws;
+    };
+
+    const createMockServer = (clients: any[]) => ({
+      clients: new Set(clients),
+      close: vi.fn((cb?: (err?: Error) => void) => cb?.()),
+    });
+
+    it('should terminate clients immediately when gracefulShutdown is disabled (default)', async () => {
+      const adapter = new WsAdapter();
+      const ws = createMockSocket(1);
+      const server = createMockServer([ws]);
+
+      await adapter.close(server);
+
+      expect(ws.terminate).toHaveBeenCalledTimes(1);
+      expect(ws.close).not.toHaveBeenCalled();
+    });
+
+    it('should block new frames, drain in-flight handler and pending reply, then close with 1001', async () => {
+      const adapter = new WsAdapter(undefined, {
+        gracefulShutdown: true,
+        gracePeriod: 5000,
+      });
+      const ws = createMockSocket(1);
+      let finishSend!: () => void;
+      ws.send.mockImplementation((_payload: string, cb?: () => void) => {
+        finishSend = () => cb?.();
+      });
+
+      const response$ = new Subject<any>();
+      const secondHandler = vi.fn(() => of('ignored'));
+      adapter.bindMessageHandlers(
+        ws,
+        [
+          {
+            message: 'slow',
+            methodName: 'slow',
+            callback: () => response$,
+            isAckHandledManually: false,
+          },
+          {
+            message: 'after-close',
+            methodName: 'after-close',
+            callback: secondHandler,
+            isAckHandledManually: false,
+          },
+        ] as any,
+        data => data,
+      );
+
+      // Start an in-flight handler before close()
+      ws.emit('message', { data: JSON.stringify({ event: 'slow', data: {} }) });
+
+      const server = createMockServer([ws]);
+      const closePromise = adapter.close(server);
+
+      // New frames arriving during drain must be dropped
+      ws.emit('message', {
+        data: JSON.stringify({ event: 'after-close', data: {} }),
+      });
+      expect(secondHandler).not.toHaveBeenCalled();
+      expect(ws.close).not.toHaveBeenCalled();
+
+      // Emit response and complete handler, while send() callback is still pending
+      response$.next({ ok: true });
+      response$.complete();
+      await Promise.resolve();
+      expect(ws.send).toHaveBeenCalledTimes(1);
+      expect(ws.close).not.toHaveBeenCalled();
+
+      // Complete pending send reply -> socket closes cleanly with 1001
+      finishSend();
+      await closePromise;
+
+      expect(ws.close).toHaveBeenCalledWith(1001, 'Going Away');
+      expect(ws.terminate).not.toHaveBeenCalled();
+    });
+
+    it('should terminate CONNECTING sockets instead of sending a 1001 close frame', async () => {
+      const adapter = new WsAdapter(undefined, {
+        gracefulShutdown: true,
+        gracePeriod: 5000,
+      });
+      const connectingWs = createMockSocket(0);
+      const server = createMockServer([connectingWs]);
+
+      await adapter.close(server);
+
+      expect(connectingWs.terminate).toHaveBeenCalledTimes(1);
+      expect(connectingWs.close).not.toHaveBeenCalled();
+    });
+
+    it('should reject new upgrades with HTTP 503 while draining on a shared HTTP server', async () => {
+      const httpServer = createServer();
+      const adapter = new WsAdapter(httpServer, {
+        gracefulShutdown: true,
+        gracePeriod: 5000,
+      });
+      const wsServer = adapter.create(0, { path: '/live' });
+
+      const activeWs = createMockSocket(1);
+      activeWs.close.mockImplementation(() => {
+        // Stay open until we finish verifying the 503 upgrade rejection
+      });
+      wsServer.clients.add(activeWs as any);
+
+      const closePromise = adapter.close(wsServer);
+
+      const socket = Object.assign(new EventEmitter(), {
+        end: vi.fn(),
+        destroy: vi.fn(),
+      });
+      httpServer.emit(
+        'upgrade',
+        { url: '/live', headers: { host: 'localhost' } },
+        socket,
+        Buffer.alloc(0),
+      );
+
+      expect(socket.end).toHaveBeenCalledTimes(1);
+      expect(socket.end.mock.calls[0][0]).toContain(
+        'HTTP/1.1 503 Service Unavailable',
+      );
+
+      activeWs.readyState = 3;
+      activeWs.emit('close');
+      wsServer.clients.delete(activeWs as any);
+      wsServer.emit('close');
+      await closePromise;
+      await adapter.dispose();
+    });
+
+    it('should forcibly terminate remaining clients and log one aggregate warning after gracePeriod', async () => {
+      vi.useFakeTimers();
+      try {
+        const adapter = new WsAdapter(undefined, {
+          gracefulShutdown: true,
+          gracePeriod: 200,
+        });
+        const warnSpy = vi
+          .spyOn(adapter['logger'], 'warn')
+          .mockImplementation(() => undefined);
+
+        const ws1 = createMockSocket(1);
+        const ws2 = createMockSocket(1);
+        ws1.close.mockImplementation(() => undefined);
+        ws2.close.mockImplementation(() => undefined);
+        const server = createMockServer([ws1, ws2]);
+
+        const closePromise = adapter.close(server);
+        await vi.advanceTimersByTimeAsync(199);
+        expect(ws1.terminate).not.toHaveBeenCalled();
+        expect(ws2.terminate).not.toHaveBeenCalled();
+        expect(warnSpy).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        await closePromise;
+
+        expect(ws1.terminate).toHaveBeenCalledTimes(1);
+        expect(ws2.terminate).toHaveBeenCalledTimes(1);
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy.mock.calls[0][0]).toContain('2 remaining WebSocket');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
 });
