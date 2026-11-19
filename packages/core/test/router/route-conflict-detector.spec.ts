@@ -551,6 +551,70 @@ describe('RouteConflictDetector', () => {
       expect(regExpPairs).toHaveLength(2);
     });
 
+    it.each([
+      [':tenant.example.com', 'admin.example.com'],
+      ['admin.example.com', ':tenant.example.com'],
+      ['{www.}example.com', 'www.example.com'],
+      [':tenant.example.com', 'ADMIN.example.com'],
+    ])(
+      'should detect host overlap between %s and %s when a host pattern matches the other host',
+      (earlierHost, laterHost) => {
+        const conflicts = RouteConflictDetector.detect(
+          [
+            makeResolvedRoute({ path: '/users', host: earlierHost }),
+            makeResolvedRoute({
+              path: '/users',
+              host: laterHost,
+              methodName: 'findAll',
+            }),
+          ],
+          undefined,
+        );
+
+        expect(conflicts).toHaveLength(1);
+        expect(conflicts[0].kind).toBe('shadow');
+      },
+    );
+
+    it.each([
+      [':tenant.example.com', 'example.com'],
+      [':tenant.example.com', 'admin.example.org'],
+      [':tenant.example.com', ':tenant.example.org'],
+      ['api.:region.example.com', 'admin.:region.example.com'],
+    ])(
+      'should not flag the hosts %s and %s, which match no host in common',
+      (earlierHost, laterHost) => {
+        const conflicts = RouteConflictDetector.detect(
+          [
+            makeResolvedRoute({ path: '/users', host: earlierHost }),
+            makeResolvedRoute({ path: '/users', host: laterHost }),
+          ],
+          undefined,
+        );
+
+        expect(conflicts).toHaveLength(0);
+      },
+    );
+
+    it.each([
+      [':tenant.example.com', ':account.example.com'],
+      [':tenant.example.com', /^admin\./],
+      [/^admin\./, ':tenant.example.com'],
+    ])(
+      'should take the hosts %s and %s to overlap',
+      (earlierHost, laterHost) => {
+        const conflicts = RouteConflictDetector.detect(
+          [
+            makeResolvedRoute({ path: '/users', host: earlierHost }),
+            makeResolvedRoute({ path: '/users', host: laterHost }),
+          ],
+          undefined,
+        );
+
+        expect(conflicts).toHaveLength(1);
+      },
+    );
+
     it('should classify identical host arrays declared in different order as a duplicate', () => {
       const earlierRoute = makeResolvedRoute({
         path: '/users/me',

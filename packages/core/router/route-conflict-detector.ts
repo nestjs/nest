@@ -588,19 +588,61 @@ export class RouteConflictDetector {
     const leftIsRegExp = leftValue instanceof RegExp;
     const rightIsRegExp = rightValue instanceof RegExp;
     if (leftIsRegExp && rightIsRegExp) return true;
-    // Reset lastIndex before calling test() to guard against RegExps with the
-    // `g` or `y` flags: those are stateful and would produce inconsistent
-    // results (false negatives) when the same instance is reused across the
-    // multiple pair comparisons that a single detect() run performs.
-    if (leftIsRegExp) {
-      leftValue.lastIndex = 0;
-      return leftValue.test(rightValue as string);
+    // A string host is a path-to-regexp pattern, as the router matches it
+    // (`:tenant.example.com`, `{www.}example.com`), so it is compared by the
+    // hosts it matches rather than by its text.
+    const leftIsPattern =
+      !leftIsRegExp && RouteConflictDetector.isHostPattern(leftValue);
+    const rightIsPattern =
+      !rightIsRegExp && RouteConflictDetector.isHostPattern(rightValue);
+    if (leftIsPattern && rightIsPattern) {
+      // Overlap unless the text they start or end with tells them apart
+      // (`:tenant.example.com` and `:tenant.example.org`)
+      return RouteConflictDetector.segmentsCanOverlap(
+        RouteConflictDetector.toComparableSegment({
+          kind: 'mixed',
+          value: (leftValue as string).toLowerCase(),
+        }),
+        RouteConflictDetector.toComparableSegment({
+          kind: 'mixed',
+          value: (rightValue as string).toLowerCase(),
+        }),
+      );
     }
-    if (rightIsRegExp) {
-      rightValue.lastIndex = 0;
-      return rightValue.test(leftValue as string);
+    // As with two RegExps, whether a RegExp and a pattern share a host
+    // cannot be told without matching them, so they are taken to overlap
+    if ((leftIsRegExp && rightIsPattern) || (rightIsRegExp && leftIsPattern)) {
+      return true;
+    }
+    if (leftIsRegExp || leftIsPattern) {
+      return RouteConflictDetector.hostMatches(leftValue, rightValue as string);
+    }
+    if (rightIsRegExp || rightIsPattern) {
+      return RouteConflictDetector.hostMatches(rightValue, leftValue as string);
     }
     return leftValue === rightValue;
+  }
+
+  private static isHostPattern(host: string): boolean {
+    const tokens = RouteConflictDetector.parseTokens(host);
+    return !!tokens && tokens.some(token => token.type !== 'text');
+  }
+
+  private static hostMatches(
+    hostMatcher: string | RegExp,
+    hostname: string,
+  ): boolean {
+    if (hostMatcher instanceof RegExp) {
+      // Reset lastIndex before calling test() to guard against RegExps with
+      // the `g` or `y` flags: those are stateful and would produce
+      // inconsistent results (false negatives) when the same instance is
+      // reused across the multiple pair comparisons that a single detect()
+      // run performs.
+      hostMatcher.lastIndex = 0;
+      return hostMatcher.test(hostname);
+    }
+    // Compiled as the router compiles it (see `applyHostFilter`)
+    return pathToRegexp(hostMatcher).regexp.test(hostname);
   }
 
   private static routesAreIdentical(
