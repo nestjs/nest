@@ -146,6 +146,7 @@ export class SocketModule<
   }
 
   public async close(): Promise<any> {
+    this.rejectClients();
     if (!this.applicationConfig) {
       return;
     }
@@ -159,7 +160,7 @@ export class SocketModule<
         .filter(({ server }) => server)
         .map(async ({ server }) => adapter.close(server)),
     );
-    await (adapter as AbstractWsAdapter)?.dispose();
+    await (adapter as AbstractWsAdapter).dispose?.();
 
     this.socketsContainer.clear();
   }
