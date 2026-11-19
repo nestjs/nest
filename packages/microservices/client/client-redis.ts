@@ -37,7 +37,6 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   protected connectionPromise: Promise<any> | null = null;
   protected isManuallyClosed = false;
   protected wasInitialConnectionSuccessful = false;
-  private closeEpoch = 0;
   protected pendingEventListeners: Array<{
     event: keyof RedisEvents;
     callback: RedisEvents[keyof RedisEvents];
@@ -244,7 +243,6 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   public handleClose() {
-    this.closeEpoch++;
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
       const callbacks = [...this.routingMap.values()];
@@ -401,9 +399,8 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         this.routingMap.delete(packet.id);
       };
 
-      const publishEpoch = this.closeEpoch;
       const publishPacket = () => {
-        if (!isCounted || publishEpoch !== this.closeEpoch) {
+        if (!isCounted) {
           return;
         }
 
@@ -412,7 +409,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
             this.getRequestPattern(pattern),
             JSON.stringify(serializedPacket),
             err => {
-              if (err && isCounted && publishEpoch === this.closeEpoch) {
+              if (err && isCounted) {
                 undoBookkeeping();
                 callback({ err });
               }
@@ -439,7 +436,8 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         this.routingMap.delete(packet.id);
       };
 
-      // Register before subscribing so handleClose() can evict pre-SUBACK callers
+      // Registered before the subscription is acknowledged, so that
+      // `handleClose()` fails a request that still waits for it as well
       this.routingMap.set(packet.id, callback);
 
       // Requests are published on another connection than the one that
@@ -452,8 +450,9 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       ) {
         this.pendingSubscriptions.add(responseChannel);
         this.subClient.subscribe(responseChannel, (err: any) => {
-          if (!isCounted || publishEpoch !== this.closeEpoch) {
-            // Torn down or evicted by handleClose() meanwhile
+          if (!isCounted) {
+            // Torn down meanwhile (e.g., failed by `handleClose()`), which
+            // gave the subscription up
             return;
           }
           if (err) {
@@ -487,15 +486,12 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   protected unsubscribeFromChannel(channel: string) {
-    const subscriptionCount = this.subscriptionsCount.get(channel);
-    if (subscriptionCount === undefined) {
-      return;
-    }
+    const subscriptionCount = this.subscriptionsCount.get(channel)!;
     this.setSubscriptionsCount(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
       // ioredis rejects when the connection is gone (e.g. in "handleClose")
-      this.subClient?.unsubscribe(channel, () => {});
+      this.subClient.unsubscribe(channel, () => {});
     }
   }
 

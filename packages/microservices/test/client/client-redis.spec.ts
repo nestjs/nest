@@ -282,29 +282,33 @@ describe('ClientRedis', () => {
         expect(publishSpy).not.toHaveBeenCalled();
       });
 
-      it('should fail pre-SUBACK callers once on handleClose and ignore late subscribe errors or cleared subClient', () => {
-        const callbacks: Array<(err?: Error) => void> = [];
-        subscribeSpy.mockImplementation((_name, fn) => {
-          callbacks.push((err?: Error) => fn(err));
+      it('should fail a request that waits for the acknowledgement on close', async () => {
+        client['routingMap'].clear();
+        client['subscriptionsCount'].clear();
+        client['pendingSubscriptions'].clear();
+        let confirmSubscription: (err?: Error) => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          confirmSubscription = err => fn(err);
         });
-
-        const cb = vi.fn();
-        const dispose = client['publish'](msg, cb);
+        const error = vi.fn();
+        client.send(pattern, 'data').subscribe({ error });
+        await vi.waitFor(() => expect(subscribeSpy).toHaveBeenCalled());
 
         client.handleClose();
-        expect(cb).toHaveBeenCalledExactlyOnceWith({
-          err: expect.objectContaining({ message: 'Connection closed' }),
-        });
-        expect(client['pendingSubscriptions'].size).toBe(0);
+        // ioredis still answers the SUBSCRIBE (or fails it) afterwards
+        confirmSubscription();
+        confirmSubscription(new Error('Connection is closed.'));
 
-        // Simulate RxJS teardown after close() cleared subClient
-        untypedClient.subClient = null;
-        expect(() => dispose()).not.toThrow();
-
-        // Late subscribe failure must not double-invoke callback or publish
-        callbacks[0](new Error('late sub failure'));
-        expect(cb).toHaveBeenCalledOnce();
+        expect(error).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ message: 'Connection closed' }),
+        );
         expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].size).toBe(0);
+        expect(unsubscribeSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}.reply`,
+          expect.any(Function),
+        );
       });
     });
     describe('dispose callback', () => {

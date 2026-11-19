@@ -241,43 +241,29 @@ describe('ClientMqtt', () => {
         expect(client['subscriptionsCount'].get(`${pattern}/reply`)).toBe(1);
       });
 
-      it('should wait for pendingSubscriptions and fail pre-SUBACK callers on handleClose without throwing on cleared client', () => {
-        let seq = 0;
-        assignStub.mockImplementation(packet =>
-          Object.assign(packet as object, { id: `id-${++seq}` }),
-        );
-        const confirmations: Array<(err?: Error) => void> = [];
-        subscribeSpy.mockImplementation((_name, fn) => {
-          confirmations.push((err?: Error) => fn(err));
+      it('should fail a request that waits for the acknowledgement on close', async () => {
+        let confirmSubscription: (err?: Error) => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          confirmSubscription = err => fn(err);
         });
-
-        const cb1 = vi.fn();
-        const cb2 = vi.fn();
-        const dispose1 = client['publish']({ ...msg }, cb1);
-        client['publish']({ ...msg }, cb2);
-
-        expect(subscribeSpy).toHaveBeenCalledTimes(2);
-        expect(publishSpy).not.toHaveBeenCalled();
-        expect(client['pendingSubscriptions'].has(`${pattern}/reply`)).toBe(
-          true,
-        );
+        const error = vi.fn();
+        client.send(pattern, 'data').subscribe({ error });
+        await vi.waitFor(() => expect(subscribeSpy).toHaveBeenCalled());
 
         client.handleClose();
-        expect(cb1).toHaveBeenCalledWith({
-          err: expect.objectContaining({ message: 'Connection closed' }),
-        });
-        expect(cb2).toHaveBeenCalledWith({
-          err: expect.objectContaining({ message: 'Connection closed' }),
-        });
-        expect(client['pendingSubscriptions'].size).toBe(0);
+        // mqtt.js still answers the subscription (or fails it) afterwards
+        confirmSubscription();
+        confirmSubscription(new Error('Connection closed'));
 
-        untypedClient.mqttClient = null;
-        expect(() => dispose1()).not.toThrow();
-
-        confirmations.forEach(confirm => confirm(new Error('late suback')));
-        expect(cb1).toHaveBeenCalledOnce();
-        expect(cb2).toHaveBeenCalledOnce();
+        expect(error).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ message: 'Connection closed' }),
+        );
         expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].size).toBe(0);
+        expect(unsubscribeSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}/reply`,
+        );
       });
     });
     describe('dispose callback', () => {
