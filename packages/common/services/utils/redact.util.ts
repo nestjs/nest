@@ -19,7 +19,7 @@ export type Redactor = (value: unknown) => unknown;
  * - Keys are compared case-insensitively.
  *
  * Plain objects, arrays, class instances, errors (including `cause` and
- * `AggregateError#errors`), `Map`s (string keys) and `Set`s are traversed.
+ * `AggregateError#errors`), `Map`s and `Set`s are traversed.
  * Only the objects on the way to a redacted property are copied; the rest is
  * returned as is, and the input is never mutated. A circular reference is
  * replaced with `"[Circular]"` (so the objects on the cycle are copied too). An
@@ -149,11 +149,12 @@ export function createRedactor(
 
     const redactArray = (array: unknown[]) => {
       let copy: unknown[] | undefined;
-      for (let i = 0; i < array.length; i++) {
-        const redacted = visit(array[i]);
-        if (!Object.is(redacted, array[i])) {
-          copy ??= array.slice();
-          copy[i] = redacted;
+      for (const index of Object.keys(array)) {
+        const item = array[index as unknown as number];
+        const redacted = visit(item);
+        if (!Object.is(redacted, item)) {
+          copy ??= Object.assign(new Array(array.length), array);
+          copy[index as unknown as number] = redacted;
         }
       }
       return copy ?? array;
@@ -163,12 +164,14 @@ export function createRedactor(
       let changed = false;
       const entries: [unknown, unknown][] = [];
       for (const [key, entryValue] of map) {
-        const redacted =
+        const redactedKey = typeof key === 'string' ? key : visit(key);
+        const redactedValue =
           typeof key === 'string'
             ? visitProperty(key, entryValue)
             : visit(entryValue);
-        changed ||= !Object.is(redacted, entryValue);
-        entries.push([key, redacted]);
+        changed ||=
+          !Object.is(redactedKey, key) || !Object.is(redactedValue, entryValue);
+        entries.push([redactedKey, redactedValue]);
       }
       return changed ? new Map(entries) : map;
     };

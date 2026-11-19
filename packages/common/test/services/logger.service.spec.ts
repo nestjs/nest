@@ -1190,6 +1190,20 @@ describe('Logger', () => {
         expect(json.params).toBeUndefined();
       });
 
+      it('should preserve Object.prototype key names when flattenParams is true', () => {
+        const logger = new ConsoleLogger({ json: true, flattenParams: true });
+        logger.log(
+          'Metadata',
+          { constructor: 'UserController', toString: 'custom', valueOf: 1 },
+          'Svc',
+        );
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.constructor).toBe('UserController');
+        expect(json.toString).toBe('custom');
+        expect(json.valueOf).toBe(1);
+      });
+
       it('should handle error with params but no stack', () => {
         const logger = new ConsoleLogger({ json: true });
         logger.error('fail', { reqId: 'abc' }, 'AppService');
@@ -2109,6 +2123,25 @@ describe('Logger', () => {
           password: '[REDACTED]',
           userId: 1,
         });
+      });
+
+      it('should not spread the censor string as character indices when flattened params fail redaction', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          flattenParams: true,
+          redact: ['password'],
+        });
+        const broken = {
+          get password(): string {
+            throw new Error('getter');
+          },
+        };
+
+        logger.log('Login', { user: broken });
+
+        const record = stdoutJson();
+        expect(record.params).toBe('[REDACTED]');
+        expect(record['0']).toBeUndefined();
       });
 
       it('should mask the structured error and its cause', () => {
