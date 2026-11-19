@@ -417,6 +417,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           // cancelled it (e.g., its queue was deleted). Reading from it would
           // throw inside amqplib's dispatch and close the connection.
           this.logger.error(CONSUMER_CANCELLED_RMQ_MESSAGE);
+          if (this.replyQueue === REPLY_QUEUE) {
+            // Direct reply-to consumers cannot recover in-flight replies from
+            // the cancelled consumer tag, so fail pending callers immediately.
+            this.handleClose();
+          }
           this.consumeChannel(channel).catch(err => this.logger.error(err));
           return;
         }

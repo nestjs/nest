@@ -395,6 +395,7 @@ describe('RouterExplorer', () => {
         handler,
         targetCallback: instance.getTest,
         methodName: 'getTest',
+        instanceWrapper: { name: TestRoute.name },
       }) as any;
 
     it('should register a route-triggered wrapper with the route metadata and version', async () => {
@@ -420,6 +421,55 @@ describe('RouterExplorer', () => {
         '/global/test',
       );
       expect(routeHandler).toHaveBeenCalledWith('req', 'res');
+    });
+
+    it('should name the route-triggered wrapper and report the raw path', async () => {
+      const get = vi.fn();
+      const onRouteTriggered = vi.fn();
+      const instance = new TestRoute();
+      const routeHandler = Object.assign(vi.fn(), { version: '1' });
+      container.setHttpAdapter({ getOnRouteTriggered: () => onRouteTriggered });
+
+      routerBuilder.registerResolvedRoute(
+        { get } as any,
+        {
+          ...createResolvedRoute(instance, routeHandler),
+          path: '/global/normalized',
+          rawPath: '/global/raw',
+        } as any,
+      );
+
+      expect(get).toHaveBeenCalledWith(
+        '/global/normalized',
+        expect.any(Function),
+      );
+      const handler = get.mock.calls[0][1];
+      expect(handler.name).toBe('TestRoute.getTest');
+      expect(handler.version).toBe('1');
+      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
+
+      await handler('req', 'res');
+      expect(onRouteTriggered).toHaveBeenCalledWith(
+        RequestMethod.GET,
+        '/global/raw',
+      );
+    });
+
+    it('should name the handler when no route triggered hook is set', () => {
+      const get = vi.fn();
+      const instance = new TestRoute();
+      const routeHandler = vi.fn();
+      container.setHttpAdapter({});
+
+      routerBuilder.registerResolvedRoute(
+        { get } as any,
+        createResolvedRoute(instance, routeHandler),
+      );
+
+      const handler = get.mock.calls[0][1];
+      expect(handler).toBe(routeHandler);
+      expect(handler.name).toBe('TestRoute.getTest');
+      expect(Reflect.getMetadata(PATH_METADATA, handler)).toBe('test');
     });
   });
 

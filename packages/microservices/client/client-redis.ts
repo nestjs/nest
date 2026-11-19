@@ -403,7 +403,6 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         if (!isCounted) {
           return;
         }
-        this.routingMap.set(packet.id, callback);
 
         try {
           this.pubClient.publish(
@@ -437,6 +436,10 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         this.routingMap.delete(packet.id);
       };
 
+      // Registered before the subscription is acknowledged, so that
+      // `handleClose()` fails a request that still waits for it as well
+      this.routingMap.set(packet.id, callback);
+
       // Requests are published on another connection than the one that
       // subscribes, so a request that finds the channel still waiting for its
       // acknowledgement subscribes as well rather than publishing right away,
@@ -447,13 +450,14 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       ) {
         this.pendingSubscriptions.add(responseChannel);
         this.subClient.subscribe(responseChannel, (err: any) => {
+          if (!isCounted) {
+            // Torn down meanwhile (e.g., failed by `handleClose()`), which
+            // gave the subscription up
+            return;
+          }
           if (err) {
             undoBookkeeping();
             return callback({ err });
-          }
-          if (!isCounted) {
-            // Torn down meanwhile, which gave the subscription up
-            return;
           }
           this.pendingSubscriptions.delete(responseChannel);
           publishPacket();

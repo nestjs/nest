@@ -134,9 +134,19 @@ describe('KafkaLogger', () => {
         nested = { a: nested };
       }
 
+      // From Node.js 26 on, JSON.stringify serializes values of any depth
+      let json: string | undefined;
+      try {
+        json = JSON.stringify({ topic: 'topic', error: nested });
+      } catch {
+        // Nested deeper than it can recurse: inspect() takes over
+      }
+
       expect(() => logError(nested)).not.toThrow();
       expect(error).toHaveBeenCalledExactlyOnceWith(
-        "label [namespace] message { topic: 'topic', error: { a: { a: [Object] } } }",
+        json === undefined
+          ? "label [namespace] message { topic: 'topic', error: { a: { a: [Object] } } }"
+          : `label [namespace] message ${json}`,
       );
     });
 

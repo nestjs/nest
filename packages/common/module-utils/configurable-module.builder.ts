@@ -2,6 +2,7 @@
 import { DynamicModule, Provider } from '../interfaces/index.js';
 import { Logger } from '../services/logger.service.js';
 import { randomStringGenerator } from '../utils/random-string-generator.util.js';
+import { isObject } from '../utils/shared.utils.js';
 import {
   ASYNC_METHOD_SUFFIX,
   ASYNC_OPTIONS_METADATA_KEYS,
@@ -267,7 +268,7 @@ export class ConfigurableModuleBuilder<
         input: ModuleOptions & ExtraModuleDefinitionOptions,
         extras: ExtraModuleDefinitionOptions | undefined,
       ): ModuleOptions {
-        if (!extras) {
+        if (!extras || !isObject(input)) {
           return input;
         }
         const moduleOptions = {};
