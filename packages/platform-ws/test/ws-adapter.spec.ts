@@ -1276,18 +1276,118 @@ describe('WsAdapter', () => {
       expect(ws.terminate).not.toHaveBeenCalled();
     });
 
-    it('should terminate CONNECTING sockets instead of sending a 1001 close frame', async () => {
-      const adapter = new WsAdapter(undefined, {
-        gracefulShutdown: true,
-        gracePeriod: 5000,
+    describe('with a real client', () => {
+      const listen = async (
+        options: { gracePeriod: number },
+        callback: () => Observable<any>,
+      ) => {
+        const httpServer = createServer();
+        const adapter = new WsAdapter(httpServer, {
+          gracefulShutdown: true,
+          ...options,
+        });
+        const server = adapter.create(0, { path: '/live' });
+        adapter.bindClientConnect(server, (client: WebSocket) =>
+          adapter.bindMessageHandlers(
+            client,
+            [
+              {
+                message: 'slow',
+                methodName: 'slow',
+                callback,
+                isAckHandledManually: false,
+              },
+            ] as any,
+            data => data,
+          ),
+        );
+        await new Promise<void>(resolve =>
+          httpServer.listen(0, '127.0.0.1', resolve),
+        );
+        const { port } = httpServer.address() as AddressInfo;
+        const url = `ws://127.0.0.1:${port}/live`;
+        const client = new WebSocket(url);
+        await once(client, 'open');
+        const teardown = async () => {
+          client.terminate();
+          await adapter.dispose();
+          await new Promise(resolve => httpServer.close(resolve));
+        };
+        return { adapter, server, client, url, teardown };
+      };
+
+      it('should send the pending reply, refuse new upgrades, then close the client with 1001', async () => {
+        const reply$ = new Subject<any>();
+        let handlerStarted!: () => void;
+        const started = new Promise<void>(resolve => {
+          handlerStarted = resolve;
+        });
+        const { adapter, server, client, url, teardown } = await listen(
+          { gracePeriod: 5000 },
+          () => {
+            handlerStarted();
+            return reply$;
+          },
+        );
+        try {
+          const messages: string[] = [];
+          client.on('message', data => messages.push(data.toString()));
+          const closed = once(client, 'close');
+          client.send(JSON.stringify({ event: 'slow', data: {} }));
+          await started;
+
+          const closing = adapter.close(server);
+
+          const late = new WebSocket(url);
+          // ws reports the aborted handshake once more as an error
+          late.on('error', () => undefined);
+          const [, response] = await once(late, 'unexpected-response');
+          expect(response.statusCode).toBe(503);
+          late.terminate();
+
+          reply$.next({ event: 'slow', data: 'done' });
+          reply$.complete();
+          await closing;
+
+          const [code] = await closed;
+          expect(messages).toEqual([
+            JSON.stringify({ event: 'slow', data: 'done' }),
+          ]);
+          expect(code).toBe(1001);
+        } finally {
+          await teardown();
+        }
       });
-      const connectingWs = createMockSocket(0);
-      const server = createMockServer([connectingWs]);
 
-      await adapter.close(server);
+      it('should terminate a client whose handler outlasts the grace period', async () => {
+        let handlerStarted!: () => void;
+        const started = new Promise<void>(resolve => {
+          handlerStarted = resolve;
+        });
+        const { adapter, server, client, teardown } = await listen(
+          { gracePeriod: 50 },
+          () => {
+            handlerStarted();
+            return new Subject<any>();
+          },
+        );
+        const warn = vi
+          .spyOn(adapter['logger'], 'warn')
+          .mockImplementation(() => undefined);
+        try {
+          const closed = once(client, 'close');
+          client.send(JSON.stringify({ event: 'slow', data: {} }));
+          await started;
 
-      expect(connectingWs.terminate).toHaveBeenCalledTimes(1);
-      expect(connectingWs.close).not.toHaveBeenCalled();
+          await adapter.close(server);
+
+          const [code] = await closed;
+          expect(code).toBe(1006);
+          expect(warn).toHaveBeenCalledOnce();
+        } finally {
+          await teardown();
+        }
+      });
     });
 
     it('should reject new upgrades with HTTP 503 while draining on a shared HTTP server', async () => {

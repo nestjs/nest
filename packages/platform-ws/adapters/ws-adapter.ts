@@ -80,10 +80,12 @@ export type WsAdapterOptions = {
    */
   maxPayload?: number;
   /**
-   * When `true`, `close()` rejects new upgrades with HTTP 503, stops accepting
-   * new frames on connected clients, waits up to `gracePeriod` milliseconds for
-   * in-flight message handlers and pending replies to finish, and closes open
-   * sockets with code 1001 ("Going Away") before falling back to `terminate()`.
+   * When `true`, `close()` stops accepting new connections (an upgrade request
+   * on a server shared with the HTTP adapter gets HTTP 503, a dedicated port
+   * stops listening), ignores new messages from connected clients, waits up to
+   * `gracePeriod` milliseconds for in-flight message handlers and pending
+   * replies to finish, and closes each socket with code 1001 ("Going Away").
+   * Sockets still open once `gracePeriod` has passed are terminated.
    *
    * @default false
    */
@@ -545,13 +547,7 @@ export class WsAdapter extends AbstractWsAdapter {
         this.decrementClientWork(client, this.clientPendingReplies);
         updatePaused();
       };
-      try {
-        client.send(payload, settleReply);
-      } catch (err) {
-        settleReply();
-        this.logger.error(err);
-        return;
-      }
+      client.send(payload, settleReply);
       if (this.ensureSendBufferWithinLimit(client)) {
         updatePaused();
       }
@@ -707,12 +703,8 @@ export class WsAdapter extends AbstractWsAdapter {
       }
       return new Promise<void>(resolve => {
         const onClose = () => resolve();
-        if (typeof ws.once === 'function') {
-          ws.once(CLOSE_EVENT, onClose);
-        } else {
-          ws.on?.(CLOSE_EVENT, onClose);
-        }
-        cleanups.push(() => ws.removeListener?.(CLOSE_EVENT, onClose));
+        ws.once(CLOSE_EVENT, onClose);
+        cleanups.push(() => ws.removeListener(CLOSE_EVENT, onClose));
       });
     };
 
@@ -730,7 +722,7 @@ export class WsAdapter extends AbstractWsAdapter {
             return;
           }
           settled = true;
-          ws.removeListener?.(CLOSE_EVENT, done);
+          ws.removeListener(CLOSE_EVENT, done);
           const set = this.clientDrainWaiters.get(ws);
           set?.delete(done);
           if (set?.size === 0) {
@@ -744,11 +736,7 @@ export class WsAdapter extends AbstractWsAdapter {
           this.clientDrainWaiters.set(ws, waiters);
         }
         waiters.add(done);
-        if (typeof ws.once === 'function') {
-          ws.once(CLOSE_EVENT, done);
-        } else {
-          ws.on?.(CLOSE_EVENT, done);
-        }
+        ws.once(CLOSE_EVENT, done);
         cleanups.push(done);
       });
     };
@@ -762,10 +750,6 @@ export class WsAdapter extends AbstractWsAdapter {
       if (ws.readyState === READY_STATE.OPEN_STATE) {
         const closed = waitForClose(ws);
         ws.close(WS_GOING_AWAY_CODE, WS_GOING_AWAY_REASON);
-        await closed;
-      } else if (ws.readyState === READY_STATE.CONNECTING_STATE) {
-        const closed = waitForClose(ws);
-        ws.terminate();
         await closed;
       } else if (ws.readyState === READY_STATE.CLOSING_STATE) {
         await waitForClose(ws);
