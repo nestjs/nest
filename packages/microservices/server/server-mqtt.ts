@@ -74,11 +74,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
       const mqttClient = await this.createMqttClient();
       if (this.closeCount !== closeCount) {
-        if (typeof mqttClient.endAsync === 'function') {
-          await mqttClient.endAsync().catch(() => {});
-        } else {
-          mqttClient.end?.();
-        }
+        await mqttClient.endAsync().catch(() => {});
         callback(new Error('Connection closed'));
         return;
       }
