@@ -1016,6 +1016,44 @@ describe('ClientRedis', () => {
       });
     });
 
+    describe('when closed while the clients are being created', () => {
+      beforeEach(() => setUp({}));
+
+      it('should not connect the clients once "close" has run', async () => {
+        const attempt = lifecycleClient.connect();
+        attempt.catch(() => {});
+        await lifecycleClient.close();
+        await new Promise(resolve => setImmediate(resolve));
+
+        await expect(attempt).rejects.toThrow('Connection closed');
+        for (const fake of created) {
+          expect(fake.connect).not.toHaveBeenCalled();
+        }
+        expect(currentPair()).toEqual([null, null]);
+        expect(untypedLifecycleClient.connectionPromise).toBeNull();
+      });
+
+      it('should not replace the clients of a "connect" called after "close"', async () => {
+        const stale = lifecycleClient.connect();
+        stale.catch(() => {});
+        await lifecycleClient.close();
+        const fresh = lifecycleClient.connect();
+        await new Promise(resolve => setImmediate(resolve));
+
+        const [pub, sub] = currentPair();
+        pub.ready();
+        sub.ready();
+
+        await expect(fresh).resolves.toBeUndefined();
+        await expect(stale).rejects.toThrow('Connection closed');
+        expect(currentPair()).toEqual([pub, sub]);
+        expect(created.filter(fake => fake.connect.mock.calls.length)).toEqual([
+          pub,
+          sub,
+        ]);
+      });
+    });
+
     it.each([
       ['set', { retryAttempts: 1 }],
       ['not set', {}],

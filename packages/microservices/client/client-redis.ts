@@ -37,6 +37,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   protected connectionPromise: Promise<any> | null = null;
   protected isManuallyClosed = false;
   protected wasInitialConnectionSuccessful = false;
+  private closeCount = 0;
   protected pendingEventListeners: Array<{
     event: keyof RedisEvents;
     callback: RedisEvents[keyof RedisEvents];
@@ -61,6 +62,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   public async close() {
+    this.closeCount++;
     this.isManuallyClosed = true;
     this.handleClose();
     this.pubClient && (await this.quitClient(this.pubClient));
@@ -129,8 +131,20 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   private async handleConnection(): Promise<any> {
-    this.pubClient = await this.createClient();
-    this.subClient = await this.createClient();
+    // `close()` may run while the clients are being created. It has no client
+    // to quit then, so the ones created afterwards must not be connected (or
+    // replace the clients of a newer `connect()` call).
+    const closeCount = this.closeCount;
+    const pubClient = await this.createClient();
+    if (this.closeCount !== closeCount) {
+      throw new Error('Connection closed');
+    }
+    this.pubClient = pubClient;
+    const subClient = await this.createClient();
+    if (this.closeCount !== closeCount) {
+      throw new Error('Connection closed');
+    }
+    this.subClient = subClient;
 
     [this.pubClient, this.subClient].forEach((client, index) => {
       const type = index === 0 ? 'pub' : 'sub';
