@@ -35,6 +35,8 @@ cd my-api
 npm run start:dev
 ```
 
+A coding agent or a script can create the project in the current folder with `npx @nestjs/cli new . --skip-git --package-manager npm`, which asks nothing when stdin isn't a terminal and adds an `AGENTS.md` for the agent to read.
+
 Add `--minimal` to start from a single file. An application can be this small:
 
 ```typescript
