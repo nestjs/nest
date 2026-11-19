@@ -46,6 +46,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public transportId: TransportId = Transport.MQTT;
   protected readonly url: string;
   protected mqttClient: MqttClient;
+  private closeCount = 0;
   protected connectionAttempts = 0;
   protected hasConnected = false;
   protected pendingEventListeners: Array<{
@@ -64,13 +65,24 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
       // Re-arm the attempts limit so that a restarted server gets a fresh
       // startup window.
       this.connectionAttempts = 0;
       this.hasConnected = false;
 
-      this.mqttClient = await this.createMqttClient();
+      const mqttClient = await this.createMqttClient();
+      if (this.closeCount !== closeCount) {
+        if (typeof mqttClient.endAsync === 'function') {
+          await mqttClient.endAsync().catch(() => {});
+        } else {
+          mqttClient.end?.();
+        }
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.mqttClient = mqttClient;
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -131,6 +143,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   }
 
   public async close() {
+    this.closeCount++;
     // Reset first, so that the status update of the client being closed is not
     // taken for the connection that gave up, and a listener registered right
     // after close() waits for the next listen() instead of attaching to it
