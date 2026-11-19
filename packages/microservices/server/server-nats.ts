@@ -41,10 +41,11 @@ export class ServerNats<
   public transportId: TransportId = Transport.NATS;
 
   private natsClient: Client;
+  private closeCount = 0;
   protected statusEventEmitter = new EventEmitter<{
     [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
   }>();
-  private readonly subscriptions: Subscription[] = [];
+  private subscriptions: Subscription[] = [];
 
   constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
@@ -56,8 +57,15 @@ export class ServerNats<
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
-      this.natsClient = await this.createNatsClient();
+      const natsClient = await this.createNatsClient();
+      if (this.closeCount !== closeCount) {
+        await natsClient.close().catch(() => {});
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.natsClient = natsClient;
 
       this._status$.next(NatsStatus.CONNECTED as S);
       this.handleStatusUpdates(this.natsClient).catch(err =>
@@ -94,12 +102,15 @@ export class ServerNats<
   }
 
   public async close() {
+    this.closeCount++;
     if (!this.natsClient) {
+      this.statusEventEmitter.removeAllListeners();
       return;
     }
     const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
     if (graceful) {
       this.subscriptions.forEach(sub => sub.unsubscribe());
+      this.subscriptions = [];
       await this.waitForHandlersInFlight(
         this.getOptionsProp(this.options, 'gracePeriod'),
       );
@@ -108,8 +119,12 @@ export class ServerNats<
     // connection that gave up
     const natsClient = this.natsClient;
     this.natsClient = null;
-    await natsClient?.close();
-    this.statusEventEmitter.removeAllListeners();
+    this.subscriptions = [];
+    try {
+      await natsClient?.close();
+    } finally {
+      this.statusEventEmitter.removeAllListeners();
+    }
   }
 
   public async createNatsClient(): Promise<Client> {

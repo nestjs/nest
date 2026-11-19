@@ -62,6 +62,32 @@ describe('ServerNats', () => {
       await server.listen(callbackSpy as any);
       await vi.waitFor(() => expect(logErrorSpy).toHaveBeenCalledWith(error));
     });
+    it('should close the created client and skip startup when closed before createNatsClient resolves', async () => {
+      let resolveClient!: (value: any) => void;
+      const pendingClient = {
+        close: vi.fn().mockResolvedValue(undefined),
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {},
+        }),
+      };
+      vi.spyOn(server, 'createNatsClient').mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+      const startSpy = vi.spyOn(server, 'start').mockImplementation(() => {});
+
+      const listenPromise = server.listen(callbackSpy as any);
+      await server.close();
+      resolveClient(pendingClient);
+      await listenPromise;
+
+      expect(pendingClient.close).toHaveBeenCalledOnce();
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(untypedServer.natsClient).toBeUndefined();
+      expect(callbackSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
   });
   describe('close', () => {
     const natsClient = { close: vi.fn() };
@@ -90,6 +116,7 @@ describe('ServerNats', () => {
         for (const subscription of subscriptions) {
           expect(subscription.unsubscribe).toHaveBeenCalledOnce();
         }
+        expect(untypedServer.subscriptions).toEqual([]);
       });
 
       it('should unsubscribe, wait for the handlers in flight, then close the connection', async () => {
