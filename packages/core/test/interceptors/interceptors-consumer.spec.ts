@@ -8,7 +8,9 @@ import { AsyncLocalStorage, createHook } from 'async_hooks';
 import {
   Observable,
   defer,
+  finalize,
   lastValueFrom,
+  map,
   merge,
   observable,
   of,
@@ -142,7 +144,8 @@ describe('InterceptorsConsumer', () => {
         } finally {
           hook.disable();
         }
-        expect(types).toEqual(['bound-anonymous-fn', 'bound-anonymous-fn']);
+        // one scope per `handle()` call, the handler runs in the last one
+        expect(types).toEqual(['interceptor-scope']);
       });
     });
 
@@ -175,6 +178,175 @@ describe('InterceptorsConsumer', () => {
       });
     });
   });
+  describe('interceptor chain', () => {
+    const run = (chain: NestInterceptor[], next: () => Promise<unknown>) =>
+      consumer.intercept(chain, null!, { constructor: null }, null!, next);
+
+    it('should run the handler in the store of the nearest `handle()` call, behind several interceptors', async () => {
+      const storage = new AsyncLocalStorage<string>();
+      const setStore = (value: string): NestInterceptor => ({
+        intercept: (_context, next) =>
+          storage.run(value, () => next.handle()) as Observable<any>,
+      });
+      const seen: Array<string | undefined> = [];
+      const result = await transformToResult(
+        await storage.run('outer', () =>
+          run([setStore('a'), { intercept: (_c, h) => h.handle() }], () => {
+            seen.push(storage.getStore());
+            return Promise.resolve('done');
+          }),
+        ),
+      );
+      expect(result).toBe('done');
+      expect(seen).toEqual(['a']);
+    });
+
+    it('should keep the store when an interceptor subscribes to the handler later', async () => {
+      const storage = new AsyncLocalStorage<string>();
+      const seen: Array<string | undefined> = [];
+      const later: NestInterceptor = {
+        intercept: (_context, next) => {
+          const handled = next.handle();
+          return new Observable(subscriber => {
+            setTimeout(() => handled.subscribe(subscriber), 1);
+          });
+        },
+      };
+      await transformToResult(
+        await run(
+          [
+            {
+              intercept: (_c, h) =>
+                storage.run('a', () => h.handle()) as Observable<any>,
+            },
+            later,
+          ],
+          () => {
+            seen.push(storage.getStore());
+            return Promise.resolve(1);
+          },
+        ),
+      );
+      expect(seen).toEqual(['a']);
+    });
+
+    it('should emit a plain handler value once and complete, through a mapping interceptor', async () => {
+      const emitted: unknown[] = [];
+      let completed = 0;
+      const mapping: NestInterceptor = {
+        intercept: (_context, next) =>
+          next.handle().pipe(map(data => ({ data }))),
+      };
+      const observable$ = (await run(
+        [mapping, { intercept: (_c, h) => h.handle() }],
+        async () => 'x',
+      )) as Observable<unknown>;
+      await new Promise<void>(resolve =>
+        observable$.subscribe({
+          next: v => emitted.push(v),
+          complete: () => {
+            completed++;
+            resolve();
+          },
+        }),
+      );
+      expect(emitted).toEqual([{ data: 'x' }]);
+      expect(completed).toBe(1);
+    });
+
+    it('should tear the chain down on unsubscribe without subscribing the handler result', async () => {
+      let resolveNext!: (value: unknown) => void;
+      const handlerResult$ = new Observable(() => {
+        throw new Error('the handler result must not be subscribed');
+      });
+      const teardowns: string[] = [];
+      const watching: NestInterceptor = {
+        intercept: (_context, next) =>
+          next.handle().pipe(finalize(() => teardowns.push('interceptor'))),
+      };
+      const observable$ = (await run(
+        [watching],
+        () => new Promise(resolve => (resolveNext = resolve)),
+      )) as Observable<unknown>;
+      const subscription = observable$.subscribe();
+      await new Promise(resolve => setTimeout(resolve, 1));
+      subscription.unsubscribe();
+      resolveNext(handlerResult$);
+      await new Promise(resolve => setTimeout(resolve, 1));
+      expect(teardowns).toEqual(['interceptor']);
+    });
+
+    it('should unsubscribe from the handler result when the consumer unsubscribes', async () => {
+      let unsubscribed = false;
+      const handlerResult$ = new Observable(() => () => {
+        unsubscribed = true;
+      });
+      const observable$ = (await run(
+        [{ intercept: (_c, h) => h.handle() }],
+        async () => handlerResult$,
+      )) as Observable<unknown>;
+      const subscription = observable$.subscribe();
+      await new Promise(resolve => setTimeout(resolve, 1));
+      subscription.unsubscribe();
+      expect(unsubscribed).toBe(true);
+    });
+
+    it('should accept an Observable of another copy of rxjs returned by an interceptor', async () => {
+      const source$ = of('foreign');
+      const foreign$ = {
+        lift: source$.lift.bind(source$),
+        subscribe: source$.subscribe.bind(source$),
+        [observable]: () => source$,
+      };
+      const result = await transformToResult(
+        await run([{ intercept: () => foreign$ as any }], async () => 1),
+      );
+      expect(result).toBe('foreign');
+    });
+
+    it('should accept a Promise of an Observable returned by an interceptor', async () => {
+      const result = await transformToResult(
+        await run(
+          [{ intercept: async (_c, h) => h.handle() }],
+          async () => 'p',
+        ),
+      );
+      expect(result).toBe('p');
+    });
+
+    it('should turn an interceptor throwing synchronously into an error notification', async () => {
+      const observable$ = (await run(
+        [
+          {
+            intercept: () => {
+              throw new Error('boom');
+            },
+          },
+        ],
+        async () => 1,
+      )) as Observable<unknown>;
+      await expect(lastValueFrom(observable$)).rejects.toThrow('boom');
+    });
+
+    it('should subscribe the Observable an interceptor returns without a microtask hop', async () => {
+      const calls: string[] = [];
+      const observable$ = (await run(
+        [
+          { intercept: (_c, h) => h.handle() },
+          {
+            intercept: (_c, h) => {
+              calls.push('second');
+              return h.handle();
+            },
+          },
+        ],
+        async () => 1,
+      )) as Observable<unknown>;
+      observable$.subscribe();
+      expect(calls).toEqual(['second']);
+    });
+  });
+
   describe('createContext', () => {
     it('should return execution context object', () => {
       const instance = { constructor: {} };
@@ -214,6 +386,16 @@ describe('InterceptorsConsumer', () => {
         expect(await lastValueFrom(consumer.transformDeferred(next))).toEqual(
           val,
         );
+      });
+    });
+    describe('when next() result is a plain value', () => {
+      it('should emit it in the turn that resolves next()', async () => {
+        const emitted: unknown[] = [];
+        consumer
+          .transformDeferred(() => Promise.resolve(1))
+          .subscribe(value => emitted.push(value));
+        await Promise.resolve();
+        expect(emitted).toEqual([1]);
       });
     });
     describe('when next() result is Promise', () => {
