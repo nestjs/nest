@@ -728,6 +728,60 @@ describe('RouterExecutionContext', () => {
         ]);
       });
     });
+    describe('when a custom param gives the response', () => {
+      const custom = (
+        extractValue: (...args: any[]) => unknown,
+        pipes: any[] = [],
+      ) => ({ index: 0, type: 'custom', data: undefined, pipes, extractValue });
+      const toResponse = (_req: unknown, res: unknown) => res;
+
+      it('passes a thenable response as it is, running no pipe on it', () => {
+        // e.g. a Fastify reply, whose then() waits for it to be sent
+        const reply = { then: vi.fn() };
+        const globalPipe = { transform: vi.fn(async value => value) };
+        const paramPipe = { transform: vi.fn(value => value) };
+        const pipesFn = contextCreator.createPipesFn(
+          [globalPipe],
+          [custom(toResponse, [paramPipe])],
+        )!;
+        const args = [undefined];
+
+        expect(pipesFn(args, {}, reply, () => {})).toBeUndefined();
+        expect(args[0]).toBe(reply);
+        expect(reply.then).not.toHaveBeenCalled();
+        expect(globalPipe.transform).not.toHaveBeenCalled();
+        expect(paramPipe.transform).not.toHaveBeenCalled();
+      });
+      it('passes a response that is not a thenable as it is too', () => {
+        const res = {};
+        const globalPipe = { transform: vi.fn(value => value) };
+        const pipesFn = contextCreator.createPipesFn(
+          [globalPipe],
+          [custom(toResponse)],
+        )!;
+        const args = [undefined];
+
+        expect(pipesFn(args, {}, res, () => {})).toBeUndefined();
+        expect(args[0]).toBe(res);
+        expect(globalPipe.transform).not.toHaveBeenCalled();
+      });
+      it('still settles any other thenable and runs the pipes on its value, calling "then()" once', async () => {
+        const reply = { then: vi.fn() };
+        const thenable = { then: vi.fn(resolve => resolve('user')) };
+        const globalPipe = { transform: vi.fn(async value => `${value}-g`) };
+        const pipesFn = contextCreator.createPipesFn(
+          [globalPipe],
+          [custom(() => thenable)],
+        )!;
+        const args = [undefined];
+
+        await pipesFn(args, {}, reply, () => {});
+
+        expect(args).toEqual(['user-g']);
+        expect(thenable.then).toHaveBeenCalledOnce();
+        expect(reply.then).not.toHaveBeenCalled();
+      });
+    });
   });
   describe('createGuardsFn', () => {
     it('should throw ForbiddenException when "tryActivate" returns false', async () => {
