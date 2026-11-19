@@ -57,6 +57,39 @@ describe('createRedactor', () => {
       });
     });
 
+    it('should only read the present items of a sparse array', () => {
+      const items: unknown[] = [];
+      items[999] = { password: 'a' };
+      const reads: PropertyKey[] = [];
+      const proxy = new Proxy(items, {
+        get(target, key, receiver) {
+          reads.push(key);
+          return Reflect.get(target, key, receiver);
+        },
+      });
+
+      const redacted = redact(['password'], { items: proxy }) as {
+        items: unknown[];
+      };
+
+      expect(reads).toEqual(['999', 'length', '999']);
+      expect(redacted.items).toHaveLength(1000);
+      expect(0 in redacted.items).toBe(false);
+      expect(redacted.items[999]).toEqual({ password: '[REDACTED]' });
+    });
+
+    it('should redact a sparse array with the largest index', () => {
+      const items: unknown[] = [];
+      items[2 ** 32 - 2] = { password: 'a' };
+
+      const redacted = redact(['password'], items) as unknown[];
+
+      expect(redacted).toHaveLength(2 ** 32 - 1);
+      expect(0 in redacted).toBe(false);
+      expect(redacted[2 ** 32 - 2]).toEqual({ password: '[REDACTED]' });
+      expect(items[2 ** 32 - 2]).toEqual({ password: 'a' });
+    });
+
     it('should use a custom censor', () => {
       expect(redact(['password'], { password: 'a' }, '***')).toEqual({
         password: '***',
@@ -168,6 +201,25 @@ describe('createRedactor', () => {
       ) as Set<unknown>;
 
       expect([...redacted]).toEqual([{ password: '[REDACTED]' }, 'x']);
+    });
+
+    it('should redact objects used as map keys', () => {
+      const key = { id: 1, password: 'a' };
+      const map = new Map<unknown, unknown>([
+        [key, { token: 'b' }],
+        [{ id: 2 }, 'ok'],
+      ]);
+
+      const redacted = redact(['password', 'token'], map) as Map<
+        unknown,
+        unknown
+      >;
+
+      expect([...redacted]).toEqual([
+        [{ id: 1, password: '[REDACTED]' }, { token: '[REDACTED]' }],
+        [{ id: 2 }, 'ok'],
+      ]);
+      expect(key.password).toBe('a');
     });
   });
 

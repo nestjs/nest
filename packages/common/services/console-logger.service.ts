@@ -542,11 +542,11 @@ export class ConsoleLogger implements LoggerService {
     }
 
     if (options.params) {
-      if (this.options.flattenParams) {
+      if (this.options.flattenParams && isPlainObject(options.params)) {
         // Framework fields win on key collisions: a param named "message" or
         // "level" must not clobber the actual log message or severity.
         for (const [key, value] of Object.entries(options.params)) {
-          if (!(key in logObject)) {
+          if (!Object.hasOwn(logObject, key)) {
             logObject[key] = value;
           }
         }
