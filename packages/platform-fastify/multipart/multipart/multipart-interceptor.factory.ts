@@ -38,6 +38,7 @@ import {
 } from './multipart.parser.js';
 import { mergeMultipartOptions } from './multipart.utils.js';
 import type { FastifyAdapter } from '../../adapters/fastify-adapter.js';
+import { onResponseClose } from '../../adapters/utils/on-response-close.util.js';
 
 /**
  * Set on a request whose pipes rejected it, by the router of
@@ -207,13 +208,17 @@ export function createMultipartInterceptor(
         // When the route's pipes reject the request (e.g. `ParseFilePipe`),
         // the route handler never sees the files, and nothing else would
         // remove them. They are removed once the response has been sent, as
-        // an exception filter may still use (or remove) them.
+        // an exception filter may still use (or remove) them, or once the
+        // connection of the request has closed: the response of a pipelined
+        // request that waits behind others may never report that itself.
         catchError(err => {
-          if (isRejectedByPipes(req)) {
-            const reply = ctx.getResponse<FastifyReply>();
-            finished(reply.raw, () => {
-              removeFiles(this.storage, req, stored).catch(() => undefined);
-            });
+          if (isRejectedByPipes(req) && stored.length > 0) {
+            const response = ctx.getResponse<FastifyReply>()?.raw;
+            if (typeof response?.on === 'function') {
+              onResponseClose(response, () => {
+                removeFiles(this.storage, req, stored).catch(() => undefined);
+              });
+            }
           }
           return throwError(() => err);
         }),
@@ -274,12 +279,13 @@ export function createMultipartStreamInterceptor(
         }
         return drainRequest(req.raw);
       };
-      if (reply.raw.writableFinished || reply.raw.destroyed) {
+      const response = reply?.raw;
+      if (response?.writableFinished || response?.destroyed) {
         // Answered while the body was being parsed (e.g. by Fastify's
         // `handlerTimeout`): 'close' may have been emitted already.
         void discardUpload();
-      } else {
-        reply.raw.once('close', () => void discardUpload());
+      } else if (typeof response?.on === 'function') {
+        onResponseClose(response, () => void discardUpload());
       }
       const drainBefore = <T>(result: T) =>
         from(discardUpload().then(() => result));

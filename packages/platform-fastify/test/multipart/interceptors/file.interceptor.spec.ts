@@ -662,6 +662,86 @@ describe('FileInterceptor', () => {
       );
     });
 
+    describe('when the request was pipelined on a connection', () => {
+      // The response of a request that waits behind others pipelined on the
+      // connection: it has no socket of its own, and may never close itself
+      const createConnection = () =>
+        Object.assign(new EventEmitter(), { destroyed: false });
+      const createPipelinedExchange = (connection: EventEmitter) => {
+        const req = createFakeRequest([file('avatar')]);
+        req.raw.socket = connection;
+        const reply = {
+          raw: Object.assign(createReply().raw, { req: req.raw }),
+        };
+        markRejectedByPipes(req);
+        return { req, reply };
+      };
+
+      it('should remove the stored file when the connection closes before the response is sent', async () => {
+        const storage = createStorage();
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const connection = createConnection();
+        const { req, reply } = createPipelinedExchange(connection);
+
+        const result$ = await target.intercept(
+          createContext(req, reply),
+          failing,
+        );
+        await expect(lastValueFrom(result$)).rejects.toBe(error);
+        expect(storage._removeFile).not.toHaveBeenCalled();
+        connection.emit('close');
+
+        await vi.waitFor(() =>
+          expect(storage._removeFile).toHaveBeenCalledExactlyOnceWith(
+            req,
+            expect.objectContaining({ path: '/uploads/a' }),
+            expect.any(Function),
+          ),
+        );
+      });
+
+      it('should remove the stored file once when the response is sent before the connection closes', async () => {
+        const storage = createStorage();
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const connection = createConnection();
+        const { req, reply } = createPipelinedExchange(connection);
+
+        const result$ = await target.intercept(
+          createContext(req, reply),
+          failing,
+        );
+        await expect(lastValueFrom(result$)).rejects.toBe(error);
+        reply.raw.end();
+        await vi.waitFor(() => expect(storage._removeFile).toHaveBeenCalled());
+        connection.emit('close');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(storage._removeFile).toHaveBeenCalledOnce();
+      });
+    });
+
+    it('should not watch the response when no file was stored', async () => {
+      const storage = createStorage();
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([]);
+      markRejectedByPipes(req);
+
+      const result$ = await target.intercept(createContext(req), failing);
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      expect(storage._removeFile).not.toHaveBeenCalled();
+    });
+
+    it('should not fail when a stand-in reply has no raw stream', async () => {
+      const storage = createStorage();
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([file('avatar')]);
+      markRejectedByPipes(req);
+
+      const result$ = await target.intercept(createContext(req), failing);
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      expect(storage._removeFile).not.toHaveBeenCalled();
+    });
+
     it('should keep the stored file when the route handler fails', async () => {
       const storage = createStorage();
       const target = new (FileInterceptor('avatar', { storage }))();

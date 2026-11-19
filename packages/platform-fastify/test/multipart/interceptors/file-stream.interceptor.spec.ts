@@ -5,7 +5,7 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { EventEmitter } from 'events';
-import { Readable } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import { lastValueFrom, of, throwError } from 'rxjs';
 import { FileStreamInterceptor } from '../../../multipart/interceptors/file-stream.interceptor.js';
 import { UPLOAD_DISCARDED_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
@@ -19,7 +19,7 @@ import {
 
 describe('FileStreamInterceptor', () => {
   const handler: CallHandler = { handle: () => of('test') };
-  const createReply = () => ({ raw: new EventEmitter() });
+  const createReply = () => ({ raw: new PassThrough() });
 
   it('should return metatype with expected structure', () => {
     const targetClass = FileStreamInterceptor('file');
@@ -253,6 +253,27 @@ describe('FileStreamInterceptor', () => {
       expect(stream.destroyed).toBe(false);
 
       reply.raw.emit('close');
+      expect(stream.destroyed).toBe(true);
+      expect(stream.errored?.message).toBe(UPLOAD_DISCARDED_MESSAGE);
+      expect(req.raw.unpipe).toHaveBeenCalled();
+    });
+
+    it('should fail the stream when the connection of a pipelined request closes', async () => {
+      // A response queued behind an unread one on the same connection: it has
+      // no socket of its own, and may never be closed itself
+      const connection = Object.assign(new EventEmitter(), {
+        destroyed: false,
+      });
+      const target = new (FileStreamInterceptor('upload'))();
+      const { req, stream } = createUploadingRequest();
+      req.raw.socket = connection;
+      const reply = {
+        raw: Object.assign(new PassThrough(), { req: req.raw }),
+      };
+      await target.intercept(createContext(req, reply), handler);
+      expect(stream.destroyed).toBe(false);
+
+      connection.emit('close');
       expect(stream.destroyed).toBe(true);
       expect(stream.errored?.message).toBe(UPLOAD_DISCARDED_MESSAGE);
       expect(req.raw.unpipe).toHaveBeenCalled();
