@@ -27,6 +27,8 @@ Nest is a TypeScript framework for building backends on [Node.js](https://nodejs
 
 It runs on [Express](https://github.com/expressjs/express), [Fastify](https://github.com/fastify/fastify) or Node's own `node:http`, and its first-party packages cover most of what a backend needs, so you can start small and add them as you go.
 
+On `node:http`, through the [`NodeAdapter`](https://docs.nestjs.com/http/performance#node-adapter), Nest handles about 3% fewer requests per second than plain Fastify and about 50% more than Express ([benchmark](https://docs.nestjs.com/faq/nest-vs-fastify-express-hono#performance)).
+
 ## Quick start
 
 ```bash
