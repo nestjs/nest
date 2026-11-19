@@ -92,6 +92,8 @@ export interface ParamProperties {
 
 type HandlerStream = StreamableFile | StreamingBody;
 
+const EMPTY_ARGS = Object.freeze([]) as unknown as any[];
+
 const isThenable = (value: unknown): value is PromiseLike<unknown> =>
   value !== null &&
   (typeof value === 'object' || typeof value === 'function') &&
@@ -220,12 +222,15 @@ export class RouterExecutionContext {
           : value;
       };
 
-    return async <TRequest, TResponse>(
+    const runWithInterceptors = async <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
       next: Function,
     ) => {
-      const args = this.contextUtils.createNullArray(argsLength);
+      const args =
+        argsLength === 0
+          ? EMPTY_ARGS
+          : this.contextUtils.createNullArray(argsLength);
       fnCanActivate && (await fnCanActivate([req, res, next]));
 
       this.responseController.setStatus(res, httpStatusCode);
@@ -267,6 +272,54 @@ export class RouterExecutionContext {
         handlerStreams,
       );
     };
+
+    if (!isSseHandler && isEmptyArray(interceptors) && !fnCanActivate) {
+      return <TRequest, TResponse>(
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ): any => {
+        const args =
+          argsLength === 0
+            ? EMPTY_ARGS
+            : this.contextUtils.createNullArray(argsLength);
+
+        this.responseController.setStatus(res, httpStatusCode);
+        hasCustomHeaders &&
+          this.responseController.setHeaders(res, responseHeaders);
+
+        if (fnApplyPipes) {
+          let pendingPipes: Promise<unknown> | undefined;
+          try {
+            pendingPipes = fnApplyPipes(args, req, res, next);
+          } catch (err) {
+            markRejectedByPipes(req);
+            throw err;
+          }
+          if (pendingPipes) {
+            return pendingPipes.then(
+              () =>
+                (fnHandleResponse as HandlerResponseBasicFn)(
+                  callback.apply(instance, args),
+                  res,
+                  req,
+                ),
+              err => {
+                markRejectedByPipes(req);
+                throw err;
+              },
+            );
+          }
+        }
+        return (fnHandleResponse as HandlerResponseBasicFn)(
+          callback.apply(instance, args),
+          res,
+          req,
+        );
+      };
+    }
+
+    return runWithInterceptors;
   }
 
   public getMetadata<TContext extends ContextType = ContextType>(
@@ -609,7 +662,7 @@ export class RouterExecutionContext {
         );
       };
     }
-    return async <TResult, TResponse>(
+    const handleAsyncResponse = async <TResult, TResponse>(
       result: TResult,
       res: TResponse,
       req?: unknown,
@@ -682,6 +735,35 @@ export class RouterExecutionContext {
         }
       }
       return res;
+    };
+
+    return <TResult, TResponse>(
+      result: TResult,
+      res: TResponse,
+      req?: unknown,
+      handlerObservable$?: Observable<unknown>,
+      handlerStreams: HandlerStream[] = [],
+    ): any => {
+      if (
+        !isResponseHandled &&
+        !isThenable(result) &&
+        !isObservable(result) &&
+        !(result instanceof StreamableFile) &&
+        handlerStreams.length === 0 &&
+        (result === null ||
+          typeof result !== 'object' ||
+          result.constructor === Object ||
+          Array.isArray(result))
+      ) {
+        return this.responseController.applySync(result, res, httpStatusCode);
+      }
+      return handleAsyncResponse(
+        result,
+        res,
+        req,
+        handlerObservable$,
+        handlerStreams,
+      );
     };
   }
 

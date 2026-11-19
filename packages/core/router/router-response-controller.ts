@@ -274,6 +274,14 @@ export class RouterResponseController {
     return this.applicationRef.reply(response, result, httpStatusCode);
   }
 
+  public applySync<TInput = any, TResponse = any>(
+    result: TInput,
+    response: TResponse,
+    httpStatusCode?: number,
+  ): any {
+    return this.applicationRef.reply(response, result, httpStatusCode);
+  }
+
   /**
    * Sends a web `Response`, a `ReadableStream` or an async iterable as it is
    * produced, through the adapter's `StreamableFile` path, which gives each of

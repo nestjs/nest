@@ -12,13 +12,27 @@ export class RouterProxy {
     targetCallback: RouterProxyCallback,
     exceptionsHandler: ExceptionsHandler,
   ) {
-    return async <TRequest, TResponse>(
+    return <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
     ) => {
       try {
-        await targetCallback(req, res, next);
+        const result = targetCallback(req, res, next);
+        if (
+          result !== null &&
+          (typeof result === 'object' || typeof result === 'function')
+        ) {
+          const then = (result as PromiseLike<unknown>).then;
+          if (typeof then === 'function') {
+            return then.call(result, undefined, (e: any) => {
+              const host = new ExecutionContextHost([req, res, next]);
+              exceptionsHandler.next(e, host);
+              return res;
+            });
+          }
+        }
+        return result;
       } catch (e) {
         const host = new ExecutionContextHost([req, res, next]);
         exceptionsHandler.next(e, host);

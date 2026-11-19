@@ -15,32 +15,35 @@ export class PipesConsumer {
     metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ) {
-    const token = this.paramsTokenFactory.exchangeEnumForString(
-      metadata.type as any as RouteParamtypes,
-    );
-    return this.applyPipes(
-      value,
-      {
-        metatype: metadata.metatype,
-        type: token,
-        data: metadata.data,
-        schema: metadata.schema,
-      },
-      pipes,
-    );
+    const resolvedMetadata =
+      typeof metadata.type === 'string' && Object.isFrozen(metadata)
+        ? metadata
+        : {
+            metatype: metadata.metatype,
+            type:
+              typeof metadata.type === 'string'
+                ? metadata.type
+                : this.paramsTokenFactory.exchangeEnumForString(
+                    metadata.type as any as RouteParamtypes,
+                  ),
+            data: metadata.data,
+            schema: metadata.schema,
+          };
+    return this.applyPipes(value, resolvedMetadata, pipes);
   }
 
   public async applyPipes<TInput = unknown>(
     value: TInput,
-    { metatype, type, data, schema }: ArgumentMetadata,
+    metadata: ArgumentMetadata,
     transforms: PipeTransform[],
   ) {
     // A custom param decorator with an async factory yields a promise, and
     // the pipes must see the value it resolves to. Any other value goes to
     // the first pipe right away.
     let result: unknown = isThenable(value) ? await value : value;
-    for (const pipe of transforms) {
-      result = await pipe.transform(result, { metatype, type, data, schema });
+    for (let i = 0; i < transforms.length; i++) {
+      const transformed = transforms[i].transform(result, metadata);
+      result = isThenable(transformed) ? await transformed : transformed;
     }
     return result;
   }

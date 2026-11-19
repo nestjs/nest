@@ -358,6 +358,65 @@ describe('InterceptorsConsumer', () => {
       }
       expect(testInterceptors[2].intercept).not.toHaveBeenCalled();
     });
+
+    it('should propagate AsyncLocalStorage stores created inside an interceptor', async () => {
+      const als = new AsyncLocalStorage<{ reqId: string }>();
+      let observed: { reqId: string } | undefined;
+
+      const testInterceptors = [
+        {
+          intercept: (_ctx: any, handler: CallHandler) =>
+            als.run({ reqId: 'cls-123' }, () => handler.handle()),
+        },
+        {
+          intercept: (_ctx: any, handler: CallHandler) => {
+            expect(als.getStore()).toEqual({ reqId: 'cls-123' });
+            return handler.handle();
+          },
+        },
+      ];
+
+      const obs$ = await consumer.intercept(
+        testInterceptors,
+        null!,
+        { constructor: null },
+        null!,
+        async () => {
+          observed = als.getStore();
+          return 'ok';
+        },
+      );
+
+      expect(await transformToResult(obs$)).toBe('ok');
+      expect(observed).toEqual({ reqId: 'cls-123' });
+    });
+
+    it('should resolve async interceptors returning plain objects, strings, or arrays without flattening', async () => {
+      for (const expected of [{ ok: true }, 'hello', [1, 2, 3], 42]) {
+        const obs$ = await consumer.intercept(
+          [
+            {
+              intercept: async () => expected as any,
+            },
+          ],
+          null!,
+          { constructor: null },
+          null!,
+          async () => 'ignored',
+        );
+
+        expect(await transformToResult(obs$)).toEqual(expected);
+      }
+    });
+
+    it('should emit an error on the returned Observable when transformDeferred next() throws synchronously', async () => {
+      const boom = new Error('sync throw');
+      const obs$ = consumer.transformDeferred(() => {
+        throw boom;
+      });
+
+      await expect(lastValueFrom(obs$)).rejects.toBe(boom);
+    });
   });
 });
 

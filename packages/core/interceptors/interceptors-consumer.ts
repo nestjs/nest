@@ -1,12 +1,17 @@
 import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
-import { Observable, defer, from, isObservable } from 'rxjs';
-import { mergeAll } from 'rxjs/operators';
+import { Observable, defer, from, isObservable, of, throwError } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { getClassRef } from '../helpers/class-ref-registry.js';
 import { destroyUnsentBody } from '../helpers/destroy-unsent-body.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import type { CallHandler, ContextType } from '@nestjs/common';
 import { type Controller, isEmptyArray } from '@nestjs/common/internal';
+
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  value !== null &&
+  (typeof value === 'object' || typeof value === 'function') &&
+  typeof (value as PromiseLike<unknown>).then === 'function';
 
 export class InterceptorsConsumer {
   public async intercept<TContext extends string = ContextType>(
@@ -14,7 +19,7 @@ export class InterceptorsConsumer {
     args: unknown[],
     instance: Controller,
     callback: (...args: unknown[]) => unknown,
-    next: () => Promise<unknown>,
+    next: () => Promise<unknown> | unknown,
     type?: TContext,
   ): Promise<unknown> {
     if (!interceptors || isEmptyArray(interceptors)) {
@@ -23,17 +28,29 @@ export class InterceptorsConsumer {
     const context = this.createContext(args, instance, callback);
     context.setType<TContext>(type!);
 
-    const nextFn = async (i = 0) => {
+    const nextFn = (i = 0): Observable<any> => {
       if (i >= interceptors.length) {
         return defer(bindAsyncScope(() => this.transformDeferred(next)));
       }
       const handler: CallHandler = {
-        handle: () =>
-          defer(bindAsyncScope(() => nextFn(i + 1))).pipe(mergeAll()),
+        handle: () => defer(bindAsyncScope(() => nextFn(i + 1))),
       };
-      return interceptors[i].intercept(context, handler);
+      const result = interceptors[i].intercept(context, handler);
+      return isObservable(result)
+        ? result
+        : isThenable(result)
+          ? from(result).pipe(
+              switchMap(resolved =>
+                isObservable(resolved)
+                  ? resolved
+                  : isThenable(resolved)
+                    ? from(resolved)
+                    : of(resolved),
+              ),
+            )
+          : of(result);
     };
-    return defer(() => nextFn()).pipe(mergeAll());
+    return defer(() => nextFn());
   }
 
   public createContext(
@@ -48,17 +65,28 @@ export class InterceptorsConsumer {
     );
   }
 
-  public transformDeferred(next: () => Promise<any>): Observable<any> {
+  public transformDeferred(next: () => Promise<any> | any): Observable<any> {
     // Call next() eagerly here — this method is invoked inside
     // defer(bindAsyncScope(...)), so the async context (e.g. AsyncLocalStorage)
     // is correctly inherited. Deferring next() into the subscriber function would
     // lose that context because the subscriber is called outside the bound scope.
-    const nextPromise = next();
+    let nextResult: any;
+    try {
+      nextResult = next();
+    } catch (err) {
+      return throwError(() => err);
+    }
+    if (!isThenable(nextResult)) {
+      if (isObservable(nextResult)) {
+        return nextResult;
+      }
+      return of(nextResult);
+    }
     return new Observable(subscriber => {
       let innerSub: { unsubscribe(): void } | undefined;
 
-      nextPromise
-        .then(res => {
+      nextResult.then(
+        res => {
           if (subscriber.closed) {
             // The outer subscription was torn down (e.g. an SSE client disconnect)
             // before the async handler resolved. Do not subscribe the producer
@@ -71,16 +99,21 @@ export class InterceptorsConsumer {
           }
           // "isObservable()" also recognises Observables created by another copy
           // of rxjs, which are not instances of the "Observable" class imported here
-          const isDeferred = res instanceof Promise || isObservable(res);
-          innerSub = from(isDeferred ? res : Promise.resolve(res)).subscribe(
-            subscriber,
-          );
-        })
-        .catch(err => {
+          if (isObservable(res)) {
+            innerSub = res.subscribe(subscriber);
+          } else if (isThenable(res)) {
+            innerSub = from(res).subscribe(subscriber);
+          } else {
+            subscriber.next(res);
+            subscriber.complete();
+          }
+        },
+        err => {
           if (!subscriber.closed) {
             subscriber.error(err);
           }
-        });
+        },
+      );
 
       return () => {
         innerSub?.unsubscribe();

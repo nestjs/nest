@@ -47,6 +47,26 @@ describe('RouterProxy', () => {
         new ExecutionContextHost([null, null, null]),
       );
     });
+
+    it('should handle a custom PromiseLike thenable without .catch()', async () => {
+      const proxy = routerProxy.createProxy(
+        () =>
+          ({
+            then(_onFulfilled: unknown, onRejected: (err: unknown) => any) {
+              return onRejected(httpException);
+            },
+          }) as any,
+        handler,
+      );
+
+      await proxy(null, null, null!);
+
+      expect(nextStub).toHaveBeenCalledOnce();
+      expect(nextStub).toHaveBeenCalledWith(
+        httpException,
+        new ExecutionContextHost([null, null, null]),
+      );
+    });
   });
 
   describe('createExceptionLayerProxy', () => {
