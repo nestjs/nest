@@ -587,6 +587,8 @@ describe('RouteConflictDetector', () => {
       ['{www.}example.com', 'api-:id.example.com'],
       ['{www.}example.com', 'api.:region.example.com'],
       [/^api\./, '{www.}example.com'],
+      [/^admin\.example\.com$/, ':tenant.example.org'],
+      [':tenant.app.example.com', /^(www\.)?example\.com$/],
     ])(
       'should not flag the hosts %s and %s, which match no host in common',
       (earlierHost, laterHost) => {
@@ -604,8 +606,9 @@ describe('RouteConflictDetector', () => {
 
     it.each([
       [':tenant.example.com', ':account.example.com'],
-      [':tenant.example.com', /^admin\./],
-      [/^admin\./, ':tenant.example.com'],
+      [':tenant.example.com', /\.example\.com$/],
+      [/\.example\.com$/, ':tenant.example.com'],
+      ['Admin.example.com', /^Admin\./],
     ])(
       'should take the hosts %s and %s to overlap',
       (earlierHost, laterHost) => {

@@ -605,12 +605,14 @@ export class RouteConflictDetector {
     if (leftValue instanceof RegExp) {
       return RouteConflictDetector.regExpCanMatchHost(
         leftValue,
+        rightValue as string,
         comparableHostOf(rightValue as string),
       );
     }
     if (rightValue instanceof RegExp) {
       return RouteConflictDetector.regExpCanMatchHost(
         rightValue,
+        leftValue,
         comparableHostOf(leftValue),
       );
     }
@@ -627,25 +629,28 @@ export class RouteConflictDetector {
   }
 
   /**
-   * As with two RegExps, whether a RegExp and a host pattern share a host
-   * cannot be told without matching them, so they are taken to overlap.
+   * Whether a RegExp and a host with a param share a host cannot be told
+   * without intersecting them. The RegExp is tested against the host as
+   * written and against each of its variants (lower-cased, as the router
+   * matches a string host in any case), so a pair that no request matches
+   * both of is not reported, which `shadow: 'error'` would turn into a failed
+   * bootstrap.
    */
   private static regExpCanMatchHost(
     regExp: RegExp,
+    host: string,
     hostVariants: ComparableSegment[],
   ): boolean {
-    return hostVariants.some(variant => {
-      if (variant.kind !== 'literal') {
-        return true;
-      }
+    const test = (value: string) => {
       // Reset lastIndex before calling test() to guard against RegExps with
       // the `g` or `y` flags: those are stateful and would produce
       // inconsistent results (false negatives) when the same instance is
       // reused across the multiple pair comparisons that a single detect()
       // run performs.
       regExp.lastIndex = 0;
-      return regExp.test(variant.value);
-    });
+      return regExp.test(value);
+    };
+    return test(host) || hostVariants.some(variant => test(variant.value));
   }
 
   /**
