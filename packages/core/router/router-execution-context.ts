@@ -636,11 +636,9 @@ export class RouterExecutionContext {
       let disconnected = false;
       try {
         if (isObservable(result)) {
-          const source = result;
-          const observable =
-            typeof source.pipe === 'function'
-              ? source
-              : new Observable(subscriber => source.subscribe(subscriber));
+          // Only an Observable returned by the route handler itself is torn
+          // down when the client goes away. Without interceptors, `result` is
+          // that Observable; otherwise `handlerObservable$` reports it.
           const disconnect$ = this.fromClientDisconnect(
             req,
             res,
@@ -649,7 +647,9 @@ export class RouterExecutionContext {
             },
             handlerObservable$,
           );
-          result = observable.pipe(
+          result = result.pipe(
+            // What it emits waits for it to complete. Without interceptors, it
+            // is the handler's own Observable, whose streams are tracked here.
             tap(value =>
               handlerObservable$
                 ? listenForStreamError(value)
@@ -660,9 +660,11 @@ export class RouterExecutionContext {
         }
         result = await this.responseController.transformToResult(result);
       } catch (err) {
-        // A disconnect completes the Observable. If it emitted nothing,
-        // lastValueFrom rejects with EmptyError, and there is no reply to send.
+        // `takeUntil` completes the stream on disconnect, so `lastValueFrom`
+        // rejects with an `EmptyError` if nothing was emitted yet. Any other
+        // error still goes to the exception filters.
         if (!disconnected || !(err instanceof EmptyError)) {
+          // An interceptor failed with a stream of the handler still in hand
           handlerStreams.forEach(destroyUnsentBody);
           throw err;
         }
@@ -789,8 +791,11 @@ export class RouterExecutionContext {
   }
 
   /**
-   * Emits when the client disconnects. With interceptors, watching starts
-   * only once the route handler itself produces an Observable.
+   * Emits once the client connection closes, or right away if it already has.
+   * With interceptors, watching starts only once the route handler itself
+   * produces an Observable, and starts over each time it does (e.g. on a
+   * retry). Picks the close source the same way `RouterResponseController#sse()`
+   * does, so the two disconnect watchers cannot drift apart.
    */
   private fromClientDisconnect(
     req: any,

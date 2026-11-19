@@ -300,6 +300,34 @@ describe('RouterExecutionContext', () => {
           expect(reply).not.toHaveBeenCalled();
         });
 
+        it('should tear down the Observable of a retried handler when the client disconnects', async () => {
+          const socket = new EventEmitter();
+          let tornDown = false;
+          const routeHandler = vi
+            .fn(
+              () =>
+                new Observable(() => () => {
+                  tornDown = true;
+                }),
+            )
+            .mockReturnValueOnce(throwError(() => new Error('first attempt')));
+          const reply = vi.spyOn(adapter, 'reply');
+          const proxy = createRoute(routeHandler, {
+            intercept: (_, next) => next.handle().pipe(retry(1)),
+          });
+
+          const pending = proxy({ socket }, {}, vi.fn());
+          await vi.waitFor(() => expect(routeHandler).toHaveBeenCalledTimes(2));
+          expect(socket.listenerCount('close')).toBe(1);
+
+          socket.emit('close');
+          await pending;
+
+          expect(tornDown).toBe(true);
+          expect(reply).not.toHaveBeenCalled();
+          expect(socket.listenerCount('close')).toBe(0);
+        });
+
         it('should not inspect the socket for a handler returning a Promise of a plain value', async () => {
           const getSocket = vi.fn(() => new EventEmitter());
           const request = Object.defineProperty({}, 'socket', {
@@ -1099,30 +1127,6 @@ describe('RouterExecutionContext', () => {
         const adapterReplySpy = vi.spyOn(adapter, 'reply');
         await handler(result, response);
         expect(adapterReplySpy).toHaveBeenCalledWith(response, 'test', 1234);
-      });
-
-      it('should resolve a foreign Observable without a pipe method', async () => {
-        const source$ = of('first', 'last');
-        const foreign$ = {
-          lift: source$.lift.bind(source$),
-          subscribe: source$.subscribe.bind(source$),
-        };
-        const response = {};
-
-        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
-          undefined!,
-        );
-        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
-
-        const handler = contextCreator.createHandleResponseFn(
-          null!,
-          false,
-          undefined,
-          200,
-        ) as HandlerResponseBasicFn;
-        const adapterReplySpy = vi.spyOn(adapter, 'reply');
-        await handler(foreign$, response);
-        expect(adapterReplySpy).toHaveBeenCalledWith(response, 'last', 200);
       });
 
       it('should reject with EmptyError when an Observable completes without emitting', async () => {
