@@ -31,15 +31,8 @@ import {
 import * as commonInternal from '@nestjs/common/internal';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { IncomingMessage } from 'http';
-import {
-  EmptyError,
-  isObservable,
-  Observable,
-  of,
-  ReplaySubject,
-  Subject,
-} from 'rxjs';
-import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { EmptyError, isObservable, Observable, type Subscriber } from 'rxjs';
+import { takeUntil, tap } from 'rxjs/operators';
 import { finished, Stream, type Writable } from 'stream';
 import {
   FORBIDDEN_MESSAGE,
@@ -53,6 +46,7 @@ import {
   HandleResponseFn,
   HandlerMetadata,
   HandlerMetadataStorage,
+  HandlerObservableNotifier,
   HandlerResponseBasicFn,
 } from '../helpers/handler-metadata-storage.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
@@ -91,6 +85,29 @@ export interface ParamProperties {
 }
 
 type HandlerStream = StreamableFile | StreamingBody;
+
+/** Signals the request's response handler each time the route returns an Observable. */
+class RouteHandlerObservableNotifier implements HandlerObservableNotifier {
+  private emitted = false;
+  private listener?: () => void;
+
+  next() {
+    this.emitted = true;
+    this.listener?.();
+  }
+
+  subscribe(listener: () => void) {
+    this.listener = listener;
+    if (this.emitted) {
+      listener();
+    }
+    return this;
+  }
+
+  unsubscribe() {
+    this.listener = undefined;
+  }
+}
 
 const isThenable = (value: unknown): value is PromiseLike<unknown> =>
   value !== null &&
@@ -190,7 +207,7 @@ export class RouterExecutionContext {
         req: TRequest,
         res: TResponse,
         next: Function,
-        handlerObservable$?: Subject<void>,
+        handlerObservable$?: RouteHandlerObservableNotifier,
         handlerStreams: HandlerStream[] = [],
       ) =>
       async () => {
@@ -245,7 +262,7 @@ export class RouterExecutionContext {
       const handlerObservable$ =
         isSseHandler || isEmptyArray(interceptors)
           ? undefined
-          : new ReplaySubject<void>(1);
+          : new RouteHandlerObservableNotifier();
       // The streams the handler produced: an interceptor may still hold one
       // when the client goes away, wrap one in a value it cannot be sent as,
       // or replace one with something else.
@@ -619,30 +636,34 @@ export class RouterExecutionContext {
       result: TResult,
       res: TResponse,
       req?: unknown,
-      handlerObservable$?: Observable<unknown>,
+      handlerObservable$?: HandlerObservableNotifier,
       handlerStreams: HandlerStream[] = [],
     ) => {
       let disconnected = false;
-      if (isObservable(result)) {
-        // Only an Observable returned by the route handler itself is torn down
-        // when the client goes away. Without interceptors, `result` is that
-        // Observable; otherwise `handlerObservable$` reports it.
-        const disconnect$ = (handlerObservable$ ?? of(null)).pipe(
-          switchMap(() => this.fromClientDisconnect(req, res)),
-          tap(() => (disconnected = true)),
-        );
-        result = result.pipe(
-          // What it emits waits for it to complete. Without interceptors, it
-          // is the handler's own Observable, whose streams are tracked here.
-          tap(value =>
-            handlerObservable$
-              ? listenForStreamError(value)
-              : this.trackHandlerStream(value, handlerStreams),
-          ),
-          takeUntil(disconnect$),
-        ) as TResult;
-      }
       try {
+        if (isObservable(result)) {
+          // Only an Observable returned by the route handler itself is torn
+          // down when the client goes away. Without interceptors, `result` is
+          // that Observable; otherwise `handlerObservable$` reports it.
+          const disconnect$ = this.fromClientDisconnect(
+            req,
+            res,
+            () => {
+              disconnected = true;
+            },
+            handlerObservable$,
+          );
+          result = result.pipe(
+            // What it emits waits for it to complete. Without interceptors, it
+            // is the handler's own Observable, whose streams are tracked here.
+            tap(value =>
+              handlerObservable$
+                ? listenForStreamError(value)
+                : this.trackHandlerStream(value, handlerStreams),
+            ),
+            takeUntil(disconnect$),
+          ) as TResult;
+        }
         result = await this.responseController.transformToResult(result);
       } catch (err) {
         // `takeUntil` completes the stream on disconnect, so `lastValueFrom`
@@ -765,7 +786,7 @@ export class RouterExecutionContext {
 
   private observeHandlerResult(
     result: unknown,
-    handlerObservable$: Subject<void>,
+    handlerObservable$: RouteHandlerObservableNotifier,
     handlerStreams: HandlerStream[],
   ) {
     if (isObservable(result)) {
@@ -777,11 +798,18 @@ export class RouterExecutionContext {
 
   /**
    * Emits once the client connection closes, or right away if it already has.
-   * Picks the close source the same way `RouterResponseController#sse()`
+   * With interceptors, watching starts only once the route handler itself
+   * produces an Observable, and starts over each time it does (e.g. on a
+   * retry). Picks the close source the same way `RouterResponseController#sse()`
    * does, so the two disconnect watchers cannot drift apart.
    */
-  private fromClientDisconnect(req: any, res: any): Observable<void> {
-    return new Observable<void>(subscriber => {
+  private fromClientDisconnect(
+    req: any,
+    res: any,
+    onDisconnect: () => void,
+    handlerObservable$?: HandlerObservableNotifier,
+  ): Observable<void> {
+    const watch = (subscriber: Subscriber<void>) => {
       const source = pickCloseSource(
         (req?.raw ?? req)?.socket,
         res?.raw ?? res,
@@ -789,11 +817,36 @@ export class RouterExecutionContext {
       if (!source) {
         return;
       }
-      if (source.destroyed) {
+      const disconnect = () => {
+        onDisconnect();
         subscriber.next();
+      };
+      if (source.destroyed) {
+        disconnect();
         return;
       }
-      return onceClosed(source, () => subscriber.next());
+      return onceClosed(source, disconnect);
+    };
+    if (!handlerObservable$) {
+      return new Observable(watch);
+    }
+    return new Observable<void>(subscriber => {
+      let stopWatching: (() => void) | undefined;
+      return handlerObservable$.subscribe(() => {
+        if (subscriber.closed) {
+          return;
+        }
+        try {
+          if (stopWatching) {
+            subscriber.remove(stopWatching);
+            stopWatching();
+          }
+          stopWatching = watch(subscriber);
+          subscriber.add(stopWatching);
+        } catch (err) {
+          subscriber.error(err);
+        }
+      });
     });
   }
 

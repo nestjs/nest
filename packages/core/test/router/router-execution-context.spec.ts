@@ -2,11 +2,14 @@ import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exceptio
 import { EventEmitter } from 'events';
 import {
   concatMap,
+  EMPTY,
+  EmptyError,
   lastValueFrom,
   map,
   Observable,
   of,
   ReplaySubject,
+  retry,
   Subject,
   throwError,
 } from 'rxjs';
@@ -25,9 +28,11 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  type NestInterceptor,
   RequestMethod,
   RouteParamMetadata,
   StreamableFile,
+  UseInterceptors,
   ValidationPipe,
 } from '../../../common/index.js';
 import { AbstractHttpAdapter } from '../../adapters/index.js';
@@ -240,6 +245,105 @@ describe('RouterExecutionContext', () => {
         await proxy({}, {}, vi.fn());
 
         expect(thenable.then).toHaveBeenCalledOnce();
+      });
+
+      describe('disconnect handling', () => {
+        const createRoute = (
+          routeHandler: () => unknown,
+          interceptor: NestInterceptor,
+        ) => {
+          @UseInterceptors(interceptor)
+          class TestController {
+            handle() {
+              return routeHandler();
+            }
+          }
+
+          const controller = new TestController();
+          return contextCreator.create(
+            controller,
+            controller.handle,
+            'handle',
+            '',
+            RequestMethod.GET,
+          );
+        };
+
+        it('should not subscribe a retried Observable when the socket is already destroyed', async () => {
+          const socket = new PassThrough();
+          const subscribe = vi.fn();
+          const retried = new Observable(() => {
+            subscribe();
+          });
+          const routeHandler = vi
+            .fn(() => retried)
+            .mockReturnValueOnce(throwError(() => new Error('first attempt')));
+          const reply = vi.spyOn(adapter, 'reply');
+          const proxy = createRoute(routeHandler, {
+            intercept: (_, next) =>
+              next.handle().pipe(
+                retry({
+                  count: 1,
+                  delay: () => {
+                    // The socket is destroyed before emitting 'close'.
+                    socket.destroy();
+                    return of(undefined);
+                  },
+                }),
+              ),
+          });
+
+          await proxy({ socket }, {}, vi.fn());
+
+          expect(routeHandler).toHaveBeenCalledTimes(2);
+          expect(subscribe).not.toHaveBeenCalled();
+          expect(reply).not.toHaveBeenCalled();
+        });
+
+        it('should tear down the Observable of a retried handler when the client disconnects', async () => {
+          const socket = new EventEmitter();
+          let tornDown = false;
+          const routeHandler = vi
+            .fn(
+              () =>
+                new Observable(() => () => {
+                  tornDown = true;
+                }),
+            )
+            .mockReturnValueOnce(throwError(() => new Error('first attempt')));
+          const reply = vi.spyOn(adapter, 'reply');
+          const proxy = createRoute(routeHandler, {
+            intercept: (_, next) => next.handle().pipe(retry(1)),
+          });
+
+          const pending = proxy({ socket }, {}, vi.fn());
+          await vi.waitFor(() => expect(routeHandler).toHaveBeenCalledTimes(2));
+          expect(socket.listenerCount('close')).toBe(1);
+
+          socket.emit('close');
+          await pending;
+
+          expect(tornDown).toBe(true);
+          expect(reply).not.toHaveBeenCalled();
+          expect(socket.listenerCount('close')).toBe(0);
+        });
+
+        it('should not inspect the socket for a handler returning a Promise of a plain value', async () => {
+          const getSocket = vi.fn(() => new EventEmitter());
+          const request = Object.defineProperty({}, 'socket', {
+            get: getSocket,
+          });
+          const response = {};
+          const reply = vi.spyOn(adapter, 'reply');
+          const proxy = createRoute(() => Promise.resolve('value'), {
+            intercept: (_, next) => next.handle(),
+          });
+
+          await proxy(request, response, vi.fn());
+
+          expect(getSocket).not.toHaveBeenCalled();
+          expect(reply).toHaveBeenCalledWith(response, 'value', undefined);
+        });
       });
     });
 
@@ -1078,6 +1182,22 @@ describe('RouterExecutionContext', () => {
         await handler(result, response);
         expect(adapterReplySpy).toHaveBeenCalledWith(response, 'test', 1234);
       });
+
+      it('should reject with EmptyError when an Observable completes without emitting', async () => {
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          false,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+
+        await expect(handler(EMPTY, {})).rejects.toBeInstanceOf(EmptyError);
+      });
     });
 
     describe('when the client disconnects', () => {
@@ -1141,6 +1261,23 @@ describe('RouterExecutionContext', () => {
         expect(request.socket.listenerCount('close')).toBe(0);
       });
 
+      it('should close the producer during a synchronous disconnect in subscribe', async () => {
+        const afterDisconnect = vi.fn();
+        const observable = new Observable(subscriber => {
+          subscriber.next('partial');
+          request.socket.emit('close');
+          if (!subscriber.closed) {
+            afterDisconnect();
+          }
+          subscriber.complete();
+        });
+
+        await handler(observable, response, request);
+
+        expect(afterDisconnect).not.toHaveBeenCalled();
+        expect(adapterReplySpy).not.toHaveBeenCalled();
+      });
+
       it('should share one "close" listener among the pipelined requests of a connection', async () => {
         const producers = [
           createProducer(),
@@ -1167,6 +1304,23 @@ describe('RouterExecutionContext', () => {
         expect(producers[2].producer.tornDown).toBe(true);
         expect(adapterReplySpy).toHaveBeenCalledTimes(1);
         expect(request.socket.listenerCount('close')).toBe(0);
+      });
+
+      it('should finish disconnecting pipelined requests if one teardown throws', async () => {
+        const error = new Error('teardown failed');
+        const failing = new Observable(() => () => {
+          throw error;
+        });
+        const { producer, observable } = createProducer();
+        const pending = [
+          handler(failing, response, request),
+          handler(observable, response, request),
+        ];
+
+        expect(() => request.socket.emit('close')).not.toThrow();
+        expect(producer.tornDown).toBe(true);
+        await Promise.all(pending);
+        expect(adapterReplySpy).not.toHaveBeenCalled();
       });
 
       it('should not subscribe an Observable returned by the handler once the client is gone', async () => {
@@ -1267,6 +1421,25 @@ describe('RouterExecutionContext', () => {
             request,
           ),
         ).rejects.toBe(error);
+      });
+
+      it('should propagate an error thrown while attaching a stream error listener', async () => {
+        const error = new Error('listener registration failed');
+        const stream = new PassThrough();
+        stream.on('newListener', event => {
+          if (event === 'error') {
+            throw error;
+          }
+        });
+
+        try {
+          await expect(
+            handler(of(stream, 'fallback'), response, request),
+          ).rejects.toBe(error);
+          expect(adapterReplySpy).not.toHaveBeenCalled();
+        } finally {
+          stream.destroy();
+        }
       });
 
       it('should ignore a disconnect when the handler did not return the (intercepted) Observable', async () => {
