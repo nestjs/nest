@@ -538,9 +538,14 @@ export class RouterExecutionContext {
     ) => {
       // A value no pipe runs on is final once extracted and needs no promise,
       // unless it is a thenable on a pipeable param, which getParamValue() has
-      // always settled. The rest, and any extractor that throws, go through
-      // one Promise.all() in param order, as before: pipes start in the same
-      // order and the first error is the same one.
+      // always settled. The response, which a custom decorator can give the
+      // handler as @Res() does, is passed on unchanged, with no pipe run on
+      // it, whatever the adapter: the then() of a Fastify reply waits for the
+      // response to be sent, so settling it, or any pipe that returns it,
+      // would wait for an answer the handler has yet to give. The rest, and
+      // any extractor that throws, go through one Promise.all() in param
+      // order, as before: pipes start in the same order and the first error
+      // is the same one.
       let pending: Promise<void>[] | undefined;
       for (let i = 0; i < params.length; i++) {
         const param = params[i];
@@ -548,7 +553,8 @@ export class RouterExecutionContext {
           const value = param.extractValue(req, res, next);
           if (
             param.isPipeable &&
-            (param.pipes.length > 0 || isThenable(value))
+            (param.pipes.length > 0 || isThenable(value)) &&
+            value !== res
           ) {
             (pending ??= []).push(applyPipes(args, param, value));
           } else {
