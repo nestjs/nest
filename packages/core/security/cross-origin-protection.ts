@@ -286,7 +286,8 @@ export class CrossOriginProtection<TRequest = any> {
    * Resolves the excluded routes to the paths they are served at, like
    * `MiddlewareConsumer.exclude()` does: with the global prefix (unless the
    * route is excluded from it) and, with URI versioning, the version segment
-   * of `RouteInfo.version` (with another versioning type, only the requests
+   * of `RouteInfo.version`, or for a route without a version, none and that
+   * of the default version (with another versioning type, only the requests
    * for that version are excluded). Called by `app.init()`, once the global
    * prefix and versioning are final; until then nothing is excluded.
    * The routes excluded from the global prefix that a route covers are

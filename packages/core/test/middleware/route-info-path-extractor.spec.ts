@@ -203,14 +203,14 @@ describe('RouteInfoPathExtractor', () => {
         ).toEqual(['/api/bar', '/api/v1/bar']);
       });
 
-      it(`should not add it to an excluded route`, () => {
+      it(`should also add it to an excluded route without a version`, () => {
         withDefaultVersion('1');
         expect(
           routeInfoPathExtractor.extractPathFrom({
             path: 'cats',
             method: RequestMethod.GET,
           }),
-        ).toEqual(['/cats']);
+        ).toEqual(['/cats', '/v1/cats']);
       });
     });
 
@@ -655,6 +655,137 @@ describe('RouteInfoPathExtractor', () => {
           method: -1 as RequestMethod,
         }),
       ).toEqual([{ path: '/{*path}', method: -1 }]);
+    });
+  });
+
+  describe('extractExclusionsFrom with a default version', () => {
+    const createExtractor = (
+      versioning: VersioningOptions,
+      configure: (config: ApplicationConfig) => void = () => {},
+    ) => {
+      const appConfig = new ApplicationConfig();
+      appConfig.enableVersioning(versioning);
+      configure(appConfig);
+      return new RouteInfoPathExtractor(appConfig);
+    };
+
+    it(`should also return the paths of the default version for a route without a version`, () => {
+      expect(
+        createExtractor({
+          type: VersioningType.URI,
+          defaultVersion: '1',
+        }).extractExclusionsFrom({ path: '/cats', method: RequestMethod.GET }),
+      ).toEqual([
+        { path: '/cats', method: RequestMethod.GET },
+        { path: '/v1/cats', method: RequestMethod.GET },
+      ]);
+
+      expect(
+        createExtractor({
+          type: VersioningType.URI,
+          defaultVersion: ['1', '2'],
+        }).extractExclusionsFrom({ path: '/cats', method: RequestMethod.GET }),
+      ).toEqual([
+        { path: '/cats', method: RequestMethod.GET },
+        { path: '/v1/cats', method: RequestMethod.GET },
+        { path: '/v2/cats', method: RequestMethod.GET },
+      ]);
+    });
+
+    it(`should only return the paths of the version of a route with a version`, () => {
+      const extractor = createExtractor({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+      });
+
+      expect(
+        extractor.extractExclusionsFrom({
+          path: '/cats',
+          method: RequestMethod.GET,
+          version: '2',
+        }),
+      ).toEqual([
+        { path: '/v2/cats', method: RequestMethod.GET, version: '2' },
+      ]);
+      expect(
+        extractor.extractExclusionsFrom({
+          path: '/cats',
+          method: RequestMethod.GET,
+          version: VERSION_NEUTRAL,
+        }),
+      ).toEqual([
+        { path: '/cats', method: RequestMethod.GET, version: VERSION_NEUTRAL },
+      ]);
+    });
+
+    it(`should only return the bare path for a VERSION_NEUTRAL default version or another versioning type`, () => {
+      for (const versioning of [
+        { type: VersioningType.URI, defaultVersion: VERSION_NEUTRAL },
+        {
+          type: VersioningType.HEADER,
+          header: 'X-Version',
+          defaultVersion: '1',
+        },
+      ] as VersioningOptions[]) {
+        expect(
+          createExtractor(versioning).extractExclusionsFrom({
+            path: '/cats',
+            method: RequestMethod.GET,
+          }),
+        ).toEqual([{ path: '/cats', method: RequestMethod.GET }]);
+      }
+    });
+
+    it(`should keep a wildcard without a version as it is`, () => {
+      const extractor = createExtractor(
+        { type: VersioningType.URI, defaultVersion: '1' },
+        config => {
+          config.setGlobalPrefix('api');
+          config.setGlobalPrefixOptions({
+            exclude: mapToExcludeRoute(['health']),
+          });
+        },
+      );
+
+      expect(
+        extractor.extractExclusionsFrom({
+          path: '/{*path}',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([{ path: '/{*path}', method: -1 }]);
+    });
+
+    it(`should also return the paths of the default version for the routes excluded from the global prefix`, () => {
+      const extractor = createExtractor(
+        { type: VersioningType.URI, defaultVersion: '1' },
+        config => {
+          config.setGlobalPrefix('api');
+          config.setGlobalPrefixOptions({
+            exclude: mapToExcludeRoute(['health', 'health/ready']),
+          });
+        },
+      );
+
+      expect(
+        extractor.extractExclusionsFrom({
+          path: '/health',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([
+        { path: '/health', method: -1 },
+        { path: '/v1/health', method: -1 },
+      ]);
+      expect(
+        extractor.extractExclusionsFrom({
+          path: '/health/{*path}',
+          method: -1 as RequestMethod,
+        }),
+      ).toEqual([
+        { path: '/api/health/{*path}', method: -1 },
+        { path: '/api/v1/health/{*path}', method: -1 },
+        { path: '/health/ready', method: -1 },
+        { path: '/v1/health/ready', method: -1 },
+      ]);
     });
   });
 
