@@ -1016,6 +1016,40 @@ describe('DependenciesScanner', () => {
       expect(addEnhancerMetadataProviderSpy).toHaveBeenCalled();
       expect(addEnhancerMetadataProviderSpy).toHaveBeenCalledWith(instance);
     });
+
+    it('should only add enhancers metadata to the given modules', () => {
+      untypedScanner.applicationProvidersApplyMap = [provider];
+
+      const instance = new InstanceWrapper({ name: 'test' });
+      const givenController = new InstanceWrapper();
+      const otherController = new InstanceWrapper();
+
+      const fakeModuleRef = (controller: InstanceWrapper) => ({
+        injectables: { get: () => instance },
+        controllers: new Map([['test', controller]]),
+        entryProviders: [],
+      });
+
+      vi.spyOn(container, 'getModules').mockImplementation(
+        () =>
+          ({
+            get: () => fakeModuleRef(otherController),
+            values() {
+              return [this.get()];
+            },
+          }) as any,
+      );
+
+      const givenSpy = vi.spyOn(givenController, 'addEnhancerMetadata');
+      const otherSpy = vi.spyOn(otherController, 'addEnhancerMetadata');
+
+      scanner.addScopedEnhancersMetadata(
+        new Map([['givenModule', fakeModuleRef(givenController) as any]]),
+      );
+
+      expect(givenSpy).toHaveBeenCalledWith(instance);
+      expect(otherSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('getApplyProvidersMap', () => {
