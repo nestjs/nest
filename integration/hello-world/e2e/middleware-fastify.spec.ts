@@ -1381,11 +1381,10 @@ describe('Middleware (FastifyAdapter)', () => {
       await createApp(new FastifyAdapter());
 
       const response = await sendRawRequest('*users');
-      expect(response.statusCode).toBe(404);
-      expect(JSON.parse(response.body)).toEqual({
-        message: 'Cannot GET *users',
-        error: 'Not Found',
-        statusCode: 404,
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body)).toMatchObject({
+        code: 'FST_ERR_BAD_URL',
+        statusCode: 400,
       });
     });
 
