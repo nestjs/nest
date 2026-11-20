@@ -57,6 +57,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   protected mqttClient: MqttClient | null = null;
   protected connectionPromise: Promise<any> | null = null;
   private closeCount = 0;
+  private readonly discardedClients = new WeakSet<MqttClient>();
   protected isInitialConnection = false;
   protected isReconnecting = false;
   protected pendingEventListeners: Array<{
@@ -83,18 +84,21 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   public async close() {
     this.closeCount++;
     this.handleClose();
-    try {
-      if (this.mqttClient) {
-        await this.mqttClient.endAsync();
+    // Reset first, so that an in-flight `connect()` or a `connect()` issued
+    // while `endAsync()` is still pending starts a fresh connection that this
+    // close leaves alone, and late events from the closing client are ignored.
+    const mqttClient = this.mqttClient;
+    this.mqttClient = null;
+    this.connectionPromise = null;
+    this.isInitialConnection = false;
+    this.isReconnecting = false;
+    this.subscriptionsCount.clear();
+    this.pendingEventListeners = [];
+    if (mqttClient) {
+      if (isObject(mqttClient)) {
+        this.discardedClients.add(mqttClient);
       }
-    } finally {
-      // The state must be reset even when `endAsync()` fails, otherwise a later
-      // `connect()` reuses the cached client and connection promise.
-      this.mqttClient = null;
-      this.connectionPromise = null;
-      this.isInitialConnection = false;
-      this.subscriptionsCount.clear();
-      this.pendingEventListeners = [];
+      await mqttClient.endAsync();
     }
   }
 
@@ -178,6 +182,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
    * on are ignored.
    */
   private discardClient(client: MqttClient) {
+    if (isObject(client)) {
+      this.discardedClients.add(client);
+    }
     if (client !== this.mqttClient) {
       return;
     }
@@ -188,7 +195,15 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     // The next client has to attach the response listener and subscribe to
     // the reply channels again
     this.isInitialConnection = false;
+    this.isReconnecting = false;
     this.subscriptionsCount.clear();
+  }
+
+  private isDiscardedClient(client: MqttClient): boolean {
+    return (
+      (isObject(client) && this.discardedClients.has(client)) ||
+      (this.mqttClient !== null && this.mqttClient !== client)
+    );
   }
 
   public mergeCloseEvent<T = any>(
@@ -227,6 +242,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerOfflineListener(client: MqttClient) {
     client.on(MqttEventsMap.OFFLINE, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this.connectionPromise = Promise.reject(
         'Error: Connection lost. Trying to reconnect...',
       );
@@ -239,6 +257,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerReconnectListener(client: MqttClient) {
     client.on(MqttEventsMap.RECONNECT, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this.isReconnecting = true;
       this._status$.next(MqttStatus.RECONNECTING);
 
@@ -248,12 +269,18 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerDisconnectListener(client: MqttClient) {
     client.on(MqttEventsMap.DISCONNECT, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this._status$.next(MqttStatus.DISCONNECTED);
     });
   }
 
   public registerCloseListener(client: MqttClient) {
     client.on(MqttEventsMap.CLOSE, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this._status$.next(MqttStatus.CLOSED);
 
       // mqtt reconnects on the same client only while reconnectPeriod is set.
@@ -273,6 +300,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerConnectListener(client: MqttClient) {
     client.on(MqttEventsMap.CONNECT, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this.isReconnecting = false;
       this._status$.next(MqttStatus.CONNECTED);
 
