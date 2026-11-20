@@ -80,6 +80,7 @@ import {
   FastifyViewOptions,
 } from '../interfaces/external/index.js';
 import {
+  type NestFastifyApplication,
   NestFastifyBodyParserOptions,
   NestFastifyListenOptions,
 } from '../interfaces/index.js';
@@ -313,6 +314,7 @@ export class FastifyAdapter<
   TInstance extends FastifyInstance<TServer, TRawRequest, TRawResponse> =
     FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
+  declare protected readonly __nestApplicationType: NestFastifyApplication<TServer>;
   protected readonly logger = new Logger(FastifyAdapter.name);
   declare protected readonly instance: TInstance;
   protected _pathPrefix?: string;

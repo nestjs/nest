@@ -57,6 +57,11 @@ export type IEntryNestModule =
   | ModuleMetadata
   | Promise<IEntryNestModule>;
 
+type ApplicationFromAdapter<TAdapter extends AbstractHttpAdapter> =
+  TAdapter extends AbstractHttpAdapter<any, any, any, infer TApplication>
+    ? TApplication
+    : INestApplication;
+
 /**
  * @publicApi
  */
@@ -67,6 +72,25 @@ export class NestFactoryStatic {
   private abortOnError = true;
   private autoFlushLogs = false;
 
+  /**
+   * Creates a Nest application and infers its type from the supplied adapter.
+   * A contextual application type takes precedence when supplied.
+   * Adapters typed as `AbstractHttpAdapter` or `any` use the fallback overloads.
+   *
+   * @param module Entry (root) application module class or module metadata
+   * @param httpAdapter Adapter to proxy the request/response cycle to
+   *    the underlying HTTP server
+   * @param options List of options to initialize NestApplication
+   */
+  public async create<
+    TAdapter extends AbstractHttpAdapter,
+    T extends INestApplication = ApplicationFromAdapter<TAdapter>,
+  >(
+    module: IEntryNestModule,
+    httpAdapter: TAdapter &
+      (AbstractHttpAdapter extends TAdapter ? never : unknown),
+    options?: NestApplicationOptions,
+  ): Promise<T>;
   /**
    * Creates an instance of NestApplication.
    *
@@ -81,15 +105,8 @@ export class NestFactoryStatic {
     options?: NestApplicationOptions,
   ): Promise<T>;
   /**
-   * Creates an instance of NestApplication with the specified `httpAdapter`.
-   *
-   * @param module Entry (root) application module class or module metadata
-   * @param httpAdapter Adapter to proxy the request/response cycle to
-   *    the underlying HTTP server
-   * @param options List of options to initialize NestApplication
-   *
-   * @returns A promise that, when resolved,
-   * contains a reference to the NestApplication instance.
+   * Preserves the original adapter signature, including an explicit `never`
+   * application type and the signatures seen by `Parameters` and `ReturnType`.
    */
   public async create<T extends INestApplication = INestApplication>(
     module: IEntryNestModule,

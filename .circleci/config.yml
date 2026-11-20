@@ -47,6 +47,9 @@ jobs:
       - *install-deps
       - *save-cache
       - *build-packages
+      - run:
+          name: Test public types
+          command: npm run test:types
 
   test:
     parameters:

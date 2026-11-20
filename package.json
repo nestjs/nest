@@ -33,6 +33,7 @@
     "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
     "postinstall": "opencollective",
     "test": "vitest run",
+    "test:types": "tsc -p packages/core/test/tsconfig.types.json",
     "test:dev": "vitest",
     "test:cov": "vitest run --coverage --config vitest.config.coverage.mts || true",
     "test:integration": "vitest run --config vitest.config.integration.mts",
