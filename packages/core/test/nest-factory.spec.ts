@@ -83,6 +83,10 @@ describe('NestFactory', () => {
     });
 
     it('should preserve fallback and caller-supplied application types', () => {
+      expectTypeOf(() => {
+        const adapter: AbstractHttpAdapter = new NodeAdapter();
+        return NestFactory.create(TestModule, adapter);
+      }).returns.toEqualTypeOf<Promise<INestApplication>>();
       expectTypeOf((adapter: NoopHttpAdapter) =>
         NestFactory.create(TestModule, adapter),
       ).returns.toEqualTypeOf<Promise<INestApplication>>();
