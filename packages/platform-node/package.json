@@ -42,7 +42,7 @@
     "cors": "2.8.6",
     "encodeurl": "2.0.3",
     "fast-querystring": "1.1.2",
-    "find-my-way": "9.10.0",
+    "find-my-way": "9.10.2",
     "light-my-request": "6.8.1",
     "mime-types": "3.0.2",
     "multer": "2.5.0",
