@@ -42,6 +42,7 @@ import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
 import { Duplex, Readable, Transform, Writable } from 'stream';
 import { types } from 'util';
+import type { NestNodeApplication } from '../interfaces/nest-node-application.interface.js';
 import type {
   NestNodeBodyParserOptionsFor,
   NestNodeBodyParserType,
@@ -147,6 +148,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
   NodeRequest,
   NodeResponse
 > {
+  declare protected readonly __nestApplicationType: NestNodeApplication;
   declare protected instance: NodeRouter;
   private readonly logger = new Logger(NodeAdapter.name);
   private readonly openConnections = new Set<Duplex>();

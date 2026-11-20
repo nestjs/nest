@@ -18,6 +18,7 @@ import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
 import { Duplex, Readable, Transform, Writable } from 'stream';
 import { types } from 'util';
+import type { NestExpressApplication } from '../interfaces/nest-express-application.interface.js';
 import {
   NestExpressBodyParserOptionsFor,
   NestExpressBodyParserType,
@@ -70,6 +71,7 @@ function isJsonContentType(contentType: string): boolean {
 export class ExpressAdapter extends AbstractHttpAdapter<
   http.Server | https.Server
 > {
+  declare protected readonly __nestApplicationType: NestExpressApplication;
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();

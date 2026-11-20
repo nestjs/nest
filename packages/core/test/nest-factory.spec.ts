@@ -1,13 +1,43 @@
-import { Controller, Get, Injectable, Module } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  type INestApplication,
+  Injectable,
+  Module,
+} from '@nestjs/common';
 import * as internal from '@nestjs/common/internal';
-import { FastifyAdapter } from '@nestjs/platform-fastify';
+import {
+  ExpressAdapter,
+  type NestExpressApplication,
+} from '@nestjs/platform-express';
+import {
+  FastifyAdapter,
+  type NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import { NodeAdapter, type NestNodeApplication } from '@nestjs/platform-node';
+import type { Http2Server } from 'node:http2';
+import type { AbstractHttpAdapter } from '../adapters/http-adapter.js';
 import { NestFactory } from '../nest-factory.js';
+import type { NoopHttpAdapter } from './utils/noop-adapter.js';
 
 @Module({})
 class TestModule {}
 
 @Injectable()
 class TestService {}
+
+interface CustomApplication extends INestApplication {
+  customMethod(): void;
+}
+
+declare abstract class CustomAdapter extends AbstractHttpAdapter<
+  unknown,
+  unknown,
+  unknown,
+  CustomApplication
+> {
+  abortOnError: boolean;
+}
 
 @Controller()
 class TestController {
@@ -23,6 +53,72 @@ const rootModuleOf = (app: { get: Function }) =>
     .find(metatype => metatype.name === 'AppModule');
 
 describe('NestFactory', () => {
+  describe('create() types', () => {
+    it('should infer the application type from the HTTP adapter', () => {
+      // Check the return types without bootstrapping applications.
+      expectTypeOf(() =>
+        NestFactory.create(TestModule, new NodeAdapter()),
+      ).returns.toEqualTypeOf<Promise<NestNodeApplication>>();
+      expectTypeOf(() =>
+        NestFactory.create(TestModule, new ExpressAdapter()),
+      ).returns.toEqualTypeOf<Promise<NestExpressApplication>>();
+      expectTypeOf(() =>
+        NestFactory.create(TestModule, new FastifyAdapter()),
+      ).returns.toEqualTypeOf<Promise<NestFastifyApplication>>();
+      expectTypeOf(() =>
+        NestFactory.create(
+          TestModule,
+          new FastifyAdapter<Http2Server>({ http2: true }),
+          { logger: false },
+        ),
+      ).returns.toEqualTypeOf<Promise<NestFastifyApplication<Http2Server>>>();
+      expectTypeOf((adapter: CustomAdapter) =>
+        NestFactory.create(TestModule, adapter),
+      ).returns.toEqualTypeOf<Promise<CustomApplication>>();
+      expectTypeOf((adapter: NodeAdapter | ExpressAdapter) =>
+        NestFactory.create(TestModule, adapter),
+      ).returns.toEqualTypeOf<
+        Promise<NestNodeApplication | NestExpressApplication>
+      >();
+    });
+
+    it('should preserve fallback and caller-supplied application types', () => {
+      expectTypeOf((adapter: NoopHttpAdapter) =>
+        NestFactory.create(TestModule, adapter),
+      ).returns.toEqualTypeOf<Promise<INestApplication>>();
+      expectTypeOf((adapter: any) =>
+        NestFactory.create(TestModule, adapter),
+      ).returns.toEqualTypeOf<Promise<INestApplication>>();
+      expectTypeOf(() => NestFactory.create(TestModule)).returns.toEqualTypeOf<
+        Promise<INestApplication>
+      >();
+      expectTypeOf(() =>
+        NestFactory.create(TestModule, { logger: false }),
+      ).returns.toEqualTypeOf<Promise<INestApplication>>();
+      expectTypeOf(() =>
+        NestFactory.create<CustomApplication>(TestModule, new NodeAdapter()),
+      ).returns.toEqualTypeOf<Promise<CustomApplication>>();
+      expectTypeOf(() =>
+        NestFactory.create<never>(TestModule, new NodeAdapter()),
+      ).returns.toEqualTypeOf<Promise<never>>();
+      expectTypeOf(() =>
+        NestFactory.create<any>(TestModule, new NodeAdapter()),
+      ).returns.toEqualTypeOf<Promise<any>>();
+      expectTypeOf(() =>
+        NestFactory.create<CustomApplication>(TestModule, { logger: false }),
+      ).returns.toEqualTypeOf<Promise<CustomApplication>>();
+      expectTypeOf((): Promise<CustomApplication> =>
+        NestFactory.create(TestModule, new NodeAdapter()),
+      ).returns.toEqualTypeOf<Promise<CustomApplication>>();
+
+      const createWithContext = <T extends INestApplication>(): Promise<T> =>
+        NestFactory.create(TestModule, new NodeAdapter());
+      expectTypeOf(createWithContext<CustomApplication>).returns.toEqualTypeOf<
+        Promise<CustomApplication>
+      >();
+    });
+  });
+
   describe('create()', () => {
     let requestedPackages: string[];
 
@@ -68,7 +164,7 @@ describe('NestFactory', () => {
       );
       await app.init();
 
-      const response = await app.getHttpAdapter().getInstance().inject({
+      const response = await app.inject({
         method: 'GET',
         url: '/',
       });
