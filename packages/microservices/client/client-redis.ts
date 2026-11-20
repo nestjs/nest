@@ -65,13 +65,18 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.closeCount++;
     this.isManuallyClosed = true;
     this.handleClose();
-    this.pubClient && (await this.quitClient(this.pubClient));
-    this.subClient && (await this.quitClient(this.subClient));
+    const pubClient = this.pubClient;
+    const subClient = this.subClient;
     this.pubClient = this.subClient = null;
     this.connectionPromise = null;
-    this.isManuallyClosed = false;
     this.wasInitialConnectionSuccessful = false;
     this.pendingEventListeners = [];
+    try {
+      pubClient && (await this.quitClient(pubClient));
+      subClient && (await this.quitClient(subClient));
+    } finally {
+      this.isManuallyClosed = false;
+    }
   }
   // `quit()` rejects when the command cannot be sent (e.g., while
   // reconnecting with the offline queue disabled), which would leave the
@@ -146,7 +151,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     }
     this.subClient = subClient;
 
-    [this.pubClient, this.subClient].forEach((client, index) => {
+    [pubClient, subClient].forEach((client, index) => {
       const type = index === 0 ? 'pub' : 'sub';
       this.registerErrorListener(client);
       this.registerReconnectListener(client);
@@ -157,7 +162,10 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       );
     });
 
-    await Promise.all([this.subClient.connect(), this.pubClient.connect()]);
+    await Promise.all([subClient.connect(), pubClient.connect()]);
+    if (this.closeCount !== closeCount) {
+      throw new Error('Connection closed');
+    }
   }
 
   public async createClient(): Promise<Redis> {
