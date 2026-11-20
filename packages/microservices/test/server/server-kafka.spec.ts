@@ -171,6 +171,29 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       expect(callback).toHaveBeenCalled();
     });
+    it('should skip startup when closed while creating the client', async () => {
+      let resolveClient!: (value: any) => void;
+      vi.spyOn(server, 'createClient').mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+      const startSpy = vi.spyOn(server, 'start');
+
+      const listenPromise = server.listen(callback);
+      await server.close();
+      resolveClient(client);
+      await listenPromise;
+
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(consumerStub).not.toHaveBeenCalled();
+      expect(producerStub).not.toHaveBeenCalled();
+      expect(untypedServer.client).toBeNull();
+      expect(callback).toHaveBeenCalledExactlyOnceWith(
+        new Error('Connection closed'),
+      );
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');

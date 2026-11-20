@@ -74,6 +74,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  private closeCount = 0;
 
   constructor(protected readonly options: Required<KafkaOptions>['options']) {
     super();
@@ -144,8 +145,15 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ): Promise<void> {
+    const closeCount = this.closeCount;
     try {
-      this.client = await this.createClient();
+      const client = await this.createClient<Kafka>();
+      // The client holds no connection until its consumer and producer connect
+      if (this.closeCount !== closeCount) {
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.client = client;
       await this.start(callback);
     } catch (err) {
       callback(err);
@@ -153,6 +161,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async close(): Promise<void> {
+    this.closeCount++;
     // The consumer goes first. Its callbacks can finish before the response
     // streams and queued publishes, so allow those to drain, for "gracePeriod"
     // at most, before closing the producer. The producer is disconnected even
