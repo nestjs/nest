@@ -1,6 +1,6 @@
 # GraphQL Federation - Schema First
 
-A production-ready example of GraphQL Federation using Schema First approach.
+A GraphQL Federation example using the schema first approach: two sub-graphs, `users-application` and `posts-application`, behind an Apollo gateway. See the [federation](https://docs.nestjs.com/graphql/federation) chapter for more.
 
 ## Installation
 
@@ -12,14 +12,13 @@ cd ../posts-application && npm install
 cd ../gateway && npm install
 ```
 
+The gateway serves a supergraph composed with [Rover](https://www.apollographql.com/docs/rover): `npm install -g @apollo/rover`.
+
 ## Execution
 
-### Development Mode
-
-For development, the gateway will automatically generate a supergraph schema from local schema files:
+Start each sub-graph in its own terminal. They listen on ports 3000 and 3001:
 
 ```sh
-# Start sub-graph applications first
 cd users-application && npm run start
 ```
 
@@ -27,46 +26,18 @@ cd users-application && npm run start
 cd posts-application && npm run start
 ```
 
-```sh
-# The gateway will auto-generate supergraph.graphql and TypeScript types on startup
-cd gateway && npm run start
-```
-
-### Production Mode
-
-For production, generate the supergraph schema and types beforehand:
+Compose the supergraph from the sub-graphs' `.graphql` files (see `gateway/supergraph.yaml`) and start the gateway. In a third terminal:
 
 ```sh
-# 1. Ensure sub-graphs are running (for Rover CLI method)
-cd users-application && npm run start
-cd ../posts-application && npm run start
-
-# 2. Generate supergraph schema using Rover CLI (requires @apollo/rover installation)
-cd ../gateway && npm run generate:supergraph:rover
-
-# 3. Generate TypeScript types from supergraph
-npm run generate:typings
-
-# 4. Start the gateway with the static supergraph
+cd gateway
+npm run generate:supergraph:rover
+npm run build
 npm run start:prod
 ```
 
-## Schema Generation
+Start the gateway with `start:prod`, as above. `npm run start` and `npm run start:dev` first run `npm run generate:supergraph`, which overwrites `supergraph.graphql` with a hand-written schema that the gateway can't load.
 
-The gateway provides multiple generation scripts:
-
-1. **Supergraph Generation (Local)**: `npm run generate:supergraph`
-   - Composes supergraph from local `.graphql` files
-   - Suitable for development when sub-graphs share the same repository
-
-2. **Supergraph Generation (Rover)**: `npm run generate:supergraph:rover`
-   - Uses Apollo Rover to compose supergraph from running sub-graphs
-   - Requires Rover CLI: `npm install -g @apollo/rover`
-   - Recommended for production deployments
-
-3. **TypeScript Types Generation**: `npm run generate:typings`
-   - Generates TypeScript interfaces from the supergraph schema
-   - Provides type safety for resolvers and GraphQL operations
+`npm run generate:typings` writes TypeScript definitions of the supergraph to `gateway/src/graphql.schema.ts`.
 
 ## Access the graph
 

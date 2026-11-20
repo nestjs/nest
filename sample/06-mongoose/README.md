@@ -13,11 +13,11 @@ This example requires docker or a local mongodb installation.  If using a local 
 
 There is a `docker-compose.yml` file for starting Docker.
 
-`docker-compose up`
+`docker compose up`
 
 After running the sample, you can stop the Docker container with
 
-`docker-compose down`
+`docker compose down`
 
 ### Run the sample
 
