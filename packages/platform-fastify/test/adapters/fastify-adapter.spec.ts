@@ -1855,13 +1855,15 @@ describe('FastifyAdapter', () => {
       expect(middleware).toHaveBeenCalledOnce();
     });
 
-    it.each(['*users', 'users', '*', 'ftp://localhost/users'])(
-      'should pass a request for "%s" to the not-found handler',
+    // "find-my-way" < 9.10.2 routes these as "/users" (see the not-found
+    // handling of `isRoutableRequestTarget()`), later versions reject them
+    it.each(['*users', 'users', 'ftp://localhost/users'])(
+      'should not run the route or its middleware for "%s"',
       async target => {
         const res = await injectRequestTarget('GET', target);
 
-        expect(res.statusCode).toBe(404);
-        expect(res.body).toBe('not found');
+        expect(res.statusCode).toBe(400);
+        expect(JSON.parse(res.body)).toMatchObject({ code: 'FST_ERR_BAD_URL' });
         expect(handler).not.toHaveBeenCalled();
         expect(middleware).not.toHaveBeenCalled();
       },
@@ -1907,10 +1909,13 @@ describe('FastifyAdapter', () => {
     it('should pass a request the router did not match to the not-found handler', async () => {
       const warn = vi.spyOn(fastifyAdapter.getInstance().log, 'warn');
 
-      const res = await injectRequestTarget('GET', '*unknown');
+      // Routed as "/", which has no GET route
+      const res = await injectRequestTarget('GET', '*');
 
       expect(res.statusCode).toBe(404);
       expect(res.body).toBe('not found');
+      expect(handler).not.toHaveBeenCalled();
+      expect(middleware).not.toHaveBeenCalled();
       expect(warn).not.toHaveBeenCalled();
     });
 
@@ -1920,7 +1925,7 @@ describe('FastifyAdapter', () => {
         return undefined;
       });
 
-      const res = await injectRequestTarget('GET', '*users');
+      const res = await injectRequestTarget('OPTIONS', '*');
 
       expect(res.statusCode).toBe(404);
       expect(res.headers['x-content-type-options']).toBe('nosniff');

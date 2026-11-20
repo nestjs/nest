@@ -2213,11 +2213,13 @@ export class FastifyAdapter<
    * middleware paths can match.
    *
    * Node.js accepts other targets too (e.g. "GET *users HTTP/1.1").
-   * "find-my-way" routes those as if their first character were the leading
-   * "/" ("*users" is served by the "/users" route), while no middleware path
-   * matches them, so the route would run without its middleware. They are
-   * answered by the not-found handler instead, as with the ExpressAdapter,
-   * whose router never matches a path that does not start with "/".
+   * "find-my-way" < 9.10.2, which the router of a Fastify instance passed to
+   * the adapter may still be, routes those as if their first character were
+   * the leading "/" ("*users" is served by the "/users" route), while no
+   * middleware path matches them, so the route would run without its
+   * middleware. They are answered by the not-found handler instead, as with
+   * the ExpressAdapter, whose router never matches a path that does not start
+   * with "/". Later versions reject them (400) before any hook runs.
    *
    * That includes the asterisk-form "OPTIONS *" (RFC 9112, section 3.2.4),
    * which asks about the server as a whole rather than about a resource:
