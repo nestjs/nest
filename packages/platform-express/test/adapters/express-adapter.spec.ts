@@ -161,6 +161,38 @@ describe('ExpressAdapter', () => {
     });
   });
 
+  describe('ETag', () => {
+    const getRoot = (adapter: ExpressAdapter) => {
+      const app = adapter.getInstance<express.Express>();
+      app.get('/', (_req, res) => adapter.reply(res, { hello: 'world' }));
+      return request(app).get('/');
+    };
+
+    it('should not compute an ETag for replies when it creates the instance', async () => {
+      const res = await getRoot(expressAdapter);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ hello: 'world' });
+      expect(res.headers.etag).toBeUndefined();
+    });
+
+    it('should keep the "etag" setting enabled for sendFile()', () => {
+      expect(expressAdapter.getInstance().enabled('etag')).toBe(true);
+    });
+
+    it('should compute an ETag again once the "etag" setting is set', async () => {
+      expressAdapter.set('etag', 'weak');
+
+      expect((await getRoot(expressAdapter)).headers.etag).toMatch(/^W\//);
+    });
+
+    it('should leave a given instance as it is', async () => {
+      const adapter = new ExpressAdapter(express());
+
+      expect((await getRoot(adapter)).headers.etag).toMatch(/^W\//);
+    });
+  });
+
   describe('createMiddlewareFactory', () => {
     // Plain-path routes such as forRoutes('*') carry no request method
     // (see RoutesMapper.getRouteInfoFromPath).

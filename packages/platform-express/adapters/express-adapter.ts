@@ -87,6 +87,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
 
   constructor(instance?: any) {
     super(instance || express());
+    if (!instance) {
+      // Skip hashing every `send()`/`json()` body, as the node and fastify
+      // adapters do. `sendFile()` keeps its ETag, since it reads the "etag"
+      // setting, and `set('etag', 'weak')` restores the default.
+      this.instance!.set('etag fn', false);
+    }
     this.instance!.use((req, res, next) => {
       if (this.onResponseHook) {
         res.on('finish', async () => {
