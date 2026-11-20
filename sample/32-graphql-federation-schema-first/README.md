@@ -12,8 +12,6 @@ cd ../posts-application && npm install
 cd ../gateway && npm install
 ```
 
-The gateway serves a supergraph composed with [Rover](https://www.apollographql.com/docs/rover): `npm install -g @apollo/rover`.
-
 ## Execution
 
 Start each sub-graph in its own terminal. They listen on ports 3000 and 3001:
@@ -26,18 +24,15 @@ cd users-application && npm run start
 cd posts-application && npm run start
 ```
 
-Compose the supergraph from the sub-graphs' `.graphql` files (see `gateway/supergraph.yaml`) and start the gateway. In a third terminal:
+Start the gateway in a third terminal:
 
 ```sh
-cd gateway
-npm run generate:supergraph:rover
-npm run build
-npm run start:prod
+cd gateway && npm run start
 ```
 
-Start the gateway with `start:prod`, as above. `npm run start` and `npm run start:dev` first run `npm run generate:supergraph`, which overwrites `supergraph.graphql` with a hand-written schema that the gateway can't load.
+`npm run start` and `npm run start:dev` first run `npm run generate:supergraph`, which composes the sub-graphs' `.graphql` files into `gateway/supergraph.graphql`, the file the gateway serves, and `npm run generate:typings`, which writes TypeScript definitions of the supergraph to `gateway/src/graphql.schema.ts`. Restart the gateway after you change a sub-graph's schema.
 
-`npm run generate:typings` writes TypeScript definitions of the supergraph to `gateway/src/graphql.schema.ts`.
+To compose with [Rover](https://www.apollographql.com/docs/rover) instead (`npm install -g @apollo/rover`, configured in `gateway/supergraph.yaml`), run `npm run generate:supergraph:rover`, then `npm run build` and `npm run start:prod`. `start` and `start:dev` would overwrite the Rover output.
 
 ## Access the graph
 

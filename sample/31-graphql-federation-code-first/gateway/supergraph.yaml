@@ -1,4 +1,4 @@
-federation_version: =2.3.2
+federation_version: =2.14.4
 subgraphs:
   users:
     routing_url: http://localhost:3002/graphql
