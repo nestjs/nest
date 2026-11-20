@@ -1052,6 +1052,44 @@ describe('ClientRedis', () => {
           sub,
         ]);
       });
+
+      it('should not wipe a new connection started while quit is still pending', async () => {
+        const [firstPub] = await connectPair();
+        let finishQuit!: () => void;
+        firstPub.quit.mockImplementation(
+          () =>
+            new Promise<string>(resolve => {
+              finishQuit = () => resolve('OK');
+            }),
+        );
+
+        const closing = lifecycleClient.close();
+        const fresh = lifecycleClient.connect();
+        await new Promise(resolve => setImmediate(resolve));
+
+        const [secondPub, secondSub] = currentPair();
+        secondPub.ready();
+        secondSub.ready();
+        await expect(fresh).resolves.toBeUndefined();
+
+        finishQuit();
+        await closing;
+
+        expect(currentPair()).toEqual([secondPub, secondSub]);
+        await expect(lifecycleClient.connect()).resolves.toBeUndefined();
+        expect(secondSub.listenerCount('message')).toBe(1);
+      });
+
+      it('should reject an in-flight connect() when close() runs before the clients finish connecting', async () => {
+        const { attempt, pub, sub } = await startConnecting();
+        await lifecycleClient.close();
+        pub.ready();
+        sub.ready();
+
+        await expect(attempt).rejects.toThrow('Connection closed');
+        expect(currentPair()).toEqual([null, null]);
+        expect(untypedLifecycleClient.connectionPromise).toBeNull();
+      });
     });
 
     it.each([
