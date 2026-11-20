@@ -893,7 +893,12 @@ describe('Middleware (FastifyAdapter)', () => {
     class TestModule {
       configure(consumer: MiddlewareConsumer) {
         consumer
-          .apply((req, res, next) => res.end(MIDDLEWARE_RETURN_VALUE))
+          .apply((req, res, next) => {
+            // A response to HEAD has no body, so the header tells that the
+            // middleware sent it
+            res.setHeader('x-middleware', 'called');
+            res.end(MIDDLEWARE_RETURN_VALUE);
+          })
           .forRoutes({ path: 'abc/def', method: RequestMethod.GET });
       }
     }
@@ -1146,9 +1151,10 @@ describe('Middleware (FastifyAdapter)', () => {
             method: 'HEAD',
             url: '/abc/def',
           })
-          .then(({ payload }) =>
-            expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE),
-          );
+          .then(({ headers, payload }) => {
+            expect(headers['x-middleware']).toBe('called');
+            expect(payload).toBe('');
+          });
       });
 
       afterEach(async () => {
