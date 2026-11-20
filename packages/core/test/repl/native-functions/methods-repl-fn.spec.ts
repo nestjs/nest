@@ -107,6 +107,69 @@ Methods:
 
 `);
       });
+
+      it('should print the own methods of a plain object provider', () => {
+        let outputText = '';
+
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
+
+        mockApp.get.mockImplementation(() => ({
+          findAll() {},
+          findOne: () => {},
+          name: 'provider',
+        }));
+
+        methodsReplFn.action('PLAIN_OBJECT_PROVIDER');
+
+        expect(outputText).toBe(`
+Methods:
+ ◻ findAll
+ ◻ findOne
+
+`);
+      });
+
+      it('should print no methods when the provider value is null', () => {
+        let outputText = '';
+
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
+
+        mockApp.get.mockImplementation(() => null);
+
+        methodsReplFn.action('NULL_PROVIDER');
+
+        expect(outputText).toBe(`
+Methods:
+
+`);
+      });
+
+      it('should print the current methods of a plain object provider after it changes', () => {
+        let outputText = '';
+
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
+
+        const provider: Record<string, () => void> = { findAll() {} };
+        mockApp.get.mockImplementation(() => provider);
+
+        methodsReplFn.action('MUTABLE_PROVIDER');
+        provider.findOne = () => {};
+        delete provider.findAll;
+        outputText = '';
+        methodsReplFn.action('MUTABLE_PROVIDER');
+
+        expect(outputText).toBe(`
+Methods:
+ ◻ findOne
+
+`);
+      });
     });
   });
 });
