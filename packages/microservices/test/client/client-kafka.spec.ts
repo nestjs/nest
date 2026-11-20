@@ -1,6 +1,7 @@
 import { Producer } from 'kafkajs';
 import { lastValueFrom, Observable } from 'rxjs';
 import { ClientKafka } from '../../client/client-kafka.js';
+import { isPlatformaticKafkaSupported } from '../utils/platformatic-kafka-support.js';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaHeaders } from '../../enums/index.js';
 import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception.js';
@@ -227,6 +228,15 @@ describe('ClientKafka', () => {
       .mockImplementation(() => kafkaClient);
   });
 
+  it('should create a kafkajs client when the driver option says so', async () => {
+    client = new ClientKafka({ driver: 'kafkajs', client: { brokers: [] } });
+
+    const kafkaClient = await client.createClient();
+
+    expect(kafkaClient.consumer).toBeTypeOf('function');
+    expect(kafkaClient.producer).toBeTypeOf('function');
+  });
+
   describe('createClient', () => {
     beforeEach(() => {
       client = new ClientKafka({});
@@ -250,6 +260,33 @@ describe('ClientKafka', () => {
 
       expect(logCreatorSpy).toHaveBeenCalled();
     });
+
+    it('should run on kafkajs without the driver option', async () => {
+      const kafkajs = await import('kafkajs');
+      client = new ClientKafka({ client: { brokers: ['broker:9092'] } });
+
+      expect(await client.createClient()).toBeInstanceOf(kafkajs.Kafka);
+    });
+
+    it.skipIf(!isPlatformaticKafkaSupported)(
+      'should run on @platformatic/kafka when the driver option names it',
+      async () => {
+        const { PlatformaticKafkaClient } =
+          await import('../../helpers/platformatic-kafka-client.js');
+        client = new ClientKafka({
+          driver: 'platformatic',
+          client: { bootstrapBrokers: ['broker:9092'], clientId: 'app' },
+        });
+
+        const kafkaClient = await client.createClient();
+
+        expect(kafkaClient).toBeInstanceOf(PlatformaticKafkaClient);
+        expect(kafkaClient.options).toEqual({
+          bootstrapBrokers: ['broker:9092'],
+          clientId: 'app-client',
+        });
+      },
+    );
   });
 
   describe('subscribeToResponseOf', () => {
@@ -1214,7 +1251,9 @@ describe('ClientKafka', () => {
 
       it('should run the dispatch hook once, and send its metadata with every message', async () => {
         const send = vi.fn().mockResolvedValue([]);
-        vi.spyOn(client as any, 'producer', 'get').mockReturnValue({ send });
+        vi.spyOn(client as any, 'connectedProducer', 'get').mockReturnValue({
+          send,
+        });
         const hook = vi.fn(packet => {
           packet.metadata = { 'x-request-id': 'trace-1' };
         });
@@ -1237,7 +1276,9 @@ describe('ClientKafka', () => {
 
       it('should not send the headers that ask for a reply', async () => {
         const send = vi.fn().mockResolvedValue([]);
-        vi.spyOn(client as any, 'producer', 'get').mockReturnValue({ send });
+        vi.spyOn(client as any, 'connectedProducer', 'get').mockReturnValue({
+          send,
+        });
 
         await lastValueFrom(
           client.emitBatch(topic, {
@@ -1303,7 +1344,7 @@ describe('ClientKafka', () => {
     });
 
     it('should throw error', async () => {
-      vi.spyOn(client as any, 'producer', 'get').mockReturnValue({
+      vi.spyOn(client as any, 'connectedProducer', 'get').mockReturnValue({
         send: sendStub,
       });
 
