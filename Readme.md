@@ -37,6 +37,8 @@ cd my-api
 npm run start:dev
 ```
 
+A coding agent or a script can create the project in the current folder with `npx @nestjs/cli new . --skip-git --package-manager npm`, which asks nothing when stdin isn't a terminal and adds an `AGENTS.md` for the agent to read.
+
 Add `--minimal` to start from a single file. An application can be this small:
 
 ```typescript
@@ -91,6 +93,14 @@ Run it with `npm run start:dev`, like any other Nest project. The Nest CLI compi
 ## Using a coding agent
 
 The whole documentation is available as markdown, with an index at [docs.nestjs.com/llms.txt](https://docs.nestjs.com/llms.txt). Projects from `nest new` come with an `AGENTS.md` that lists the packages above, since most models were trained before they existed.
+
+The official [NestJS agent skills](https://github.com/nestjs/agent-skills) teach an agent the current APIs and the mistakes that still pass tests. They cover starting a project, features, authentication and authorization, data, testing and production. Add them to a project with:
+
+```bash
+npx @nestjs/skills add
+```
+
+This copies them into `.agents/skills`, which Codex and Cursor read. Add `--agent claude` for Claude Code, or `--agent all` for both. Claude Code can also install them as a plugin: `claude plugin marketplace add nestjs/agent-skills`, then `claude plugin install nestjs@nestjs`.
 
 ## Philosophy
 
