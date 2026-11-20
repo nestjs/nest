@@ -152,6 +152,19 @@ Potential solutions:
 
 For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`;
 
+export const DURABLE_REQUEST_WITHOUT_PAYLOAD_MESSAGE = (
+  token: string,
+) => `${token} is durable and injects "REQUEST", but the registered ContextIdStrategy supplies no payload, so it is built with what the entry point of a single request registered: that request itself, or nothing when no entry point of the request is request-scoped.
+
+A durable instance is shared by every request mapped to its context, so the request it holds outlives its own caller: every later caller of that context is served an instance reading the first caller's headers, body and credentials.
+
+Potential solutions:
+- Return a payload from attach(), which is what a durable instance reads as "REQUEST":
+  return { resolve: info => info.isTreeDurable ? tenantSubTreeId : contextId, payload: { tenantId } };
+- Or do not inject "REQUEST" into a durable provider, and pass what the request decides as an argument instead.
+
+Read more: https://docs.nestjs.com/fundamentals/injection-scopes#durable-providers`;
+
 export const MISSING_HANDLER_METADATA_MESSAGE = (
   type: string,
   methodName: string,
