@@ -90,7 +90,7 @@
     "@fastify/formbody": "9.0.2",
     "@fastify/middie": "9.3.7",
     "@fastify/multipart": "10.1.9",
-    "@fastify/static": "10.1.11",
+    "@fastify/static": "10.1.12",
     "@fastify/view": "12.0.1",
     "@grpc/grpc-js": "1.14.7",
     "@grpc/proto-loader": "0.8.1",
