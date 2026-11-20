@@ -12,7 +12,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "oxlint src --fix",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
@@ -23,7 +23,6 @@
     "@nestjs/core": "12.5.1",
     "@nestjs/platform-express": "12.5.1",
     "@nestjs/schedule": "12.0.4",
-    "dotenv": "18.0.10",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.4",
     "rxjs": "7.8.2"

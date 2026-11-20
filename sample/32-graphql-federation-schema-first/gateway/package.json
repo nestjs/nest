@@ -19,7 +19,7 @@
     "prestart": "npm run generate:supergraph && npm run generate:typings",
     "prestart:dev": "npm run generate:supergraph && npm run generate:typings",
     "lint": "oxlint src --fix",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",

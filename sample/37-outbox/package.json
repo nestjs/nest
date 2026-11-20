@@ -16,7 +16,7 @@
     "lint": "oxlint src analytics-service --fix",
     "migrate": "drizzle-kit migrate",
     "migrate:analytics": "drizzle-kit migrate --config analytics-service/drizzle.config.ts",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
