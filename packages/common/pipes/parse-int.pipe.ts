@@ -78,13 +78,15 @@ export class ParseIntPipe implements PipeTransform {
 
   /**
    * @param value currently processed route argument
-   * @returns `true` if `value` is a valid integer number
+   * @returns `true` if `value` is a safe integer. Integers outside the
+   * `Number.MIN_SAFE_INTEGER`..`Number.MAX_SAFE_INTEGER` range are rejected,
+   * as they cannot be represented exactly and would be silently rounded.
    */
   protected isNumeric(value: unknown): boolean {
     return (
       ['string', 'number'].includes(typeof value) &&
       /^-?\d+$/.test(String(value)) &&
-      isFinite(value as any)
+      Number.isSafeInteger(Number(value))
     );
   }
 }
