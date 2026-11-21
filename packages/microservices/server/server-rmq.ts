@@ -132,8 +132,6 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const channel = this.channel;
     const server = this.server;
     this.consumer = null;
-    this.channel = null;
-    this.server = null;
     this.pendingEventListeners = [];
 
     if (consumer && this.getOptionsProp(this.options, 'gracefulShutdown')) {
@@ -141,6 +139,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       await this.waitForHandlersInFlight(
         this.getOptionsProp(this.options, 'gracePeriod'),
       );
+    }
+    if (this.channel === channel) {
+      this.channel = null;
+    }
+    if (this.server === server) {
+      this.server = null;
     }
     // The channel goes first, as amqplib settles its close on the broker's
     // reply, which never arrives once the connection is closed. The
