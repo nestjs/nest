@@ -216,6 +216,116 @@ describe('ServerRMQ', () => {
         );
       });
     });
+    describe('when closed during listen', () => {
+      it('should close the created client and settle callback with Connection closed when close() runs before createClient() resolves', async () => {
+        let resolveClient!: (value: any) => void;
+        createClient.mockImplementation(
+          () =>
+            new Promise(resolve => {
+              resolveClient = resolve;
+            }),
+        );
+        const pendingServer = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockRejectedValue(new Error('close failed')),
+          createChannel: createChannelStub,
+        });
+
+        const listening = server.listen(callbackSpy);
+        const closing = server.close();
+        resolveClient(pendingServer);
+        await Promise.all([listening, closing]);
+
+        expect(pendingServer.close).toHaveBeenCalledOnce();
+        expect(untypedServer.server).toBeNull();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callbackSpy.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should settle callback with Connection closed when close() runs during setupChannel()', async () => {
+        setupChannelStub.mockRestore();
+        let resolveAssertQueue!: (value: { queue: string }) => void;
+        const rawChannel = {
+          assertQueue: vi.fn(
+            () =>
+              new Promise<{ queue: string }>(resolve => {
+                resolveAssertQueue = resolve;
+              }),
+          ),
+          prefetch: vi.fn(),
+          consume: vi.fn(() => ({ consumerTag: 'amq.ctag-test' })),
+          close: vi.fn().mockResolvedValue(undefined),
+        };
+        const channelWrapper = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+        });
+        const pendingClient = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+          createChannel: vi.fn(({ setup }) => {
+            void setup(rawChannel);
+            return channelWrapper;
+          }),
+        });
+        createClient.mockResolvedValue(pendingClient);
+
+        await server.listen(callbackSpy);
+        pendingClient.emit('connect');
+        const closing = server.close();
+        resolveAssertQueue({ queue: 'test' });
+        await closing;
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(rawChannel.consume).not.toHaveBeenCalled();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callbackSpy.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should allow a subsequent listen() after close() before connect', async () => {
+        let resolveFirstClient!: (value: any) => void;
+        const firstServer = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+          createChannel: createChannelStub,
+        });
+        const secondChannel = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+        });
+        const secondServer = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+          createChannel: vi.fn(({ setup }) => {
+            void setup({});
+            return secondChannel;
+          }),
+        });
+        setupChannelStub.mockImplementation(async (_channel, setupCallback) =>
+          setupCallback(),
+        );
+        createClient
+          .mockImplementationOnce(
+            () =>
+              new Promise(resolve => {
+                resolveFirstClient = resolve;
+              }),
+          )
+          .mockResolvedValueOnce(secondServer);
+
+        const firstCb = vi.fn();
+        const secondCb = vi.fn();
+        const firstListen = server.listen(firstCb);
+        await server.close();
+        await server.listen(secondCb);
+        secondServer.emit('connect');
+        resolveFirstClient(firstServer);
+        await firstListen;
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(firstCb).toHaveBeenCalledTimes(1);
+        expect(firstCb.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(firstCb.mock.calls[0][0].message).toBe('Connection closed');
+        expect(secondCb).toHaveBeenCalledExactlyOnceWith();
+        expect(untypedServer.server).toBe(secondServer);
+      });
+    });
     describe('when listening again after "close"', () => {
       let channel: EventEmitter;
       let secondListenCallback: ReturnType<
