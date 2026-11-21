@@ -143,6 +143,7 @@ export class ServerGrpc extends Server<never, never> {
   protected readonly maxPendingResponses: number;
   protected grpcClient: GrpcServer;
   private pendingClose: Promise<void> | null = null;
+  private closeCount = 0;
 
   get status(): never {
     throw new Error(
@@ -177,22 +178,54 @@ export class ServerGrpc extends Server<never, never> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
+    let grpcClient: GrpcServer | undefined;
     try {
-      this.grpcClient = await this.createClient();
-      await this.start(callback);
+      grpcClient = await this.createClient();
+      if (this.closeCount !== closeCount) {
+        this.forceShutdownClient(grpcClient);
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.grpcClient = grpcClient;
+      await this.start(callback, grpcClient, closeCount);
     } catch (err) {
-      callback(err);
+      this.forceShutdownClient(grpcClient);
+      if (grpcClient && this.grpcClient === grpcClient) {
+        this.grpcClient = null as any;
+      }
+      callback(
+        this.closeCount !== closeCount ? new Error('Connection closed') : err,
+      );
     }
   }
 
-  public async start(callback?: () => void) {
-    await this.bindEvents();
+  public async start(
+    callback?: (err?: unknown) => void,
+    grpcClient: GrpcServer = this.grpcClient,
+    closeCount = this.closeCount,
+  ) {
+    await this.bindEvents(grpcClient, closeCount);
+    if (this.closeCount !== closeCount) {
+      this.forceShutdownClient(grpcClient);
+      if (grpcClient && this.grpcClient === grpcClient) {
+        this.grpcClient = null as any;
+      }
+      callback?.(new Error('Connection closed'));
+      return;
+    }
     callback?.();
   }
 
-  public async bindEvents() {
+  public async bindEvents(
+    grpcClient: GrpcServer = this.grpcClient,
+    closeCount = this.closeCount,
+  ) {
     await this.loadGrpcPackage();
-    const grpcContext = this.loadProto();
+    if (this.closeCount !== closeCount) {
+      return;
+    }
+    const grpcContext = this.loadProto(grpcClient);
     const packageOption = this.getOptionsProp(this.options, 'package');
     const packageNames = Array.isArray(packageOption)
       ? packageOption
@@ -200,7 +233,10 @@ export class ServerGrpc extends Server<never, never> {
 
     for (const packageName of packageNames) {
       const grpcPkg = this.lookupPackage(grpcContext, packageName);
-      await this.createServices(grpcPkg, packageName);
+      await this.createServices(grpcPkg, packageName, grpcClient, closeCount);
+      if (this.closeCount !== closeCount) {
+        return;
+      }
     }
   }
 
@@ -948,11 +984,20 @@ export class ServerGrpc extends Server<never, never> {
   }
 
   public close(): Promise<void> {
+    this.closeCount++;
     // Coalesce overlapping close() calls onto the active shutdown promise
     this.pendingClose ??= this.closeServer().finally(() => {
       this.pendingClose = null;
     });
     return this.pendingClose;
+  }
+
+  private forceShutdownClient(grpcClient: GrpcServer | null | undefined) {
+    try {
+      grpcClient?.forceShutdown?.();
+    } catch {
+      // Ignore teardown errors so the primary startup or abort error is preserved
+    }
   }
 
   private async closeServer(): Promise<void> {
@@ -1120,7 +1165,7 @@ export class ServerGrpc extends Server<never, never> {
     );
   }
 
-  public loadProto(): any {
+  public loadProto(grpcClient: GrpcServer = this.grpcClient): any {
     try {
       const packageDefinition = getGrpcPackageDefinition(
         this.options,
@@ -1128,10 +1173,7 @@ export class ServerGrpc extends Server<never, never> {
       );
 
       if (this.options.onLoadPackageDefinition) {
-        this.options.onLoadPackageDefinition(
-          packageDefinition,
-          this.grpcClient,
-        );
+        this.options.onLoadPackageDefinition(packageDefinition, grpcClient);
       }
 
       return grpcPackage.loadPackageDefinition(packageDefinition);
@@ -1205,7 +1247,12 @@ export class ServerGrpc extends Server<never, never> {
     return `${name}.${key}`;
   }
 
-  private async createServices(grpcPkg: any, packageName: string) {
+  private async createServices(
+    grpcPkg: any,
+    packageName: string,
+    grpcClient: GrpcServer = this.grpcClient,
+    closeCount = this.closeCount,
+  ) {
     if (!grpcPkg) {
       const invalidPackageError = new InvalidGrpcPackageException(packageName);
       this.logger.error(invalidPackageError);
@@ -1215,11 +1262,18 @@ export class ServerGrpc extends Server<never, never> {
     // Take all of the services defined in grpcPkg and assign them to
     // method handlers defined in Controllers
     for (const definition of this.getServiceNames(grpcPkg)) {
-      this.grpcClient.addService(
+      const service = await this.createService(
+        definition.service,
+        definition.name,
+      );
+      if (this.closeCount !== closeCount) {
+        return;
+      }
+      grpcClient.addService(
         // First parameter requires exact service definition from proto
         definition.service.service,
         // Here full proto definition required along with namespaced pattern name
-        await this.createService(definition.service, definition.name),
+        service,
       );
     }
   }
