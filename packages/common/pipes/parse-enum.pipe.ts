@@ -90,13 +90,17 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
    * since HTTP route and query params always arrive as strings.
    */
   protected toEnumValue(value: unknown): string | number | undefined {
-    return this.getEnumValues().find(
-      enumValue =>
-        enumValue === value ||
-        (typeof enumValue === 'number' &&
-          typeof value === 'string' &&
-          String(enumValue) === value),
-    );
+    const enumValues = this.getEnumValues();
+    if (enumValues.includes(value as string | number)) {
+      return value as string | number;
+    }
+    if (typeof value === 'string') {
+      return enumValues.find(
+        enumValue =>
+          typeof enumValue === 'number' && String(enumValue) === value,
+      );
+    }
+    return undefined;
   }
 
   protected getEnumValues(): (string | number)[] {
