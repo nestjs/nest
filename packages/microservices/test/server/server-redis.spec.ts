@@ -113,6 +113,146 @@ describe('ServerRedis', () => {
         expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
+    describe('when closed or failing during listen', () => {
+      it('should quit subClient and settle callback with Connection closed when close() runs before first createRedisClient() resolves', async () => {
+        let resolveSub!: (value: any) => void;
+        const subClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn(),
+          quit: vi.fn().mockResolvedValue(undefined),
+        });
+        const createSpy = vi
+          .spyOn(server, 'createRedisClient')
+          .mockImplementationOnce(
+            () =>
+              new Promise(resolve => {
+                resolveSub = resolve;
+              }),
+          );
+
+        const listening = server.listen(callbackSpy);
+        const closing = server.close();
+        resolveSub(subClient);
+        await Promise.all([listening, closing]);
+
+        expect(createSpy).toHaveBeenCalledTimes(1);
+        expect(subClient.quit).toHaveBeenCalledOnce();
+        expect(untypedServer.subClient).toBeNull();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callbackSpy.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should quit both clients and settle callback with Connection closed when close() runs before second createRedisClient() resolves', async () => {
+        let resolvePub!: (value: any) => void;
+        const subClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn(),
+          quit: vi.fn().mockResolvedValue(undefined),
+        });
+        const pubClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn(),
+          quit: vi.fn().mockResolvedValue(undefined),
+        });
+        vi.spyOn(server, 'createRedisClient')
+          .mockResolvedValueOnce(subClient as any)
+          .mockImplementationOnce(
+            () =>
+              new Promise(resolve => {
+                resolvePub = resolve;
+              }),
+          );
+
+        const listening = server.listen(callbackSpy);
+        await new Promise(resolve => setImmediate(resolve));
+        const closing = server.close();
+        resolvePub(pubClient);
+        await Promise.all([listening, closing]);
+
+        expect(subClient.quit).toHaveBeenCalledOnce();
+        expect(pubClient.quit).toHaveBeenCalledOnce();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callbackSpy.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should quit subClient if second createRedisClient() rejects', async () => {
+        const pubError = new Error('pub creation failed');
+        const subClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn(),
+          quit: vi.fn().mockResolvedValue(undefined),
+        });
+        vi.spyOn(server, 'createRedisClient')
+          .mockResolvedValueOnce(subClient as any)
+          .mockRejectedValueOnce(pubError);
+
+        await server.listen(callbackSpy);
+
+        expect(subClient.quit).toHaveBeenCalledOnce();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy).toHaveBeenCalledWith(pubError);
+      });
+
+      it('should quit both clients, reset fields, and not mask primary error when bindEvents() rejects', async () => {
+        const aclError = new Error('NOPERM');
+        const subClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn().mockResolvedValue(undefined),
+          quit: vi.fn().mockRejectedValue(new Error('quit failed')),
+          disconnect: vi.fn(),
+        });
+        const pubClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn().mockResolvedValue(undefined),
+          quit: vi.fn().mockResolvedValue(undefined),
+          disconnect: vi.fn(),
+        });
+        vi.spyOn(server, 'createRedisClient')
+          .mockResolvedValueOnce(subClient as any)
+          .mockResolvedValueOnce(pubClient as any);
+        vi.spyOn(server, 'bindEvents').mockRejectedValue(aclError);
+
+        await server.listen(callbackSpy);
+
+        expect(pubClient.quit).toHaveBeenCalledOnce();
+        expect(subClient.quit).toHaveBeenCalledOnce();
+        expect(subClient.disconnect).toHaveBeenCalledOnce();
+        expect(untypedServer.subClient).toBeNull();
+        expect(untypedServer.pubClient).toBeNull();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy).toHaveBeenCalledWith(aclError);
+      });
+
+      it('should quit both clients when close() runs during connect()', async () => {
+        let resolveConnect!: () => void;
+        const subClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn(
+            () =>
+              new Promise<void>(resolve => {
+                resolveConnect = resolve;
+              }),
+          ),
+          quit: vi.fn().mockResolvedValue(undefined),
+        });
+        const pubClient = Object.assign(new EventEmitter(), {
+          connect: vi.fn().mockResolvedValue(undefined),
+          quit: vi.fn().mockResolvedValue(undefined),
+        });
+        vi.spyOn(server, 'createRedisClient')
+          .mockResolvedValueOnce(subClient as any)
+          .mockResolvedValueOnce(pubClient as any);
+
+        const listening = server.listen(callbackSpy);
+        await new Promise(resolve => setImmediate(resolve));
+        const closing = server.close();
+        resolveConnect();
+        await Promise.all([listening, closing]);
+
+        expect(pubClient.quit).toHaveBeenCalled();
+        expect(subClient.quit).toHaveBeenCalled();
+        expect(untypedServer.subClient).toBeNull();
+        expect(untypedServer.pubClient).toBeNull();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callbackSpy.mock.calls[0][0].message).toBe('Connection closed');
+      });
+    });
   });
   describe('event listeners registered before "listen"', () => {
     it('should forward the matching client type ("sub"/"pub") to the listener', async () => {
