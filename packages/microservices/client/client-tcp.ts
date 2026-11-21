@@ -1,7 +1,7 @@
 import { Logger, type Type } from '@nestjs/common';
 import * as net from 'net';
-import { EmptyError, fromEvent, lastValueFrom, merge } from 'rxjs';
-import { map, share, take, tap } from 'rxjs/operators';
+import { EmptyError, fromEvent, lastValueFrom } from 'rxjs';
+import { map, mergeWith, share, take, tap } from 'rxjs/operators';
 import { ConnectionOptions, connect as tlsConnect, TLSSocket } from 'tls';
 import {
   ECONNREFUSED,
@@ -34,6 +34,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   protected readonly maxSendBufferSize?: number;
   protected socket: TcpSocket | null = null;
   private readonly connectedSockets = new WeakSet<TcpSocket>();
+  private readonly closedSockets = new WeakSet<TcpSocket>();
   protected connectionPromise: Promise<any> | null = null;
   protected pendingEventListeners: Array<{
     event: keyof TcpEvents;
@@ -82,20 +83,18 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       TcpEventsMap.ERROR,
       this.tlsOptions ? 'secureConnect' : TcpEventsMap.CONNECT,
     );
-    // A TLS socket destroyed during the handshake (see `close()`) closes
-    // without an "error", which would otherwise leave this pending.
-    const source$ = (
-      this.tlsOptions
-        ? merge(
-            connected$,
-            fromEvent(socket.netSocket, TcpEventsMap.CLOSE).pipe(
-              map(() => {
-                throw new Error('Connection closed');
-              }),
-            ),
-          ).pipe(take(1))
-        : connected$
-    ).pipe(
+    // A socket closed before connecting (e.g., via `close()` during a TCP
+    // connect or TLS handshake) may emit "close" without "error", which would
+    // otherwise leave `connect()` pending forever.
+    const source$ = connected$.pipe(
+      mergeWith(
+        fromEvent(socket.netSocket, TcpEventsMap.CLOSE).pipe(
+          map(() => {
+            throw new Error('Connection closed');
+          }),
+        ),
+      ),
+      take(1),
       tap(() => {
         this.connectedSockets.add(socket);
         // A socket replaced by a newer `connect()` call (`close()` followed by
@@ -185,6 +184,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
   public close() {
     if (this.socket) {
+      this.closedSockets.add(this.socket);
       // `end()` waits for a pending TLS handshake, which may never finish
       if (this.tlsOptions && !this.connectedSockets.has(this.socket)) {
         this.socket.netSocket.destroy();
@@ -198,7 +198,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
   public registerConnectListener(socket: TcpSocket) {
     socket.on(this.tlsOptions ? 'secureConnect' : TcpEventsMap.CONNECT, () => {
-      if (this.isReplacedSocket(socket)) {
+      if (this.isReplacedSocket(socket) || this.closedSockets.has(socket)) {
         return;
       }
       this._status$.next(TcpStatus.CONNECTED);
