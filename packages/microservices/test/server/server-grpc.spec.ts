@@ -94,6 +94,88 @@ describe('ServerGrpc', () => {
         expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
+    describe('when closed or failing during listen', () => {
+      it('should call forceShutdown() and settle callback with Connection closed when close() runs before createClient() resolves', async () => {
+        let resolveClient!: (value: any) => void;
+        const grpcClient = { forceShutdown: vi.fn() };
+        vi.spyOn(server, 'createClient').mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              resolveClient = resolve;
+            }),
+        );
+
+        const listening = server.listen(callback);
+        const closing = server.close();
+        resolveClient(grpcClient);
+        await Promise.all([listening, closing]);
+
+        expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+        expect(untypedServer.grpcClient).toBeUndefined();
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callback.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should call forceShutdown(), reset grpcClient, and not mask primary error when bindEvents() throws', async () => {
+        const bindError = new InvalidProtoDefinitionException('bad.proto');
+        const grpcClient = {
+          forceShutdown: vi.fn(() => {
+            throw new Error('forceShutdown failed');
+          }),
+        };
+        vi.spyOn(server, 'createClient').mockResolvedValueOnce(
+          grpcClient as any,
+        );
+        bindEventsStub.mockRejectedValueOnce(bindError);
+
+        await server.listen(callback);
+
+        expect(grpcClient.forceShutdown).toHaveBeenCalledOnce();
+        expect(untypedServer.grpcClient).toBeNull();
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(bindError);
+      });
+
+      it('should abort cleanly when close() runs during createServices()', async () => {
+        bindEventsStub.mockRestore();
+        let resolveService!: (value: any) => void;
+        const grpcClient = {
+          addService: vi.fn(),
+          forceShutdown: vi.fn(),
+          tryShutdown: vi.fn((cb: () => void) => cb()),
+        };
+        vi.spyOn(server, 'createClient').mockResolvedValueOnce(
+          grpcClient as any,
+        );
+        vi.spyOn(server, 'loadProto').mockReturnValueOnce({});
+        vi.spyOn(server, 'lookupPackage').mockReturnValueOnce({
+          TestService: { service: { ping: {} } },
+        });
+        vi.spyOn(server, 'getServiceNames').mockReturnValueOnce([
+          { name: 'TestService', service: { service: {} } },
+        ]);
+        vi.spyOn(server, 'createService').mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              resolveService = resolve;
+            }),
+        );
+
+        const listening = server.listen(callback);
+        await new Promise(resolve => setImmediate(resolve));
+        const closing = server.close();
+        resolveService({});
+        await Promise.all([listening, closing]);
+
+        expect(grpcClient.addService).not.toHaveBeenCalled();
+        expect(grpcClient.forceShutdown).toHaveBeenCalled();
+        expect(untypedServer.grpcClient).toBeNull();
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callback.mock.calls[0][0].message).toBe('Connection closed');
+      });
+    });
   });
 
   describe('listen (multiple proto)', () => {
