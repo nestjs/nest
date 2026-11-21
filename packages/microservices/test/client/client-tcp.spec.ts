@@ -437,6 +437,27 @@ describe('ClientTCP', () => {
       expect(createSocketStub).toHaveBeenCalledTimes(1);
     });
 
+    it('should reject a pending non-TLS connect when the socket closes before connecting', async () => {
+      const connectA = client.connect();
+      client.close();
+
+      socketA.netSocket.emit('close');
+
+      await expect(connectA).rejects.toThrow('Connection closed');
+      expect(untypedClient.socket).toBeNull();
+      expect(untypedClient.connectionPromise).toBeNull();
+    });
+
+    it('should not emit CONNECTED when a closed socket emits a late connect event', async () => {
+      const connectA = client.connect();
+      client.close();
+
+      socketA.netSocket.emit('connect');
+
+      await expect(connectA).resolves.toBeUndefined();
+      expect(statuses).toEqual([]);
+    });
+
     describe('when a newer "connect()" call replaced the socket', () => {
       it('should connect the newer socket when the replaced one closes before it connects', async () => {
         await connectWith(socketA);
