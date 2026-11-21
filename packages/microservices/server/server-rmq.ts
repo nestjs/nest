@@ -68,6 +68,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   protected consumer: { channel: Channel; consumerTag: string } | null = null;
   protected isClosing = false;
   private pendingClose: Promise<void> | null = null;
+  private closeCount = 0;
   protected connectionAttempts = 0;
   protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
@@ -112,6 +113,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public close(): Promise<void> {
+    this.closeCount++;
     // A close() that overlaps another one waits for it: closing the
     // connection while the first one waits for its channel to close would
     // leave that close() pending for good
@@ -125,34 +127,39 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     // A reconnection from here on must not set the channel up, and so
     // consume, again
     this.isClosing = true;
-    try {
-      // Without a consumer, no request or event can be in flight
-      const consumer = this.consumer;
-      if (consumer && this.getOptionsProp(this.options, 'gracefulShutdown')) {
-        await this.stopReceivingMessages(consumer);
-        await this.waitForHandlersInFlight(
-          this.getOptionsProp(this.options, 'gracePeriod'),
-        );
-      }
-      // The channel goes first, as amqplib settles its close on the broker's
-      // reply, which never arrives once the connection is closed. The
-      // connection is still closed when the channel close fails, otherwise
-      // the connection manager keeps reconnecting after close() rejected.
-      const results = [
-        ...(await Promise.allSettled([this.channel?.close()])),
-        ...(await Promise.allSettled([this.server?.close()])),
-      ];
-      const [failure, ...otherFailures] = results.filter(
-        (result): result is PromiseRejectedResult =>
-          result.status === 'rejected',
+    // Without a consumer, no request or event can be in flight
+    const consumer = this.consumer;
+    const channel = this.channel;
+    const server = this.server;
+    this.consumer = null;
+    this.pendingEventListeners = [];
+
+    if (consumer && this.getOptionsProp(this.options, 'gracefulShutdown')) {
+      await this.stopReceivingMessages(consumer);
+      await this.waitForHandlersInFlight(
+        this.getOptionsProp(this.options, 'gracePeriod'),
       );
-      otherFailures.forEach(({ reason }) => this.logger.error(reason));
-      if (failure) {
-        throw failure.reason;
-      }
-    } finally {
-      this.consumer = null;
-      this.pendingEventListeners = [];
+    }
+    if (this.channel === channel) {
+      this.channel = null;
+    }
+    if (this.server === server) {
+      this.server = null;
+    }
+    // The channel goes first, as amqplib settles its close on the broker's
+    // reply, which never arrives once the connection is closed. The
+    // connection is still closed when the channel close fails, otherwise
+    // the connection manager keeps reconnecting after close() rejected.
+    const results = [
+      ...(await Promise.allSettled([channel?.close()])),
+      ...(await Promise.allSettled([server?.close()])),
+    ];
+    const [failure, ...otherFailures] = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    otherFailures.forEach(({ reason }) => this.logger.error(reason));
+    if (failure) {
+      throw failure.reason;
     }
   }
 
@@ -170,6 +177,19 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   public async start(
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
+    const server = await this.createClient();
+    let listenCallback = callback;
+    const settleListenCallback = (...args: unknown[]) => {
+      const cb = listenCallback;
+      listenCallback = undefined;
+      cb?.(...args);
+    };
+    if (this.closeCount !== closeCount) {
+      await server?.close?.()?.catch(() => {});
+      settleListenCallback(new Error('Connection closed'));
+      return;
+    }
     // Each start counts its own attempts towards "maxConnectionAttempts"
     this.connectionAttempts = 0;
     // The channel of an earlier start, closed since, must not stop this one
@@ -177,22 +197,24 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     this.channel = null;
     this.consumer = null;
     this.isClosing = false;
-    this.server = await this.createClient();
-    let listenCallback = callback;
-    const settleListenCallback = (...args: unknown[]) => {
-      const cb = listenCallback;
-      listenCallback = undefined;
-      cb?.(...args);
-    };
+    this.server = server;
     this.server!.once(RmqEventsMap.CONNECT, () => {
+      if (this.closeCount !== closeCount) {
+        settleListenCallback(new Error('Connection closed'));
+        return;
+      }
       if (this.channel) {
         return;
       }
       this._status$.next(RmqStatus.CONNECTED);
       this.channel = this.server!.createChannel({
         json: false,
-        setup: (channel: Channel) =>
-          this.setupChannel(channel, settleListenCallback),
+        setup: async (channel: Channel) => {
+          await this.setupChannel(channel, settleListenCallback, closeCount);
+          if (this.isClosing || this.closeCount !== closeCount) {
+            settleListenCallback(new Error('Connection closed'));
+          }
+        },
       });
       // The wrapper emits "error" when the setup throws, and an unhandled emit
       // crashes the process. A later error is only logged: the callback
@@ -300,8 +322,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     });
   }
 
-  public async setupChannel(channel: Channel, callback: Function) {
-    if (this.isClosing) {
+  public async setupChannel(
+    channel: Channel,
+    callback: Function,
+    closeCount = this.closeCount,
+  ) {
+    if (this.isClosing || this.closeCount !== closeCount) {
       return;
     }
     const noAssert =
@@ -373,7 +399,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     // close() may have started while the channel was being set up
-    if (this.isClosing) {
+    if (this.isClosing || this.closeCount !== closeCount) {
       return;
     }
     // The broker names the consumer when no "consumerTag" is configured
@@ -390,6 +416,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         ),
       },
     );
+    if (this.isClosing || this.closeCount !== closeCount) {
+      return;
+    }
     this.consumer = { channel, consumerTag };
     callback();
   }
