@@ -38,6 +38,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   protected pubClient: Redis;
   protected isManuallyClosed = false;
   protected wasInitialConnectionSuccessful = false;
+  private closeCount = 0;
   protected pendingEventListeners: Array<{
     event: keyof RedisEvents;
     callback: RedisEvents[keyof RedisEvents];
@@ -53,9 +54,27 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
+    let subClient: Redis;
+    let pubClient: Redis;
     try {
-      this.subClient = await this.createRedisClient();
-      this.pubClient = await this.createRedisClient();
+      subClient = await this.createRedisClient();
+      if (this.closeCount !== closeCount) {
+        await this.quitClient(subClient);
+        callback(new Error('Connection closed'));
+        return;
+      }
+      pubClient = await this.createRedisClient();
+      if (this.closeCount !== closeCount) {
+        await Promise.allSettled([
+          this.quitClient(pubClient),
+          this.quitClient(subClient),
+        ]);
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.subClient = subClient;
+      this.pubClient = pubClient;
       // A close() before this listen() must not keep retries off for good.
       // Set once the replacement clients exist, so an old client cannot report
       // its own "end" through the flag while the swap is in progress
@@ -73,17 +92,64 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       });
       this.pendingEventListeners = [];
 
-      this.start(callback);
+      await this.start(callback, subClient, pubClient, closeCount);
     } catch (err) {
+      await Promise.allSettled([
+        pubClient && this.quitClient(pubClient),
+        subClient && this.quitClient(subClient),
+      ]);
+      if (this.subClient === subClient!) {
+        this.subClient = null;
+      }
+      if (this.pubClient === pubClient!) {
+        this.pubClient = null;
+      }
       callback(err);
     }
   }
 
-  public start(callback?: () => void) {
-    void Promise.all([this.subClient.connect(), this.pubClient.connect()])
-      .then(() => this.bindEvents(this.subClient, this.pubClient))
-      .then(() => callback?.())
-      .catch(callback);
+  public async start(
+    callback?: (err?: unknown) => void,
+    subClient: Redis = this.subClient,
+    pubClient: Redis = this.pubClient,
+    closeCount = this.closeCount,
+  ) {
+    const cleanup = async () => {
+      await Promise.allSettled([
+        this.quitClient(pubClient),
+        this.quitClient(subClient),
+      ]);
+      if (this.subClient === subClient) {
+        this.subClient = null;
+      }
+      if (this.pubClient === pubClient) {
+        this.pubClient = null;
+      }
+    };
+
+    try {
+      if (this.closeCount !== closeCount) {
+        await cleanup();
+        callback?.(new Error('Connection closed'));
+        return;
+      }
+      await Promise.all([subClient.connect(), pubClient.connect()]);
+      if (this.closeCount !== closeCount) {
+        await cleanup();
+        callback?.(new Error('Connection closed'));
+        return;
+      }
+      await this.bindEvents(subClient, pubClient);
+      if (this.closeCount !== closeCount) {
+        await cleanup();
+        callback?.(new Error('Connection closed'));
+        return;
+      }
+      callback?.();
+    } catch (err) {
+      await cleanup();
+      callback?.(err);
+    }
   }
 
   public async bindEvents(subClient: Redis, pubClient: Redis): Promise<void> {
@@ -110,28 +176,33 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   }
 
   public async close() {
+    this.closeCount++;
     this.isManuallyClosed = true;
+    const subClient = this.subClient;
+    const pubClient = this.pubClient;
+    this.subClient = null;
+    this.pubClient = null;
+    this.pendingEventListeners = [];
     if (this.getOptionsProp(this.options, 'gracefulShutdown')) {
-      await this.stopReceivingMessages();
+      await this.stopReceivingMessages(subClient);
       await this.waitForHandlersInFlight(
         this.getOptionsProp(this.options, 'gracePeriod'),
       );
     }
-    this.pubClient && (await this.quitClient(this.pubClient));
-    this.subClient && (await this.quitClient(this.subClient));
-    this.pendingEventListeners = [];
+    pubClient && (await this.quitClient(pubClient));
+    subClient && (await this.quitClient(subClient));
   }
 
   // The connections stay open, as the handlers in flight publish their
   // replies through them.
-  private async stopReceivingMessages() {
-    if (!this.subClient) {
+  private async stopReceivingMessages(subClient: Redis = this.subClient) {
+    if (!subClient) {
       return;
     }
     try {
       await (this.options?.wildcards
-        ? this.subClient.punsubscribe()
-        : this.subClient.unsubscribe());
+        ? subClient.punsubscribe()
+        : subClient.unsubscribe());
     } catch {
       // The command cannot be sent, so the subscriber is not connected and
       // receives nothing either way.
@@ -143,9 +214,9 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   // other client open. Close the connection right away instead.
   private async quitClient(client: Redis) {
     try {
-      await client.quit();
+      await client?.quit?.();
     } catch {
-      client.disconnect();
+      client?.disconnect?.();
     }
   }
 
