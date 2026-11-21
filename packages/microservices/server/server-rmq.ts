@@ -210,7 +210,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this.channel = this.server!.createChannel({
         json: false,
         setup: async (channel: Channel) => {
-          await this.setupChannel(channel, settleListenCallback);
+          await this.setupChannel(channel, settleListenCallback, closeCount);
           if (this.isClosing || this.closeCount !== closeCount) {
             settleListenCallback(new Error('Connection closed'));
           }
@@ -322,8 +322,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     });
   }
 
-  public async setupChannel(channel: Channel, callback: Function) {
-    if (this.isClosing) {
+  public async setupChannel(
+    channel: Channel,
+    callback: Function,
+    closeCount = this.closeCount,
+  ) {
+    if (this.isClosing || this.closeCount !== closeCount) {
       return;
     }
     const noAssert =
@@ -395,7 +399,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     // close() may have started while the channel was being set up
-    if (this.isClosing) {
+    if (this.isClosing || this.closeCount !== closeCount) {
       return;
     }
     // The broker names the consumer when no "consumerTag" is configured
@@ -412,6 +416,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         ),
       },
     );
+    if (this.isClosing || this.closeCount !== closeCount) {
+      return;
+    }
     this.consumer = { channel, consumerTag };
     callback();
   }

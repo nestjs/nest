@@ -325,6 +325,121 @@ describe('ServerRMQ', () => {
         expect(secondCb).toHaveBeenCalledExactlyOnceWith();
         expect(untypedServer.server).toBe(secondServer);
       });
+
+      it('should settle callback with Connection closed when close() runs during channel.consume()', async () => {
+        setupChannelStub.mockRestore();
+        let resolveConsume!: (value: { consumerTag: string }) => void;
+        const rawChannel = {
+          assertQueue: vi.fn().mockResolvedValue({ queue: 'test' }),
+          prefetch: vi.fn(),
+          consume: vi.fn(
+            () =>
+              new Promise<{ consumerTag: string }>(resolve => {
+                resolveConsume = resolve;
+              }),
+          ),
+          close: vi.fn().mockResolvedValue(undefined),
+        };
+        const channelWrapper = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+        });
+        const pendingClient = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+          createChannel: vi.fn(({ setup }) => {
+            void setup(rawChannel);
+            return channelWrapper;
+          }),
+        });
+        createClient.mockResolvedValue(pendingClient);
+
+        await server.listen(callbackSpy);
+        pendingClient.emit('connect');
+        await vi.waitFor(() => expect(rawChannel.consume).toHaveBeenCalled());
+        const closing = server.close();
+        resolveConsume({ consumerTag: 'amq.ctag-test' });
+        await closing;
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(untypedServer.consumer).toBeNull();
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callbackSpy.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should not overwrite a newer listen() consumer when an earlier channel.consume() resolves after restart', async () => {
+        setupChannelStub.mockRestore();
+        let resolveFirstConsume!: (value: { consumerTag: string }) => void;
+        const firstRawChannel = {
+          assertQueue: vi.fn().mockResolvedValue({ queue: 'test' }),
+          prefetch: vi.fn(),
+          consume: vi.fn(
+            () =>
+              new Promise<{ consumerTag: string }>(resolve => {
+                resolveFirstConsume = resolve;
+              }),
+          ),
+          close: vi.fn().mockResolvedValue(undefined),
+        };
+        const firstChannelWrapper = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+        });
+        const firstClient = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+          createChannel: vi.fn(({ setup }) => {
+            void setup(firstRawChannel);
+            return firstChannelWrapper;
+          }),
+        });
+
+        const secondRawChannel = {
+          assertQueue: vi.fn().mockResolvedValue({ queue: 'test' }),
+          prefetch: vi.fn(),
+          consume: vi
+            .fn()
+            .mockResolvedValue({ consumerTag: 'amq.ctag-second' }),
+          close: vi.fn().mockResolvedValue(undefined),
+        };
+        const secondChannelWrapper = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+        });
+        const secondClient = Object.assign(new EventEmitter(), {
+          close: vi.fn().mockResolvedValue(undefined),
+          createChannel: vi.fn(({ setup }) => {
+            void setup(secondRawChannel);
+            return secondChannelWrapper;
+          }),
+        });
+
+        createClient
+          .mockResolvedValueOnce(firstClient)
+          .mockResolvedValueOnce(secondClient);
+
+        const firstCb = vi.fn();
+        const secondCb = vi.fn();
+
+        await server.listen(firstCb);
+        firstClient.emit('connect');
+        await vi.waitFor(() =>
+          expect(firstRawChannel.consume).toHaveBeenCalled(),
+        );
+
+        await server.close();
+        await server.listen(secondCb);
+        secondClient.emit('connect');
+        await vi.waitFor(() => expect(secondCb).toHaveBeenCalledOnce());
+
+        resolveFirstConsume({ consumerTag: 'amq.ctag-stale' });
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(firstCb).toHaveBeenCalledTimes(1);
+        expect(firstCb.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(firstCb.mock.calls[0][0].message).toBe('Connection closed');
+        expect(secondCb).toHaveBeenCalledExactlyOnceWith();
+        expect(untypedServer.consumer).toEqual({
+          channel: secondRawChannel,
+          consumerTag: 'amq.ctag-second',
+        });
+      });
     });
     describe('when listening again after "close"', () => {
       let channel: EventEmitter;
