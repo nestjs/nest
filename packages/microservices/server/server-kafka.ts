@@ -70,6 +70,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected client: Kafka | null = null;
   protected consumer: Consumer | null = null;
   protected producer: Producer | null = null;
+  private closeCount = 0;
   protected parser: KafkaParser | null = null;
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
@@ -144,15 +145,26 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ): Promise<void> {
+    const closeCount = this.closeCount;
     try {
-      this.client = await this.createClient();
-      await this.start(callback);
+      const client = await this.createClient();
+      if (this.closeCount !== closeCount) {
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.client = client;
+      await this.start(callback, client, closeCount);
     } catch (err) {
       callback(err);
     }
   }
 
   public async close(): Promise<void> {
+    this.closeCount++;
+    const consumer = this.consumer;
+    const producer = this.producer;
+    this.consumer = null;
+    this.client = null;
     // The consumer goes first. Its callbacks can finish before the response
     // streams and queued publishes, so allow those to drain, for "gracePeriod"
     // at most, before closing the producer. The producer is disconnected even
@@ -160,8 +172,8 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     let consumerFailed = false;
     let consumerError: unknown;
     try {
-      await this.consumer?.disconnect();
-      if (this.producer) {
+      await consumer?.disconnect?.();
+      if (producer) {
         await this.waitForHandlersInFlight(
           this.getOptionsProp(this.options, 'gracePeriod'),
         );
@@ -170,68 +182,120 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       consumerFailed = true;
       consumerError = err;
     }
+    if (this.producer === producer) {
+      this.producer = null;
+    }
     try {
-      await this.producer?.disconnect();
+      await producer?.disconnect?.();
     } catch (err) {
       if (!consumerFailed) {
         throw err;
       }
       this.logger.error(err);
-    } finally {
-      this.consumer = null;
-      this.producer = null;
-      this.client = null;
     }
     if (consumerFailed) {
       throw consumerError;
     }
   }
 
-  public async start(callback: () => void): Promise<void> {
+  public async start(
+    callback: (err?: unknown) => void,
+    client: Kafka = this.client!,
+    closeCount = this.closeCount,
+  ): Promise<void> {
+    if (this.closeCount !== closeCount) {
+      if (this.client === client) {
+        this.client = null;
+      }
+      callback(new Error('Connection closed'));
+      return;
+    }
     const consumerOptions = {
       ...(this.options.consumer || {}),
       groupId: this.groupId,
     };
-    this.consumer = this.client!.consumer(consumerOptions);
-    this.producer = this.client!.producer(this.options.producer);
-    this.registerConsumerEventListeners();
-    this.registerProducerEventListeners();
+    const consumer = client.consumer(consumerOptions);
+    const producer = client.producer(this.options.producer);
+    this.registerConsumerEventListeners(consumer);
+    this.registerProducerEventListeners(producer);
 
-    await this.consumer.connect();
-    await this.producer.connect();
-    await this.bindEvents(this.consumer);
-    callback();
+    const cleanup = async () => {
+      await Promise.allSettled([
+        consumer?.disconnect?.(),
+        producer?.disconnect?.(),
+      ]);
+      if (this.consumer === consumer) {
+        this.consumer = null;
+      }
+      if (this.producer === producer) {
+        this.producer = null;
+      }
+      if (this.client === client) {
+        this.client = null;
+      }
+    };
+
+    try {
+      await consumer.connect();
+      if (this.closeCount !== closeCount) {
+        await cleanup();
+        callback(new Error('Connection closed'));
+        return;
+      }
+      await producer.connect();
+      if (this.closeCount !== closeCount) {
+        await cleanup();
+        callback(new Error('Connection closed'));
+        return;
+      }
+      await this.bindEvents(consumer);
+      if (this.closeCount !== closeCount) {
+        await cleanup();
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.consumer = consumer;
+      this.producer = producer;
+      callback();
+    } catch (err) {
+      await cleanup();
+      throw err;
+    }
   }
 
-  protected registerConsumerEventListeners() {
-    if (!this.consumer) {
+  protected registerConsumerEventListeners(
+    consumer: Consumer | null = this.consumer,
+  ) {
+    if (!consumer) {
       return;
     }
-    this.consumer.on(this.consumer.events.CONNECT, () =>
+    consumer.on(consumer.events.CONNECT, () =>
       this._status$.next(KafkaStatus.CONNECTED),
     );
-    this.consumer.on(this.consumer.events.DISCONNECT, () =>
+    consumer.on(consumer.events.DISCONNECT, () =>
       this._status$.next(KafkaStatus.DISCONNECTED),
     );
-    this.consumer.on(this.consumer.events.REBALANCING, () =>
+    consumer.on(consumer.events.REBALANCING, () =>
       this._status$.next(KafkaStatus.REBALANCING),
     );
-    this.consumer.on(this.consumer.events.STOP, () =>
+    consumer.on(consumer.events.STOP, () =>
       this._status$.next(KafkaStatus.STOPPED),
     );
-    this.consumer.on(this.consumer.events.CRASH, () =>
+    consumer.on(consumer.events.CRASH, () =>
       this._status$.next(KafkaStatus.CRASHED),
     );
   }
 
-  protected registerProducerEventListeners() {
-    if (!this.producer) {
+  protected registerProducerEventListeners(
+    producer: Producer | null = this.producer,
+  ) {
+    if (!producer) {
       return;
     }
-    this.producer.on(this.producer.events.CONNECT, () =>
+    producer.on(producer.events.CONNECT, () =>
       this._status$.next(KafkaStatus.CONNECTED),
     );
-    this.producer.on(this.producer.events.DISCONNECT, () =>
+    producer.on(producer.events.DISCONNECT, () =>
       this._status$.next(KafkaStatus.DISCONNECTED),
     );
   }
@@ -255,7 +319,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     const consumerSubscribeOptions = this.options.subscribe || {};
 
     if (registeredPatterns.length > 0) {
-      await this.consumer!.subscribe({
+      await consumer.subscribe({
         ...consumerSubscribeOptions,
         topics: registeredPatterns,
       });
