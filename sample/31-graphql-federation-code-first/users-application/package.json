@@ -18,9 +18,9 @@
     "test:debug": "vitest --inspect-brk --no-file-parallelism"
   },
   "dependencies": {
-    "@apollo/gateway": "2.14.4",
+    "@apollo/gateway": "2.14.5",
     "@apollo/server": "5.5.2",
-    "@apollo/subgraph": "2.16.0",
+    "@apollo/subgraph": "2.17.0",
     "@nestjs/apollo": "14.2.1",
     "@nestjs/common": "12.5.1",
     "@nestjs/core": "12.5.1",
