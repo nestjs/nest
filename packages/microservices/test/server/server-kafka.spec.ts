@@ -183,6 +183,122 @@ describe('ServerKafka', () => {
         expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
+    describe('when closed or failing during listen', () => {
+      it('should settle callback with Connection closed and skip start() when close() runs before createClient() resolves', async () => {
+        let resolveClient!: (value: any) => void;
+        vi.spyOn(server, 'createClient').mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              resolveClient = resolve;
+            }),
+        );
+        const startSpy = vi.spyOn(server, 'start');
+
+        const listening = server.listen(callback);
+        const closing = server.close();
+        resolveClient(client);
+        await Promise.all([listening, closing]);
+
+        expect(startSpy).not.toHaveBeenCalled();
+        expect(untypedServer.client).toBeNull();
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callback.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should disconnect consumer and producer when close() runs during producer.connect()', async () => {
+        let resolveProducerConnect!: () => void;
+        const consumerDisconnect = vi.fn().mockResolvedValue(undefined);
+        const producerDisconnect = vi.fn().mockResolvedValue(undefined);
+        consumerStub.mockReturnValueOnce({
+          connect: vi.fn().mockResolvedValue(undefined),
+          disconnect: consumerDisconnect,
+          subscribe,
+          run,
+          on,
+          events: {
+            CONNECT: 'consumer.connect',
+            DISCONNECT: 'consumer.disconnect',
+            REBALANCING: 'consumer.rebalancing',
+            STOP: 'consumer.stop',
+            CRASH: 'consumer.crash',
+          },
+        });
+        producerStub.mockReturnValueOnce({
+          connect: vi.fn(
+            () =>
+              new Promise<void>(resolve => {
+                resolveProducerConnect = resolve;
+              }),
+          ),
+          disconnect: producerDisconnect,
+          send,
+          on,
+          events: {
+            CONNECT: 'producer.connect',
+            DISCONNECT: 'producer.disconnect',
+          },
+        });
+
+        const listening = server.listen(callback);
+        await new Promise(resolve => setImmediate(resolve));
+        const closing = server.close();
+        resolveProducerConnect();
+        await Promise.all([listening, closing]);
+
+        expect(consumerDisconnect).toHaveBeenCalledOnce();
+        expect(producerDisconnect).toHaveBeenCalledOnce();
+        expect(untypedServer.consumer).toBeNull();
+        expect(untypedServer.producer).toBeNull();
+        expect(untypedServer.client).toBeNull();
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(callback.mock.calls[0][0].message).toBe('Connection closed');
+      });
+
+      it('should disconnect consumer and producer and not mask primary error when bindEvents() rejects', async () => {
+        const bindError = new Error('subscribe failed');
+        const consumerDisconnect = vi
+          .fn()
+          .mockRejectedValue(new Error('disconnect failed'));
+        const producerDisconnect = vi.fn().mockResolvedValue(undefined);
+        consumerStub.mockReturnValueOnce({
+          connect: vi.fn().mockResolvedValue(undefined),
+          disconnect: consumerDisconnect,
+          subscribe: vi.fn().mockRejectedValue(bindError),
+          run,
+          on,
+          events: {
+            CONNECT: 'consumer.connect',
+            DISCONNECT: 'consumer.disconnect',
+            REBALANCING: 'consumer.rebalancing',
+            STOP: 'consumer.stop',
+            CRASH: 'consumer.crash',
+          },
+        });
+        producerStub.mockReturnValueOnce({
+          connect: vi.fn().mockResolvedValue(undefined),
+          disconnect: producerDisconnect,
+          send,
+          on,
+          events: {
+            CONNECT: 'producer.connect',
+            DISCONNECT: 'producer.disconnect',
+          },
+        });
+        server.addHandler('test.topic', vi.fn() as any);
+
+        await server.listen(callback);
+
+        expect(consumerDisconnect).toHaveBeenCalledOnce();
+        expect(producerDisconnect).toHaveBeenCalledOnce();
+        expect(untypedServer.consumer).toBeNull();
+        expect(untypedServer.producer).toBeNull();
+        expect(untypedServer.client).toBeNull();
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(bindError);
+      });
+    });
   });
 
   describe('close', () => {
