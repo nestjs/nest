@@ -71,12 +71,12 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.connectionPromise = null;
     this.wasInitialConnectionSuccessful = false;
     this.pendingEventListeners = [];
-    try {
-      pubClient && (await this.quitClient(pubClient));
-      subClient && (await this.quitClient(subClient));
-    } finally {
-      this.isManuallyClosed = false;
-    }
+    // The dropped clients get no more retries (see `getClientOptions()`) and
+    // their events are ignored, so a `connect()` call made while they quit
+    // must not be treated as closed
+    this.isManuallyClosed = false;
+    pubClient && (await this.quitClient(pubClient));
+    subClient && (await this.quitClient(subClient));
   }
   // `quit()` rejects when the command cannot be sent (e.g., while
   // reconnecting with the offline queue disabled), which would leave the
@@ -285,7 +285,13 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   public getClientOptions(): Partial<RedisOptions['options']> {
-    const retryStrategy = (times: number) => this.createRetryStrategy(times);
+    // Clients created before a `close()` call must not reconnect after it,
+    // unlike the ones a later `connect()` call creates
+    const closeCount = this.closeCount;
+    const retryStrategy = (times: number) =>
+      this.closeCount === closeCount
+        ? this.createRetryStrategy(times)
+        : undefined;
 
     return {
       ...(this.options || {}),
