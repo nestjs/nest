@@ -39,4 +39,16 @@ describe('FileFieldsInterceptor', () => {
       }),
     );
   });
+
+  it('should reject every file of a field whose maxCount is NaN, as multer does', async () => {
+    const target = new (FileFieldsInterceptor([
+      { name: 'avatar', maxCount: NaN },
+    ]))();
+    const req = createFakeRequest([file('avatar')]);
+    await expect(target.intercept(createContext(req), handler)).rejects.toEqual(
+      new BadRequestException('Unexpected file field - avatar', {
+        cause: new MultipartError('LIMIT_UNEXPECTED_FILE', 'avatar'),
+      }),
+    );
+  });
 });

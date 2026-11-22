@@ -603,8 +603,10 @@ export async function processMultipart(
       if (!stream) {
         continue;
       }
+      // A "maxCount" of NaN counts as no file left, as in multer: "left <= 0"
+      // alone is never true for NaN
       const left =
-        spec.fields === 'ANY' ? Infinity : (filesLeft.get(part.fieldname) ?? 0);
+        spec.fields === 'ANY' ? Infinity : filesLeft.get(part.fieldname) || 0;
       if (left <= 0) {
         throw new MultipartError('LIMIT_UNEXPECTED_FILE', part.fieldname);
       }
