@@ -172,6 +172,18 @@ describe('applyDefaultLimits', () => {
     ).toEqual(defaults);
   });
 
+  it('should set the default limits that are not a number', () => {
+    expect(
+      applyDefaultLimits({
+        limits: {
+          fieldNestingDepth: NaN,
+          fieldArrayIndexLimit: NaN,
+          parts: NaN,
+        },
+      }).limits,
+    ).toEqual(defaults);
+  });
+
   it('should not modify the options it is given', () => {
     const options = { limits: { fileSize: 10 } };
     applyDefaultLimits(options);
