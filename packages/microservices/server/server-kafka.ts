@@ -197,18 +197,34 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async start(callback: () => void): Promise<void> {
+    const closeCount = this.closeCount;
     const consumerOptions = {
       ...(this.options.consumer || {}),
       groupId: this.groupId,
     };
-    this.consumer = this.client!.consumer(consumerOptions);
-    this.producer = this.client!.producer(this.options.producer);
+    const consumer = (this.consumer = this.client!.consumer(consumerOptions));
+    const producer = (this.producer = this.client!.producer(
+      this.options.producer,
+    ));
     this.registerConsumerEventListeners();
     this.registerProducerEventListeners();
 
-    await this.consumer.connect();
-    await this.producer.connect();
-    await this.bindEvents(this.consumer);
+    // `close()` may run while these connect. It disconnects them, but a
+    // connect (or "run", which joins the group) already under way can still
+    // finish afterwards.
+    const stopIfClosed = async () => {
+      if (this.closeCount === closeCount) {
+        return;
+      }
+      await Promise.allSettled([consumer.disconnect(), producer.disconnect()]);
+      throw new Error('Connection closed');
+    };
+    await consumer.connect();
+    await stopIfClosed();
+    await producer.connect();
+    await stopIfClosed();
+    await this.bindEvents(consumer);
+    await stopIfClosed();
     callback();
   }
 
