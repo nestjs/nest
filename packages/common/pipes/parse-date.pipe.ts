@@ -94,19 +94,35 @@ export class ParseDatePipe implements PipeTransform {
 
   /**
    * `new Date()` rolls a day past the end of its month into the next month
-   * ("2024-02-30" becomes March 1), so an ISO date's day is checked against
-   * the length of its month.
+   * ("2024-02-30" becomes March 1), so date strings are checked against
+   * the length of their month.
    */
   protected hasDayPastMonthEnd(value: string): boolean {
-    const match = /^\s*([+-]\d{6}|\d{4})-(\d{2})-(\d{2})(?!\d)/.exec(value);
-    if (!match) {
-      return false;
+    let year: number;
+    let month: number;
+    let day: number;
+
+    const isoMatch = /^\s*([+-]\d{6}|\d{4})([-/.])(\d{2})\2(\d{2})(?!\d)/.exec(
+      value,
+    );
+    if (isoMatch) {
+      year = Number(isoMatch[1]);
+      month = Number(isoMatch[3]);
+      day = Number(isoMatch[4]);
+    } else {
+      const usMatch = /^\s*(\d{2})([-/.])(\d{2})\2(\d{4})(?!\d)/.exec(value);
+      if (usMatch) {
+        month = Number(usMatch[1]);
+        day = Number(usMatch[3]);
+        year = Number(usMatch[4]);
+      } else {
+        return false;
+      }
     }
-    const year = Number(match[1]);
-    const month = Number(match[2]);
+
     const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     const daysInMonth =
       month === 2 && isLeapYear ? 29 : DAYS_IN_MONTH[month - 1];
-    return Number(match[3]) > daysInMonth;
+    return daysInMonth !== undefined && day > daysInMonth;
   }
 }
