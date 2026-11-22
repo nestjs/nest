@@ -798,6 +798,47 @@ describe('ClientMqtt', () => {
         expect.any(Function),
       );
     });
+
+    it('should not wipe a new connection started while endAsync is still pending', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      let finishEnd!: () => void;
+      const firstClient: any = new EventEmitter();
+      firstClient.options = { reconnectPeriod: 0 };
+      firstClient.endAsync = vi.fn(
+        () =>
+          new Promise<void>(resolve => {
+            finishEnd = resolve;
+          }),
+      );
+      const secondClient: any = new EventEmitter();
+      secondClient.options = { reconnectPeriod: 0 };
+      secondClient.endAsync = vi.fn().mockResolvedValue(undefined);
+      const createClientSpy = vi
+        .spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const firstConnect = mqtt.connect();
+      await vi.waitFor(() => expect(createClientSpy).toHaveBeenCalledTimes(1));
+      firstClient.emit('connect');
+      await firstConnect;
+
+      const closing = mqtt.close();
+      const secondConnect = mqtt.connect();
+      await vi.waitFor(() => expect(createClientSpy).toHaveBeenCalledTimes(2));
+      secondClient.emit('connect');
+      await secondConnect;
+
+      firstClient.emit('offline');
+      firstClient.emit('close');
+      finishEnd();
+      await closing;
+
+      expect(untyped.mqttClient).toBe(secondClient);
+      await expect(untyped.connectionPromise).resolves.toBeUndefined();
+      expect(secondClient.listenerCount('message')).toBe(1);
+    });
   });
   describe('connect', () => {
     let createClientStub: ReturnType<typeof vi.fn>;
@@ -1003,6 +1044,37 @@ describe('ClientMqtt', () => {
       secondClient.emit('connect');
       await second;
       expect(secondClient.listenerCount('message')).toBe(1);
+    });
+
+    it('should ignore late events emitted by a dropped client', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const firstClient = fakeClient(0);
+      const secondClient = fakeClient(0);
+      vi.spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const failed = mqtt.connect();
+      firstClient.emit('error', refused());
+      await expect(failed).rejects.toThrow('connect ECONNREFUSED');
+
+      // mqtt.js emits "offline" and "close" on the failed client after "error"
+      firstClient.emit('offline');
+      firstClient.emit('close');
+      expect(untyped.connectionPromise).toBeNull();
+
+      const second = mqtt.connect();
+      secondClient.emit('connect');
+      await second;
+
+      firstClient.emit('offline');
+      firstClient.emit('disconnect');
+      firstClient.emit('reconnect');
+      firstClient.emit('close');
+
+      expect(untyped.mqttClient).toBe(secondClient);
+      await expect(untyped.connectionPromise).resolves.toBeUndefined();
     });
   });
   describe('mergeCloseEvent', () => {
