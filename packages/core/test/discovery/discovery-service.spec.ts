@@ -744,4 +744,99 @@ describe('DiscoveryService', () => {
       }
     });
   });
+
+  describe('discovery of wrappers that a later registration replaced', () => {
+    it('should not discover a provider that a later provider of the same token replaced', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Injectable()
+      class DefaultStorage {}
+
+      @TestDecorator()
+      @Injectable()
+      class CustomStorage {}
+
+      @NestModule({
+        providers: [
+          DiscoveryService,
+          { provide: 'STORAGE', useClass: DefaultStorage },
+        ],
+      })
+      class StorageModule {
+        static forRoot() {
+          return {
+            module: StorageModule,
+            providers: [{ provide: 'STORAGE', useClass: CustomStorage }],
+          };
+        }
+      }
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [StorageModule.forRoot()],
+      }).compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBe(moduleRef.get('STORAGE'));
+    });
+
+    it('should discover a provider listed twice in a module once', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Injectable()
+      class ClassService {}
+
+      @NestModule({ providers: [DiscoveryService, ClassService] })
+      class AppModule {
+        static forRoot() {
+          return { module: AppModule, providers: [ClassService] };
+        }
+      }
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule.forRoot()],
+      }).compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBe(moduleRef.get(ClassService));
+    });
+
+    it('should discover a controller listed twice in a module once', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Controller()
+      class TestController {}
+
+      @NestModule({
+        providers: [DiscoveryService],
+        controllers: [TestController],
+      })
+      class AppModule {
+        static forRoot() {
+          return { module: AppModule, controllers: [TestController] };
+        }
+      }
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule.forRoot()],
+      }).compile();
+
+      const controllers = moduleRef
+        .get(DiscoveryService)
+        .getControllers({ metadataKey: TestDecorator.KEY });
+
+      expect(controllers).toHaveLength(1);
+      expect(controllers[0].instance).toBe(moduleRef.get(TestController));
+    });
+  });
 });
