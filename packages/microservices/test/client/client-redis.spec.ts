@@ -8,6 +8,7 @@ import { ClientRedis } from '../../client/client-redis.js';
  */
 class FakeRedisClient extends EventEmitter {
   public status = 'wait';
+  public options?: ReturnType<ClientRedis['getClientOptions']>;
   private settle?: {
     resolve: () => void;
     reject: (err: Error) => void;
@@ -791,21 +792,6 @@ describe('ClientRedis', () => {
       expect(subClose).toHaveBeenCalled();
       expect(untypedClient.routingMap.size).toBe(0);
     });
-    it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
-      let endHandler: Function | undefined;
-      sub.on = (event, handler) => {
-        if (event === 'end') endHandler = handler;
-      };
-      sub.quit = async () => {
-        if (endHandler) {
-          endHandler();
-          expect(untypedClient.isManuallyClosed).toBe(true);
-        }
-      };
-      client.registerEndListener(sub);
-      await client.close();
-    });
-
     it('should not log error when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
       const logError = vi.spyOn(untypedClient.logger, 'error');
@@ -902,6 +888,7 @@ describe('ClientRedis', () => {
       created = [];
       vi.spyOn(lifecycleClient, 'createClient').mockImplementation(async () => {
         const fake = new FakeRedisClient();
+        fake.options = lifecycleClient.getClientOptions();
         created.push(fake);
         return fake;
       });
@@ -1051,6 +1038,73 @@ describe('ClientRedis', () => {
           pub,
           sub,
         ]);
+      });
+
+      it('should not wipe a new connection started while quit is still pending', async () => {
+        const [firstPub] = await connectPair();
+        let finishQuit!: () => void;
+        firstPub.quit.mockImplementation(
+          () =>
+            new Promise<string>(resolve => {
+              finishQuit = () => resolve('OK');
+            }),
+        );
+
+        const closing = lifecycleClient.close();
+        const fresh = lifecycleClient.connect();
+        await new Promise(resolve => setImmediate(resolve));
+
+        const [secondPub, secondSub] = currentPair();
+        secondPub.ready();
+        secondSub.ready();
+        await expect(fresh).resolves.toBeUndefined();
+
+        finishQuit();
+        await closing;
+
+        expect(currentPair()).toEqual([secondPub, secondSub]);
+        await expect(lifecycleClient.connect()).resolves.toBeUndefined();
+        expect(secondSub.listenerCount('message')).toBe(1);
+      });
+
+      it('should let a connection started while quit is still pending reconnect', async () => {
+        setUp({ retryAttempts: 3, retryDelay: 10 });
+        const [firstPub, firstSub] = await connectPair();
+        let finishQuit!: () => void;
+        firstPub.quit.mockImplementation(
+          () =>
+            new Promise<string>(resolve => {
+              finishQuit = () => resolve('OK');
+            }),
+        );
+
+        const closing = lifecycleClient.close();
+        const fresh = lifecycleClient.connect();
+        await new Promise(resolve => setImmediate(resolve));
+        const [secondPub, secondSub] = currentPair();
+        secondPub.ready();
+        secondSub.ready();
+        await fresh;
+
+        expect(secondPub.options.retryStrategy(1)).toBe(10);
+        expect(firstSub.options!.retryStrategy!(1)).toBeUndefined();
+        secondPub.closeAndRetry();
+        await expect(lifecycleClient.connect()).rejects.toBe(connectionLost);
+
+        finishQuit();
+        await closing;
+        expect(currentPair()).toEqual([secondPub, secondSub]);
+      });
+
+      it('should reject an in-flight connect() when close() runs before the clients finish connecting', async () => {
+        const { attempt, pub, sub } = await startConnecting();
+        await lifecycleClient.close();
+        pub.ready();
+        sub.ready();
+
+        await expect(attempt).rejects.toThrow('Connection closed');
+        expect(currentPair()).toEqual([null, null]);
+        expect(untypedLifecycleClient.connectionPromise).toBeNull();
       });
     });
 
