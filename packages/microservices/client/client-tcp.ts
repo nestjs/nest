@@ -185,8 +185,9 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   public close() {
     if (this.socket) {
       this.closedSockets.add(this.socket);
-      // `end()` waits for a pending TLS handshake, which may never finish
-      if (this.tlsOptions && !this.connectedSockets.has(this.socket)) {
+      // `end()` waits for a pending TCP connect or TLS handshake, which may
+      // never finish and would otherwise still connect after `close()`
+      if (!this.connectedSockets.has(this.socket)) {
         this.socket.netSocket.destroy();
       } else {
         this.socket.end();
