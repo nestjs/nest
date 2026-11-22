@@ -143,6 +143,7 @@ export class ServerGrpc extends Server<never, never> {
   protected readonly maxPendingResponses: number;
   protected grpcClient: GrpcServer;
   private pendingClose: Promise<void> | null = null;
+  private closeCount = 0;
 
   get status(): never {
     throw new Error(
@@ -177,8 +178,17 @@ export class ServerGrpc extends Server<never, never> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
-      this.grpcClient = await this.createClient();
+      const grpcClient = await this.createClient();
+      // The server is bound to its port by now, and close() found nothing to
+      // shut down
+      if (this.closeCount !== closeCount) {
+        grpcClient.forceShutdown();
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.grpcClient = grpcClient;
       await this.start(callback);
     } catch (err) {
       callback(err);
@@ -948,6 +958,7 @@ export class ServerGrpc extends Server<never, never> {
   }
 
   public close(): Promise<void> {
+    this.closeCount++;
     // Coalesce overlapping close() calls onto the active shutdown promise
     this.pendingClose ??= this.closeServer().finally(() => {
       this.pendingClose = null;

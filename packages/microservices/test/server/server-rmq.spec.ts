@@ -312,6 +312,33 @@ describe('ServerRMQ', () => {
         );
       });
     });
+    it('should close the new connection when closed while creating it', async () => {
+      let resolveClient!: (value: any) => void;
+      const pendingClient = {
+        close: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+      createClient.mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+
+      const listenPromise = server.listen(callbackSpy);
+      await server.close();
+      resolveClient(pendingClient);
+      await listenPromise;
+
+      expect(pendingClient.close).toHaveBeenCalledOnce();
+      expect(pendingClient.once).not.toHaveBeenCalled();
+      expect(pendingClient.on).not.toHaveBeenCalled();
+      expect(untypedServer.server).toBeNull();
+      expect(callbackSpy).toHaveBeenCalledExactlyOnceWith(
+        new Error('Connection closed'),
+      );
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');

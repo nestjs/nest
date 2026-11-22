@@ -68,6 +68,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   protected consumer: { channel: Channel; consumerTag: string } | null = null;
   protected isClosing = false;
   private pendingClose: Promise<void> | null = null;
+  private closeCount = 0;
   protected connectionAttempts = 0;
   protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
@@ -112,6 +113,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public close(): Promise<void> {
+    this.closeCount++;
     // A close() that overlaps another one waits for it: closing the
     // connection while the first one waits for its channel to close would
     // leave that close() pending for good
@@ -177,7 +179,16 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     this.channel = null;
     this.consumer = null;
     this.isClosing = false;
-    this.server = await this.createClient();
+    const closeCount = this.closeCount;
+    const server = await this.createClient<AmqpConnectionManager>();
+    // The connection manager starts connecting as soon as it is created, and
+    // close() found nothing to close
+    if (this.closeCount !== closeCount) {
+      await server.close().catch(() => {});
+      callback?.(new Error('Connection closed'));
+      return;
+    }
+    this.server = server;
     let listenCallback = callback;
     const settleListenCallback = (...args: unknown[]) => {
       const cb = listenCallback;

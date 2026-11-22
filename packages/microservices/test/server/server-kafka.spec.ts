@@ -171,6 +171,82 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       expect(callback).toHaveBeenCalled();
     });
+    it('should skip startup when closed while creating the client', async () => {
+      let resolveClient!: (value: any) => void;
+      vi.spyOn(server, 'createClient').mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+      const startSpy = vi.spyOn(server, 'start');
+
+      const listenPromise = server.listen(callback);
+      await server.close();
+      resolveClient(client);
+      await listenPromise;
+
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(consumerStub).not.toHaveBeenCalled();
+      expect(producerStub).not.toHaveBeenCalled();
+      expect(untypedServer.client).toBeNull();
+      expect(callback).toHaveBeenCalledExactlyOnceWith(
+        new Error('Connection closed'),
+      );
+    });
+    it.each(['consumer.connect', 'producer.connect', 'consumer.run'] as const)(
+      'should disconnect and stop startup when closed during %s',
+      async step => {
+        const disconnect = vi.fn().mockResolvedValue(undefined);
+        let finishStep!: () => void;
+        const pending = () =>
+          new Promise<void>(resolve => {
+            finishStep = resolve;
+          });
+        let connects = 0;
+        connect.mockImplementation(() => {
+          connects++;
+          return (step === 'consumer.connect' && connects === 1) ||
+            (step === 'producer.connect' && connects === 2)
+            ? pending()
+            : Promise.resolve();
+        });
+        if (step === 'consumer.run') {
+          run.mockImplementation(pending);
+        }
+        consumerStub.mockImplementation(() => ({
+          connect,
+          subscribe,
+          run,
+          on,
+          disconnect,
+          events: {},
+        }));
+        producerStub.mockImplementation(() => ({
+          connect,
+          send,
+          on,
+          disconnect,
+          events: {},
+        }));
+        server.addHandler('topic', vi.fn() as any);
+
+        const listening = server.listen(callback);
+        await vi.waitFor(() => expect(finishStep).toBeDefined());
+        await server.close();
+        finishStep();
+        await listening;
+
+        expect(callback).toHaveBeenCalledExactlyOnceWith(
+          new Error('Connection closed'),
+        );
+        expect(connect).toHaveBeenCalledTimes(
+          step === 'consumer.connect' ? 1 : 2,
+        );
+        // Once by "close()", then once more after the step finished
+        expect(disconnect).toHaveBeenCalledTimes(4);
+      },
+    );
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
