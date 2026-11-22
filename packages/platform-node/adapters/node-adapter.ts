@@ -72,6 +72,7 @@ import {
 } from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import { onResponseClose } from './utils/on-response-close.util.js';
+import { setTextContentType } from './utils/set-text-content-type.util.js';
 
 type StreamableHandlerResponse = Parameters<StreamableFile['errorHandler']>[1];
 
@@ -338,7 +339,6 @@ export class NodeAdapter extends AbstractHttpAdapter<
       return this.writeBody(
         response,
         toBytes(body),
-        responseContentType,
         'application/octet-stream',
       );
     }
@@ -346,16 +346,10 @@ export class NodeAdapter extends AbstractHttpAdapter<
       return this.writeBody(
         response,
         JSON.stringify(body) ?? '',
-        responseContentType,
         'application/json; charset=utf-8',
       );
     }
-    return this.writeBody(
-      response,
-      String(body),
-      responseContentType,
-      'text/plain; charset=utf-8',
-    );
+    return this.writeBody(response, String(body), 'text/plain; charset=utf-8');
   }
 
   public status(response: NodeResponse, statusCode: number) {
@@ -386,12 +380,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
       }
       return response.send(html);
     }
-    return this.writeBody(
-      response,
-      html,
-      response.getHeader('Content-Type'),
-      'text/html; charset=utf-8',
-    );
+    return this.writeBody(response, html, 'text/html; charset=utf-8');
   }
 
   public redirect(response: NodeResponse, statusCode: number, url: string) {
@@ -973,17 +962,20 @@ export class NodeAdapter extends AbstractHttpAdapter<
     }
   }
 
-  // Writes the headers in a single "writeHead()" call, which is cheaper than
+  // Writes the default headers in a single "writeHead()" call, cheaper than
   // one "setHeader()" per header, with an explicit "Content-Length" (also
   // sent in answer to HEAD requests, which carry no body).
   private writeBody(
     response: NodeResponse,
     payload: string | Uint8Array,
-    contentType: unknown,
     defaultContentType: string,
   ) {
     if (endWithoutBody(response)) {
       return;
+    }
+    const contentType = response.getHeader('Content-Type');
+    if (typeof payload === 'string' && contentType !== undefined) {
+      setTextContentType(response, defaultContentType);
     }
     const contentLength =
       typeof payload === 'string'
