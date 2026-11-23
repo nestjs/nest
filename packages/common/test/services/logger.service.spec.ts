@@ -2090,6 +2090,27 @@ describe('Logger', () => {
         expect(output).toContain("authorization: '[REDACTED]'");
         expect(output).not.toContain('Bearer abc');
       });
+
+      it('should mask the entries of headers, search params and form data', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['authorization', 'token', 'password'],
+        });
+        const form = new FormData();
+        form.append('password', 'hunter2');
+
+        logger.log('Request', {
+          headers: new Headers({ authorization: 'Bearer abc' }),
+          query: new URLSearchParams('token=xyz'),
+          form,
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain("authorization: '[REDACTED]'");
+        expect(output).not.toContain('Bearer abc');
+        expect(output).not.toContain('xyz');
+        expect(output).not.toContain('hunter2');
+      });
     });
 
     describe('JSON mode', () => {
@@ -2108,6 +2129,33 @@ describe('Logger', () => {
           password: '[REDACTED]',
           items: [{ token: '[REDACTED]', id: 1 }],
         });
+      });
+
+      it('should still serialize headers, search params and form data', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: ['authorization', 'token', 'password'],
+        });
+        const form = new FormData();
+        form.append('password', 'hunter2');
+
+        logger.log('Request', {
+          headers: new Headers({ authorization: 'Bearer abc' }),
+          query: new URLSearchParams('token=xyz'),
+          form,
+          id: 1,
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(stdoutJson().params).toEqual({
+          headers: {},
+          query: {},
+          form: {},
+          id: 1,
+        });
+        expect(output).not.toContain('Bearer abc');
+        expect(output).not.toContain('xyz');
+        expect(output).not.toContain('hunter2');
       });
 
       it('should mask flattened params', () => {

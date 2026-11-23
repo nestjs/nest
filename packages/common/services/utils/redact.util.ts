@@ -19,7 +19,8 @@ export type Redactor = (value: unknown) => unknown;
  * - Keys are compared case-insensitively.
  *
  * Plain objects, arrays, class instances, errors (including `cause` and
- * `AggregateError#errors`), `Map`s and `Set`s are traversed.
+ * `AggregateError#errors`), `Map`s, `Set`s, `Headers`, `URLSearchParams` and
+ * `FormData` are traversed.
  * Only the objects on the way to a redacted property are copied; the rest is
  * returned as is, and the input is never mutated. A circular reference is
  * replaced with `"[Circular]"` (so the objects on the cycle are copied too). An
@@ -139,6 +140,8 @@ export function createRedactor(
         redacted = redactSet(current);
       } else if (isOpaque(current)) {
         redacted = current;
+      } else if (getEntryListType(current)) {
+        redacted = redactEntryList(current as EntryList);
       } else {
         redacted = redactObject(current);
       }
@@ -185,6 +188,32 @@ export function createRedactor(
         values.push(redacted);
       }
       return changed ? new Set(values) : set;
+    };
+
+    const redactEntryList = (list: EntryList) => {
+      let changed = false;
+      const entries: [string, unknown][] = [];
+      for (const [key, entryValue] of list) {
+        const redactedValue = visitProperty(key, entryValue);
+        changed ||= !Object.is(redactedValue, entryValue);
+        entries.push([key, redactedValue]);
+      }
+      if (!changed) {
+        return list;
+      }
+      const EntryListType = getEntryListType(list)!;
+      const copy = new EntryListType();
+      try {
+        for (const [key, entryValue] of entries) {
+          // A file of a FormData keeps its name, as it is a File.
+          copy.append(key, entryValue as string);
+        }
+      } catch {
+        // `Headers` only takes Latin-1 values, which the censor may not be
+        // ("••••"), so the entries are printed as a `Map` instead
+        return new Map(entries);
+      }
+      return copy;
     };
 
     const redactObject = (object: object) => {
@@ -261,6 +290,23 @@ export function createRedactor(
       return censor;
     }
   };
+}
+
+type EntryList = Headers | URLSearchParams | FormData;
+
+/**
+ * The classes that hold their entries in internal slots rather than in
+ * properties, so that a copy must be built through their API. They are
+ * printed with their entries, as `Map`s are.
+ */
+const ENTRY_LIST_TYPES: (new () => EntryList)[] = [
+  Headers,
+  URLSearchParams,
+  FormData,
+];
+
+function getEntryListType(value: object): (new () => EntryList) | undefined {
+  return ENTRY_LIST_TYPES.find(type => value instanceof type);
 }
 
 /**
