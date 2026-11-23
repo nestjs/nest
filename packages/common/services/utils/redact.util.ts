@@ -203,9 +203,15 @@ export function createRedactor(
       }
       const EntryListType = getEntryListType(list)!;
       const copy = new EntryListType();
-      for (const [key, entryValue] of entries) {
-        // A file of a FormData keeps its name, as it is a File.
-        copy.append(key, entryValue as string);
+      try {
+        for (const [key, entryValue] of entries) {
+          // A file of a FormData keeps its name, as it is a File.
+          copy.append(key, entryValue as string);
+        }
+      } catch {
+        // `Headers` only takes Latin-1 values, which the censor may not be
+        // ("••••"), so the entries are printed as a `Map` instead
+        return new Map(entries);
       }
       return copy;
     };

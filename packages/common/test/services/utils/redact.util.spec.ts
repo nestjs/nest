@@ -287,6 +287,24 @@ describe('createRedactor', () => {
       expect(redacted.other).toBe(value.other);
     });
 
+    it('should redact headers with a censor that is not a header value', () => {
+      const headers = new Headers({
+        authorization: 'Bearer abc',
+        accept: 'application/json',
+      });
+
+      const redacted = redact(['authorization'], { headers }, '••••') as {
+        headers: Map<string, string>;
+      };
+
+      expect(redacted.headers).toEqual(
+        new Map([
+          ['accept', 'application/json'],
+          ['authorization', '••••'],
+        ]),
+      );
+    });
+
     it('should return them as they are when nothing matches', () => {
       const headers = new Headers({ accept: 'application/json' });
 
