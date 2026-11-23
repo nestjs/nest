@@ -1556,6 +1556,60 @@ describe('body parsers', () => {
       },
     );
 
+    it.each([
+      { name: 'json', parser: json, headers: JSON_TYPE },
+      { name: 'urlencoded', parser: urlencoded, headers: FORM_TYPE },
+      { name: 'text', parser: text, headers: TEXT_TYPE },
+      { name: 'raw', parser: raw, headers: BINARY_TYPE },
+    ])(
+      'should call verify() in that store ($name)',
+      async ({ parser, headers }) => {
+        const verifyStores: Array<string | undefined> = [];
+        const { middleware, stores } = inStore(
+          parser({
+            verify: () => {
+              verifyStores.push(storage.getStore());
+            },
+          }),
+        );
+
+        const { status } = await send(middleware, {
+          headers,
+          body: ['{"name":', '"nest"}'],
+        });
+
+        expect(status).toBe(200);
+        expect(verifyStores).toEqual(['request']);
+        expect(stores).toEqual(['request']);
+      },
+    );
+
+    it.each(['identity', 'gzip'])(
+      'should call the JSON reviver in that store (%s)',
+      async encoding => {
+        const reviverStores: Array<string | undefined> = [];
+        const { middleware, stores } = inStore(
+          json({
+            reviver: (key, value) => {
+              reviverStores.push(storage.getStore());
+              return value;
+            },
+          }),
+        );
+        const body = '{"name":"nest"}';
+
+        const { status, req } = await send(middleware, {
+          headers: { ...JSON_TYPE, 'content-encoding': encoding },
+          body: encoding === 'gzip' ? gzipSync(body) : body,
+        });
+
+        expect(status).toBe(200);
+        expect(req.body).toEqual({ name: 'nest' });
+        expect(reviverStores).toEqual(['request', 'request']);
+        expect(stores).toEqual(['request']);
+      },
+    );
+
     it('should call next() in that store with the error that ends the read', async () => {
       const { middleware, stores } = inStore(raw({ limit: 10 }));
 
