@@ -437,7 +437,7 @@ export interface RmqOptions {
      */
     noAssert?: boolean;
     /**
-     * Name for the exchange. Defaults to the queue name when "wildcards" is set to true.
+     * Name for the exchange. Defaults to the queue name when "wildcards" is set to true or "exchangeType" is 'fanout'.
      * @default ''
      */
     exchange?: string;
