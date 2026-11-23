@@ -442,15 +442,16 @@ function exceedsArrayIndexLimit(name: string, limit: number) {
   return false;
 }
 
+// A limit given as NaN would turn the check off, so it gets the default too
+function resolveLimit(value: number | undefined, defaultValue: number): number {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
 /**
  * `fieldNestingDepth` and `fieldArrayIndexLimit` are multer's own limits
  * (busboy knows neither), so they are checked here, against the decoded name.
  * Unlike multer, they default to `DEFAULT_FIELD_NAME_LIMITS`.
  */
-function resolveLimit(value: number | undefined, defaultValue: number): number {
-  return value == null || isNaN(value) ? defaultValue : value;
-}
-
 function checkFieldNameShape(
   name: string,
   limits: MultipartLimits | undefined,
