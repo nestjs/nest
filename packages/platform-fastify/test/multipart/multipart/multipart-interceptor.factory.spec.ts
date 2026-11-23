@@ -121,9 +121,35 @@ describe('upload interceptors (bootstrap checks)', () => {
       () => new (FileInterceptor('file'))({ limits: { parts: '2' as any } }),
     ).toThrow(TypeError);
     expect(
+      () => new (FileInterceptor('file'))({ limits: { parts: 'a' as any } }),
+    ).toThrow(TypeError);
+    expect(
+      () => new (FileInterceptor('file', { limits: { fileSize: NaN } }))(),
+    ).toThrow(
+      new TypeError(
+        'Expected limits.fileSize to be a non-negative integer or Infinity',
+      ),
+    );
+    expect(
       () =>
         new (FileInterceptor('file', {
           limits: { fileSize: Infinity, files: undefined },
+        }))(),
+    ).not.toThrow();
+  });
+
+  it('should accept NaN for the limits that then take their default', () => {
+    // As platform-express and platform-node do for all but jsonFieldsSize,
+    // which only exists here
+    expect(
+      () =>
+        new (FileInterceptor('file', {
+          limits: {
+            parts: NaN,
+            fieldNestingDepth: NaN,
+            fieldArrayIndexLimit: NaN,
+            jsonFieldsSize: NaN,
+          },
         }))(),
     ).not.toThrow();
   });

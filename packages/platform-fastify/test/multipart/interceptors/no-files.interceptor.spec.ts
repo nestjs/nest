@@ -84,6 +84,38 @@ describe('NoFilesInterceptor', () => {
       );
     });
 
+    it('should limit their total size to 1 MiB when jsonFieldsSize is NaN', async () => {
+      for (const limits of [
+        { jsonFieldsSize: NaN },
+        () => ({ jsonFieldsSize: NaN }),
+      ]) {
+        expect(
+          Object.keys(
+            await parse(
+              [
+                jsonField('a', text(512 * 1024)),
+                jsonField('b', text(512 * 1024)),
+              ],
+              { limits },
+            ),
+          ),
+        ).toEqual(['a', 'b']);
+        await expect(
+          parse(
+            [
+              jsonField('a', text(512 * 1024)),
+              jsonField('b', text(512 * 1024 + 1)),
+            ],
+            { limits },
+          ),
+        ).rejects.toEqual(
+          new BadRequestException('JSON field values too large - b', {
+            cause: new MultipartError('LIMIT_JSON_FIELDS_SIZE', 'b'),
+          }),
+        );
+      }
+    });
+
     it('should apply the jsonFieldsSize limit that is set', async () => {
       const limits = { jsonFieldsSize: 14 };
       expect(
@@ -326,6 +358,27 @@ describe('NoFilesInterceptor', () => {
     );
   });
 
+  it('should apply the default field name limits when they are NaN', async () => {
+    const deep = 'a' + '[b]'.repeat(33);
+    for (const limits of [
+      { fieldNestingDepth: NaN, fieldArrayIndexLimit: NaN },
+      () => ({ fieldNestingDepth: NaN, fieldArrayIndexLimit: NaN }),
+    ]) {
+      const target = new (NoFilesInterceptor({ limits }))();
+      expect((await intercept(target, 'a[1000]')).a).toEqual(['x']);
+      await expect(intercept(target, 'a[1001]')).rejects.toEqual(
+        new BadRequestException('Field name array index too large - a[1001]', {
+          cause: new MultipartError('LIMIT_FIELD_ARRAY_INDEX', 'a[1001]'),
+        }),
+      );
+      await expect(intercept(target, deep)).rejects.toEqual(
+        new BadRequestException(`Field name nesting too deep - ${deep}`, {
+          cause: new MultipartError('LIMIT_FIELD_NESTING', deep),
+        }),
+      );
+    }
+  });
+
   it('should lift the default field name limits when set to Infinity', async () => {
     const name = 'a' + '[b]'.repeat(33) + '[1001]';
     const expected = nest(33, ['x']);
@@ -382,7 +435,7 @@ describe('NoFilesInterceptor', () => {
       { fieldNestingDepth: -1 },
       { fieldNestingDepth: 1.5 },
       { fieldArrayIndexLimit: -1 },
-      { fieldArrayIndexLimit: NaN },
+      { fieldArrayIndexLimit: -Infinity },
     ]) {
       expect(() => new (NoFilesInterceptor({ limits }))()).toThrow(TypeError);
     }

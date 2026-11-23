@@ -92,6 +92,13 @@ class FastifyUploadController {
     return { size: file.size };
   }
 
+  // As with `parts: Number(process.env.MAX_PARTS)` for a variable not set.
+  @Post('nan-limits')
+  @UseInterceptors(FileInterceptor('doc', { limits: { parts: NaN } }))
+  nanLimits(@UploadedFile() file: any) {
+    return { size: file.size };
+  }
+
   @Post('fields')
   @UseInterceptors(NoFilesInterceptor())
   fields(@Body() body: any) {
@@ -233,6 +240,25 @@ describe('File upload (Fastify)', () => {
         .post('/undefined-limits')
         .attach('doc', Buffer.from('123456789'), txt('big.txt'))
         .expect(413);
+    });
+
+    it('should apply the plugin limits in place of a NaN parts limit', async () => {
+      await http()
+        .post('/nan-limits')
+        .attach('doc', Buffer.from('12345678'), txt('ok.txt'))
+        .expect(201, { size: 8 });
+      await http()
+        .post('/nan-limits')
+        .attach('doc', Buffer.from('123456789'), txt('big.txt'))
+        .expect(413);
+      // 1,000 fields and the file: one part over the plugin's default
+      const req = http().post('/nan-limits');
+      for (let i = 0; i < 1000; i++) {
+        req.field(`f${i}`, 'x');
+      }
+      const res = await req.attach('doc', Buffer.from('1'), txt('a.txt'));
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Too many parts');
     });
 
     it('should reject field names that would pollute a prototype', async () => {
