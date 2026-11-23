@@ -144,6 +144,23 @@ describe('FileInterceptor', () => {
       });
     });
 
+    it('should leave a parts limit of NaN to the plugin', async () => {
+      // platform-express and platform-node use their default parts limit then
+      for (const limits of [
+        { parts: NaN, files: 2 },
+        () => ({ parts: NaN, files: 2 }),
+      ]) {
+        const target = new (FileInterceptor('avatar', { limits }))();
+        const req = createFakeRequest([]);
+        await target.intercept(createContext(req), handler);
+
+        expect(req.parts.mock.calls[0][0]).toStrictEqual({
+          throwFileSizeLimit: false,
+          limits: { files: 2 },
+        });
+      }
+    });
+
     it('should resolve limits given as a function of the request', async () => {
       const limits = vi.fn(() => ({ fileSize: 3 }));
       const target = new (FileInterceptor('avatar', { limits }))();
