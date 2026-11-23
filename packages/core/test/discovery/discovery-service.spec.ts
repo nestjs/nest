@@ -551,6 +551,48 @@ describe('DiscoveryService', () => {
     });
   });
 
+  it('should limit metadata lookups to the explicitly supplied modules', async () => {
+    const Plugin = DiscoveryService.createDecorator();
+
+    @Plugin()
+    @Injectable()
+    class PluginService {}
+
+    @Plugin()
+    @Controller()
+    class PluginController {}
+
+    @NestModule({ providers: [PluginService], controllers: [PluginController] })
+    class BooksModule {}
+
+    @NestModule({ providers: [PluginService], controllers: [PluginController] })
+    class MusicModule {}
+
+    const app = await Test.createTestingModule({
+      imports: [BooksModule, MusicModule],
+      providers: [DiscoveryService],
+    }).compile();
+    try {
+      const discovery = app.get(DiscoveryService);
+      const books = [...app.get(ModulesContainer).values()].find(
+        module => module.metatype === BooksModule,
+      )!;
+      const options = { metadataKey: Plugin.KEY };
+      expect(discovery.getProviders(options)).toHaveLength(2);
+      expect(discovery.getControllers(options)).toHaveLength(2);
+      expect(discovery.getProviders(options, [books])).toEqual([
+        books.providers.get(PluginService),
+      ]);
+      expect(discovery.getControllers(options, [books])).toEqual([
+        books.controllers.get(PluginController),
+      ]);
+      expect(discovery.getProviders(options, [])).toEqual([]);
+      expect(discovery.getControllers(options, [])).toEqual([]);
+    } finally {
+      await app.close();
+    }
+  });
+
   describe('getModules', () => {
     it('should return all modules when no options provided', () => {
       const module1 = new Module(class Module1 {}, modulesContainer as any);
