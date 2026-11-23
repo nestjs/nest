@@ -67,13 +67,13 @@ function compileExcludedPath(
   path: string,
   matchingOptions?: RouteMatchingOptions,
 ): Pick<ExcludeRouteMetadata, 'pathRegex' | 'paramLimit'> {
-  if (!matchingOptions) {
-    return { pathRegex: pathToRegexp(addLeadingSlash(path)).regexp };
-  }
   // Routes are registered without a trailing slash, so "users/login/" must
   // match the requests the router serves with the "users/login" route
   const routePath =
     addLeadingSlash(path.length > 1 ? path.replace(/\/+$/, '') : path) || '/';
+  if (!matchingOptions) {
+    return { pathRegex: pathToRegexp(routePath).regexp };
+  }
   // A case-insensitive router that still compares the text after a
   // parameter as written serves "/reports/7.PNG" with another route than
   // "reports/:id.png", so such a path only matches as it is written

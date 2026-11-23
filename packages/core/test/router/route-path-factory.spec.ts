@@ -283,6 +283,25 @@ describe('RoutePathFactory', () => {
           .sort(),
       ).toEqual(['/v1/v1/metrics', 'v1/metrics']);
     });
+    it('should exclude a route from the global prefix however its path is declared when the exclusion has a trailing slash', () => {
+      vi.spyOn(applicationConfig, 'getGlobalPrefixOptions').mockReturnValue({
+        exclude: mapToExcludeRoute(['health/']),
+      });
+      // @Controller('health') + @Get()
+      expect(
+        routePathFactory.create(
+          { ctrlPath: '/health', methodPath: '/', globalPrefix: '/api' },
+          RequestMethod.GET,
+        ),
+      ).toEqual(['/health']);
+      // @Controller() + @Get('health')
+      expect(
+        routePathFactory.create(
+          { ctrlPath: '/', methodPath: '/health', globalPrefix: '/api' },
+          RequestMethod.GET,
+        ),
+      ).toEqual(['/health']);
+    });
   });
 
   describe('isExcludedFromGlobalPrefix', () => {
