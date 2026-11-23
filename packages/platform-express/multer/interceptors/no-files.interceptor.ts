@@ -15,6 +15,7 @@ import { MulterOptions } from '../interfaces/multer-options.interface.js';
 import {
   applyDefaultLimits,
   mergeMulterOptions,
+  rejectPrototypePoisoning,
   runMulter,
 } from '../multer/multer.utils.js';
 
@@ -48,6 +49,7 @@ export function NoFilesInterceptor(
       const ctx = context.switchToHttp();
 
       await runMulter(this.multer.none(), ctx.getRequest(), ctx.getResponse());
+      await rejectPrototypePoisoning(this.multer.storage, ctx.getRequest());
       return next.handle();
     }
   }
