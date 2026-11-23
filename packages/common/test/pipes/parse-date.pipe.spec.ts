@@ -151,6 +151,41 @@ describe('ParseDatePipe', () => {
           expect(target.transform(value)).toEqual(new Date(value));
         }
       });
+
+      it('should throw for a day past the end of its month with a two-digit year', () => {
+        for (const value of [
+          '4/31/24',
+          '02/30/24',
+          '2/29/23',
+          '2/29/49',
+          '04-31-24',
+          '4.31.24',
+          '4/31/24 10:00 PM',
+          'Apr 31, 24',
+          'Feb 29 23',
+          '31-Apr-24',
+          '30 Feb 24',
+        ]) {
+          expect(() => target.transform(value)).toThrow(BadRequestException);
+        }
+      });
+
+      it('should accept the last day of each month with a two-digit year', () => {
+        for (const value of [
+          '4/30/24',
+          '2/29/24',
+          '2/29/00',
+          '2/29/96',
+          '12/31/99',
+          '4/30/24 10:00 PM',
+          'Feb 29, 24',
+          '29-Feb-24',
+          'Feb 29 10:00 2024',
+          '29 Feb 10:00 2024',
+        ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
     });
     describe('when empty value', () => {
       it('should throw an error', () => {
