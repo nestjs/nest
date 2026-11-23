@@ -223,6 +223,77 @@ describe('createRedactor', () => {
     });
   });
 
+  describe('headers, search params and form data', () => {
+    it('should redact the entries of headers', () => {
+      const headers = new Headers({
+        authorization: 'Bearer abc',
+        accept: 'application/json',
+      });
+
+      const redacted = redact(['authorization'], { headers }) as {
+        headers: Headers;
+      };
+
+      expect(redacted.headers).toBeInstanceOf(Headers);
+      expect([...redacted.headers]).toEqual([
+        ['accept', 'application/json'],
+        ['authorization', '[REDACTED]'],
+      ]);
+      expect(headers.get('authorization')).toBe('Bearer abc');
+    });
+
+    it('should redact every value of a repeated search param', () => {
+      const params = new URLSearchParams('token=a&page=1&token=b');
+
+      const redacted = redact(['token'], params) as URLSearchParams;
+
+      expect(redacted).toBeInstanceOf(URLSearchParams);
+      expect([...redacted]).toEqual([
+        ['token', '[REDACTED]'],
+        ['page', '1'],
+        ['token', '[REDACTED]'],
+      ]);
+      expect(params.getAll('token')).toEqual(['a', 'b']);
+    });
+
+    it('should redact form data fields and keep files', () => {
+      const file = new File(['content'], 'avatar.png', { type: 'image/png' });
+      const form = new FormData();
+      form.append('password', 'hunter2');
+      form.append('avatar', file);
+
+      const redacted = redact(['password'], form) as FormData;
+
+      expect(redacted).toBeInstanceOf(FormData);
+      expect(redacted.get('password')).toBe('[REDACTED]');
+      const avatar = redacted.get('avatar') as File;
+      expect(avatar.name).toBe('avatar.png');
+      expect(avatar.type).toBe('image/png');
+      expect(form.get('password')).toBe('hunter2');
+    });
+
+    it('should match dotted paths through them', () => {
+      const value = {
+        headers: new Headers({ authorization: 'a' }),
+        other: new Headers({ authorization: 'b' }),
+      };
+
+      const redacted = redact(['headers.authorization'], value) as {
+        headers: Headers;
+        other: Headers;
+      };
+
+      expect(redacted.headers.get('authorization')).toBe('[REDACTED]');
+      expect(redacted.other).toBe(value.other);
+    });
+
+    it('should return them as they are when nothing matches', () => {
+      const headers = new Headers({ accept: 'application/json' });
+
+      expect(redact(['authorization'], headers)).toBe(headers);
+    });
+  });
+
   describe('class instances', () => {
     it('should keep the prototype of a copied instance', () => {
       class User {
