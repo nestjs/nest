@@ -171,6 +171,23 @@ describe('createRedactor', () => {
         Object.getOwnPropertyDescriptor(redacted, 'cause')!.enumerable,
       ).toBe(false);
     });
+
+    it('should redact the "error" and "suppressed" of a SuppressedError', () => {
+      const error = createSuppressedError(
+        Object.assign(new Error('error'), { token: 'a' }),
+        { token: 'b' },
+      );
+
+      const redacted = redact(['token'], error) as any;
+
+      expect(redacted.name).toBe('SuppressedError');
+      expect(redacted.error.token).toBe('[REDACTED]');
+      expect(redacted.suppressed.token).toBe('[REDACTED]');
+      expect(
+        Object.getOwnPropertyDescriptor(redacted, 'suppressed')!.enumerable,
+      ).toBe(false);
+      expect((error as any).suppressed.token).toBe('b');
+    });
   });
 
   describe('maps and sets', () => {
@@ -532,3 +549,24 @@ describe('createRedactor', () => {
     expect(elapsed).toBeLessThan(1000);
   });
 });
+
+/**
+ * A 'SuppressedError' (thrown by 'using' declarations), or an error of the
+ * same shape where Node.js does not have the class (before v24).
+ */
+function createSuppressedError(error: unknown, suppressed: unknown): Error {
+  const SuppressedErrorType = (globalThis as any).SuppressedError;
+  if (SuppressedErrorType) {
+    return new SuppressedErrorType(error, suppressed);
+  }
+  const suppressedError = new Error('An error was suppressed during disposal');
+  suppressedError.name = 'SuppressedError';
+  for (const [key, value] of Object.entries({ error, suppressed })) {
+    Object.defineProperty(suppressedError, key, {
+      value,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return suppressedError;
+}
