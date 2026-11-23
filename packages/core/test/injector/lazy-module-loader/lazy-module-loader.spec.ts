@@ -107,6 +107,52 @@ describe('LazyModuleLoader', () => {
         await lazyModuleLoader.load(() => ModuleWithLogB);
         expect(logSpy).toHaveBeenCalled();
       });
+
+      it('should keep overlapping load() calls with logger false silent and restore the logger after both', async () => {
+        const createDeferred = () => {
+          let release!: () => void;
+          let requested!: () => void;
+          const isRequested = new Promise<void>(
+            resolve => (requested = resolve),
+          );
+          const released = new Promise<void>(resolve => (release = resolve));
+          const factory = () => {
+            requested();
+            return released;
+          };
+          return { factory, isRequested, release };
+        };
+        const first = createDeferred();
+        const second = createDeferred();
+
+        @Module({ providers: [{ provide: 'A', useFactory: first.factory }] })
+        class SlowModuleA {}
+
+        @Module({ providers: [{ provide: 'B', useFactory: second.factory }] })
+        class SlowModuleB {}
+
+        const logger = instanceLoader['logger'];
+        const logSpy = vitest.spyOn(logger, 'log');
+
+        const loadA = lazyModuleLoader.load(() => SlowModuleA, {
+          logger: false,
+        });
+        await first.isRequested;
+        const loadB = lazyModuleLoader.load(() => SlowModuleB, {
+          logger: false,
+        });
+        await second.isRequested;
+
+        first.release();
+        await loadA;
+        second.release();
+        await loadB;
+        expect(logSpy).not.toHaveBeenCalled();
+        expect(instanceLoader['logger']).toBe(logger);
+
+        await lazyModuleLoader.load(() => ModuleWithLogB);
+        expect(logSpy).toHaveBeenCalled();
+      });
     });
 
     describe('when load() is called while another load() of the module is in flight', () => {
