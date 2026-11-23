@@ -43,4 +43,15 @@ describe('FilesInterceptor', () => {
     expect(storage._removeFile).toHaveBeenCalledTimes(1);
     expect(req.raw.unpipe).toHaveBeenCalled();
   });
+
+  it('should reject every file when maxCount is NaN, as multer does', async () => {
+    const target = new (FilesInterceptor('docs', NaN))();
+    const req = createFakeRequest([file('docs')]);
+
+    await expect(target.intercept(createContext(req), handler)).rejects.toEqual(
+      new BadRequestException('Unexpected file field - docs', {
+        cause: new MultipartError('LIMIT_UNEXPECTED_FILE', 'docs'),
+      }),
+    );
+  });
 });
