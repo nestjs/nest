@@ -701,10 +701,58 @@ describe('NodeAdapter', () => {
       }
     });
 
+    describe.each(['unwrapped', 'send', 'json'] as const)(
+      'with %s response methods',
+      method => {
+        it.each([
+          ['<p>zażółć</p>', 'text/html'],
+          [{ name: 'Grüß' }, 'application/json'],
+        ])(
+          'should add the charset to a native Content-Type for %j',
+          async (body, contentType) => {
+            const text = typeof body === 'string' ? body : JSON.stringify(body);
+            const res = await replyWith(body, undefined, response => {
+              response.setHeader('Content-Type', contentType);
+              if (method !== 'unwrapped') {
+                vi.spyOn(response, method);
+              }
+            });
+
+            expect(res.status).toBe(200);
+            expect(res.headers['content-type']).toBe(
+              `${contentType}; charset=utf-8`,
+            );
+            expect(res.headers['content-length']).toBe(
+              String(Buffer.byteLength(text)),
+            );
+            expect(res.text).toBe(text);
+          },
+        );
+      },
+    );
+
+    it('should normalize the Content-Type set while serializing the body', async () => {
+      let response: NodeResponse;
+      const body = {
+        toJSON() {
+          response.setHeader('Content-Type', 'text/plain');
+          return { name: 'Grüß' };
+        },
+      };
+
+      const res = await replyWith(body, undefined, res => (response = res));
+
+      expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
+      expect(res.text).toBe('{"name":"Grüß"}');
+    });
+
     it.each([
       ['a string', '<p>zażółć</p>', 'text/html; charset=utf-8'],
       ['an object', { data: [] }, 'application/vnd.api+json'],
       ['a Buffer', Buffer.from('%PDF-1.7'), 'application/pdf'],
+      ['a Buffer with a text type', Buffer.from('Hi'), 'text/html'],
+      ['an explicit charset', 'Hi', 'text/html; Charset=latin1'],
+      ['a raw extension', 'Hi', 'html'],
     ])(
       'should keep the Content-Type set by the handler for %s',
       async (_, body, contentType) => {
@@ -745,13 +793,16 @@ describe('NodeAdapter', () => {
     });
 
     it.each([
-      'application/json; charset=utf-8',
-      'application/problem+json',
-      'application/vnd.api+json; charset=utf-8',
-      'Application/JSON',
+      ['application/json; charset=utf-8', 'application/json; charset=utf-8'],
+      ['application/problem+json', 'application/problem+json'],
+      [
+        'application/vnd.api+json; charset=utf-8',
+        'application/vnd.api+json; charset=utf-8',
+      ],
+      ['Application/JSON', 'Application/JSON; charset=utf-8'],
     ])(
       'should keep the "%s" JSON Content-Type for error bodies',
-      async contentType => {
+      async (contentType, sent) => {
         const warn = vi
           .spyOn((adapter as any).logger, 'warn')
           .mockImplementation(() => {});
@@ -762,7 +813,7 @@ describe('NodeAdapter', () => {
           response => response.setHeader('Content-Type', contentType),
         );
 
-        expect(res.headers['content-type']).toBe(contentType);
+        expect(res.headers['content-type']).toBe(sent);
         expect(warn).not.toHaveBeenCalled();
       },
     );
@@ -792,7 +843,7 @@ describe('NodeAdapter', () => {
       );
 
       expect(res.status).toBe(404);
-      expect(res.headers['content-type']).toBe('text/html');
+      expect(res.headers['content-type']).toBe('text/html; charset=utf-8');
       expect(res.text).toBe('<h1>Not found</h1>');
     });
 
@@ -1767,6 +1818,19 @@ describe('NodeAdapter', () => {
       expect(res.headers['content-length']).toBe(
         String(Buffer.byteLength('<h1>Hello Zażółć</h1>')),
       );
+    });
+
+    it('should add the charset to a Content-Type set natively before rendering', async () => {
+      adapter.setViewEngine({ engine: { fake: fakeEngine }, root: viewsDir });
+      adapter.use((req: NodeRequest, res: NodeResponse, next: Next) => {
+        res.setHeader('Content-Type', 'text/html');
+        next();
+      });
+
+      const res = await renderIndex();
+
+      expect(res.headers['content-type']).toBe('text/html; charset=utf-8');
+      expect(res.text).toBe('<h1>Hello Zażółć</h1>');
     });
 
     it('should look views up in the directory set with setBaseViewsDir()', async () => {
