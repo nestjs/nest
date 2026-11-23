@@ -138,10 +138,10 @@ export function createRedactor(
         redacted = redactMap(current);
       } else if (current instanceof Set) {
         redacted = redactSet(current);
-      } else if (getEntryListType(current)) {
-        redacted = redactEntryList(current as EntryList);
       } else if (isOpaque(current)) {
         redacted = current;
+      } else if (getEntryListType(current)) {
+        redacted = redactEntryList(current as EntryList);
       } else {
         redacted = redactObject(current);
       }

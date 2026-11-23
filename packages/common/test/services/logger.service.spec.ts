@@ -2131,6 +2131,33 @@ describe('Logger', () => {
         });
       });
 
+      it('should still serialize headers, search params and form data', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: ['authorization', 'token', 'password'],
+        });
+        const form = new FormData();
+        form.append('password', 'hunter2');
+
+        logger.log('Request', {
+          headers: new Headers({ authorization: 'Bearer abc' }),
+          query: new URLSearchParams('token=xyz'),
+          form,
+          id: 1,
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(stdoutJson().params).toEqual({
+          headers: {},
+          query: {},
+          form: {},
+          id: 1,
+        });
+        expect(output).not.toContain('Bearer abc');
+        expect(output).not.toContain('xyz');
+        expect(output).not.toContain('hunter2');
+      });
+
       it('should mask flattened params', () => {
         const logger = new ConsoleLogger({
           json: true,
