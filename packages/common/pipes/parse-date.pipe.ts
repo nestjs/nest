@@ -102,15 +102,16 @@ export class ParseDatePipe implements PipeTransform {
     let month: number;
     let day: number;
 
-    const isoMatch = /^\s*([+-]\d{6}|\d{4})([-/.])(\d{2})\2(\d{2})(?!\d)/.exec(
-      value,
-    );
+    const isoMatch =
+      /^\s*([+-]\d{6}|\d{4})([-/.])(\d{1,2})\2(\d{1,2})(?!\d)/.exec(value);
     if (isoMatch) {
       year = Number(isoMatch[1]);
       month = Number(isoMatch[3]);
       day = Number(isoMatch[4]);
     } else {
-      const usMatch = /^\s*(\d{2})([-/.])(\d{2})\2(\d{4})(?!\d)/.exec(value);
+      const usMatch = /^\s*(\d{1,2})([-/.])(\d{1,2})\2(\d{4})(?!\d)/.exec(
+        value,
+      );
       if (usMatch) {
         month = Number(usMatch[1]);
         day = Number(usMatch[3]);

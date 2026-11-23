@@ -101,6 +101,10 @@ describe('ParseDatePipe', () => {
           '02/30/2024',
           '02/29/2023',
           '04/31/2024',
+          '2/30/2024',
+          '2024/2/30',
+          '2024-2-30',
+          '4.31.2024',
         ]) {
           expect(() => target.transform(value)).toThrow(BadRequestException);
         }
@@ -119,6 +123,9 @@ describe('ParseDatePipe', () => {
           '2024.02.29',
           '02/29/2024',
           '02/28/2023',
+          '2/29/2024',
+          '2024/2/29',
+          '2024-4-30',
         ]) {
           expect(target.transform(value)).toEqual(new Date(value));
         }
