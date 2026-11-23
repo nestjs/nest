@@ -82,6 +82,85 @@ Methods:
 
 `);
       });
+
+      it('should print the methods of the class the token is provided with', () => {
+        abstract class AbstractLogger {
+          abstract log(message: string): void;
+        }
+        class PinoLogger extends AbstractLogger {
+          log() {}
+          flush() {}
+        }
+        let outputText = '';
+
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
+
+        mockApp.get.mockImplementation(() => new PinoLogger());
+
+        methodsReplFn.action(AbstractLogger);
+
+        expect(mockApp.get).toHaveBeenCalledWith(AbstractLogger);
+        expect(outputText).toBe(`
+Methods:
+ ◻ log
+ ◻ flush
+
+`);
+      });
+
+      it('should print the own methods of a plain object the token is provided with', () => {
+        class CacheService {
+          get() {}
+        }
+        let outputText = '';
+
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
+
+        mockApp.get.mockImplementation(() => ({
+          get() {},
+          set() {},
+          reset: () => {},
+        }));
+
+        methodsReplFn.action(CacheService);
+
+        expect(outputText).toBe(`
+Methods:
+ ◻ get
+ ◻ set
+ ◻ reset
+
+`);
+      });
+
+      it('should print the class methods when the provider cannot be got', () => {
+        class RequestScopedService {
+          findAll() {}
+        }
+        let outputText = '';
+
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
+
+        mockApp.get.mockImplementation(() => {
+          throw new Error(
+            'RequestScopedService is marked as a scoped provider',
+          );
+        });
+
+        methodsReplFn.action(RequestScopedService);
+
+        expect(outputText).toBe(`
+Methods:
+ ◻ findAll
+
+`);
+      });
     });
 
     describe('when token is a string', () => {

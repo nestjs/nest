@@ -16,7 +16,7 @@ export class MethodsReplFn extends ReplFunction {
     const proto =
       typeof token !== 'function'
         ? this.getMethodsHost(this.ctx.app.get(token))
-        : token?.prototype;
+        : this.getClassTokenMethodsHost(token);
 
     const methods = new MetadataScanner().getAllMethodNames(proto);
 
@@ -26,6 +26,23 @@ export class MethodsReplFn extends ReplFunction {
       this.ctx.writeToStdout(` ${clc.yellow('◻')} ${methodName}\n`),
     );
     this.ctx.writeToStdout('\n');
+  }
+
+  /**
+   * A class token may stand for a provider of another class (`useClass`), a
+   * value (`useValue`) or what a factory returns (`useFactory`), so the
+   * methods are read from the resolved instance. The prototype of the class is
+   * used when there is no instance to get: a class that is not registered, or
+   * a request-scoped or transient provider.
+   */
+  private getClassTokenMethodsHost(token: Type<unknown>): object | null {
+    let instance: unknown;
+    try {
+      instance = this.ctx.app.get(token);
+    } catch {
+      return token.prototype;
+    }
+    return isNil(instance) ? token.prototype : this.getMethodsHost(instance);
   }
 
   private getMethodsHost(instance: unknown): object | null {
