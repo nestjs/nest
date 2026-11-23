@@ -380,8 +380,27 @@ export class NestContainer {
     }
   }
 
-  public replace(toReplace: any, options: { scope: any[] | null }) {
-    this.modules.forEach(moduleRef => moduleRef.replace(toReplace, options));
+  public replace(
+    toReplace: any,
+    options: { scope: any[] | null; isProvider?: boolean },
+  ) {
+    this.modules.forEach(moduleRef => {
+      const providerRef = options.isProvider
+        ? moduleRef.providers.get(toReplace)
+        : undefined;
+      moduleRef.replace(toReplace, options);
+      if (providerRef) {
+        // The wrapper now stands for another class or value, so it must be
+        // discovered by the metadata of that one, not of the replaced class
+        DiscoverableMetaHostCollection.removeInstanceWrappers(this.modules, [
+          providerRef,
+        ]);
+        DiscoverableMetaHostCollection.inspectProvider(
+          this.modules,
+          providerRef,
+        );
+      }
+    });
   }
 
   public bindGlobalScope() {

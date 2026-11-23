@@ -839,4 +839,94 @@ describe('DiscoveryService', () => {
       expect(controllers[0].instance).toBe(moduleRef.get(TestController));
     });
   });
+
+  describe('discovery of providers a testing module overrides', () => {
+    it('should not discover a provider overridden with a value', async () => {
+      const TestDecorator = DiscoveryService.createDecorator<string>();
+
+      @TestDecorator('handler')
+      @Injectable()
+      class Handler {}
+
+      @NestModule({ providers: [DiscoveryService, Handler] })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(Handler)
+        .useValue({ handle() {} })
+        .compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(0);
+    });
+
+    it('should not discover a provider overridden with a class without the decorator', async () => {
+      const TestDecorator = DiscoveryService.createDecorator<string>();
+
+      @TestDecorator('handler')
+      @Injectable()
+      class Handler {}
+
+      @Injectable()
+      class HandlerMock {}
+
+      @NestModule({ providers: [DiscoveryService, Handler] })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(Handler)
+        .useClass(HandlerMock)
+        .compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(0);
+    });
+
+    it('should discover a provider by the metadata of the class it is overridden with', async () => {
+      const TestDecorator = DiscoveryService.createDecorator<string>();
+      const OtherDecorator = DiscoveryService.createDecorator<string>();
+
+      @TestDecorator('handler')
+      @Injectable()
+      class Handler {}
+
+      @OtherDecorator('mock')
+      @Injectable()
+      class HandlerMock {}
+
+      @NestModule({ providers: [DiscoveryService, Handler] })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(Handler)
+        .useClass(HandlerMock)
+        .compile();
+
+      const discoveryService = moduleRef.get(DiscoveryService);
+      const providers = discoveryService.getProviders({
+        metadataKey: OtherDecorator.KEY,
+      });
+
+      expect(
+        discoveryService.getProviders({ metadataKey: TestDecorator.KEY }),
+      ).toHaveLength(0);
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBe(moduleRef.get(Handler));
+      expect(
+        discoveryService.getMetadataByDecorator(OtherDecorator, providers[0]),
+      ).toBe('mock');
+    });
+  });
 });
