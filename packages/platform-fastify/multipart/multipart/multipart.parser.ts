@@ -442,6 +442,11 @@ function exceedsArrayIndexLimit(name: string, limit: number) {
   return false;
 }
 
+// A limit given as NaN would turn the check off, so it gets the default too
+function resolveLimit(value: number | undefined, defaultValue: number): number {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
 /**
  * `fieldNestingDepth` and `fieldArrayIndexLimit` are multer's own limits
  * (busboy knows neither), so they are checked here, against the decoded name.
@@ -451,14 +456,17 @@ function checkFieldNameShape(
   name: string,
   limits: MultipartLimits | undefined,
 ) {
-  const nestingDepth =
-    limits?.fieldNestingDepth ?? DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth;
+  const nestingDepth = resolveLimit(
+    limits?.fieldNestingDepth,
+    DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth,
+  );
   if (name.split('[').length - 1 > nestingDepth) {
     throw new MultipartError('LIMIT_FIELD_NESTING', name);
   }
-  const arrayIndexLimit =
-    limits?.fieldArrayIndexLimit ??
-    DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit;
+  const arrayIndexLimit = resolveLimit(
+    limits?.fieldArrayIndexLimit,
+    DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit,
+  );
   if (
     arrayIndexLimit !== Infinity &&
     exceedsArrayIndexLimit(name, arrayIndexLimit)
@@ -476,7 +484,10 @@ interface FieldBudget {
 
 function createFieldBudget(limits: MultipartLimits | undefined): FieldBudget {
   return {
-    jsonFieldsSize: limits?.jsonFieldsSize ?? DEFAULT_JSON_FIELDS_SIZE,
+    jsonFieldsSize: resolveLimit(
+      limits?.jsonFieldsSize,
+      DEFAULT_JSON_FIELDS_SIZE,
+    ),
   };
 }
 
