@@ -84,7 +84,7 @@ export class ParseIntPipe implements PipeTransform {
     return (
       ['string', 'number'].includes(typeof value) &&
       /^-?\d+$/.test(String(value)) &&
-      isFinite(value as any)
+      (typeof value === 'number' ? Number.isFinite(value) : true)
     );
   }
 }
