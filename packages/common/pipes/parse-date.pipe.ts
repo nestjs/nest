@@ -36,6 +36,28 @@ export interface ParseDatePipeOptions {
 }
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const MONTH_NAMES = [
+  'jan',
+  'feb',
+  'mar',
+  'apr',
+  'may',
+  'jun',
+  'jul',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+];
+const NAMED_MONTH_DATE_PATTERNS = [
+  // "Feb 30, 2024", "Thu Feb 30 2024 10:00:00 GMT+0300", "Feb-30-2024"
+  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s/-]+(?<day>\d{1,2})(?:,\s*|[\s/-]+)(?<year>\d{4})(?!\d)/i,
+  // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024"
+  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s/-]+(?<month>[a-z]{3,})\.?(?:,\s*|[\s/-]+)(?<year>\d{4})(?!\d)/i,
+  // "2024 Feb 30", "2024-Feb-30"
+  /^\s*(?<year>\d{4})[\s/-]+(?<month>[a-z]{3,})\.?[\s/-]+(?<day>\d{1,2})(?!\d)/i,
+];
 
 /**
  * @publicApi
@@ -117,7 +139,11 @@ export class ParseDatePipe implements PipeTransform {
         day = Number(usMatch[3]);
         year = Number(usMatch[4]);
       } else {
-        return false;
+        const namedMatch = this.matchNamedMonthDate(value);
+        if (!namedMatch) {
+          return false;
+        }
+        [year, month, day] = namedMatch;
       }
     }
 
@@ -125,5 +151,28 @@ export class ParseDatePipe implements PipeTransform {
     const daysInMonth =
       month === 2 && isLeapYear ? 29 : DAYS_IN_MONTH[month - 1];
     return daysInMonth !== undefined && day > daysInMonth;
+  }
+
+  /**
+   * Reads the year, month and day of a date whose month is a name ("Feb 30,
+   * 2024", "30 Feb 2024", "2024-Feb-30"), optionally after a weekday ("Thu,
+   * 30 Feb 2024 10:00:00 GMT"). As in `new Date()`, a month is named by its
+   * first three letters.
+   */
+  private matchNamedMonthDate(
+    value: string,
+  ): [year: number, month: number, day: number] | undefined {
+    for (const pattern of NAMED_MONTH_DATE_PATTERNS) {
+      const groups = pattern.exec(value)?.groups;
+      if (!groups) {
+        continue;
+      }
+      const month =
+        MONTH_NAMES.indexOf(groups.month.slice(0, 3).toLowerCase()) + 1;
+      if (month > 0) {
+        return [Number(groups.year), month, Number(groups.day)];
+      }
+    }
+    return undefined;
   }
 }
