@@ -1,19 +1,45 @@
 export type ContextType = 'http' | 'ws' | 'rpc';
 
 /**
+ * Opt-in defaults for HTTP request and response types across a TypeScript program.
+ * Leave this interface unaugmented when applications in the same program use
+ * different adapters. The accessors then default to `any`, and callers can
+ * supply explicit type arguments for each adapter.
+ *
+ * @example
+ * ```ts
+ * import type { NodeRequest, NodeResponse } from '@nestjs/platform-node';
+ *
+ * declare module '@nestjs/common' {
+ *   interface HttpAdapterTypes {
+ *     request: NodeRequest;
+ *     response: NodeResponse;
+ *   }
+ * }
+ * ```
+ *
+ * @publicApi
+ */
+export interface HttpAdapterTypes {}
+
+/**
  * Methods to obtain request and response objects.
  *
  * @publicApi
  */
 export interface HttpArgumentsHost {
   /**
-   * Returns the in-flight `request` object.
+   * Returns the in-flight `request` object, defaulting to the registered type
+   * when available. An explicit type argument takes precedence.
    */
-  getRequest<T = any>(): T;
+  getRequest<T = HttpAdapterTypes extends { request: infer R } ? R : any>(): T;
   /**
-   * Returns the in-flight `response` object.
+   * Returns the in-flight `response` object, defaulting to the registered type
+   * when available. An explicit type argument takes precedence.
    */
-  getResponse<T = any>(): T;
+  getResponse<
+    T = HttpAdapterTypes extends { response: infer R } ? R : any,
+  >(): T;
   getNext<T = any>(): T;
 }
 

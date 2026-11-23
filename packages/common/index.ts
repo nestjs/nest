@@ -30,6 +30,7 @@ export {
   ExistingProvider,
   FactoryProvider,
   ForwardReference,
+  HttpAdapterTypes,
   HttpServer,
   HttpExceptionBody,
   HttpExceptionBodyMessage,
