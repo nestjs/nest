@@ -1297,6 +1297,38 @@ describe('ServerRMQ', () => {
       await server.setupChannel(channel, () => null);
       expect(channel.bindQueue).toHaveBeenCalledWith(namedQueue, exchange, '');
     });
+    it('should bind the queue to an exchange named after it when exchangeType is fanout and no exchange is set', async () => {
+      // the client publishes to an exchange named after the queue in this case
+      server['options' as any] = {
+        ...(server as any)['options'],
+        queue,
+        exchangeType: 'fanout',
+      };
+      await server.setupChannel(channel, () => null);
+      expect(channel.assertExchange).toHaveBeenCalledWith(
+        queue,
+        'fanout',
+        expect.any(Object),
+      );
+      expect(channel.bindQueue).toHaveBeenCalledWith(queue, queue, '');
+    });
+    it.each([
+      ['neither an exchange nor a queue is set', {}],
+      ['the exchange is set to undefined', { queue, exchange: undefined }],
+      ['the exchange is set to an empty string', { queue, exchange: '' }],
+    ])(
+      'should not assert an exchange when exchangeType is fanout and %s',
+      async (_, options) => {
+        server['options' as any] = {
+          ...(server as any)['options'],
+          ...options,
+          exchangeType: 'fanout',
+        };
+        await server.setupChannel(channel, () => null);
+        expect(channel.assertExchange).not.toHaveBeenCalled();
+        expect(channel.bindQueue).not.toHaveBeenCalled();
+      },
+    );
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await server.setupChannel(channel, () => null);
       expect(channel.prefetch).toHaveBeenCalledWith(

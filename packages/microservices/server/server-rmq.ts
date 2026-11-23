@@ -343,13 +343,20 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       RMQ_DEFAULT_PREFETCH_COUNT,
     );
 
-    if (this.options.exchange || this.options.wildcards) {
-      // Use queue name as exchange name if exchange is not provided and "wildcards" is set to true
-      const exchange = this.getOptionsProp(
-        this.options,
-        'exchange',
-        this.options.queue,
-      );
+    // Use queue name as exchange name if exchange is not provided and "wildcards" is set to true
+    // or the exchange is a fanout one, which is where the client publishes in these cases
+    const exchange = this.getOptionsProp(
+      this.options,
+      'exchange',
+      this.options.queue,
+    );
+    if (
+      this.options.exchange ||
+      this.options.wildcards ||
+      // Only with a name to declare, so that a fanout server that has none
+      // still consumes its queue directly
+      (this.options.exchangeType === 'fanout' && exchange)
+    ) {
       const exchangeType = this.getOptionsProp(
         this.options,
         'exchangeType',
