@@ -9,6 +9,7 @@ import {
   isUndefined,
 } from '../utils/shared.utils.js';
 import { LoggerService, LogLevel } from './logger.service.js';
+import { formatLogTimestamp } from './utils/format-log-timestamp.util.js';
 import {
   getEnvLogLevels,
   LOG_LEVEL_ENV_VAR,
@@ -163,15 +164,6 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
  * sharing the environment warn about it once.
  */
 let reportedInvalidEnvLogLevel: string | undefined;
-
-const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  hour: 'numeric',
-  minute: 'numeric',
-  second: 'numeric',
-  day: '2-digit',
-  month: '2-digit',
-});
 
 /**
  * @publicApi
@@ -410,7 +402,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected getTimestamp(): string {
-    return dateTimeFormatter.format(Date.now());
+    return formatLogTimestamp();
   }
 
   protected printMessages(
