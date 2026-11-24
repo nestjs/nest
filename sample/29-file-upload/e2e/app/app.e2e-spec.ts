@@ -63,6 +63,14 @@ describe('E2E FileTest', () => {
       .expect(201);
   });
 
+  it('should reject a file over the size limit', () => {
+    return request(app.getHttpServer())
+      .post('/file')
+      .attach('file', Buffer.alloc(1024 * 1024 + 1), 'large.txt')
+      .field('name', 'test')
+      .expect(413);
+  });
+
   afterAll(async () => {
     await app.close();
   });
