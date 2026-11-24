@@ -986,9 +986,16 @@ export class FastifyAdapter<
     return response && response.view(view, options);
   }
 
-  public redirect(response: TReply, statusCode: number, url: string) {
+  public redirect(
+    response: TRawResponse | TReply,
+    statusCode: number,
+    url: string,
+  ) {
+    const fastifyReply: TReply = this.isNativeResponse(response)
+      ? this.createReplyForRawResponse(response)
+      : response;
     const code = statusCode ?? HttpStatus.FOUND;
-    return response.status(code).redirect(url);
+    return fastifyReply.status(code).redirect(url);
   }
 
   public setErrorHandler(handler: Parameters<TInstance['setErrorHandler']>[0]) {

@@ -653,6 +653,44 @@ describe('FastifyAdapter', () => {
     });
   });
 
+  describe('redirect', () => {
+    afterEach(() => fastifyAdapter.close());
+
+    it('should redirect a raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        // Nest middleware, and the exception filters of its errors, receive
+        // the raw response instead of the reply.
+        fastifyAdapter.redirect(reply.raw, 301, '/target');
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const response = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/p',
+      });
+
+      expect(response.statusCode).toBe(301);
+      expect(response.headers.location).toBe('/target');
+    });
+
+    it('should redirect a raw response with 302 when no status code is given', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.redirect(reply.raw, undefined!, '/target');
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const response = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/p',
+      });
+
+      expect(response.statusCode).toBe(302);
+      expect(response.headers.location).toBe('/target');
+    });
+  });
+
   describe('appendHeader', () => {
     it('should append to an existing header instead of overwriting it', async () => {
       fastifyAdapter.initHttpServer();
