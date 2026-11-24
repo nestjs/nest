@@ -9,6 +9,7 @@ import {
   isFunction,
   isNil,
   isString,
+  normalizePath,
 } from '@nestjs/common/internal';
 import type { ApplicationConfig } from '@nestjs/core';
 import { isDeepStrictEqual } from 'util';
@@ -38,10 +39,9 @@ export class SocketServerProvider {
     port: number,
     gatewayName?: string,
   ): ServerAndEventStreamsHost {
-    const serverAndStreamsHost = this.socketsContainer.getOneByConfig({
-      port,
-      path: options.path,
-    });
+    const serverAndStreamsHost = this.socketsContainer.getOneByConfig(
+      this.getServerConfig(port, options.path),
+    );
     if (serverAndStreamsHost) {
       this.ensureOptionsApply(options, port, serverAndStreamsHost, gatewayName);
     }
@@ -82,7 +82,7 @@ export class SocketServerProvider {
       ServerAndEventStreamsFactory.create(ioServer);
 
     this.socketsContainer.addOne(
-      { port, path: options.path },
+      this.getServerConfig(port, options.path),
       serverAndEventStreamsHost,
     );
     this.serverOptions.set(
@@ -162,8 +162,7 @@ export class SocketServerProvider {
     // socket.io also serves a RegExp namespace from the first parent namespace
     // created for it, so a second one would never get a connection.
     const namespaceConfig = {
-      port,
-      path: options.path,
+      ...this.getServerConfig(port, options.path),
       namespace: this.validateNamespace(options.namespace || ''),
     };
     const namespaceHost = this.socketsContainer.getOneByConfig(namespaceConfig);
@@ -181,7 +180,9 @@ export class SocketServerProvider {
     // shares their streams too, while it keeps the namespace as its server
     const rootHost =
       namespaceConfig.namespace === '/'
-        ? this.socketsContainer.getOneByConfig({ port, path: options.path })
+        ? this.socketsContainer.getOneByConfig(
+            this.getServerConfig(port, options.path),
+          )
         : undefined;
     if (rootHost) {
       serverAndEventStreamsHost.connection = rootHost.connection;
@@ -201,6 +202,19 @@ export class SocketServerProvider {
       namespace: this.validateNamespace(options.namespace || ''),
       server,
     });
+  }
+
+  /**
+   * What identifies the server of a gateway. The adapters serve a path
+   * written with or without its leading slash, and with or without trailing
+   * ones, as the same path ("chat", "/chat" and "/chat/"), so gateways that
+   * write it differently share a server, as do gateways that write it alike.
+   * A second server for that path would never be handed a client (WsAdapter),
+   * or would answer the same upgrade requests too (IoAdapter). A missing or
+   * empty path is left as it is: it is not "/" for every adapter.
+   */
+  private getServerConfig(port: number, path: string | undefined) {
+    return { port, path: isString(path) && path ? normalizePath(path) : path };
   }
 
   private validateNamespace(namespace: string | RegExp): string | RegExp {

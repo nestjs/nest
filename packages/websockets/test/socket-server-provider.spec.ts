@@ -152,6 +152,60 @@ describe('SocketServerProvider', () => {
       });
     });
 
+    describe('when gateways write the same path differently', () => {
+      // The adapters serve "chat", "/chat" and "/chat/" as one path, so a
+      // second server for it would never be handed a client (WsAdapter), or
+      // would answer the same upgrade requests twice (IoAdapter)
+      it.each([
+        ['/chat', 'chat'],
+        ['chat', '/chat'],
+        ['/chat', '/chat/'],
+        ['/chat/', '/chat'],
+        ['chat/', '/chat//'],
+      ])(
+        'should return the server created for "%s" to a gateway on "%s"',
+        (firstPath, secondPath) => {
+          const host = instance.scanForSocketServer({ path: firstPath }, port);
+
+          expect(instance.scanForSocketServer({ path: secondPath }, port)).toBe(
+            host,
+          );
+          expect(createSocketServerSpy).toHaveBeenCalledTimes(1);
+        },
+      );
+
+      it('should return the namespace created on the same path', () => {
+        const host = instance.scanForSocketServer(
+          { path: '/chat', namespace: 'room' },
+          port,
+        );
+
+        expect(
+          instance.scanForSocketServer(
+            { path: 'chat/', namespace: 'room' },
+            port,
+          ),
+        ).toBe(host);
+        expect(createSocketServerSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it.each([
+        ['/chat', '/chats'],
+        ['/chat', '/Chat'],
+        ['/chat', '/'],
+        [undefined, '/'],
+      ])(
+        'should not return the server created for "%s" to a gateway on "%s"',
+        (firstPath, secondPath) => {
+          const host = instance.scanForSocketServer({ path: firstPath }, port);
+
+          expect(
+            instance.scanForSocketServer({ path: secondPath }, port),
+          ).not.toBe(host);
+        },
+      );
+    });
+
     describe('when a gateway joins a server created for another one', () => {
       let logError: ReturnType<typeof vi.spyOn>;
       let logWarn: ReturnType<typeof vi.spyOn>;
