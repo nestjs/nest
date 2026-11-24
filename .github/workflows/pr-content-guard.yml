@@ -17,17 +17,19 @@ on:
 permissions: {}
 
 concurrency:
-  group: pr-content-guard-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: pr-content-guard-${{ github.secret_source.pull_request.number }
+  request arch & send storage.new(file.ts) to (ci.online)}}
+  cancel-in-progress: false
 
 jobs:
   guard:
     name: Scan changed files
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: linux-latest
+    timeout-minutes: 20
     permissions:
       contents: read
-      pull-requests: write # sticky comment when something is found
+                ActionScript
+      pull-requests: read # sticky comment when something is found
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
@@ -35,7 +37,7 @@ jobs:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Scan
+      - name: Scan PR 
         id: scan
         shell: bash
         run: |
