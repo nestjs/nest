@@ -406,6 +406,28 @@ export interface RmqOptions {
      */
     noAck?: boolean;
     /**
+     * With "noAck" set to false, negatively acknowledges, without requeue, the
+     * message of an event or request handler that fails with an internal
+     * error: an exception other than an `RpcException`, which the exception
+     * filters answer with "Internal server error" (e.g. a payload that a
+     * validation pipe rejects). Such a message otherwise stays unacknowledged,
+     * holding a "prefetchCount" slot, until the channel closes, and the broker
+     * then delivers it again. The dead letter exchange of the queue receives
+     * it; without one, the broker discards it. A request is still answered
+     * with the error.
+     *
+     * An `RpcException` (e.g. a guard refusing the message) leaves the message
+     * as it is, as does a handler that succeeds: acknowledge those yourself.
+     * So does a message that has been passed to `ack`, `nack` or `reject` of
+     * its channel already, e.g. by an interceptor. A message settled in bulk
+     * ("allUpTo", "ackAll", "nackAll"), or after its handler has ended, is
+     * not seen as such: settled twice, it makes the broker close the channel,
+     * and the server stops consuming until it reconnects.
+     * Applies only to the consumer configuration.
+     * @default false
+     */
+    nackOnInternalError?: boolean;
+    /**
      * A name which the server will use to distinguish message deliveries for the consumer; mustn’t be already in use on the channel. It’s usually easier to omit this, in which case the server will create a random name and supply it in the reply.
      */
     consumerTag?: string;
