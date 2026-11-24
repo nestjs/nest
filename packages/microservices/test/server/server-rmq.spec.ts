@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { of } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import {
   CONSUMER_CANCELLED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
@@ -9,6 +10,10 @@ import {
 import { RmqContext } from '../../ctx-host/index.js';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
+import {
+  BaseRpcExceptionFilter,
+  RpcException,
+} from '../../exceptions/index.js';
 import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -1636,6 +1641,97 @@ describe('ServerRMQ', () => {
       );
 
       expect(nack).not.toHaveBeenCalledWith(message, false, false);
+    });
+  });
+
+  describe('with "nackOnInternalError"', () => {
+    const pattern = 'test';
+    const filter = new BaseRpcExceptionFilter();
+    // What the exception filters answer a handler failure with
+    const internalErrorReply = () =>
+      filter.catch(new Error('failed'), {} as any);
+    const rpcErrorReply = () =>
+      filter.catch(new RpcException('Internal server error'), {} as any);
+    // The server wraps the methods of the channel, so the spies stay apart
+    let spies: Record<'ack' | 'nack' | 'reject', ReturnType<typeof vi.fn>>;
+    let channel: Record<string, (...args: unknown[]) => unknown>;
+    const message = (packet: object = { pattern, data: 'test' }) => ({
+      content: { toString: () => JSON.stringify(packet) },
+      fields: { deliveryTag: 1 },
+      properties: { correlationId: '1', replyTo: 'reply-queue' },
+    });
+    const createServer = (options: object = {}) => {
+      server = new ServerRMQ({
+        noAck: false,
+        nackOnInternalError: true,
+        ...options,
+      });
+      untypedServer = server as any;
+      untypedServer.channel = { nack: vi.fn() };
+      vi.spyOn(server, 'sendMessage').mockResolvedValue(undefined);
+    };
+    const handle = async (
+      handler: (ctx: RmqContext) => unknown,
+      msg = message(),
+    ) => {
+      server.addHandler(pattern, (async (_: unknown, ctx: RmqContext) =>
+        handler(ctx)) as any);
+      await server.handleMessage(msg, channel).catch(() => {});
+      await new Promise(resolve => setImmediate(resolve));
+    };
+
+    beforeEach(() => {
+      vi.spyOn(BaseRpcExceptionFilter['logger'], 'error').mockImplementation(
+        () => {},
+      );
+      spies = { ack: vi.fn(), nack: vi.fn(), reject: vi.fn() };
+      channel = {
+        ack: (...args) => spies.ack(...args),
+        nack: (...args) => spies.nack(...args),
+        reject: (...args) => spies.reject(...args),
+      };
+      createServer();
+    });
+
+    it('should nack, without requeue, an event or a request that fails with an internal error', async () => {
+      const event = message();
+      await handle(() => internalErrorReply(), event);
+      expect(spies.nack).toHaveBeenLastCalledWith(event, false, false);
+
+      const request = message({ pattern, data: 'test', id: '1' });
+      await handle(() => internalErrorReply(), request);
+      expect(spies.nack).toHaveBeenLastCalledWith(request, false, false);
+
+      // An exception filter that throws
+      await handle(() => Promise.reject(new Error('filter failed')));
+      expect(spies.nack).toHaveBeenCalledTimes(3);
+    });
+    it('should not nack a message that fails with an RpcException, whatever its message', async () => {
+      await handle(() => rpcErrorReply());
+      await handle(() => Promise.reject(new RpcException('not found')));
+      expect(spies.nack).not.toHaveBeenCalled();
+    });
+    it('should not nack a message acknowledged already, also in "finalize" after the error', async () => {
+      await handle(ctx => {
+        ctx.getChannelRef().ack(ctx.getMessage());
+        return internalErrorReply();
+      });
+      await handle(ctx =>
+        internalErrorReply().pipe(
+          finalize(() => ctx.getChannelRef().ack(ctx.getMessage())),
+        ),
+      );
+      expect(spies.ack).toHaveBeenCalledTimes(2);
+      expect(spies.nack).not.toHaveBeenCalled();
+    });
+    it('should leave the channel and the message alone without the option or with "noAck"', async () => {
+      const { ack } = channel;
+      for (const options of [{ nackOnInternalError: false }, { noAck: true }]) {
+        createServer(options);
+        await handle(() => internalErrorReply());
+      }
+      expect(spies.nack).not.toHaveBeenCalled();
+      expect(channel.ack).toBe(ack);
     });
   });
 

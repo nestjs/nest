@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+import { isObservable } from 'rxjs';
+import { finalize, tap } from 'rxjs/operators';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
@@ -24,6 +26,8 @@ import {
 import { RmqContext } from '../ctx-host/index.js';
 import { Transport } from '../enums/index.js';
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
+import { isInternalErrorReply } from '../exceptions/internal-error-reply.js';
+import { RpcException } from '../exceptions/rpc-exception.js';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
 import { RmqUrl } from '../external/rmq-url.interface.js';
 import {
@@ -80,6 +84,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     event: keyof RmqEvents;
     callback: RmqEvents[keyof RmqEvents];
   }> = [];
+  private readonly recordingChannels = new WeakSet<Channel>();
+  private readonly settledMessages = new WeakSet<Message>();
 
   constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
@@ -476,10 +482,11 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       );
 
     this.warnIfEventHandlerReplies(handler, pattern);
+    const handle = this.nackOnInternalError(handler, rmqContext);
     return this.handleRequest(
       rmqContext,
       async () =>
-        this.transformToObservable(await handler(packet.data, rmqContext)),
+        this.transformToObservable(await handle(packet.data, rmqContext)),
       publish,
     );
   }
@@ -527,7 +534,92 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this.channel!.nack(context.getMessage() as Message, false, false);
       return this.logger.warn(RMQ_NO_EVENT_HANDLER`${pattern}`);
     }
-    return super.handleEvent(pattern, packet, context);
+    return super.handleEvent(
+      pattern,
+      packet,
+      context,
+      handler && this.nackOnInternalError(handler, context),
+    );
+  }
+
+  /**
+   * With "nackOnInternalError", returns a handler that negatively
+   * acknowledges the message when `handler` fails with an internal error: its
+   * stream errors with the reply the exception filters answer an exception
+   * other than an `RpcException` with, or it rejects with anything but an
+   * `RpcException` (an exception filter that throws).
+   *
+   * A message settled twice closes its channel (PRECONDITION_FAILED), which
+   * the channel wrapper only opens again on a reconnect, so the server would
+   * stop consuming. The message is left as it is once `ack`, `nack` or
+   * `reject` has been called with it on its channel, which is checked when
+   * the handler's stream has been torn down, after its `finalize` callbacks.
+   */
+  private nackOnInternalError(
+    handler: MessageHandler,
+    context: RmqContext,
+  ): MessageHandler {
+    if (
+      this.noAck ||
+      !this.getOptionsProp(this.options, 'nackOnInternalError', false)
+    ) {
+      return handler;
+    }
+    const message = context.getMessage();
+    // The channel the message was delivered on: the wrapper's current channel
+    // may be another one since a reconnect
+    const channel = context.getChannelRef();
+    this.recordSettlements(channel);
+    const nack = () => {
+      if (this.settledMessages.has(message)) {
+        return;
+      }
+      try {
+        channel.nack(message, false, false);
+      } catch (err) {
+        // The channel has closed, and the broker delivers the message again
+        this.logger.error(err);
+      }
+    };
+    return (async (data: unknown, ctx?: unknown) => {
+      let resultOrStream: unknown;
+      try {
+        resultOrStream = await handler(data, ctx);
+      } catch (err) {
+        if (!(err instanceof RpcException)) {
+          nack();
+        }
+        throw err;
+      }
+      if (!isObservable(resultOrStream)) {
+        return resultOrStream;
+      }
+      let isInternalError = false;
+      return resultOrStream.pipe(
+        tap({ error: err => (isInternalError = isInternalErrorReply(err)) }),
+        finalize(() => isInternalError && nack()),
+      );
+    }) as MessageHandler;
+  }
+
+  /**
+   * Makes `ack`, `nack` and `reject` of `channel` record the message they
+   * settle, once per channel.
+   */
+  private recordSettlements(channel: Channel) {
+    if (this.recordingChannels.has(channel)) {
+      return;
+    }
+    this.recordingChannels.add(channel);
+    const settledMessages = this.settledMessages;
+    for (const method of ['ack', 'nack', 'reject']) {
+      const settle = channel[method];
+      channel[method] = function (message: Message, ...args: unknown[]) {
+        const result = settle.call(this, message, ...args);
+        settledMessages.add(message);
+        return result;
+      };
+    }
   }
 
   public sendMessage<T = any>(
