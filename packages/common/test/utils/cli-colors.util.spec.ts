@@ -1,4 +1,9 @@
-import { clc, isColorAllowed, yellow } from '../../utils/cli-colors.util.js';
+import {
+  clc,
+  isColorAllowed,
+  withSingleColorCheck,
+  yellow,
+} from '../../utils/cli-colors.util.js';
 
 describe('cli-colors.util', () => {
   const originalEnv = process.env.NO_COLOR;
@@ -85,6 +90,56 @@ describe('cli-colors.util', () => {
 
     it('should return plain text for cyanBright', () => {
       expect(clc.cyanBright('hello')).toBe('hello');
+    });
+  });
+
+  describe('withSingleColorCheck', () => {
+    it('should read NO_COLOR once for all the colors of the callback', () => {
+      delete process.env.NO_COLOR;
+
+      const [first, second] = withSingleColorCheck(() => {
+        const text = clc.green('first');
+        process.env.NO_COLOR = '1';
+        return [text, clc.green('second')];
+      });
+
+      expect(first).toBe('\x1B[32mfirst\x1B[39m');
+      expect(second).toBe('\x1B[32msecond\x1B[39m');
+    });
+
+    it('should keep the result of the outer callback in a nested one', () => {
+      process.env.NO_COLOR = '1';
+
+      const text = withSingleColorCheck(() => {
+        isColorAllowed();
+        delete process.env.NO_COLOR;
+        return withSingleColorCheck(() => clc.green('text'));
+      });
+
+      expect(text).toBe('text');
+    });
+
+    it('should read NO_COLOR again after the callback', () => {
+      delete process.env.NO_COLOR;
+      withSingleColorCheck(() => clc.green('first'));
+
+      process.env.NO_COLOR = '1';
+
+      expect(clc.green('second')).toBe('second');
+    });
+
+    it('should read NO_COLOR again after the callback throws', () => {
+      delete process.env.NO_COLOR;
+      expect(() =>
+        withSingleColorCheck(() => {
+          clc.green('first');
+          throw new Error('failed');
+        }),
+      ).toThrow('failed');
+
+      process.env.NO_COLOR = '1';
+
+      expect(clc.green('second')).toBe('second');
     });
   });
 

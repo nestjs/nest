@@ -474,6 +474,58 @@ describe('Logger', () => {
       });
     });
 
+    describe('NO_COLOR', () => {
+      const originalNoColor = process.env.NO_COLOR;
+      let processStdoutWriteStub: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        delete process.env.NO_COLOR;
+        processStdoutWriteStub = vi
+          .spyOn(process.stdout, 'write')
+          .mockImplementation(() => true);
+      });
+
+      afterEach(() => {
+        processStdoutWriteStub.mockRestore();
+        if (originalNoColor === undefined) {
+          delete process.env.NO_COLOR;
+        } else {
+          process.env.NO_COLOR = originalNoColor;
+        }
+      });
+
+      it('should check NO_COLOR for every line', () => {
+        const logger = new ConsoleLogger('Context', { colors: true });
+
+        logger.log('first');
+        process.env.NO_COLOR = '1';
+        logger.log('second');
+
+        const [first, second] = processStdoutWriteStub.mock.calls.map(
+          ([line]) => line as string,
+        );
+        expect(first).not.toBe(stripVTControlCharacters(first));
+        expect(second).toBe(stripVTControlCharacters(second));
+      });
+
+      it('should check NO_COLOR once for all the parts of a line', () => {
+        class NoColorSettingLogger extends ConsoleLogger {
+          protected formatContext(context: string): string {
+            const formattedContext = super.formatContext(context);
+            process.env.NO_COLOR = '1';
+            return formattedContext;
+          }
+        }
+        const logger = new NoColorSettingLogger('Context', { colors: true });
+
+        logger.log('message');
+
+        const line = processStdoutWriteStub.mock.calls[0][0] as string;
+        expect(line).toContain('\x1B[38;5;3m[Context] \x1B[39m');
+        expect(line).toContain('\x1B[32mmessage\x1B[39m');
+      });
+    });
+
     describe('forceConsole option', () => {
       let consoleLogSpy: ReturnType<typeof vi.fn>;
       let consoleErrorSpy: ReturnType<typeof vi.fn>;

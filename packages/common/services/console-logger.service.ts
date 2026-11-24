@@ -1,6 +1,11 @@
 import { inspect, InspectOptions } from 'util';
 import { Injectable, Optional } from '../decorators/core/index.js';
-import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util.js';
+import {
+  clc,
+  yellow,
+  isColorAllowed,
+  withSingleColorCheck,
+} from '../utils/cli-colors.util.js';
 import {
   isFunction,
   isObject,
@@ -444,19 +449,22 @@ export class ConsoleLogger implements LoggerService {
       return;
     }
     messages.forEach(message => {
-      const pidMessage = this.formatPid(process.pid);
-      const contextMessage = this.formatContext(context);
-      const timestampDiff = this.updateAndGetTimestampDiff();
-      const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
-      const formattedMessage = this.formatMessage(
-        logLevel,
-        message,
-        pidMessage,
-        formattedLogLevel,
-        contextMessage,
-        timestampDiff,
-        params,
-      );
+      // A colored line has up to five colored parts: NO_COLOR is read once
+      const formattedMessage = withSingleColorCheck(() => {
+        const pidMessage = this.formatPid(process.pid);
+        const contextMessage = this.formatContext(context);
+        const timestampDiff = this.updateAndGetTimestampDiff();
+        const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
+        return this.formatMessage(
+          logLevel,
+          message,
+          pidMessage,
+          formattedLogLevel,
+          contextMessage,
+          timestampDiff,
+          params,
+        );
+      });
 
       if (this.options.forceConsole) {
         if (writeStreamType === 'stderr') {
