@@ -910,12 +910,25 @@ describe('FastifyAdapter', () => {
       });
     }
 
-    for (const target of ['*users', 'users', '*', 'ftp://localhost/users']) {
+    for (const target of ['*users', '*']) {
       it(`should pass a request for "${target}" to the not-found handler`, async () => {
         const res = await injectRequestTarget('GET', target);
 
         expect(res.statusCode).to.equal(404);
         expect(res.body).to.equal('not found');
+        expect(handler.called).to.be.false;
+        expect(middleware.called).to.be.false;
+      });
+    }
+
+    // The router does not match these, and "@fastify/middie" >= 9.3.8 rejects
+    // a target that is neither origin-form nor an http(s) absolute-form URL
+    for (const target of ['users', 'ftp://localhost/users']) {
+      it(`should reject a request for "${target}" as a malformed URL`, async () => {
+        const res = await injectRequestTarget('GET', target);
+
+        expect(res.statusCode).to.equal(400);
+        expect(res.json().code).to.equal('FST_ERR_MIDDIE_MALFORMED_URL');
         expect(handler.called).to.be.false;
         expect(middleware.called).to.be.false;
       });
@@ -957,13 +970,15 @@ describe('FastifyAdapter', () => {
       expect(handler.called).to.be.false;
     });
 
-    it('should pass a request the router did not match to the not-found handler', async () => {
+    it('should leave a request the router did not match to "@fastify/middie", which rejects it as a malformed URL', async () => {
       const warn = sinon.spy(fastifyAdapter.getInstance().log, 'warn');
 
       const res = await injectRequestTarget('GET', '*unknown');
 
-      expect(res.statusCode).to.equal(404);
-      expect(res.body).to.equal('not found');
+      expect(res.statusCode).to.equal(400);
+      expect(res.json().code).to.equal('FST_ERR_MIDDIE_MALFORMED_URL');
+      expect(handler.called).to.be.false;
+      expect(middleware.called).to.be.false;
       expect(warn.called).to.be.false;
     });
   });
