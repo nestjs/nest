@@ -51,13 +51,27 @@ const MONTH_NAMES = [
   'dec',
 ];
 const NAMED_MONTH_DATE_PATTERNS = [
-  // "Feb 30, 2024", "Thu Feb 30 2024 10:00:00 GMT+0300", "Feb-30-2024"
-  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s/-]+(?<day>\d{1,2})(?:,\s*|[\s/-]+)(?<year>\d{4})(?!\d)/i,
-  // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024"
-  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s/-]+(?<month>[a-z]{3,})\.?(?:,\s*|[\s/-]+)(?<year>\d{4})(?!\d)/i,
+  // "Feb 30, 2024", "Thu Feb 30 2024 10:00:00 GMT+0300", "Feb-30-2024",
+  // "Feb 30, 24"
+  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s/-]+(?<day>\d{1,2})(?:,\s*|[\s/-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
+  // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024", "30-Feb-24"
+  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s/-]+(?<month>[a-z]{3,})\.?(?:,\s*|[\s/-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
   // "2024 Feb 30", "2024-Feb-30"
   /^\s*(?<year>\d{4})[\s/-]+(?<month>[a-z]{3,})\.?[\s/-]+(?<day>\d{1,2})(?!\d)/i,
 ];
+
+/**
+ * Reads a year as `new Date()` does, where a two-digit year below 50 is in
+ * the 2000s ("2/29/24" is in 2024) and any other in the 1900s. Two digits
+ * followed by ":" are the hour of a time ("Feb 29 10:00 2024"), not a year.
+ */
+function toFullYear(year: string): number {
+  const value = Number(year);
+  if (year.length !== 2) {
+    return value;
+  }
+  return value < 50 ? 2000 + value : 1900 + value;
+}
 
 /**
  * @publicApi
@@ -131,13 +145,12 @@ export class ParseDatePipe implements PipeTransform {
       month = Number(isoMatch[3]);
       day = Number(isoMatch[4]);
     } else {
-      const usMatch = /^\s*(\d{1,2})([-/.])(\d{1,2})\2(\d{4})(?!\d)/.exec(
-        value,
-      );
+      const usMatch =
+        /^\s*(\d{1,2})([-/.])(\d{1,2})\2(\d{4}|\d{2}(?!:))(?!\d)/.exec(value);
       if (usMatch) {
         month = Number(usMatch[1]);
         day = Number(usMatch[3]);
-        year = Number(usMatch[4]);
+        year = toFullYear(usMatch[4]);
       } else {
         const namedMatch = this.matchNamedMonthDate(value);
         if (!namedMatch) {
@@ -170,7 +183,7 @@ export class ParseDatePipe implements PipeTransform {
       const month =
         MONTH_NAMES.indexOf(groups.month.slice(0, 3).toLowerCase()) + 1;
       if (month > 0) {
-        return [Number(groups.year), month, Number(groups.day)];
+        return [toFullYear(groups.year), month, Number(groups.day)];
       }
     }
     return undefined;
