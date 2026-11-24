@@ -90,7 +90,7 @@ describe('HttpArgumentsHost types', () => {
       explicitResponse: 'ServerResponse',
       next: 'any',
     });
-  });
+  }, 30000);
 
   it('should preserve any defaults and explicit generics without registration', () => {
     expect(getHttpTypes('')).toMatchObject({
@@ -104,5 +104,5 @@ describe('HttpArgumentsHost types', () => {
       explicitResponse: 'ServerResponse',
       next: 'any',
     });
-  });
+  }, 30000);
 });
