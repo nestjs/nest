@@ -18,8 +18,9 @@ export type Redactor = (value: unknown) => unknown;
  *   `users.password` also matches `{ users: [{ password }] }`.
  * - Keys are compared case-insensitively.
  *
- * Plain objects, arrays, class instances, errors (including `cause` and
- * `AggregateError#errors`), `Map`s, `Set`s, `Headers`, `URLSearchParams` and
+ * Plain objects, arrays, class instances, errors (including `cause`,
+ * `AggregateError#errors` and the `error` and `suppressed` of a
+ * `SuppressedError`), `Map`s, `Set`s, `Headers`, `URLSearchParams` and
  * `FormData` are traversed.
  * Only the objects on the way to a redacted property are copied; the rest is
  * returned as is, and the input is never mutated. A circular reference is
@@ -220,8 +221,9 @@ export function createRedactor(
       const source = object as Record<string, unknown>;
       const keysToVisit = Object.keys(source);
       if (object instanceof Error) {
-        // Non-enumerable, but part of the logged error.
-        for (const key of ['cause', 'errors']) {
+        // Non-enumerable, but part of the logged error ("error" and
+        // "suppressed" are those of a SuppressedError).
+        for (const key of ['cause', 'errors', 'error', 'suppressed']) {
           if (
             Object.prototype.hasOwnProperty.call(object, key) &&
             !keysToVisit.includes(key)

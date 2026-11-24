@@ -1714,6 +1714,41 @@ describe('Logger', () => {
         ]);
       });
 
+      it('should serialize the errors of a SuppressedError', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = new Error('dispose failed');
+        const suppressed = new Error('handler failed');
+
+        logger.error('Failed', createSuppressedError(error, suppressed));
+
+        const json = parseStderr();
+        expect(json.error.name).toBe('SuppressedError');
+        expect(json.error.error).toEqual({
+          name: 'Error',
+          message: 'dispose failed',
+          stack: error.stack,
+        });
+        expect(json.error.suppressed).toEqual({
+          name: 'Error',
+          message: 'handler failed',
+          stack: suppressed.stack,
+        });
+      });
+
+      it('should redact the errors of a SuppressedError', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['token'] });
+        const suppressedError = createSuppressedError(
+          Object.assign(new Error('dispose failed'), { token: 'a' }),
+          { token: 'b' },
+        );
+
+        logger.error('Failed', suppressedError);
+
+        const json = parseStderr();
+        expect(json.error.error.token).toBe('[REDACTED]');
+        expect(json.error.suppressed).toEqual({ token: '[REDACTED]' });
+      });
+
       it('should keep the stack argument convention', () => {
         const logger = new ConsoleLogger({ json: true });
         const error = new Error('boom');
@@ -2471,4 +2506,25 @@ function convertInspectToJSON(inspectOutput: string) {
     console.error('Error parsing the modified inspect output:', error);
     throw error;
   }
+}
+
+/**
+ * A 'SuppressedError' (thrown by 'using' declarations), or an error of the
+ * same shape where Node.js does not have the class (before v24).
+ */
+function createSuppressedError(error: unknown, suppressed: unknown): Error {
+  const SuppressedErrorType = (globalThis as any).SuppressedError;
+  if (SuppressedErrorType) {
+    return new SuppressedErrorType(error, suppressed);
+  }
+  const suppressedError = new Error('An error was suppressed during disposal');
+  suppressedError.name = 'SuppressedError';
+  for (const [key, value] of Object.entries({ error, suppressed })) {
+    Object.defineProperty(suppressedError, key, {
+      value,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return suppressedError;
 }
