@@ -162,11 +162,12 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     }
 
     /**
-     * Removes the routes that a parameterized route of the same method is
-     * mounted on as well (e.g. "/users/me" next to "/users/:id"), so that
-     * the middleware runs once for them. Only a route without parameters or
-     * wildcards is removed, and only when the parameterized route matches
-     * every path it would be mounted on (global prefix and version included).
+     * Removes the routes that a parameterized or wildcard route of the same
+     * method is mounted on as well (e.g. "/users/me" next to "/users/:id",
+     * "/media/favicon.ico" next to "/media/*"), so that the middleware runs
+     * once for them. Only a route without parameters or wildcards is removed,
+     * and only when the parameterized or wildcard route matches every path it
+     * would be mounted on (global prefix and version included).
      *
      * The paths are compared as the router serves them, without a trailing
      * slash: the root route of a controller is mounted on "/cats/" and served
@@ -174,7 +175,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
      */
     private removeOverlappedRoutes(routes: RouteInfo[]) {
       const routesWithRegex = routes
-        .filter(route => route.path.includes(':'))
+        .filter(route => route.path.includes(':') || route.path.includes('*'))
         .map(route => ({
           method: route.method,
           regexes: this.compileMountPaths(route),
@@ -189,11 +190,11 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           method: RequestMethod;
           regexes: RegExp[];
         }): boolean =>
-          // A parameterized route mounted for every method (a plain string
-          // passed to forRoutes(), or RequestMethod.ALL) also serves the
-          // requests of a route declared for a specific method, while a
-          // specific-method parameterized route covers none of the methods
-          // an all-methods route is mounted on. A plain string is only covered
+          // A parameterized or wildcard route mounted for every method (a
+          // plain string passed to forRoutes(), or RequestMethod.ALL) also
+          // serves the requests of a route declared for a specific method,
+          // while a specific-method one covers none of the methods an
+          // all-methods route is mounted on. A plain string is only covered
           // by another one: Express and the node adapter mount it with use(),
           // which also matches paths below it, while RequestMethod.ALL only
           // matches its own pattern

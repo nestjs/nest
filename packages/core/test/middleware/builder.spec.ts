@@ -378,6 +378,70 @@ describe('MiddlewareBuilder', () => {
             },
           ]);
         });
+
+        it.each(['*', '{*path}'])(
+          'should remove a route covered by a wildcard route "%s" of the same method',
+          wildcard => {
+            @Controller('media')
+            class MediaController {
+              @Get('favicon.ico')
+              favicon() {}
+
+              @Get(wildcard)
+              everything() {}
+            }
+            configProxy.forRoutes(MediaController);
+
+            expect(builder.build()[0].forRoutes).toEqual([
+              { path: `/media/${wildcard}`, method: RequestMethod.GET },
+            ]);
+          },
+        );
+
+        it('should remove a route of a specific method covered by an all-methods wildcard route', () => {
+          configProxy.forRoutes(
+            { path: 'media/*', method: RequestMethod.ALL },
+            { path: 'media/favicon.ico', method: RequestMethod.GET },
+          );
+
+          expect(builder.build()[0].forRoutes).toEqual([
+            { path: '/media/*', method: RequestMethod.ALL },
+          ]);
+        });
+
+        it('should not remove a route covered by a wildcard route of another method', () => {
+          // The wildcard route only serves POST requests, so it does not run
+          // the middleware for "media/favicon.ico"
+          const routes = [
+            { path: '/media/*', method: RequestMethod.POST },
+            { path: '/media/favicon.ico', method: RequestMethod.GET },
+          ];
+          configProxy.forRoutes(...routes);
+
+          expect(builder.build()[0].forRoutes).toEqual(routes);
+        });
+
+        it.each(['*', '{*path}'])(
+          'should not remove the root route of a controller next to a wildcard "%s" of its own',
+          wildcard => {
+            // The root route is mounted on "/media/" and served at "/media",
+            // which the wildcard route only matches with the trailing slash
+            @Controller('media')
+            class MediaController {
+              @Get()
+              findAll() {}
+
+              @Get(wildcard)
+              everything() {}
+            }
+            configProxy.forRoutes(MediaController);
+
+            expect(builder.build()[0].forRoutes).toEqual([
+              { path: '/media/', method: RequestMethod.GET },
+              { path: `/media/${wildcard}`, method: RequestMethod.GET },
+            ]);
+          },
+        );
       });
     });
   });
