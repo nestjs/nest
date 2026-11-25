@@ -243,6 +243,78 @@ describe('FastifyAdapter', () => {
       await fastifyAdapter.close();
     });
 
+    describe('with a 205 status code', () => {
+      afterEach(() => fastifyAdapter.close());
+
+      it.each([
+        ['a string', () => 'hello world'],
+        ['an object', () => ({ message: 'hello world' })],
+        [
+          'a StreamableFile',
+          () =>
+            new StreamableFile(Buffer.from('hello world'), {
+              type: 'text/csv',
+              length: 11,
+            }),
+        ],
+      ])(
+        'should send no body or Content-Type, and a zero Content-Length, for %s',
+        async (_, createBody) => {
+          fastifyAdapter.get(
+            '/',
+            (_req: FastifyRequest, reply: FastifyReply) => {
+              reply.header('Content-Type', 'text/plain');
+              fastifyAdapter.reply(reply, createBody(), 205);
+            },
+          );
+
+          const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+          expect(res.statusCode).toBe(205);
+          expect(res.headers['content-type']).toBeUndefined();
+          expect(res.headers['content-length']).toBe('0');
+          expect(res.body).toBe('');
+        },
+      );
+
+      it('should destroy the stream of a StreamableFile', async () => {
+        const source = new PassThrough();
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          fastifyAdapter.reply(reply, new StreamableFile(source), 205);
+        });
+
+        await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(source.destroyed).toBe(true);
+      });
+
+      it('should send no body when the status was set on the reply before', async () => {
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          reply.status(205);
+          fastifyAdapter.reply(reply, 'hello world');
+        });
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(res.statusCode).toBe(205);
+        expect(res.headers['content-length']).toBe('0');
+        expect(res.body).toBe('');
+      });
+
+      it('should send no body on a raw response', async () => {
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          reply.hijack();
+          fastifyAdapter.reply(reply.raw, 'hello world', 205);
+        });
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(res.statusCode).toBe(205);
+        expect(res.headers['content-length']).toBe('0');
+        expect(res.body).toBe('');
+      });
+    });
+
     it('should destroy the stream of a StreamableFile once the reply was sent', () => {
       // e.g. by Fastify's `handlerTimeout`: send() then drops the stream
       const reply = { ...createReply(), sent: true };

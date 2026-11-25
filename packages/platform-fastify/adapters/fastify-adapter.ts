@@ -876,6 +876,20 @@ export class FastifyAdapter<
     if (!isNil(statusCode)) {
       fastifyReply.status(statusCode);
     }
+    // Fastify drops the body of a 204, but sends the one of a 205, which must
+    // have none (RFC 9110). It gets no body or Content-Type and a zero
+    // Content-Length instead, as in the Express and Node adapters.
+    if (fastifyReply.statusCode === HttpStatus.RESET_CONTENT) {
+      if (body instanceof StreamableFile) {
+        const stream = body.getStream();
+        if (isFunction(stream?.destroy)) {
+          stream.destroy();
+        }
+      }
+      fastifyReply.removeHeader('Content-Type');
+      fastifyReply.removeHeader('Transfer-Encoding');
+      return fastifyReply.send();
+    }
     if (body instanceof StreamableFile) {
       const file = body;
       const stream = file.getStream();
