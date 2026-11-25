@@ -2146,6 +2146,22 @@ describe('Logger', () => {
         expect(output).not.toContain('xyz');
         expect(output).not.toContain('hunter2');
       });
+      it('should mask the credentials and search params of a url', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['token', 'password'],
+        });
+
+        logger.log('Callback', {
+          url: new URL('https://admin:hunter2@example.com/cb?token=xyz&page=1'),
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain("'token' => '[REDACTED]'");
+        expect(output).toContain("'page' => '1'");
+        expect(output).not.toContain('hunter2');
+        expect(output).not.toContain('xyz');
+      });
     });
 
     describe('JSON mode', () => {
@@ -2191,6 +2207,21 @@ describe('Logger', () => {
         expect(output).not.toContain('Bearer abc');
         expect(output).not.toContain('xyz');
         expect(output).not.toContain('hunter2');
+      });
+
+      it('should mask the credentials and search params of a url', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: ['token', 'password'],
+        });
+
+        logger.log('Callback', {
+          url: new URL('https://admin:hunter2@example.com/cb?token=xyz&page=1'),
+        });
+
+        expect(stdoutJson().params).toEqual({
+          url: 'https://admin:%5BREDACTED%5D@example.com/cb?token=%5BREDACTED%5D&page=1',
+        });
       });
 
       it('should mask flattened params', () => {

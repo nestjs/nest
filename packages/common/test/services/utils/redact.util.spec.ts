@@ -329,6 +329,54 @@ describe('createRedactor', () => {
     });
   });
 
+  describe('urls', () => {
+    it('should redact the credentials and search params of a url', () => {
+      const url = new URL(
+        'https://admin:hunter2@example.com/callback?token=abc&page=1#top',
+      );
+
+      const redacted = redact(['password', 'token'], { url }) as { url: URL };
+
+      expect(redacted.url).toBeInstanceOf(URL);
+      expect(redacted.url.username).toBe('admin');
+      expect(redacted.url.password).toBe('%5BREDACTED%5D');
+      expect([...redacted.url.searchParams]).toEqual([
+        ['token', '[REDACTED]'],
+        ['page', '1'],
+      ]);
+      expect(redacted.url.pathname).toBe('/callback');
+      expect(redacted.url.hash).toBe('#top');
+      expect(redacted.url.href).not.toContain('hunter2');
+      expect(redacted.url.href).not.toContain('abc');
+      expect(url.href).toBe(
+        'https://admin:hunter2@example.com/callback?token=abc&page=1#top',
+      );
+    });
+
+    it('should match dotted paths through its search params', () => {
+      const url = new URL('https://example.com/?token=abc');
+
+      const redacted = redact(['searchParams.token'], url) as URL;
+
+      expect(redacted.searchParams.get('token')).toBe('[REDACTED]');
+    });
+
+    it('should not add credentials a url does not have', () => {
+      const url = new URL('https://example.com/?token=abc');
+
+      const redacted = redact(['password', 'token'], url) as URL;
+
+      expect(redacted.password).toBe('');
+      expect(redacted.searchParams.get('token')).toBe('[REDACTED]');
+    });
+
+    it('should return it as it is when nothing matches', () => {
+      const url = new URL('https://user:pass@example.com/?page=1');
+
+      expect(redact(['token'], url)).toBe(url);
+    });
+  });
+
   describe('class instances', () => {
     it('should keep the prototype of a copied instance', () => {
       class User {
