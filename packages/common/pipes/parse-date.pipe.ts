@@ -50,15 +50,24 @@ const MONTH_NAMES = [
   'nov',
   'dec',
 ];
+// As in `new Date()`, the parts of a date may be separated by any run of
+// spaces, commas, dots, slashes and dashes ("2024 02 30", "02,30,2024",
+// "Feb.30.2024"), and a numeric date may follow a weekday ("Fri 02/30/2024").
 const NAMED_MONTH_DATE_PATTERNS = [
   // "Feb 30, 2024", "Thu Feb 30 2024 10:00:00 GMT+0300", "Feb-30-2024",
   // "Feb 30, 24"
-  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s/-]+(?<day>\d{1,2})(?:,\s*|[\s/-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
+  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})[\s,./-]+(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
   // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024", "30-Feb-24"
-  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s/-]+(?<month>[a-z]{3,})\.?(?:,\s*|[\s/-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
+  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s,./-]+(?<month>[a-z]{3,})\.?[\s,./-]+(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
   // "2024 Feb 30", "2024-Feb-30"
-  /^\s*(?<year>\d{4})[\s/-]+(?<month>[a-z]{3,})\.?[\s/-]+(?<day>\d{1,2})(?!\d)/i,
+  /^\s*(?<year>\d{4})[\s,./-]+(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?!\d)/i,
 ];
+// "2024-02-30", "2024 02 30", "Fri, 2024/02/30", "+002024-02-30"
+const YEAR_FIRST_DATE_PATTERN =
+  /^\s*(?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+)?([+-]\d{6}|\d{4})[\s,./-]+(\d{1,2})[\s,./-]+(\d{1,2})(?!\d)/i;
+// "02/30/2024", "02,30,2024", "Fri 02/30/2024", "2.30.24"
+const MONTH_FIRST_DATE_PATTERN =
+  /^\s*(?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+)?(\d{1,2})[\s,./-]+(\d{1,2})[\s,./-]+(\d{4}|\d{2}(?!:))(?!\d)/i;
 
 /**
  * Reads a year as `new Date()` does, where a two-digit year below 50 is in
@@ -138,19 +147,17 @@ export class ParseDatePipe implements PipeTransform {
     let month: number;
     let day: number;
 
-    const isoMatch =
-      /^\s*([+-]\d{6}|\d{4})([-/.])(\d{1,2})\2(\d{1,2})(?!\d)/.exec(value);
+    const isoMatch = YEAR_FIRST_DATE_PATTERN.exec(value);
     if (isoMatch) {
       year = Number(isoMatch[1]);
-      month = Number(isoMatch[3]);
-      day = Number(isoMatch[4]);
+      month = Number(isoMatch[2]);
+      day = Number(isoMatch[3]);
     } else {
-      const usMatch =
-        /^\s*(\d{1,2})([-/.])(\d{1,2})\2(\d{4}|\d{2}(?!:))(?!\d)/.exec(value);
+      const usMatch = MONTH_FIRST_DATE_PATTERN.exec(value);
       if (usMatch) {
         month = Number(usMatch[1]);
-        day = Number(usMatch[3]);
-        year = toFullYear(usMatch[4]);
+        day = Number(usMatch[2]);
+        year = toFullYear(usMatch[3]);
       } else {
         const namedMatch = this.matchNamedMonthDate(value);
         if (!namedMatch) {
@@ -160,6 +167,11 @@ export class ParseDatePipe implements PipeTransform {
       }
     }
 
+    // `new Date()` doesn't read a number above 31 as a day ("99-Jan-20" is
+    // January 20, 1999), so such a reading is left to it
+    if (day > 31) {
+      return false;
+    }
     const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     const daysInMonth =
       month === 2 && isLeapYear ? 29 : DAYS_IN_MONTH[month - 1];
