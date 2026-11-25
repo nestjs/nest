@@ -1,5 +1,14 @@
 import { isUndefined } from '../../utils/shared.utils.js';
 
+type ComposedDecorator = ClassDecorator &
+  MethodDecorator &
+  // Also supports calling the decorator directly on a plain object.
+  ((
+    target: object,
+    propertyKey?: string | symbol,
+    descriptor?: undefined,
+  ) => void);
+
 /**
  * Function that returns a new decorator that applies all decorators provided by param
  *
@@ -11,8 +20,8 @@ import { isUndefined } from '../../utils/shared.utils.js';
  */
 export function applyDecorators(
   ...decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator>
-) {
-  return <TFunction extends Function, Y>(
+): ComposedDecorator {
+  const composed = <TFunction extends Function, Y>(
     target: TFunction | object,
     propertyKey?: string | symbol,
     descriptor?: TypedPropertyDescriptor<Y>,
@@ -63,4 +72,5 @@ export function applyDecorators(
     }
     return decorated;
   };
+  return composed as ComposedDecorator;
 }
