@@ -1454,9 +1454,17 @@ export class FastifyAdapter<
           hasEndOfStringCharacter,
         );
 
+        // The middleware is added to the root and to the contexts created
+        // since middie was registered (see below), and @fastify/middie
+        // >= 9.3.9 also adds the one of the root to those contexts, so two
+        // copies may see the same request. Only the first one runs it.
+        const handledRequests = new WeakSet<object>();
         const createMiddleware =
           (stripsPath: boolean) =>
           (req: any, res: any, next: (err?: Error) => void) => {
+            if (handledRequests.has(req)) {
+              return next();
+            }
             const queryParamsIndex = req.originalUrl.indexOf('?');
             let pathname =
               queryParamsIndex >= 0
@@ -1479,6 +1487,7 @@ export class FastifyAdapter<
                     : '/';
               }
             }
+            handledRequests.add(req);
             this.runMiddleware(callback, req, res, next);
           };
 

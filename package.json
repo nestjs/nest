@@ -88,7 +88,7 @@
     "@commitlint/config-angular": "21.2.4",
     "@fastify/cors": "11.4.3",
     "@fastify/formbody": "9.0.2",
-    "@fastify/middie": "9.3.7",
+    "@fastify/middie": "9.3.9",
     "@fastify/multipart": "10.1.9",
     "@fastify/static": "10.1.12",
     "@fastify/view": "12.0.1",
