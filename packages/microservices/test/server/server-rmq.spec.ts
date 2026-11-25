@@ -806,7 +806,7 @@ describe('ServerRMQ', () => {
     });
     it('should negative acknowledge if message does not exists in handlers object and noAck option is false', async () => {
       untypedServer.noAck = false;
-      await server.handleMessage(msg, '');
+      await server.handleMessage(msg, channel);
       expect(channel.nack).toHaveBeenCalledWith(msg, false, false);
       expect(sendMessageStub).toHaveBeenCalledWith(
         {
@@ -1045,7 +1045,7 @@ describe('ServerRMQ', () => {
         untypedServer.noAck = false;
         const message = withId('a'.repeat(257));
 
-        await expect(server.handleMessage(message, '')).rejects.toThrow(
+        await expect(server.handleMessage(message, channel)).rejects.toThrow(
           InvalidPacketIdException,
         );
         expect(channel.nack).toHaveBeenCalledWith(message, false, false);
@@ -1612,19 +1612,47 @@ describe('ServerRMQ', () => {
     });
 
     it('should negative acknowledge without retrying if key does not exists in handlers object and noAck option is false', async () => {
-      const nack = vi.fn();
+      const deliveryChannelNack = vi.fn();
+      const currentChannelNack = vi.fn();
       const message = { pattern: 'no-exists', data };
       untypedServer.channel = {
-        nack,
+        nack: currentChannelNack,
       };
       untypedServer.noAck = false;
       await server.handleEvent(
         channel,
         message,
-        new RmqContext([message, '', '']),
+        new RmqContext([message, { nack: deliveryChannelNack }, '']),
       );
 
-      expect(nack).toHaveBeenCalledWith(message, false, false);
+      expect(deliveryChannelNack).toHaveBeenCalledWith(message, false, false);
+      expect(currentChannelNack).not.toHaveBeenCalled();
+    });
+
+    it('should not nack through the replacement channel if the delivery channel has closed', async () => {
+      const closedChannelError = new Error('Channel closed');
+      const deliveryChannelNack = vi.fn(() => {
+        throw closedChannelError;
+      });
+      const currentChannelNack = vi.fn();
+      const message = { pattern: 'no-exists', data };
+      const logError = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      untypedServer.channel = { nack: currentChannelNack };
+      untypedServer.noAck = false;
+
+      await expect(
+        server.handleEvent(
+          channel,
+          message,
+          new RmqContext([message, { nack: deliveryChannelNack }, '']),
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(deliveryChannelNack).toHaveBeenCalledWith(message, false, false);
+      expect(currentChannelNack).not.toHaveBeenCalled();
+      expect(logError).toHaveBeenCalledWith(closedChannelError);
     });
 
     it('should not negative acknowledge if key does not exists in handlers object but noAck option is true', async () => {

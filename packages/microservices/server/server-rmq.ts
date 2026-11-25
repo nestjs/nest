@@ -443,7 +443,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         `Message dropped: its pattern does not name the handler of its routing key "${fields.routingKey}".`,
       );
       if (!this.noAck) {
-        this.channel!.nack(message as Message, false, false);
+        this.nackMessage(channel, message as Message);
       }
       return;
     }
@@ -455,7 +455,10 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     if (!handler) {
       if (!this.noAck) {
         this.logger.warn(RMQ_NO_MESSAGE_HANDLER`${pattern}`);
-        this.channel!.nack(rmqContext.getMessage() as Message, false, false);
+        this.nackMessage(
+          rmqContext.getChannelRef(),
+          rmqContext.getMessage() as Message,
+        );
       }
       // The sender chooses the id, which this reply carries
       this.assertValidPacketId((packet as IncomingRequest).id);
@@ -509,7 +512,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
     if (!this.noAck) {
       // Requeued, it would be delivered again
-      this.channel!.nack(message as Message, false, false);
+      this.nackMessage(channel, message as Message);
     }
     if (isNil(properties?.replyTo)) {
       return;
@@ -531,7 +534,10 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler && !this.noAck) {
-      this.channel!.nack(context.getMessage() as Message, false, false);
+      this.nackMessage(
+        context.getChannelRef(),
+        context.getMessage() as Message,
+      );
       return this.logger.warn(RMQ_NO_EVENT_HANDLER`${pattern}`);
     }
     return super.handleEvent(
@@ -574,12 +580,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       if (this.settledMessages.has(message)) {
         return;
       }
-      try {
-        channel.nack(message, false, false);
-      } catch (err) {
-        // The channel has closed, and the broker delivers the message again
-        this.logger.error(err);
-      }
+      this.nackMessage(channel, message);
     };
     return (async (data: unknown, ctx?: unknown) => {
       let resultOrStream: unknown;
@@ -600,6 +601,15 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         finalize(() => isInternalError && nack()),
       );
     }) as MessageHandler;
+  }
+
+  private nackMessage(channel: Channel, message: Message) {
+    try {
+      channel.nack(message, false, false);
+    } catch (err) {
+      // The channel has closed, and the broker delivers the message again.
+      this.logger.error(err);
+    }
   }
 
   /**
