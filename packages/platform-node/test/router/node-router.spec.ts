@@ -135,6 +135,23 @@ describe('NodeRouter', () => {
       expect(calls).toEqual(['first', 'second']);
     });
 
+    it("should skip the other handlers of a route on next('route'), as Express does", () => {
+      const calls: string[] = [];
+      router.get(
+        '/a',
+        (_req: unknown, _res: unknown, next: Next) => {
+          calls.push('first');
+          next('route');
+        },
+        () => calls.push('second'),
+      );
+      router.get('/a', () => calls.push('next route'));
+
+      dispatch('GET', '/a');
+
+      expect(calls).toEqual(['first', 'next route']);
+    });
+
     it('should give each handler the params of its own route', () => {
       const seen: Record<string, string>[] = [];
       router.get('/a/:id', (req: any, _res: unknown, next: Next) => {

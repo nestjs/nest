@@ -468,10 +468,28 @@ export class NodeRouter {
   private addRoute(method: string | null, args: any[]) {
     const [path, handlers] =
       typeof args[0] === 'string' ? [args[0], args.slice(1)] : ['/', args];
-    for (const handler of handlers.flat()) {
-      this.route(method, path, handler);
+    const routeHandlers: RouteHandler[] = handlers.flat();
+    if (routeHandlers.length <= 1) {
+      for (const handler of routeHandlers) {
+        this.route(method, path, handler);
+      }
+      return this;
     }
-    return this;
+    // As with Express, the handlers passed in one call are one route:
+    // next('route') skips the rest of them, on to the next route
+    return this.route(method, path, (req, res, next) => {
+      let index = 0;
+      const nextHandler: NextFunction = err => {
+        if (err === 'route') {
+          return next();
+        }
+        if (err || index === routeHandlers.length) {
+          return next(err);
+        }
+        invoke(routeHandlers[index++], req, res, nextHandler);
+      };
+      nextHandler();
+    });
   }
 
   /**
