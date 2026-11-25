@@ -5,5 +5,8 @@
     "skipLibCheck": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["nest-factory.spec.ts"]
+  "include": [
+    "nest-factory.spec.ts",
+    "../../common/test/decorators/apply-decorators.types.spec.ts"
+  ]
 }
