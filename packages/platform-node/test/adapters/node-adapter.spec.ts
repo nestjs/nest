@@ -918,6 +918,39 @@ describe('NodeAdapter', () => {
       expect(res.body).toHaveLength(0);
     });
 
+    it.each([204, 304])(
+      'should send a %i response with no body, Content-Type or Content-Length for a StreamableFile',
+      async statusCode => {
+        const source = Readable.from(['abcd']);
+
+        const res = await replyWith(
+          new StreamableFile(source, { type: 'text/csv', length: 4 }),
+          statusCode,
+        );
+
+        expect(res.status).toBe(statusCode);
+        expect(res.headers['content-type']).toBeUndefined();
+        expect(res.headers['content-length']).toBeUndefined();
+        expect(res.body).toHaveLength(0);
+        expect(source.destroyed).toBe(true);
+      },
+    );
+
+    it('should send a 205 response with no body or Content-Type, and a zero Content-Length, for a StreamableFile', async () => {
+      const source = Readable.from(['abcd']);
+
+      const res = await replyWith(
+        new StreamableFile(source, { type: 'text/csv', length: 4 }),
+        205,
+      );
+
+      expect(res.status).toBe(205);
+      expect(res.headers['content-type']).toBeUndefined();
+      expect(res.headers['content-length']).toBe('0');
+      expect(res.body).toHaveLength(0);
+      expect(source.destroyed).toBe(true);
+    });
+
     // Middleware written for Express wraps them to log or reshape the body,
     // and the Express adapter replies through them
     describe('when a middleware wrapped res.send() and res.json()', () => {

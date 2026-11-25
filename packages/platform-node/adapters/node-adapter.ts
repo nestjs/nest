@@ -267,6 +267,10 @@ export class NodeAdapter extends AbstractHttpAdapter<
           this.toStreamableHandlerResponse(response),
         );
       }
+      // No body for a 204, 205 or 304 (RFC 9110), as for any other body
+      if (endWithoutBody(response)) {
+        return body.getStream().destroy();
+      }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {

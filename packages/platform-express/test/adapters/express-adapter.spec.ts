@@ -486,6 +486,49 @@ describe('ExpressAdapter', () => {
         expect(logger).toHaveBeenCalledWith(handlerError);
       });
 
+      it.each([204, 304])(
+        'should send a %i response with no body, Content-Type or Content-Length',
+        async statusCode => {
+          const source = Readable.from(['abcd']);
+          expressAdapter.getInstance().get('/', (_req, res) => {
+            expressAdapter.reply(
+              res,
+              new StreamableFile(source, { type: 'text/csv', length: 4 }),
+              statusCode,
+            );
+          });
+
+          const res = await request(expressAdapter.getInstance())
+            .get('/')
+            .expect(statusCode);
+
+          expect(res.headers['content-type']).toBeUndefined();
+          expect(res.headers['content-length']).toBeUndefined();
+          expect(res.text).toBe('');
+          expect(source.destroyed).toBe(true);
+        },
+      );
+
+      it('should send a 205 response with no body or Content-Type, and a zero Content-Length', async () => {
+        const source = Readable.from(['abcd']);
+        expressAdapter.getInstance().get('/', (_req, res) => {
+          expressAdapter.reply(
+            res,
+            new StreamableFile(source, { type: 'text/csv', length: 4 }),
+            205,
+          );
+        });
+
+        const res = await request(expressAdapter.getInstance())
+          .get('/')
+          .expect(205);
+
+        expect(res.headers['content-type']).toBeUndefined();
+        expect(res.headers['content-length']).toBe('0');
+        expect(res.text).toBe('');
+        expect(source.destroyed).toBe(true);
+      });
+
       it('should set the Content-Length of the file', () => {
         const response = createStreamResponse();
 
