@@ -65,7 +65,8 @@ import { AbstractHttpAdapter } from '@nestjs/core';
 import { LegacyRouteConverter } from '@nestjs/core/internal';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import { onResponseClose } from './utils/on-response-close.util.js';
-const { kErrorHandler, kReplySerializer, kRouteContext } = fastifySymbols;
+const { kErrorHandler, kReply, kReplySerializer, kRouteContext } =
+  fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
 import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
@@ -979,11 +980,27 @@ export class FastifyAdapter<
   }
 
   public render(
-    response: TReply & { view: Function },
+    response: TRawResponse | (TReply & { view: Function }),
     view: string,
     options: any,
   ) {
-    return response && response.view(view, options);
+    if (!response) {
+      return response;
+    }
+    if (!this.isNativeResponse(response)) {
+      const reply = response as TReply & { view: Function };
+      return reply.view(view, options);
+    }
+    // The reply created for a raw response is a plain Fastify reply, without
+    // the "view" decorator @fastify/view adds to the replies of the instance,
+    // so that decorator is called on it: rendering, the Content-Type and
+    // sending the page or the error stay those of the plugin
+    const instance = this.instance as TInstance & Record<symbol, any>;
+    const fastifyReply = this.createReplyForRawResponse(response);
+    // Its renderers read the route options of the request, and a raw
+    // response has no route
+    (fastifyReply.request as { routeOptions?: object }).routeOptions = {};
+    return instance[kReply].prototype.view.call(fastifyReply, view, options);
   }
 
   public redirect(
