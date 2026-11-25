@@ -1,8 +1,12 @@
-import { GUARDS_METADATA } from '../../constants.js';
+import {
+  GUARDS_METADATA,
+  SELF_DECLARED_DEPS_METADATA,
+} from '../../constants.js';
 import {
   applyDecorators,
   Controller,
   Get,
+  Inject,
   SetMetadata,
   UseGuards,
 } from '../../index.js';
@@ -36,5 +40,17 @@ describe('applyDecorators public types', () => {
     expect(
       Reflect.getMetadata(GUARDS_METADATA, AppController.prototype.findAll),
     ).toEqual([Guard]);
+  });
+
+  it('should compose a parameter decorator', () => {
+    const InjectConfig = () => applyDecorators(Inject('CONFIG'));
+
+    class Service {
+      constructor(@InjectConfig() public config: unknown) {}
+    }
+
+    expect(Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, Service)).toEqual([
+      { index: 0, param: 'CONFIG' },
+    ]);
   });
 });

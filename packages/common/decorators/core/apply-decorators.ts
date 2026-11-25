@@ -2,6 +2,7 @@ import { isUndefined } from '../../utils/shared.utils.js';
 
 type ComposedDecorator = ClassDecorator &
   MethodDecorator &
+  ParameterDecorator &
   // Also supports calling the decorator directly on a plain object.
   ((
     target: object,
@@ -19,7 +20,9 @@ type ComposedDecorator = ClassDecorator &
  * @publicApi
  */
 export function applyDecorators(
-  ...decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator>
+  ...decorators: Array<
+    ClassDecorator | MethodDecorator | PropertyDecorator | ParameterDecorator
+  >
 ): ComposedDecorator {
   const composed = <TFunction extends Function, Y>(
     target: TFunction | object,

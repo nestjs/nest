@@ -152,9 +152,7 @@ describe('applyDecorators', () => {
     const record: ParameterDecorator = (target, key, index) => {
       calls.push([target, key, index]);
     };
-    const composed = applyDecorators(
-      record as unknown as PropertyDecorator,
-    ) as unknown as ParameterDecorator;
+    const composed = applyDecorators(record);
 
     class Test {
       constructor(@composed first: string, @composed second: string) {}
