@@ -2318,10 +2318,7 @@ function isHttpError(
   );
 }
 
-/**
- * Returns true when `err` is the error Node.js destroys a request with when
- * its client disconnects mid-body, and Fastify gave it a status.
- */
+/** Node.js's error for a client that disconnects mid-body. */
 function isRequestAbortedError(
   err: unknown,
 ): err is Error & { statusCode: number } {
