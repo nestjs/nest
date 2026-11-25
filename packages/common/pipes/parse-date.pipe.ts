@@ -55,10 +55,11 @@ const MONTH_NAMES = [
 // "Feb.30.2024"), and a numeric date may follow a weekday ("Fri 02/30/2024").
 const NAMED_MONTH_DATE_PATTERNS = [
   // "Feb 30, 2024", "Thu Feb 30 2024 10:00:00 GMT+0300", "Feb-30-2024",
-  // "Feb 30, 24"
-  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})[\s,./-]+(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
-  // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024", "30-Feb-24"
-  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s,./-]+(?<month>[a-z]{3,})\.?[\s,./-]+(?<year>\d{4}|\d{2}(?!:))(?!\d)/i,
+  // "Feb 30, 24", "Feb 30", "Thu Feb 30"
+  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?:(?:[\s,./-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))/i,
+  // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024", "30-Feb-24",
+  // "30 Feb"
+  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s,./-]+(?<month>[a-z]{3,})\.?(?:(?:[\s,./-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))/i,
   // "2024 Feb 30", "2024-Feb-30"
   /^\s*(?<year>\d{4})[\s,./-]+(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?!\d)/i,
 ];
@@ -181,8 +182,10 @@ export class ParseDatePipe implements PipeTransform {
   /**
    * Reads the year, month and day of a date whose month is a name ("Feb 30,
    * 2024", "30 Feb 2024", "2024-Feb-30"), optionally after a weekday ("Thu,
-   * 30 Feb 2024 10:00:00 GMT"). As in `new Date()`, a month is named by its
-   * first three letters.
+   * 30 Feb 2024 10:00:00 GMT"). The year may be missing ("Feb 30") as long as
+   * no digit follows the day, so that a time in between ("Feb 29 10:00 2024")
+   * is left to `new Date()`. As in `new Date()`, a month is named by its first
+   * three letters and a date without a year is in 2001.
    */
   private matchNamedMonthDate(
     value: string,
@@ -195,7 +198,12 @@ export class ParseDatePipe implements PipeTransform {
       const month =
         MONTH_NAMES.indexOf(groups.month.slice(0, 3).toLowerCase()) + 1;
       if (month > 0) {
-        return [toFullYear(groups.year), month, Number(groups.day)];
+        // As in `new Date()`, a date without a year is in 2001
+        return [
+          groups.year === undefined ? 2001 : toFullYear(groups.year),
+          month,
+          Number(groups.day),
+        ];
       }
     }
     return undefined;
