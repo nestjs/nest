@@ -167,6 +167,11 @@ export class ParseDatePipe implements PipeTransform {
       }
     }
 
+    // `new Date()` doesn't read a number above 31 as a day ("99-Jan-20" is
+    // January 20, 1999), so such a reading is left to it
+    if (day > 31) {
+      return false;
+    }
     const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     const daysInMonth =
       month === 2 && isLeapYear ? 29 : DAYS_IN_MONTH[month - 1];

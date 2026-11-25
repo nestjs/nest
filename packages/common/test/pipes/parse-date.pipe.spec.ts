@@ -212,6 +212,18 @@ describe('ParseDatePipe', () => {
           expect(target.transform(value)).toEqual(new Date(value));
         }
       });
+
+      it('should accept a two-digit year in front of a month name', () => {
+        for (const value of [
+          '99-Jan-20',
+          '99 Jan 20',
+          '99, Jan, 20',
+          '99.Jan.20',
+          '50-Feb-27',
+        ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
     });
     describe('when empty value', () => {
       it('should throw an error', () => {
