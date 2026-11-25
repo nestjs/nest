@@ -878,8 +878,14 @@ export class FastifyAdapter<
     }
     // Fastify drops the body of a 204, but sends the one of a 205, which must
     // have none (RFC 9110). It gets no body or Content-Type and a zero
-    // Content-Length instead, as in the Express and Node adapters.
-    if (fastifyReply.statusCode === HttpStatus.RESET_CONTENT) {
+    // Content-Length instead, as in the Express and Node adapters. On a 304,
+    // Node.js discards the body, but Fastify still reads the whole stream of
+    // a StreamableFile before it ends the response, so it is destroyed too.
+    if (
+      fastifyReply.statusCode === HttpStatus.RESET_CONTENT ||
+      (fastifyReply.statusCode === HttpStatus.NOT_MODIFIED &&
+        body instanceof StreamableFile)
+    ) {
       if (body instanceof StreamableFile) {
         const stream = body.getStream();
         if (isFunction(stream?.destroy)) {
