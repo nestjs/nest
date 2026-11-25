@@ -20,7 +20,7 @@
   "dependencies": {
     "@fastify/cors": "11.3.0",
     "@fastify/formbody": "8.0.2",
-    "@fastify/middie": "9.3.8",
+    "@fastify/middie": "9.3.9",
     "fast-querystring": "1.1.2",
     "fastify": "5.12.8",
     "find-my-way": "9.10.0",
