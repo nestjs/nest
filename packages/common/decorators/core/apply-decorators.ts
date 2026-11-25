@@ -17,6 +17,18 @@ export function applyDecorators(
     propertyKey?: string | symbol,
     descriptor?: TypedPropertyDescriptor<Y>,
   ) => {
+    // A parameter decorator (e.g. `Inject()` in a constructor) gets the
+    // index of the parameter in place of a descriptor, and returns nothing
+    if (typeof descriptor === 'number') {
+      for (const decorator of decorators) {
+        (decorator as unknown as ParameterDecorator)(
+          target,
+          propertyKey,
+          descriptor,
+        );
+      }
+      return;
+    }
     // A class decorator gets the constructor alone. A decorator of a static
     // member gets the constructor too, along with the member's key.
     if (target instanceof Function && isUndefined(propertyKey)) {
@@ -25,7 +37,7 @@ export function applyDecorators(
         // As TypeScript does, a class returned by a decorator replaces the
         // decorated one for the decorators that follow
         decorated =
-          ((decorator as ClassDecorator)(decorated) as TFunction | void) ??
+          ((decorator as ClassDecorator)(decorated) as TFunction | void) ||
           decorated;
       }
       return decorated;
@@ -47,7 +59,7 @@ export function applyDecorators(
           target,
           propertyKey!,
           decorated,
-        ) as TypedPropertyDescriptor<Y> | void) ?? decorated;
+        ) as TypedPropertyDescriptor<Y> | void) || decorated;
     }
     return decorated;
   };

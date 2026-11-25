@@ -146,6 +146,31 @@ describe('applyDecorators', () => {
       [Test.prototype, 'instanceProperty'],
     ]);
   });
+
+  it('should pass the index of a parameter to a parameter decorator', () => {
+    const calls: Array<[unknown, string | symbol | undefined, number]> = [];
+    const record: ParameterDecorator = (target, key, index) => {
+      calls.push([target, key, index]);
+    };
+    const composed = applyDecorators(
+      record as unknown as PropertyDecorator,
+    ) as unknown as ParameterDecorator;
+
+    class Test {
+      constructor(@composed first: string, @composed second: string) {}
+
+      method(@composed value: string) {}
+    }
+
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        [Test, undefined, 0],
+        [Test, undefined, 1],
+        [Test.prototype, 'method', 0],
+      ]),
+    );
+    expect(calls).toHaveLength(3);
+  });
 });
 
 class Guard implements CanActivate {
