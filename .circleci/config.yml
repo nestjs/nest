@@ -9,10 +9,10 @@ parameters:
     default: '18.20'
   maintenance-node-version:
     type: string
-    default: '20.18'
+    default: '20.19'
   active-node-version:
     type: string
-    default: '22.11'
+    default: '22.12'
   current-node-version:
     type: string
     default: '23.3'
