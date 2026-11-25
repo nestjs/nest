@@ -443,7 +443,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         `Message dropped: its pattern does not name the handler of its routing key "${fields.routingKey}".`,
       );
       if (!this.noAck) {
-        this.channel!.nack(message as Message, false, false);
+        this.nackDelivery(message as Message, channel);
       }
       return;
     }
@@ -455,7 +455,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     if (!handler) {
       if (!this.noAck) {
         this.logger.warn(RMQ_NO_MESSAGE_HANDLER`${pattern}`);
-        this.channel!.nack(rmqContext.getMessage() as Message, false, false);
+        this.nackDelivery(rmqContext.getMessage() as Message, channel);
       }
       // The sender chooses the id, which this reply carries
       this.assertValidPacketId((packet as IncomingRequest).id);
@@ -509,7 +509,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
     if (!this.noAck) {
       // Requeued, it would be delivered again
-      this.channel!.nack(message as Message, false, false);
+      this.nackDelivery(message as Message, channel);
     }
     if (isNil(properties?.replyTo)) {
       return;
@@ -531,7 +531,10 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler && !this.noAck) {
-      this.channel!.nack(context.getMessage() as Message, false, false);
+      this.nackDelivery(
+        context.getMessage() as Message,
+        context.getChannelRef(),
+      );
       return this.logger.warn(RMQ_NO_EVENT_HANDLER`${pattern}`);
     }
     return super.handleEvent(
@@ -570,17 +573,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     // may be another one since a reconnect
     const channel = context.getChannelRef();
     this.recordSettlements(channel);
-    const nack = () => {
-      if (this.settledMessages.has(message)) {
-        return;
-      }
-      try {
-        channel.nack(message, false, false);
-      } catch (err) {
-        // The channel has closed, and the broker delivers the message again
-        this.logger.error(err);
-      }
-    };
+    const nack = () => this.nackDelivery(message, channel);
     return (async (data: unknown, ctx?: unknown) => {
       let resultOrStream: unknown;
       try {
@@ -600,6 +593,25 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         finalize(() => isInternalError && nack()),
       );
     }) as MessageHandler;
+  }
+
+  /**
+   * Negatively acknowledges a delivery on the channel it was consumed from.
+   * The wrapper's current channel (`this.channel`) may be another one since
+   * a reconnect, and nacking there with this delivery tag closes that channel
+   * (PRECONDITION_FAILED).
+   */
+  private nackDelivery(message: Message, channel: Channel) {
+    if (this.settledMessages.has(message)) {
+      return;
+    }
+    try {
+      channel.nack(message, false, false);
+      this.settledMessages.add(message);
+    } catch (err) {
+      // The channel has closed, and the broker delivers the message again
+      this.logger.error(err);
+    }
   }
 
   /**
