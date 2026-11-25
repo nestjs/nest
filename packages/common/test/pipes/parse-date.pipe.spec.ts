@@ -256,6 +256,27 @@ describe('ParseDatePipe', () => {
           expect(target.transform(value)).toEqual(new Date(value));
         }
       });
+
+      it('should throw for a day past its month end in a numeric date without a year', () => {
+        for (const value of [
+          '2/30',
+          '02/30',
+          '02-30',
+          '2.30',
+          '4/31',
+          'Fri 2/30',
+          // As in `new Date()`, the year of such a date is 2001, not a leap year
+          '2/29',
+        ]) {
+          expect(() => target.transform(value)).toThrow(BadRequestException);
+        }
+      });
+
+      it('should accept the last day of each month in a numeric date without a year', () => {
+        for (const value of ['2/28', '02-28', '4/30', '12/31', '2/28 10:00']) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
     });
     describe('when empty value', () => {
       it('should throw an error', () => {

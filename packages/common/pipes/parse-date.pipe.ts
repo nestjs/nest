@@ -66,9 +66,9 @@ const NAMED_MONTH_DATE_PATTERNS = [
 // "2024-02-30", "2024 02 30", "Fri, 2024/02/30", "+002024-02-30"
 const YEAR_FIRST_DATE_PATTERN =
   /^\s*(?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+)?([+-]\d{6}|\d{4})[\s,./-]+(\d{1,2})[\s,./-]+(\d{1,2})(?!\d)/i;
-// "02/30/2024", "02,30,2024", "Fri 02/30/2024", "2.30.24"
+// "02/30/2024", "02,30,2024", "Fri 02/30/2024", "2.30.24", "2/30"
 const MONTH_FIRST_DATE_PATTERN =
-  /^\s*(?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+)?(\d{1,2})[\s,./-]+(\d{1,2})[\s,./-]+(\d{4}|\d{2}(?!:))(?!\d)/i;
+  /^\s*(?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+)?(\d{1,2})[\s,./-]+(\d{1,2})(?:[\s,./-]+(\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))/i;
 
 /**
  * Reads a year as `new Date()` does, where a two-digit year below 50 is in
@@ -158,7 +158,8 @@ export class ParseDatePipe implements PipeTransform {
       if (usMatch) {
         month = Number(usMatch[1]);
         day = Number(usMatch[2]);
-        year = toFullYear(usMatch[3]);
+        // As in `new Date()`, a date without a year is in 2001
+        year = usMatch[3] === undefined ? 2001 : toFullYear(usMatch[3]);
       } else {
         const namedMatch = this.matchNamedMonthDate(value);
         if (!namedMatch) {
