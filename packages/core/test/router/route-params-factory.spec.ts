@@ -92,6 +92,15 @@ describe('RouteParamsFactory', () => {
             expect(extract(['a'], '0')).toBe('a');
             expect(extract('text', 'length')).toBe(4);
           });
+          it('should not return a falsy primitive body in place of the key', () => {
+            expect(extract('', 'name')).toBeUndefined();
+            expect(extract(0, 'name')).toBeUndefined();
+            expect(extract(false, 'name')).toBeUndefined();
+          });
+          it('should return a missing body as it is', () => {
+            expect(extract(undefined, 'name')).toBeUndefined();
+            expect(extract(null, 'name')).toBeNull();
+          });
         });
       });
       describe(`RouteParamtypes.RAW_BODY`, () => {
