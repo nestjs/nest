@@ -71,8 +71,8 @@ import {
 } from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import { onResponseClose } from './utils/on-response-close.util.js';
-import { toWritableChunks } from './utils/to-writable-chunks.util.js';
 import { setTextContentType } from './utils/set-text-content-type.util.js';
+import { toWritableChunks } from './utils/to-writable-chunks.util.js';
 
 type StreamableHandlerResponse = Parameters<StreamableFile['errorHandler']>[1];
 

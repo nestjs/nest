@@ -1239,6 +1239,46 @@ describe('NodeResponse', () => {
         expect(response.body.toString()).toBe('Internal Server Error');
       });
 
+      it('should answer with a 500 when the stream failed before send()', async () => {
+        const source = new PassThrough();
+        // Attached by the caller, so that the error doesn't crash the process
+        source.on('error', () => {});
+        const closed = new Promise(resolve => source.once('close', resolve));
+        source.destroy(new Error('open failed'));
+        await closed;
+
+        const response = await respond((req, res) => {
+          res.setHeader('Content-Length', '5');
+          res.send(source);
+        });
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body.toString()).toBe('Internal Server Error');
+      });
+
+      it('should answer with a 500 when the stream was destroyed before send()', async () => {
+        const source = new PassThrough();
+        source.write('partial');
+        source.destroy();
+        await once(source, 'close');
+
+        const response = await respond((req, res) => res.send(source));
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body.toString()).toBe('Internal Server Error');
+      });
+
+      it('should send an empty body for a stream that has already ended', async () => {
+        const source = Readable.from([]);
+        source.resume();
+        await once(source, 'end');
+
+        const response = await respond((req, res) => res.send(source));
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.toString()).toBe('');
+      });
+
       it('should abort the response when the stream fails midway', async () => {
         const source = new PassThrough();
         let response!: NodeResponse;

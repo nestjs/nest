@@ -725,6 +725,13 @@ function transferFile(
  * leave the stream open.
  */
 function sendStream(res: ServerResponse, stream: Readable) {
+  // A stream that failed or was destroyed before (e.g. while an interceptor
+  // awaited) emits nothing more, so piping it would never end the response
+  if (stream.errored || (stream.destroyed && !stream.readableEnded)) {
+    res.removeHeader('Content-Length');
+    respondWithError(res, stream.errored);
+    return;
+  }
   if (!res.hasHeader('Content-Type')) {
     res.setHeader('Content-Type', 'application/octet-stream');
   }
