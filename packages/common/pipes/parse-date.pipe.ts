@@ -60,8 +60,8 @@ const NAMED_MONTH_DATE_PATTERNS = [
   // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024", "30-Feb-24",
   // "30 Feb"
   /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s,./-]+(?<month>[a-z]{3,})\.?(?:(?:[\s,./-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))/i,
-  // "2024 Feb 30", "2024-Feb-30"
-  /^\s*(?<year>\d{4})[\s,./-]+(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?!\d)/i,
+  // "2024 Feb 30", "2024-Feb-30", "Fri, 2024-Feb-30"
+  /^\s*(?:[a-z]+,?\s+)?(?<year>\d{4})[\s,./-]+(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?!\d)/i,
 ];
 // "2024-02-30", "2024 02 30", "Fri, 2024/02/30", "+002024-02-30"
 const YEAR_FIRST_DATE_PATTERN =
@@ -182,10 +182,10 @@ export class ParseDatePipe implements PipeTransform {
   /**
    * Reads the year, month and day of a date whose month is a name ("Feb 30,
    * 2024", "30 Feb 2024", "2024-Feb-30"), optionally after a weekday ("Thu,
-   * 30 Feb 2024 10:00:00 GMT"). The year may be missing ("Feb 30") as long as
-   * no digit follows the day, so that a time in between ("Feb 29 10:00 2024")
-   * is left to `new Date()`. As in `new Date()`, a month is named by its first
-   * three letters and a date without a year is in 2001.
+   * 30 Feb 2024 10:00:00 GMT", "Fri, 2024-Feb-30"). The year may be missing
+   * ("Feb 30") as long as no digit follows the day, so that a time in between
+   * ("Feb 29 10:00 2024") is left to `new Date()`. As in `new Date()`, a month
+   * is named by its first three letters and a date without a year is in 2001.
    */
   private matchNamedMonthDate(
     value: string,
