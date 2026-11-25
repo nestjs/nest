@@ -31,6 +31,11 @@ export class GrpcExceptionFilter implements RpcExceptionFilter {
       return throwError(() => this.serializeRpcException(exception));
     }
 
+    // As in `BaseRpcExceptionFilter`, the caller only gets a generic message,
+    // so the exception is logged or it would be lost
+    if (!(exception instanceof IntrinsicException)) {
+      GrpcExceptionFilter.logger.error(exception);
+    }
     return throwError(() => ({
       code: GrpcStatus.UNKNOWN,
       message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
