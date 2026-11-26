@@ -315,6 +315,30 @@ describe('FastifyAdapter', () => {
       });
     });
 
+    describe('with a 304 status code and a StreamableFile', () => {
+      afterEach(() => fastifyAdapter.close());
+
+      it('should answer without reading the stream, and destroy it', async () => {
+        // A stream that never ends: Fastify would wait for it to end
+        const source = new PassThrough();
+        source.write('hello world');
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          fastifyAdapter.reply(
+            reply,
+            new StreamableFile(source, { type: 'text/csv', length: 11 }),
+            304,
+          );
+        });
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(res.statusCode).toBe(304);
+        expect(res.headers['content-type']).toBeUndefined();
+        expect(res.body).toBe('');
+        expect(source.destroyed).toBe(true);
+      });
+    });
+
     it('should destroy the stream of a StreamableFile once the reply was sent', () => {
       // e.g. by Fastify's `handlerTimeout`: send() then drops the stream
       const reply = { ...createReply(), sent: true };
