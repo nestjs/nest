@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18.6
+    image: postgres:18.7
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
