@@ -32,7 +32,7 @@
     "@nestjs/cli": "12.0.15",
     "@nestjs/schematics": "12.0.16",
     "@nestjs/testing": "12.6.2",
-    "@types/node": "26.6.10",
+    "@types/node": "26.6.11",
     "@types/supertest": "7.2.1",
     "oxlint": "1.95.0",
     "prettier": "3.9.10",
