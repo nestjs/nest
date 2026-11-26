@@ -35,7 +35,7 @@
     "@nestjs/testing": "12.6.2",
     "@types/amqplib": "2.2.1",
     "@types/express": "5.0.6",
-    "@types/node": "26.6.10",
+    "@types/node": "26.6.11",
     "@types/supertest": "7.2.1",
     "oxlint": "1.95.0",
     "prettier": "3.10.1",
