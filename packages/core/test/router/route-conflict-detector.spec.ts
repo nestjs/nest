@@ -362,6 +362,135 @@ describe('RouteConflictDetector', () => {
       expect(conflicts[0].shadowed).toBe(staticRoute);
     });
 
+    it('should not flag paths that differ by case only on a case-sensitive router', () => {
+      const lowerCaseRoute = makeResolvedRoute({ path: '/users' });
+      const upperCaseRoute = makeResolvedRoute({
+        path: '/Users',
+        methodName: 'somethingElse',
+      });
+
+      expect(
+        RouteConflictDetector.detect(
+          [lowerCaseRoute, upperCaseRoute],
+          undefined,
+        ),
+      ).toHaveLength(0);
+    });
+
+    it('should flag paths that differ by case only as a duplicate on a case-insensitive router, the first-registered route winning', () => {
+      const lowerCaseRoute = makeResolvedRoute({ path: '/users' });
+      const upperCaseRoute = makeResolvedRoute({
+        path: '/Users',
+        methodName: 'somethingElse',
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [lowerCaseRoute, upperCaseRoute],
+        undefined,
+        false,
+      );
+
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('duplicate');
+      expect(conflicts[0].winner).toBe(lowerCaseRoute);
+      expect(conflicts[0].shadowed).toBe(upperCaseRoute);
+    });
+
+    it('should flag a static route shadowed by a param of another case on a case-insensitive router only', () => {
+      const paramRoute = makeResolvedRoute({ path: '/users/:id' });
+      const staticRoute = makeResolvedRoute({ path: '/Users/me' });
+
+      expect(
+        RouteConflictDetector.detect([paramRoute, staticRoute], undefined),
+      ).toHaveLength(0);
+
+      const conflicts = RouteConflictDetector.detect(
+        [paramRoute, staticRoute],
+        undefined,
+        false,
+      );
+
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('shadow');
+      expect(conflicts[0].winner).toBe(paramRoute);
+      expect(conflicts[0].shadowed).toBe(staticRoute);
+    });
+
+    it('should compare in any case the text that follows a param in its segment', () => {
+      const lowerCaseRoute = makeResolvedRoute({ path: '/files/:name.png' });
+      const upperCaseRoute = makeResolvedRoute({
+        path: '/Files/:name.PNG',
+        methodName: 'somethingElse',
+      });
+
+      expect(
+        RouteConflictDetector.detect(
+          [lowerCaseRoute, upperCaseRoute],
+          undefined,
+          true,
+        ),
+      ).toHaveLength(0);
+      expect(
+        RouteConflictDetector.detect(
+          [lowerCaseRoute, upperCaseRoute],
+          undefined,
+          false,
+        ).map(conflict => conflict.kind),
+      ).toEqual(['duplicate']);
+    });
+
+    it('should compare percent-encoded text as written, hex digits in any case', () => {
+      const upperHexRoute = makeResolvedRoute({ path: '/%2F' });
+      const lowerHexRoute = makeResolvedRoute({
+        path: '/%2f',
+        methodName: 'somethingElse',
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [upperHexRoute, lowerHexRoute],
+        undefined,
+        false,
+      );
+
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('duplicate');
+      // "%41" and "%61" encode different characters, which a request path
+      // keeps apart
+      expect(
+        RouteConflictDetector.detect(
+          [
+            makeResolvedRoute({ path: '/%41' }),
+            makeResolvedRoute({ path: '/%61' }),
+          ],
+          undefined,
+          false,
+        ),
+      ).toHaveLength(0);
+    });
+
+    it('should compare a param with a custom pattern as a param, whatever the case of its pattern', () => {
+      const upperCaseRoute = makeResolvedRoute({ path: '/users/:id([A-Z]+)' });
+      const lowerCaseRoute = makeResolvedRoute({
+        path: '/Users/:id([a-z]+)',
+        methodName: 'somethingElse',
+      });
+
+      expect(
+        RouteConflictDetector.detect(
+          [upperCaseRoute, lowerCaseRoute],
+          undefined,
+          true,
+        ),
+      ).toHaveLength(0);
+      expect(
+        RouteConflictDetector.detect(
+          [upperCaseRoute, lowerCaseRoute],
+          undefined,
+          false,
+        ).map(conflict => conflict.kind),
+      ).toEqual(['duplicate']);
+    });
+
     it('should not flag routes on different HTTP methods', () => {
       const getRoute = makeResolvedRoute({
         path: '/users/:userId',

@@ -199,17 +199,22 @@ export class RouteConflictDetector {
    * Walks every unique pair of resolved routes and produces a conflict
    * record for each pair whose (method, host, version, path) tuples can
    * collide at runtime.
+   *
+   * A router that matches paths in any case (Express, unless it is told
+   * otherwise) serves "/Users" with "/users", so their paths are compared
+   * lower-cased.
    */
   public static detect(
     routes: ResolvedRoute[],
     versioningOptions: VersioningOptions | undefined,
+    caseSensitive = true,
   ): RouteConflict[] {
     const conflicts: RouteConflict[] = [];
     // Every route is compared with every other one: read each path once
     const comparablePaths = new Map(
       routes.map(route => [
         route.path,
-        RouteConflictDetector.toComparablePath(route.path),
+        RouteConflictDetector.toComparablePath(route.path, caseSensitive),
       ]),
     );
     // ... and each string host, the first time a pair of routes needs it
@@ -265,6 +270,7 @@ export class RouteConflictDetector {
           earlierRoute,
           laterRoute,
           versioningOptions,
+          caseSensitive,
         );
         conflicts.push({
           winner: earlierRoute,
@@ -378,15 +384,19 @@ export class RouteConflictDetector {
    * Paths path-to-regexp cannot match, or with more than
    * `MAX_EXPANDED_GROUPS` groups, are split on `/` instead.
    */
-  private static toComparablePath(rawPath: string): ComparablePath {
-    const tokens = RouteConflictDetector.parseTokens(rawPath);
+  private static toComparablePath(
+    rawPath: string,
+    caseSensitive = true,
+  ): ComparablePath {
+    const path = caseSensitive ? rawPath : rawPath.toLowerCase();
+    const tokens = RouteConflictDetector.parseTokens(path);
     if (
       !tokens ||
       RouteConflictDetector.countGroups(tokens) > MAX_EXPANDED_GROUPS
     ) {
       return {
         variants: [
-          RouteConflictDetector.splitPath(rawPath).map(
+          RouteConflictDetector.splitPath(path).map(
             RouteConflictDetector.toComparableSegment,
           ),
         ],
@@ -707,10 +717,14 @@ export class RouteConflictDetector {
     leftRoute: ResolvedRoute,
     rightRoute: ResolvedRoute,
     versioningOptions: VersioningOptions | undefined,
+    caseSensitive = true,
   ): boolean {
+    const samePath = caseSensitive
+      ? leftRoute.path === rightRoute.path
+      : leftRoute.path.toLowerCase() === rightRoute.path.toLowerCase();
     return (
       leftRoute.method === rightRoute.method &&
-      leftRoute.path === rightRoute.path &&
+      samePath &&
       RouteConflictDetector.hostsAreIdentical(
         leftRoute.host,
         rightRoute.host,
