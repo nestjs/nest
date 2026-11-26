@@ -687,6 +687,37 @@ describe('NestApplicationContext', () => {
     });
   });
 
+  describe('instrument', () => {
+    it("should decorate providers created by resolve() with the container's instrument", async () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class RequestService {}
+
+      const decorated = new WeakSet<object>();
+      const nestContainer = new NestContainer(undefined, {
+        instrument: {
+          instanceDecorator: (instance: unknown) => {
+            decorated.add(instance as object);
+            return instance;
+          },
+        },
+      });
+      const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
+      nestContainer.addProvider(RequestService, moduleRef.token);
+      await new InstanceLoader(
+        nestContainer,
+        new Injector(),
+        new GraphInspector(nestContainer),
+      ).createInstancesOfDependencies(nestContainer.getModules());
+
+      const applicationContext = new NestApplicationContext(nestContainer);
+      applicationContext.selectContextModule();
+
+      const instance = await applicationContext.resolve(RequestService);
+      expect(instance).toBeInstanceOf(RequestService);
+      expect(decorated.has(instance)).toBe(true);
+    });
+  });
+
   describe('get', () => {
     describe('when scope = DEFAULT', () => {
       it('should get value with function injection key', async () => {
