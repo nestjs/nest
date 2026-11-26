@@ -35,7 +35,7 @@ import {
  */
 export type TestingModuleOptions = Pick<
   NestApplicationContextOptions,
-  'moduleIdGeneratorAlgorithm'
+  'moduleIdGeneratorAlgorithm' | 'instrument'
 >;
 
 /**
@@ -198,6 +198,8 @@ export class TestingModuleBuilder {
     const injector = new TestingInjector({
       preview: options?.preview ?? false,
       snapshot: options?.snapshot ?? false,
+      instanceDecorator:
+        this.container.contextOptions?.instrument?.instanceDecorator,
     });
     const instanceLoader = new TestingInstanceLoader(
       this.container,
