@@ -5,6 +5,7 @@ import {
   type RpcExceptionFilter,
 } from '@nestjs/common';
 import { Observable, throwError as _throw } from 'rxjs';
+import { markInternalErrorReply } from './internal-error-reply.js';
 import { RpcException } from './rpc-exception.js';
 import { isObject } from '@nestjs/common/internal';
 import { MESSAGES } from '@nestjs/core/internal';
@@ -44,7 +45,9 @@ export class BaseRpcExceptionFilter<
       logger.error(exception);
     }
 
-    return _throw(() => ({ status, message: errorMessage }));
+    return _throw(() =>
+      markInternalErrorReply({ status, message: errorMessage }),
+    );
   }
 
   public isError(exception: any): exception is Error {

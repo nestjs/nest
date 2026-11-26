@@ -85,6 +85,6 @@ The files are in `storage/photos` and `storage/private`, as plain files: `storag
 
 ### Test
 
-The tutorial's test replaces both disks with in-memory disks, so it needs no signing key and no files. The upload still goes through multer and `uploadToDisk()`, as it does in the app. vitest needs Node.js 22 or later:
+The tutorial's test replaces both disks with in-memory disks, so it needs no signing key and no files. The upload still goes through multer and `uploadToDisk()`, as it does in the app. vitest needs Node.js 22.12 or later:
 
 `npm run test:e2e`

@@ -9,6 +9,7 @@ import {
   isUndefined,
 } from '../utils/shared.utils.js';
 import { LoggerService, LogLevel } from './logger.service.js';
+import { formatLogTimestamp } from './utils/format-log-timestamp.util.js';
 import {
   getEnvLogLevels,
   LOG_LEVEL_ENV_VAR,
@@ -18,8 +19,9 @@ import { createRedactor, Redactor } from './utils/redact.util.js';
 
 const DEFAULT_DEPTH = 5;
 /**
- * How many levels of nested errors (`cause`, `AggregateError#errors`) are
- * serialized in JSON mode.
+ * How many levels of nested errors (`cause`, `AggregateError#errors`, the
+ * `error` and `suppressed` of a `SuppressedError`) are serialized in JSON
+ * mode.
  */
 const MAX_ERROR_DEPTH = 5;
 /**
@@ -162,15 +164,6 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
  * sharing the environment warn about it once.
  */
 let reportedInvalidEnvLogLevel: string | undefined;
-
-const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  hour: 'numeric',
-  minute: 'numeric',
-  second: 'numeric',
-  day: '2-digit',
-  month: '2-digit',
-});
 
 /**
  * @publicApi
@@ -409,7 +402,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected getTimestamp(): string {
-    return dateTimeFormatter.format(Date.now());
+    return formatLogTimestamp();
   }
 
   protected printMessages(
@@ -582,8 +575,9 @@ export class ConsoleLogger implements LoggerService {
 
   /**
    * Converts an error into a plain object: `name`, `message`, `stack`, own
-   * primitive properties (e.g. `code`), and, recursively, `cause` and the
-   * `errors` of an `AggregateError`, up to a fixed depth.
+   * primitive properties (e.g. `code`), and, recursively, `cause`, the
+   * `errors` of an `AggregateError` and the `error` and `suppressed` of a
+   * `SuppressedError`, up to a fixed depth.
    */
   protected serializeError(
     error: Error,
@@ -627,6 +621,17 @@ export class ConsoleLogger implements LoggerService {
     const errors = (error as Partial<AggregateError>).errors;
     if (Array.isArray(errors)) {
       serialized.errors = errors.map(serializeNested);
+    }
+    // A SuppressedError (thrown by "using" declarations) holds the error
+    // thrown while disposing and the one it suppressed. Detected by shape, as
+    // the class is not a global before Node.js 24.
+    if (Object.hasOwn(error, 'suppressed')) {
+      const { error: thrown, suppressed } = error as Error & {
+        error: unknown;
+        suppressed: unknown;
+      };
+      serialized.error = serializeNested(thrown);
+      serialized.suppressed = serializeNested(suppressed);
     }
     ancestors.delete(error);
 

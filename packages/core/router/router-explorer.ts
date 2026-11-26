@@ -11,6 +11,7 @@ import {
   VERSIONED_ROUTE_MAPPED_MESSAGE,
 } from '../helpers/messages.js';
 import { RouterMethodFactory } from '../helpers/router-method-factory.js';
+import { withoutStackTrace } from '../helpers/without-stack-trace.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
 import { Injector } from '../injector/injector.js';
@@ -429,7 +430,9 @@ export class RouterExplorer {
         }
         const method = httpAdapterRef.getRequestMethod(req);
         const url = httpAdapterRef.getRequestUrl(req);
-        throw new NotFoundException(`Cannot ${method} ${url}`);
+        throw withoutStackTrace(
+          () => new NotFoundException(`Cannot ${method} ${url}`),
+        );
       }
       return next();
     };

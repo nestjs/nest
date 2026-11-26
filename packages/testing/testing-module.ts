@@ -1,4 +1,5 @@
 import {
+  ConsoleLogger,
   type HttpServer,
   type INestApplication,
   type INestMicroservice,
@@ -17,7 +18,7 @@ import {
   tryLoadPackage,
   loadPackageCached,
   isFunction,
-  isUndefined,
+  isNil,
 } from '@nestjs/common/internal';
 import type {
   ApplicationConfig,
@@ -128,10 +129,16 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private applyLogger(options: NestApplicationContextOptions | undefined) {
-    if (!options || isUndefined(options.logger)) {
+    if (!options) {
       return;
     }
-    Logger.overrideLogger(options.logger);
+    const { logger, forceConsole } = options;
+    // As with NestFactory: "logger: true" keeps the current (testing) logger
+    if ((logger as boolean) !== true && !isNil(logger)) {
+      Logger.overrideLogger(logger);
+    } else if (forceConsole) {
+      Logger.overrideLogger(new ConsoleLogger({ forceConsole: true }));
+    }
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {

@@ -1,5 +1,9 @@
 import { GUARDS_METADATA } from '../../constants.js';
-import { applyDecorators, UseGuards } from '../../decorators/index.js';
+import {
+  applyDecorators,
+  SetMetadata,
+  UseGuards,
+} from '../../decorators/index.js';
 import { CanActivate } from '../../interfaces/index.js';
 
 describe('applyDecorators', () => {
@@ -55,6 +59,115 @@ describe('applyDecorators', () => {
 
     expect(decoratedTarget).toEqual(expectedTarget);
     expect(customDecoratedTarget).toEqual(expectedTarget);
+  });
+
+  describe('when a decorator returns a value', () => {
+    const wrap =
+      (prefix: string): MethodDecorator =>
+      (target, key, descriptor: TypedPropertyDescriptor<any>) => ({
+        ...descriptor,
+        value: function (...args: unknown[]) {
+          return prefix + descriptor.value.apply(this, args);
+        },
+      });
+
+    it('should replace the method with the descriptor a method decorator returns', () => {
+      class Direct {
+        @wrap('wrapped:')
+        test() {
+          return 'test';
+        }
+      }
+      class Composed {
+        @applyDecorators(wrap('wrapped:'))
+        test() {
+          return 'test';
+        }
+      }
+
+      expect(new Direct().test()).toBe('wrapped:test');
+      expect(new Composed().test()).toBe('wrapped:test');
+    });
+
+    it('should pass the descriptor a method decorator returns to the next decorator', () => {
+      class Composed {
+        @applyDecorators(wrap('first:'), wrap('second:'))
+        test() {
+          return 'test';
+        }
+      }
+
+      expect(new Composed().test()).toBe('second:first:test');
+    });
+
+    it('should replace the class with the one a class decorator returns', () => {
+      const replace: ClassDecorator = (target: any) =>
+        class extends target {
+          replaced = true;
+        } as any;
+
+      @replace
+      class Direct {}
+      @applyDecorators(replace)
+      class Composed {}
+
+      expect(new Direct()).toHaveProperty('replaced', true);
+      expect(new Composed()).toHaveProperty('replaced', true);
+    });
+  });
+
+  it('should leave a property as it is when a decorator returns the target', () => {
+    class Dto {
+      @applyDecorators(SetMetadata('a', 1))
+      x = 5;
+    }
+
+    expect(Object.getOwnPropertyDescriptor(Dto.prototype, 'x')).toBeUndefined();
+    expect(new Dto().x).toBe(5);
+    expect(Reflect.getMetadata('a', Dto.prototype)).toBe(1);
+  });
+
+  it('should pass the key of a static property to a property decorator', () => {
+    const calls: Array<[unknown, string | symbol | undefined]> = [];
+    const record: PropertyDecorator = (target, key) => {
+      calls.push([target, key]);
+    };
+
+    class Test {
+      @applyDecorators(record)
+      static staticProperty: number;
+
+      @applyDecorators(record)
+      instanceProperty: number;
+    }
+
+    expect(calls).toEqual([
+      [Test, 'staticProperty'],
+      [Test.prototype, 'instanceProperty'],
+    ]);
+  });
+
+  it('should pass the index of a parameter to a parameter decorator', () => {
+    const calls: Array<[unknown, string | symbol | undefined, number]> = [];
+    const record: ParameterDecorator = (target, key, index) => {
+      calls.push([target, key, index]);
+    };
+    const composed = applyDecorators(record);
+
+    class Test {
+      constructor(@composed first: string, @composed second: string) {}
+
+      method(@composed value: string) {}
+    }
+
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        [Test, undefined, 0],
+        [Test, undefined, 1],
+        [Test.prototype, 'method', 0],
+      ]),
+    );
+    expect(calls).toHaveLength(3);
   });
 });
 

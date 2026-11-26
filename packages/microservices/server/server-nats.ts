@@ -1,4 +1,4 @@
-import { isObject, isUndefined } from '@nestjs/common/internal';
+import { isObject, isPlainObject, isUndefined } from '@nestjs/common/internal';
 import { EventEmitter } from 'events';
 import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants.js';
 import { NatsContext } from '../ctx-host/nats.context.js';
@@ -30,6 +30,13 @@ import { Server } from './server.js';
 type Client = any;
 type NatsMsg = any;
 type Subscription = any;
+type EncodableHeaders = { encode(): Uint8Array };
+
+let natsPackage = {} as any;
+
+const isEncodable = (headers: unknown): headers is EncodableHeaders =>
+  isObject(headers) &&
+  typeof (headers as EncodableHeaders).encode === 'function';
 
 /**
  * @publicApi
@@ -41,10 +48,11 @@ export class ServerNats<
   public transportId: TransportId = Transport.NATS;
 
   private natsClient: Client;
+  private closeCount = 0;
   protected statusEventEmitter = new EventEmitter<{
     [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
   }>();
-  private readonly subscriptions: Subscription[] = [];
+  private subscriptions: Subscription[] = [];
 
   constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
@@ -56,8 +64,15 @@ export class ServerNats<
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
-      this.natsClient = await this.createNatsClient();
+      const natsClient = await this.createNatsClient();
+      if (this.closeCount !== closeCount) {
+        await natsClient.close().catch(() => {});
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.natsClient = natsClient;
 
       this._status$.next(NatsStatus.CONNECTED as S);
       this.handleStatusUpdates(this.natsClient).catch(err =>
@@ -94,12 +109,15 @@ export class ServerNats<
   }
 
   public async close() {
+    this.closeCount++;
     if (!this.natsClient) {
+      this.statusEventEmitter.removeAllListeners();
       return;
     }
     const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
     if (graceful) {
       this.subscriptions.forEach(sub => sub.unsubscribe());
+      this.subscriptions = [];
       await this.waitForHandlersInFlight(
         this.getOptionsProp(this.options, 'gracePeriod'),
       );
@@ -108,12 +126,16 @@ export class ServerNats<
     // connection that gave up
     const natsClient = this.natsClient;
     this.natsClient = null;
-    await natsClient?.close();
-    this.statusEventEmitter.removeAllListeners();
+    this.subscriptions = [];
+    try {
+      await natsClient?.close();
+    } finally {
+      this.statusEventEmitter.removeAllListeners();
+    }
   }
 
   public async createNatsClient(): Promise<Client> {
-    const natsPackage = await this.loadPackage(
+    natsPackage = await this.loadPackage(
       '@nats-io/transport-node',
       ServerNats.name,
       () => import('@nats-io/transport-node'),
@@ -282,7 +304,7 @@ export class ServerNats<
           this.serializer.serialize(response);
 
         return natsMsg.respond(outgoingResponse.data, {
-          headers: outgoingResponse.headers,
+          headers: this.toMsgHdrs(outgoingResponse.headers),
         });
       };
     }
@@ -291,6 +313,24 @@ export class ServerNats<
     // Method returns a noop function instead
 
     return () => {};
+  }
+
+  /**
+   * nats.js encodes the headers of a publish with "MsgHdrs.encode()", and a
+   * record's headers are whatever "setHeaders()" was given. A plain object
+   * without "encode()" is copied into a "MsgHdrs", as "ClientNats" does before
+   * a request. Anything else is sent as it is, so a "MsgHdrs" keeps its
+   * repeated values and a custom encoder its bytes.
+   */
+  private toMsgHdrs(recordHeaders: unknown) {
+    if (isEncodable(recordHeaders) || !isPlainObject(recordHeaders)) {
+      return recordHeaders;
+    }
+    const headers = natsPackage.headers();
+    for (const [key, value] of Object.entries(recordHeaders)) {
+      headers.set(key, value as string);
+    }
+    return headers;
   }
 
   public async handleStatusUpdates(client: Client) {

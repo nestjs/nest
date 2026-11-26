@@ -285,9 +285,19 @@ export class NestContainer {
     if (!moduleRef) {
       throw new UnknownModuleException();
     }
+    const replacedRef = moduleRef.providers.get(
+      moduleRef.isCustomProvider(provider) ? provider.provide : provider,
+    );
     const providerKey = moduleRef.addProvider(provider, enhancerSubtype!);
     const providerRef = moduleRef.getProviderByKey(providerKey);
 
+    if (replacedRef && replacedRef !== providerRef) {
+      // The module keeps the later provider of a token, so the replaced one
+      // is never instantiated and must not be discovered
+      DiscoverableMetaHostCollection.removeInstanceWrappers(this.modules, [
+        replacedRef,
+      ]);
+    }
     DiscoverableMetaHostCollection.inspectProvider(this.modules, providerRef);
 
     return providerKey as Function;
@@ -328,9 +338,15 @@ export class NestContainer {
     if (isNil(controller)) {
       throw new CircularDependencyException(moduleRef.metatype.name);
     }
+    const replacedRef = moduleRef.controllers.get(controller);
     moduleRef.addController(controller);
 
     const controllerRef = moduleRef.controllers.get(controller)!;
+    if (replacedRef && replacedRef !== controllerRef) {
+      DiscoverableMetaHostCollection.removeInstanceWrappers(this.modules, [
+        replacedRef,
+      ]);
+    }
     DiscoverableMetaHostCollection.inspectController(
       this.modules,
       controllerRef,
@@ -364,8 +380,27 @@ export class NestContainer {
     }
   }
 
-  public replace(toReplace: any, options: { scope: any[] | null }) {
-    this.modules.forEach(moduleRef => moduleRef.replace(toReplace, options));
+  public replace(
+    toReplace: any,
+    options: { scope: any[] | null; isProvider?: boolean },
+  ) {
+    this.modules.forEach(moduleRef => {
+      const providerRef = options.isProvider
+        ? moduleRef.providers.get(toReplace)
+        : undefined;
+      moduleRef.replace(toReplace, options);
+      if (providerRef) {
+        // The wrapper now stands for another class or value, so it must be
+        // discovered by the metadata of that one, not of the replaced class
+        DiscoverableMetaHostCollection.removeInstanceWrappers(this.modules, [
+          providerRef,
+        ]);
+        DiscoverableMetaHostCollection.inspectProvider(
+          this.modules,
+          providerRef,
+        );
+      }
+    });
   }
 
   public bindGlobalScope() {

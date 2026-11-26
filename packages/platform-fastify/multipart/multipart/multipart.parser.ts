@@ -85,10 +85,13 @@ function assertPluginRegistered(
  * them over the options the plugin was registered with. Limits set to `null`
  * or `undefined` are left out, as the merge would copy them over the
  * plugin's limits (and its `fileSize` and `parts` defaults), which
- * `@fastify/busboy` then reads as no limit. `@fastify/busboy` treats
- * `fileSize` and `parts` as "max allowed" (it fires once a limit is
- * exceeded), so unlike multer there is no `+1` adjustment. Truncation is
- * detected here (`file.truncated`), so the plugin's own throw is disabled.
+ * `@fastify/busboy` then reads as no limit. So is a `NaN` that
+ * `isDefaultedLimit()` leaves to its default: `@fastify/busboy` would throw
+ * on a `parts` of `NaN`, and the plugin's limit applies instead.
+ * `@fastify/busboy` treats `fileSize` and `parts` as "max allowed" (it fires
+ * once a limit is exceeded), so unlike multer there is no `+1` adjustment.
+ * Truncation is detected here (`file.truncated`), so the plugin's own throw
+ * is disabled.
  */
 function toBusboyConfig(
   limits: MultipartLimits | undefined,
@@ -97,7 +100,9 @@ function toBusboyConfig(
   const config: Record<string, unknown> = { throwFileSizeLimit: false };
   if (limits) {
     config.limits = Object.fromEntries(
-      Object.entries(limits).filter(([, value]) => value != null),
+      Object.entries(limits).filter(
+        ([key, value]) => !isDefaultedLimit(key, value),
+      ),
     );
   }
   if (options.preservePath !== undefined) {
@@ -354,12 +359,13 @@ export function drainRequest(raw: IncomingMessage): Promise<void> {
 /**
  * Rejects limits that are not a non-negative integer or `Infinity`, as
  * multer does: busboy compares most limits with strict equality, so such a
- * value would silently disable the limit.
+ * value would silently disable the limit. A `NaN` that `isDefaultedLimit()`
+ * leaves to its default is let through.
  */
 export function validateLimits(limits: MultipartLimits | undefined) {
   for (const [key, value] of Object.entries(limits ?? {})) {
     if (
-      value == null ||
+      isDefaultedLimit(key, value) ||
       (Number.isInteger(value) && value >= 0) ||
       value === Infinity
     ) {
@@ -442,6 +448,29 @@ function exceedsArrayIndexLimit(name: string, limit: number) {
   return false;
 }
 
+// A limit given as NaN would turn the check off, so it gets the default too
+function resolveLimit(value: number | undefined, defaultValue: number): number {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
+/**
+ * The limits that get their default when given as `NaN`, as platform-express
+ * and platform-node do for the first three (`jsonFieldsSize` only exists
+ * here). Any other limit given as `NaN` is rejected, as multer does.
+ */
+const LIMITS_DEFAULTED_WHEN_NAN = new Set([
+  'parts',
+  'fieldNestingDepth',
+  'fieldArrayIndexLimit',
+  'jsonFieldsSize',
+]);
+
+function isDefaultedLimit(key: string, value: number | undefined) {
+  return (
+    value == null || (LIMITS_DEFAULTED_WHEN_NAN.has(key) && Number.isNaN(value))
+  );
+}
+
 /**
  * `fieldNestingDepth` and `fieldArrayIndexLimit` are multer's own limits
  * (busboy knows neither), so they are checked here, against the decoded name.
@@ -451,14 +480,17 @@ function checkFieldNameShape(
   name: string,
   limits: MultipartLimits | undefined,
 ) {
-  const nestingDepth =
-    limits?.fieldNestingDepth ?? DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth;
+  const nestingDepth = resolveLimit(
+    limits?.fieldNestingDepth,
+    DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth,
+  );
   if (name.split('[').length - 1 > nestingDepth) {
     throw new MultipartError('LIMIT_FIELD_NESTING', name);
   }
-  const arrayIndexLimit =
-    limits?.fieldArrayIndexLimit ??
-    DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit;
+  const arrayIndexLimit = resolveLimit(
+    limits?.fieldArrayIndexLimit,
+    DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit,
+  );
   if (
     arrayIndexLimit !== Infinity &&
     exceedsArrayIndexLimit(name, arrayIndexLimit)
@@ -476,7 +508,10 @@ interface FieldBudget {
 
 function createFieldBudget(limits: MultipartLimits | undefined): FieldBudget {
   return {
-    jsonFieldsSize: limits?.jsonFieldsSize ?? DEFAULT_JSON_FIELDS_SIZE,
+    jsonFieldsSize: resolveLimit(
+      limits?.jsonFieldsSize,
+      DEFAULT_JSON_FIELDS_SIZE,
+    ),
   };
 }
 
@@ -603,8 +638,10 @@ export async function processMultipart(
       if (!stream) {
         continue;
       }
+      // A "maxCount" of NaN counts as no file left, as in multer: "left <= 0"
+      // alone is never true for NaN
       const left =
-        spec.fields === 'ANY' ? Infinity : (filesLeft.get(part.fieldname) ?? 0);
+        spec.fields === 'ANY' ? Infinity : filesLeft.get(part.fieldname) || 0;
       if (left <= 0) {
         throw new MultipartError('LIMIT_UNEXPECTED_FILE', part.fieldname);
       }

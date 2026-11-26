@@ -8,7 +8,13 @@ import {
 } from '../interfaces/features/pipe-transform.interface.js';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util.js';
 import { withoutArrayGaps } from '../utils/close-array-gaps.util.js';
-import { isNil, isString, isUndefined } from '../utils/shared.utils.js';
+import {
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+  isUndefined,
+} from '../utils/shared.utils.js';
 import {
   OMITTED_ERRORS_MESSAGE,
   resolveMaxErrorMessagesLength,
@@ -73,20 +79,33 @@ export type ParseArrayOptions = ParseArrayPipeOptions;
 export class ParseArrayPipe implements PipeTransform {
   protected readonly validationPipe: ValidationPipe;
   protected exceptionFactory: (error: string) => any;
+  /**
+   * The exceptions created by a custom exception factory. Such an exception
+   * can be an `Error` that is not an `HttpException` (e.g. an `RpcException`
+   * or a `WsException`), and it is told apart this way from an error thrown
+   * by the code that validates an item.
+   */
+  private readonly createdExceptions = new WeakSet<object>();
 
   constructor(
     @Optional() protected readonly options: ParseArrayPipeOptions = {},
   ) {
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
+    const trackedExceptionFactory =
+      exceptionFactory &&
+      ((error: any) => this.trackCreatedException(exceptionFactory(error)));
+
     this.validationPipe = new ValidationPipe({
       transform: true,
       validateCustomDecorators: true,
       ...options,
+      ...(trackedExceptionFactory && {
+        exceptionFactory: trackedExceptionFactory,
+      }),
     });
-
-    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
-      options;
     this.exceptionFactory =
-      exceptionFactory ||
+      trackedExceptionFactory ||
       (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
@@ -161,7 +180,11 @@ export class ParseArrayPipe implements PipeTransform {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
-            if (err instanceof Error && !(err as any).getResponse) {
+            if (
+              err instanceof Error &&
+              !(err as any).getResponse &&
+              !this.createdExceptions.has(err)
+            ) {
               // Not a validation error, but a failure of the code that
               // validates (e.g. an async constraint or a `@Transform()`
               // function). It is left to the exception filters, as when the
@@ -199,6 +222,14 @@ export class ParseArrayPipe implements PipeTransform {
               } else {
                 message = `[${i}] ${response.message}`;
               }
+            } else if (err instanceof Error) {
+              // An exception of the custom factory that is not an
+              // HttpException (e.g. an RpcException). An Error has no
+              // enumerable properties, so it would be sent as `{}`: it is
+              // listed by its messages instead, as the ones above are.
+              message = this.getCreatedExceptionMessages(err).map(
+                item => `[${i}] ${item}`,
+              );
             } else {
               message = err;
             }
@@ -228,6 +259,30 @@ export class ParseArrayPipe implements PipeTransform {
       }
     }
     return value;
+  }
+
+  private trackCreatedException(exception: unknown): unknown {
+    // The validation pipe awaits the result of the factory, so an async
+    // factory's exception is tracked once it is resolved.
+    if (exception instanceof Promise) {
+      return exception.then(resolved => this.trackCreatedException(resolved));
+    }
+    if (isObject(exception)) {
+      this.createdExceptions.add(exception);
+    }
+    return exception;
+  }
+
+  /**
+   * The messages of an exception that a custom exception factory created and
+   * that is not an `HttpException`: the errors it holds when they are a list
+   * (e.g. `new RpcException(errors)` for the validation errors of an item,
+   * whose message is only "Rpc Exception"), or else its message.
+   */
+  private getCreatedExceptionMessages(exception: Error): unknown[] {
+    const getError = (exception as any).getError;
+    const error = isFunction(getError) ? getError.call(exception) : undefined;
+    return Array.isArray(error) ? error : [exception.message];
   }
 
   protected isExpectedTypePrimitive(): boolean {

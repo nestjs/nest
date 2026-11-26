@@ -562,6 +562,29 @@ describe('Injector', () => {
 
         expect(warn).not.toHaveBeenCalled();
       });
+
+      it('should warn about a parameter the metadata of its parent class does not cover', () => {
+        // The parent keeps the metadata its compiler emitted, like a class
+        // from a library built with tsc
+        @Injectable()
+        class Parent {
+          constructor(public dependency: Dependency) {}
+        }
+        class Target extends Parent {
+          constructor(
+            dependency: Dependency,
+            public other: Dependency,
+          ) {
+            super(dependency);
+          }
+        }
+        withoutMetadata(Target);
+
+        expect(dependenciesOf(Target)[0]).toEqual([Dependency]);
+        expect(warn).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(/The Target .* argument at index \[1\]/),
+        );
+      });
     });
 
     it('should not warn about an undecorated class', () => {
@@ -605,6 +628,25 @@ describe('Injector', () => {
       }
 
       expect(dependenciesOf(Target)[0]).toEqual([Dependency]);
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('should not warn about a subclass with decorator metadata of its own', () => {
+      @Injectable()
+      class Parent {
+        constructor(public dependency: Dependency) {}
+      }
+      @Injectable()
+      class Target extends Parent {
+        constructor(
+          dependency: Dependency,
+          public other: Dependency,
+        ) {
+          super(dependency);
+        }
+      }
+
+      expect(dependenciesOf(Target)[0]).toEqual([Dependency, Dependency]);
       expect(warn).not.toHaveBeenCalled();
     });
   });

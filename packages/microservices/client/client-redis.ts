@@ -65,13 +65,18 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.closeCount++;
     this.isManuallyClosed = true;
     this.handleClose();
-    this.pubClient && (await this.quitClient(this.pubClient));
-    this.subClient && (await this.quitClient(this.subClient));
+    const pubClient = this.pubClient;
+    const subClient = this.subClient;
     this.pubClient = this.subClient = null;
     this.connectionPromise = null;
-    this.isManuallyClosed = false;
     this.wasInitialConnectionSuccessful = false;
     this.pendingEventListeners = [];
+    // The dropped clients get no more retries (see `getClientOptions()`) and
+    // their events are ignored, so a `connect()` call made while they quit
+    // must not be treated as closed
+    this.isManuallyClosed = false;
+    pubClient && (await this.quitClient(pubClient));
+    subClient && (await this.quitClient(subClient));
   }
   // `quit()` rejects when the command cannot be sent (e.g., while
   // reconnecting with the offline queue disabled), which would leave the
@@ -146,7 +151,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     }
     this.subClient = subClient;
 
-    [this.pubClient, this.subClient].forEach((client, index) => {
+    [pubClient, subClient].forEach((client, index) => {
       const type = index === 0 ? 'pub' : 'sub';
       this.registerErrorListener(client);
       this.registerReconnectListener(client);
@@ -157,7 +162,10 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       );
     });
 
-    await Promise.all([this.subClient.connect(), this.pubClient.connect()]);
+    await Promise.all([subClient.connect(), pubClient.connect()]);
+    if (this.closeCount !== closeCount) {
+      throw new Error('Connection closed');
+    }
   }
 
   public async createClient(): Promise<Redis> {
@@ -277,7 +285,13 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   public getClientOptions(): Partial<RedisOptions['options']> {
-    const retryStrategy = (times: number) => this.createRetryStrategy(times);
+    // Clients created before a `close()` call must not reconnect after it,
+    // unlike the ones a later `connect()` call creates
+    const closeCount = this.closeCount;
+    const retryStrategy = (times: number) =>
+      this.closeCount === closeCount
+        ? this.createRetryStrategy(times)
+        : undefined;
 
     return {
       ...(this.options || {}),

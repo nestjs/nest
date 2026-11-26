@@ -5,6 +5,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { uid } from 'uid';
+import { getClassRef } from '../helpers/class-ref-registry.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { Module } from '../injector/module.js';
 import { ModulesContainer } from '../injector/modules-container.js';
@@ -78,22 +79,24 @@ export class DiscoveryService {
    * Returns an array of instance wrappers (providers).
    * Depending on the options, the array will contain either all providers or only providers with the specified metadata key.
    * @param options Discovery options.
-   * @param modules A list of modules to filter by.
+   * @param modules Restricts discovery to these modules, including when filtering by metadata key.
    * @returns An array of instance wrappers (providers).
    */
   public getProviders(
     options: DiscoveryOptions = {},
-    modules: Module[] = this.getModules(options),
+    modules?: Module[],
   ): InstanceWrapper[] {
     if ('metadataKey' in options) {
       const providers = DiscoverableMetaHostCollection.getProvidersByMetaKey(
         this.modulesContainer,
         options.metadataKey!,
       );
-      return Array.from(providers);
+      return this.filterByModules(providers, modules);
     }
 
-    const providers = modules.map(item => [...item.providers.values()]);
+    const providers = (modules ?? this.getModules(options)).map(item => [
+      ...item.providers.values(),
+    ]);
     return flatten(providers);
   }
 
@@ -101,12 +104,12 @@ export class DiscoveryService {
    * Returns an array of instance wrappers (controllers).
    * Depending on the options, the array will contain either all controllers or only controllers with the specified metadata key.
    * @param options Discovery options.
-   * @param modules A list of modules to filter by.
+   * @param modules Restricts discovery to these modules, including when filtering by metadata key.
    * @returns An array of instance wrappers (controllers).
    */
   public getControllers(
     options: DiscoveryOptions = {},
-    modules: Module[] = this.getModules(options),
+    modules?: Module[],
   ): InstanceWrapper[] {
     if ('metadataKey' in options) {
       const controllers =
@@ -114,10 +117,12 @@ export class DiscoveryService {
           this.modulesContainer,
           options.metadataKey!,
         );
-      return Array.from(controllers);
+      return this.filterByModules(controllers, modules);
     }
 
-    const controllers = modules.map(item => [...item.controllers.values()]);
+    const controllers = (modules ?? this.getModules(options)).map(item => [
+      ...item.controllers.values(),
+    ]);
     return flatten(controllers);
   }
 
@@ -140,8 +145,11 @@ export class DiscoveryService {
       );
     }
 
+    // A mixin helper can overwrite the "constructor" of the instance's
+    // prototype, so the class comes from the class-ref registry
+    const { instance, metatype } = instanceWrapper;
     const clsRef =
-      instanceWrapper.instance?.constructor ?? instanceWrapper.metatype;
+      (instance == null ? undefined : getClassRef(instance)) ?? metatype!;
     return Reflect.getMetadata(decorator.KEY, clsRef);
   }
 
@@ -156,6 +164,16 @@ export class DiscoveryService {
     }
     const whitelisted = this.includeWhitelisted(options.include!);
     return whitelisted;
+  }
+
+  private filterByModules(wrappers: Set<InstanceWrapper>, modules?: Module[]) {
+    if (!modules) {
+      return Array.from(wrappers);
+    }
+    const moduleSet = new Set(modules);
+    return Array.from(wrappers).filter(
+      wrapper => wrapper.host && moduleSet.has(wrapper.host),
+    );
   }
 
   private includeWhitelisted(include: Function[]): Module[] {

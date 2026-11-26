@@ -571,7 +571,9 @@ export class Injector {
    * Without them, a dependency nothing names is `undefined` until the first
    * request that uses it, so this says so while the application starts. It
    * doesn't throw, as a class may tolerate that. An undecorated class has no
-   * metadata either way, so it isn't checked.
+   * metadata either way, so it isn't checked. Only a class's own parameter
+   * types describe the constructor it declares: those it inherits, say from
+   * a library built with tsc, leave the parameters it adds undefined.
    */
   private warnOnMissingDecoratorMetadata(
     type: Type<unknown>,
@@ -581,7 +583,7 @@ export class Injector {
     if (
       type.length === 0 ||
       this.classesWithoutMetadata.has(type) ||
-      Reflect.hasMetadata(PARAMTYPES_METADATA, type) ||
+      Reflect.hasOwnMetadata(PARAMTYPES_METADATA, type) ||
       Reflect.getOwnMetadataKeys(type).length === 0
     ) {
       return;

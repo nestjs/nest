@@ -221,29 +221,32 @@ export class ValidationPipe implements PipeTransform {
       entity = { constructor: metatype };
     }
 
-    const binaryErrors = this.findNestedBinaryValues(entity);
-    if (binaryErrors.length > 0) {
+    let errors: ValidationError[];
+    try {
       // A binary value (e.g. an attachment of a socket.io message) is never
       // an instance of a nested class: class-transformer copies it instead
       // of building the class from it, and class-validator then looks for
       // the rules of its own type (there are none), not those of the class.
-      throw await this.exceptionFactory(binaryErrors);
-    }
-    const errors = await this.validate(entity, {
-      ...this.validatorOptions,
-      // The target of an error is the whole object it was found in, so an
-      // exception factory that sends the errors would repeat that object
-      // once per error.
-      validationError: {
-        target: false,
-        ...this.validatorOptions.validationError,
-      },
-    });
-    if (isCtorNotEqual && !isStandIn) {
-      // Left on the value, the stand-in would go wherever the value is
-      // copied (e.g. `{ ...dto }`), and class-transformer would then take
-      // the copy for an instance of the class.
-      delete entity.constructor;
+      errors = this.findNestedBinaryValues(entity);
+      if (errors.length === 0) {
+        errors = await this.validate(entity, {
+          ...this.validatorOptions,
+          // The target of an error is the whole object it was found in, so an
+          // exception factory that sends the errors would repeat that object
+          // once per error.
+          validationError: {
+            target: false,
+            ...this.validatorOptions.validationError,
+          },
+        });
+      }
+    } finally {
+      if (isCtorNotEqual && !isStandIn) {
+        // Left on the value, the stand-in would go wherever the value is
+        // copied (e.g. `{ ...dto }`), and class-transformer would then take
+        // the copy for an instance of the class.
+        delete entity.constructor;
+      }
     }
     if (errors.length > 0) {
       if (isUndefined(this.validatorOptions.validationError?.value)) {
@@ -487,11 +490,13 @@ export class ValidationPipe implements PipeTransform {
   protected findNestedBinaryValues(
     object: any,
     metadataCache = new Map<unknown, any[]>(),
+    ancestors = new WeakSet<object>(),
   ): ValidationError[] {
     const metadataStorage = classValidator.getMetadataStorage?.();
     if (
       !metadataStorage ||
       !isObject(object) ||
+      ancestors.has(object) ||
       Array.isArray(object) ||
       this.isBinary(object) ||
       !isFunction((object as any).constructor) ||
@@ -519,36 +524,43 @@ export class ValidationPipe implements PipeTransform {
     }
     const errors: ValidationError[] = [];
     const checked = new Set<string>();
-    for (const metadata of metadatas) {
-      const property: string = metadata.propertyName;
-      if (metadata.type !== NESTED_VALIDATION || checked.has(property)) {
-        continue;
-      }
-      checked.add(property);
-      const value = target[property];
-      // class-validator does not look at a value that a condition of the
-      // property (e.g. "@ValidateIf()" or "@IsOptional()") rules out
-      const isValidated = () =>
-        metadatas.every(
-          item =>
-            item.type !== CONDITIONAL_VALIDATION ||
-            item.propertyName !== property ||
-            item.constraints[0](target, value),
+    // Track the current path so cycles stop while shared objects are still checked.
+    ancestors.add(object);
+    try {
+      for (const metadata of metadatas) {
+        const property: string = metadata.propertyName;
+        if (metadata.type !== NESTED_VALIDATION || checked.has(property)) {
+          continue;
+        }
+        checked.add(property);
+        const value = target[property];
+        // class-validator does not look at a value that a condition of the
+        // property (e.g. "@ValidateIf()" or "@IsOptional()") rules out
+        const isValidated = () =>
+          metadatas.every(
+            item =>
+              item.type !== CONDITIONAL_VALIDATION ||
+              item.propertyName !== property ||
+              item.constraints[0](target, value),
+          );
+        const message = (
+          isString(metadata.message)
+            ? metadata.message
+            : `${metadata.each ? 'each value in ' : ''}nested property $property must be either object or array`
+        ).replace(/\$property/g, property);
+        const error = this.toNestedBinaryError(
+          property,
+          value,
+          message,
+          metadataCache,
+          ancestors,
         );
-      const message = (
-        isString(metadata.message)
-          ? metadata.message
-          : `${metadata.each ? 'each value in ' : ''}nested property $property must be either object or array`
-      ).replace(/\$property/g, property);
-      const error = this.toNestedBinaryError(
-        property,
-        value,
-        message,
-        metadataCache,
-      );
-      if (error && isValidated()) {
-        errors.push(error);
+        if (error && isValidated()) {
+          errors.push(error);
+        }
       }
+    } finally {
+      ancestors.delete(object);
     }
     return errors;
   }
@@ -558,6 +570,7 @@ export class ValidationPipe implements PipeTransform {
     value: unknown,
     message: string,
     metadataCache: Map<unknown, any[]>,
+    ancestors = new WeakSet<object>(),
   ): ValidationError | undefined {
     if (this.isBinary(value)) {
       return {
@@ -568,21 +581,30 @@ export class ValidationPipe implements PipeTransform {
     }
     let children: ValidationError[] = [];
     if (Array.isArray(value) || value instanceof Set || value instanceof Map) {
-      // class-validator validates each item, with or without "each"
-      const items: any = value instanceof Set ? Array.from(value) : value;
-      items.forEach((item: unknown, key: unknown) => {
-        const error = this.toNestedBinaryError(
-          String(key),
-          item,
-          message,
-          metadataCache,
-        );
-        if (error) {
-          children.push(error);
-        }
-      });
+      if (ancestors.has(value)) {
+        return;
+      }
+      ancestors.add(value);
+      try {
+        // class-validator validates each item, with or without "each"
+        const items: any = value instanceof Set ? Array.from(value) : value;
+        items.forEach((item: unknown, key: unknown) => {
+          const error = this.toNestedBinaryError(
+            String(key),
+            item,
+            message,
+            metadataCache,
+            ancestors,
+          );
+          if (error) {
+            children.push(error);
+          }
+        });
+      } finally {
+        ancestors.delete(value);
+      }
     } else {
-      children = this.findNestedBinaryValues(value, metadataCache);
+      children = this.findNestedBinaryValues(value, metadataCache, ancestors);
     }
     return children.length > 0 ? { property, children } : undefined;
   }

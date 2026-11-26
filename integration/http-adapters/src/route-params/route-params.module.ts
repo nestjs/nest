@@ -19,5 +19,30 @@ export class UsersV2Controller {
   }
 }
 
-@Module({ controllers: [UsersV1Controller, UsersV2Controller] })
+@Controller({ path: 'reports', version: '1' })
+export class ReportsV1Controller {
+  @Get(':name.:ext')
+  find(@Param() params: Record<string, string>) {
+    const response: Record<string, string> = { version: '1', ...params };
+    return response;
+  }
+}
+
+@Controller({ path: 'reports', version: '2' })
+export class ReportsV2Controller {
+  @Get(':name{.:locale}.:ext')
+  find(@Param() params: Record<string, string>) {
+    const response: Record<string, string> = { version: '2', ...params };
+    return response;
+  }
+}
+
+@Module({
+  controllers: [
+    UsersV1Controller,
+    UsersV2Controller,
+    ReportsV1Controller,
+    ReportsV2Controller,
+  ],
+})
 export class RouteParamsModule {}

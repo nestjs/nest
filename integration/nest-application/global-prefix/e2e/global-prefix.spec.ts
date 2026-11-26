@@ -49,6 +49,16 @@ describe('Global prefix', () => {
     await request(server).post('/api/v1/middleware').expect(404);
   });
 
+  it(`should exclude a path written with a trailing slash`, async () => {
+    app.setGlobalPrefix('/api/v1', { exclude: ['health/'] });
+
+    server = app.getHttpServer();
+    await listenOnLoopback(app);
+
+    await request(server).get('/health').expect(200, 'up');
+    await request(server).get('/api/v1/health').expect(404);
+  });
+
   it(`should exclude the path as RouteInfo`, async () => {
     app.setGlobalPrefix('/api/v1', {
       exclude: [

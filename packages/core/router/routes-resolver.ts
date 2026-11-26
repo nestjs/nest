@@ -16,6 +16,7 @@ import {
   CONTROLLER_MAPPING_MESSAGE,
   VERSIONED_CONTROLLER_MAPPING_MESSAGE,
 } from '../helpers/messages.js';
+import { withoutStackTrace } from '../helpers/without-stack-trace.js';
 import { NestContainer } from '../injector/container.js';
 import { Injector } from '../injector/injector.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
@@ -157,7 +158,9 @@ export class RoutesResolver implements Resolver {
     const callback = <TRequest, TResponse>(req: TRequest, res: TResponse) => {
       const method = applicationRef.getRequestMethod(req);
       const url = applicationRef.getRequestUrl(req);
-      throw new NotFoundException(`Cannot ${method} ${url}`);
+      throw withoutStackTrace(
+        () => new NotFoundException(`Cannot ${method} ${url}`),
+      );
     };
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);

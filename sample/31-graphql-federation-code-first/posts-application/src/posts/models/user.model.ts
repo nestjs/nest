@@ -1,5 +1,4 @@
 import { Directive, Field, ID, ObjectType } from '@nestjs/graphql';
-import { Post } from './post.model.js';
 
 @ObjectType()
 @Directive('@extends')
@@ -8,7 +7,4 @@ export class User {
   @Field((type) => ID)
   @Directive('@external')
   id: number;
-
-  @Field((type) => [Post])
-  posts?: Post[];
 }

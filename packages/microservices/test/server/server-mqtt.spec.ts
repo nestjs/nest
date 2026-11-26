@@ -72,6 +72,31 @@ describe('ServerMqtt', () => {
 
       expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
+    it('should close the created client and skip startup when closed before createMqttClient resolves', async () => {
+      let resolveClient!: (value: any) => void;
+      const pendingClient = {
+        endAsync: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+      vi.spyOn(server, 'createMqttClient').mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+      const startSpy = vi.spyOn(server, 'start').mockImplementation(() => {});
+
+      const listenPromise = server.listen(callbackSpy);
+      await server.close();
+      resolveClient(pendingClient);
+      await listenPromise;
+
+      expect(pendingClient.endAsync).toHaveBeenCalledOnce();
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(untypedServer.mqttClient).toBeNull();
+      expect(callbackSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
     it('should bind the callback with "once"', async () => {
       await server.listen(callbackSpy);
 
@@ -194,17 +219,45 @@ describe('ServerMqtt', () => {
   });
   describe('close', () => {
     let endAsync: ReturnType<typeof vi.fn>;
-    let mqttClient: { endAsync: ReturnType<typeof vi.fn> };
+    let mqttClient: { endAsync: ReturnType<typeof vi.fn>; connected: boolean };
 
     beforeEach(() => {
       endAsync = vi.fn().mockResolvedValue(undefined);
-      mqttClient = { endAsync };
+      mqttClient = { endAsync, connected: true };
       untypedServer.mqttClient = mqttClient;
     });
 
     it('should end mqttClient', async () => {
       await server.close();
-      expect(endAsync).toHaveBeenCalledOnce();
+      expect(endAsync).toHaveBeenCalledExactlyOnceWith(false);
+    });
+
+    it('should not wait for the broker to acknowledge packets while disconnected', async () => {
+      mqttClient.connected = false;
+
+      await server.close();
+
+      expect(endAsync).toHaveBeenCalledExactlyOnceWith(true);
+    });
+
+    it('should settle with a reply in flight when the broker is gone', async () => {
+      const { connect } = await import('mqtt');
+      // Nothing listens there, so the client keeps reconnecting
+      const client = connect('mqtt://127.0.0.1:1', { reconnectPeriod: 50 });
+      client.on('error', () => {});
+      // Kept for the next connection, and acknowledged by none
+      client.publish('reply', 'x', { qos: 1 });
+      untypedServer.mqttClient = client;
+
+      const settled = await Promise.race([
+        server.close().then(() => true),
+        new Promise(resolve => setTimeout(() => resolve(false), 1000)),
+      ]);
+      if (!settled) {
+        client.end(true);
+      }
+
+      expect(settled).toBe(true);
     });
 
     it('should settle only once the connection is closed', async () => {

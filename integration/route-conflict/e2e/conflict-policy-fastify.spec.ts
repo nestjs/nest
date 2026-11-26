@@ -7,6 +7,8 @@ import {
 import { Test } from '@nestjs/testing';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
+import { PathCaseModule } from '../src/path-case/path-case.module.js';
+import { RegexParamModule } from '../src/regex-param/regex-param.module.js';
 import { SameShapeModule } from '../src/same-shape/same-shape.module.js';
 
 interface CapturedLogger {
@@ -40,12 +42,13 @@ async function buildFastifyApp(
   moduleClass: any,
   options: NestApplicationOptions,
   capture?: CapturedLogger,
+  adapter: FastifyAdapter = new FastifyAdapter(),
 ): Promise<NestFastifyApplication> {
   const moduleRef = await Test.createTestingModule({
     imports: [moduleClass],
   }).compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter(),
+    adapter,
     options,
   );
   if (capture) {
@@ -146,6 +149,85 @@ describe('Route conflict policy (Fastify)', () => {
       await expect(builtApp.init()).rejects.toBeInstanceOf(
         RouteConflictException,
       );
+    });
+  });
+
+  describe('path case fixture', () => {
+    it('with caseSensitive: false, warns of the duplicate instead of failing on it', async () => {
+      const capture = createCaptureLogger();
+      app = await buildFastifyApp(
+        PathCaseModule,
+        { routeConflictPolicy: { duplicate: 'warn', shadow: 'off' } },
+        capture,
+        new FastifyAdapter({ caseSensitive: false }),
+      );
+      await expect(app.init()).resolves.toBeDefined();
+      expect(capture.warnings).toEqual([
+        'Duplicate route: GET /users is registered by both LowerUsersController#lower and UpperUsersController#upper.',
+      ]);
+
+      await app.getHttpAdapter().getInstance().ready();
+      const response = await app.inject({ method: 'GET', url: '/Users' });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ handler: 'lower' });
+    });
+
+    it('on the default case-sensitive router, reports nothing, as the paths are different routes', async () => {
+      const capture = createCaptureLogger();
+      app = await buildFastifyApp(
+        PathCaseModule,
+        { routeConflictPolicy: { duplicate: 'warn', shadow: 'warn' } },
+        capture,
+      );
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      expect(capture.warnings).toEqual([]);
+
+      const cases: Array<{ url: string; body: Record<string, unknown> }> = [
+        { url: '/users', body: { handler: 'lower' } },
+        { url: '/Users', body: { handler: 'upper' } },
+        { url: '/Orders/pending', body: { handler: 'pending' } },
+      ];
+
+      for (const testCase of cases) {
+        const response = await app.inject({
+          method: 'GET',
+          url: testCase.url,
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.json()).toEqual(testCase.body);
+      }
+    });
+  });
+
+  describe('regex param fixture', () => {
+    it('with caseSensitive: false, reports the duplicate and keeps matching the param pattern as written', async () => {
+      const capture = createCaptureLogger();
+      app = await buildFastifyApp(
+        RegexParamModule,
+        { routeConflictPolicy: { duplicate: 'warn' } },
+        capture,
+        new FastifyAdapter({ caseSensitive: false }),
+      );
+      await expect(app.init()).resolves.toBeDefined();
+      expect(capture.warnings).toEqual([
+        'Duplicate route: GET /users/:id([A-Z]+) is registered by both UpperIdController#byUpperId and LowerIdController#byLowerId.',
+      ]);
+
+      await app.getHttpAdapter().getInstance().ready();
+      const upperCaseResponse = await app.inject({
+        method: 'GET',
+        url: '/Users/ABC',
+      });
+      expect(upperCaseResponse.statusCode).toBe(200);
+      expect(upperCaseResponse.json()).toEqual({ handler: 'upper' });
+
+      const lowerCaseResponse = await app.inject({
+        method: 'GET',
+        url: '/Users/abc',
+      });
+      expect(lowerCaseResponse.statusCode).toBe(404);
     });
   });
 });

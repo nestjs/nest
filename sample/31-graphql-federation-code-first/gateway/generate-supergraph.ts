@@ -1,3 +1,10 @@
+import {
+  LocalCompose,
+  RemoteGraphQLDataSource,
+  SERVICE_DEFINITION_QUERY,
+  type ServiceDefinition,
+} from '@apollo/gateway';
+import { parse } from 'graphql';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { writeFileSync } from 'node:fs';
@@ -36,68 +43,51 @@ async function generateSupergraph() {
   }
 }
 
+const subgraphs = [
+  { name: 'users', url: 'http://localhost:3002/graphql' },
+  { name: 'posts', url: 'http://localhost:3003/graphql' },
+];
+
+async function fetchSubgraphSdl(url: string): Promise<string> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query: SERVICE_DEFINITION_QUERY }),
+  });
+  const { data } = await response.json();
+  return data._service.sdl;
+}
+
 async function generateSupergraphLocal() {
-  console.log('Generating local supergraph schema for development...');
+  console.log('Composing supergraph schema from the running sub-graphs...');
 
-  const supergraphSchema = `\
-schema
-  @link(url: "https://specs.apollo.dev/federation/v2.3")
-  @link(url: "https://specs.apollo.dev/link/v1.0")
-{
-  query: Query
-}
+  const localServiceList: ServiceDefinition[] = [];
+  for (const { name, url } of subgraphs) {
+    try {
+      const sdl = await fetchSubgraphSdl(url);
+      localServiceList.push({ name, url, typeDefs: parse(sdl) });
+    } catch {
+      console.error(
+        `Failed to fetch the "${name}" sub-graph schema from ${url}.`,
+      );
+      console.error(
+        'Start users-application and posts-application before the gateway.',
+      );
+      process.exit(1);
+    }
+  }
 
-directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+  const { supergraphSdl } = await new LocalCompose({
+    localServiceList,
+  }).initialize({
+    update: () => {},
+    healthCheck: async () => {},
+    getDataSource: ({ url }) => new RemoteGraphQLDataSource({ url }),
+  });
 
-directive @key(fields: String!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-directive @requires(fields: String!) on FIELD_DEFINITION
-
-directive @provides(fields: String!) on FIELD_DEFINITION
-
-directive @external on OBJECT | FIELD_DEFINITION
-
-directive @shareable on OBJECT | FIELD_DEFINITION
-
-directive @extends on OBJECT | INTERFACE
-
-scalar link__Import
-
-enum link__Purpose {
-  SECURITY
-  EXECUTION
-}
-
-type Query {
-  _entities(representations: [_Any!]!): [_Entity]!
-  _service: _Service!
-}
-
-union _Entity = User | Post
-
-scalar _Any
-
-type _Service {
-  sdl: String!
-}
-
-type User @key(fields: "id") {
-  id: ID!
-  name: String!
-  posts: [Post!]!
-}
-
-type Post @key(fields: "id") {
-  id: ID!
-  title: String!
-  body: String!
-  authorId: ID!
-  user: User!
-}
-`;
-
-  writeFileSync(join(__dirname, 'supergraph.graphql'), supergraphSchema);
-  console.log('Local supergraph schema generated successfully!');
+  writeFileSync(join(__dirname, 'supergraph.graphql'), supergraphSdl);
+  console.log('Supergraph schema generated successfully!');
+  console.log('Output written to: supergraph.graphql');
 }
 
 const useRover = process.argv.includes('--rover');

@@ -46,6 +46,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public transportId: TransportId = Transport.MQTT;
   protected readonly url: string;
   protected mqttClient: MqttClient;
+  private closeCount = 0;
   protected connectionAttempts = 0;
   protected hasConnected = false;
   protected pendingEventListeners: Array<{
@@ -64,13 +65,20 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
       // Re-arm the attempts limit so that a restarted server gets a fresh
       // startup window.
       this.connectionAttempts = 0;
       this.hasConnected = false;
 
-      this.mqttClient = await this.createMqttClient();
+      const mqttClient = await this.createMqttClient();
+      if (this.closeCount !== closeCount) {
+        await mqttClient.endAsync().catch(() => {});
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.mqttClient = mqttClient;
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -131,6 +139,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   }
 
   public async close() {
+    this.closeCount++;
     // Reset first, so that the status update of the client being closed is not
     // taken for the connection that gave up, and a listener registered right
     // after close() waits for the next listen() instead of attaching to it
@@ -145,8 +154,10 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     }
     // Awaited, so that a close() the caller awaits really has the connection
     // closed, as with the other transports: mqtt closes it on a later tick and
-    // the broker still delivers to it until then
-    await mqttClient?.endAsync();
+    // the broker still delivers to it until then. mqtt stops reconnecting,
+    // then waits for the broker to acknowledge the packets in flight (e.g. a
+    // QoS 1 reply). Without a connection that never happens.
+    await mqttClient?.endAsync(!mqttClient.connected);
   }
 
   private async stopReceivingMessages(mqttClient: MqttClient) {

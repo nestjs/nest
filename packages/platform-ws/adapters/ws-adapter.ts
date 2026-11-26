@@ -637,9 +637,7 @@ export class WsAdapter extends AbstractWsAdapter {
 
   public async close(server: any) {
     if (!this.gracefulShutdown) {
-      const closeEventSignal = new Promise((resolve, reject) =>
-        server.close((err: Error) => (err ? reject(err) : resolve(undefined))),
-      );
+      const closeEventSignal = this.closeServer(server);
       if (server.clients) {
         for (const ws of server.clients) {
           ws.terminate();
@@ -650,9 +648,7 @@ export class WsAdapter extends AbstractWsAdapter {
     }
 
     this.closingServers.add(server);
-    const closeEventSignal = new Promise((resolve, reject) =>
-      server.close((err: Error) => (err ? reject(err) : resolve(undefined))),
-    );
+    const closeEventSignal = this.closeServer(server);
     const clients: any[] = server.clients ? [...server.clients] : [];
     if (clients.length > 0) {
       await this.drainAndCloseClients(clients);
@@ -691,6 +687,14 @@ export class WsAdapter extends AbstractWsAdapter {
       (this.clientActiveHandlers.get(client) ?? 0) +
       (this.clientPendingReplies.get(client) ?? 0)
     );
+  }
+
+  private closeServer(server: any): Promise<void> {
+    // ws only reports an error for a server that is not running (e.g., one a
+    // gateway closed itself), which is the state this is after anyway. Like
+    // AbstractWsAdapter, it resolves, as a rejection would stop app.close()
+    // before the HTTP server is closed.
+    return new Promise(resolve => server.close(() => resolve()));
   }
 
   private async drainAndCloseClients(clients: any[]): Promise<void> {

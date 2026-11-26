@@ -94,6 +94,47 @@ describe('ParseDatePipe', () => {
           '2024-02-30T10:00:00Z',
           '2024-06-31T10:00:00+09:00',
           '+002024-02-30',
+          '2024/02/30',
+          '2023/02/29',
+          '2024/04/31',
+          '2024.02.30',
+          '02/30/2024',
+          '02/29/2023',
+          '04/31/2024',
+          '2/30/2024',
+          '2024/2/30',
+          '2024-2-30',
+          '4.31.2024',
+          'Feb 30, 2024',
+          'feb 30 2024',
+          'February 30 2024',
+          'Feb 29, 2023',
+          'Apr 31 2024 10:00',
+          'Sept 31 2024',
+          '30 Feb 2024',
+          '30-Feb-2024',
+          '2024-Feb-30',
+          'Fri Feb 30 2024 10:00:00 GMT+0300',
+          'Thu, 30 Feb 2024 10:00:00 GMT',
+          '2024 02 30',
+          '02 30 2024',
+          '2024,02,30',
+          '02, 30, 2024',
+          'Fri 02/30/2024',
+          'Fri, 2024-02-30',
+          'Friday 2024/04/31',
+          'Feb.30.2024',
+          'Feb,30,2024',
+          '30.Feb.2024',
+          '2024.Feb.30',
+          'Thu 2024 sept 31',
+          'Thu 2023 Feb 29',
+          'Fri, 2024 Feb 30',
+          'Friday 2024-Feb-30',
+          'Sun 2024 Sep 31 10:00',
+          'Sun 2024 Feb 30 10:00:00 GMT+0300',
+          'Thursday 2024.Apr.31',
+          'Wed 2100 Feb 29',
         ]) {
           expect(() => target.transform(value)).toThrow(BadRequestException);
         }
@@ -106,7 +147,151 @@ describe('ParseDatePipe', () => {
           '2023-02-28',
           '2024-04-30',
           '2024-12-31T23:59:59Z',
+          '2024/02/29',
+          '2023/02/28',
+          '2024/04/30',
+          '2024.02.29',
+          '02/29/2024',
+          '02/28/2023',
+          '2/29/2024',
+          '2024/2/29',
+          '2024-4-30',
+          'Feb 29, 2024',
+          'February 29 2024',
+          'Feb 28, 2023',
+          'Apr 30 2024 10:00',
+          'Sept 30 2024',
+          'Dec 31, 2024',
+          '29 Feb 2024',
+          '2024-Feb-29',
+          'Thu Feb 29 2024 10:00:00 GMT+0300',
+          'Thu, 29 Feb 2024 10:00:00 GMT',
+          '2024 02 29',
+          '02 29 2024',
+          '2024,04,30',
+          '02, 29, 2024',
+          'Thu 02/29/2024',
+          'Thu, 2024-02-29',
+          'Tuesday 2024/04/30',
+          'Feb.29.2024',
+          'Feb,29,2024',
+          '29.Feb.2024',
+          '2024.Feb.29',
+          'Thu 2024 Sept 30',
+          'Thu 2024 Feb 29',
+          'Friday 2024-Feb-29',
+          'Fri, 2024 Feb 29',
+          'Sun 2024 Sep 30 10:00',
+          'Sun 2024 Feb 29 10:00:00 GMT+0300',
+          'Thursday 2024.Apr.30',
+          'Wed 2000 Feb 29',
+          'Tue, 2024 02 29',
+          'Tue, 2024/02/29',
         ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
+
+      it('should throw for a day past the end of its month with a two-digit year', () => {
+        for (const value of [
+          '4/31/24',
+          '02/30/24',
+          '2/29/23',
+          '2/29/49',
+          '04-31-24',
+          '4.31.24',
+          '4/31/24 10:00 PM',
+          'Apr 31, 24',
+          'Feb 29 23',
+          '31-Apr-24',
+          '30 Feb 24',
+          '04 31 24',
+          'Fri 2/30/24',
+        ]) {
+          expect(() => target.transform(value)).toThrow(BadRequestException);
+        }
+      });
+
+      it('should accept the last day of each month with a two-digit year', () => {
+        for (const value of [
+          '4/30/24',
+          '2/29/24',
+          '2/29/00',
+          '2/29/96',
+          '12/31/99',
+          '4/30/24 10:00 PM',
+          'Feb 29, 24',
+          '29-Feb-24',
+          'Feb 29 10:00 2024',
+          '29 Feb 10:00 2024',
+          '04 30 24',
+          'Thu 2/29/24',
+        ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
+
+      it('should accept a two-digit year in front of a month name', () => {
+        for (const value of [
+          '99-Jan-20',
+          '99 Jan 20',
+          '99, Jan, 20',
+          '99.Jan.20',
+          '50-Feb-27',
+        ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
+
+      it('should throw for a day past its month end in a month-name date without a year', () => {
+        for (const value of [
+          'Feb 30',
+          '30 Feb',
+          'Feb-30',
+          '30-Feb',
+          'Thu Feb 30',
+          'Sep 31',
+          'Feb,30',
+          'Feb.30',
+          'Thu, Feb 30',
+          // As in `new Date()`, the year of such a date is 2001, not a leap year
+          'Feb 29',
+        ]) {
+          expect(() => target.transform(value)).toThrow(BadRequestException);
+        }
+      });
+
+      it('should accept the last day of each month in a month-name date without a year', () => {
+        for (const value of [
+          'Feb 28',
+          '28 Feb',
+          '30 Mar',
+          'Apr 30',
+          'Feb,28',
+          '28.Feb',
+          'Feb 28 10:00',
+        ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
+
+      it('should throw for a day past its month end in a numeric date without a year', () => {
+        for (const value of [
+          '2/30',
+          '02/30',
+          '02-30',
+          '2.30',
+          '4/31',
+          'Fri 2/30',
+          // As in `new Date()`, the year of such a date is 2001, not a leap year
+          '2/29',
+        ]) {
+          expect(() => target.transform(value)).toThrow(BadRequestException);
+        }
+      });
+
+      it('should accept the last day of each month in a numeric date without a year', () => {
+        for (const value of ['2/28', '02-28', '4/30', '12/31', '2/28 10:00']) {
           expect(target.transform(value)).toEqual(new Date(value));
         }
       });

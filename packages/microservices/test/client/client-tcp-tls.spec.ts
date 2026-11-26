@@ -134,6 +134,35 @@ describe('ClientTCP TLS connection readiness', () => {
     }
   });
 
+  it('rejects a pending TCP connect when the client is closed', async () => {
+    const peers = new Set<Socket>();
+    const server = createTcpServer(socket => {
+      peers.add(socket);
+      socket.on('error', () => {});
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    const port = (server.address() as { port: number }).port;
+    const client = new ClientTCP({ port, host: '127.0.0.1' });
+    const statuses: TcpStatus[] = [];
+    const subscription = client.status.subscribe(status =>
+      statuses.push(status),
+    );
+    const attempt = client.connect();
+    const socket = client.unwrap<Socket>();
+    try {
+      // Still connecting: `end()` here would let the socket connect anyway
+      client.close();
+
+      await expect(attempt).rejects.toThrow('Connection closed');
+      expect(socket.destroyed).toBe(true);
+      expect(statuses).not.toContain(TcpStatus.CONNECTED);
+    } finally {
+      subscription.unsubscribe();
+      for (const peer of peers) peer.destroy();
+      await new Promise<void>(resolve => server.close(() => resolve()));
+    }
+  });
+
   it.each(['stalled', 'accepted', 'untrusted'] as const)(
     'handles a real %s TLS handshake',
     async mode => {

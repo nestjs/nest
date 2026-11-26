@@ -664,6 +664,97 @@ describe('RouteTable', () => {
       ]);
     });
 
+    it.each(['GET', 'HEAD'])(
+      'should keep the optional captures of each shared route on %s',
+      method => {
+        const v1 = handler();
+        const v2 = handler();
+        table.add('GET', '/reports/:name.:ext', v1);
+        table.add('GET', '/reports/:name{.:locale}.:ext', v2);
+
+        for (const path of [
+          '/reports/report.en.json',
+          '/reports/report.en.json/',
+        ]) {
+          const found = table.lookup(method, path);
+          expect(found?.handlers).toEqual([v1, v2]);
+          expect(found?.params).toEqual({ name: 'report.en', ext: 'json' });
+          expect(found?.paramsByHandler).toEqual([
+            { name: 'report.en', ext: 'json' },
+            { name: 'report', locale: 'en', ext: 'json' },
+          ]);
+        }
+      },
+    );
+
+    it('should keep the optional captures of a route when an earlier route has the shape of a shorter variant', () => {
+      table.add('GET', '/reports/:name.:ext/meta', handler());
+      const optional = handler();
+      table.add('GET', '/reports/:name{.:locale}.:ext', optional);
+
+      const found = table.lookup('GET', '/reports/report.en.json');
+      expect(found?.handlers).toEqual([optional]);
+      expect(found?.params).toEqual({
+        name: 'report',
+        locale: 'en',
+        ext: 'json',
+      });
+    });
+
+    it('should keep optional captures when the shared routes name their parameters differently', () => {
+      table.add('GET', '/reports/:file.:format', handler());
+      table.add('GET', '/reports/:name{.:locale}.:ext', handler());
+
+      expect(
+        table.lookup('GET', '/reports/report.en.json')?.paramsByHandler,
+      ).toEqual([
+        { file: 'report.en', format: 'json' },
+        { name: 'report', locale: 'en', ext: 'json' },
+      ]);
+      expect(
+        table.lookup('GET', '/reports/report.json')?.paramsByHandler,
+      ).toEqual([
+        { file: 'report', format: 'json' },
+        { name: 'report', ext: 'json' },
+      ]);
+    });
+
+    it('should still omit a trailing slash from a shared optional wildcard', () => {
+      table.add('GET', '/files/:name/*rest', handler());
+      table.add('GET', '/files/:name{/*remaining}', handler());
+
+      expect(
+        table.lookup('GET', '/files/report/en/json/')?.paramsByHandler,
+      ).toEqual([
+        { name: 'report', rest: ['en', 'json'] },
+        { name: 'report', remaining: ['en', 'json'] },
+      ]);
+    });
+
+    it('should preserve encoded text and parameter values when rematching optional captures', () => {
+      table.add('GET', '/rates%/:name.:ext', handler());
+      table.add('GET', '/rates%/:name{.:locale}.:ext', handler());
+
+      expect(
+        table.lookup('GET', '/rates%25/report%252Fen.en.json')?.paramsByHandler,
+      ).toEqual([
+        { name: 'report%2Fen.en', ext: 'json' },
+        { name: 'report%2Fen', locale: 'en', ext: 'json' },
+      ]);
+    });
+
+    it('should retain optional captures before a repeated parameter name', () => {
+      table.add('GET', '/reports/:id.:ext/:id', handler());
+      table.add('GET', '/reports/:id{.:locale}.:ext/:id', handler());
+
+      expect(
+        table.lookup('GET', '/reports/report.en.json/42')?.paramsByHandler,
+      ).toEqual([
+        { id: '42', ext: 'json' },
+        { id: '42', locale: 'en', ext: 'json' },
+      ]);
+    });
+
     it('should give each handler its own parameters for a HEAD request', () => {
       table.add('GET', '/a/:id', handler());
       table.add('GET', '/a/:other', handler());

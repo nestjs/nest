@@ -35,18 +35,18 @@ describe('GraphQL Federation Gateway (Schema First)', () => {
       .send({
         query: `
           query {
-            _service {
-              sdl
+            __type(name: "User") {
+              fields {
+                name
+              }
             }
           }
         `,
       })
       .expect(200)
       .expect((res) => {
-        expect(res.body.data).toBeDefined();
-        expect(res.body.data._service).toBeDefined();
-        expect(res.body.data._service.sdl).toContain('type User');
-        expect(res.body.data._service.sdl).toContain('type Post');
+        const fields = res.body.data.__type.fields.map(({ name }) => name);
+        expect(fields).toEqual(expect.arrayContaining(['id', 'name', 'posts']));
       });
   });
 

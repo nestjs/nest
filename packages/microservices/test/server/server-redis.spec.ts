@@ -101,6 +101,49 @@ describe('ServerRedis', () => {
 
       expect(statuses).not.toContain('disconnected');
     });
+    it('should disconnect the new clients when closed while creating them', async () => {
+      let resolveClient!: (value: any) => void;
+      const subClient = { disconnect: vi.fn(), quit: vi.fn(), on: vi.fn() };
+      const pubClient = { disconnect: vi.fn(), quit: vi.fn(), on: vi.fn() };
+      vi.spyOn(server, 'createRedisClient')
+        .mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              resolveClient = resolve;
+            }),
+        )
+        .mockResolvedValueOnce(pubClient as any);
+      const startSpy = vi.spyOn(server, 'start').mockImplementation(() => {});
+
+      const listenPromise = server.listen(callbackSpy);
+      await server.close();
+      resolveClient(subClient);
+      await listenPromise;
+
+      // "quit" would make a lazily connecting client connect first
+      expect(subClient.disconnect).toHaveBeenCalledOnce();
+      expect(pubClient.disconnect).toHaveBeenCalledOnce();
+      expect(subClient.quit).not.toHaveBeenCalled();
+      expect(pubClient.quit).not.toHaveBeenCalled();
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(untypedServer.subClient).toBeUndefined();
+      expect(untypedServer.pubClient).toBeUndefined();
+      expect(callbackSpy).toHaveBeenCalledExactlyOnceWith(
+        new Error('Connection closed'),
+      );
+    });
+    it('should disconnect the subscriber when the publisher cannot be created', async () => {
+      const error = new Error('random error');
+      const subClient = { disconnect: vi.fn(), on: vi.fn() };
+      vi.spyOn(server, 'createRedisClient')
+        .mockResolvedValueOnce(subClient as any)
+        .mockRejectedValueOnce(error);
+
+      await server.listen(callbackSpy);
+
+      expect(subClient.disconnect).toHaveBeenCalledOnce();
+      expect(callbackSpy).toHaveBeenCalledExactlyOnceWith(error);
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');

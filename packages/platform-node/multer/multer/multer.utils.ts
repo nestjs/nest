@@ -146,17 +146,24 @@ function passErrorToCallback(fileFilter: FileFilter): FileFilter {
   };
 }
 
+function resolveLimit(value: number | undefined, defaultValue: number): number {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
 function withDefaultLimits(
   limits: MulterLimits | null | undefined,
 ): MulterLimits {
   return {
     ...limits,
-    fieldNestingDepth:
-      limits?.fieldNestingDepth ?? DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth,
-    fieldArrayIndexLimit:
-      limits?.fieldArrayIndexLimit ??
+    fieldNestingDepth: resolveLimit(
+      limits?.fieldNestingDepth,
+      DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth,
+    ),
+    fieldArrayIndexLimit: resolveLimit(
+      limits?.fieldArrayIndexLimit,
       DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit,
-    parts: limits?.parts ?? DEFAULT_PARTS_LIMIT,
+    ),
+    parts: resolveLimit(limits?.parts, DEFAULT_PARTS_LIMIT),
   };
 }
 

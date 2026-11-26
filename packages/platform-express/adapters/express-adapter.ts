@@ -18,6 +18,7 @@ import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
 import { Duplex, Readable, Transform, Writable } from 'stream';
 import { types } from 'util';
+import type { NestExpressApplication } from '../interfaces/nest-express-application.interface.js';
 import {
   NestExpressBodyParserOptionsFor,
   NestExpressBodyParserType,
@@ -70,6 +71,7 @@ function isJsonContentType(contentType: string): boolean {
 export class ExpressAdapter extends AbstractHttpAdapter<
   http.Server | https.Server
 > {
+  declare protected readonly __nestApplicationType: NestExpressApplication;
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();
@@ -178,6 +180,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       const { errored } = body.getStream();
       if (errored) {
         return body.errorHandler(errored, response);
+      }
+      // No body for a 204, 205 or 304 (RFC 9110): res.send() strips it and
+      // the headers describing it, as for any other body
+      if ([204, 205, 304].includes(response.statusCode)) {
+        body.getStream().destroy();
+        return response.send();
       }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();

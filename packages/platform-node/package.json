@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-node",
-  "version": "12.5.1",
+  "version": "12.6.2",
   "description": "Run NestJS directly on node:http, with no framework underneath: the fastest NestJS HTTP adapter.",
   "keywords": [
     "nestjs",
@@ -40,10 +40,10 @@
     "cookie": "0.7.2",
     "cookie-signature": "1.2.2",
     "cors": "2.8.6",
-    "encodeurl": "2.0.1",
+    "encodeurl": "2.0.3",
     "fast-querystring": "1.1.2",
-    "find-my-way": "9.10.0",
-    "light-my-request": "6.8.0",
+    "find-my-way": "9.10.2",
+    "light-my-request": "6.8.1",
     "mime-types": "3.0.2",
     "multer": "2.5.0",
     "on-finished": "2.4.2",
@@ -56,8 +56,8 @@
     "type-is": "2.1.0"
   },
   "devDependencies": {
-    "@nestjs/common": "12.5.1",
-    "@nestjs/core": "12.5.1"
+    "@nestjs/common": "12.6.2",
+    "@nestjs/core": "12.6.2"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.0",

@@ -1,3 +1,9 @@
+import {
+  LocalCompose,
+  RemoteGraphQLDataSource,
+  type ServiceDefinition,
+} from '@apollo/gateway';
+import { parse } from 'graphql';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -37,7 +43,7 @@ async function generateSupergraph() {
 }
 
 async function generateSupergraphLocal() {
-  console.log('Generating local supergraph schema from schema files...');
+  console.log('Composing supergraph schema from the sub-graph schema files...');
 
   const usersSchemaPath = join(
     __dirname,
@@ -63,64 +69,30 @@ async function generateSupergraphLocal() {
     process.exit(1);
   }
 
-  const usersSchema = readFileSync(usersSchemaPath, 'utf-8');
-  const postsSchema = readFileSync(postsSchemaPath, 'utf-8');
+  const localServiceList: ServiceDefinition[] = [
+    {
+      name: 'users',
+      url: 'http://localhost:3000/graphql',
+      typeDefs: parse(readFileSync(usersSchemaPath, 'utf-8')),
+    },
+    {
+      name: 'posts',
+      url: 'http://localhost:3001/graphql',
+      typeDefs: parse(readFileSync(postsSchemaPath, 'utf-8')),
+    },
+  ];
 
-  const supergraphSchema = `\
-schema
-  @link(url: "https://specs.apollo.dev/federation/v2.3")
-  @link(url: "https://specs.apollo.dev/link/v1.0")
-{
-  query: Query
-}
+  const { supergraphSdl } = await new LocalCompose({
+    localServiceList,
+  }).initialize({
+    update: () => {},
+    healthCheck: async () => {},
+    getDataSource: ({ url }) => new RemoteGraphQLDataSource({ url }),
+  });
 
-directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
-
-directive @key(fields: String!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-directive @requires(fields: String!) on FIELD_DEFINITION
-
-directive @provides(fields: String!) on FIELD_DEFINITION
-
-directive @external on OBJECT | FIELD_DEFINITION
-
-directive @shareable on OBJECT | FIELD_DEFINITION
-
-directive @extends on OBJECT | INTERFACE
-
-scalar link__Import
-
-enum link__Purpose {
-  SECURITY
-  EXECUTION
-}
-
-type Query {
-  _entities(representations: [_Any!]!): [_Entity]!
-  _service: _Service!
-  getUser(id: ID!): User
-  getPosts: [Post]
-  findPost(id: ID!): Post
-}
-
-union _Entity = User | Post
-
-scalar _Any
-
-type _Service {
-  sdl: String!
-}
-
-${usersSchema.replace(/^extend type Query[\s\S]*?}$/m, '')}
-
-${postsSchema.replace(/^extend type Query[\s\S]*?}$/m, '').replace(/^extend type User[\s\S]*?}$/m, '')}
-`;
-
-  writeFileSync(join(__dirname, 'supergraph.graphql'), supergraphSchema);
-  console.log('Local supergraph schema generated successfully!');
-  console.log(
-    'Note: For production, use Rover CLI with actual running sub-graphs.',
-  );
+  writeFileSync(join(__dirname, 'supergraph.graphql'), supergraphSdl);
+  console.log('Supergraph schema generated successfully!');
+  console.log('Output written to: supergraph.graphql');
 }
 
 const useRover = process.argv.includes('--rover');

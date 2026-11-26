@@ -1,5 +1,5 @@
 import { Module as ModuleDecorator } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
+import { ConsoleLogger, Logger } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Module } from '@nestjs/core/injector/module';
@@ -67,6 +67,28 @@ describe('TestingModule', () => {
       const microservice = module.createNestMicroservice(options);
 
       expect((microservice as any).options).toBe(options);
+    });
+
+    it('should log through the console when "forceConsole" is true', async () => {
+      await tryLoadPackage('@nestjs/microservices', () => ({
+        NestMicroservice: MockNestMicroservice,
+      }));
+
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
+
+      module.createNestMicroservice({ transport: 0, forceConsole: true });
+
+      const consoleLogSpy = vi
+        .spyOn(console, 'log')
+        .mockImplementation(() => {});
+      new Logger('TestContext').log('message');
+
+      expect(consoleLogSpy).toHaveBeenCalledOnce();
     });
   });
 
@@ -142,6 +164,63 @@ describe('TestingModule', () => {
       module.createNestApplication(adapter as any, { logger: false });
 
       expect(overrideSpy).toHaveBeenCalledOnce();
+    });
+
+    it('should keep the testing logger when "logger" is true', async () => {
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
+      const testingLogger = (Logger as any).staticInstanceRef;
+
+      module.createNestApplication(createMockAdapter() as any, {
+        logger: true,
+      });
+
+      expect((Logger as any).staticInstanceRef).toBe(testingLogger);
+    });
+
+    it('should log through the console when "forceConsole" is true', async () => {
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
+
+      module.createNestApplication(createMockAdapter() as any, {
+        forceConsole: true,
+      });
+
+      const consoleLogSpy = vi
+        .spyOn(console, 'log')
+        .mockImplementation(() => {});
+      const stdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      new Logger('TestContext').log('message');
+
+      expect(consoleLogSpy).toHaveBeenCalledOnce();
+      expect(stdoutWriteSpy).not.toHaveBeenCalled();
+    });
+
+    it('should prefer a custom logger over "forceConsole"', async () => {
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
+      const customLogger = new ConsoleLogger();
+
+      module.createNestApplication(createMockAdapter() as any, {
+        logger: customLogger,
+        forceConsole: true,
+      });
+
+      expect((Logger as any).staticInstanceRef).toBe(customLogger);
     });
   });
 

@@ -4,7 +4,7 @@ import { adapters, createApp } from '../src/adapters.js';
 import { RouteParamsModule } from '../src/route-params/route-params.module.js';
 
 describe.each(adapters('express', 'node'))(
-  'Params of routes that differ only by param names (%s)',
+  'Params of routes that share a path shape (%s)',
   name => {
     let app: INestApplication;
 
@@ -28,6 +28,43 @@ describe.each(adapters('express', 'node'))(
 
       expect(v1.body).toEqual({ id: '5' });
       expect(v2.body).toEqual({ userId: '5' });
+    });
+
+    it.each(['/reports/report.en.json', '/reports/report.en.json/'])(
+      'should preserve optional captures after a version miss on %s',
+      async path => {
+        const v1 = await request(app.getHttpServer())
+          .get(path)
+          .set('v', '1')
+          .expect(200);
+        const v2 = await request(app.getHttpServer())
+          .get(path)
+          .set('v', '2')
+          .expect(200);
+
+        expect(v1.body).toEqual({
+          version: '1',
+          name: 'report.en',
+          ext: 'json',
+        });
+        expect(v2.body).toEqual({
+          version: '2',
+          name: 'report',
+          locale: 'en',
+          ext: 'json',
+        });
+      },
+    );
+
+    it('should also match the versioned route without its optional part', async () => {
+      for (const version of ['1', '2']) {
+        const response = await request(app.getHttpServer())
+          .get('/reports/report.json')
+          .set('v', version)
+          .expect(200);
+
+        expect(response.body).toEqual({ version, name: 'report', ext: 'json' });
+      }
     });
   },
 );

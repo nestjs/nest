@@ -12,6 +12,7 @@ import {
   takeUntil,
 } from 'rxjs/operators';
 import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
+import { types } from 'util';
 import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/internal';
 import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
@@ -119,10 +120,76 @@ export class IoAdapter extends AbstractWsAdapter {
     port: number | undefined,
     options?: ServerOptions,
   ): Server {
+    const serverOptions = options && this.guardAllowRequest(options);
     if (this.httpServer && port === 0) {
-      return new Server(this.httpServer, options);
+      return new Server(this.httpServer, serverOptions);
     }
-    return new Server(port, options);
+    return new Server(port, serverOptions);
+  }
+
+  /**
+   * engine.io calls "allowRequest" while it handles the handshake of a client,
+   * and catches nothing it throws, nor a promise it returns that rejects, so an
+   * error in a gateway's check of what a client sent would end the process.
+   * Here the error is logged and the client is refused as if "allowRequest"
+   * had called back with "false".
+   */
+  protected guardAllowRequest(
+    options: Partial<ServerOptions>,
+  ): Partial<ServerOptions> {
+    const { allowRequest } = options;
+    if (!isFunction(allowRequest)) {
+      return options;
+    }
+    const logger = this.logger;
+    return {
+      // A copy, so that the options passed in are left as they are
+      ...options,
+      // A function, so that the check gets the "this" engine.io calls it with
+      allowRequest: function (
+        this: unknown,
+        req: Parameters<typeof allowRequest>[0],
+        callback: Parameters<typeof allowRequest>[1],
+      ) {
+        // Only the first answer is passed on, unless engine.io throws on it
+        let isSettled = false;
+        // Once engine.io has thrown while it went on with an answer, what the
+        // check throws is taken to be that error, or one put in its place
+        let hasAnswerThrown = false;
+        const settle: typeof callback = (message, success) => {
+          if (isSettled) {
+            return;
+          }
+          isSettled = true;
+          try {
+            callback(message, success);
+          } catch (err) {
+            hasAnswerThrown = true;
+            // The check may then answer again, as it could without this guard
+            isSettled = false;
+            throw err;
+          }
+        };
+        const refuse = (err: unknown) => {
+          if (hasAnswerThrown) {
+            throw err;
+          }
+          logger.error(err);
+          settle(undefined, false);
+        };
+        let result: unknown;
+        try {
+          result = allowRequest.call(this, req, settle);
+        } catch (err) {
+          return refuse(err);
+        }
+        // Only a promise ends the process when it rejects unhandled. Any other
+        // thenable is left alone, as a query may run again when "then" is called
+        if (types.isPromise(result)) {
+          result.catch(refuse);
+        }
+      },
+    };
   }
 
   public bindMessageHandlers(

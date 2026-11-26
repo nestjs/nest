@@ -1218,6 +1218,20 @@ describe('WsAdapter', () => {
       expect(ws.close).not.toHaveBeenCalled();
     });
 
+    it.each([false, true])(
+      'should resolve for a server that is already closed (gracefulShutdown: %s)',
+      async gracefulShutdown => {
+        // e.g. a gateway closing its own server in onModuleDestroy(): a
+        // rejection here would stop app.close() before the HTTP server closes
+        const adapter = new WsAdapter(createServer(), { gracefulShutdown });
+        const server = adapter.create(0, { path: '/closed' });
+        await new Promise(resolve => server.close(resolve));
+
+        await expect(adapter.close(server)).resolves.toBeUndefined();
+        await adapter.dispose();
+      },
+    );
+
     it('should block new frames, drain in-flight handler and pending reply, then close with 1001', async () => {
       const adapter = new WsAdapter(undefined, {
         gracefulShutdown: true,

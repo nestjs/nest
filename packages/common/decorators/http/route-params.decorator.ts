@@ -160,10 +160,19 @@ export const Response: (
   options?: ResponseDecoratorOptions,
 ) => ParameterDecorator =
   (options?: ResponseDecoratorOptions) => (target, key, index) => {
-    if (options?.passthrough) {
+    // An overriding method would otherwise inherit the passthrough of the
+    // @Res() it replaces, and Nest would send its return value as well
+    if (
+      options?.passthrough ||
+      Reflect.getMetadata(
+        RESPONSE_PASSTHROUGH_METADATA,
+        target.constructor,
+        key!,
+      )
+    ) {
       Reflect.defineMetadata(
         RESPONSE_PASSTHROUGH_METADATA,
-        options?.passthrough,
+        !!options?.passthrough,
         target.constructor,
         key!,
       );
