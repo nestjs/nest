@@ -7,7 +7,7 @@ import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants.js';
 import { NestContainer } from '@nestjs/core';
 import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
+import { fromEvent, lastValueFrom, Observable, of, Subject } from 'rxjs';
 import { GraphInspector } from '../../core/inspector/graph-inspector.js';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { AbstractWsAdapter } from '../adapters/ws-adapter.js';
@@ -1963,6 +1963,52 @@ describe('WebSocketsController', () => {
 
         expect(handleDisconnectSpy).toHaveBeenCalledOnce();
         expect(handleDisconnectSpy).toHaveBeenCalledWith(null);
+      });
+    });
+
+    describe('when gateways sharing a server report the same disconnects', () => {
+      it('should handle each client once, even when another one is reported in between', () => {
+        const handler = vi.fn();
+        const disconnect = new Subject<any>();
+        instance.subscribeDisconnectEvent(handler, disconnect);
+        const host = { id: 'host' };
+        const guest = { id: 'guest' };
+
+        // A hook kicks the guest while the host's disconnect is reported, so
+        // the guest's reports come before the host's second one
+        disconnect.next({
+          client: host,
+          reason: 'client namespace disconnect',
+        });
+        disconnect.next({
+          client: guest,
+          reason: 'server namespace disconnect',
+        });
+        disconnect.next({
+          client: guest,
+          reason: 'server namespace disconnect',
+        });
+        disconnect.next({
+          client: host,
+          reason: 'client namespace disconnect',
+        });
+
+        expect(handler.mock.calls).toEqual([
+          [host, 'client namespace disconnect'],
+          [guest, 'server namespace disconnect'],
+        ]);
+      });
+
+      it('should drop a repeat of the last client that is not an object', () => {
+        const handler = vi.fn();
+        const disconnect = new Subject<any>();
+        instance.subscribeDisconnectEvent(handler, disconnect);
+
+        disconnect.next('a');
+        disconnect.next('a');
+        disconnect.next('b');
+
+        expect(handler.mock.calls).toEqual([['a'], ['b']]);
       });
     });
   });

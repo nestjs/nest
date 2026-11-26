@@ -5,7 +5,7 @@ import {
   of,
   Subject,
 } from 'rxjs';
-import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
+import { distinctUntilChanged, filter, mergeAll } from 'rxjs/operators';
 import {
   GATEWAY_OPTIONS,
   MESSAGE_METADATA,
@@ -344,12 +344,24 @@ export class WebSocketsController {
         ? handlerOrGateway
         : handlerOrGateway?.handleDisconnect?.bind(handlerOrGateway);
     if (handler) {
+      // Every gateway sharing the server reports each disconnect. A hook that
+      // disconnects other clients (socket.io emits "disconnect" synchronously)
+      // has theirs reported in between the reports of one client, so every
+      // client handled is remembered, not just the last one.
+      const handledClients = new WeakSet<object>();
+      let lastClient: unknown = handledClients;
       event
         .pipe(
-          distinctUntilChanged((prev, curr) => {
-            const prevClient = prev?.client || prev;
-            const currClient = curr?.client || curr;
-            return prevClient === currClient;
+          filter((data: any) => {
+            const client = data?.client || data;
+            const isRepeat =
+              client === lastClient ||
+              (canBeHeldWeakly(client) && handledClients.has(client));
+            lastClient = client;
+            if (canBeHeldWeakly(client)) {
+              handledClients.add(client);
+            }
+            return !isRepeat;
           }),
         )
         .subscribe((data: any) => {
@@ -802,4 +814,11 @@ export class WebSocketsController {
       ),
     );
   }
+}
+
+/** Whether a value can be put in a `WeakSet`. */
+function canBeHeldWeakly(value: unknown): value is object {
+  return (
+    (typeof value === 'object' && value !== null) || typeof value === 'function'
+  );
 }
