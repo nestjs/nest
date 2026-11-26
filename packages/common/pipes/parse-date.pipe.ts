@@ -53,13 +53,22 @@ const MONTH_NAMES = [
 // As in `new Date()`, the parts of a date may be separated by any run of
 // spaces, commas, dots, slashes and dashes ("2024 02 30", "02,30,2024",
 // "Feb.30.2024"), and a numeric date may follow a weekday ("Fri 02/30/2024").
+// A time of day ("10:00:00.5 PM GMT+0300") may follow the day of a date whose
+// year is missing ("Feb 30 10:00") or comes last ("Feb 29 10:00 2024").
+const TIME_OF_DAY = String.raw`[\s,./-]+\d{1,2}:\d{2}(?::\d{2}(?:[.,]\d+)?)?(?:\s*[ap]m)?(?:\s*[a-z]+(?:[+-]\d{1,2}(?::?\d{2})?)?|\s*[+-]\d{1,2}(?::?\d{2})?)?`;
 const NAMED_MONTH_DATE_PATTERNS = [
   // "Feb 30, 2024", "Thu Feb 30 2024 10:00:00 GMT+0300", "Feb-30-2024",
-  // "Feb 30, 24", "Feb 30", "Thu Feb 30"
-  /^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?:(?:[\s,./-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))/i,
+  // "Feb 30, 24", "Feb 30", "Thu Feb 30", "Feb 30 10:00"
+  new RegExp(
+    String.raw`^\s*(?:[a-z]+,?\s+)?(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?:${TIME_OF_DAY})?(?:(?:[\s,./-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))`,
+    'i',
+  ),
   // "30 Feb 2024", "Thu, 30 Feb 2024 10:00:00 GMT", "30-Feb-2024", "30-Feb-24",
-  // "30 Feb"
-  /^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s,./-]+(?<month>[a-z]{3,})\.?(?:(?:[\s,./-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))/i,
+  // "30 Feb", "30 Feb 10:00"
+  new RegExp(
+    String.raw`^\s*(?:[a-z]+,?\s+)?(?<day>\d{1,2})[\s,./-]+(?<month>[a-z]{3,})\.?(?:${TIME_OF_DAY})?(?:(?:[\s,./-]+)(?<year>\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))`,
+    'i',
+  ),
   // "2024 Feb 30", "2024-Feb-30", "Fri, 2024-Feb-30"
   /^\s*(?:[a-z]+,?\s+)?(?<year>\d{4})[\s,./-]+(?<month>[a-z]{3,})\.?[\s,./-]+(?<day>\d{1,2})(?!\d)/i,
 ];
@@ -184,9 +193,10 @@ export class ParseDatePipe implements PipeTransform {
    * Reads the year, month and day of a date whose month is a name ("Feb 30,
    * 2024", "30 Feb 2024", "2024-Feb-30"), optionally after a weekday ("Thu,
    * 30 Feb 2024 10:00:00 GMT", "Fri, 2024-Feb-30"). The year may be missing
-   * ("Feb 30") as long as no digit follows the day, so that a time in between
-   * ("Feb 29 10:00 2024") is left to `new Date()`. As in `new Date()`, a month
-   * is named by its first three letters and a date without a year is in 2001.
+   * ("Feb 30", "Feb 30 10:00") or come after a time of day ("Feb 29 10:00
+   * 2024"), as long as no other digit follows the day. As in `new Date()`, a
+   * month is named by its first three letters and a date without a year is in
+   * 2001.
    */
   private matchNamedMonthDate(
     value: string,

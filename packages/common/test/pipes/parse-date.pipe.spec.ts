@@ -135,6 +135,7 @@ describe('ParseDatePipe', () => {
           'Sun 2024 Feb 30 10:00:00 GMT+0300',
           'Thursday 2024.Apr.31',
           'Wed 2100 Feb 29',
+          'Feb 29 10:00 2023',
         ]) {
           expect(() => target.transform(value)).toThrow(BadRequestException);
         }
@@ -187,6 +188,7 @@ describe('ParseDatePipe', () => {
           'Wed 2000 Feb 29',
           'Tue, 2024 02 29',
           'Tue, 2024/02/29',
+          'Feb 29 2024 10:00',
         ]) {
           expect(target.transform(value)).toEqual(new Date(value));
         }
@@ -254,8 +256,12 @@ describe('ParseDatePipe', () => {
           'Feb,30',
           'Feb.30',
           'Thu, Feb 30',
+          'Feb 30 10:00',
+          '30 Feb 10:00',
+          'Thu Feb 30 10:00:00.5 PM GMT+0300',
           // As in `new Date()`, the year of such a date is 2001, not a leap year
           'Feb 29',
+          'Feb 29 10:00',
         ]) {
           expect(() => target.transform(value)).toThrow(BadRequestException);
         }
@@ -270,6 +276,9 @@ describe('ParseDatePipe', () => {
           'Feb,28',
           '28.Feb',
           'Feb 28 10:00',
+          '28 Feb 10:00',
+          'Apr 30 10:00',
+          'Thu Feb 28 10:00:00.5 PM GMT+0300',
         ]) {
           expect(target.transform(value)).toEqual(new Date(value));
         }
