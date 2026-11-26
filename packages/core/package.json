@@ -43,6 +43,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@standard-schema/spec": "1.1.0",
     "fast-safe-stringify": "2.1.1",
     "iterare": "1.2.1",
     "path-to-regexp": "8.4.2",
