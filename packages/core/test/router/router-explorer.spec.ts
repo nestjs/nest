@@ -673,6 +673,9 @@ describe('RouterExplorer', () => {
           error: 'Not Found',
           statusCode: 404,
         });
+        expect((error as NotFoundException).stack).toBe(
+          'NotFoundException: Cannot GET /host?a=1',
+        );
         expect(handler).not.toHaveBeenCalled();
       });
 

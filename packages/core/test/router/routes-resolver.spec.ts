@@ -1,4 +1,10 @@
-import { Module, Post, RequestMethod, VersioningType } from '@nestjs/common';
+import {
+  Module,
+  NotFoundException,
+  Post,
+  RequestMethod,
+  VersioningType,
+} from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator.js';
@@ -326,6 +332,29 @@ describe('RoutesResolver', () => {
           { path: 'health', method: RequestMethod.ALL },
           { path: 'hello', method: RequestMethod.GET },
         ],
+      );
+    });
+
+    it('should throw the 404 without a stack trace', () => {
+      const createProxy = vi.spyOn(
+        untypedRoutesResolver.routerProxy,
+        'createProxy',
+      );
+      applicationRef.getRequestMethod = () => 'GET';
+      applicationRef.getRequestUrl = () => '/unknown';
+      routesResolver.registerNotFoundHandler();
+
+      const [callback] = createProxy.mock.calls[0] as [Function];
+      let error: unknown;
+      try {
+        callback({}, {});
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect((error as NotFoundException).stack).toBe(
+        'NotFoundException: Cannot GET /unknown',
       );
     });
 
