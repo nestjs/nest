@@ -409,12 +409,24 @@ export class RouteInfoPathExtractor {
     return this.versioningConfig;
   }
 
+  /**
+   * Returns the paths the router serves an excluded route at: under the
+   * global prefix, unless the route is excluded from it, and under the
+   * version segments of its version. A route without a version covers the
+   * versions an unversioned route is served under (see
+   * `getVersionOfUnversionedRoutes()`), as in `forRoutes()`. A path that
+   * starts with a wildcard and has no version is returned as it is, without
+   * the prefix or a version segment.
+   */
   public extractPathFrom(route: RouteInfo): string[] {
     if (this.isAWildcard(route.path) && !route.version) {
       return [addLeadingSlash(route.path)];
     }
 
-    return this.extractNonWildcardPathsFrom(route);
+    return this.extractNonWildcardPathsFrom({
+      ...route,
+      version: route.version ?? this.getVersionOfUnversionedRoutes(),
+    });
   }
 
   private isAWildcard(path: string): boolean {
@@ -457,9 +469,9 @@ export class RouteInfoPathExtractor {
 
   /**
    * Returns the versions a route given without a version (e.g.
-   * `forRoutes('cats')`) may be served under: no version, as for a
-   * version-neutral controller, and the default version, under which
-   * controllers without a version are served.
+   * `forRoutes('cats')` or `exclude('cats')`) may be served under: no
+   * version, as for a version-neutral controller, and the default version,
+   * under which controllers without a version are served.
    */
   private getVersionOfUnversionedRoutes(): VersionValue | undefined {
     if (this.versioningConfig?.type !== VersioningType.URI) {
