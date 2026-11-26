@@ -705,6 +705,11 @@ describe('FastifyAdapter', () => {
       const error = Object.assign(new Error('Test error'), { statusCode: 400 });
       expect(fastifyAdapter.mapException(error)).toBe(error);
     });
+
+    it('should not map an "aborted" error without a status code', () => {
+      const error = Object.assign(new Error('aborted'), { code: 'ECONNRESET' });
+      expect(fastifyAdapter.mapException(error)).toBe(error);
+    });
   });
 
   describe('isHeadersSent', () => {

@@ -1713,7 +1713,10 @@ export class FastifyAdapter<
   public mapException(error: unknown): unknown {
     // A 5xx FastifyError (e.g. FST_ERR_HANDLER_TIMEOUT) is a server fault: it
     // stays unmapped, so the built-in filter logs it, like an http-errors one.
-    if (this.isHttpFastifyError(error) && error.statusCode < 500) {
+    if (
+      (this.isHttpFastifyError(error) || isRequestAbortedError(error)) &&
+      error.statusCode < 500
+    ) {
       return new HttpException(error.message, error.statusCode, {
         cause: error,
       });
@@ -2318,5 +2321,19 @@ function isHttpError(
     typeof (err as any).expose === 'boolean' &&
     typeof (err as any).statusCode === 'number' &&
     (err as any).status === (err as any).statusCode
+  );
+}
+
+/** Node.js's error for a client that disconnects mid-body. */
+function isRequestAbortedError(
+  err: unknown,
+): err is Error & { statusCode: number } {
+  return (
+    err instanceof Error &&
+    err.message === 'aborted' &&
+    'code' in err &&
+    err.code === 'ECONNRESET' &&
+    'statusCode' in err &&
+    typeof err.statusCode === 'number'
   );
 }
