@@ -7,7 +7,8 @@ import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants.js';
 import { NestContainer } from '@nestjs/core';
 import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
+import { EventEmitter } from 'events';
+import { fromEvent, lastValueFrom, Observable, of, Subject } from 'rxjs';
 import { GraphInspector } from '../../core/inspector/graph-inspector.js';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { AbstractWsAdapter } from '../adapters/ws-adapter.js';
@@ -1844,6 +1845,133 @@ describe('WebSocketsController', () => {
         earlyClient,
         gateway,
       );
+    });
+  });
+
+  describe('getConnectionHandler when gateways share a server', () => {
+    const gateway = new Test();
+    let calls: string[];
+    let disconnect: Subject<any>;
+    let connectionHandlers: Array<(client: unknown) => void>;
+
+    const createClient = (name: string) =>
+      Object.assign(new EventEmitter(), { name });
+    const connectToEveryGateway = (client: unknown) =>
+      connectionHandlers.forEach(handler => handler(client));
+
+    // One disconnect hook per gateway, all on the same disconnect stream,
+    // as for gateways sharing a server
+    function shareServer(...hooks: Array<(client: { name: string }) => void>) {
+      disconnect = new Subject();
+      const connection = new Subject<any>();
+      connectionHandlers = hooks.map(hook => {
+        instance.subscribeDisconnectEvent(hook, disconnect);
+        return instance.getConnectionHandler(
+          instance,
+          gateway,
+          [],
+          disconnect,
+          connection,
+        );
+      });
+    }
+
+    beforeEach(() => {
+      calls = [];
+      untypedInstance.subscribeMessages = vi.fn();
+    });
+
+    it('should call every disconnect hook once when a hook disconnects other clients', () => {
+      const host = createClient('host');
+      const guest = createClient('guest');
+      shareServer(
+        client => {
+          calls.push(`first: ${client.name}`);
+          if (client === host) {
+            guest.emit('disconnect');
+          }
+        },
+        client => calls.push(`second: ${client.name}`),
+      );
+      connectToEveryGateway(host);
+      connectToEveryGateway(guest);
+
+      host.emit('disconnect');
+
+      expect(calls).toEqual([
+        'first: host',
+        'first: guest',
+        'second: guest',
+        'second: host',
+      ]);
+    });
+
+    it('should call every disconnect hook once when a listener of the client disconnects other clients', () => {
+      const host = createClient('host');
+      const guest = createClient('guest');
+      shareServer(
+        client => calls.push(`first: ${client.name}`),
+        client => calls.push(`second: ${client.name}`),
+      );
+      connectionHandlers[0](host);
+      host.on('disconnect', () => guest.emit('disconnect'));
+      connectionHandlers[1](host);
+      connectToEveryGateway(guest);
+
+      host.emit('disconnect');
+
+      expect(calls).toEqual([
+        'first: host',
+        'second: host',
+        'first: guest',
+        'second: guest',
+      ]);
+    });
+
+    it('should call the disconnect hooks again for a client object reused by a new connection', () => {
+      const client = createClient('client');
+      const otherClient = createClient('other client');
+      shareServer(
+        ({ name }) => calls.push(`first: ${name}`),
+        ({ name }) => calls.push(`second: ${name}`),
+      );
+
+      connectToEveryGateway(client);
+      client.emit('disconnect');
+      connectToEveryGateway(otherClient);
+      otherClient.emit('disconnect');
+      connectToEveryGateway(client);
+      client.emit('disconnect');
+
+      expect(calls).toEqual([
+        'first: client',
+        'second: client',
+        'first: other client',
+        'second: other client',
+        'first: client',
+        'second: client',
+      ]);
+    });
+
+    it('should call every disconnect hook once for a client disconnected by a connection hook', () => {
+      const client = createClient('client');
+      shareServer(
+        ({ name }) => calls.push(`first: ${name}`),
+        ({ name }) => calls.push(`second: ${name}`),
+      );
+      const connection = new Subject<any>();
+      connection.subscribe(([connected]) => connected.emit('disconnect'));
+      connectionHandlers[0] = instance.getConnectionHandler(
+        instance,
+        gateway,
+        [],
+        disconnect,
+        connection,
+      );
+
+      connectToEveryGateway(client);
+
+      expect(calls).toEqual(['first: client', 'second: client']);
     });
   });
   describe('subscribeInitEvent', () => {

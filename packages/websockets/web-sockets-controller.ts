@@ -24,7 +24,7 @@ import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams
 import { WebsocketEntrypointMetadata } from './interfaces/websockets-entrypoint-metadata.interface.js';
 import { SocketServerProvider } from './socket-server-provider.js';
 import { compareElementAt } from './utils/compare-element.util.js';
-import { isFunction } from '@nestjs/common/internal';
+import { isFunction, isObject } from '@nestjs/common/internal';
 import type { NestApplicationContextOptions } from '@nestjs/common/internal';
 import { type Type, Logger } from '@nestjs/common';
 import {
@@ -53,6 +53,13 @@ export class WebSocketsController {
     new MetadataScanner(),
   );
   private readonly pendingDisconnects = new WeakMap<ContextId, number>();
+  // For each connected client, the disconnect streams it has not been reported
+  // on yet. Gateways that share a server share its stream, and each of them
+  // reports the disconnect of the client.
+  private readonly unreportedDisconnects = new WeakMap<
+    object,
+    Set<Subject<any>>
+  >();
   // For each gateway resolved per connection, a promise per client that
   // settles once its connection hook has been called
   private readonly connectionHookCalls = new WeakMap<
@@ -285,6 +292,7 @@ export class WebSocketsController {
         adapter.closeClient?.(client);
         return;
       }
+      this.trackConnection(client, disconnect);
       // Bound before the connection hooks run, since socket.io emits the
       // disconnect synchronously when one of them calls client.disconnect().
       // Such a disconnect is held back until every gateway sharing this
@@ -298,7 +306,7 @@ export class WebSocketsController {
             heldDisconnect = { reason };
             return;
           }
-          disconnect.next({ client, reason });
+          this.reportDisconnect(client, reason, disconnect);
         });
 
       try {
@@ -307,9 +315,47 @@ export class WebSocketsController {
       } finally {
         isConnecting = false;
         heldDisconnect &&
-          disconnect.next({ client, reason: heldDisconnect.reason });
+          this.reportDisconnect(client, heldDisconnect.reason, disconnect);
       }
     };
+  }
+
+  /**
+   * Notes that the disconnect of a client that has just connected is yet to
+   * be reported on the stream (see "reportDisconnect").
+   */
+  private trackConnection(client: unknown, disconnect: Subject<any>) {
+    if (!isObject(client)) {
+      return;
+    }
+    const streams = this.unreportedDisconnects.get(client);
+    if (streams) {
+      streams.add(disconnect);
+    } else {
+      this.unreportedDisconnects.set(client, new Set([disconnect]));
+    }
+  }
+
+  /**
+   * Passes the disconnect of a client on to the disconnect hooks once for a
+   * connection, although every gateway sharing the stream reports it. Telling
+   * repeated reports apart by the client reported last is not enough: socket.io
+   * emits a disconnect synchronously, so a hook (or a listener of the client)
+   * that disconnects other clients reports theirs before the remaining gateways
+   * report the first one.
+   */
+  private reportDisconnect(
+    client: unknown,
+    reason: string | undefined,
+    disconnect: Subject<any>,
+  ) {
+    if (
+      isObject(client) &&
+      !this.unreportedDisconnects.get(client)?.delete(disconnect)
+    ) {
+      return;
+    }
+    disconnect.next({ client, reason });
   }
 
   public subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
