@@ -107,9 +107,9 @@ export class TestingInjector extends Injector {
     // Every provider that depends on the token must get the same mock,
     // the one `get()` returns.
     let mockedInstance = this.mockedInstances.get(token);
-    if (!mockedInstance) {
+    if (!this.mockedInstances.has(token)) {
       mockedInstance = this.mocker(name);
-      if (!mockedInstance) {
+      if (mockedInstance == null) {
         throw err;
       }
       this.mockedInstances.set(token, mockedInstance);

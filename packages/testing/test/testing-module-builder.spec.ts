@@ -7,6 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UndefinedDependencyException } from '@nestjs/core/errors/exceptions/undefined-dependency.exception.js';
+import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception.js';
 import {
   UuidFactory,
   UuidFactoryMode,
@@ -459,6 +460,77 @@ describe('TestingModuleBuilder', () => {
 
       const instance = module.get(NeedsMissing);
       expect(instance.dep).toEqual({ mockValue: 'mocked-dep' });
+    });
+
+    it('should inject falsy values returned by the mocker', async () => {
+      @Injectable()
+      class NeedsFalsyDeps {
+        constructor(
+          @Inject('ZERO') public readonly zero: unknown,
+          @Inject('FALSE') public readonly falsy: unknown,
+          @Inject('EMPTY') public readonly empty: unknown,
+        ) {}
+      }
+
+      const mocker = vi.fn((token: unknown) => {
+        if (token === 'ZERO') return 0;
+        if (token === 'FALSE') return false;
+        if (token === 'EMPTY') return '';
+        return null;
+      });
+
+      const module = await Test.createTestingModule({
+        providers: [NeedsFalsyDeps],
+      })
+        .useMocker(mocker)
+        .compile();
+
+      const instance = module.get(NeedsFalsyDeps);
+      expect(instance.zero).toBe(0);
+      expect(instance.falsy).toBe(false);
+      expect(instance.empty).toBe('');
+    });
+
+    it('should call the mocker once per token when the mock is falsy', async () => {
+      @Injectable()
+      class FirstConsumer {
+        constructor(@Inject('ZERO') public readonly dep: unknown) {}
+      }
+
+      @Injectable()
+      class SecondConsumer {
+        constructor(@Inject('ZERO') public readonly dep: unknown) {}
+      }
+
+      const mocker = vi.fn((token: unknown) => (token === 'ZERO' ? 0 : null));
+      const module = await Test.createTestingModule({
+        providers: [FirstConsumer, SecondConsumer],
+      })
+        .useMocker(mocker)
+        .compile();
+
+      expect(module.get('ZERO')).toBe(0);
+      expect(module.get(FirstConsumer).dep).toBe(0);
+      expect(module.get(SecondConsumer).dep).toBe(0);
+      expect(mocker).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still throw UnknownDependenciesException when the mocker returns null or undefined', async () => {
+      @Injectable()
+      class MissingDepClass {}
+
+      @Injectable()
+      class NeedsMissing {
+        constructor(public readonly dep: MissingDepClass) {}
+      }
+
+      for (const value of [null, undefined]) {
+        await expect(
+          Test.createTestingModule({ providers: [NeedsMissing] })
+            .useMocker(() => value)
+            .compile(),
+        ).rejects.toThrow(UnknownDependenciesException);
+      }
     });
 
     it('should use mocker for unresolved dependencies of request-scoped providers', async () => {
