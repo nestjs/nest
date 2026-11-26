@@ -246,6 +246,8 @@ describe('resolveSecurityHeaders', () => {
     [{ referrerPolicy: { policy: 'never' as any } }],
     [{ referrerPolicy: { policy: [] } }],
     [{ referrerPolicy: { policy: ['origin', 'origin'] as any } }],
+    [{ referrerPolicy: { policy: [undefined] as any } }],
+    [{ referrerPolicy: { policy: ['origin', undefined] as any } }],
     [{ strictTransportSecurity: { maxAge: -1 } }],
     [{ strictTransportSecurity: { maxAge: Infinity } }],
     [{ strictTransportSecurity: { maxAge: '1' as any } }],
