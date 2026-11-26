@@ -9,6 +9,7 @@ import {
   isFunction,
   isNil,
   isString,
+  normalizePath,
 } from '@nestjs/common/internal';
 import type { ApplicationConfig } from '@nestjs/core';
 import { isDeepStrictEqual } from 'util';
@@ -40,7 +41,7 @@ export class SocketServerProvider {
   ): ServerAndEventStreamsHost {
     const serverAndStreamsHost = this.socketsContainer.getOneByConfig({
       port,
-      path: options.path,
+      path: this.normalizeServerPath(options.path),
     });
     if (serverAndStreamsHost) {
       this.ensureOptionsApply(options, port, serverAndStreamsHost, gatewayName);
@@ -82,7 +83,7 @@ export class SocketServerProvider {
       ServerAndEventStreamsFactory.create(ioServer);
 
     this.socketsContainer.addOne(
-      { port, path: options.path },
+      { port, path: this.normalizeServerPath(options.path) },
       serverAndEventStreamsHost,
     );
     this.serverOptions.set(
@@ -163,7 +164,7 @@ export class SocketServerProvider {
     // created for it, so a second one would never get a connection.
     const namespaceConfig = {
       port,
-      path: options.path,
+      path: this.normalizeServerPath(options.path),
       namespace: this.validateNamespace(options.namespace || ''),
     };
     const namespaceHost = this.socketsContainer.getOneByConfig(namespaceConfig);
@@ -181,7 +182,10 @@ export class SocketServerProvider {
     // shares their streams too, while it keeps the namespace as its server
     const rootHost =
       namespaceConfig.namespace === '/'
-        ? this.socketsContainer.getOneByConfig({ port, path: options.path })
+        ? this.socketsContainer.getOneByConfig({
+            port,
+            path: namespaceConfig.path,
+          })
         : undefined;
     if (rootHost) {
       serverAndEventStreamsHost.connection = rootHost.connection;
@@ -201,6 +205,16 @@ export class SocketServerProvider {
       namespace: this.validateNamespace(options.namespace || ''),
       server,
     });
+  }
+
+  /**
+   * WsAdapter serves "events", "/events" and "/events/" on the same path, and
+   * Socket.IO drops a trailing slash too, so gateways that spell the path
+   * differently share one server, as they do for a namespace. A second server
+   * on the same path would never get a client.
+   */
+  private normalizeServerPath(path?: string): string | undefined {
+    return path && isString(path) ? normalizePath(path) : path;
   }
 
   private validateNamespace(namespace: string | RegExp): string | RegExp {

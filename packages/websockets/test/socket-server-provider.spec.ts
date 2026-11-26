@@ -57,6 +57,26 @@ describe('SocketServerProvider', () => {
       expect(decorateWithNamespaceSpy).toHaveBeenCalled();
     });
 
+    it(`should return the stored server for the same path spelled differently`, () => {
+      const host = instance.scanForSocketServer({ path: '/events' }, port);
+      const namespaceHost = instance.scanForSocketServer(
+        { path: '/events', namespace: 'chat' },
+        port,
+      );
+
+      expect(instance.scanForSocketServer({ path: 'events' }, port)).toBe(host);
+      expect(instance.scanForSocketServer({ path: '/events/' }, port)).toBe(
+        host,
+      );
+      expect(
+        instance.scanForSocketServer(
+          { path: 'events', namespace: 'chat' },
+          port,
+        ),
+      ).toBe(namespaceHost);
+      expect(createSocketServerSpy).toHaveBeenCalledTimes(1);
+    });
+
     describe('when namespace is specified and server does exist already', () => {
       it(`should call "decorateWithNamespace" and not call "createSocketServer"`, () => {
         const server = { test: 'test' };
