@@ -68,6 +68,11 @@ export class SocketServerProvider {
       string,
       unknown
     >;
+    // The server gets the path as it is looked up: Socket.IO serves no client
+    // on a path without its leading slash ("events")
+    if (isString(partialOptions.path)) {
+      partialOptions.path = this.normalizeServerPath(partialOptions.path);
+    }
     let ioServer: unknown;
     if (this.isServedWithoutListener(port, adapter)) {
       // An adapter would otherwise listen on a port of the kernel's choosing,
@@ -209,9 +214,9 @@ export class SocketServerProvider {
 
   /**
    * WsAdapter serves "events", "/events" and "/events/" on the same path, and
-   * Socket.IO drops a trailing slash too, so gateways that spell the path
-   * differently share one server, as they do for a namespace. A second server
-   * on the same path would never get a client.
+   * the server is created with the normalized path on every adapter, so
+   * gateways that spell the path differently share one server, as they do for
+   * a namespace. A second server on the same path would never get a client.
    */
   private normalizeServerPath(path?: string): string | undefined {
     return path && isString(path) ? normalizePath(path) : path;

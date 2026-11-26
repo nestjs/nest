@@ -77,6 +77,18 @@ describe('SocketServerProvider', () => {
       expect(createSocketServerSpy).toHaveBeenCalledTimes(1);
     });
 
+    it(`should create the server with the normalized path`, () => {
+      const adapter = instance['applicationConfig'].getIoAdapter();
+      const create = vi.spyOn(adapter, 'create');
+
+      instance.scanForSocketServer({ path: 'events/', transports: [] }, port);
+
+      expect(create).toHaveBeenCalledWith(port, {
+        path: '/events',
+        transports: [],
+      });
+    });
+
     describe('when namespace is specified and server does exist already', () => {
       it(`should call "decorateWithNamespace" and not call "createSocketServer"`, () => {
         const server = { test: 'test' };
