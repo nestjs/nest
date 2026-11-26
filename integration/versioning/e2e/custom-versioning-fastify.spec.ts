@@ -300,6 +300,44 @@ describe('Custom Versioning (fastify)', () => {
       });
     });
 
+    describe('GET /multiple-neutral', () => {
+      it('V1', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/foo.v1+json',
+          })
+          .expect(404);
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/foo.v2+json',
+          })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/json',
+          })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it('No Header', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+    });
+
     describe('GET /override', () => {
       it('V1', () => {
         return request(app.getHttpServer())
@@ -1023,6 +1061,41 @@ describe('Custom Versioning (fastify)', () => {
         .set({ Accept: 'application/foo.v1+json' })
         .expect(200)
         .expect('Hello World V1!');
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
+  });
+
+  // ======================================================================== //
+  describe('with an extractor that returns undefined for no version', () => {
+    beforeAll(async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleRef.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+      );
+      app.enableVersioning({
+        type: VersioningType.CUSTOM,
+        extractor: (request: FastifyRequest) =>
+          request.headers['x-api-version'] as string,
+      });
+      await listenOnLoopback(app);
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it('GET /multiple-neutral', () => {
+      return request(app.getHttpServer())
+        .get('/multiple-neutral')
+        .expect(200)
+        .expect('Multiple Versions Neutral or 2');
+    });
+
+    it('GET /', () => {
+      return request(app.getHttpServer()).get('/').expect(404);
     });
 
     afterAll(async () => {
