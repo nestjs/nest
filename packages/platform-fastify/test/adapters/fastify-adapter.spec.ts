@@ -3132,6 +3132,41 @@ describe('FastifyAdapter', () => {
         undefined,
       );
     });
+
+    it('should pass the callback that follows the host', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+
+      fastifyAdapter.listen(3000, '127.0.0.1', callback);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1' },
+        callback,
+      );
+    });
+
+    it('should pass the backlog and the callback that follow the host', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+
+      fastifyAdapter.listen(3000, '127.0.0.1', 511, callback);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1', backlog: 511 },
+        callback,
+      );
+    });
+
+    it('should not take the backlog for the callback', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen(3000, '127.0.0.1', 511);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1', backlog: 511 },
+        undefined,
+      );
+    });
   });
 
   describe('useStaticAssets / setViewEngine', () => {

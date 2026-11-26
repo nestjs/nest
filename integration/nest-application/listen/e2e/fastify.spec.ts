@@ -27,6 +27,15 @@ describe('Listen (Fastify Application)', () => {
     expect(response).toEqual(app.getHttpServer());
   });
 
+  it('should resolve with httpServer when a backlog follows the host', async () => {
+    const response = await (app as NestFastifyApplication).listen(
+      3000,
+      '127.0.0.1',
+      511,
+    );
+    expect(response).toEqual(app.getHttpServer());
+  });
+
   it('should reject if the port is not available', async () => {
     await app.listen(3000);
     const secondApp = testModule.createNestApplication(new FastifyAdapter());

@@ -718,11 +718,19 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(
+    port: string | number,
+    hostname: string,
+    backlog: number,
+    callback?: () => void,
+  ): void;
+  public listen(
     listenOptions: string | number | NestFastifyListenOptions,
     ...args: any[]
   ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
-    const callback = isFirstArgTypeofFunction ? args[0] : args[1];
+    // The callback comes last, after the host and the backlog if any
+    const lastArg = args[args.length - 1];
+    const callback = isFunction(lastArg) ? lastArg : undefined;
 
     if (typeof listenOptions === 'string' && Number.isNaN(+listenOptions)) {
       // A string that is not a number is a Unix socket path or a named pipe.
@@ -747,6 +755,9 @@ export class FastifyAdapter<
     }
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
+      if (typeof args[1] === 'number') {
+        options.backlog = args[1];
+      }
     }
     if (options.port !== undefined && !this.isValidPort(options.port)) {
       // Fastify calls `server.listen()` from its ready callback, where the
