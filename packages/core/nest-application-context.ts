@@ -73,7 +73,13 @@ export class NestApplicationContext<
     private readonly scope = new Array<Type<any>>(),
   ) {
     super();
-    this.injector = new Injector();
+    // Like `ModuleRef`, decorate what `resolve()` creates with the container's
+    // instrument, so request-scoped and transient providers are instrumented too.
+    this.injector = new Injector({
+      preview: false,
+      instanceDecorator:
+        container.contextOptions?.instrument?.instanceDecorator,
+    });
     this.moduleCompiler = container.getModuleCompiler();
 
     if (this.appOptions.preview) {

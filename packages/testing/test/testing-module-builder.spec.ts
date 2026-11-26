@@ -144,6 +144,81 @@ describe('TestingModuleBuilder', () => {
     });
   });
 
+  describe('instrument', () => {
+    function createInstrument() {
+      const decorated = new WeakSet<object>();
+      return {
+        decorated,
+        instrument: {
+          instanceDecorator: (instance: unknown) => {
+            if (typeof instance === 'object' && instance !== null) {
+              decorated.add(instance);
+            }
+            return instance;
+          },
+        },
+      };
+    }
+
+    it('should decorate providers with the instanceDecorator', async () => {
+      @Injectable()
+      class Service {}
+
+      const { decorated, instrument } = createInstrument();
+      const module = await Test.createTestingModule(
+        { providers: [Service] },
+        { instrument },
+      ).compile();
+
+      expect(decorated.has(module.get(Service))).toBe(true);
+    });
+
+    it('should decorate overridden providers', async () => {
+      @Injectable()
+      class Service {}
+      @Injectable()
+      class FakeService {}
+
+      const { decorated, instrument } = createInstrument();
+      const module = await Test.createTestingModule(
+        { providers: [Service] },
+        { instrument },
+      )
+        .overrideProvider(Service)
+        .useClass(FakeService)
+        .compile();
+
+      const service = module.get(Service);
+      expect(service).toBeInstanceOf(FakeService);
+      expect(decorated.has(service)).toBe(true);
+    });
+
+    it('should decorate request-scoped providers when they are resolved', async () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class RequestService {}
+
+      const { decorated, instrument } = createInstrument();
+      const module = await Test.createTestingModule(
+        { providers: [RequestService] },
+        { instrument },
+      ).compile();
+
+      expect(decorated.has(await module.resolve(RequestService))).toBe(true);
+    });
+
+    it('should not decorate anything without the option', async () => {
+      @Injectable()
+      class Service {}
+
+      const { decorated } = createInstrument();
+      const module = await Test.createTestingModule({
+        providers: [Service],
+      }).compile();
+
+      expect(decorated.has(module.get(Service))).toBe(false);
+    });
+  });
+
   describe('compile', () => {
     it('should return a TestingModule instance', async () => {
       @ModuleDecorator({})
