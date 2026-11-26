@@ -5,6 +5,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { uid } from 'uid';
+import { getClassRef } from '../helpers/class-ref-registry.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { Module } from '../injector/module.js';
 import { ModulesContainer } from '../injector/modules-container.js';
@@ -144,8 +145,11 @@ export class DiscoveryService {
       );
     }
 
+    // A mixin helper can overwrite the "constructor" of the instance's
+    // prototype, so the class comes from the class-ref registry
+    const { instance, metatype } = instanceWrapper;
     const clsRef =
-      instanceWrapper.instance?.constructor ?? instanceWrapper.metatype;
+      (instance == null ? undefined : getClassRef(instance)) ?? metatype!;
     return Reflect.getMetadata(decorator.KEY, clsRef);
   }
 

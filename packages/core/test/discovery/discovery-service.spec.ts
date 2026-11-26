@@ -549,6 +549,43 @@ describe('DiscoveryService', () => {
 
       expect(metadata).toEqual({ test: 'value' });
     });
+
+    it('should read the metadata of the class when a mixin helper overwrote the "constructor" of its prototype', () => {
+      const TestDecorator = DiscoveryService.createDecorator<{
+        name: string;
+      }>();
+
+      class Timestamps {
+        touch() {}
+      }
+
+      @TestDecorator({ name: 'users' })
+      class UsersHandler {}
+
+      // What `applyMixins` from the TypeScript handbook does: it copies every
+      // own property of the mixin's prototype, "constructor" included
+      Object.getOwnPropertyNames(Timestamps.prototype).forEach(name =>
+        Object.defineProperty(
+          UsersHandler.prototype,
+          name,
+          Object.getOwnPropertyDescriptor(Timestamps.prototype, name)!,
+        ),
+      );
+
+      const wrapper = new InstanceWrapper({
+        name: 'UsersHandler',
+        token: UsersHandler,
+        metatype: UsersHandler,
+        instance: new UsersHandler(),
+      });
+
+      const metadata = discoveryService.getMetadataByDecorator(
+        TestDecorator,
+        wrapper,
+      );
+
+      expect(metadata).toEqual({ name: 'users' });
+    });
   });
 
   it('should limit metadata lookups to the explicitly supplied modules', async () => {

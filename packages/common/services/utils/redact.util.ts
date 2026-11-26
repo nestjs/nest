@@ -18,9 +18,11 @@ export type Redactor = (value: unknown) => unknown;
  *   `users.password` also matches `{ users: [{ password }] }`.
  * - Keys are compared case-insensitively.
  *
- * Plain objects, arrays, class instances, errors (including `cause` and
- * `AggregateError#errors`), `Map`s, `Set`s, `Headers`, `URLSearchParams` and
- * `FormData` are traversed.
+ * Plain objects, arrays, class instances, errors (including `cause`,
+ * `AggregateError#errors` and the `error` and `suppressed` of a
+ * `SuppressedError`), `Map`s, `Set`s, `Headers`, `URLSearchParams`,
+ * `FormData` and `URL`s (their username, password and search params) are
+ * traversed.
  * Only the objects on the way to a redacted property are copied; the rest is
  * returned as is, and the input is never mutated. A circular reference is
  * replaced with `"[Circular]"` (so the objects on the cycle are copied too). An
@@ -138,6 +140,8 @@ export function createRedactor(
         redacted = redactMap(current);
       } else if (current instanceof Set) {
         redacted = redactSet(current);
+      } else if (current instanceof URL) {
+        redacted = redactUrl(current);
       } else if (isOpaque(current)) {
         redacted = current;
       } else if (getEntryListType(current)) {
@@ -216,16 +220,38 @@ export function createRedactor(
       return copy;
     };
 
+    // A URL holds its parts in internal slots, as the entry lists do, so a
+    // copy is built from its href with the redacted parts set again (and
+    // percent-encoded by the URL, as any other text would be).
+    const redactUrl = (url: URL) => {
+      const credentials = (['username', 'password'] as const).filter(
+        key => url[key] !== '' && visitProperty(key, url[key]) !== url[key],
+      );
+      const searchParams = visitProperty(
+        'searchParams',
+        url.searchParams,
+      ) as URLSearchParams;
+      if (credentials.length === 0 && searchParams === url.searchParams) {
+        return url;
+      }
+      const copy = new URL(url.href);
+      for (const key of credentials) {
+        copy[key] = censor;
+      }
+      if (searchParams !== url.searchParams) {
+        copy.search = searchParams.toString();
+      }
+      return copy;
+    };
+
     const redactObject = (object: object) => {
       const source = object as Record<string, unknown>;
       const keysToVisit = Object.keys(source);
       if (object instanceof Error) {
-        // Non-enumerable, but part of the logged error.
-        for (const key of ['cause', 'errors']) {
-          if (
-            Object.prototype.hasOwnProperty.call(object, key) &&
-            !keysToVisit.includes(key)
-          ) {
+        // Non-enumerable, but part of the logged error ("error" and
+        // "suppressed" are those of a SuppressedError).
+        for (const key of ['cause', 'errors', 'error', 'suppressed']) {
+          if (Object.hasOwn(object, key) && !keysToVisit.includes(key)) {
             keysToVisit.push(key);
           }
         }

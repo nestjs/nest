@@ -802,6 +802,27 @@ describe('ServerNats', () => {
       );
     });
     describe('when the response is a record', () => {
+      const payload = JSON.stringify({
+        response: { value: 'test' },
+        isDisposed: true,
+        id,
+      });
+
+      beforeEach(async () => {
+        vi.spyOn(server as any, 'loadPackage').mockResolvedValue({
+          headers: createHeaders,
+          connect: vi.fn().mockResolvedValue({}),
+        });
+        await server.createNatsClient();
+      });
+
+      function replyHeaders(respond: ReturnType<typeof vi.fn>) {
+        expect(respond).toHaveBeenCalledOnce();
+        const [body, options] = respond.mock.calls[0];
+        expect(body).toBe(payload);
+        return options.headers;
+      }
+
       it(`should respond with the record data as "response" and the record headers`, () => {
         const natsMsg = {
           data: new Uint8Array(),
@@ -811,21 +832,18 @@ describe('ServerNats', () => {
           reply: 'test',
         } as NatsMsg;
         const publisher = server.getPublisher(natsMsg, id, context);
-        const headers = { key: 'value' };
+        const headers = { key: 'value', 'x-version': '1.0.0' };
         const record = new NatsRecordBuilder({ value: 'test' })
           .setHeaders(headers)
           .build();
 
         publisher({ response: record, isDisposed: true });
 
-        expect(natsMsg.respond).toHaveBeenCalledWith(
-          JSON.stringify({
-            response: { value: 'test' },
-            isDisposed: true,
-            id,
-          }),
-          { headers },
-        );
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(() => sent.encode()).not.toThrow();
+        expect(sent.get('key')).toBe('value');
+        expect(sent.get('x-version')).toBe('1.0.0');
+        // The caller's record keeps the object it was given.
         expect(record.headers).toBe(headers);
       });
       it(`should respond with the record sent through "send" unwrapped, with its headers, once disposed`, async () => {
@@ -846,14 +864,88 @@ describe('ServerNats', () => {
         server.send(of(record), publisher);
         await flush();
 
-        expect(natsMsg.respond).toHaveBeenCalledExactlyOnceWith(
-          JSON.stringify({
-            response: { value: 'test' },
-            isDisposed: true,
-            id,
-          }),
-          { headers },
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(sent.get('key')).toBe('value');
+        expect(() => sent.encode()).not.toThrow();
+      });
+      it('should encode an empty plain header object', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders({})
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(sent.keys()).toEqual([]);
+        expect(() => sent.encode()).not.toThrow();
+      });
+      it('should pass a MsgHdrs through, repeated values included', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const headers = createHeaders();
+        headers.append('x-tag', 'a');
+        headers.append('x-tag', 'b');
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders(headers)
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(sent).toBe(headers);
+        expect(sent.values('x-tag')).toEqual(['a', 'b']);
+      });
+      it('should pass an object that already has encode() through', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const headers = { encode: () => new Uint8Array([1]) };
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders(headers)
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        expect(replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>)).toBe(
+          headers,
         );
+      });
+      it('should not publish a plain header whose value is not a string', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders({ 'x-n': 1 })
+          .build();
+
+        expect(() =>
+          publisher({ response: record, isDisposed: true }),
+        ).toThrow();
+        expect(natsMsg.respond).not.toHaveBeenCalled();
       });
     });
     it(`should not call "publish" when replyTo NOT provided`, () => {

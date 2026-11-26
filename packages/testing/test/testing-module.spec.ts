@@ -92,6 +92,53 @@ describe('TestingModule', () => {
     });
   });
 
+  describe('instrument', () => {
+    const instrument = { instanceDecorator: (instance: unknown) => instance };
+
+    async function compileWithInstrument() {
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      return Test.createTestingModule(
+        { imports: [TestAppModule] },
+        { instrument },
+      ).compile();
+    }
+
+    it("should pass the module's instrument to the application", async () => {
+      const module = await compileWithInstrument();
+
+      const app: any = module.createNestApplication(createMockAdapter() as any);
+
+      expect(app.appOptions.instrument).toBe(instrument);
+    });
+
+    it("should keep the application's own instrument", async () => {
+      const module = await compileWithInstrument();
+      const own = { instanceDecorator: (instance: unknown) => instance };
+
+      const app: any = module.createNestApplication(
+        createMockAdapter() as any,
+        { instrument: own },
+      );
+
+      expect(app.appOptions.instrument).toBe(own);
+    });
+
+    it("should pass the module's instrument to a microservice, without changing its options", async () => {
+      await tryLoadPackage('@nestjs/microservices', () => ({
+        NestMicroservice: MockNestMicroservice,
+      }));
+      const module = await compileWithInstrument();
+      const options = { transport: 0 };
+
+      const microservice: any = module.createNestMicroservice(options);
+
+      expect(microservice.options).toEqual({ transport: 0, instrument });
+      expect(options).toEqual({ transport: 0 });
+    });
+  });
+
   describe('createNestApplication', () => {
     it('should create a NestApplication and return a Proxy when given an adapter', async () => {
       @ModuleDecorator({})

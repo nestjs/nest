@@ -447,9 +447,9 @@ function pick(
   option: string,
   value: unknown,
   allowed: readonly string[],
-  fallback: string,
+  fallback?: string,
 ): string {
-  if (value === undefined) {
+  if (value === undefined && fallback !== undefined) {
     return fallback;
   }
   if (!isString(value) || !allowed.includes(value)) {
@@ -473,7 +473,8 @@ function resolveReferrerPolicy(
   }
   const unique = new Set<unknown>();
   for (const token of tokens) {
-    pick('referrerPolicy.policy', token, REFERRER_POLICIES, 'no-referrer');
+    // An entry of the list has no default, unlike the option itself
+    pick('referrerPolicy.policy', token, REFERRER_POLICIES);
     if (unique.has(token)) {
       fail(`referrerPolicy.policy contains "${token}" more than once.`);
     }

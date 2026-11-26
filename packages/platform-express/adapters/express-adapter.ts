@@ -181,6 +181,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       if (errored) {
         return body.errorHandler(errored, response);
       }
+      // No body for a 204, 205 or 304 (RFC 9110): res.send() strips it and
+      // the headers describing it, as for any other body
+      if ([204, 205, 304].includes(response.statusCode)) {
+        body.getStream().destroy();
+        return response.send();
+      }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {

@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { of } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import {
   CONSUMER_CANCELLED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
@@ -9,6 +10,10 @@ import {
 import { RmqContext } from '../../ctx-host/index.js';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
+import {
+  BaseRpcExceptionFilter,
+  RpcException,
+} from '../../exceptions/index.js';
 import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -801,7 +806,7 @@ describe('ServerRMQ', () => {
     });
     it('should negative acknowledge if message does not exists in handlers object and noAck option is false', async () => {
       untypedServer.noAck = false;
-      await server.handleMessage(msg, '');
+      await server.handleMessage(msg, channel);
       expect(channel.nack).toHaveBeenCalledWith(msg, false, false);
       expect(sendMessageStub).toHaveBeenCalledWith(
         {
@@ -1040,7 +1045,7 @@ describe('ServerRMQ', () => {
         untypedServer.noAck = false;
         const message = withId('a'.repeat(257));
 
-        await expect(server.handleMessage(message, '')).rejects.toThrow(
+        await expect(server.handleMessage(message, channel)).rejects.toThrow(
           InvalidPacketIdException,
         );
         expect(channel.nack).toHaveBeenCalledWith(message, false, false);
@@ -1609,17 +1614,19 @@ describe('ServerRMQ', () => {
     it('should negative acknowledge without retrying if key does not exists in handlers object and noAck option is false', async () => {
       const nack = vi.fn();
       const message = { pattern: 'no-exists', data };
+      const deliveryChannel = { nack };
       untypedServer.channel = {
-        nack,
+        nack: vi.fn(),
       };
       untypedServer.noAck = false;
       await server.handleEvent(
         channel,
         message,
-        new RmqContext([message, '', '']),
+        new RmqContext([message, deliveryChannel, '']),
       );
 
       expect(nack).toHaveBeenCalledWith(message, false, false);
+      expect(untypedServer.channel.nack).not.toHaveBeenCalled();
     });
 
     it('should not negative acknowledge if key does not exists in handlers object but noAck option is true', async () => {
@@ -1636,6 +1643,258 @@ describe('ServerRMQ', () => {
       );
 
       expect(nack).not.toHaveBeenCalledWith(message, false, false);
+    });
+  });
+
+  describe('when the wrapper reconnects while a delivery is in flight', () => {
+    const createChannel = () => ({
+      nack: vi.fn(),
+      ack: vi.fn(),
+      reject: vi.fn(),
+    });
+    const createRawMessage = (
+      payload: object,
+      extra: Record<string, unknown> = {},
+    ) => ({
+      content: Buffer.from(JSON.stringify(payload)),
+      properties: { correlationId: '1' },
+      fields: {},
+      ...extra,
+    });
+
+    let deliveryChannel: ReturnType<typeof createChannel>;
+    let wrapperChannel: ReturnType<typeof createChannel>;
+
+    beforeEach(() => {
+      deliveryChannel = createChannel();
+      wrapperChannel = createChannel();
+    });
+
+    const silenceLogs = () => {
+      vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+      vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+    };
+
+    const expectNackedOnDeliveryChannelOnly = (message: object) => {
+      expect(deliveryChannel.nack).toHaveBeenCalledWith(message, false, false);
+      expect(wrapperChannel.nack).not.toHaveBeenCalled();
+    };
+
+    it('should nack an unmatched event on the delivery channel after deserialize', async () => {
+      server = new ServerRMQ({ noAck: false });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = deliveryChannel;
+
+      let resume!: (packet: object) => void;
+      untypedServer.deserializer = {
+        deserialize: () =>
+          new Promise(resolve => {
+            resume = resolve;
+          }),
+      };
+
+      const message = createRawMessage({
+        pattern: 'unknown-event',
+        data: 'x',
+      });
+      const handling = server.handleMessage(message, deliveryChannel);
+
+      untypedServer.channel = wrapperChannel;
+      resume({ pattern: 'unknown-event', data: 'x' });
+      await handling;
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should nack an unmatched request on the delivery channel after deserialize', async () => {
+      server = new ServerRMQ({ noAck: false });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = deliveryChannel;
+      vi.spyOn(server, 'sendMessage').mockResolvedValue(undefined);
+
+      let resume!: (packet: object) => void;
+      untypedServer.deserializer = {
+        deserialize: () =>
+          new Promise(resolve => {
+            resume = resolve;
+          }),
+      };
+
+      const message = createRawMessage({
+        pattern: 'unknown-request',
+        data: 'x',
+        id: '3',
+      });
+      const handling = server.handleMessage(message, deliveryChannel);
+
+      untypedServer.channel = wrapperChannel;
+      resume({ pattern: 'unknown-request', data: 'x', id: '3' });
+      await handling;
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should nack an oversized message on the delivery channel', async () => {
+      server = new ServerRMQ({ noAck: false, maxMessageSize: 8 });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = wrapperChannel;
+      vi.spyOn(server, 'sendMessage').mockResolvedValue(undefined);
+
+      const message = createRawMessage({
+        pattern: 'test',
+        data: '123',
+        id: '3',
+      });
+      await server.handleMessage(message, deliveryChannel);
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should nack a dropped wildcard message on the delivery channel', async () => {
+      server = new ServerRMQ({
+        noAck: false,
+        wildcards: true,
+        queue: 'accounts',
+      });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = wrapperChannel;
+      untypedServer.messageHandlers = objectToMap({
+        'admin.purge': vi.fn() as any,
+        'public.*': vi.fn() as any,
+      });
+      untypedServer.initializeWildcardHandlersIfExist();
+
+      const message = createRawMessage(
+        { pattern: 'admin.purge', data: 'account-4', id: '3' },
+        { fields: { exchange: 'accounts', routingKey: 'public.info' } },
+      );
+      await server.handleMessage(message, deliveryChannel);
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should not throw when the delivery channel has closed', async () => {
+      server = new ServerRMQ({ noAck: false });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = wrapperChannel;
+      const closedError = new Error('Channel closed');
+      const closedChannel = {
+        nack: vi.fn(() => {
+          throw closedError;
+        }),
+      };
+      const logError = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+
+      await expect(
+        server.handleEvent(
+          'missing',
+          { pattern: 'missing', data: 'x' },
+          new RmqContext([{ id: 1 }, closedChannel, 'missing']),
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(closedChannel.nack).toHaveBeenCalled();
+      expect(wrapperChannel.nack).not.toHaveBeenCalled();
+      expect(logError).toHaveBeenCalledWith(closedError);
+    });
+  });
+
+  describe('with "nackOnInternalError"', () => {
+    const pattern = 'test';
+    const filter = new BaseRpcExceptionFilter();
+    // What the exception filters answer a handler failure with
+    const internalErrorReply = () =>
+      filter.catch(new Error('failed'), {} as any);
+    const rpcErrorReply = () =>
+      filter.catch(new RpcException('Internal server error'), {} as any);
+    // The server wraps the methods of the channel, so the spies stay apart
+    let spies: Record<'ack' | 'nack' | 'reject', ReturnType<typeof vi.fn>>;
+    let channel: Record<string, (...args: unknown[]) => unknown>;
+    const message = (packet: object = { pattern, data: 'test' }) => ({
+      content: { toString: () => JSON.stringify(packet) },
+      fields: { deliveryTag: 1 },
+      properties: { correlationId: '1', replyTo: 'reply-queue' },
+    });
+    const createServer = (options: object = {}) => {
+      server = new ServerRMQ({
+        noAck: false,
+        nackOnInternalError: true,
+        ...options,
+      });
+      untypedServer = server as any;
+      untypedServer.channel = { nack: vi.fn() };
+      vi.spyOn(server, 'sendMessage').mockResolvedValue(undefined);
+    };
+    const handle = async (
+      handler: (ctx: RmqContext) => unknown,
+      msg = message(),
+    ) => {
+      server.addHandler(pattern, (async (_: unknown, ctx: RmqContext) =>
+        handler(ctx)) as any);
+      await server.handleMessage(msg, channel).catch(() => {});
+      await new Promise(resolve => setImmediate(resolve));
+    };
+
+    beforeEach(() => {
+      vi.spyOn(BaseRpcExceptionFilter['logger'], 'error').mockImplementation(
+        () => {},
+      );
+      spies = { ack: vi.fn(), nack: vi.fn(), reject: vi.fn() };
+      channel = {
+        ack: (...args) => spies.ack(...args),
+        nack: (...args) => spies.nack(...args),
+        reject: (...args) => spies.reject(...args),
+      };
+      createServer();
+    });
+
+    it('should nack, without requeue, an event or a request that fails with an internal error', async () => {
+      const event = message();
+      await handle(() => internalErrorReply(), event);
+      expect(spies.nack).toHaveBeenLastCalledWith(event, false, false);
+
+      const request = message({ pattern, data: 'test', id: '1' });
+      await handle(() => internalErrorReply(), request);
+      expect(spies.nack).toHaveBeenLastCalledWith(request, false, false);
+
+      // An exception filter that throws
+      await handle(() => Promise.reject(new Error('filter failed')));
+      expect(spies.nack).toHaveBeenCalledTimes(3);
+    });
+    it('should not nack a message that fails with an RpcException, whatever its message', async () => {
+      await handle(() => rpcErrorReply());
+      await handle(() => Promise.reject(new RpcException('not found')));
+      expect(spies.nack).not.toHaveBeenCalled();
+    });
+    it('should not nack a message acknowledged already, also in "finalize" after the error', async () => {
+      await handle(ctx => {
+        ctx.getChannelRef().ack(ctx.getMessage());
+        return internalErrorReply();
+      });
+      await handle(ctx =>
+        internalErrorReply().pipe(
+          finalize(() => ctx.getChannelRef().ack(ctx.getMessage())),
+        ),
+      );
+      expect(spies.ack).toHaveBeenCalledTimes(2);
+      expect(spies.nack).not.toHaveBeenCalled();
+    });
+    it('should leave the channel and the message alone without the option or with "noAck"', async () => {
+      const { ack } = channel;
+      for (const options of [{ nackOnInternalError: false }, { noAck: true }]) {
+        createServer(options);
+        await handle(() => internalErrorReply());
+      }
+      expect(spies.nack).not.toHaveBeenCalled();
+      expect(channel.ack).toBe(ack);
     });
   });
 

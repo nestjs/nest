@@ -4,6 +4,8 @@ export type * from './controllers/controller.interface.js';
 export type * from './exceptions/exception-filter.interface.js';
 export type * from './exceptions/rpc-exception-filter.interface.js';
 export type * from './exceptions/ws-exception-filter.interface.js';
+export type * from './external/cors-options.interface.js';
+export type * from './external/https-options.interface.js';
 export type * from './external/validation-error.interface.js';
 export type * from './features/arguments-host.interface.js';
 export type * from './features/can-activate.interface.js';

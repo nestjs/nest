@@ -129,6 +129,45 @@ class ShopWithAllController {
   }
 }
 
+@Controller('media')
+class LegacyWildcardController {
+  @Get('favicon.ico')
+  favicon() {
+    return RETURN_VALUE;
+  }
+
+  @Get('*')
+  everything() {
+    return RETURN_VALUE;
+  }
+}
+
+@Controller('media')
+class AllLegacyWildcardController {
+  @Get('favicon.ico')
+  favicon() {
+    return RETURN_VALUE;
+  }
+
+  @All('*')
+  everything() {
+    return RETURN_VALUE;
+  }
+}
+
+@Controller('assets')
+class WildcardController {
+  @Get('health')
+  health() {
+    return RETURN_VALUE;
+  }
+
+  @Get('{*path}')
+  everything() {
+    return RETURN_VALUE;
+  }
+}
+
 describe('Middleware - routes next to a parameterized route', () => {
   let app: INestApplication;
 
@@ -307,6 +346,75 @@ describe('Middleware - a plain string next to a parameterized RequestMethod.ALL 
       await request(app.getHttpServer())
         .get('/shop/admin/undeclared')
         .expect(200, MIDDLEWARE_VALUE);
+    });
+  });
+});
+
+describe('Middleware - a static route next to a wildcard route', () => {
+  let app: INestApplication;
+  let runs = 0;
+  const countingMiddleware = (req, res, next) => {
+    runs++;
+    next();
+  };
+
+  const createApp = async (
+    controller: Type<any>,
+    adapter?: FastifyAdapter | NodeAdapter,
+  ) => {
+    @Module({ controllers: [controller] })
+    class TestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer.apply(countingMiddleware).forRoutes(controller);
+      }
+    }
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [TestModule],
+    }).compile();
+    app = adapter
+      ? moduleRef.createNestApplication(adapter)
+      : moduleRef.createNestApplication();
+    await listenOnLoopback(app);
+  };
+
+  const expectOneRun = async (path: string) => {
+    runs = 0;
+    await request(app.getHttpServer()).get(path).expect(200, RETURN_VALUE);
+    expect(runs).toBe(1);
+  };
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  describe.each([
+    ['Express', () => undefined],
+    ['Fastify', () => new FastifyAdapter()],
+    ['node', () => new NodeAdapter()],
+  ])('with the %s adapter', (_, createAdapter) => {
+    it(`should run once on "/media/favicon.ico" next to "/media/*"`, async () => {
+      await createApp(LegacyWildcardController, createAdapter());
+      await expectOneRun('/media/favicon.ico');
+      await expectOneRun('/media/anything');
+    });
+
+    it(`should run once on "/media/favicon.ico" next to the all-methods "/media/*"`, async () => {
+      await createApp(AllLegacyWildcardController, createAdapter());
+      await expectOneRun('/media/favicon.ico');
+      await expectOneRun('/media/anything');
+    });
+  });
+
+  // Fastify accepts "*" as a wildcard, not "{*path}"
+  describe.each([
+    ['Express', () => undefined],
+    ['node', () => new NodeAdapter()],
+  ])('with the %s adapter', (_, createAdapter) => {
+    it(`should run once on "/assets/health" next to "/assets/{*path}"`, async () => {
+      await createApp(WildcardController, createAdapter());
+      await expectOneRun('/assets/health');
+      await expectOneRun('/assets/anything');
     });
   });
 });

@@ -545,6 +545,113 @@ describe('ParseArrayPipe', () => {
           ).rejects.toBe(error);
         });
 
+        describe('and a custom exception factory returns an Error that is not an HttpException', () => {
+          // As an RpcException or a WsException: the message of a string,
+          // or else the name of the class, and the error it was given.
+          class ItemException extends Error {
+            constructor(private readonly error: string | object) {
+              super(typeof error === 'string' ? error : 'Item Exception');
+            }
+            getError() {
+              return this.error;
+            }
+          }
+          class ArrItemWithProp {
+            @IsNumber()
+            number: number;
+          }
+
+          it('should hand the message of every invalid item to the factory', async () => {
+            const exceptionFactory = vi.fn((error: any) => new Error(error));
+            const pipe = new ParseArrayPipe({
+              items: Number,
+              stopAtFirstError: false,
+              exceptionFactory,
+            });
+
+            const error = await pipe
+              .transform('a,1,b', {} as ArgumentMetadata)
+              .catch(err => err);
+
+            expect(error).toBeInstanceOf(Error);
+            expect(exceptionFactory).toHaveBeenLastCalledWith([
+              '[0] item must be a number',
+              '[2] item must be a number',
+            ]);
+          });
+
+          it('should hand the errors that an exception holds to the factory', async () => {
+            const exceptionFactory = vi.fn(
+              (error: any) => new ItemException(error),
+            );
+            const pipe = new ParseArrayPipe({
+              items: ArrItemWithProp,
+              stopAtFirstError: false,
+              exceptionFactory,
+            });
+
+            const error = await pipe
+              .transform(
+                [{ number: 'a' }, { number: 1 }, { number: 'b' }] as any[],
+                {} as ArgumentMetadata,
+              )
+              .catch(err => err);
+
+            expect(error).toBeInstanceOf(ItemException);
+            expect(error.getError()).toEqual([
+              expect.stringMatching(/^\[0\] .*property number has failed/s),
+              expect.stringMatching(/^\[2\] .*property number has failed/s),
+            ]);
+          });
+
+          it('should collect the exceptions of an async exception factory', async () => {
+            const pipe = new ParseArrayPipe({
+              items: ArrItemWithProp,
+              stopAtFirstError: false,
+              exceptionFactory: async (error: any) => new ItemException(error),
+            });
+
+            const error = await pipe
+              .transform(
+                [{ number: 'a' }, { number: 'b' }] as any[],
+                {} as ArgumentMetadata,
+              )
+              .catch(err => err);
+
+            expect(error).toBeInstanceOf(ItemException);
+            expect(error.getError()).toEqual([
+              expect.stringMatching(/^\[0\] .*property number has failed/s),
+              expect.stringMatching(/^\[1\] .*property number has failed/s),
+            ]);
+          });
+
+          it('should still rethrow an error thrown by a transformation', async () => {
+            const error = new Error('lookup failed');
+            class ArrItemWithTransform {
+              @Transform(({ value }) => {
+                if (value === 'unknown') {
+                  throw error;
+                }
+                return value;
+              })
+              @IsString()
+              name: string;
+            }
+            const pipe = new ParseArrayPipe({
+              items: ArrItemWithTransform,
+              stopAtFirstError: false,
+              exceptionFactory: (errors: any) => new ItemException(errors),
+            });
+
+            await expect(
+              pipe.transform(
+                [{ name: 1 }, { name: 'unknown' }] as any[],
+                {} as ArgumentMetadata,
+              ),
+            ).rejects.toBe(error);
+          });
+        });
+
         it('should collect the errors without copying them for each item', async () => {
           const pipe = new ParseArrayPipe({
             items: Number,

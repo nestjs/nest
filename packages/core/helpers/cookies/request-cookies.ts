@@ -39,9 +39,7 @@ export function getRequestCookie(
   name: string,
 ): string | undefined {
   const cookies = getRequestCookies(req);
-  return Object.prototype.hasOwnProperty.call(cookies, name)
-    ? cookies[name]
-    : undefined;
+  return Object.hasOwn(cookies, name) ? cookies[name] : undefined;
 }
 
 /**

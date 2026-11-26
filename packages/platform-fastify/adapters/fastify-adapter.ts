@@ -65,7 +65,8 @@ import { AbstractHttpAdapter } from '@nestjs/core';
 import { LegacyRouteConverter } from '@nestjs/core/internal';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import { onResponseClose } from './utils/on-response-close.util.js';
-const { kErrorHandler, kReplySerializer, kRouteContext } = fastifySymbols;
+const { kErrorHandler, kReply, kReplySerializer, kRouteContext } =
+  fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
 import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
@@ -717,11 +718,19 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(
+    port: string | number,
+    hostname: string,
+    backlog: number,
+    callback?: () => void,
+  ): void;
+  public listen(
     listenOptions: string | number | NestFastifyListenOptions,
     ...args: any[]
   ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
-    const callback = isFirstArgTypeofFunction ? args[0] : args[1];
+    // The callback comes last, after the host and the backlog if any
+    const lastArg = args[args.length - 1];
+    const callback = isFunction(lastArg) ? lastArg : undefined;
 
     if (typeof listenOptions === 'string' && Number.isNaN(+listenOptions)) {
       // A string that is not a number is a Unix socket path or a named pipe.
@@ -746,6 +755,9 @@ export class FastifyAdapter<
     }
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
+      if (typeof args[1] === 'number') {
+        options.backlog = args[1];
+      }
     }
     if (options.port !== undefined && !this.isValidPort(options.port)) {
       // Fastify calls `server.listen()` from its ready callback, where the
@@ -876,6 +888,26 @@ export class FastifyAdapter<
     if (!isNil(statusCode)) {
       fastifyReply.status(statusCode);
     }
+    // Fastify drops the body of a 204, but sends the one of a 205, which must
+    // have none (RFC 9110). It gets no body or Content-Type and a zero
+    // Content-Length instead, as in the Express and Node adapters. On a 304,
+    // Node.js discards the body, but Fastify still reads the whole stream of
+    // a StreamableFile before it ends the response, so it is destroyed too.
+    if (
+      fastifyReply.statusCode === HttpStatus.RESET_CONTENT ||
+      (fastifyReply.statusCode === HttpStatus.NOT_MODIFIED &&
+        body instanceof StreamableFile)
+    ) {
+      if (body instanceof StreamableFile) {
+        const stream = body.getStream();
+        if (isFunction(stream?.destroy)) {
+          stream.destroy();
+        }
+      }
+      fastifyReply.removeHeader('Content-Type');
+      fastifyReply.removeHeader('Transfer-Encoding');
+      return fastifyReply.send();
+    }
     if (body instanceof StreamableFile) {
       const file = body;
       const stream = file.getStream();
@@ -979,16 +1011,39 @@ export class FastifyAdapter<
   }
 
   public render(
-    response: TReply & { view: Function },
+    response: TRawResponse | (TReply & { view: Function }),
     view: string,
     options: any,
   ) {
-    return response && response.view(view, options);
+    if (!response) {
+      return response;
+    }
+    if (!this.isNativeResponse(response)) {
+      const reply = response as TReply & { view: Function };
+      return reply.view(view, options);
+    }
+    // The reply created for a raw response is a plain Fastify reply, without
+    // the "view" decorator @fastify/view adds to the replies of the instance,
+    // so that decorator is called on it: rendering, the Content-Type and
+    // sending the page or the error stay those of the plugin
+    const instance = this.instance as TInstance & Record<symbol, any>;
+    const fastifyReply = this.createReplyForRawResponse(response);
+    // Its renderers read the route options of the request, and a raw
+    // response has no route
+    (fastifyReply.request as { routeOptions?: object }).routeOptions = {};
+    return instance[kReply].prototype.view.call(fastifyReply, view, options);
   }
 
-  public redirect(response: TReply, statusCode: number, url: string) {
+  public redirect(
+    response: TRawResponse | TReply,
+    statusCode: number,
+    url: string,
+  ) {
+    const fastifyReply: TReply = this.isNativeResponse(response)
+      ? this.createReplyForRawResponse(response)
+      : response;
     const code = statusCode ?? HttpStatus.FOUND;
-    return response.status(code).redirect(url);
+    return fastifyReply.status(code).redirect(url);
   }
 
   public setErrorHandler(handler: Parameters<TInstance['setErrorHandler']>[0]) {
@@ -1447,9 +1502,17 @@ export class FastifyAdapter<
           hasEndOfStringCharacter,
         );
 
+        // The middleware is added to the root and to the contexts created
+        // since middie was registered (see below), and @fastify/middie
+        // >= 9.3.9 also adds the one of the root to those contexts, so two
+        // copies may see the same request. Only the first one runs it.
+        const handledRequests = new WeakSet<object>();
         const createMiddleware =
           (stripsPath: boolean) =>
           (req: any, res: any, next: (err?: Error) => void) => {
+            if (handledRequests.has(req)) {
+              return next();
+            }
             const queryParamsIndex = req.originalUrl.indexOf('?');
             let pathname =
               queryParamsIndex >= 0
@@ -1472,6 +1535,7 @@ export class FastifyAdapter<
                     : '/';
               }
             }
+            handledRequests.add(req);
             this.runMiddleware(callback, req, res, next);
           };
 
@@ -1677,7 +1741,10 @@ export class FastifyAdapter<
   public mapException(error: unknown): unknown {
     // A 5xx FastifyError (e.g. FST_ERR_HANDLER_TIMEOUT) is a server fault: it
     // stays unmapped, so the built-in filter logs it, like an http-errors one.
-    if (this.isHttpFastifyError(error) && error.statusCode < 500) {
+    if (
+      (this.isHttpFastifyError(error) || isRequestAbortedError(error)) &&
+      error.statusCode < 500
+    ) {
       return new HttpException(error.message, error.statusCode, {
         cause: error,
       });
@@ -2282,5 +2349,19 @@ function isHttpError(
     typeof (err as any).expose === 'boolean' &&
     typeof (err as any).statusCode === 'number' &&
     (err as any).status === (err as any).statusCode
+  );
+}
+
+/** Node.js's error for a client that disconnects mid-body. */
+function isRequestAbortedError(
+  err: unknown,
+): err is Error & { statusCode: number } {
+  return (
+    err instanceof Error &&
+    err.message === 'aborted' &&
+    'code' in err &&
+    err.code === 'ECONNRESET' &&
+    'statusCode' in err &&
+    typeof err.statusCode === 'number'
   );
 }

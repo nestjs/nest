@@ -154,8 +154,10 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     }
     // Awaited, so that a close() the caller awaits really has the connection
     // closed, as with the other transports: mqtt closes it on a later tick and
-    // the broker still delivers to it until then
-    await mqttClient?.endAsync();
+    // the broker still delivers to it until then. mqtt stops reconnecting,
+    // then waits for the broker to acknowledge the packets in flight (e.g. a
+    // QoS 1 reply). Without a connection that never happens.
+    await mqttClient?.endAsync(!mqttClient.connected);
   }
 
   private async stopReceivingMessages(mqttClient: MqttClient) {

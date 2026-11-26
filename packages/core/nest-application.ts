@@ -282,6 +282,9 @@ export class NestApplication
       const conflicts = RouteConflictDetector.detect(
         orderedRoutes,
         this.config.getVersioning(),
+        // Paths are compared as the router matches them: in any case on
+        // Express, unless it is configured otherwise
+        this.httpAdapter.getRouteMatchingOptions?.().caseSensitive ?? true,
       );
 
       // On adapters that reject duplicate registrations the policy

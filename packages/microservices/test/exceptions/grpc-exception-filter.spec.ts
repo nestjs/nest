@@ -153,20 +153,36 @@ describe('GrpcExceptionFilter', () => {
     });
   });
 
-  it('should serialize unknown exceptions to UNKNOWN', () =>
-    new Promise<void>(done => {
-      filter
-        .catch(new Error('boom'), null!)
-        .pipe(
-          catchError(err => {
-            expect(err).toEqual({
-              code: GrpcStatus.UNKNOWN,
-              message: 'Internal server error',
-            });
-            done();
-            return EMPTY;
-          }),
-        )
-        .subscribe(() => ({}));
-    }));
+  describe('when the exception is not an RpcException', () => {
+    let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      loggerErrorSpy = vi
+        .spyOn((GrpcExceptionFilter as any).logger, 'error')
+        .mockImplementation(() => undefined);
+    });
+    afterEach(() => {
+      loggerErrorSpy.mockRestore();
+    });
+
+    it('should serialize it to UNKNOWN and log it', async () => {
+      const error = new Error('connect ECONNREFUSED 10.0.0.7:5432');
+
+      await expect(lastValueFrom(filter.catch(error, null!))).rejects.toEqual({
+        code: GrpcStatus.UNKNOWN,
+        message: 'Internal server error',
+      });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(error);
+    });
+
+    it('should not log an intrinsic exception', async () => {
+      await expect(
+        lastValueFrom(filter.catch(new HttpException('Not Found', 404), null!)),
+      ).rejects.toEqual({
+        code: GrpcStatus.UNKNOWN,
+        message: 'Internal server error',
+      });
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+  });
 });

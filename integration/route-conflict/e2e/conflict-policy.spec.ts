@@ -8,6 +8,8 @@ import request from 'supertest';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
 import { HostPatternModule } from '../src/host-pattern/host-pattern.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
+import { PathCaseModule } from '../src/path-case/path-case.module.js';
+import { PercentEncodedModule } from '../src/percent-encoded/percent-encoded.module.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
 
 interface CapturedLogger {
@@ -304,6 +306,83 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
         capture,
       );
       await expect(builtApp.init()).rejects.toThrow();
+    });
+  });
+
+  describe('path case fixture', () => {
+    let app: INestApplication | undefined;
+
+    afterEach(async () => {
+      if (app) {
+        await app.close();
+        app = undefined;
+      }
+    });
+
+    it('with duplicate=warn, shadow=warn, warns of the duplicate and of the shadow, as Express matches paths in any case', async () => {
+      const capture = createCaptureLogger();
+      app = await buildApp(
+        PathCaseModule,
+        { routeConflictPolicy: { duplicate: 'warn', shadow: 'warn' } },
+        capture,
+      );
+      await listenOnLoopback(app);
+
+      expect(capture.warnings).toEqual([
+        'Duplicate route: GET /users is registered by both LowerUsersController#lower and UpperUsersController#upper.',
+        'Route GET /Orders/pending (UpperOrdersController#pending) is shadowed by GET /orders/:id (LowerOrdersController#byId). The first-registered route will match all matching requests on order-sensitive adapters.',
+      ]);
+
+      const usersResponse = await request(app.getHttpServer()).get('/Users');
+      expect(usersResponse.status).toBe(200);
+      expect(usersResponse.body).toEqual({ handler: 'lower' });
+
+      const ordersResponse = await request(app.getHttpServer()).get(
+        '/Orders/pending',
+      );
+      expect(ordersResponse.status).toBe(200);
+      expect(ordersResponse.body).toEqual({ handler: 'byId', id: 'pending' });
+    });
+
+    it('with duplicate=error, aborts bootstrap for paths that differ by case only', async () => {
+      const capture = createCaptureLogger();
+      const builtApp = await buildApp(
+        PathCaseModule,
+        { routeConflictPolicy: { duplicate: 'error', shadow: 'off' } },
+        capture,
+      );
+      await expect(builtApp.init()).rejects.toThrow(
+        'Duplicate route: GET /users is registered by both LowerUsersController#lower and UpperUsersController#upper.',
+      );
+    });
+  });
+
+  describe('percent-encoded fixture', () => {
+    let app: INestApplication | undefined;
+
+    afterEach(async () => {
+      if (app) {
+        await app.close();
+        app = undefined;
+      }
+    });
+
+    it('with duplicate=warn, reports percent-encoded text that differs by the case of its hex digits', async () => {
+      const capture = createCaptureLogger();
+      app = await buildApp(
+        PercentEncodedModule,
+        { routeConflictPolicy: { duplicate: 'warn' } },
+        capture,
+      );
+      await listenOnLoopback(app);
+
+      expect(capture.warnings).toEqual([
+        'Duplicate route: GET /encoded/%2F is registered by both UpperHexController#upperHex and LowerHexController#lowerHex.',
+      ]);
+
+      const response = await request(app.getHttpServer()).get('/encoded/%2f');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ handler: 'upperHex' });
     });
   });
 });

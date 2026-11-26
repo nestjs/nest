@@ -25,9 +25,12 @@ import {
   fastify,
 } from 'fastify';
 import { EventEmitter } from 'events';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import * as http from 'http';
 import { inject } from 'light-my-request';
 import { AddressInfo } from 'net';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { PassThrough, Readable } from 'stream';
 
 describe('FastifyAdapter', () => {
@@ -241,6 +244,102 @@ describe('FastifyAdapter', () => {
       expect(res.headers['content-length']).toBeUndefined();
       expect(res.body).toBe('hello world');
       await fastifyAdapter.close();
+    });
+
+    describe('with a 205 status code', () => {
+      afterEach(() => fastifyAdapter.close());
+
+      it.each([
+        ['a string', () => 'hello world'],
+        ['an object', () => ({ message: 'hello world' })],
+        [
+          'a StreamableFile',
+          () =>
+            new StreamableFile(Buffer.from('hello world'), {
+              type: 'text/csv',
+              length: 11,
+            }),
+        ],
+      ])(
+        'should send no body or Content-Type, and a zero Content-Length, for %s',
+        async (_, createBody) => {
+          fastifyAdapter.get(
+            '/',
+            (_req: FastifyRequest, reply: FastifyReply) => {
+              reply.header('Content-Type', 'text/plain');
+              fastifyAdapter.reply(reply, createBody(), 205);
+            },
+          );
+
+          const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+          expect(res.statusCode).toBe(205);
+          expect(res.headers['content-type']).toBeUndefined();
+          expect(res.headers['content-length']).toBe('0');
+          expect(res.body).toBe('');
+        },
+      );
+
+      it('should destroy the stream of a StreamableFile', async () => {
+        const source = new PassThrough();
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          fastifyAdapter.reply(reply, new StreamableFile(source), 205);
+        });
+
+        await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(source.destroyed).toBe(true);
+      });
+
+      it('should send no body when the status was set on the reply before', async () => {
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          reply.status(205);
+          fastifyAdapter.reply(reply, 'hello world');
+        });
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(res.statusCode).toBe(205);
+        expect(res.headers['content-length']).toBe('0');
+        expect(res.body).toBe('');
+      });
+
+      it('should send no body on a raw response', async () => {
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          reply.hijack();
+          fastifyAdapter.reply(reply.raw, 'hello world', 205);
+        });
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(res.statusCode).toBe(205);
+        expect(res.headers['content-length']).toBe('0');
+        expect(res.body).toBe('');
+      });
+    });
+
+    describe('with a 304 status code and a StreamableFile', () => {
+      afterEach(() => fastifyAdapter.close());
+
+      it('should answer without reading the stream, and destroy it', async () => {
+        // A stream that never ends: Fastify would wait for it to end
+        const source = new PassThrough();
+        source.write('hello world');
+        fastifyAdapter.get('/', (_req: FastifyRequest, reply: FastifyReply) => {
+          fastifyAdapter.reply(
+            reply,
+            new StreamableFile(source, { type: 'text/csv', length: 11 }),
+            304,
+          );
+        });
+
+        const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+
+        expect(res.statusCode).toBe(304);
+        expect(res.headers['content-type']).toBeUndefined();
+        expect(res.body).toBe('');
+        expect(source.destroyed).toBe(true);
+      });
     });
 
     it('should destroy the stream of a StreamableFile once the reply was sent', () => {
@@ -609,6 +708,11 @@ describe('FastifyAdapter', () => {
       const error = Object.assign(new Error('Test error'), { statusCode: 400 });
       expect(fastifyAdapter.mapException(error)).toBe(error);
     });
+
+    it('should not map an "aborted" error without a status code', () => {
+      const error = Object.assign(new Error('aborted'), { code: 'ECONNRESET' });
+      expect(fastifyAdapter.mapException(error)).toBe(error);
+    });
   });
 
   describe('isHeadersSent', () => {
@@ -650,6 +754,178 @@ describe('FastifyAdapter', () => {
 
       expect(response.payload).toBe('partial');
       await fastifyAdapter.close();
+    });
+  });
+
+  describe('redirect', () => {
+    afterEach(() => fastifyAdapter.close());
+
+    it('should redirect a raw response', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        // Nest middleware, and the exception filters of its errors, receive
+        // the raw response instead of the reply.
+        fastifyAdapter.redirect(reply.raw, 301, '/target');
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const response = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/p',
+      });
+
+      expect(response.statusCode).toBe(301);
+      expect(response.headers.location).toBe('/target');
+    });
+
+    it('should redirect a raw response with 302 when no status code is given', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.redirect(reply.raw, undefined!, '/target');
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const response = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/p',
+      });
+
+      expect(response.statusCode).toBe(302);
+      expect(response.headers.location).toBe('/target');
+    });
+  });
+
+  describe('render', () => {
+    afterEach(() => fastifyAdapter.close());
+
+    describe('with a "view" reply decorator', () => {
+      beforeEach(() => {
+        fastifyAdapter.initHttpServer();
+        // Renders and sends like the one @fastify/view registers
+        fastifyAdapter
+          .getInstance()
+          .decorateReply(
+            'view',
+            async function (this: FastifyReply, view: string, data: any) {
+              try {
+                if (!data.message) {
+                  throw new Error('Missing message');
+                }
+                if (!this.getHeader('Content-Type')) {
+                  this.header('Content-Type', 'text/html; charset=utf-8');
+                }
+                this.send(`<${view}>${data.message}`);
+              } catch (err) {
+                this.send(err);
+              }
+              return this;
+            },
+          );
+      });
+
+      it('should render a view on a raw response', async () => {
+        fastifyAdapter.get('/p', (_req, reply) => {
+          // Nest middleware, and the exception filters of its errors, receive
+          // the raw response instead of the reply.
+          fastifyAdapter.status(reply.raw, 401);
+          void fastifyAdapter.render(reply.raw, 'h1', {
+            message: 'Sign in first',
+          });
+        });
+
+        await fastifyAdapter.getInstance().ready();
+        const response = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/p',
+        });
+
+        expect(response.statusCode).toBe(401);
+        expect(response.headers['content-type']).toBe(
+          'text/html; charset=utf-8',
+        );
+        expect(response.body).toBe('<h1>Sign in first');
+      });
+
+      it('should pass a view that fails to render on a raw response to the error handler', async () => {
+        const errorHandler = vi.fn((err: Error, _req, reply: FastifyReply) => {
+          reply.code(500).send(err.message);
+        });
+        fastifyAdapter.setErrorHandler(errorHandler);
+        fastifyAdapter.get('/p', (_req, reply) => {
+          void fastifyAdapter.render(reply.raw, 'h1', {});
+        });
+
+        await fastifyAdapter.getInstance().ready();
+        const response = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/p',
+        });
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body).toBe('Missing message');
+        expect(errorHandler).toHaveBeenCalledOnce();
+      });
+
+      it('should render a view on a reply', async () => {
+        fastifyAdapter.get('/p', (_req, reply) =>
+          fastifyAdapter.render(reply, 'h1', { message: 'Hello' }),
+        );
+
+        await fastifyAdapter.getInstance().ready();
+        const response = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/p',
+        });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toBe('<h1>Hello');
+      });
+    });
+
+    describe('with @fastify/view', () => {
+      // The part of the handlebars API @fastify/view calls
+      const handlebars = {
+        compile: (source: string) => (data: Record<string, string>) =>
+          source.replace('{{message}}', data.message),
+        registerPartial: () => {},
+      };
+      let templates: string;
+
+      beforeEach(() => {
+        templates = mkdtempSync(join(tmpdir(), 'nest-fastify-view-'));
+        writeFileSync(join(templates, 'page.hbs'), '<h1>{{message}}</h1>');
+      });
+
+      afterEach(() => rmSync(templates, { recursive: true, force: true }));
+
+      it('should render a view on a raw response with the charset of the view engine', async () => {
+        fastifyAdapter.initHttpServer();
+        // Its handlebars renderer reads the route options of the request,
+        // which a raw response has no route for
+        await fastifyAdapter.setViewEngine({
+          engine: { handlebars },
+          templates,
+          charset: 'iso-8859-1',
+        });
+        fastifyAdapter.get('/p', (_req, reply) => {
+          fastifyAdapter.status(reply.raw, 401);
+          void fastifyAdapter.render(reply.raw, 'page', {
+            message: 'Sign in first',
+          });
+        });
+
+        await fastifyAdapter.getInstance().ready();
+        const response = await fastifyAdapter.inject({
+          method: 'GET',
+          url: '/p',
+        });
+
+        expect(response.statusCode).toBe(401);
+        expect(response.headers['content-type']).toBe(
+          'text/html; charset=iso-8859-1',
+        );
+        expect(response.body).toBe('<h1>Sign in first</h1>');
+      });
     });
   });
 
@@ -2853,6 +3129,41 @@ describe('FastifyAdapter', () => {
 
       expect(listen).toHaveBeenCalledWith(
         { port: 3000, host: '127.0.0.1' },
+        undefined,
+      );
+    });
+
+    it('should pass the callback that follows the host', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+
+      fastifyAdapter.listen(3000, '127.0.0.1', callback);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1' },
+        callback,
+      );
+    });
+
+    it('should pass the backlog and the callback that follow the host', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+
+      fastifyAdapter.listen(3000, '127.0.0.1', 511, callback);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1', backlog: 511 },
+        callback,
+      );
+    });
+
+    it('should not take the backlog for the callback', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen(3000, '127.0.0.1', 511);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '127.0.0.1', backlog: 511 },
         undefined,
       );
     });
