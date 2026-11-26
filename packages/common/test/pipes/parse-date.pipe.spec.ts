@@ -127,6 +127,14 @@ describe('ParseDatePipe', () => {
           'Feb,30,2024',
           '30.Feb.2024',
           '2024.Feb.30',
+          'Thu 2024 sept 31',
+          'Thu 2023 Feb 29',
+          'Fri, 2024 Feb 30',
+          'Friday 2024-Feb-30',
+          'Sun 2024 Sep 31 10:00',
+          'Sun 2024 Feb 30 10:00:00 GMT+0300',
+          'Thursday 2024.Apr.31',
+          'Wed 2100 Feb 29',
         ]) {
           expect(() => target.transform(value)).toThrow(BadRequestException);
         }
@@ -169,6 +177,16 @@ describe('ParseDatePipe', () => {
           'Feb,29,2024',
           '29.Feb.2024',
           '2024.Feb.29',
+          'Thu 2024 Sept 30',
+          'Thu 2024 Feb 29',
+          'Friday 2024-Feb-29',
+          'Fri, 2024 Feb 29',
+          'Sun 2024 Sep 30 10:00',
+          'Sun 2024 Feb 29 10:00:00 GMT+0300',
+          'Thursday 2024.Apr.30',
+          'Wed 2000 Feb 29',
+          'Tue, 2024 02 29',
+          'Tue, 2024/02/29',
         ]) {
           expect(target.transform(value)).toEqual(new Date(value));
         }
