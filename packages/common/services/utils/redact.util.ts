@@ -251,10 +251,7 @@ export function createRedactor(
         // Non-enumerable, but part of the logged error ("error" and
         // "suppressed" are those of a SuppressedError).
         for (const key of ['cause', 'errors', 'error', 'suppressed']) {
-          if (
-            Object.prototype.hasOwnProperty.call(object, key) &&
-            !keysToVisit.includes(key)
-          ) {
+          if (Object.hasOwn(object, key) && !keysToVisit.includes(key)) {
             keysToVisit.push(key);
           }
         }

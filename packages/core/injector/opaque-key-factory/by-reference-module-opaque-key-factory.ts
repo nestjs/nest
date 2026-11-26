@@ -33,7 +33,7 @@ export class ByReferenceModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory
     originalRef: Type | DynamicModule | ForwardReference,
   ): string {
     // Own property only: a subclass would inherit the id of the module it extends.
-    if (Object.prototype.hasOwnProperty.call(originalRef, K_MODULE_ID)) {
+    if (Object.hasOwn(originalRef, K_MODULE_ID)) {
       return originalRef[K_MODULE_ID];
     }
 
