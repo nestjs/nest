@@ -286,14 +286,14 @@ function hasPrototypeKey(store: object): boolean {
   const pending: object[] = [store];
   while (pending.length > 0) {
     const container = pending.pop()! as any;
-    if (Object.prototype.hasOwnProperty.call(container, '__proto__')) {
+    if (Object.hasOwn(container, '__proto__')) {
       return true;
     }
     if (
-      Object.prototype.hasOwnProperty.call(container, 'constructor') &&
+      Object.hasOwn(container, 'constructor') &&
       typeof container.constructor === 'object' &&
       container.constructor !== null &&
-      Object.prototype.hasOwnProperty.call(container.constructor, 'prototype')
+      Object.hasOwn(container.constructor, 'prototype')
     ) {
       return true;
     }
