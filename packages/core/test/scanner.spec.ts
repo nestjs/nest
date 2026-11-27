@@ -1016,6 +1016,79 @@ describe('DependenciesScanner', () => {
       expect(addEnhancerMetadataProviderSpy).toHaveBeenCalled();
       expect(addEnhancerMetadataProviderSpy).toHaveBeenCalledWith(instance);
     });
+
+    it('should only add enhancers metadata to the given modules', () => {
+      untypedScanner.applicationProvidersApplyMap = [provider];
+
+      const instance = new InstanceWrapper({ name: 'test' });
+      const eagerController = new InstanceWrapper();
+      const lazyController = new InstanceWrapper();
+
+      const fakeModuleRef = (controller: InstanceWrapper) => ({
+        injectables: { get: () => instance },
+        controllers: new Map([['test', controller]]),
+        entryProviders: [],
+      });
+      const eagerModuleRef = fakeModuleRef(eagerController);
+
+      vi.spyOn(container, 'getModules').mockImplementation(
+        () =>
+          ({
+            get: () => eagerModuleRef,
+            values() {
+              return [eagerModuleRef];
+            },
+          }) as any,
+      );
+
+      scanner.addScopedEnhancersMetadata();
+
+      const eagerSpy = vi.spyOn(eagerController, 'addEnhancerMetadata');
+      const lazySpy = vi.spyOn(lazyController, 'addEnhancerMetadata');
+
+      scanner.addScopedEnhancersMetadata(
+        new Map([['lazyModule', fakeModuleRef(lazyController) as any]]),
+      );
+
+      expect(lazySpy).toHaveBeenCalledWith(instance);
+      expect(eagerSpy).not.toHaveBeenCalled();
+    });
+
+    it('should only add the enhancers collected on the first pass', () => {
+      untypedScanner.applicationProvidersApplyMap = [];
+
+      const instance = new InstanceWrapper({ name: 'test' });
+      const lazyController = new InstanceWrapper();
+
+      const fakeModuleRef = (controller: InstanceWrapper) => ({
+        injectables: { get: () => instance },
+        controllers: new Map([['test', controller]]),
+        entryProviders: [],
+      });
+      const eagerModuleRef = fakeModuleRef(new InstanceWrapper());
+
+      vi.spyOn(container, 'getModules').mockImplementation(
+        () =>
+          ({
+            get: () => eagerModuleRef,
+            values() {
+              return [eagerModuleRef];
+            },
+          }) as any,
+      );
+
+      scanner.addScopedEnhancersMetadata();
+
+      // as a lazily loaded module declaring its own scoped global enhancer does
+      untypedScanner.applicationProvidersApplyMap = [provider];
+      const lazySpy = vi.spyOn(lazyController, 'addEnhancerMetadata');
+
+      scanner.addScopedEnhancersMetadata(
+        new Map([['lazyModule', fakeModuleRef(lazyController) as any]]),
+      );
+
+      expect(lazySpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('getApplyProvidersMap', () => {

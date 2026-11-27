@@ -1,5 +1,6 @@
 import {
   CallHandler,
+  Controller,
   DynamicModule,
   ExecutionContext,
   Global,
@@ -11,6 +12,7 @@ import {
   Type,
   UseInterceptors,
 } from '@nestjs/common';
+import { APP_GUARD } from '../../../constants.js';
 import { DiscoverableMetaHostCollection } from '../../../discovery/discoverable-meta-host-collection.js';
 import {
   LazyModuleLoader,
@@ -61,6 +63,16 @@ describe('LazyModuleLoader', () => {
       modulesContainer,
     );
   });
+
+  const getControllerWrapper = async (
+    moduleClass: Type<unknown>,
+    controllerClass: Type<unknown>,
+  ) => {
+    const { token } =
+      await nestContainer['moduleCompiler'].compile(moduleClass);
+    return modulesContainer.get(token)!.controllers.get(controllerClass)!;
+  };
+
   describe('load', () => {
     const bProvider = { provide: 'B', useValue: 'B' };
 
@@ -936,6 +948,255 @@ describe('LazyModuleLoader', () => {
 
         await lazyModuleLoader.load(() => LazyGlobalModule);
         expect(globalConstructionsCount).toBe(1);
+      });
+    });
+
+    describe('when a request-scoped global enhancer is registered', () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class ScopedGuard {
+        canActivate() {
+          return true;
+        }
+      }
+
+      @Controller()
+      class EagerlyScannedController {}
+
+      @Controller()
+      class LazilyLoadedController {}
+
+      @Module({
+        controllers: [EagerlyScannedController],
+        providers: [{ provide: APP_GUARD, useClass: ScopedGuard }],
+      })
+      class RootModule {}
+
+      @Module({ controllers: [LazilyLoadedController] })
+      class LazyControllerModule {}
+
+      beforeEach(async () => {
+        await dependenciesScanner.scan(RootModule);
+        await instanceLoader.createInstancesOfDependencies();
+        dependenciesScanner.applyApplicationProviders();
+      });
+
+      it('should bind it to the controllers of a lazily loaded module', async () => {
+        await lazyModuleLoader.load(() => LazyControllerModule);
+
+        const eagerController = await getControllerWrapper(
+          RootModule,
+          EagerlyScannedController,
+        );
+        const lazyController = await getControllerWrapper(
+          LazyControllerModule,
+          LazilyLoadedController,
+        );
+
+        expect(eagerController.getEnhancersMetadata()).toHaveLength(1);
+        expect(lazyController.getEnhancersMetadata()).toHaveLength(1);
+      });
+
+      it('should mark the lazily loaded controller as non-static', async () => {
+        await lazyModuleLoader.load(() => LazyControllerModule);
+
+        const lazyController = await getControllerWrapper(
+          LazyControllerModule,
+          LazilyLoadedController,
+        );
+
+        expect(lazyController.isDependencyTreeStatic()).toBe(false);
+      });
+
+      it('should bind it once when the same module is loaded twice', async () => {
+        await lazyModuleLoader.load(() => LazyControllerModule);
+        await lazyModuleLoader.load(() => LazyControllerModule);
+
+        const lazyController = await getControllerWrapper(
+          LazyControllerModule,
+          LazilyLoadedController,
+        );
+
+        expect(lazyController.getEnhancersMetadata()).toHaveLength(1);
+      });
+    });
+
+    describe('when a transient global enhancer is registered', () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientGuard {
+        canActivate() {
+          return true;
+        }
+      }
+
+      @Controller()
+      class EagerlyScannedController {}
+
+      @Controller()
+      class LazilyLoadedController {}
+
+      @Module({
+        controllers: [EagerlyScannedController],
+        providers: [{ provide: APP_GUARD, useClass: TransientGuard }],
+      })
+      class RootModule {}
+
+      @Module({ controllers: [LazilyLoadedController] })
+      class LazyControllerModule {}
+
+      beforeEach(async () => {
+        await dependenciesScanner.scan(RootModule);
+        await instanceLoader.createInstancesOfDependencies();
+        dependenciesScanner.applyApplicationProviders();
+      });
+
+      it('should bind it to the controllers of a lazily loaded module', async () => {
+        await lazyModuleLoader.load(() => LazyControllerModule);
+
+        const eagerController = await getControllerWrapper(
+          RootModule,
+          EagerlyScannedController,
+        );
+        const lazyController = await getControllerWrapper(
+          LazyControllerModule,
+          LazilyLoadedController,
+        );
+
+        expect(lazyController.getEnhancersMetadata()).toHaveLength(1);
+        // a transient enhancer is created per host, which leaves it static
+        expect(lazyController.isDependencyTreeStatic()).toBe(
+          eagerController.isDependencyTreeStatic(),
+        );
+      });
+    });
+
+    describe('when a lazily loaded module registers a scoped global enhancer', () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class OwnScopedGuard {
+        canActivate() {
+          return true;
+        }
+      }
+
+      @Controller()
+      class ControllerOfTheDeclaringModule {}
+
+      @Controller()
+      class ControllerOfTheModuleLoadedLater {}
+
+      @Module({
+        controllers: [ControllerOfTheDeclaringModule],
+        providers: [{ provide: APP_GUARD, useClass: OwnScopedGuard }],
+      })
+      class DeclaringModule {}
+
+      @Module({ controllers: [ControllerOfTheModuleLoadedLater] })
+      class ModuleLoadedLater {}
+
+      @Module({})
+      class RootModule {}
+
+      beforeEach(async () => {
+        await dependenciesScanner.scan(RootModule);
+        await instanceLoader.createInstancesOfDependencies();
+        dependenciesScanner.applyApplicationProviders();
+      });
+
+      // `applyApplicationProviders` runs at bootstrap only, so that enhancer
+      // never reaches the application config and never runs
+      it('should leave its own controllers static', async () => {
+        await lazyModuleLoader.load(() => DeclaringModule);
+
+        const ownController = await getControllerWrapper(
+          DeclaringModule,
+          ControllerOfTheDeclaringModule,
+        );
+
+        expect(ownController.getEnhancersMetadata() ?? []).toHaveLength(0);
+        expect(ownController.isDependencyTreeStatic()).toBe(true);
+      });
+
+      it('should leave the controllers of a module loaded later static', async () => {
+        await lazyModuleLoader.load(() => DeclaringModule);
+        await lazyModuleLoader.load(() => ModuleLoadedLater);
+
+        const laterController = await getControllerWrapper(
+          ModuleLoadedLater,
+          ControllerOfTheModuleLoadedLater,
+        );
+
+        expect(laterController.getEnhancersMetadata() ?? []).toHaveLength(0);
+        expect(laterController.isDependencyTreeStatic()).toBe(true);
+      });
+    });
+
+    describe('when a lazily loaded module that registers one fails to build', () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class GuardOfTheFailingModule {
+        canActivate() {
+          return true;
+        }
+      }
+
+      @Injectable()
+      class ProviderWithAnUnresolvableDependency {
+        constructor(
+          @Inject('MISSING_TOKEN') private readonly missing: unknown,
+        ) {}
+      }
+
+      @Module({
+        providers: [
+          { provide: APP_GUARD, useClass: GuardOfTheFailingModule },
+          ProviderWithAnUnresolvableDependency,
+        ],
+      })
+      class FailingModule {}
+
+      @Module({})
+      class ModuleLoadedAfterTheFailure {}
+
+      @Controller()
+      class ControllerOfTheFlakyModule {}
+
+      it('should not let its enhancer outlive the rolled back module', async () => {
+        await expect(
+          lazyModuleLoader.load(() => FailingModule),
+        ).rejects.toThrow('MISSING_TOKEN');
+
+        const moduleRef = await lazyModuleLoader.load(
+          () => ModuleLoadedAfterTheFailure,
+        );
+
+        expect(moduleRef).toBeInstanceOf(ModuleRef);
+      });
+
+      it('should let the module be loaded again', async () => {
+        let attempts = 0;
+
+        @Module({
+          controllers: [ControllerOfTheFlakyModule],
+          providers: [
+            { provide: APP_GUARD, useClass: GuardOfTheFailingModule },
+            {
+              provide: 'UNREACHABLE_ON_THE_FIRST_ATTEMPT',
+              useFactory: () => {
+                if (attempts++ === 0) {
+                  throw new Error('connection refused');
+                }
+                return 'connected';
+              },
+            },
+          ],
+        })
+        class FlakyModule {}
+
+        await expect(lazyModuleLoader.load(() => FlakyModule)).rejects.toThrow(
+          'connection refused',
+        );
+
+        const moduleRef = await lazyModuleLoader.load(() => FlakyModule);
+
+        expect(moduleRef).toBeInstanceOf(ModuleRef);
       });
     });
 
