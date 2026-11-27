@@ -424,7 +424,11 @@ export class FastifyAdapter<
       // Custom Versioning Handler
       else if (this.versioningOptions?.type === VersioningType.CUSTOM) {
         try {
-          return this.versioningOptions.extractor(req);
+          const version = this.versioningOptions.extractor(req);
+          return isUndefined(version) ||
+            (Array.isArray(version) && !version.length)
+            ? VERSION_NEUTRAL // No version was supplied
+            : version;
         } catch (err) {
           // Fastify routes the request, and so calls the extractor, before
           // anything could catch the exception. It is passed to the error

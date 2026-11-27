@@ -586,6 +586,14 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         const extractedVersion = versioningOptions.extractor(req);
 
         if (Array.isArray(version)) {
+          // No version was supplied
+          if (
+            version.includes(VERSION_NEUTRAL) &&
+            (isUndefined(extractedVersion) ||
+              (Array.isArray(extractedVersion) && !extractedVersion.length))
+          ) {
+            return handler(req, res, next);
+          }
           if (
             Array.isArray(extractedVersion) &&
             version.filter(v => extractedVersion.includes(v as string)).length
