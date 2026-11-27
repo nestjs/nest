@@ -148,7 +148,7 @@ export class HttpException extends IntrinsicException {
     statusCode?: number,
     errorCode?: string,
   ): HttpExceptionBody | Body {
-    if (!arg0) {
+    if (arg0 === null || arg0 === undefined || arg0 === '') {
       const body: HttpExceptionBody = {
         message: arg1!,
         statusCode: statusCode!,

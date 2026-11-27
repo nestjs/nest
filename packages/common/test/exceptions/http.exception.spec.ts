@@ -399,6 +399,16 @@ describe('HttpException', () => {
       });
     });
 
+    describe('createBody with zero message', () => {
+      it('should handle zero as the message', () => {
+        expect(HttpException.createBody(0, 'Not Found', 404)).toEqual({
+          message: 0,
+          error: 'Not Found',
+          statusCode: 404,
+        });
+      });
+    });
+
     describe('createBody with empty string', () => {
       it('should treat empty string as nil', () => {
         expect(HttpException.createBody('', 'Error', 500)).toEqual({
