@@ -1018,6 +1018,7 @@ describe('NodeResponse', () => {
       ['*/*', 'text/plain'],
       ['text/plain;q=0.5, text/html', 'text/html'],
       ['text/html;q=0.5, text/plain;q=0.5', 'text/html'],
+      ['text/plain;q=0.5, text/plain;q=0.9, text/html;q=0.7', 'text/plain'],
       ['application/json, text/*;q=0.2', 'text/plain'],
     ])('should negotiate "%s" to %s', async (accept, type) => {
       const response = await respond((req, res) => res.redirect(target), {

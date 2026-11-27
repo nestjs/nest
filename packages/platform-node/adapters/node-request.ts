@@ -817,7 +817,12 @@ function preferredRedirectType(
             : range.type === '*' && range.subtype === '*'
               ? 0
               : -1;
-      if (specificity > (best?.specificity ?? -1)) {
+      if (
+        specificity >= 0 &&
+        (specificity > (best?.specificity ?? -1) ||
+          (specificity === best?.specificity &&
+            range.q > (best?.q ?? -Infinity)))
+      ) {
         best = { q: range.q, specificity, order: range.order };
       }
     }
