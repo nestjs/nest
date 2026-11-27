@@ -32,6 +32,34 @@ describe('Server', () => {
     vi.restoreAllMocks();
   });
 
+  describe('getOptionsProp', () => {
+    it('should return the value of the prop', () => {
+      expect(server.getOptionsProp({ host: 'localhost' } as any, 'host')).toBe(
+        'localhost',
+      );
+    });
+
+    it('should return defaultValue when prop does not exist', () => {
+      expect(server.getOptionsProp({} as any, 'host', 'default-host')).toBe(
+        'default-host',
+      );
+    });
+
+    it('should return defaultValue when prop is set to undefined', () => {
+      expect(
+        server.getOptionsProp({ host: undefined } as any, 'host', 'default'),
+      ).toBe('default');
+    });
+
+    it('should return a falsy value other than undefined', () => {
+      for (const value of [null, 0, '', false]) {
+        expect(
+          server.getOptionsProp({ host: value } as any, 'host', 'default'),
+        ).toBe(value);
+      }
+    });
+  });
+
   describe('addHandler', () => {
     it(`should add handler`, () => {
       const handlerRoute = 'hello';
