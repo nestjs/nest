@@ -176,10 +176,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     }
     if (body instanceof StreamableFile) {
       // A stream that failed before the reply (e.g. while an interceptor
-      // awaited) has already emitted its 'error' event.
-      const { errored } = body.getStream();
-      if (errored) {
-        return body.errorHandler(errored, response);
+      // awaited) has already emitted its 'error' event, and one destroyed
+      // without an error emits nothing more, so piping either of them would
+      // never end the response.
+      const earlyError = getEarlyStreamError(body.getStream());
+      if (earlyError) {
+        return body.errorHandler(earlyError, response);
       }
       // No body for a 204, 205 or 304 (RFC 9110): res.send() strips it and
       // the headers describing it, as for any other body
@@ -861,6 +863,24 @@ export class ExpressAdapter extends AbstractHttpAdapter<
 
 function isWritableChunk(chunk: unknown): chunk is string | Uint8Array {
   return typeof chunk === 'string' || types.isUint8Array(chunk);
+}
+
+/**
+ * Returns the error a StreamableFile source can no longer be piped for. That
+ * is the error it failed with, or for a source destroyed before it ended
+ * without one (e.g. "fs.ReadStream#close()"), a premature close error like
+ * the one `stream.finished()` reports.
+ */
+function getEarlyStreamError(stream: Readable): Error | undefined {
+  if (stream.errored) {
+    return stream.errored;
+  }
+  if (stream.destroyed && !stream.readableEnded) {
+    return Object.assign(new Error('Premature close'), {
+      code: 'ERR_STREAM_PREMATURE_CLOSE',
+    });
+  }
+  return undefined;
 }
 
 /**

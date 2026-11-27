@@ -40,7 +40,7 @@ import type {
 import { createRequire } from 'module';
 import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
-import { Duplex, Writable } from 'stream';
+import { Duplex, Readable, Writable } from 'stream';
 import type { NestNodeApplication } from '../interfaces/nest-node-application.interface.js';
 import type {
   NestNodeBodyParserOptionsFor,
@@ -259,11 +259,13 @@ export class NodeAdapter extends AbstractHttpAdapter<
     }
     if (body instanceof StreamableFile) {
       // A stream that failed before the reply (e.g. while an interceptor
-      // awaited) has already emitted its 'error' event
-      const { errored } = body.getStream();
-      if (errored) {
+      // awaited) has already emitted its 'error' event, and one destroyed
+      // without an error emits nothing more, so piping either of them would
+      // never end the response
+      const earlyError = getEarlyStreamError(body.getStream());
+      if (earlyError) {
         return body.errorHandler(
-          errored,
+          earlyError,
           this.toStreamableHandlerResponse(response),
         );
       }
@@ -1100,4 +1102,22 @@ function isHttpError(
     typeof (err as any).statusCode === 'number' &&
     (err as any).status === (err as any).statusCode
   );
+}
+
+/**
+ * Returns the error a StreamableFile source can no longer be piped for. That
+ * is the error it failed with, or for a source destroyed before it ended
+ * without one (e.g. "fs.ReadStream#close()"), a premature close error like
+ * the one `stream.finished()` reports.
+ */
+function getEarlyStreamError(stream: Readable): Error | undefined {
+  if (stream.errored) {
+    return stream.errored;
+  }
+  if (stream.destroyed && !stream.readableEnded) {
+    return Object.assign(new Error('Premature close'), {
+      code: 'ERR_STREAM_PREMATURE_CLOSE',
+    });
+  }
+  return undefined;
 }

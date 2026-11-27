@@ -1256,6 +1256,32 @@ describe('NodeAdapter', () => {
         expect(res.text).toBe('gone');
       });
 
+      it.each(['GET', 'HEAD'])(
+        'should hand a source destroyed before the reply without an error to the error handler (%s)',
+        async method => {
+          // e.g. a file stream closed while an interceptor awaits, which
+          // emits no 'error', nor anything else that would end the response
+          const source = new PassThrough();
+          const errorHandler = vi.fn(
+            (err: Error, response: StreamableHandlerResponse) => {
+              response.statusCode = 410;
+              response.send('gone');
+            },
+          );
+          const file = new StreamableFile(source).setErrorHandler(errorHandler);
+          source.destroy();
+          await new Promise(resolve => setImmediate(resolve));
+
+          const res = await replyWith(file, undefined, undefined, { method });
+
+          expect(errorHandler).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ code: 'ERR_STREAM_PREMATURE_CLOSE' }),
+            expect.anything(),
+          );
+          expect(res.status).toBe(410);
+        },
+      );
+
       it('should end a HEAD response without reading the whole source', async () => {
         const chunkCount = 1000;
         const chunk = Buffer.alloc(1024);
