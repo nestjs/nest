@@ -34,6 +34,7 @@ export {
   ForwardReference,
   GetOrResolveOptions,
   GlobalPrefixOptions,
+  HttpAdapterTypes,
   HttpArgumentsHost,
   HttpServer,
   HttpExceptionBody,
