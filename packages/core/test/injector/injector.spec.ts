@@ -366,6 +366,25 @@ describe('Injector', () => {
           expect(warn).toHaveBeenCalledOnce();
         });
 
+        it('should warn once per durable host across injectors', async () => {
+          // the application, each `ModuleRef`, microservices and gateways
+          // have their own injector, and the host is resolved by whichever
+          // one the caller went through
+          const injectors = [injector, new Injector()];
+          const wrapper = moduleRef.providers.get(TenantStats)!;
+
+          for (const [index, tenantId] of ['acme', 'globex'].entries()) {
+            await injectors[index].loadInstance(
+              wrapper,
+              moduleRef.providers,
+              moduleRef,
+              { contextId: createContextId({ tenantId, user: 'alice' }) },
+            );
+          }
+
+          expect(warn).toHaveBeenCalledOnce();
+        });
+
         it('should not warn about an instance of the context being resolved', async () => {
           await load(
             CurrentUser,

@@ -154,9 +154,9 @@ For more common dependency resolution issues, see: https://docs.nestjs.com/faq/c
 
 export const DURABLE_REQUEST_WITHOUT_PAYLOAD_MESSAGE = (
   token: string,
-) => `${token} is durable and injects "REQUEST", but the registered ContextIdStrategy supplies no payload, so it is built with what the entry point of a single request registered: that request itself, or nothing when no entry point of the request is request-scoped.
+) => `${token} is durable and injects "REQUEST", directly or through a transient provider, but attach() supplied no payload for this request, so it is built with whatever the entry point that first registered "REQUEST" for that request left there: that request itself when that entry point (a middleware, a controller, a message handler, ...) is not durable, and undefined when it is.
 
-A durable instance is shared by every request mapped to its context, so the request it holds outlives its own caller: every later caller of that context is served an instance reading the first caller's headers, body and credentials.
+A durable instance is shared by every request mapped to its context. When it holds a request, that request outlives its own caller: every later caller of that context is served an instance reading the first caller's data.
 
 Potential solutions:
 - Return a payload from attach(), which is what a durable instance reads as "REQUEST":

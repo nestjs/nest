@@ -124,10 +124,17 @@ class HostSettlementRef {
  */
 const failedInstances = new WeakMap<InstancePerContext<unknown>, unknown>();
 
+/**
+ * Hosts already reported by `warnOnDurableRequestWithoutPayload`. A host is
+ * resolved by whichever injector the caller went through, so this is shared
+ * by all of them to warn once per process rather than once per injector.
+ */
+const durableHostsWithoutPayload = new WeakSet<InstanceWrapper>();
+
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
   private readonly classesWithoutMetadata = new WeakSet<object>();
-  private readonly durableHostsWithoutPayload = new WeakSet<InstanceWrapper>();
+  private readonly durableHostsWithoutPayload = durableHostsWithoutPayload;
   private readonly instanceDecorator: (target: unknown) => unknown = (
     target: unknown,
   ) => target;
@@ -2063,7 +2070,10 @@ export class Injector {
   }
 
   private warnOnDurableRequestWithoutPayload(host: InstanceWrapper) {
-    if (this.durableHostsWithoutPayload.has(host)) {
+    // The wrapper of `ModuleRef#create()` carries no token: its instance is
+    // kept at the context of the request it was created for and is thrown
+    // away with the wrapper, so it is shared with no other caller
+    if (isNil(host.token) || this.durableHostsWithoutPayload.has(host)) {
       return;
     }
     this.durableHostsWithoutPayload.add(host);
