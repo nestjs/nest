@@ -446,6 +446,43 @@ describe('ExpressAdapter', () => {
         expect(response.setHeader).not.toHaveBeenCalled();
       });
 
+      it('should report a source destroyed before the reply without an error to the error handler', async () => {
+        // e.g. a file stream closed while an interceptor awaits, which emits
+        // no 'error', nor anything else that would end the response
+        const source = new PassThrough();
+        const errorHandler = vi.fn();
+        const file = new StreamableFile(source).setErrorHandler(errorHandler);
+        const response = createStreamResponse();
+        source.destroy();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, file);
+
+        expect(errorHandler).toHaveBeenCalledWith(
+          expect.objectContaining({ code: 'ERR_STREAM_PREMATURE_CLOSE' }),
+          response,
+        );
+        expect(response.setHeader).not.toHaveBeenCalled();
+      });
+
+      it.each(['get', 'head'] as const)(
+        'should answer a source destroyed before the reply with a 400 (%s)',
+        async method => {
+          expressAdapter.getInstance().get('/', async (_req, res) => {
+            const source = new PassThrough();
+            const file = new StreamableFile(source).setErrorLogger(() => {});
+            source.destroy();
+            await new Promise(resolve => setImmediate(resolve));
+            expressAdapter.reply(res, file);
+          });
+
+          await request(expressAdapter.getInstance())
+            [method]('/')
+            .timeout(2000)
+            .expect(400);
+        },
+      );
+
       it.each(['image/', 'pdf', 'image/png'])(
         'should answer a source that fails with a plain-text 400 (type "%s")',
         async type => {
