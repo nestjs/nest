@@ -69,6 +69,8 @@ const YEAR_FIRST_DATE_PATTERN =
 // "02/30/2024", "02,30,2024", "Fri 02/30/2024", "2.30.24", "2/30"
 const MONTH_FIRST_DATE_PATTERN =
   /^\s*(?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+)?(\d{1,2})[\s,./-]+(\d{1,2})(?:[\s,./-]+(\d{4}|\d{2}(?!:))(?!\d)|(?![\s\S]*\d))/i;
+// "10:00", "10:00:00", "10:00:00.123"
+const TIME_OF_DAY_PATTERN = /\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?/g;
 
 /**
  * Reads a year as `new Date()` does, where a two-digit year below 50 is in
@@ -147,6 +149,11 @@ export class ParseDatePipe implements PipeTransform {
     let year: number;
     let month: number;
     let day: number;
+
+    // A time of day says nothing about the date, and its digits would otherwise
+    // be read as a year ("Feb 29 10:00" is not February 2010), so it is dropped
+    // before the date is read.
+    value = value.replace(TIME_OF_DAY_PATTERN, ' ');
 
     const isoMatch = YEAR_FIRST_DATE_PATTERN.exec(value);
     if (isoMatch) {

@@ -295,6 +295,36 @@ describe('ParseDatePipe', () => {
           expect(target.transform(value)).toEqual(new Date(value));
         }
       });
+
+      it('should throw for a day past its month end before a time of day', () => {
+        for (const value of [
+          '2/30 10:00',
+          '02-30 10:00:00',
+          'Feb 30 10:00',
+          '30 Feb 10:00:00',
+          '2/30 10:00 2024',
+          'Feb 31 10:00 2023',
+          // As in `new Date()`, the year of such a date is 2001, not a leap year
+          '2/29 10:00',
+          'Feb 29 10:00',
+        ]) {
+          expect(() => target.transform(value)).toThrow(BadRequestException);
+        }
+      });
+
+      it('should accept a day of the month before a time of day', () => {
+        for (const value of [
+          '2/28 10:00',
+          'Feb 29 10:00 2024',
+          '2024-02-29T10:00:00',
+          '2024-02-29T10:00:00.000Z',
+          'Thu, 29 Feb 2024 10:00:00 GMT+0300',
+          '2/28/2024 10:00',
+          '12/31 23:59:59',
+        ]) {
+          expect(target.transform(value)).toEqual(new Date(value));
+        }
+      });
     });
     describe('when empty value', () => {
       it('should throw an error', () => {
