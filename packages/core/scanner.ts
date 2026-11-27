@@ -91,6 +91,10 @@ const ENHANCER_KIND_BY_TOKEN: Record<string, EnhancerKind> = {
 export class DependenciesScanner {
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
     [];
+  // The scoped global enhancers of the eagerly scanned modules, which are the
+  // ones `applyApplicationProviders` goes on to apply. A lazily loaded module
+  // declares its own too, and those never reach the application config.
+  private scopedEnhancers: InstanceWrapper[] = [];
 
   constructor(
     private readonly container: NestContainer,
@@ -711,37 +715,41 @@ export class DependenciesScanner {
   }
 
   /**
-   * Add either request or transient globally scoped enhancers
-   * to the controllers and entry providers of the given modules,
-   * or of every registered module when none are given
+   * Add the request or transient globally scoped enhancers to the controllers
+   * and entry providers of the given modules, or of every registered module
+   * when none are given, which is also when those enhancers are collected
    */
   public addScopedEnhancersMetadata(modules?: Map<string, Module>) {
     const modulesContainer = this.container.getModules();
+    if (!modules) {
+      this.scopedEnhancers = this.collectScopedEnhancers(modulesContainer);
+    }
+
     const modulesToWire = modules ?? modulesContainer;
+    iterate(modulesToWire.values())
+      .map(moduleRef =>
+        Array.from<InstanceWrapper>(moduleRef.controllers.values()).concat(
+          moduleRef.entryProviders,
+        ),
+      )
+      .flatten()
+      .forEach(controllerOrEntryProvider =>
+        this.scopedEnhancers.forEach(enhancer =>
+          controllerOrEntryProvider.addEnhancerMetadata(enhancer),
+        ),
+      );
+  }
 
-    iterate(this.applicationProvidersApplyMap)
+  private collectScopedEnhancers(
+    modulesContainer: Map<string, Module>,
+  ): InstanceWrapper[] {
+    return iterate(this.applicationProvidersApplyMap)
       .filter(wrapper => this.isRequestOrTransient(wrapper.scope!))
-      .forEach(({ moduleKey, providerKey }) => {
-        // The map outlives the modules: a lazily loaded module that failed to
-        // build was rolled back, but the enhancers it declared are still here
-        const enhancerHostModule = modulesContainer.get(moduleKey);
-        if (!enhancerHostModule) {
-          return;
-        }
-        const instanceWrapper = enhancerHostModule.injectables.get(providerKey);
-
-        const iterableIterator = modulesToWire.values();
-        iterate(iterableIterator)
-          .map(moduleRef =>
-            Array.from<InstanceWrapper>(moduleRef.controllers.values()).concat(
-              moduleRef.entryProviders,
-            ),
-          )
-          .flatten()
-          .forEach(controllerOrEntryProvider =>
-            controllerOrEntryProvider.addEnhancerMetadata(instanceWrapper!),
-          );
-      });
+      .map(({ moduleKey, providerKey }) => {
+        const { injectables } = modulesContainer.get(moduleKey)!;
+        return injectables.get(providerKey)!;
+      })
+      .toArray();
   }
 
   public applyApplicationProviders() {
