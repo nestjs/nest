@@ -28,7 +28,10 @@ import { CircularDependencyException } from '../errors/exceptions/index.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
-import { MISSING_DECORATOR_METADATA_MESSAGE } from '../errors/messages.js';
+import {
+  DURABLE_REQUEST_WITHOUT_PAYLOAD_MESSAGE,
+  MISSING_DECORATOR_METADATA_MESSAGE,
+} from '../errors/messages.js';
 import { Barrier } from '../helpers/barrier.js';
 import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator.js';
 import { REQUEST } from '../router/request/request-constants.js';
@@ -121,9 +124,17 @@ class HostSettlementRef {
  */
 const failedInstances = new WeakMap<InstancePerContext<unknown>, unknown>();
 
+/**
+ * Hosts already reported by `warnOnDurableRequestWithoutPayload`. A host is
+ * resolved by whichever injector the caller went through, so this is shared
+ * by all of them to warn once per process rather than once per injector.
+ */
+const durableHostsWithoutPayload = new WeakSet<InstanceWrapper>();
+
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
   private readonly classesWithoutMetadata = new WeakSet<object>();
+  private readonly durableHostsWithoutPayload = durableHostsWithoutPayload;
   private readonly instanceDecorator: (target: unknown) => unknown = (
     target: unknown,
   ) => target;
@@ -2035,7 +2046,9 @@ export class Injector {
    * for, and is handed to the next requests mapped to that context. When the
    * strategy supplies a payload, that is its `REQUEST`, never the request
    * that the entry point (a controller that is not durable, a middleware, a
-   * message handler, ...) registered as the `REQUEST` of the context.
+   * message handler, ...) registered as the `REQUEST` of the context. A
+   * strategy that supplies no payload leaves that request in place, which
+   * `warnOnDurableRequestWithoutPayload` reports once per host.
    */
   private shouldInjectDurablePayload(
     dependency: InstanceWrapper | undefined,
@@ -2043,12 +2056,32 @@ export class Injector {
     parentInquirer: InstanceWrapper | undefined,
     contextId: ContextId,
   ): boolean {
-    if (dependency?.token !== REQUEST || isUndefined(contextId.payload)) {
+    if (dependency?.token !== REQUEST) {
       return false;
     }
     // An instance of a transient provider belongs to its consumer
     const host = dependent?.isTransient ? parentInquirer : dependent;
-    return !!host && this.getContextId(contextId, host) !== contextId;
+    if (!host || this.getContextId(contextId, host) === contextId) {
+      return false;
+    }
+    if (isUndefined(contextId.payload)) {
+      this.warnOnDurableRequestWithoutPayload(host);
+      return false;
+    }
+    return true;
+  }
+
+  private warnOnDurableRequestWithoutPayload(host: InstanceWrapper) {
+    // The wrapper of `ModuleRef#create()` carries no token: its instance is
+    // kept at the context of the request it was created for and is thrown
+    // away with the wrapper, so it is shared with no other caller
+    if (isNil(host.token) || this.durableHostsWithoutPayload.has(host)) {
+      return;
+    }
+    this.durableHostsWithoutPayload.add(host);
+    this.logger.warn(
+      DURABLE_REQUEST_WITHOUT_PAYLOAD_MESSAGE(this.getTokenName(host.token)),
+    );
   }
 
   private getNowTimestamp() {

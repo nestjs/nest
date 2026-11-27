@@ -152,6 +152,19 @@ Potential solutions:
 
 For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`;
 
+export const DURABLE_REQUEST_WITHOUT_PAYLOAD_MESSAGE = (
+  token: string,
+) => `${token} is durable and injects "REQUEST", directly or through a transient provider, but attach() supplied no payload for this request, so it is built with whatever the entry point that first registered "REQUEST" for that request left there: that request itself when that entry point (a middleware, a controller, a message handler, ...) is not durable, and undefined when it is.
+
+A durable instance is shared by every request mapped to its context. When it holds a request, that request outlives its own caller: every later caller of that context is served an instance reading the first caller's data.
+
+Potential solutions:
+- Return a payload from attach(), which is what a durable instance reads as "REQUEST":
+  return { resolve: info => info.isTreeDurable ? tenantSubTreeId : contextId, payload: { tenantId } };
+- Or do not inject "REQUEST" into a durable provider, and pass what the request decides as an argument instead.
+
+Read more: https://docs.nestjs.com/fundamentals/injection-scopes#durable-providers`;
+
 export const MISSING_HANDLER_METADATA_MESSAGE = (
   type: string,
   methodName: string,

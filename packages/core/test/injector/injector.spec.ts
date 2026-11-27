@@ -328,6 +328,82 @@ describe('Injector', () => {
           expect(currentUser.requestProperty).toBe(request);
         }
       });
+
+      describe('when the strategy supplies no payload', () => {
+        let warn: MockInstance;
+
+        beforeEach(() => {
+          warn = vi
+            .spyOn(Logger.prototype, 'warn')
+            .mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+          warn.mockRestore();
+        });
+
+        it('should warn that the durable instance keeps the request of one caller', async () => {
+          await load(
+            TenantStats,
+            createContextId({ tenantId: 'acme', user: 'alice' }),
+          );
+
+          expect(warn).toHaveBeenCalledExactlyOnceWith(
+            expect.stringContaining(
+              'TenantStats is durable and injects "REQUEST"',
+            ),
+          );
+        });
+
+        it('should warn once per durable host', async () => {
+          for (const tenantId of ['acme', 'globex']) {
+            await load(
+              TenantStats,
+              createContextId({ tenantId, user: 'alice' }),
+            );
+          }
+
+          expect(warn).toHaveBeenCalledOnce();
+        });
+
+        it('should warn once per durable host across injectors', async () => {
+          // the application, each `ModuleRef`, microservices and gateways
+          // have their own injector, and the host is resolved by whichever
+          // one the caller went through
+          const injectors = [injector, new Injector()];
+          const wrapper = moduleRef.providers.get(TenantStats)!;
+
+          for (const [index, tenantId] of ['acme', 'globex'].entries()) {
+            await injectors[index].loadInstance(
+              wrapper,
+              moduleRef.providers,
+              moduleRef,
+              { contextId: createContextId({ tenantId, user: 'alice' }) },
+            );
+          }
+
+          expect(warn).toHaveBeenCalledOnce();
+        });
+
+        it('should not warn about an instance of the context being resolved', async () => {
+          await load(
+            CurrentUser,
+            createContextId({ tenantId: 'acme', user: 'alice' }),
+          );
+
+          expect(warn).not.toHaveBeenCalled();
+        });
+
+        it('should not warn when the strategy supplies a payload', async () => {
+          const request = { tenantId: 'acme', user: 'alice' };
+          await load(
+            TenantStats,
+            createContextId(request, { tenantId: 'acme' }),
+          );
+
+          expect(warn).not.toHaveBeenCalled();
+        });
+      });
     });
   });
 

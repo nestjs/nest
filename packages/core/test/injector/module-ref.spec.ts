@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope, Type } from '@nestjs/common';
+import { Inject, Injectable, Logger, Scope, Type } from '@nestjs/common';
 import { RuntimeException } from '../../errors/exceptions';
 import { RequestScopedCreateException } from '../../errors/exceptions/request-scoped-create.exception.js';
 import { createContextId } from '../../helpers/context-id-factory.js';
@@ -6,6 +6,8 @@ import { NestContainer } from '../../injector/container';
 import { ModuleRef } from '../../injector/module-ref';
 import { Module } from '../../injector/module';
 import { ContextId } from '../../injector/instance-wrapper';
+import { REQUEST } from '../../router/request/request-constants.js';
+import { requestProvider } from '../../router/request/request-providers.js';
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { InstanceLoader } from '../../injector/instance-loader';
 import { Injector } from '../../injector/injector';
@@ -511,6 +513,51 @@ describe('ModuleRef', () => {
       expect(instance).toBeInstanceOf(Created);
       expect(instance.dep).toBeInstanceOf(SingletonDep);
       expect(instance.ctorDep).toBe(instance.dep);
+    });
+
+    describe('when the created class is durable and injects "REQUEST"', () => {
+      @Injectable({ scope: Scope.REQUEST, durable: true })
+      class DurableCreated {
+        constructor(@Inject(REQUEST) public readonly request: unknown) {}
+      }
+
+      beforeEach(() => {
+        module.addProvider(requestProvider);
+      });
+
+      // the context of a strategy that supplies no payload
+      const createDurableContextId = (request: unknown) => {
+        const subTreeId = createContextId();
+        const contextId: ContextId = {
+          id: Math.random(),
+          getParent: ({ isTreeDurable }) =>
+            isTreeDurable ? subTreeId : contextId,
+        };
+        module.providers.get(REQUEST)!.setInstanceByContextId(contextId, {
+          instance: request,
+          isResolved: true,
+        });
+        return contextId;
+      };
+
+      it('should create an instance without warning about it', async () => {
+        const warn = vi
+          .spyOn(Logger.prototype, 'warn')
+          .mockImplementation(() => {});
+        const request = { tenantId: 'acme' };
+
+        const instance = await moduleRef.create(
+          DurableCreated,
+          createDurableContextId(request),
+        );
+
+        expect(instance).toBeInstanceOf(DurableCreated);
+        expect(instance.request).toBe(request);
+        // the wrapper is thrown away with the instance, which is shared
+        // with no other caller, so there is nothing to report
+        expect(warn).not.toHaveBeenCalled();
+        warn.mockRestore();
+      });
     });
   });
 
