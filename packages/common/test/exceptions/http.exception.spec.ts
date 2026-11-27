@@ -407,6 +407,15 @@ describe('HttpException', () => {
           statusCode: 404,
         });
       });
+
+      it('should still treat false as no message', () => {
+        expect(
+          HttpException.createBody(false as any, 'Not Found', 404),
+        ).toEqual({
+          message: 'Not Found',
+          statusCode: 404,
+        });
+      });
     });
 
     describe('createBody with empty string', () => {
