@@ -33,11 +33,11 @@ This example requires docker or a local PostgreSQL installation, with two databa
 
 There is a `docker-compose.yml` file for starting Docker, which creates both databases.
 
-`docker-compose up`
+`docker compose up`
 
 After running the sample, you can stop the Docker container with
 
-`docker-compose down`
+`docker compose down`
 
 #### Migrations
 
@@ -98,7 +98,7 @@ $ curl localhost:3000/admin/outbox/dead-letters -H 'x-admin-token: s3cret'
 Restock, then requeue the message by its id. The reservation goes through, and no second email is sent:
 
 ```bash
-$ docker-compose exec postgres psql -U postgres -d store \
+$ docker compose exec postgres psql -U postgres -d store \
     -c "UPDATE products SET in_stock = in_stock + 5 WHERE id = 'clumping-litter-10l'"
 $ curl -X POST localhost:3000/admin/outbox/dead-letters/<id>/requeue -H 'x-admin-token: s3cret'
 ```

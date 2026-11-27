@@ -57,6 +57,39 @@ describe('createRedactor', () => {
       });
     });
 
+    it('should only read the present items of a sparse array', () => {
+      const items: unknown[] = [];
+      items[999] = { password: 'a' };
+      const reads: PropertyKey[] = [];
+      const proxy = new Proxy(items, {
+        get(target, key, receiver) {
+          reads.push(key);
+          return Reflect.get(target, key, receiver);
+        },
+      });
+
+      const redacted = redact(['password'], { items: proxy }) as {
+        items: unknown[];
+      };
+
+      expect(reads).toEqual(['999', 'length', '999']);
+      expect(redacted.items).toHaveLength(1000);
+      expect(0 in redacted.items).toBe(false);
+      expect(redacted.items[999]).toEqual({ password: '[REDACTED]' });
+    });
+
+    it('should redact a sparse array with the largest index', () => {
+      const items: unknown[] = [];
+      items[2 ** 32 - 2] = { password: 'a' };
+
+      const redacted = redact(['password'], items) as unknown[];
+
+      expect(redacted).toHaveLength(2 ** 32 - 1);
+      expect(0 in redacted).toBe(false);
+      expect(redacted[2 ** 32 - 2]).toEqual({ password: '[REDACTED]' });
+      expect(items[2 ** 32 - 2]).toEqual({ password: 'a' });
+    });
+
     it('should use a custom censor', () => {
       expect(redact(['password'], { password: 'a' }, '***')).toEqual({
         password: '***',
@@ -138,6 +171,23 @@ describe('createRedactor', () => {
         Object.getOwnPropertyDescriptor(redacted, 'cause')!.enumerable,
       ).toBe(false);
     });
+
+    it('should redact the "error" and "suppressed" of a SuppressedError', () => {
+      const error = createSuppressedError(
+        Object.assign(new Error('error'), { token: 'a' }),
+        { token: 'b' },
+      );
+
+      const redacted = redact(['token'], error) as any;
+
+      expect(redacted.name).toBe('SuppressedError');
+      expect(redacted.error.token).toBe('[REDACTED]');
+      expect(redacted.suppressed.token).toBe('[REDACTED]');
+      expect(
+        Object.getOwnPropertyDescriptor(redacted, 'suppressed')!.enumerable,
+      ).toBe(false);
+      expect((error as any).suppressed.token).toBe('b');
+    });
   });
 
   describe('maps and sets', () => {
@@ -168,6 +218,162 @@ describe('createRedactor', () => {
       ) as Set<unknown>;
 
       expect([...redacted]).toEqual([{ password: '[REDACTED]' }, 'x']);
+    });
+
+    it('should redact objects used as map keys', () => {
+      const key = { id: 1, password: 'a' };
+      const map = new Map<unknown, unknown>([
+        [key, { token: 'b' }],
+        [{ id: 2 }, 'ok'],
+      ]);
+
+      const redacted = redact(['password', 'token'], map) as Map<
+        unknown,
+        unknown
+      >;
+
+      expect([...redacted]).toEqual([
+        [{ id: 1, password: '[REDACTED]' }, { token: '[REDACTED]' }],
+        [{ id: 2 }, 'ok'],
+      ]);
+      expect(key.password).toBe('a');
+    });
+  });
+
+  describe('headers, search params and form data', () => {
+    it('should redact the entries of headers', () => {
+      const headers = new Headers({
+        authorization: 'Bearer abc',
+        accept: 'application/json',
+      });
+
+      const redacted = redact(['authorization'], { headers }) as {
+        headers: Headers;
+      };
+
+      expect(redacted.headers).toBeInstanceOf(Headers);
+      expect([...redacted.headers]).toEqual([
+        ['accept', 'application/json'],
+        ['authorization', '[REDACTED]'],
+      ]);
+      expect(headers.get('authorization')).toBe('Bearer abc');
+    });
+
+    it('should redact every value of a repeated search param', () => {
+      const params = new URLSearchParams('token=a&page=1&token=b');
+
+      const redacted = redact(['token'], params) as URLSearchParams;
+
+      expect(redacted).toBeInstanceOf(URLSearchParams);
+      expect([...redacted]).toEqual([
+        ['token', '[REDACTED]'],
+        ['page', '1'],
+        ['token', '[REDACTED]'],
+      ]);
+      expect(params.getAll('token')).toEqual(['a', 'b']);
+    });
+
+    it('should redact form data fields and keep files', () => {
+      const file = new File(['content'], 'avatar.png', { type: 'image/png' });
+      const form = new FormData();
+      form.append('password', 'hunter2');
+      form.append('avatar', file);
+
+      const redacted = redact(['password'], form) as FormData;
+
+      expect(redacted).toBeInstanceOf(FormData);
+      expect(redacted.get('password')).toBe('[REDACTED]');
+      const avatar = redacted.get('avatar') as File;
+      expect(avatar.name).toBe('avatar.png');
+      expect(avatar.type).toBe('image/png');
+      expect(form.get('password')).toBe('hunter2');
+    });
+
+    it('should match dotted paths through them', () => {
+      const value = {
+        headers: new Headers({ authorization: 'a' }),
+        other: new Headers({ authorization: 'b' }),
+      };
+
+      const redacted = redact(['headers.authorization'], value) as {
+        headers: Headers;
+        other: Headers;
+      };
+
+      expect(redacted.headers.get('authorization')).toBe('[REDACTED]');
+      expect(redacted.other).toBe(value.other);
+    });
+
+    it('should redact headers with a censor that is not a header value', () => {
+      const headers = new Headers({
+        authorization: 'Bearer abc',
+        accept: 'application/json',
+      });
+
+      const redacted = redact(['authorization'], { headers }, '••••') as {
+        headers: Map<string, string>;
+      };
+
+      expect(redacted.headers).toEqual(
+        new Map([
+          ['accept', 'application/json'],
+          ['authorization', '••••'],
+        ]),
+      );
+    });
+
+    it('should return them as they are when nothing matches', () => {
+      const headers = new Headers({ accept: 'application/json' });
+
+      expect(redact(['authorization'], headers)).toBe(headers);
+    });
+  });
+
+  describe('urls', () => {
+    it('should redact the credentials and search params of a url', () => {
+      const url = new URL(
+        'https://admin:hunter2@example.com/callback?token=abc&page=1#top',
+      );
+
+      const redacted = redact(['password', 'token'], { url }) as { url: URL };
+
+      expect(redacted.url).toBeInstanceOf(URL);
+      expect(redacted.url.username).toBe('admin');
+      expect(redacted.url.password).toBe('%5BREDACTED%5D');
+      expect([...redacted.url.searchParams]).toEqual([
+        ['token', '[REDACTED]'],
+        ['page', '1'],
+      ]);
+      expect(redacted.url.pathname).toBe('/callback');
+      expect(redacted.url.hash).toBe('#top');
+      expect(redacted.url.href).not.toContain('hunter2');
+      expect(redacted.url.href).not.toContain('abc');
+      expect(url.href).toBe(
+        'https://admin:hunter2@example.com/callback?token=abc&page=1#top',
+      );
+    });
+
+    it('should match dotted paths through its search params', () => {
+      const url = new URL('https://example.com/?token=abc');
+
+      const redacted = redact(['searchParams.token'], url) as URL;
+
+      expect(redacted.searchParams.get('token')).toBe('[REDACTED]');
+    });
+
+    it('should not add credentials a url does not have', () => {
+      const url = new URL('https://example.com/?token=abc');
+
+      const redacted = redact(['password', 'token'], url) as URL;
+
+      expect(redacted.password).toBe('');
+      expect(redacted.searchParams.get('token')).toBe('[REDACTED]');
+    });
+
+    it('should return it as it is when nothing matches', () => {
+      const url = new URL('https://user:pass@example.com/?page=1');
+
+      expect(redact(['token'], url)).toBe(url);
     });
   });
 
@@ -391,3 +597,24 @@ describe('createRedactor', () => {
     expect(elapsed).toBeLessThan(1000);
   });
 });
+
+/**
+ * A 'SuppressedError' (thrown by 'using' declarations), or an error of the
+ * same shape where Node.js does not have the class (before v24).
+ */
+function createSuppressedError(error: unknown, suppressed: unknown): Error {
+  const SuppressedErrorType = (globalThis as any).SuppressedError;
+  if (SuppressedErrorType) {
+    return new SuppressedErrorType(error, suppressed);
+  }
+  const suppressedError = new Error('An error was suppressed during disposal');
+  suppressedError.name = 'SuppressedError';
+  for (const [key, value] of Object.entries({ error, suppressed })) {
+    Object.defineProperty(suppressedError, key, {
+      value,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return suppressedError;
+}

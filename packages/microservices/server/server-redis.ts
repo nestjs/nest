@@ -42,6 +42,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     event: keyof RedisEvents;
     callback: RedisEvents[keyof RedisEvents];
   }> = [];
+  private closeCount = 0;
 
   constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
@@ -53,9 +54,23 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
-      this.subClient = await this.createRedisClient();
-      this.pubClient = await this.createRedisClient();
+      const subClient = await this.createRedisClient();
+      const pubClient = await this.createRedisClient().catch(err => {
+        subClient.disconnect();
+        throw err;
+      });
+      if (this.closeCount !== closeCount) {
+        // The clients connect lazily and have not connected yet. "quit" would
+        // connect them first, "disconnect" just ends them.
+        subClient.disconnect();
+        pubClient.disconnect();
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.subClient = subClient;
+      this.pubClient = pubClient;
       // A close() before this listen() must not keep retries off for good.
       // Set once the replacement clients exist, so an old client cannot report
       // its own "end" through the flag while the swap is in progress
@@ -110,10 +125,33 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   }
 
   public async close() {
+    this.closeCount++;
     this.isManuallyClosed = true;
+    if (this.getOptionsProp(this.options, 'gracefulShutdown')) {
+      await this.stopReceivingMessages();
+      await this.waitForHandlersInFlight(
+        this.getOptionsProp(this.options, 'gracePeriod'),
+      );
+    }
     this.pubClient && (await this.quitClient(this.pubClient));
     this.subClient && (await this.quitClient(this.subClient));
     this.pendingEventListeners = [];
+  }
+
+  // The connections stay open, as the handlers in flight publish their
+  // replies through them.
+  private async stopReceivingMessages() {
+    if (!this.subClient) {
+      return;
+    }
+    try {
+      await (this.options?.wildcards
+        ? this.subClient.punsubscribe()
+        : this.subClient.unsubscribe());
+    } catch {
+      // The command cannot be sent, so the subscriber is not connected and
+      // receives nothing either way.
+    }
   }
 
   // `quit()` rejects when the command cannot be sent (e.g., while

@@ -240,6 +240,31 @@ describe('ClientMqtt', () => {
         expect(publishSpy).toHaveBeenCalledTimes(2);
         expect(client['subscriptionsCount'].get(`${pattern}/reply`)).toBe(1);
       });
+
+      it('should fail a request that waits for the acknowledgement on close', async () => {
+        let confirmSubscription: (err?: Error) => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          confirmSubscription = err => fn(err);
+        });
+        const error = vi.fn();
+        client.send(pattern, 'data').subscribe({ error });
+        await vi.waitFor(() => expect(subscribeSpy).toHaveBeenCalled());
+
+        client.handleClose();
+        // mqtt.js still answers the subscription (or fails it) afterwards
+        confirmSubscription();
+        confirmSubscription(new Error('Connection closed'));
+
+        expect(error).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ message: 'Connection closed' }),
+        );
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].size).toBe(0);
+        expect(unsubscribeSpy).toHaveBeenCalledExactlyOnceWith(
+          `${pattern}/reply`,
+        );
+      });
     });
     describe('dispose callback', () => {
       let getResponsePatternStub: ReturnType<typeof vi.fn>;
@@ -690,6 +715,91 @@ describe('ClientMqtt', () => {
       expect(endSpy).not.toHaveBeenCalled();
     });
 
+    it('should end a connected client gracefully', async () => {
+      untypedClient.mqttClient = { connected: true, endAsync: endSpy };
+      await client.close();
+      expect(endSpy).toHaveBeenCalledWith(false);
+    });
+
+    it('should end a disconnected client by force, as nothing can be flushed', async () => {
+      untypedClient.mqttClient = { connected: false, endAsync: endSpy };
+      await client.close();
+      expect(endSpy).toHaveBeenCalledWith(true);
+    });
+
+    describe('when requests are pending', () => {
+      let unsubscribeSpy: ReturnType<typeof vi.fn>;
+      let unsubscribeAsyncSpy: ReturnType<typeof vi.fn>;
+      let mqttClient: Record<string, any>;
+
+      beforeEach(() => {
+        unsubscribeSpy = vi.fn();
+        unsubscribeAsyncSpy = vi.fn().mockResolvedValue(undefined);
+        mqttClient = {
+          connected: true,
+          subscribe: vi.fn((channel, callback) => callback()),
+          publish: vi.fn(),
+          unsubscribe: unsubscribeSpy,
+          unsubscribeAsync: unsubscribeAsyncSpy,
+          endAsync: endSpy,
+        };
+        untypedClient.mqttClient = mqttClient;
+      });
+
+      /** A request that tears itself down once it fails, as `send()` does. */
+      const sendRequest = (pattern: string) => {
+        let dispose = () => {};
+        const callback = vi.fn(() => dispose());
+        dispose = untypedClient.publish({ pattern, data: 'data' }, callback);
+        return callback;
+      };
+
+      it('should unsubscribe from their reply topics once, before the client ends', async () => {
+        const first = sendRequest('first');
+        const second = sendRequest('second');
+        sendRequest('second');
+
+        await client.close();
+
+        expect(first).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(second).toHaveBeenCalledTimes(1);
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+        expect(unsubscribeAsyncSpy).toHaveBeenCalledExactlyOnceWith([
+          'first/reply',
+          'second/reply',
+        ]);
+        expect(unsubscribeAsyncSpy.mock.invocationCallOrder[0]).toBeLessThan(
+          endSpy.mock.invocationCallOrder[0],
+        );
+        expect(endSpy).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it('should not unsubscribe while disconnected, as mqtt would keep the packet', async () => {
+        sendRequest('first');
+        mqttClient.connected = false;
+
+        await client.close();
+
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+        expect(unsubscribeAsyncSpy).not.toHaveBeenCalled();
+        expect(endSpy).toHaveBeenCalledExactlyOnceWith(true);
+      });
+
+      it('should end by force when the connection is lost before the broker answers', async () => {
+        sendRequest('first');
+        unsubscribeAsyncSpy.mockImplementation(async () => {
+          mqttClient.connected = false;
+          throw new Error('Connection closed');
+        });
+
+        await client.close();
+
+        expect(endSpy).toHaveBeenCalledExactlyOnceWith(true);
+      });
+    });
+
     it('should reset connection state for a subsequent connection', async () => {
       untypedClient.isInitialConnection = true;
       untypedClient.subscriptionsCount.set('response/reply', 1);
@@ -772,6 +882,47 @@ describe('ClientMqtt', () => {
         'message',
         expect.any(Function),
       );
+    });
+
+    it('should not wipe a new connection started while endAsync is still pending', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      let finishEnd!: () => void;
+      const firstClient: any = new EventEmitter();
+      firstClient.options = { reconnectPeriod: 0 };
+      firstClient.endAsync = vi.fn(
+        () =>
+          new Promise<void>(resolve => {
+            finishEnd = resolve;
+          }),
+      );
+      const secondClient: any = new EventEmitter();
+      secondClient.options = { reconnectPeriod: 0 };
+      secondClient.endAsync = vi.fn().mockResolvedValue(undefined);
+      const createClientSpy = vi
+        .spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const firstConnect = mqtt.connect();
+      await vi.waitFor(() => expect(createClientSpy).toHaveBeenCalledTimes(1));
+      firstClient.emit('connect');
+      await firstConnect;
+
+      const closing = mqtt.close();
+      const secondConnect = mqtt.connect();
+      await vi.waitFor(() => expect(createClientSpy).toHaveBeenCalledTimes(2));
+      secondClient.emit('connect');
+      await secondConnect;
+
+      firstClient.emit('offline');
+      firstClient.emit('close');
+      finishEnd();
+      await closing;
+
+      expect(untyped.mqttClient).toBe(secondClient);
+      await expect(untyped.connectionPromise).resolves.toBeUndefined();
+      expect(secondClient.listenerCount('message')).toBe(1);
     });
   });
   describe('connect', () => {
@@ -978,6 +1129,37 @@ describe('ClientMqtt', () => {
       secondClient.emit('connect');
       await second;
       expect(secondClient.listenerCount('message')).toBe(1);
+    });
+
+    it('should ignore late events emitted by a dropped client', async () => {
+      const mqtt = new ClientMqtt({});
+      const untyped: any = mqtt;
+      const firstClient = fakeClient(0);
+      const secondClient = fakeClient(0);
+      vi.spyOn(mqtt, 'createClient')
+        .mockReturnValueOnce(firstClient)
+        .mockReturnValueOnce(secondClient);
+
+      const failed = mqtt.connect();
+      firstClient.emit('error', refused());
+      await expect(failed).rejects.toThrow('connect ECONNREFUSED');
+
+      // mqtt.js emits "offline" and "close" on the failed client after "error"
+      firstClient.emit('offline');
+      firstClient.emit('close');
+      expect(untyped.connectionPromise).toBeNull();
+
+      const second = mqtt.connect();
+      secondClient.emit('connect');
+      await second;
+
+      firstClient.emit('offline');
+      firstClient.emit('disconnect');
+      firstClient.emit('reconnect');
+      firstClient.emit('close');
+
+      expect(untyped.mqttClient).toBe(secondClient);
+      await expect(untyped.connectionPromise).resolves.toBeUndefined();
     });
   });
   describe('mergeCloseEvent', () => {

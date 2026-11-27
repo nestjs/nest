@@ -281,6 +281,38 @@ describe('DiscoveryService', () => {
       expect(providers).toHaveLength(1);
       expect(providers).toContain(instanceWrapper);
     });
+
+    it('should discover providers that inherit a custom discovery decorator', () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      class BaseService {}
+      class ChildService extends BaseService {}
+
+      const module1 = new Module(class Module1 {}, modulesContainer as any);
+      const instanceWrapper = new InstanceWrapper({
+        name: 'ChildService',
+        token: ChildService,
+        metatype: ChildService,
+      });
+
+      DiscoverableMetaHostCollection.inspectProvider(
+        modulesContainer,
+        instanceWrapper,
+      );
+
+      module1.providers.set(ChildService, instanceWrapper);
+      modulesContainer.set('Module1', module1);
+
+      const providers = discoveryService.getProviders({
+        metadataKey: TestDecorator.KEY,
+      });
+
+      expect(providers).toEqual([instanceWrapper]);
+      expect(
+        discoveryService.getMetadataByDecorator(TestDecorator, instanceWrapper),
+      ).toEqual({});
+    });
   });
 
   describe('getControllers', () => {
@@ -517,6 +549,85 @@ describe('DiscoveryService', () => {
 
       expect(metadata).toEqual({ test: 'value' });
     });
+
+    it('should read the metadata of the class when a mixin helper overwrote the "constructor" of its prototype', () => {
+      const TestDecorator = DiscoveryService.createDecorator<{
+        name: string;
+      }>();
+
+      class Timestamps {
+        touch() {}
+      }
+
+      @TestDecorator({ name: 'users' })
+      class UsersHandler {}
+
+      // What `applyMixins` from the TypeScript handbook does: it copies every
+      // own property of the mixin's prototype, "constructor" included
+      Object.getOwnPropertyNames(Timestamps.prototype).forEach(name =>
+        Object.defineProperty(
+          UsersHandler.prototype,
+          name,
+          Object.getOwnPropertyDescriptor(Timestamps.prototype, name)!,
+        ),
+      );
+
+      const wrapper = new InstanceWrapper({
+        name: 'UsersHandler',
+        token: UsersHandler,
+        metatype: UsersHandler,
+        instance: new UsersHandler(),
+      });
+
+      const metadata = discoveryService.getMetadataByDecorator(
+        TestDecorator,
+        wrapper,
+      );
+
+      expect(metadata).toEqual({ name: 'users' });
+    });
+  });
+
+  it('should limit metadata lookups to the explicitly supplied modules', async () => {
+    const Plugin = DiscoveryService.createDecorator();
+
+    @Plugin()
+    @Injectable()
+    class PluginService {}
+
+    @Plugin()
+    @Controller()
+    class PluginController {}
+
+    @NestModule({ providers: [PluginService], controllers: [PluginController] })
+    class BooksModule {}
+
+    @NestModule({ providers: [PluginService], controllers: [PluginController] })
+    class MusicModule {}
+
+    const app = await Test.createTestingModule({
+      imports: [BooksModule, MusicModule],
+      providers: [DiscoveryService],
+    }).compile();
+    try {
+      const discovery = app.get(DiscoveryService);
+      const books = [...app.get(ModulesContainer).values()].find(
+        module => module.metatype === BooksModule,
+      )!;
+      const options = { metadataKey: Plugin.KEY };
+      expect(discovery.getProviders(options)).toHaveLength(2);
+      expect(discovery.getControllers(options)).toHaveLength(2);
+      expect(discovery.getProviders(options, [books])).toEqual([
+        books.providers.get(PluginService),
+      ]);
+      expect(discovery.getControllers(options, [books])).toEqual([
+        books.controllers.get(PluginController),
+      ]);
+      expect(discovery.getProviders(options, [])).toEqual([]);
+      expect(discovery.getControllers(options, [])).toEqual([]);
+    } finally {
+      await app.close();
+    }
   });
 
   describe('getModules', () => {
@@ -710,6 +821,191 @@ describe('DiscoveryService', () => {
           expect.any(TestController),
         ]);
       }
+    });
+  });
+
+  describe('discovery of wrappers that a later registration replaced', () => {
+    it('should not discover a provider that a later provider of the same token replaced', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Injectable()
+      class DefaultStorage {}
+
+      @TestDecorator()
+      @Injectable()
+      class CustomStorage {}
+
+      @NestModule({
+        providers: [
+          DiscoveryService,
+          { provide: 'STORAGE', useClass: DefaultStorage },
+        ],
+      })
+      class StorageModule {
+        static forRoot() {
+          return {
+            module: StorageModule,
+            providers: [{ provide: 'STORAGE', useClass: CustomStorage }],
+          };
+        }
+      }
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [StorageModule.forRoot()],
+      }).compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBe(moduleRef.get('STORAGE'));
+    });
+
+    it('should discover a provider listed twice in a module once', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Injectable()
+      class ClassService {}
+
+      @NestModule({ providers: [DiscoveryService, ClassService] })
+      class AppModule {
+        static forRoot() {
+          return { module: AppModule, providers: [ClassService] };
+        }
+      }
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule.forRoot()],
+      }).compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBe(moduleRef.get(ClassService));
+    });
+
+    it('should discover a controller listed twice in a module once', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Controller()
+      class TestController {}
+
+      @NestModule({
+        providers: [DiscoveryService],
+        controllers: [TestController],
+      })
+      class AppModule {
+        static forRoot() {
+          return { module: AppModule, controllers: [TestController] };
+        }
+      }
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule.forRoot()],
+      }).compile();
+
+      const controllers = moduleRef
+        .get(DiscoveryService)
+        .getControllers({ metadataKey: TestDecorator.KEY });
+
+      expect(controllers).toHaveLength(1);
+      expect(controllers[0].instance).toBe(moduleRef.get(TestController));
+    });
+  });
+
+  describe('discovery of providers a testing module overrides', () => {
+    it('should not discover a provider overridden with a value', async () => {
+      const TestDecorator = DiscoveryService.createDecorator<string>();
+
+      @TestDecorator('handler')
+      @Injectable()
+      class Handler {}
+
+      @NestModule({ providers: [DiscoveryService, Handler] })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(Handler)
+        .useValue({ handle() {} })
+        .compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(0);
+    });
+
+    it('should not discover a provider overridden with a class without the decorator', async () => {
+      const TestDecorator = DiscoveryService.createDecorator<string>();
+
+      @TestDecorator('handler')
+      @Injectable()
+      class Handler {}
+
+      @Injectable()
+      class HandlerMock {}
+
+      @NestModule({ providers: [DiscoveryService, Handler] })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(Handler)
+        .useClass(HandlerMock)
+        .compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(0);
+    });
+
+    it('should discover a provider by the metadata of the class it is overridden with', async () => {
+      const TestDecorator = DiscoveryService.createDecorator<string>();
+      const OtherDecorator = DiscoveryService.createDecorator<string>();
+
+      @TestDecorator('handler')
+      @Injectable()
+      class Handler {}
+
+      @OtherDecorator('mock')
+      @Injectable()
+      class HandlerMock {}
+
+      @NestModule({ providers: [DiscoveryService, Handler] })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(Handler)
+        .useClass(HandlerMock)
+        .compile();
+
+      const discoveryService = moduleRef.get(DiscoveryService);
+      const providers = discoveryService.getProviders({
+        metadataKey: OtherDecorator.KEY,
+      });
+
+      expect(
+        discoveryService.getProviders({ metadataKey: TestDecorator.KEY }),
+      ).toHaveLength(0);
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBe(moduleRef.get(Handler));
+      expect(
+        discoveryService.getMetadataByDecorator(OtherDecorator, providers[0]),
+      ).toBe('mock');
     });
   });
 });

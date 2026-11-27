@@ -46,6 +46,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public transportId: TransportId = Transport.MQTT;
   protected readonly url: string;
   protected mqttClient: MqttClient;
+  private closeCount = 0;
   protected connectionAttempts = 0;
   protected hasConnected = false;
   protected pendingEventListeners: Array<{
@@ -64,13 +65,20 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
       // Re-arm the attempts limit so that a restarted server gets a fresh
       // startup window.
       this.connectionAttempts = 0;
       this.hasConnected = false;
 
-      this.mqttClient = await this.createMqttClient();
+      const mqttClient = await this.createMqttClient();
+      if (this.closeCount !== closeCount) {
+        await mqttClient.endAsync().catch(() => {});
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.mqttClient = mqttClient;
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -112,7 +120,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(pattern => {
       const handler = this.messageHandlers.get(pattern)!;
-      const { isEventHandler, extras } = handler;
+      const { extras } = handler;
 
       const globalSubscribeOptions = this.getOptionsProp(
         this.options,
@@ -124,23 +132,56 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
           : globalSubscribeOptions;
 
       mqttClient.subscribe(
-        isEventHandler ? pattern : this.getRequestPattern(pattern),
+        this.getSubscriptionTopic(pattern, handler),
         subscribeOptions,
       );
     });
   }
 
   public async close() {
+    this.closeCount++;
     // Reset first, so that the status update of the client being closed is not
     // taken for the connection that gave up, and a listener registered right
     // after close() waits for the next listen() instead of attaching to it
     const mqttClient = this.mqttClient;
     this.mqttClient = null;
     this.pendingEventListeners = [];
+    if (mqttClient && this.getOptionsProp(this.options, 'gracefulShutdown')) {
+      await this.stopReceivingMessages(mqttClient);
+      await this.waitForHandlersInFlight(
+        this.getOptionsProp(this.options, 'gracePeriod'),
+      );
+    }
     // Awaited, so that a close() the caller awaits really has the connection
     // closed, as with the other transports: mqtt closes it on a later tick and
-    // the broker still delivers to it until then
-    await mqttClient?.endAsync();
+    // the broker still delivers to it until then. mqtt stops reconnecting,
+    // then waits for the broker to acknowledge the packets in flight (e.g. a
+    // QoS 1 reply). Without a connection that never happens.
+    await mqttClient?.endAsync(!mqttClient.connected);
+  }
+
+  private async stopReceivingMessages(mqttClient: MqttClient) {
+    // On a reconnect, mqtt subscribes again to every topic it has not
+    // unsubscribed from. Turned off, as the client is discarded after close().
+    mqttClient.options.resubscribe = false;
+    const topics = [...this.messageHandlers].map(([pattern, handler]) =>
+      this.getSubscriptionTopic(pattern, handler),
+    );
+    // While disconnected, mqtt would keep the packet for the next connection,
+    // which end() would then wait for. That connection does not resubscribe.
+    if (topics.length === 0 || !mqttClient.connected) {
+      return;
+    }
+    try {
+      await mqttClient.unsubscribeAsync(topics);
+    } catch {
+      // The connection was lost before the broker answered. The next one does
+      // not resubscribe either.
+    }
+  }
+
+  private getSubscriptionTopic(pattern: string, handler: MessageHandler) {
+    return handler.isEventHandler ? pattern : this.getRequestPattern(pattern);
   }
 
   public async createMqttClient(): Promise<MqttClient> {

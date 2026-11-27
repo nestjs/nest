@@ -3,7 +3,10 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
-import { multerExceptions } from '../../../multipart/multipart/multipart.constants.js';
+import {
+  fastifyMultipartErrorCodes,
+  multerExceptions,
+} from '../../../multipart/multipart/multipart.constants.js';
 import { MultipartError } from '../../../multipart/multipart/multipart.error.js';
 import {
   mergeMultipartOptions,
@@ -97,19 +100,28 @@ describe('transformException', () => {
   ])(
     'should map the @fastify/multipart code %s like multer',
     (code, type, message) => {
-      const result = transformException(fastifyError(code));
+      const error = fastifyError(code);
+      const result = transformException(error);
       expect(result).toBeInstanceOf(type);
       expect(result!.message).toBe(message);
+      const cause = result!.cause as MultipartError;
+      expect(cause).toBeInstanceOf(MultipartError);
+      expect(cause.code).toBe(fastifyMultipartErrorCodes[code]);
+      expect(cause.cause).toBe(error);
     },
   );
 
   it('should append the field name when the error carries one', () => {
-    const result = transformException(
-      fastifyError('FST_REQ_FILE_TOO_LARGE', 'x', {
-        part: { fieldname: 'avatar' },
+    const error = fastifyError('FST_REQ_FILE_TOO_LARGE', 'x', {
+      part: { fieldname: 'avatar' },
+    });
+    expect(transformException(error)).toEqual(
+      new PayloadTooLargeException('File too large', {
+        cause: new MultipartError('LIMIT_FILE_SIZE', 'avatar', {
+          cause: error,
+        }),
       }),
     );
-    expect(result).toEqual(new PayloadTooLargeException('File too large'));
     expect(
       transformException(new MultipartError('LIMIT_UNEXPECTED_FILE', 'f'))!
         .message,
@@ -119,21 +131,24 @@ describe('transformException', () => {
   it.each(Object.keys(multerExceptions) as (keyof typeof multerExceptions)[])(
     'should map MultipartError %s to the multer message',
     code => {
-      const result = transformException(new MultipartError(code));
+      const error = new MultipartError(code);
+      const result = transformException(error);
       expect(result).toBeInstanceOf(
         code === 'LIMIT_FILE_SIZE'
           ? PayloadTooLargeException
           : BadRequestException,
       );
       expect(result!.message).toBe(multerExceptions[code]);
+      expect(result!.cause).toBe(error);
     },
   );
 
   it.each(['FST_MP_PREMATURE_CLOSE', 'FST_INVALID_JSON_FIELD_ERROR'])(
     'should report %s as a 400 with its own message',
     code => {
-      expect(transformException(fastifyError(code, 'msg'))).toEqual(
-        new BadRequestException('msg'),
+      const error = fastifyError(code, 'msg');
+      expect(transformException(error)).toEqual(
+        new BadRequestException('msg', { cause: error }),
       );
     },
   );
@@ -148,8 +163,9 @@ describe('transformException', () => {
   ])(
     'should rewrite the @fastify/busboy message "%s" to "%s"',
     (message, expected) => {
-      expect(transformException(new Error(message))).toEqual(
-        new BadRequestException(expected),
+      const error = new Error(message);
+      expect(transformException(error)).toEqual(
+        new BadRequestException(expected, { cause: error }),
       );
     },
   );

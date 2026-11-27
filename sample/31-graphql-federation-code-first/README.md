@@ -1,6 +1,6 @@
 # GraphQL Federation - Code First
 
-A production-ready example of GraphQL Federation using Code First approach.
+A GraphQL Federation example using the code first approach: two sub-graphs, `users-application` and `posts-application`, behind an Apollo gateway. See the [federation](https://docs.nestjs.com/graphql/federation) chapter for more.
 
 ## Installation
 
@@ -14,12 +14,9 @@ cd ../gateway && npm install
 
 ## Execution
 
-### Development Mode
-
-For development, the gateway will automatically generate a supergraph schema on startup:
+Start each sub-graph in its own terminal. They listen on ports 3002 and 3003:
 
 ```sh
-# Start sub-graph applications first
 cd users-application && npm run start
 ```
 
@@ -27,39 +24,15 @@ cd users-application && npm run start
 cd posts-application && npm run start
 ```
 
+Once both are running, start the gateway in a third terminal:
+
 ```sh
-# The gateway will auto-generate supergraph.graphql on startup
 cd gateway && npm run start
 ```
 
-### Production Mode
+`npm run start` and `npm run start:dev` first run `npm run generate:supergraph`, which fetches the schema of each running sub-graph and composes them into `gateway/supergraph.graphql`, the file the gateway serves. Restart the gateway after you change a sub-graph's schema.
 
-For production, generate the supergraph schema beforehand:
-
-```sh
-# 1. Ensure sub-graphs are running
-cd users-application && npm run start
-cd ../posts-application && npm run start
-
-# 2. Generate supergraph schema using Rover CLI (requires @apollo/rover installation)
-cd ../gateway && npm run generate:supergraph:rover
-
-# 3. Start the gateway with the static supergraph
-npm run start:prod
-```
-
-## Supergraph Schema Generation
-
-The gateway provides two methods for generating the supergraph schema:
-
-1. **Local Generation (Development)**: `npm run generate:supergraph`
-   - Generates a simplified supergraph for local development
-   - Does not require Rover CLI
-
-2. **Rover CLI Generation (Production)**: `npm run generate:supergraph:rover`
-   - Uses Apollo Rover to compose the actual supergraph from running sub-graphs
-   - Requires Rover CLI: `npm install -g @apollo/rover`
-   - Recommended for production deployments
+To compose with [Rover](https://www.apollographql.com/docs/rover) instead (`npm install -g @apollo/rover`, configured in `gateway/supergraph.yaml`), run `npm run generate:supergraph:rover`, then `npm run build` and `npm run start:prod`. `start` and `start:dev` would overwrite the Rover output.
 
 ## Access the graph
 

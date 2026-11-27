@@ -1,5 +1,6 @@
 import { EventEmitter, once } from 'events';
 import {
+  createReadStream,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -13,6 +14,7 @@ import * as https from 'https';
 import type { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { PassThrough, Readable } from 'stream';
 import {
   endWithoutBody,
   NodeRequest,
@@ -1016,6 +1018,7 @@ describe('NodeResponse', () => {
       ['*/*', 'text/plain'],
       ['text/plain;q=0.5, text/html', 'text/html'],
       ['text/html;q=0.5, text/plain;q=0.5', 'text/html'],
+      ['text/plain;q=0.5, text/plain;q=0.9, text/html;q=0.7', 'text/plain'],
       ['application/json, text/*;q=0.2', 'text/plain'],
     ])('should negotiate "%s" to %s', async (accept, type) => {
       const response = await respond((req, res) => res.redirect(target), {
@@ -1173,6 +1176,202 @@ describe('NodeResponse', () => {
       expect([...response.body]).toEqual([0, 1, 2, 255]);
     });
 
+    describe('with a stream', () => {
+      let dir: string;
+
+      beforeEach(() => {
+        dir = mkdtempSync(join(tmpdir(), 'nest-send-stream-'));
+      });
+
+      afterEach(() => {
+        rmSync(dir, { recursive: true, force: true });
+      });
+
+      it('should pipe it as binary, rather than send it as JSON', async () => {
+        const response = await respond((req, res) =>
+          res.send(Readable.from(['a,b\n', '1,2\n'])),
+        );
+
+        expect(response.statusCode).toBe(200);
+        expect(response.headers['content-type']).toBe(
+          'application/octet-stream',
+        );
+        expect(response.headers['transfer-encoding']).toBe('chunked');
+        expect(response.body.toString()).toBe('a,b\n1,2\n');
+      });
+
+      it('should keep the Content-Type set before', async () => {
+        const response = await respond((req, res) => {
+          res.setHeader('Content-Type', 'text/csv');
+          res.send(Readable.from(['a,b\n']));
+        });
+
+        expect(response.headers['content-type']).toBe('text/csv');
+        expect(response.body.toString()).toBe('a,b\n');
+      });
+
+      it('should send a file stream and close it', async () => {
+        const path = join(dir, 'a.txt');
+        writeFileSync(path, 'hello');
+        let stream!: ReadStream;
+
+        const response = await respond((req, res) => {
+          stream = createReadStream(path);
+          res.send(stream);
+        });
+
+        expect(response.body.toString()).toBe('hello');
+        if (!stream.closed) {
+          await once(stream, 'close');
+        }
+        expect(stream.closed).toBe(true);
+      });
+
+      it('should answer with a 500 when the stream fails before sending anything', async () => {
+        const response = await respond((req, res) => {
+          res.setHeader('Content-Length', '5');
+          res.send(createReadStream(join(dir, 'missing.txt')));
+        });
+
+        expect(response.statusCode).toBe(500);
+        expect(response.headers['content-type']).toBe(
+          'text/plain; charset=utf-8',
+        );
+        expect(response.body.toString()).toBe('Internal Server Error');
+      });
+
+      it('should answer with a 500 when the stream failed before send()', async () => {
+        const source = new PassThrough();
+        // Attached by the caller, so that the error doesn't crash the process
+        source.on('error', () => {});
+        const closed = new Promise(resolve => source.once('close', resolve));
+        source.destroy(new Error('open failed'));
+        await closed;
+
+        const response = await respond((req, res) => {
+          res.setHeader('Content-Length', '5');
+          res.send(source);
+        });
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body.toString()).toBe('Internal Server Error');
+      });
+
+      it('should answer with a 500 when the stream was destroyed before send()', async () => {
+        const source = new PassThrough();
+        source.write('partial');
+        source.destroy();
+        await once(source, 'close');
+
+        const response = await respond((req, res) => res.send(source));
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body.toString()).toBe('Internal Server Error');
+      });
+
+      it('should send an empty body for a stream that has already ended', async () => {
+        const source = Readable.from([]);
+        source.resume();
+        await once(source, 'end');
+
+        const response = await respond((req, res) => res.send(source));
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.toString()).toBe('');
+      });
+
+      it('should abort the response when the stream fails midway', async () => {
+        const source = new PassThrough();
+        let response!: NodeResponse;
+
+        const sending = respond((req, res) => {
+          response = res;
+          res.send(source);
+          source.write('partial');
+          setImmediate(() => source.destroy(new Error('read failed')));
+        });
+
+        await expect(sending).rejects.toThrow();
+        expect(response.destroyed).toBe(true);
+        expect(response.writableFinished).toBe(false);
+      });
+
+      it('should answer with a 500 for a chunk that is neither a string nor bytes', async () => {
+        const response = await respond((req, res) =>
+          res.send(Readable.from([{ id: 1 }])),
+        );
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body.toString()).toBe('Internal Server Error');
+      });
+
+      it('should not read the stream in answer to a HEAD request', async () => {
+        const source = new PassThrough();
+        source.write('hello');
+
+        const response = await respond((req, res) => res.send(source), {
+          method: 'HEAD',
+        });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toHaveLength(0);
+        if (!source.destroyed) {
+          await once(source, 'close');
+        }
+        expect(source.destroyed).toBe(true);
+      });
+
+      it('should answer a HEAD request with a 500 when the stream fails to open', async () => {
+        const response = await respond(
+          (req, res) => res.send(createReadStream(join(dir, 'missing.txt'))),
+          { method: 'HEAD' },
+        );
+
+        expect(response.statusCode).toBe(500);
+      });
+
+      it.each([204, 304])(
+        'should destroy the stream of a %i response',
+        async status => {
+          const source = new PassThrough();
+
+          const response = await respond((req, res) => {
+            res.statusCode = status;
+            res.send(source);
+          });
+
+          expect(response.statusCode).toBe(status);
+          expect(source.destroyed).toBe(true);
+        },
+      );
+
+      it('should destroy the stream when the client disconnects', async () => {
+        const source = new PassThrough();
+        const port = await listen((req, res) => {
+          res.send(source);
+          source.write('first');
+        });
+
+        await new Promise<void>(resolve => {
+          const clientRequest = http.get(
+            { host: '127.0.0.1', port, agent: false },
+            response => {
+              response.once('data', () => {
+                clientRequest.destroy();
+                resolve();
+              });
+            },
+          );
+          clientRequest.on('error', () => {});
+        });
+        if (!source.destroyed) {
+          await once(source, 'close');
+        }
+
+        expect(source.destroyed).toBe(true);
+      });
+    });
+
     it.each([
       { kind: 'a number', body: 42, text: '42' },
       { kind: 'a boolean', body: true, text: 'true' },
@@ -1217,6 +1416,52 @@ describe('NodeResponse', () => {
         expect(response.headers['content-type']).toBe(sent);
       },
     );
+
+    it.each([
+      ['text/html', 'text/html; charset=utf-8'],
+      ['application/json', 'application/json; charset=utf-8'],
+      ['text/plain; charset=latin1', 'text/plain; charset=latin1'],
+      ['text/html; Charset=latin1', 'text/html; Charset=latin1'],
+      ['application/vnd.api+json', 'application/vnd.api+json'],
+      ['unknown', 'unknown'],
+      ['html', 'html'],
+    ])(
+      'should send a string with the charset of a Content-Type "%s" set through setHeader()',
+      async (type, sent) => {
+        const response = await respond((req, res) => {
+          res.setHeader('Content-Type', type);
+          res.send('zażółć');
+        });
+
+        expect(response.headers['content-type']).toBe(sent);
+        expect(response.body.toString()).toBe('zażółć');
+      },
+    );
+
+    it.each(['send', 'json'] as const)(
+      'should send an object through %s() with the charset of a Content-Type set through setHeader()',
+      async method => {
+        const response = await respond((req, res) => {
+          res.setHeader('Content-Type', 'application/json');
+          res[method]({ name: 'Grüß' });
+        });
+
+        expect(response.headers['content-type']).toBe(
+          'application/json; charset=utf-8',
+        );
+        expect(response.body.toString()).toBe('{"name":"Grüß"}');
+      },
+    );
+
+    it('should send a Buffer with a Content-Type set through setHeader() as it is', async () => {
+      const response = await respond((req, res) => {
+        res.setHeader('Content-Type', 'text/html');
+        res.send(Buffer.from('<p>Hi</p>'));
+      });
+
+      expect(response.headers['content-type']).toBe('text/html');
+      expect(response.body.toString()).toBe('<p>Hi</p>');
+    });
 
     it.each([undefined, null])(
       'should end the response without a body for %s',

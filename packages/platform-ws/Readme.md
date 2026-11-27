@@ -27,6 +27,8 @@ Nest is a TypeScript framework for building backends on [Node.js](https://nodejs
 
 It runs on [Express](https://github.com/expressjs/express), [Fastify](https://github.com/fastify/fastify) or Node's own `node:http`, and its first-party packages cover most of what a backend needs, so you can start small and add them as you go.
 
+On `node:http`, through the [`NodeAdapter`](https://docs.nestjs.com/http/performance#node-adapter), Nest handles about 3% fewer requests per second than plain Fastify and about 50% more than Express ([benchmark](https://docs.nestjs.com/faq/nest-vs-fastify-express-hono#performance)).
+
 ## Quick start
 
 ```bash
@@ -35,10 +37,12 @@ cd my-api
 npm run start:dev
 ```
 
-Add `--minimal` to start from a single file. An application can be this small, and `npx tsx src/main.ts` runs it with no build step:
+A coding agent or a script can create the project in the current folder with `npx @nestjs/cli new . --skip-git --package-manager npm`, which asks nothing when stdin isn't a terminal and adds an `AGENTS.md` for the agent to read.
+
+Add `--minimal` to start from a single file. An application can be this small:
 
 ```typescript
-import { Controller, Get, Module } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
 @Controller()
@@ -49,14 +53,13 @@ class AppController {
   }
 }
 
-@Module({ controllers: [AppController] })
-class AppModule {}
-
-const app = await NestFactory.create(AppModule);
+const app = await NestFactory.create({ controllers: [AppController] });
 await app.listen(3000);
 ```
 
-tsx doesn't emit decorator metadata, which constructor injection by type and `ValidationPipe` rely on. Once the application uses them, run it with the Nest CLI, or with tsc or SWC and `emitDecoratorMetadata` enabled.
+The object passed to `NestFactory.create()` is the root module's metadata, so `imports` and `providers` work there too. Move it into a `@Module()` class when the root module needs middleware, or for `nest generate` to register what it creates.
+
+Run it with `npm run start:dev`, like any other Nest project. The Nest CLI compiles it with the decorator metadata that constructor injection by type and `ValidationPipe` rely on. Tools that don't emit that metadata, such as `tsx`, leave injected dependencies `undefined`.
 
 ## First-party packages
 
@@ -91,6 +94,14 @@ tsx doesn't emit decorator metadata, which constructor injection by type and `Va
 
 The whole documentation is available as markdown, with an index at [docs.nestjs.com/llms.txt](https://docs.nestjs.com/llms.txt). Projects from `nest new` come with an `AGENTS.md` that lists the packages above, since most models were trained before they existed.
 
+The official [NestJS agent skills](https://github.com/nestjs/agent-skills) teach an agent the current APIs and the mistakes that still pass tests. They cover starting a project, features, authentication and authorization, data, testing and production. Add them to a project with:
+
+```bash
+npx @nestjs/skills add
+```
+
+This copies them into `.agents/skills`, which Codex and Cursor read. Add `--agent claude` for Claude Code, or `--agent all` for both. Claude Code can also install them as a plugin: `claude plugin marketplace add nestjs/agent-skills`, then `claude plugin install nestjs@nestjs`.
+
 ## Philosophy
 
 <p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front-end and back-end applications, giving rise to awesome projects like <a href="https://angular.dev/" target="_blank">Angular</a>, <a href="https://react.dev/" target="_blank">React</a>, and <a href="https://vuejs.org/" target="_blank">Vue</a>, which improve developer productivity and enable the construction of fast, testable, and extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers, and tools for Node, none of them effectively solve the main problem - the architecture.</p>
@@ -99,9 +110,9 @@ The whole documentation is available as markdown, with an index at [docs.nestjs.
 ## Getting started
 
 - To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
-- 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
-- [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
-- [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
+- 要查看中文 [指南](https://github.com/nestjs/nest/blob/master/readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
+- [가이드](https://github.com/nestjs/nest/blob/master/readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
+- [ガイド](https://github.com/nestjs/nest/blob/master/readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
 
 ## Questions
 
@@ -192,4 +203,4 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

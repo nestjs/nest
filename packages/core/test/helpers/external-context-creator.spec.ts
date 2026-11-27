@@ -417,6 +417,178 @@ describe('ExternalContextCreator', () => {
       expect(consumerApplySpy).toHaveBeenCalled();
     });
   });
+  describe('createPipesFn without pipes', () => {
+    const param = (
+      index: number,
+      extractValue: (...args: any[]) => unknown,
+      type: number | string = 'test',
+    ) => ({ index, type, data: undefined as any, pipes: [], extractValue });
+
+    it('fills the args without returning a promise', () => {
+      const pipesFn = contextCreator.createPipesFn(
+        [],
+        [
+          param(1, (first: unknown) => first),
+          param(0, (_first: unknown, second: unknown) => second),
+        ],
+      )!;
+      const args: unknown[] = [undefined, undefined];
+
+      expect(pipesFn(args, 'a', 'b')).toBeUndefined();
+      expect(args).toEqual(['b', 'a']);
+    });
+    it('settles a thenable value, calling "then()" once', async () => {
+      const thenable = { then: vi.fn(resolve => resolve('settled')) };
+      const pipesFn = contextCreator.createPipesFn(
+        [],
+        [param(0, () => thenable)],
+      )!;
+      const args: unknown[] = [undefined];
+
+      await pipesFn(args);
+
+      expect(args).toEqual(['settled']);
+      expect(thenable.then).toHaveBeenCalledOnce();
+    });
+    it('runs every extractor and rejects with the first error', async () => {
+      const first = new Error('first');
+      const last = vi.fn(() => 'last');
+      const pipesFn = contextCreator.createPipesFn(
+        [],
+        [
+          param(0, () => {
+            throw first;
+          }),
+          param(1, () => {
+            throw new Error('second');
+          }),
+          param(2, last),
+        ],
+      )!;
+
+      await expect(pipesFn([])).rejects.toBe(first);
+      expect(last).toHaveBeenCalledOnce();
+    });
+    it('rejects with an extractor error before an earlier thenable rejects', async () => {
+      const error = new Error('extractor');
+      const thenable = {
+        then: vi.fn((_resolve, reject) => reject(new Error('thenable'))),
+      };
+      const pipesFn = contextCreator.createPipesFn(
+        [],
+        [
+          param(0, () => thenable),
+          param(1, () => {
+            throw error;
+          }),
+        ],
+      )!;
+
+      await expect(pipesFn([])).rejects.toBe(error);
+      expect(thenable.then).toHaveBeenCalledOnce();
+    });
+  });
+  describe('createPipesFn with pipes', () => {
+    it('runs the global pipes, then the param pipes, with the metadata of the param on every call', async () => {
+      const globalPipe = { transform: vi.fn(async value => `${value}-g`) };
+      const paramPipe = { transform: vi.fn(value => `${value}-p`) };
+      const pipesFn = contextCreator.createPipesFn(
+        [globalPipe],
+        [
+          {
+            index: 0,
+            type: 'test',
+            data: 'id',
+            pipes: [paramPipe],
+            extractValue: () => '42',
+          },
+          {
+            index: 1,
+            type: 'test',
+            data: undefined as any,
+            pipes: [],
+            extractValue: () => '7',
+          },
+        ],
+      )!;
+      const args: unknown[] = [undefined, undefined];
+
+      await pipesFn(args);
+      await pipesFn(args);
+
+      expect(args).toEqual(['42-g-p', '7-g']);
+      expect(globalPipe.transform).toHaveBeenCalledTimes(4);
+      expect(globalPipe.transform).toHaveBeenCalledWith('42', {
+        metatype: undefined,
+        type: 'custom',
+        data: 'id',
+        schema: undefined,
+      });
+      expect(paramPipe.transform).toHaveBeenCalledTimes(2);
+    });
+    it('keeps a pipeless param synchronous next to a piped one', async () => {
+      const pipe = { transform: vi.fn(async value => `${value}-p`) };
+      const pipesFn = contextCreator.createPipesFn(
+        [],
+        [
+          {
+            index: 0,
+            type: 'test',
+            data: undefined as any,
+            pipes: [pipe],
+            extractValue: () => 'a',
+          },
+          {
+            index: 1,
+            type: 'test',
+            data: undefined as any,
+            pipes: [],
+            extractValue: () => 'b',
+          },
+        ],
+      )!;
+      const args: unknown[] = [undefined, undefined];
+
+      const result = pipesFn(args);
+
+      expect(result).toBeInstanceOf(Promise);
+      expect(args[1]).toBe('b');
+      await result;
+      expect(args).toEqual(['a-p', 'b']);
+    });
+    it("starts each param's pipes right after extracting it", async () => {
+      const order: string[] = [];
+      const pipe = {
+        transform: (value: string) => {
+          order.push(`transform ${value}`);
+          return value;
+        },
+      };
+      const query = (index: number) => ({
+        index,
+        type: 'test',
+        data: undefined as any,
+        pipes: [],
+        extractValue: () => {
+          order.push(`extract ${index}`);
+          return `${index}`;
+        },
+      });
+      const pipesFn = contextCreator.createPipesFn(
+        [pipe],
+        [query(0), query(1)],
+      )!;
+
+      await pipesFn([]);
+
+      expect(order).toEqual([
+        'extract 0',
+        'transform 0',
+        'extract 1',
+        'transform 1',
+      ]);
+    });
+  });
   describe('createPipesFn', () => {
     describe('when "paramsOptions" is empty', () => {
       it('returns null', async () => {

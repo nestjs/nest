@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+import { isObservable } from 'rxjs';
+import { finalize, tap } from 'rxjs/operators';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
@@ -24,6 +26,8 @@ import {
 import { RmqContext } from '../ctx-host/index.js';
 import { Transport } from '../enums/index.js';
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
+import { isInternalErrorReply } from '../exceptions/internal-error-reply.js';
+import { RpcException } from '../exceptions/rpc-exception.js';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
 import { RmqUrl } from '../external/rmq-url.interface.js';
 import {
@@ -65,6 +69,10 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
   protected server: AmqpConnectionManager | null = null;
   protected channel: ChannelWrapper | null = null;
+  protected consumer: { channel: Channel; consumerTag: string } | null = null;
+  protected isClosing = false;
+  private pendingClose: Promise<void> | null = null;
+  private closeCount = 0;
   protected connectionAttempts = 0;
   protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
@@ -76,6 +84,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     event: keyof RmqEvents;
     callback: RmqEvents[keyof RmqEvents];
   }> = [];
+  private readonly recordingChannels = new WeakSet<Channel>();
+  private readonly settledMessages = new WeakSet<Message>();
 
   constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
@@ -108,8 +118,30 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
   }
 
-  public async close(): Promise<void> {
+  public close(): Promise<void> {
+    this.closeCount++;
+    // A close() that overlaps another one waits for it: closing the
+    // connection while the first one waits for its channel to close would
+    // leave that close() pending for good
+    this.pendingClose ??= this.closeChannelAndConnection().finally(() => {
+      this.pendingClose = null;
+    });
+    return this.pendingClose;
+  }
+
+  private async closeChannelAndConnection(): Promise<void> {
+    // A reconnection from here on must not set the channel up, and so
+    // consume, again
+    this.isClosing = true;
     try {
+      // Without a consumer, no request or event can be in flight
+      const consumer = this.consumer;
+      if (consumer && this.getOptionsProp(this.options, 'gracefulShutdown')) {
+        await this.stopReceivingMessages(consumer);
+        await this.waitForHandlersInFlight(
+          this.getOptionsProp(this.options, 'gracePeriod'),
+        );
+      }
       // The channel goes first, as amqplib settles its close on the broker's
       // reply, which never arrives once the connection is closed. The
       // connection is still closed when the channel close fails, otherwise
@@ -127,7 +159,19 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         throw failure.reason;
       }
     } finally {
+      this.consumer = null;
       this.pendingEventListeners = [];
+    }
+  }
+
+  private async stopReceivingMessages(consumer: {
+    channel: Channel;
+    consumerTag: string;
+  }) {
+    try {
+      await consumer.channel.cancel(consumer.consumerTag);
+    } catch {
+      // The channel is closed, so the server receives nothing either way.
     }
   }
 
@@ -139,7 +183,18 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     // The channel of an earlier start, closed since, must not stop this one
     // from setting up its own or be taken for a reconnect
     this.channel = null;
-    this.server = await this.createClient();
+    this.consumer = null;
+    this.isClosing = false;
+    const closeCount = this.closeCount;
+    const server = await this.createClient<AmqpConnectionManager>();
+    // The connection manager starts connecting as soon as it is created, and
+    // close() found nothing to close
+    if (this.closeCount !== closeCount) {
+      await server.close().catch(() => {});
+      callback?.(new Error('Connection closed'));
+      return;
+    }
+    this.server = server;
     let listenCallback = callback;
     const settleListenCallback = (...args: unknown[]) => {
       const cb = listenCallback;
@@ -263,6 +318,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public async setupChannel(channel: Channel, callback: Function) {
+    if (this.isClosing) {
+      return;
+    }
     const noAssert =
       this.getOptionsProp(this.options, 'noAssert') ??
       this.queueOptions.noAssert ??
@@ -291,13 +349,20 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       RMQ_DEFAULT_PREFETCH_COUNT,
     );
 
-    if (this.options.exchange || this.options.wildcards) {
-      // Use queue name as exchange name if exchange is not provided and "wildcards" is set to true
-      const exchange = this.getOptionsProp(
-        this.options,
-        'exchange',
-        this.options.queue,
-      );
+    // Use queue name as exchange name if exchange is not provided and "wildcards" is set to true
+    // or the exchange is a fanout one, which is where the client publishes in these cases
+    const exchange = this.getOptionsProp(
+      this.options,
+      'exchange',
+      this.options.queue,
+    );
+    if (
+      this.options.exchange ||
+      this.options.wildcards ||
+      // Only with a name to declare, so that a fanout server that has none
+      // still consumes its queue directly
+      (this.options.exchangeType === 'fanout' && exchange)
+    ) {
       const exchangeType = this.getOptionsProp(
         this.options,
         'exchangeType',
@@ -331,7 +396,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
-    await channel.consume(
+    // close() may have started while the channel was being set up
+    if (this.isClosing) {
+      return;
+    }
+    // The broker names the consumer when no "consumerTag" is configured
+    const { consumerTag } = await channel.consume(
       createdQueue,
       (msg: Record<string, any> | null) =>
         this.handleMessage(msg!, channel).catch(err => this.handleError(err)),
@@ -344,6 +414,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         ),
       },
     );
+    this.consumer = { channel, consumerTag };
     callback();
   }
 
@@ -372,7 +443,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         `Message dropped: its pattern does not name the handler of its routing key "${fields.routingKey}".`,
       );
       if (!this.noAck) {
-        this.channel!.nack(message as Message, false, false);
+        this.nackDelivery(message as Message, channel);
       }
       return;
     }
@@ -384,7 +455,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     if (!handler) {
       if (!this.noAck) {
         this.logger.warn(RMQ_NO_MESSAGE_HANDLER`${pattern}`);
-        this.channel!.nack(rmqContext.getMessage() as Message, false, false);
+        this.nackDelivery(rmqContext.getMessage() as Message, channel);
       }
       // The sender chooses the id, which this reply carries
       this.assertValidPacketId((packet as IncomingRequest).id);
@@ -411,10 +482,11 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       );
 
     this.warnIfEventHandlerReplies(handler, pattern);
+    const handle = this.nackOnInternalError(handler, rmqContext);
     return this.handleRequest(
       rmqContext,
       async () =>
-        this.transformToObservable(await handler(packet.data, rmqContext)),
+        this.transformToObservable(await handle(packet.data, rmqContext)),
       publish,
     );
   }
@@ -437,7 +509,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
     if (!this.noAck) {
       // Requeued, it would be delivered again
-      this.channel!.nack(message as Message, false, false);
+      this.nackDelivery(message as Message, channel);
     }
     if (isNil(properties?.replyTo)) {
       return;
@@ -459,10 +531,107 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler && !this.noAck) {
-      this.channel!.nack(context.getMessage() as Message, false, false);
+      this.nackDelivery(
+        context.getMessage() as Message,
+        context.getChannelRef(),
+      );
       return this.logger.warn(RMQ_NO_EVENT_HANDLER`${pattern}`);
     }
-    return super.handleEvent(pattern, packet, context);
+    return super.handleEvent(
+      pattern,
+      packet,
+      context,
+      handler && this.nackOnInternalError(handler, context),
+    );
+  }
+
+  /**
+   * With "nackOnInternalError", returns a handler that negatively
+   * acknowledges the message when `handler` fails with an internal error: its
+   * stream errors with the reply the exception filters answer an exception
+   * other than an `RpcException` with, or it rejects with anything but an
+   * `RpcException` (an exception filter that throws).
+   *
+   * A message settled twice closes its channel (PRECONDITION_FAILED), which
+   * the channel wrapper only opens again on a reconnect, so the server would
+   * stop consuming. The message is left as it is once `ack`, `nack` or
+   * `reject` has been called with it on its channel, which is checked when
+   * the handler's stream has been torn down, after its `finalize` callbacks.
+   */
+  private nackOnInternalError(
+    handler: MessageHandler,
+    context: RmqContext,
+  ): MessageHandler {
+    if (
+      this.noAck ||
+      !this.getOptionsProp(this.options, 'nackOnInternalError', false)
+    ) {
+      return handler;
+    }
+    const message = context.getMessage();
+    // The channel the message was delivered on: the wrapper's current channel
+    // may be another one since a reconnect
+    const channel = context.getChannelRef();
+    this.recordSettlements(channel);
+    const nack = () => this.nackDelivery(message, channel);
+    return (async (data: unknown, ctx?: unknown) => {
+      let resultOrStream: unknown;
+      try {
+        resultOrStream = await handler(data, ctx);
+      } catch (err) {
+        if (!(err instanceof RpcException)) {
+          nack();
+        }
+        throw err;
+      }
+      if (!isObservable(resultOrStream)) {
+        return resultOrStream;
+      }
+      let isInternalError = false;
+      return resultOrStream.pipe(
+        tap({ error: err => (isInternalError = isInternalErrorReply(err)) }),
+        finalize(() => isInternalError && nack()),
+      );
+    }) as MessageHandler;
+  }
+
+  /**
+   * Negatively acknowledges a delivery on the channel it was consumed from.
+   * The wrapper's current channel (`this.channel`) may be another one since
+   * a reconnect, and nacking there with this delivery tag closes that channel
+   * (PRECONDITION_FAILED).
+   */
+  private nackDelivery(message: Message, channel: Channel) {
+    if (this.settledMessages.has(message)) {
+      return;
+    }
+    try {
+      channel.nack(message, false, false);
+      this.settledMessages.add(message);
+    } catch (err) {
+      // The channel has closed, and the broker delivers the message again
+      this.logger.error(err);
+    }
+  }
+
+  /**
+   * Makes `ack`, `nack` and `reject` of `channel` record the message they
+   * settle, once per channel.
+   */
+  private recordSettlements(channel: Channel) {
+    if (this.recordingChannels.has(channel)) {
+      return;
+    }
+    this.recordingChannels.add(channel);
+    const settledMessages = this.settledMessages;
+    for (const method of ['ack', 'nack', 'reject']) {
+      const settle = channel[method];
+      channel[method] = function (message: Message, ...args: unknown[]) {
+        const result = settle.call(this, message, ...args);
+        settledMessages.add(message);
+        return result;
+      };
+    }
   }
 
   public sendMessage<T = any>(

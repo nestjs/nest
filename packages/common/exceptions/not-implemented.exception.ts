@@ -30,8 +30,8 @@ export class NotImplementedException extends HttpException {
    * entire JSON response body, pass an object instead. Nest will serialize the object
    * and return it as the JSON response body.
    *
+   * @param objectOrError string or object describing the error condition.
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
-   * @param error a short description of the HTTP error.
    */
   constructor(
     objectOrError?: any,

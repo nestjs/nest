@@ -13,6 +13,7 @@ import {
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
+import { BaseExceptionFilter } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -22,6 +23,8 @@ import { NestNodeApplication, NodeAdapter } from '@nestjs/platform-node';
 import { Test } from '@nestjs/testing';
 import { RawServerDefault } from 'fastify';
 import createError from 'http-errors';
+import type { AddressInfo } from 'net';
+import { connect } from 'net';
 import request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller.js';
 import { listenOnLoopback } from '../../_support/listen-on-loopback.js';
@@ -300,6 +303,22 @@ describe('Error messages', () => {
             message: "body must have required property 'name'",
           });
         });
+    });
+
+    it(`/POST (BadRequest when the client disconnects mid-body)`, async () => {
+      const handle = vi.spyOn(BaseExceptionFilter.prototype, 'catch');
+      const { port } = server.address() as AddressInfo;
+
+      connect(port, '127.0.0.1').end(
+        'POST /schema HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n{',
+      );
+
+      await vi.waitFor(() => expect(handle).toHaveBeenCalledOnce());
+      expect(handle.mock.calls[0][0]).toEqual(
+        new HttpException('aborted', HttpStatus.BAD_REQUEST, {
+          cause: expect.anything(),
+        }),
+      );
     });
 
     it(`/GET (ServiceUnavailable logged when a middleware passes an "http-errors" error to next())`, async () => {

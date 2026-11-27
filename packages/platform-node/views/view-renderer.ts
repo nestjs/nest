@@ -23,8 +23,11 @@ import {
  *
  * Any engine exposing Express' `__express(path, data, callback)`, a
  * `renderFile()` or a `compile()` function works (ejs, pug, handlebars, eta,
- * ...). An Express-style engine name works too: `app.setViewEngine('ejs')`,
- * with the directory set through `app.setBaseViewsDir()`.
+ * ...). nunjucks renders through an `Environment` over the views directories,
+ * so its includes and layouts resolve there, and `options.onConfigure(env)`
+ * can add filters and globals to it, as with `@fastify/view`. An
+ * Express-style engine name works too: `app.setViewEngine('ejs')`, with the
+ * directory set through `app.setBaseViewsDir()`.
  *
  * @publicApi
  */
@@ -73,6 +76,18 @@ const DEFAULT_EXTENSIONS: Record<string, string> = {
 type Engine = { name: string; module: any };
 type RenderFn = (data: Record<string, any>) => string | Promise<string>;
 
+/**
+ * Whether the engine module is nunjucks: it exposes an `Environment` and a
+ * `FileSystemLoader` to render through, while its `compile()` returns a
+ * Template object rather than a function.
+ */
+function isNunjucksModule(module: any): boolean {
+  return (
+    typeof module?.Environment === 'function' &&
+    typeof module?.FileSystemLoader === 'function'
+  );
+}
+
 function promisify(
   fn: (callback: (err: unknown, html?: string) => void) => unknown,
 ): Promise<string> {
@@ -102,9 +117,12 @@ export class ViewRenderer {
   private engineOptions: Record<string, any> = {};
   private production = process.env.NODE_ENV === 'production';
   private readonly cache = new Map<string, RenderFn>();
+  // Shared by all views, so that a layout is compiled once for all of them
+  private nunjucksEnv?: any;
 
   public setEngine(options: NodeViewOptions | string) {
     this.cache.clear();
+    this.nunjucksEnv = undefined;
     if (typeof options === 'string') {
       // Express style: the engine module is loaded on first render
       this.engineName = options;
@@ -131,6 +149,7 @@ export class ViewRenderer {
 
   public setBaseViewsDir(path: string | string[]) {
     this.cache.clear();
+    this.nunjucksEnv = undefined;
     this.roots = ([] as string[]).concat(path).map(dir => resolve(dir));
   }
 
@@ -191,6 +210,17 @@ export class ViewRenderer {
           module.__express(file, withOptions(data), callback),
         );
     }
+    if (isNunjucksModule(module)) {
+      // nunjucks' compile() returns a Template object, not a function, and
+      // takes an Environment as its second argument, so it cannot go through
+      // the compile() branch below. Render through an Environment over the
+      // views directories instead, as @fastify/view does: includes and
+      // layouts then resolve through the loader, by the view's path relative
+      // to the directory it was found in.
+      const env = (this.nunjucksEnv ??= this.createNunjucksEnvironment(module));
+      const name = this.relativeViewName(file);
+      return data => promisify(callback => env.render(name, data, callback));
+    }
     if (typeof module.compile === 'function') {
       const template = module.compile(await readFile(file, 'utf8'), {
         ...this.engineOptions,
@@ -225,6 +255,46 @@ export class ViewRenderer {
       );
     }
     return this.engine;
+  }
+
+  /**
+   * Creates the environment as `nunjucks.configure()` does, without replacing
+   * nunjucks' global one, and hands it to `onConfigure()` to add filters and
+   * globals, as `@fastify/view` does. Outside production, the loader reads
+   * the templates again on every render.
+   */
+  private createNunjucksEnvironment(module: any) {
+    const { onConfigure, watch, noCache, ...options } = this.engineOptions;
+    const env = new module.Environment(
+      new module.FileSystemLoader(this.roots, {
+        watch,
+        noCache: noCache ?? !this.production,
+      }),
+      options,
+    );
+    if (typeof onConfigure === 'function') {
+      onConfigure(env);
+    }
+    return env;
+  }
+
+  /**
+   * The path of a resolved view file relative to the views directory it was
+   * found in, with forward slashes, as template loaders name templates.
+   */
+  private relativeViewName(file: string): string {
+    for (const root of this.roots) {
+      const name = relative(root, file);
+      if (
+        name &&
+        name !== '..' &&
+        !name.startsWith(`..${sep}`) &&
+        !isAbsolute(name)
+      ) {
+        return name.split(sep).join('/');
+      }
+    }
+    return basename(file);
   }
 
   private async resolveFile(view: string, extension: string): Promise<string> {

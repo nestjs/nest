@@ -142,6 +142,8 @@ export class ServerGrpc extends Server<never, never> {
   protected readonly url: string;
   protected readonly maxPendingResponses: number;
   protected grpcClient: GrpcServer;
+  private pendingClose: Promise<void> | null = null;
+  private closeCount = 0;
 
   get status(): never {
     throw new Error(
@@ -176,8 +178,17 @@ export class ServerGrpc extends Server<never, never> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
+    const closeCount = this.closeCount;
     try {
-      this.grpcClient = await this.createClient();
+      const grpcClient = await this.createClient();
+      // The server is bound to its port by now, and close() found nothing to
+      // shut down
+      if (this.closeCount !== closeCount) {
+        grpcClient.forceShutdown();
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.grpcClient = grpcClient;
       await this.start(callback);
     } catch (err) {
       callback(err);
@@ -937,24 +948,105 @@ export class ServerGrpc extends Server<never, never> {
     };
   }
 
-  public async close(): Promise<void> {
-    if (this.grpcClient) {
-      const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
-      try {
-        if (graceful) {
-          await new Promise<void>((resolve, reject) => {
-            this.grpcClient.tryShutdown((error: Error) => {
-              if (error) reject(error);
-              else resolve();
-            });
-          });
-        } else {
-          this.grpcClient.forceShutdown();
-        }
-      } finally {
-        this.grpcClient = null;
-      }
+  /**
+   * "gracePeriod" as every transport reads it (see "normalizeGracePeriod").
+   */
+  protected getGracePeriod(): number {
+    return this.normalizeGracePeriod(
+      this.getOptionsProp(this.options, 'gracePeriod'),
+    );
+  }
+
+  public close(): Promise<void> {
+    this.closeCount++;
+    // Coalesce overlapping close() calls onto the active shutdown promise
+    this.pendingClose ??= this.closeServer().finally(() => {
+      this.pendingClose = null;
+    });
+    return this.pendingClose;
+  }
+
+  private async closeServer(): Promise<void> {
+    const grpcClient = this.grpcClient;
+    if (!grpcClient) {
+      return;
     }
+    this.grpcClient = null;
+
+    const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
+    const gracePeriod = this.getGracePeriod();
+    if (!graceful || gracePeriod <= 0) {
+      grpcClient.forceShutdown();
+      return;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+
+      const cleanupTimer = () => {
+        if (timer !== undefined) {
+          clearTimeout(timer);
+          timer = undefined;
+        }
+      };
+
+      const shutdownTimeout = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        timer = undefined;
+        this.logger.warn(
+          `ServerGrpc (${this.url}) graceful shutdown timed out after ${gracePeriod}ms; calling forceShutdown().`,
+        );
+        try {
+          grpcClient.forceShutdown();
+          resolve();
+        } catch (forceErr) {
+          reject(forceErr);
+        }
+      };
+
+      // Not logged, as close() rejects with it
+      const abortWithForceShutdown = (cause: unknown) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        cleanupTimer();
+        try {
+          grpcClient.forceShutdown();
+        } catch (forceErr) {
+          reject(forceErr);
+          return;
+        }
+        reject(cause);
+      };
+
+      try {
+        grpcClient.tryShutdown((error?: Error) => {
+          if (settled) {
+            return;
+          }
+          if (error) {
+            abortWithForceShutdown(error);
+            return;
+          }
+          settled = true;
+          cleanupTimer();
+          resolve();
+        });
+      } catch (syncError) {
+        abortWithForceShutdown(syncError);
+        return;
+      }
+
+      // tryShutdown() calls back at once when there is nothing to wait for
+      if (!settled) {
+        timer = setTimeout(shutdownTimeout, gracePeriod);
+      }
+    });
   }
 
   public deserialize(obj: any): any {

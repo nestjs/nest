@@ -1,6 +1,7 @@
 import type {
   CookieSerializeOptions,
   HttpServer,
+  INestApplication,
   RequestMethod,
   VersioningOptions,
 } from '@nestjs/common';
@@ -52,6 +53,7 @@ import { serializeCookie } from '../helpers/cookies/serialize-cookie.js';
  * (e.g. `http.Server | https.Server`).
  * @typeParam TRequest - Type of the framework request object.
  * @typeParam TResponse - Type of the framework response object.
+ * @typeParam TApplication - Application type inferred by `NestFactory.create()`.
  *
  * @see [HTTP adapter](https://docs.nestjs.com/faq/http-adapter)
  *
@@ -61,7 +63,11 @@ export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
   TResponse = any,
+  TApplication extends INestApplication = INestApplication,
 > implements HttpServer<TRequest, TResponse> {
+  /** Type-only declaration of the application returned by `NestFactory.create()`. */
+  declare protected readonly __nestApplicationType: TApplication;
+
   /**
    * Native HTTP server created by {@link AbstractHttpAdapter.initHttpServer}
    * and returned by {@link AbstractHttpAdapter.getHttpServer}.

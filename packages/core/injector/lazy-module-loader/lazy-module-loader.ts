@@ -1,4 +1,4 @@
-import type { DynamicModule, Type } from '@nestjs/common';
+import type { DynamicModule, Logger, Type } from '@nestjs/common';
 import { ModuleOverride } from '../../interfaces/module-override.interface.js';
 import { DependenciesScanner } from '../../scanner.js';
 import { ModuleCompiler } from '../compiler.js';
@@ -11,6 +11,10 @@ import { LazyModuleLoaderLoadOptions } from './lazy-module-loader-options.interf
 
 export class LazyModuleLoader {
   private readonly modulesInFlight = new WeakMap<Module, Promise<void>>();
+  // The instance loader is shared by every load(), so its logger is swapped
+  // for the first silent load() in flight and restored after the last one.
+  private silentLoadsInFlight = 0;
+  private loggerBeforeSilentLoads?: Logger;
 
   constructor(
     private readonly dependenciesScanner: DependenciesScanner,
@@ -95,10 +99,12 @@ export class LazyModuleLoader {
     if (moduleInstances.length === 0) {
       return;
     }
-    const originalLogger = (this.instanceLoader as any).logger;
+    const isSilent = loadOpts?.logger === false;
+    if (isSilent && this.silentLoadsInFlight++ === 0) {
+      this.loggerBeforeSilentLoads = (this.instanceLoader as any).logger;
+      this.instanceLoader.setLogger(new SilentLogger());
+    }
     try {
-      this.registerLoggerConfiguration(loadOpts);
-
       const lazyModulesContainer =
         this.createLazyModulesContainer(moduleInstances);
       await this.dependenciesScanner.scanModulesForDependencies(
@@ -108,15 +114,10 @@ export class LazyModuleLoader {
         lazyModulesContainer,
       );
     } finally {
-      if (loadOpts?.logger === false) {
-        this.instanceLoader.setLogger(originalLogger);
+      if (isSilent && --this.silentLoadsInFlight === 0) {
+        this.instanceLoader.setLogger(this.loggerBeforeSilentLoads!);
+        this.loggerBeforeSilentLoads = undefined;
       }
-    }
-  }
-
-  private registerLoggerConfiguration(loadOpts?: LazyModuleLoaderLoadOptions) {
-    if (loadOpts?.logger === false) {
-      this.instanceLoader.setLogger(new SilentLogger());
     }
   }
 

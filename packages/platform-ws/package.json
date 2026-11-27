@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-ws",
-  "version": "12.5.0",
+  "version": "12.6.3",
   "description": "ws adapter for NestJS gateways: plain WebSockets, with no Socket.IO protocol on top.",
   "keywords": [
     "nestjs",
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "tslib": "2.9.1",
-    "ws": "8.22.1"
+    "ws": "8.23.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.0",

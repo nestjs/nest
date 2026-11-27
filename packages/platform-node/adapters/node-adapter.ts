@@ -40,8 +40,8 @@ import type {
 import { createRequire } from 'module';
 import { pathToRegexp } from 'path-to-regexp';
 import serveStatic from 'serve-static';
-import { Duplex, Readable, Transform, Writable } from 'stream';
-import { types } from 'util';
+import { Duplex, Readable, Writable } from 'stream';
+import type { NestNodeApplication } from '../interfaces/nest-node-application.interface.js';
 import type {
   NestNodeBodyParserOptionsFor,
   NestNodeBodyParserType,
@@ -71,6 +71,8 @@ import {
 } from './node-request.js';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import { onResponseClose } from './utils/on-response-close.util.js';
+import { setTextContentType } from './utils/set-text-content-type.util.js';
+import { toWritableChunks } from './utils/to-writable-chunks.util.js';
 
 type StreamableHandlerResponse = Parameters<StreamableFile['errorHandler']>[1];
 
@@ -147,6 +149,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
   NodeRequest,
   NodeResponse
 > {
+  declare protected readonly __nestApplicationType: NestNodeApplication;
   declare protected instance: NodeRouter;
   private readonly logger = new Logger(NodeAdapter.name);
   private readonly openConnections = new Set<Duplex>();
@@ -256,13 +259,19 @@ export class NodeAdapter extends AbstractHttpAdapter<
     }
     if (body instanceof StreamableFile) {
       // A stream that failed before the reply (e.g. while an interceptor
-      // awaited) has already emitted its 'error' event
-      const { errored } = body.getStream();
-      if (errored) {
+      // awaited) has already emitted its 'error' event, and one destroyed
+      // without an error emits nothing more, so piping either of them would
+      // never end the response
+      const earlyError = getEarlyStreamError(body.getStream());
+      if (earlyError) {
         return body.errorHandler(
-          errored,
+          earlyError,
           this.toStreamableHandlerResponse(response),
         );
+      }
+      // No body for a 204, 205 or 304 (RFC 9110), as for any other body
+      if (endWithoutBody(response)) {
+        return body.getStream().destroy();
       }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
@@ -289,7 +298,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
         }
         return response.on('error', (err: Error) => body.errorLogger(err));
       }
-      return this.toWritableChunks(stream)
+      return toWritableChunks(stream, 'A StreamableFile')
         .pipe<Writable>(response)
         .on('error', (err: Error) => body.errorLogger(err));
     }
@@ -336,7 +345,6 @@ export class NodeAdapter extends AbstractHttpAdapter<
       return this.writeBody(
         response,
         toBytes(body),
-        responseContentType,
         'application/octet-stream',
       );
     }
@@ -344,16 +352,10 @@ export class NodeAdapter extends AbstractHttpAdapter<
       return this.writeBody(
         response,
         JSON.stringify(body) ?? '',
-        responseContentType,
         'application/json; charset=utf-8',
       );
     }
-    return this.writeBody(
-      response,
-      String(body),
-      responseContentType,
-      'text/plain; charset=utf-8',
-    );
+    return this.writeBody(response, String(body), 'text/plain; charset=utf-8');
   }
 
   public status(response: NodeResponse, statusCode: number) {
@@ -384,12 +386,7 @@ export class NodeAdapter extends AbstractHttpAdapter<
       }
       return response.send(html);
     }
-    return this.writeBody(
-      response,
-      html,
-      response.getHeader('Content-Type'),
-      'text/html; charset=utf-8',
-    );
+    return this.writeBody(response, html, 'text/html; charset=utf-8');
   }
 
   public redirect(response: NodeResponse, statusCode: number, url: string) {
@@ -739,6 +736,14 @@ export class NodeAdapter extends AbstractHttpAdapter<
         const extractedVersion = versioningOptions.extractor(req);
 
         if (Array.isArray(version)) {
+          // No version was supplied
+          if (
+            version.includes(VERSION_NEUTRAL) &&
+            (isUndefined(extractedVersion) ||
+              (Array.isArray(extractedVersion) && !extractedVersion.length))
+          ) {
+            return handler(req, res, next);
+          }
           if (
             Array.isArray(extractedVersion) &&
             version.filter(v => extractedVersion.includes(v as string)).length
@@ -971,17 +976,20 @@ export class NodeAdapter extends AbstractHttpAdapter<
     }
   }
 
-  // Writes the headers in a single "writeHead()" call, which is cheaper than
+  // Writes the default headers in a single "writeHead()" call, cheaper than
   // one "setHeader()" per header, with an explicit "Content-Length" (also
   // sent in answer to HEAD requests, which carry no body).
   private writeBody(
     response: NodeResponse,
     payload: string | Uint8Array,
-    contentType: unknown,
     defaultContentType: string,
   ) {
     if (endWithoutBody(response)) {
       return;
+    }
+    const contentType = response.getHeader('Content-Type');
+    if (typeof payload === 'string' && contentType !== undefined) {
+      setTextContentType(response, defaultContentType);
     }
     const contentLength =
       typeof payload === 'string'
@@ -1050,42 +1058,6 @@ export class NodeAdapter extends AbstractHttpAdapter<
     }
   }
 
-  /**
-   * response.write() throws for a chunk that is neither a string nor bytes,
-   * inside the "data" listener of pipe(), where nothing catches it. A source
-   * in object mode (e.g. "Readable.from()" over values) is checked as it is
-   * read instead, and fails like any other stream on such a chunk.
-   */
-  private toWritableChunks(stream: Readable): Readable {
-    if (!stream.readableObjectMode) {
-      return stream;
-    }
-    // Passes the chunks on as they are (an empty string, too, which sends
-    // the headers early), one at a time, so that it does not read ahead of
-    // the response
-    const checked = new Transform({
-      objectMode: true,
-      highWaterMark: 1,
-      transform(chunk, _encoding, callback) {
-        callback(null, isWritableChunk(chunk) ? chunk : undefined);
-      },
-    });
-    // Registered before pipe(), so the source fails as it emits the chunk,
-    // before it can end. Its error handler then answers the request, or
-    // aborts a response that has started, as for a file that fails midway.
-    stream.on('data', chunk => {
-      if (!isWritableChunk(chunk)) {
-        checked.destroy();
-        stream.destroy(
-          new TypeError(
-            `A StreamableFile can only send string and Uint8Array chunks, received ${typeof chunk}`,
-          ),
-        );
-      }
-    });
-    return stream.pipe(checked);
-  }
-
   private setHeaderIfNotExists(
     response: NodeResponse,
     name: string,
@@ -1116,10 +1088,6 @@ export class NodeAdapter extends AbstractHttpAdapter<
   }
 }
 
-function isWritableChunk(chunk: unknown): chunk is string | Uint8Array {
-  return typeof chunk === 'string' || types.isUint8Array(chunk);
-}
-
 /**
  * Returns true when `err` is an "http-errors"-shaped error (the body parsers,
  * csrf, etc.), as the ExpressAdapter checks it.
@@ -1134,4 +1102,22 @@ function isHttpError(
     typeof (err as any).statusCode === 'number' &&
     (err as any).status === (err as any).statusCode
   );
+}
+
+/**
+ * Returns the error a StreamableFile source can no longer be piped for. That
+ * is the error it failed with, or for a source destroyed before it ended
+ * without one (e.g. "fs.ReadStream#close()"), a premature close error like
+ * the one `stream.finished()` reports.
+ */
+function getEarlyStreamError(stream: Readable): Error | undefined {
+  if (stream.errored) {
+    return stream.errored;
+  }
+  if (stream.destroyed && !stream.readableEnded) {
+    return Object.assign(new Error('Premature close'), {
+      code: 'ERR_STREAM_PREMATURE_CLOSE',
+    });
+  }
+  return undefined;
 }

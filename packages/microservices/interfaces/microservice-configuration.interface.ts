@@ -77,7 +77,22 @@ export interface GrpcOptions {
     package: string | string[];
     protoLoader?: string;
     packageDefinition?: any;
+    /**
+     * When enabled, closing the server stops accepting calls and waits for
+     * the calls in progress to finish ("tryShutdown()"), for "gracePeriod" at
+     * most, before it cancels those still running ("forceShutdown()").
+     * Applies only to the server.
+     * @default false
+     */
     gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the calls in progress before cancelling those still running. Set it to
+     * 0 to cancel them at once, or to a larger value to wait longer (e.g.,
+     * for long-running streams). Applies only to the server.
+     * @default 10000
+     */
+    gracePeriod?: number;
     /**
      * Maximum number of responses of a streaming call that may wait for a
      * client that is not reading them (default: 1000). A handler's Observable
@@ -186,6 +201,18 @@ export interface TcpOptions {
      * dropped. Set to 0 to disable.
      */
     maxConcurrentMessages?: number;
+    /**
+     * When enabled, closing the server keeps the connections that have
+     * requests or events being handled open until those are done, for
+     * "gracePeriod" at most, and takes no further message from them. The
+     * other connections are closed right away. (default: false)
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds before every
+     * connection is closed. (default: 10000)
+     */
+    gracePeriod?: number;
   };
 }
 
@@ -211,6 +238,17 @@ export interface RedisOptions {
      * is logged. Set to 0 to disable.
      */
     maxWildcardChannelLength?: number;
+    /**
+     * When enabled, closing the server first stops receiving messages, then
+     * waits for the requests and events being handled, for "gracePeriod" at
+     * most, before it closes its connections. (default: false)
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled. (default: 10000)
+     */
+    gracePeriod?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
   } & IORedisOptions;
@@ -253,6 +291,22 @@ export interface MqttOptions {
      * @default -1
      */
     maxConnectionAttempts?: number;
+    /**
+     * When enabled, closing the server first stops receiving messages, then
+     * waits for the requests and events being handled, for "gracePeriod" at
+     * most, before it closes its connection. Applies only to the server
+     * configuration. With a persistent session ("clean: false", plus a
+     * "sessionExpiryInterval" on MQTT 5), unsubscribing removes the
+     * subscriptions from the session, so QoS 1 and 2 messages published to a
+     * non-shared subscription while the instance restarts are not queued for
+     * it. (default: false)
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled. (default: 10000)
+     */
+    gracePeriod?: number;
   };
 }
 
@@ -299,7 +353,16 @@ export interface NatsOptions {
     token?: string;
     yieldTime?: number;
     tokenHandler?: any;
+    /**
+     * When enabled, closing the server first unsubscribes from every subject,
+     * then waits for the requests and events being handled, for "gracePeriod"
+     * at most, before it closes the connection. (default: false)
+     */
     gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled. (default: 10000)
+     */
     gracePeriod?: number;
     [key: string]: any;
   };
@@ -343,6 +406,28 @@ export interface RmqOptions {
      */
     noAck?: boolean;
     /**
+     * With "noAck" set to false, negatively acknowledges, without requeue, the
+     * message of an event or request handler that fails with an internal
+     * error: an exception other than an `RpcException`, which the exception
+     * filters answer with "Internal server error" (e.g. a payload that a
+     * validation pipe rejects). Such a message otherwise stays unacknowledged,
+     * holding a "prefetchCount" slot, until the channel closes, and the broker
+     * then delivers it again. The dead letter exchange of the queue receives
+     * it; without one, the broker discards it. A request is still answered
+     * with the error.
+     *
+     * An `RpcException` (e.g. a guard refusing the message) leaves the message
+     * as it is, as does a handler that succeeds: acknowledge those yourself.
+     * So does a message that has been passed to `ack`, `nack` or `reject` of
+     * its channel already, e.g. by an interceptor. A message settled in bulk
+     * ("allUpTo", "ackAll", "nackAll"), or after its handler has ended, is
+     * not seen as such: settled twice, it makes the broker close the channel,
+     * and the server stops consuming until it reconnects.
+     * Applies only to the consumer configuration.
+     * @default false
+     */
+    nackOnInternalError?: boolean;
+    /**
      * A name which the server will use to distinguish message deliveries for the consumer; mustn’t be already in use on the channel. It’s usually easier to omit this, in which case the server will create a random name and supply it in the reply.
      */
     consumerTag?: string;
@@ -374,7 +459,7 @@ export interface RmqOptions {
      */
     noAssert?: boolean;
     /**
-     * Name for the exchange. Defaults to the queue name when "wildcards" is set to true.
+     * Name for the exchange. Defaults to the queue name when "wildcards" is set to true or "exchangeType" is 'fanout'.
      * @default ''
      */
     exchange?: string;
@@ -416,6 +501,20 @@ export interface RmqOptions {
      * @default -1
      */
     maxConnectionAttempts?: number;
+    /**
+     * When enabled, closing the server first cancels its consumer, then waits
+     * for the requests and events being handled, for "gracePeriod" at most,
+     * before it closes its channel and its connection.
+     * Applies only to the consumer configuration.
+     * @default false
+     */
+    gracefulShutdown?: boolean;
+    /**
+     * With "gracefulShutdown", the longest time in milliseconds to wait for
+     * the requests and events being handled.
+     * @default 10000
+     */
+    gracePeriod?: number;
   };
 }
 
@@ -458,5 +557,15 @@ export interface KafkaOptions {
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
     producerOnlyMode?: boolean;
+    /**
+     * The longest time in milliseconds that closing the server waits, once
+     * its consumer has disconnected, for the requests and events still being
+     * handled (e.g., the rest of a stream that a handler returned, or a reply
+     * still being serialized or published) before it disconnects its
+     * producer. Set it to `0` to disconnect the producer without waiting.
+     * Applies only to the server.
+     * @default 10000
+     */
+    gracePeriod?: number;
   };
 }

@@ -60,6 +60,15 @@ describe('NestApplicationContext', () => {
   }
 
   describe('listenToShutdownSignals', () => {
+    // On Windows, process.kill() ends the process instead of calling its
+    // signal listeners, so the signal is emitted as a POSIX system delivers it.
+    function deliverSignalsToListeners() {
+      return vi.spyOn(process, 'kill').mockImplementation((_pid, signal) => {
+        setImmediate(() => process.emit(signal as any, signal as any));
+        return true;
+      });
+    }
+
     function removeListenersNotIn(
       signal: string,
       baseline: Set<ReturnType<typeof process.listeners>[number]>,
@@ -96,11 +105,13 @@ describe('NestApplicationContext', () => {
         process.on(signal, handler);
       });
 
+      const killStub = deliverSignalsToListeners();
       // add some third party handler
-      process.on(signal, signal => {
+      const thirdPartyHandler = (signal: NodeJS.Signals) => {
         // do some work
         process.kill(process.pid, signal);
-      });
+      };
+      process.on(signal, thirdPartyHandler);
 
       const hookStub = vi
         .spyOn(applicationContext as any, 'callShutdownHook')
@@ -113,6 +124,8 @@ describe('NestApplicationContext', () => {
         });
       process.kill(process.pid, signal);
       await waitProcessDown;
+      process.removeListener(signal, thirdPartyHandler);
+      killStub.mockRestore();
       hookStub.mockRestore();
       expect(processUp).toBe(false);
       expect(promisesResolved).toBe(true);
@@ -408,6 +421,7 @@ describe('NestApplicationContext', () => {
         // noop to prevent process from exiting
       };
       process.on(signal, ignoreProcessSignal);
+      const killStub = deliverSignalsToListeners();
 
       const deferredShutdown = async () => {
         await delay(1);
@@ -427,6 +441,7 @@ describe('NestApplicationContext', () => {
       expect(onModuleInitStub).toHaveBeenCalled();
       expect(onApplicationShutdownStub).toHaveBeenCalled();
 
+      killStub.mockRestore();
       vi.useRealTimers();
     });
 
@@ -669,6 +684,37 @@ describe('NestApplicationContext', () => {
 
       expect(printed()).toEqual([]);
       expect(Logger['isBufferAttached']).toBe(true);
+    });
+  });
+
+  describe('instrument', () => {
+    it("should decorate providers created by resolve() with the container's instrument", async () => {
+      @Injectable({ scope: Scope.REQUEST })
+      class RequestService {}
+
+      const decorated = new WeakSet<object>();
+      const nestContainer = new NestContainer(undefined, {
+        instrument: {
+          instanceDecorator: (instance: unknown) => {
+            decorated.add(instance as object);
+            return instance;
+          },
+        },
+      });
+      const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
+      nestContainer.addProvider(RequestService, moduleRef.token);
+      await new InstanceLoader(
+        nestContainer,
+        new Injector(),
+        new GraphInspector(nestContainer),
+      ).createInstancesOfDependencies(nestContainer.getModules());
+
+      const applicationContext = new NestApplicationContext(nestContainer);
+      applicationContext.selectContextModule();
+
+      const instance = await applicationContext.resolve(RequestService);
+      expect(instance).toBeInstanceOf(RequestService);
+      expect(decorated.has(instance)).toBe(true);
     });
   });
 

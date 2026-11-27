@@ -265,5 +265,26 @@ describe('ParseEnumPipe', () => {
       expect(result).toBe('0');
       expect(typeof result).toBe('string');
     });
+
+    it('should prefer an exact string match over numeric coercion in heterogeneous enums', async () => {
+      enum MixedDigits {
+        Zero = 0,
+        ZeroStr = '0',
+      }
+      const mixedTarget = new ParseEnumPipe(MixedDigits);
+      const stringResult = await mixedTarget.transform(
+        '0',
+        {} as ArgumentMetadata,
+      );
+      expect(stringResult).toBe('0');
+      expect(typeof stringResult).toBe('string');
+
+      const numericResult = await mixedTarget.transform(
+        0,
+        {} as ArgumentMetadata,
+      );
+      expect(numericResult).toBe(0);
+      expect(typeof numericResult).toBe('number');
+    });
   });
 });

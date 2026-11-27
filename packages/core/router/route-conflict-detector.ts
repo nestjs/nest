@@ -63,6 +63,15 @@ interface ComparablePath {
   leadingText: string;
 }
 
+/**
+ * A string host as one segment per combination of its optional groups, and
+ * the text every host it matches ends with.
+ */
+interface ComparableHost {
+  variants: ComparableSegment[];
+  trailingText: string;
+}
+
 // Each optional group doubles the number of path variants to compare
 const MAX_EXPANDED_GROUPS = 6;
 
@@ -190,19 +199,34 @@ export class RouteConflictDetector {
    * Walks every unique pair of resolved routes and produces a conflict
    * record for each pair whose (method, host, version, path) tuples can
    * collide at runtime.
+   *
+   * A router that matches paths in any case (Express, unless it is told
+   * otherwise) serves "/Users" with "/users", so their paths are compared
+   * lower-cased.
    */
   public static detect(
     routes: ResolvedRoute[],
     versioningOptions: VersioningOptions | undefined,
+    caseSensitive = true,
   ): RouteConflict[] {
     const conflicts: RouteConflict[] = [];
     // Every route is compared with every other one: read each path once
     const comparablePaths = new Map(
       routes.map(route => [
         route.path,
-        RouteConflictDetector.toComparablePath(route.path),
+        RouteConflictDetector.toComparablePath(route.path, caseSensitive),
       ]),
     );
+    // ... and each string host, the first time a pair of routes needs it
+    const comparableHosts = new Map<string, ComparableHost>();
+    const comparableHostOf = (host: string) => {
+      let comparableHost = comparableHosts.get(host);
+      if (!comparableHost) {
+        comparableHost = RouteConflictDetector.toComparableHost(host);
+        comparableHosts.set(host, comparableHost);
+      }
+      return comparableHost;
+    };
 
     RouteConflictDetector.forEachUniquePair(
       routes,
@@ -228,6 +252,7 @@ export class RouteConflictDetector {
           !RouteConflictDetector.hostsCanOverlap(
             earlierRoute.host,
             laterRoute.host,
+            comparableHostOf,
           )
         ) {
           return;
@@ -245,6 +270,7 @@ export class RouteConflictDetector {
           earlierRoute,
           laterRoute,
           versioningOptions,
+          caseSensitive,
         );
         conflicts.push({
           winner: earlierRoute,
@@ -358,15 +384,19 @@ export class RouteConflictDetector {
    * Paths path-to-regexp cannot match, or with more than
    * `MAX_EXPANDED_GROUPS` groups, are split on `/` instead.
    */
-  private static toComparablePath(rawPath: string): ComparablePath {
-    const tokens = RouteConflictDetector.parseTokens(rawPath);
+  private static toComparablePath(
+    rawPath: string,
+    caseSensitive = true,
+  ): ComparablePath {
+    const path = caseSensitive ? rawPath : rawPath.toLowerCase();
+    const tokens = RouteConflictDetector.parseTokens(path);
     if (
       !tokens ||
       RouteConflictDetector.countGroups(tokens) > MAX_EXPANDED_GROUPS
     ) {
       return {
         variants: [
-          RouteConflictDetector.splitPath(rawPath).map(
+          RouteConflictDetector.splitPath(path).map(
             RouteConflictDetector.toComparableSegment,
           ),
         ],
@@ -565,6 +595,7 @@ export class RouteConflictDetector {
   private static hostsCanOverlap(
     leftHost: ResolvedRoute['host'],
     rightHost: ResolvedRoute['host'],
+    comparableHostOf: (host: string) => ComparableHost,
   ): boolean {
     if (leftHost === undefined || rightHost === undefined) return true;
 
@@ -576,6 +607,7 @@ export class RouteConflictDetector {
         RouteConflictDetector.hostValuesCanMatchSameRequest(
           leftValue,
           rightValue,
+          comparableHostOf,
         ),
       ),
     );
@@ -584,33 +616,115 @@ export class RouteConflictDetector {
   private static hostValuesCanMatchSameRequest(
     leftValue: string | RegExp,
     rightValue: string | RegExp,
+    comparableHostOf: (host: string) => ComparableHost,
   ): boolean {
-    const leftIsRegExp = leftValue instanceof RegExp;
-    const rightIsRegExp = rightValue instanceof RegExp;
-    if (leftIsRegExp && rightIsRegExp) return true;
-    // Reset lastIndex before calling test() to guard against RegExps with the
-    // `g` or `y` flags: those are stateful and would produce inconsistent
-    // results (false negatives) when the same instance is reused across the
-    // multiple pair comparisons that a single detect() run performs.
-    if (leftIsRegExp) {
-      leftValue.lastIndex = 0;
-      return leftValue.test(rightValue as string);
+    if (leftValue instanceof RegExp && rightValue instanceof RegExp) {
+      return true;
     }
-    if (rightIsRegExp) {
-      rightValue.lastIndex = 0;
-      return rightValue.test(leftValue as string);
+    if (leftValue instanceof RegExp) {
+      return RouteConflictDetector.regExpCanMatchHost(
+        leftValue,
+        rightValue as string,
+        comparableHostOf(rightValue as string).variants,
+      );
     }
-    return leftValue === rightValue;
+    if (rightValue instanceof RegExp) {
+      return RouteConflictDetector.regExpCanMatchHost(
+        rightValue,
+        leftValue,
+        comparableHostOf(leftValue).variants,
+      );
+    }
+    if (leftValue === rightValue) {
+      return true;
+    }
+    const leftHost = comparableHostOf(leftValue);
+    const rightHost = comparableHostOf(rightValue);
+    // Rules out most pairs before comparing every pair of variants
+    if (
+      !leftHost.trailingText.endsWith(rightHost.trailingText) &&
+      !rightHost.trailingText.endsWith(leftHost.trailingText)
+    ) {
+      return false;
+    }
+    return leftHost.variants.some(leftVariant =>
+      rightHost.variants.some(rightVariant =>
+        RouteConflictDetector.segmentsCanOverlap(leftVariant, rightVariant),
+      ),
+    );
+  }
+
+  /**
+   * Whether a RegExp and a host with a param share a host cannot be told
+   * without intersecting them. The RegExp is tested against the host as
+   * written and against each of its variants (lower-cased, as the router
+   * matches a string host in any case), so a pair that no request matches
+   * both of is not reported, which `shadow: 'error'` would turn into a failed
+   * bootstrap.
+   */
+  private static regExpCanMatchHost(
+    regExp: RegExp,
+    host: string,
+    hostVariants: ComparableSegment[],
+  ): boolean {
+    const test = (value: string) => {
+      // Reset lastIndex before calling test() to guard against RegExps with
+      // the `g` or `y` flags: those are stateful and would produce
+      // inconsistent results (false negatives) when the same instance is
+      // reused across the multiple pair comparisons that a single detect()
+      // run performs.
+      regExp.lastIndex = 0;
+      return regExp.test(value);
+    };
+    return test(host) || hostVariants.some(variant => test(variant.value));
+  }
+
+  /**
+   * A string host is a path-to-regexp pattern, which the router matches
+   * case-insensitively (`:tenant.example.com`, `{www.}example.com`). It is
+   * compared as one segment per combination of its optional groups, as
+   * paths are, so a group does not hide the text around it.
+   */
+  private static toComparableHost(host: string): ComparableHost {
+    const tokens = RouteConflictDetector.parseTokens(host);
+    if (!tokens) {
+      const value = host.toLowerCase();
+      return { variants: [{ kind: 'literal', value }], trailingText: value };
+    }
+    if (RouteConflictDetector.countGroups(tokens) > MAX_EXPANDED_GROUPS) {
+      // Too many variants to compare: taken to match any host
+      return {
+        variants: [{ kind: 'wildcard', value: host }],
+        trailingText: '',
+      };
+    }
+    return {
+      variants: RouteConflictDetector.expandGroups(tokens).map(variant =>
+        variant.every(token => token.type === 'text')
+          ? { kind: 'literal', value: joinText(variant).toLowerCase() }
+          : RouteConflictDetector.toComparableSegment({
+              kind: 'mixed',
+              value: stringify(new TokenData(variant)).toLowerCase(),
+            }),
+      ),
+      trailingText: joinText(
+        tokens.slice(tokens.findLastIndex(token => token.type !== 'text') + 1),
+      ).toLowerCase(),
+    };
   }
 
   private static routesAreIdentical(
     leftRoute: ResolvedRoute,
     rightRoute: ResolvedRoute,
     versioningOptions: VersioningOptions | undefined,
+    caseSensitive = true,
   ): boolean {
+    const samePath = caseSensitive
+      ? leftRoute.path === rightRoute.path
+      : leftRoute.path.toLowerCase() === rightRoute.path.toLowerCase();
     return (
       leftRoute.method === rightRoute.method &&
-      leftRoute.path === rightRoute.path &&
+      samePath &&
       RouteConflictDetector.hostsAreIdentical(
         leftRoute.host,
         rightRoute.host,

@@ -15,11 +15,13 @@ import { contentType as lookupContentType } from 'mime-types';
 import onFinished from 'on-finished';
 import { isAbsolute } from 'path';
 import send from 'send';
-import type { Readable } from 'stream';
+import { Readable } from 'stream';
 import typeIs from 'type-is';
 import { getRoutingPath } from '../router/utils.js';
 import { getHostname } from './utils/hostname.util.js';
 import { onResponseClose } from './utils/on-response-close.util.js';
+import { setTextContentType } from './utils/set-text-content-type.util.js';
+import { toWritableChunks } from './utils/to-writable-chunks.util.js';
 
 const QUERY = Symbol('query');
 const LOCALS = Symbol('locals');
@@ -443,9 +445,7 @@ export class NodeResponse<
     }
     // Before any header, in case it throws (a BigInt, a circular reference)
     const text = JSON.stringify(body);
-    if (!this.hasHeader('Content-Type')) {
-      this.setHeader('Content-Type', 'application/json; charset=utf-8');
-    }
+    setTextContentType(this, 'application/json; charset=utf-8');
     if (this.send !== NodeResponse.prototype.send) {
       // Through the res.send() a middleware wrapped, with the serialized body,
       // as Express' res.json() does
@@ -460,26 +460,31 @@ export class NodeResponse<
 
   /**
    * Sends a response: objects, numbers and booleans as JSON, buffers, typed
-   * arrays and `DataView`s as binary, anything else as text. Unlike Express,
-   * strings default to `text/plain` (as with the values route handlers
-   * return); set the `Content-Type` first to send HTML.
+   * arrays and `DataView`s as binary, a `Readable` stream piped as binary,
+   * anything else as text. Unlike Express, strings default to `text/plain` (as
+   * with the values route handlers return) and streams are not sent as JSON;
+   * set the `Content-Type` first to send HTML.
    */
   send(body?: unknown): this {
     if (endWithoutBody(this)) {
+      // Never read then, a stream would stay open
+      if (body instanceof Readable) {
+        body.destroy();
+      }
       return this;
     }
     if (body === undefined || body === null) {
       this.end();
     } else if (typeof body === 'string') {
-      if (!this.hasHeader('Content-Type')) {
-        this.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      }
+      setTextContentType(this, 'text/plain; charset=utf-8');
       endWithBody(this, body);
     } else if (ArrayBuffer.isView(body)) {
       if (!this.hasHeader('Content-Type')) {
         this.setHeader('Content-Type', 'application/octet-stream');
       }
       endWithBody(this, toBytes(body));
+    } else if (body instanceof Readable) {
+      sendStream(this, body);
     } else if (
       typeof body === 'object' ||
       typeof body === 'number' ||
@@ -715,8 +720,58 @@ function transferFile(
 }
 
 /**
+ * Pipes a stream into the response, as Fastify's `reply.send()` does. As JSON,
+ * it would send the fields of the stream (e.g. the path of a file stream) and
+ * leave the stream open.
+ */
+function sendStream(res: ServerResponse, stream: Readable) {
+  // A stream that failed or was destroyed before (e.g. while an interceptor
+  // awaited) emits nothing more, so piping it would never end the response
+  if (stream.errored || (stream.destroyed && !stream.readableEnded)) {
+    res.removeHeader('Content-Length');
+    respondWithError(res, stream.errored);
+    return;
+  }
+  if (!res.hasHeader('Content-Type')) {
+    res.setHeader('Content-Type', 'application/octet-stream');
+  }
+  stream.on('error', (err: Error) => {
+    if (res.destroyed) {
+      return;
+    }
+    if (!res.headersSent) {
+      // Set for the stream, not for the error
+      res.removeHeader('Content-Length');
+    }
+    respondWithError(res, err);
+  });
+  // pipe() leaves the source open when the client disconnects early, or
+  // while the response waits behind others pipelined on the connection
+  onResponseClose(res, () => {
+    if (!stream.readableEnded) {
+      stream.destroy();
+    }
+  });
+  // Node discards the body of a HEAD response without applying backpressure,
+  // so piping would read the whole source. The response ends once the source
+  // is readable or has ended instead, which still leaves an error opening it
+  // (e.g. a missing file) to the listener above.
+  if (res.req?.method === 'HEAD') {
+    const end = () => res.end();
+    if (stream.readableEnded) {
+      end();
+    } else {
+      stream.once('readable', end).once('end', end);
+    }
+    return;
+  }
+  toWritableChunks(stream, 'res.send()').pipe(res);
+}
+
+/**
  * Answers an error with its status and reason phrase, when there is no
- * adapter to hand it to (a `NodeRouter` mounted in another server).
+ * adapter to hand it to (a `NodeRouter` mounted in another server, a stream
+ * passed to `send()`).
  */
 function respondWithError(res: ServerResponse, err: any) {
   if (res.headersSent) {
@@ -762,7 +817,12 @@ function preferredRedirectType(
             : range.type === '*' && range.subtype === '*'
               ? 0
               : -1;
-      if (specificity > (best?.specificity ?? -1)) {
+      if (
+        specificity >= 0 &&
+        (specificity > (best?.specificity ?? -1) ||
+          (specificity === best?.specificity &&
+            range.q > (best?.q ?? -Infinity)))
+      ) {
         best = { q: range.q, specificity, order: range.order };
       }
     }

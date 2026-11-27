@@ -1,7 +1,8 @@
 import type { CanActivate } from '@nestjs/common';
 import { isObservable, lastValueFrom, Observable } from 'rxjs';
+import { getClassRef } from '../helpers/class-ref-registry.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
-import type { ContextType } from '@nestjs/common';
+import type { ContextType, Type } from '@nestjs/common';
 import { type Controller, isEmptyArray } from '@nestjs/common/internal';
 
 export class GuardsConsumer {
@@ -41,7 +42,7 @@ export class GuardsConsumer {
   ): ExecutionContextHost {
     return new ExecutionContextHost(
       args,
-      instance.constructor as any,
+      getClassRef(instance) as Type<unknown>,
       callback,
     );
   }

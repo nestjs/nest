@@ -57,6 +57,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   protected mqttClient: MqttClient | null = null;
   protected connectionPromise: Promise<any> | null = null;
   private closeCount = 0;
+  private readonly discardedClients = new WeakSet<MqttClient>();
   protected isInitialConnection = false;
   protected isReconnecting = false;
   protected pendingEventListeners: Array<{
@@ -82,19 +83,43 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public async close() {
     this.closeCount++;
+    // Taken over from the pending requests, which would each unsubscribe on
+    // their own once failed. Nothing waits for that answer, except end().
+    const replyTopics = [...this.subscriptionsCount.keys()];
+    this.subscriptionsCount.clear();
     this.handleClose();
-    try {
-      if (this.mqttClient) {
-        await this.mqttClient.endAsync();
+    // Reset first, so that an in-flight `connect()` or a `connect()` issued
+    // while `endAsync()` is still pending starts a fresh connection that this
+    // close leaves alone, and late events from the closing client are ignored.
+    const mqttClient = this.mqttClient;
+    this.mqttClient = null;
+    this.connectionPromise = null;
+    this.isInitialConnection = false;
+    this.isReconnecting = false;
+    this.subscriptionsCount.clear();
+    this.pendingEventListeners = [];
+    if (mqttClient) {
+      if (isObject(mqttClient)) {
+        this.discardedClients.add(mqttClient);
       }
-    } finally {
-      // The state must be reset even when `endAsync()` fails, otherwise a later
-      // `connect()` reuses the cached client and connection promise.
-      this.mqttClient = null;
-      this.connectionPromise = null;
-      this.isInitialConnection = false;
-      this.subscriptionsCount.clear();
-      this.pendingEventListeners = [];
+      await this.unsubscribeFromReplyTopics(mqttClient, replyTopics);
+      // mqtt stops reconnecting, then waits for the broker to acknowledge the
+      // packets in flight. Without a connection that never happens.
+      await mqttClient.endAsync(!mqttClient.connected);
+    }
+  }
+
+  private async unsubscribeFromReplyTopics(
+    mqttClient: MqttClient,
+    topics: string[],
+  ) {
+    if (topics.length === 0 || !mqttClient.connected) {
+      return;
+    }
+    try {
+      await mqttClient.unsubscribeAsync(topics);
+    } catch {
+      // The connection was lost before the broker answered
     }
   }
 
@@ -178,6 +203,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
    * on are ignored.
    */
   private discardClient(client: MqttClient) {
+    if (isObject(client)) {
+      this.discardedClients.add(client);
+    }
     if (client !== this.mqttClient) {
       return;
     }
@@ -188,7 +216,15 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     // The next client has to attach the response listener and subscribe to
     // the reply channels again
     this.isInitialConnection = false;
+    this.isReconnecting = false;
     this.subscriptionsCount.clear();
+  }
+
+  private isDiscardedClient(client: MqttClient): boolean {
+    return (
+      (isObject(client) && this.discardedClients.has(client)) ||
+      (this.mqttClient !== null && this.mqttClient !== client)
+    );
   }
 
   public mergeCloseEvent<T = any>(
@@ -227,6 +263,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerOfflineListener(client: MqttClient) {
     client.on(MqttEventsMap.OFFLINE, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this.connectionPromise = Promise.reject(
         'Error: Connection lost. Trying to reconnect...',
       );
@@ -239,6 +278,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerReconnectListener(client: MqttClient) {
     client.on(MqttEventsMap.RECONNECT, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this.isReconnecting = true;
       this._status$.next(MqttStatus.RECONNECTING);
 
@@ -248,12 +290,18 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerDisconnectListener(client: MqttClient) {
     client.on(MqttEventsMap.DISCONNECT, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this._status$.next(MqttStatus.DISCONNECTED);
     });
   }
 
   public registerCloseListener(client: MqttClient) {
     client.on(MqttEventsMap.CLOSE, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this._status$.next(MqttStatus.CLOSED);
 
       // mqtt reconnects on the same client only while reconnectPeriod is set.
@@ -273,6 +321,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public registerConnectListener(client: MqttClient) {
     client.on(MqttEventsMap.CONNECT, () => {
+      if (this.isDiscardedClient(client)) {
+        return;
+      }
       this.isReconnecting = false;
       this._status$.next(MqttStatus.CONNECTED);
 
@@ -388,7 +439,6 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         if (!isCounted) {
           return;
         }
-        this.routingMap.set(packet.id, callback);
 
         try {
           const options =
@@ -430,8 +480,16 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         this.routingMap.delete(packet.id);
       };
 
+      // Registered before the subscription is acknowledged, so that
+      // `handleClose()` fails a request that still waits for it as well
+      this.routingMap.set(packet.id, callback);
+
       if (subscriptionsCount <= 0) {
         this.mqttClient!.subscribe(responseChannel, (err: any) => {
+          if (!isCounted) {
+            // Torn down meanwhile (e.g., failed by `handleClose()`)
+            return;
+          }
           if (err) {
             undoBookkeeping();
             return callback({ err });
@@ -473,7 +531,11 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   }
 
   protected unsubscribeFromChannel(channel: string) {
-    const subscriptionCount = this.subscriptionsCount.get(channel)!;
+    const subscriptionCount = this.subscriptionsCount.get(channel);
+    if (subscriptionCount === undefined) {
+      // `close()` has taken the reply topics over
+      return;
+    }
     this.setSubscriptionsCount(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {

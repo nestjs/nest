@@ -51,6 +51,30 @@ describe('ConfigurableModuleBuilder', () => {
         'folder: forRootAsync',
       );
     });
+
+    it.each([undefined, null, 42])(
+      'should pass %s options through when setExtras is configured',
+      input => {
+        const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
+          new ConfigurableModuleBuilder()
+            .setExtras(
+              { isGlobal: false },
+              (definition, extras: { isGlobal: boolean }) => ({
+                ...definition,
+                global: extras.isGlobal,
+              }),
+            )
+            .build();
+
+        const definition = ConfigurableModuleClass.register(input as any);
+
+        expect(definition.global).toBe(false);
+        expect(definition.providers).toContainEqual({
+          provide: MODULE_OPTIONS_TOKEN,
+          useValue: input,
+        });
+      },
+    );
   });
   describe('setClassMethodName', () => {
     it('should set static class method name and return typed builder', () => {
@@ -157,6 +181,32 @@ describe('ConfigurableModuleBuilder', () => {
           '"OPTIONS_TYPE" is not supposed to be used as a value.',
         );
       }
+    });
+
+    it('should not mutate the options passed to the builder', () => {
+      const options = { alwaysTransient: true };
+
+      new ConfigurableModuleBuilder(options).build();
+
+      expect(options).toEqual({ alwaysTransient: true });
+    });
+
+    it('should generate a distinct token for each builder created with the same options', () => {
+      const options = {};
+
+      const first = new ConfigurableModuleBuilder(options).build();
+      const second = new ConfigurableModuleBuilder(options).build();
+
+      expect(first.MODULE_OPTIONS_TOKEN).not.toBe(second.MODULE_OPTIONS_TOKEN);
+    });
+
+    it('should share the token between builders derived from the same builder', () => {
+      const builder = new ConfigurableModuleBuilder();
+
+      const root = builder.setClassMethodName('forRoot').build();
+      const feature = builder.setClassMethodName('forFeature').build();
+
+      expect(root.MODULE_OPTIONS_TOKEN).toBe(feature.MODULE_OPTIONS_TOKEN);
     });
   });
 });

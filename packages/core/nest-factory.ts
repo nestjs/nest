@@ -5,6 +5,7 @@ import type {
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
+  ModuleMetadata,
   Type,
 } from '@nestjs/common';
 import { AbstractHttpAdapter } from './adapters/http-adapter.js';
@@ -31,20 +32,35 @@ import {
   isFunction,
   isNil,
   isObject,
+  isPlainObject,
 } from '@nestjs/common/internal';
 import {
   type NestApplicationOptions,
   ConsoleLogger,
   Logger,
+  Module,
 } from '@nestjs/common';
 
 /**
  * Represents the entry (root) module type accepted by the NestFactory methods.
  *
+ * Besides a module class, a dynamic module or a forward reference, it can be
+ * plain module metadata (for example, `{ controllers: [AppController] }`),
+ * from which Nest creates the root module.
+ *
  * @publicApi
  */
 export type IEntryNestModule =
-  Type<any> | DynamicModule | ForwardReference | Promise<IEntryNestModule>;
+  | Type<any>
+  | DynamicModule
+  | ForwardReference
+  | ModuleMetadata
+  | Promise<IEntryNestModule>;
+
+type ApplicationFromAdapter<TAdapter extends AbstractHttpAdapter> =
+  TAdapter extends AbstractHttpAdapter<any, any, any, infer TApplication>
+    ? TApplication
+    : INestApplication;
 
 /**
  * @publicApi
@@ -57,9 +73,28 @@ export class NestFactoryStatic {
   private autoFlushLogs = false;
 
   /**
+   * Creates a Nest application and infers its type from the supplied adapter.
+   * A contextual application type takes precedence when supplied.
+   * Adapters typed as `AbstractHttpAdapter` or `any` use the fallback overloads.
+   *
+   * @param module Entry (root) application module class or module metadata
+   * @param httpAdapter Adapter to proxy the request/response cycle to
+   *    the underlying HTTP server
+   * @param options List of options to initialize NestApplication
+   */
+  public async create<
+    TAdapter extends AbstractHttpAdapter,
+    T extends INestApplication = ApplicationFromAdapter<TAdapter>,
+  >(
+    module: IEntryNestModule,
+    httpAdapter: TAdapter &
+      (AbstractHttpAdapter extends TAdapter ? never : unknown),
+    options?: NestApplicationOptions,
+  ): Promise<T>;
+  /**
    * Creates an instance of NestApplication.
    *
-   * @param module Entry (root) application module class
+   * @param module Entry (root) application module class or module metadata
    * @param options List of options to initialize NestApplication
    *
    * @returns A promise that, when resolved,
@@ -70,15 +105,8 @@ export class NestFactoryStatic {
     options?: NestApplicationOptions,
   ): Promise<T>;
   /**
-   * Creates an instance of NestApplication with the specified `httpAdapter`.
-   *
-   * @param module Entry (root) application module class
-   * @param httpAdapter Adapter to proxy the request/response cycle to
-   *    the underlying HTTP server
-   * @param options List of options to initialize NestApplication
-   *
-   * @returns A promise that, when resolved,
-   * contains a reference to the NestApplication instance.
+   * Preserves the original adapter signature, including an explicit `never`
+   * application type and the signatures seen by `Parameters` and `ReturnType`.
    */
   public async create<T extends INestApplication = INestApplication>(
     module: IEntryNestModule,
@@ -125,7 +153,7 @@ export class NestFactoryStatic {
   /**
    * Creates an instance of NestMicroservice.
    *
-   * @param moduleCls Entry (root) application module class
+   * @param moduleCls Entry (root) application module class or module metadata
    * @param options Optional microservice configuration
    *
    * @returns A promise that, when resolved,
@@ -167,7 +195,7 @@ export class NestFactoryStatic {
   /**
    * Creates an instance of NestApplicationContext.
    *
-   * @param moduleCls Entry (root) application module class
+   * @param moduleCls Entry (root) application module class or module metadata
    * @param options Optional Nest application configuration
    *
    * @returns A promise that, when resolved,
@@ -209,7 +237,7 @@ export class NestFactoryStatic {
   }
 
   private async initialize(
-    module: any,
+    module: IEntryNestModule,
     container: NestContainer,
     graphInspector: GraphInspector,
     config = new ApplicationConfig(),
@@ -246,7 +274,7 @@ export class NestFactoryStatic {
 
       await ExceptionsZone.asyncRun(
         async () => {
-          await dependenciesScanner.scan(module);
+          await dependenciesScanner.scan(await this.toRootModule(module));
           await instanceLoader.createInstancesOfDependencies();
           dependenciesScanner.applyApplicationProviders();
         },
@@ -256,6 +284,25 @@ export class NestFactoryStatic {
     } catch (e) {
       this.handleInitializationError(e);
     }
+  }
+
+  private async toRootModule(module: IEntryNestModule): Promise<any> {
+    const resolved: unknown =
+      module instanceof Promise ? await (module as Promise<unknown>) : module;
+    if (!this.isModuleMetadata(resolved)) {
+      return resolved;
+    }
+    class AppModule {}
+    Module(resolved)(AppModule);
+    return AppModule;
+  }
+
+  private isModuleMetadata(module: unknown): module is ModuleMetadata {
+    return (
+      isPlainObject(module) &&
+      !('module' in module) &&
+      !('forwardRef' in module)
+    );
   }
 
   private handleInitializationError(err: unknown) {

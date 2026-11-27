@@ -1,4 +1,10 @@
-import { Exclude, Expose, instanceToPlain, Type } from 'class-transformer';
+import {
+  Exclude,
+  Expose,
+  instanceToPlain,
+  Transform,
+  Type,
+} from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -1255,6 +1261,212 @@ describe('ValidationPipe', () => {
       });
       const value = { nested: Buffer.alloc(0) };
       expect(await target.transform(value, nestedMetadata)).toBe(value);
+    });
+    it('should report a binary sibling inside a self-circular plain object without leaking constructor', async () => {
+      target = new ValidationPipe({
+        errorFormat: 'grouped',
+        transformerPackage: {
+          plainToInstance: <T>(_metatype: unknown, val: unknown) => val as T,
+          classToPlain: val => val as object,
+        },
+      });
+      const value: Record<string, unknown> = {
+        items: [Buffer.alloc(0)],
+      };
+      value.nested = value;
+
+      await expect(
+        target.transform(value, nestedMetadata),
+      ).rejects.toHaveProperty('response.message', {
+        'items.0': [itemsMessage],
+      });
+      expect(Object.hasOwn(value, 'constructor')).toBe(false);
+    });
+    it('should report a binary sibling inside mutually circular objects produced by @Transform', async () => {
+      const inner = new WithNested();
+      const outer = new WithNested();
+      outer.nested = inner as unknown as Nested;
+      inner.nested = outer as unknown as Nested;
+      inner.items = [Buffer.alloc(0) as unknown as Nested];
+
+      class WithTransformedNested {
+        @Transform(() => outer)
+        @ValidateNested()
+        public nested: WithNested;
+      }
+
+      target = new ValidationPipe({ errorFormat: 'grouped' });
+      await expect(
+        target.transform(
+          { nested: {} },
+          { ...nestedMetadata, metatype: WithTransformedNested },
+        ),
+      ).rejects.toHaveProperty('response.message', {
+        'nested.nested.items.0': [itemsMessage],
+      });
+    });
+    it.each([
+      [
+        'array',
+        () => {
+          const array: unknown[] = [];
+          array.push(array, Buffer.alloc(0));
+          return array;
+        },
+      ],
+      [
+        'set',
+        () => {
+          const set = new Set<unknown>();
+          set.add(set).add(Buffer.alloc(0));
+          return set;
+        },
+      ],
+      [
+        'map',
+        () => {
+          const map = new Map<number, unknown>();
+          map.set(0, map).set(1, Buffer.alloc(0));
+          return map;
+        },
+      ],
+    ])(
+      'should report binary values after a circular reference in a shared %s',
+      async (_, createCollection) => {
+        class WithSharedCircularCollections {
+          @ValidateNested()
+          public first: unknown;
+
+          @ValidateNested()
+          public second: unknown;
+        }
+
+        target = new ValidationPipe({
+          errorFormat: 'grouped',
+          transformerPackage: {
+            plainToInstance: <T>(_metatype: unknown, val: unknown) => val as T,
+            classToPlain: val => val as object,
+          },
+        });
+        const collection = createCollection();
+        const value = { first: collection, second: collection };
+
+        await expect(
+          target.transform(value, {
+            ...nestedMetadata,
+            metatype: WithSharedCircularCollections,
+          }),
+        ).rejects.toHaveProperty('response.message', {
+          'first.1': ['nested property first must be either object or array'],
+          'second.1': ['nested property second must be either object or array'],
+        });
+        expect(Object.hasOwn(value, 'constructor')).toBe(false);
+      },
+    );
+    it('should still reject a binary value in a shared object when an earlier property is excluded by @ValidateIf', async () => {
+      const shared = new WithNested();
+      shared.nested = Buffer.alloc(0) as unknown as Nested;
+
+      class WithSharedNested {
+        @Transform(() => shared)
+        @ValidateIf(() => false)
+        @ValidateNested()
+        public skipped: WithNested;
+
+        @Transform(() => shared)
+        @ValidateNested()
+        public active: WithNested;
+      }
+
+      target = new ValidationPipe({ errorFormat: 'grouped' });
+      await expect(
+        target.transform(
+          { skipped: {}, active: {} },
+          { ...nestedMetadata, metatype: WithSharedNested },
+        ),
+      ).rejects.toHaveProperty('response.message', {
+        'active.nested': [nestedMessage],
+      });
+    });
+    it('should not follow a cycle under a property that a condition rules out', async () => {
+      const cyclic = new WithNested();
+      cyclic.nested = cyclic as unknown as Nested;
+
+      class WithSkippedCycle {
+        @Transform(() => cyclic)
+        @ValidateIf(() => false)
+        @ValidateNested()
+        public skipped: WithNested;
+      }
+
+      target = new ValidationPipe();
+      const value = { skipped: {} };
+      expect(
+        await target.transform(value, {
+          ...nestedMetadata,
+          metatype: WithSkippedCycle,
+        }),
+      ).toBe(value);
+    });
+    it('should not follow a cycle that "stopAtFirstError" keeps class-validator from', async () => {
+      const cyclic = new WithNested();
+      cyclic.nested = cyclic as unknown as Nested;
+
+      class WithStoppedCycle {
+        @Transform(() => cyclic)
+        @IsString()
+        @ValidateNested()
+        public stopped: WithNested;
+      }
+
+      target = new ValidationPipe({ stopAtFirstError: true });
+      await expect(
+        target.transform(
+          { stopped: {} },
+          { ...nestedMetadata, metatype: WithStoppedCycle },
+        ),
+      ).rejects.toHaveProperty('response.message', [
+        'stopped must be a string',
+      ]);
+    });
+    it('should preserve single getter evaluation on a non-circular DTO without own object properties', async () => {
+      let reads = 0;
+      class WithNestedGetter {
+        @IsString()
+        public label: string;
+
+        @ValidateNested()
+        public get computed(): Nested | undefined {
+          reads++;
+          return reads === 1 ? undefined : ('invalid' as unknown as Nested);
+        }
+      }
+
+      target = new ValidationPipe();
+      const result = await target.transform(
+        { label: 'ok' },
+        { ...nestedMetadata, metatype: WithNestedGetter },
+      );
+      expect(result).toEqual({ label: 'ok' });
+      expect(reads).toBe(1);
+    });
+    it('should remove temporary constructor when validate throws an unexpected error', async () => {
+      const validationFailure = new Error('validator failed');
+      target = new ValidationPipe({
+        transformerPackage: {
+          plainToInstance: <T>(_metatype: unknown, val: unknown) => val as T,
+          classToPlain: val => val as object,
+        },
+        validatorPackage: {
+          validate: () => Promise.reject(validationFailure),
+        },
+      });
+      const value = { nested: {} };
+
+      await expect(target.transform(value, nestedMetadata)).rejects.toBe(
+        validationFailure,
+      );
+      expect(Object.hasOwn(value, 'constructor')).toBe(false);
     });
   });
 

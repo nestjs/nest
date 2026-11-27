@@ -45,6 +45,12 @@ describe('middleware utils', () => {
         },
       ]);
     });
+    it('should match the route a path with a trailing slash is served at', () => {
+      const [route] = mapToExcludeRoute(['health/']);
+      expect(route.pathRegex.test('/health')).toBe(true);
+      expect(route.pathRegex.test('/health/')).toBe(true);
+      expect(route.pathRegex.test('/healthz')).toBe(false);
+    });
     describe('when route matching options are given', () => {
       const matches = (
         path: string,

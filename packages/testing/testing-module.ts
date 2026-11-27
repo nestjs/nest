@@ -1,4 +1,5 @@
 import {
+  ConsoleLogger,
   type HttpServer,
   type INestApplication,
   type INestMicroservice,
@@ -17,7 +18,7 @@ import {
   tryLoadPackage,
   loadPackageCached,
   isFunction,
-  isUndefined,
+  isNil,
 } from '@nestjs/common/internal';
 import type {
   ApplicationConfig,
@@ -86,9 +87,10 @@ export class TestingModule extends NestApplicationContext {
       | undefined,
     options?: NestApplicationOptions,
   ): T {
-    const [httpAdapter, appOptions] = this.isHttpServer(serverOrOptions)
+    const [httpAdapter, ownOptions] = this.isHttpServer(serverOrOptions)
       ? [serverOrOptions, options]
       : [this.createHttpAdapter(), serverOrOptions];
+    const appOptions = this.withModuleInstrument(ownOptions);
 
     this.applyLogger(appOptions);
     this.container.setHttpAdapter(httpAdapter);
@@ -113,10 +115,25 @@ export class TestingModule extends NestApplicationContext {
     this.applyLogger(options);
     return new NestMicroservice(
       this.container,
-      options,
+      this.withModuleInstrument(options),
       this.graphInspector,
       this.applicationConfig,
     );
+  }
+
+  /**
+   * The `instrument` passed to `Test.createTestingModule()` has already decorated
+   * the module's providers; applications and microservices created from the
+   * module use it too, unless their own options set one.
+   */
+  private withModuleInstrument<
+    T extends NestApplicationContextOptions | undefined,
+  >(options: T): T {
+    const instrument = this.container.contextOptions?.instrument;
+    if (!instrument || options?.instrument) {
+      return options;
+    }
+    return { ...options, instrument } as T;
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
@@ -128,10 +145,16 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private applyLogger(options: NestApplicationContextOptions | undefined) {
-    if (!options || isUndefined(options.logger)) {
+    if (!options) {
       return;
     }
-    Logger.overrideLogger(options.logger);
+    const { logger, forceConsole } = options;
+    // As with NestFactory: "logger: true" keeps the current (testing) logger
+    if ((logger as boolean) !== true && !isNil(logger)) {
+      Logger.overrideLogger(logger);
+    } else if (forceConsole) {
+      Logger.overrideLogger(new ConsoleLogger({ forceConsole: true }));
+    }
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {

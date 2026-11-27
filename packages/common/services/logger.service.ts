@@ -2,6 +2,7 @@ import { Injectable, Optional } from '../decorators/core/index.js';
 import { isObject } from '../utils/shared.utils.js';
 import { ConsoleLogger } from './console-logger.service.js';
 import { LogLevel } from './log-levels.constant.js';
+import { formatLogTimestamp } from './utils/format-log-timestamp.util.js';
 import { isLogLevelEnabled } from './utils/index.js';
 
 // Defined in a separate file so that the log level utilities don't import
@@ -62,15 +63,6 @@ interface LogBufferRecord {
 }
 
 const DEFAULT_LOGGER = new ConsoleLogger();
-
-const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  hour: 'numeric',
-  minute: 'numeric',
-  second: 'numeric',
-  day: '2-digit',
-  month: '2-digit',
-});
 
 /**
  * @publicApi
@@ -301,7 +293,7 @@ export class Logger implements LoggerService {
   }
 
   static getTimestamp() {
-    return dateTimeFormatter.format(Date.now());
+    return formatLogTimestamp();
   }
 
   static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {

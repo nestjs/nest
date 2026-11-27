@@ -446,6 +446,43 @@ describe('ExpressAdapter', () => {
         expect(response.setHeader).not.toHaveBeenCalled();
       });
 
+      it('should report a source destroyed before the reply without an error to the error handler', async () => {
+        // e.g. a file stream closed while an interceptor awaits, which emits
+        // no 'error', nor anything else that would end the response
+        const source = new PassThrough();
+        const errorHandler = vi.fn();
+        const file = new StreamableFile(source).setErrorHandler(errorHandler);
+        const response = createStreamResponse();
+        source.destroy();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expressAdapter.reply(response, file);
+
+        expect(errorHandler).toHaveBeenCalledWith(
+          expect.objectContaining({ code: 'ERR_STREAM_PREMATURE_CLOSE' }),
+          response,
+        );
+        expect(response.setHeader).not.toHaveBeenCalled();
+      });
+
+      it.each(['get', 'head'] as const)(
+        'should answer a source destroyed before the reply with a 400 (%s)',
+        async method => {
+          expressAdapter.getInstance().get('/', async (_req, res) => {
+            const source = new PassThrough();
+            const file = new StreamableFile(source).setErrorLogger(() => {});
+            source.destroy();
+            await new Promise(resolve => setImmediate(resolve));
+            expressAdapter.reply(res, file);
+          });
+
+          await request(expressAdapter.getInstance())
+            [method]('/')
+            .timeout(2000)
+            .expect(400);
+        },
+      );
+
       it.each(['image/', 'pdf', 'image/png'])(
         'should answer a source that fails with a plain-text 400 (type "%s")',
         async type => {
@@ -484,6 +521,49 @@ describe('ExpressAdapter', () => {
 
         await vi.waitFor(() => expect(response.destroyed).toBe(true));
         expect(logger).toHaveBeenCalledWith(handlerError);
+      });
+
+      it.each([204, 304])(
+        'should send a %i response with no body, Content-Type or Content-Length',
+        async statusCode => {
+          const source = Readable.from(['abcd']);
+          expressAdapter.getInstance().get('/', (_req, res) => {
+            expressAdapter.reply(
+              res,
+              new StreamableFile(source, { type: 'text/csv', length: 4 }),
+              statusCode,
+            );
+          });
+
+          const res = await request(expressAdapter.getInstance())
+            .get('/')
+            .expect(statusCode);
+
+          expect(res.headers['content-type']).toBeUndefined();
+          expect(res.headers['content-length']).toBeUndefined();
+          expect(res.text).toBe('');
+          expect(source.destroyed).toBe(true);
+        },
+      );
+
+      it('should send a 205 response with no body or Content-Type, and a zero Content-Length', async () => {
+        const source = Readable.from(['abcd']);
+        expressAdapter.getInstance().get('/', (_req, res) => {
+          expressAdapter.reply(
+            res,
+            new StreamableFile(source, { type: 'text/csv', length: 4 }),
+            205,
+          );
+        });
+
+        const res = await request(expressAdapter.getInstance())
+          .get('/')
+          .expect(205);
+
+        expect(res.headers['content-type']).toBeUndefined();
+        expect(res.headers['content-length']).toBe('0');
+        expect(res.text).toBe('');
+        expect(source.destroyed).toBe(true);
       });
 
       it('should set the Content-Length of the file', () => {

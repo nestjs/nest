@@ -74,6 +74,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  private closeCount = 0;
 
   constructor(protected readonly options: Required<KafkaOptions>['options']) {
     super();
@@ -144,8 +145,15 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ): Promise<void> {
+    const closeCount = this.closeCount;
     try {
-      this.client = await this.createClient();
+      const client = await this.createClient<Kafka>();
+      // The client holds no connection until its consumer and producer connect
+      if (this.closeCount !== closeCount) {
+        callback(new Error('Connection closed'));
+        return;
+      }
+      this.client = client;
       await this.start(callback);
     } catch (err) {
       callback(err);
@@ -153,13 +161,20 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async close(): Promise<void> {
-    // The consumer goes first: disconnecting it waits for the running message
-    // handlers, which send their replies through the producer. The producer is
-    // disconnected even when the consumer fails to.
+    this.closeCount++;
+    // The consumer goes first. Its callbacks can finish before the response
+    // streams and queued publishes, so allow those to drain, for "gracePeriod"
+    // at most, before closing the producer. The producer is disconnected even
+    // if the consumer fails.
     let consumerFailed = false;
     let consumerError: unknown;
     try {
       await this.consumer?.disconnect();
+      if (this.producer) {
+        await this.waitForHandlersInFlight(
+          this.getOptionsProp(this.options, 'gracePeriod'),
+        );
+      }
     } catch (err) {
       consumerFailed = true;
       consumerError = err;
@@ -182,18 +197,34 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async start(callback: () => void): Promise<void> {
+    const closeCount = this.closeCount;
     const consumerOptions = {
       ...(this.options.consumer || {}),
       groupId: this.groupId,
     };
-    this.consumer = this.client!.consumer(consumerOptions);
-    this.producer = this.client!.producer(this.options.producer);
+    const consumer = (this.consumer = this.client!.consumer(consumerOptions));
+    const producer = (this.producer = this.client!.producer(
+      this.options.producer,
+    ));
     this.registerConsumerEventListeners();
     this.registerProducerEventListeners();
 
-    await this.consumer.connect();
-    await this.producer.connect();
-    await this.bindEvents(this.consumer);
+    // `close()` may run while these connect. It disconnects them, but a
+    // connect (or "run", which joins the group) already under way can still
+    // finish afterwards.
+    const stopIfClosed = async () => {
+      if (this.closeCount === closeCount) {
+        return;
+      }
+      await Promise.allSettled([consumer.disconnect(), producer.disconnect()]);
+      throw new Error('Connection closed');
+    };
+    await consumer.connect();
+    await stopIfClosed();
+    await producer.connect();
+    await stopIfClosed();
+    await this.bindEvents(consumer);
+    await stopIfClosed();
     callback();
   }
 

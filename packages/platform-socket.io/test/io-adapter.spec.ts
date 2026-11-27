@@ -1,6 +1,8 @@
-import { EventEmitter } from 'events';
+import { EventEmitter, once } from 'events';
+import { createServer, get } from 'http';
+import type { AddressInfo } from 'net';
 import { config, from, mergeAll, of } from 'rxjs';
-import { Namespace, Server } from 'socket.io';
+import { Namespace, Server, type ServerOptions } from 'socket.io';
 import { IoAdapter } from '../adapters/io-adapter.js';
 import { WsProxy } from '../../websockets/context/ws-proxy.js';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler.js';
@@ -425,23 +427,334 @@ describe('IoAdapter', () => {
         (data: any) => of(data),
       );
 
-      const depth = 100_000;
-      const deep = JSON.parse(`${'['.repeat(depth)}${']'.repeat(depth)}`);
+      // JSON.stringify throws on a BigInt on every Node.js version. A value
+      // nested deeper than it can recurse is not enough: from Node.js 26 on,
+      // it serializes values of any depth.
+      const unserializable = { limit: 10n };
       const ack = vi.fn((payload: any) => JSON.stringify(payload));
 
-      socket.emit('echo', deep);
+      socket.emit('echo', unserializable);
       socket.emit('echo', 'ok');
-      socket.emit('echo-ack', deep, ack);
+      socket.emit('echo-ack', unserializable, ack);
       socket.emit('echo-ack', 'ok', ack);
       await new Promise(resolve => setTimeout(resolve, 5));
       config.onUnhandledError = null;
 
       expect(unhandled).toEqual([]);
       expect(logError).toHaveBeenCalledTimes(2);
-      expect(logError.mock.calls[0][0]).toBeInstanceOf(RangeError);
-      expect(logError.mock.calls[1][0]).toBeInstanceOf(RangeError);
+      expect(logError.mock.calls[0][0]).toBeInstanceOf(TypeError);
+      expect(logError.mock.calls[1][0]).toBeInstanceOf(TypeError);
       expect(replies).toEqual(['ok']);
       expect(ack).toHaveBeenLastCalledWith('ok');
+    });
+  });
+
+  describe('allowRequest', () => {
+    const getFreePort = async () => {
+      const probe = createServer();
+      await new Promise<void>(resolve => probe.listen(0, '127.0.0.1', resolve));
+      const { port } = probe.address() as AddressInfo;
+      await new Promise(resolve => probe.close(resolve));
+      return port;
+    };
+    // The answer to the first request of a client
+    const handshake = (port: number, transport: 'polling' | 'websocket') =>
+      new Promise<{ status?: number; body: string }>((resolve, reject) => {
+        const request = get({
+          host: '127.0.0.1',
+          port,
+          path: `/socket.io/?EIO=4&transport=${transport}`,
+          agent: false,
+          headers:
+            transport === 'websocket'
+              ? {
+                  Connection: 'Upgrade',
+                  Upgrade: 'websocket',
+                  'Sec-WebSocket-Version': '13',
+                  'Sec-WebSocket-Key': 'dGhlIHNhbXBsZSBub25jZQ==',
+                }
+              : {},
+        });
+        request.once('upgrade', (response, socket) => {
+          resolve({ status: response.statusCode, body: '' });
+          socket.destroy();
+        });
+        request.once('response', response => {
+          let body = '';
+          response.setEncoding('utf8');
+          response.on('data', chunk => (body += chunk));
+          response.once('end', () =>
+            resolve({ status: response.statusCode, body }),
+          );
+        });
+        request.once('error', reject);
+      });
+    // What engine.io answers when "allowRequest" calls back with "false"
+    const refused = { polling: 403, websocket: 400 };
+    let logError: ReturnType<typeof vi.spyOn>;
+    let cleanUp: Array<() => Promise<unknown>>;
+
+    beforeEach(() => {
+      cleanUp = [];
+    });
+    afterEach(async () => {
+      for (const step of cleanUp.reverse()) {
+        await step();
+      }
+    });
+
+    // A port of its own, where socket.io creates the HTTP server, or the HTTP
+    // server of the application
+    const layouts = {
+      'on a port of its own': async (
+        options: Partial<ServerOptions>,
+        Adapter = IoAdapter,
+      ) => {
+        const adapter = new Adapter();
+        logError = vi
+          .spyOn(adapter['logger'], 'error')
+          .mockImplementation(() => undefined);
+        const server = adapter.create(
+          await getFreePort(),
+          options as ServerOptions,
+        ) as Server;
+        cleanUp.push(() => adapter.close(server));
+        await once(server.httpServer, 'listening');
+        return (server.httpServer.address() as AddressInfo).port;
+      },
+      'on the HTTP server': async (
+        options: Partial<ServerOptions>,
+        Adapter = IoAdapter,
+      ) => {
+        const httpServer = createServer();
+        const adapter = new Adapter(httpServer);
+        logError = vi
+          .spyOn(adapter['logger'], 'error')
+          .mockImplementation(() => undefined);
+        const server = adapter.create(0, options as ServerOptions) as Server;
+        await new Promise<void>(resolve =>
+          httpServer.listen(0, '127.0.0.1', resolve),
+        );
+        cleanUp.push(() => adapter.close(server));
+        return (httpServer.address() as AddressInfo).port;
+      },
+    };
+
+    describe.each(Object.entries(layouts))('%s', (_, listen) => {
+      it('should refuse a client when "allowRequest" throws', async () => {
+        const error = new Error('no authorization header');
+        const port = await listen({
+          allowRequest: () => {
+            throw error;
+          },
+        });
+
+        const polling = await handshake(port, 'polling');
+        expect(polling.status).toBe(refused.polling);
+        expect(polling.body).not.toContain(error.message);
+        expect((await handshake(port, 'websocket')).status).toBe(
+          refused.websocket,
+        );
+        expect(logError).toHaveBeenCalledTimes(2);
+        expect(logError).toHaveBeenCalledWith(error);
+      });
+
+      it('should refuse a client when the promise of "allowRequest" rejects', async () => {
+        const error = new Error('token store unreachable');
+        const port = await listen({
+          allowRequest: async () => {
+            throw error;
+          },
+        });
+
+        const polling = await handshake(port, 'polling');
+        expect(polling.status).toBe(refused.polling);
+        expect(polling.body).not.toContain(error.message);
+        expect((await handshake(port, 'websocket')).status).toBe(
+          refused.websocket,
+        );
+        expect(logError).toHaveBeenCalledTimes(2);
+        expect(logError).toHaveBeenCalledWith(error);
+      });
+
+      it('should refuse a client when "allowRequest" set by a subclass rejects', async () => {
+        const error = new Error('jwt malformed');
+        const check = async () => {
+          throw error;
+        };
+        // as an adapter that authenticates clients overrides it
+        class AuthenticatingAdapter extends IoAdapter {
+          public createIOServer(port: number, options?: ServerOptions) {
+            options!.allowRequest = check;
+            return super.createIOServer(port, options);
+          }
+        }
+        const port = await listen({}, AuthenticatingAdapter);
+
+        expect((await handshake(port, 'polling')).status).toBe(refused.polling);
+        expect(logError).toHaveBeenCalledWith(error);
+      });
+
+      it('should not answer again when "allowRequest" throws after calling back', async () => {
+        const error = new Error('audit log unreachable');
+        const port = await listen({
+          allowRequest: (_: unknown, callback: Function) => {
+            callback(null, true);
+            throw error;
+          },
+        });
+
+        expect((await handshake(port, 'polling')).status).toBe(200);
+        expect((await handshake(port, 'websocket')).status).toBe(101);
+        expect(logError).toHaveBeenCalledWith(error);
+      });
+
+      it('should pass on what "allowRequest" answers again once engine.io has thrown on its answer', async () => {
+        // as when a listener of "connection_error" throws on a refusal
+        class ListeningAdapter extends IoAdapter {
+          public createIOServer(port: number, options?: ServerOptions) {
+            const server = super.createIOServer(port, options);
+            server.engine.on('connection_error', ({ context }: any) => {
+              if (!context?.message) {
+                throw new Error('metrics unreachable');
+              }
+            });
+            return server;
+          }
+        }
+        const port = await listen(
+          {
+            allowRequest: (_: unknown, callback: Function) => {
+              try {
+                callback(null, false);
+              } catch {
+                callback('refused again', false);
+              }
+            },
+          },
+          ListeningAdapter,
+        );
+
+        const polling = await handshake(port, 'polling');
+        expect(polling.status).toBe(refused.polling);
+        expect(polling.body).toContain('refused again');
+        const websocket = await handshake(port, 'websocket');
+        expect(websocket.status).toBe(refused.websocket);
+        expect(websocket.body).toBe('refused again');
+        expect(logError).not.toHaveBeenCalled();
+      });
+
+      it('should still accept a client "allowRequest" calls back for', async () => {
+        const port = await listen({
+          cors: { credentials: true },
+          // reads an option of the server, as engine.io calls it on them
+          allowRequest: function (this: any, _: unknown, callback: Function) {
+            setImmediate(() => callback(null, this.cors.credentials === true));
+          },
+        });
+
+        expect((await handshake(port, 'polling')).status).toBe(200);
+        expect((await handshake(port, 'websocket')).status).toBe(101);
+        expect(logError).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should not take an error engine.io throws on the answer for one of "allowRequest"', () => {
+      const adapter = new IoAdapter();
+      logError = vi
+        .spyOn(adapter['logger'], 'error')
+        .mockImplementation(() => undefined);
+      const { allowRequest } = adapter['guardAllowRequest']({
+        allowRequest: (_, callback) => callback(null, true),
+      });
+      // as when a listener of "initial_headers" throws on a WebSocket handshake
+      const error = new Error('cannot write the headers');
+      const callback = vi.fn(() => {
+        throw error;
+      });
+
+      expect(() => allowRequest!({} as any, callback)).toThrow(error);
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(logError).not.toHaveBeenCalled();
+    });
+
+    it('should not take an error "allowRequest" throws in place of the one engine.io throws on the answer', () => {
+      const adapter = new IoAdapter();
+      logError = vi
+        .spyOn(adapter['logger'], 'error')
+        .mockImplementation(() => undefined);
+      const replaced = new Error('the client could not be answered');
+      const { allowRequest } = adapter['guardAllowRequest']({
+        allowRequest: (_, callback) => {
+          try {
+            callback(null, true);
+          } catch {
+            throw replaced;
+          }
+        },
+      });
+      const callback = vi.fn(() => {
+        throw new Error('cannot write the headers');
+      });
+
+      expect(() => allowRequest!({} as any, callback)).toThrow(replaced);
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(logError).not.toHaveBeenCalled();
+    });
+
+    it('should let the promise of an async "allowRequest" reject with the error engine.io throws on its answer', async () => {
+      const adapter = new IoAdapter();
+      logError = vi
+        .spyOn(adapter['logger'], 'error')
+        .mockImplementation(() => undefined);
+      const { allowRequest } = adapter['guardAllowRequest']({
+        allowRequest: async (_, callback) => callback(null, true),
+      });
+      const error = new Error('cannot write the headers');
+      const callback = vi.fn(() => {
+        throw error;
+      });
+      const unhandled = vi.fn();
+      process.on('unhandledRejection', unhandled);
+      try {
+        allowRequest!({} as any, callback);
+        await new Promise(resolve => setTimeout(resolve, 10));
+        expect(unhandled).toHaveBeenCalledWith(error, expect.any(Promise));
+      } finally {
+        process.off('unhandledRejection', unhandled);
+      }
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(logError).not.toHaveBeenCalled();
+    });
+
+    it('should leave alone what "allowRequest" returns unless it is a promise', async () => {
+      const adapter = new IoAdapter();
+      logError = vi
+        .spyOn(adapter['logger'], 'error')
+        .mockImplementation(() => undefined);
+      // as a query that runs again when "then" is called, and fails
+      const then = vi.fn((_: unknown, reject: Function) =>
+        reject(new Error('query was already executed')),
+      );
+      // whose prototype cannot be read
+      const { proxy, revoke } = Proxy.revocable({}, {});
+      revoke();
+
+      for (const returned of [{ then }, proxy]) {
+        const { allowRequest } = adapter['guardAllowRequest']({
+          allowRequest: ((_: unknown, callback: Function) => {
+            callback(null, true);
+            return returned;
+          }) as any,
+        });
+        const callback = vi.fn();
+
+        expect(() => allowRequest!({} as any, callback)).not.toThrow();
+        await new Promise(resolve => setImmediate(resolve));
+        expect(callback).toHaveBeenCalledExactlyOnceWith(null, true);
+      }
+      expect(then).not.toHaveBeenCalled();
+      expect(logError).not.toHaveBeenCalled();
     });
   });
 

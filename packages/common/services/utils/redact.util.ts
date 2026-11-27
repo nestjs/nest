@@ -18,8 +18,11 @@ export type Redactor = (value: unknown) => unknown;
  *   `users.password` also matches `{ users: [{ password }] }`.
  * - Keys are compared case-insensitively.
  *
- * Plain objects, arrays, class instances, errors (including `cause` and
- * `AggregateError#errors`), `Map`s (string keys) and `Set`s are traversed.
+ * Plain objects, arrays, class instances, errors (including `cause`,
+ * `AggregateError#errors` and the `error` and `suppressed` of a
+ * `SuppressedError`), `Map`s, `Set`s, `Headers`, `URLSearchParams`,
+ * `FormData` and `URL`s (their username, password and search params) are
+ * traversed.
  * Only the objects on the way to a redacted property are copied; the rest is
  * returned as is, and the input is never mutated. A circular reference is
  * replaced with `"[Circular]"` (so the objects on the cycle are copied too). An
@@ -137,8 +140,12 @@ export function createRedactor(
         redacted = redactMap(current);
       } else if (current instanceof Set) {
         redacted = redactSet(current);
+      } else if (current instanceof URL) {
+        redacted = redactUrl(current);
       } else if (isOpaque(current)) {
         redacted = current;
+      } else if (getEntryListType(current)) {
+        redacted = redactEntryList(current as EntryList);
       } else {
         redacted = redactObject(current);
       }
@@ -149,11 +156,12 @@ export function createRedactor(
 
     const redactArray = (array: unknown[]) => {
       let copy: unknown[] | undefined;
-      for (let i = 0; i < array.length; i++) {
-        const redacted = visit(array[i]);
-        if (!Object.is(redacted, array[i])) {
-          copy ??= array.slice();
-          copy[i] = redacted;
+      for (const index of Object.keys(array)) {
+        const item = array[index as unknown as number];
+        const redacted = visit(item);
+        if (!Object.is(redacted, item)) {
+          copy ??= Object.assign(new Array(array.length), array);
+          copy[index as unknown as number] = redacted;
         }
       }
       return copy ?? array;
@@ -163,12 +171,14 @@ export function createRedactor(
       let changed = false;
       const entries: [unknown, unknown][] = [];
       for (const [key, entryValue] of map) {
-        const redacted =
+        const redactedKey = typeof key === 'string' ? key : visit(key);
+        const redactedValue =
           typeof key === 'string'
             ? visitProperty(key, entryValue)
             : visit(entryValue);
-        changed ||= !Object.is(redacted, entryValue);
-        entries.push([key, redacted]);
+        changed ||=
+          !Object.is(redactedKey, key) || !Object.is(redactedValue, entryValue);
+        entries.push([redactedKey, redactedValue]);
       }
       return changed ? new Map(entries) : map;
     };
@@ -184,16 +194,64 @@ export function createRedactor(
       return changed ? new Set(values) : set;
     };
 
+    const redactEntryList = (list: EntryList) => {
+      let changed = false;
+      const entries: [string, unknown][] = [];
+      for (const [key, entryValue] of list) {
+        const redactedValue = visitProperty(key, entryValue);
+        changed ||= !Object.is(redactedValue, entryValue);
+        entries.push([key, redactedValue]);
+      }
+      if (!changed) {
+        return list;
+      }
+      const EntryListType = getEntryListType(list)!;
+      const copy = new EntryListType();
+      try {
+        for (const [key, entryValue] of entries) {
+          // A file of a FormData keeps its name, as it is a File.
+          copy.append(key, entryValue as string);
+        }
+      } catch {
+        // `Headers` only takes Latin-1 values, which the censor may not be
+        // ("••••"), so the entries are printed as a `Map` instead
+        return new Map(entries);
+      }
+      return copy;
+    };
+
+    // A URL holds its parts in internal slots, as the entry lists do, so a
+    // copy is built from its href with the redacted parts set again (and
+    // percent-encoded by the URL, as any other text would be).
+    const redactUrl = (url: URL) => {
+      const credentials = (['username', 'password'] as const).filter(
+        key => url[key] !== '' && visitProperty(key, url[key]) !== url[key],
+      );
+      const searchParams = visitProperty(
+        'searchParams',
+        url.searchParams,
+      ) as URLSearchParams;
+      if (credentials.length === 0 && searchParams === url.searchParams) {
+        return url;
+      }
+      const copy = new URL(url.href);
+      for (const key of credentials) {
+        copy[key] = censor;
+      }
+      if (searchParams !== url.searchParams) {
+        copy.search = searchParams.toString();
+      }
+      return copy;
+    };
+
     const redactObject = (object: object) => {
       const source = object as Record<string, unknown>;
       const keysToVisit = Object.keys(source);
       if (object instanceof Error) {
-        // Non-enumerable, but part of the logged error.
-        for (const key of ['cause', 'errors']) {
-          if (
-            Object.prototype.hasOwnProperty.call(object, key) &&
-            !keysToVisit.includes(key)
-          ) {
+        // Non-enumerable, but part of the logged error ("error" and
+        // "suppressed" are those of a SuppressedError).
+        for (const key of ['cause', 'errors', 'error', 'suppressed']) {
+          if (Object.hasOwn(object, key) && !keysToVisit.includes(key)) {
             keysToVisit.push(key);
           }
         }
@@ -258,6 +316,23 @@ export function createRedactor(
       return censor;
     }
   };
+}
+
+type EntryList = Headers | URLSearchParams | FormData;
+
+/**
+ * The classes that hold their entries in internal slots rather than in
+ * properties, so that a copy must be built through their API. They are
+ * printed with their entries, as `Map`s are.
+ */
+const ENTRY_LIST_TYPES: (new () => EntryList)[] = [
+  Headers,
+  URLSearchParams,
+  FormData,
+];
+
+function getEntryListType(value: object): (new () => EntryList) | undefined {
+  return ENTRY_LIST_TYPES.find(type => value instanceof type);
 }
 
 /**

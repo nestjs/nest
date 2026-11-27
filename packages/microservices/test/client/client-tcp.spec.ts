@@ -12,7 +12,9 @@ import { TcpSocket } from '../../helpers/tcp-socket.js';
  * plays the underlying net socket, so connection events can be fired by hand.
  */
 class FakeTcpSocket {
-  public readonly netSocket = new EventEmitter();
+  public readonly netSocket = Object.assign(new EventEmitter(), {
+    destroy: vi.fn(),
+  });
   public readonly connect = vi.fn();
   public readonly end = vi.fn();
   public readonly sendMessage = vi.fn();
@@ -298,6 +300,7 @@ describe('ClientTCP', () => {
       routingMap.set('some id', callback);
 
       untypedClient.socket = socket;
+      untypedClient.connectedSockets.add(socket);
       untypedClient.routingMap = routingMap;
       client.close();
     });
@@ -306,6 +309,15 @@ describe('ClientTCP', () => {
     });
     it('should end() socket', () => {
       expect(socket.end).toHaveBeenCalled();
+    });
+    it('should destroy a socket that has not connected yet', () => {
+      const pending = new FakeTcpSocket();
+      untypedClient.socket = pending;
+
+      client.close();
+
+      expect(pending.netSocket.destroy).toHaveBeenCalledTimes(1);
+      expect(pending.end).not.toHaveBeenCalled();
     });
     it('should set "socket" to null', () => {
       expect(untypedClient.socket).toBeNull();
@@ -430,11 +442,33 @@ describe('ClientTCP', () => {
       socketA.netSocket.emit('connect');
 
       await expect(connectA).resolves.toBeUndefined();
-      expect(socketA.end).toHaveBeenCalledTimes(1);
+      expect(socketA.netSocket.destroy).toHaveBeenCalledTimes(1);
+      expect(socketA.end).not.toHaveBeenCalled();
       expect(socketA.netSocket.listenerCount('message')).toBe(1);
       expect(untypedClient.socket).toBeNull();
       expect(untypedClient.connectionPromise).toBeNull();
       expect(createSocketStub).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reject a pending non-TLS connect when the socket closes before connecting', async () => {
+      const connectA = client.connect();
+      client.close();
+
+      socketA.netSocket.emit('close');
+
+      await expect(connectA).rejects.toThrow('Connection closed');
+      expect(untypedClient.socket).toBeNull();
+      expect(untypedClient.connectionPromise).toBeNull();
+    });
+
+    it('should not emit CONNECTED when a closed socket emits a late connect event', async () => {
+      const connectA = client.connect();
+      client.close();
+
+      socketA.netSocket.emit('connect');
+
+      await expect(connectA).resolves.toBeUndefined();
+      expect(statuses).toEqual([]);
     });
 
     describe('when a newer "connect()" call replaced the socket', () => {

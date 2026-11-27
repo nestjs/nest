@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { of } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import {
   CONSUMER_CANCELLED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
@@ -9,6 +10,10 @@ import {
 import { RmqContext } from '../../ctx-host/index.js';
 import { InvalidPacketIdException } from '../../errors/invalid-packet-id.exception.js';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
+import {
+  BaseRpcExceptionFilter,
+  RpcException,
+} from '../../exceptions/index.js';
 import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -255,6 +260,32 @@ describe('ServerRMQ', () => {
         expect(createChannelStub).toHaveBeenCalledTimes(2);
         expect(secondListenCallback).toHaveBeenCalledExactlyOnceWith();
       });
+      it('should consume again', async () => {
+        setupChannelStub.mockRestore();
+        const rawChannel = {
+          assertQueue: vi.fn(() => ({ queue: 'test' })),
+          prefetch: vi.fn(),
+          consume: vi.fn(() => ({ consumerTag: 'amq.ctag-test' })),
+        };
+        createChannelStub.mockImplementation(({ setup }) => {
+          channel = Object.assign(new EventEmitter(), {
+            close: vi.fn().mockResolvedValue(undefined),
+          });
+          void setup(rawChannel);
+          return channel;
+        });
+        await server.listen(callbackSpy);
+        client.emit('connect');
+        await new Promise(resolve => setImmediate(resolve));
+        await server.close();
+
+        await server.listen(secondListenCallback);
+        client.emit('connect');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(rawChannel.consume).toHaveBeenCalledTimes(2);
+        expect(secondListenCallback).toHaveBeenCalledExactlyOnceWith();
+      });
       it('should call the callback after a listen whose channel setup failed', async () => {
         const setupError = new Error('NOT_FOUND');
         setupChannelStub.mockImplementationOnce(async () => {});
@@ -285,6 +316,33 @@ describe('ServerRMQ', () => {
           connectionError,
         );
       });
+    });
+    it('should close the new connection when closed while creating it', async () => {
+      let resolveClient!: (value: any) => void;
+      const pendingClient = {
+        close: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+      createClient.mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+
+      const listenPromise = server.listen(callbackSpy);
+      await server.close();
+      resolveClient(pendingClient);
+      await listenPromise;
+
+      expect(pendingClient.close).toHaveBeenCalledOnce();
+      expect(pendingClient.once).not.toHaveBeenCalled();
+      expect(pendingClient.on).not.toHaveBeenCalled();
+      expect(untypedServer.server).toBeNull();
+      expect(callbackSpy).toHaveBeenCalledExactlyOnceWith(
+        new Error('Connection closed'),
+      );
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
@@ -358,6 +416,257 @@ describe('ServerRMQ', () => {
 
       await expect(server.close()).rejects.toBe(channelError);
       expect(logError).toHaveBeenCalledWith(connectionError);
+    });
+    it('should not cancel the consumer nor wait without "gracefulShutdown"', async () => {
+      const consumerChannel = { cancel: vi.fn() };
+      untypedServer.consumer = {
+        channel: consumerChannel,
+        consumerTag: 'amq.ctag-test',
+      };
+      const waitSpy = vi.spyOn(untypedServer, 'waitForHandlersInFlight');
+
+      await server.close();
+
+      expect(consumerChannel.cancel).not.toHaveBeenCalled();
+      expect(waitSpy).not.toHaveBeenCalled();
+    });
+    it('should not set the channel up, and so consume, once it is closing', async () => {
+      const channel = {
+        assertQueue: vi.fn(() => ({ queue: 'test' })),
+        prefetch: vi.fn(),
+        consume: vi.fn(() => ({ consumerTag: 'amq.ctag-test' })),
+      };
+      const callback = vi.fn();
+
+      await server.close();
+      // The channel wrapper runs the setup again on every reconnection
+      await server.setupChannel(channel, callback);
+
+      expect(channel.assertQueue).not.toHaveBeenCalled();
+      expect(channel.consume).not.toHaveBeenCalled();
+      expect(callback).not.toHaveBeenCalled();
+    });
+
+    describe('with "gracefulShutdown"', () => {
+      function createGracefulServer(options: Record<string, unknown> = {}) {
+        const gracefulServer = new ServerRMQ({
+          gracefulShutdown: true,
+          ...options,
+        });
+        const consumerChannel = {
+          cancel: vi.fn().mockResolvedValue(undefined),
+        };
+        const channel = { close: vi.fn() };
+        const connection = { close: vi.fn() };
+        Object.assign(gracefulServer, {
+          server: connection,
+          channel,
+          consumer: { channel: consumerChannel, consumerTag: 'amq.ctag-test' },
+        });
+        const waitSpy = vi
+          .spyOn(gracefulServer as any, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+        return {
+          gracefulServer,
+          consumerChannel,
+          channel,
+          connection,
+          waitSpy,
+        };
+      }
+
+      it('should cancel the consumer, wait for the handlers in flight, then close', async () => {
+        const {
+          gracefulServer,
+          consumerChannel,
+          channel,
+          connection,
+          waitSpy,
+        } = createGracefulServer();
+
+        await gracefulServer.close();
+
+        expect(consumerChannel.cancel).toHaveBeenCalledExactlyOnceWith(
+          'amq.ctag-test',
+        );
+        const [cancelled] = consumerChannel.cancel.mock.invocationCallOrder;
+        const [waited] = waitSpy.mock.invocationCallOrder;
+        const [channelClosed] = channel.close.mock.invocationCallOrder;
+        const [connectionClosed] = connection.close.mock.invocationCallOrder;
+        expect(cancelled).toBeLessThan(waited);
+        expect(waited).toBeLessThan(channelClosed);
+        expect(channelClosed).toBeLessThan(connectionClosed);
+      });
+
+      it('should keep the channel and the connection open while handlers are in flight, so that they can acknowledge and reply', async () => {
+        const { gracefulServer, channel, connection, waitSpy } =
+          createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+
+        const closing = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(channel.close).not.toHaveBeenCalled();
+        expect(connection.close).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+
+        expect(channel.close).toHaveBeenCalledOnce();
+        expect(connection.close).toHaveBeenCalledOnce();
+      });
+
+      it('should not set the channel up again when the connection is restored while it waits', async () => {
+        const { gracefulServer, waitSpy } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        const restoredChannel = {
+          assertQueue: vi.fn(() => ({ queue: 'test' })),
+          prefetch: vi.fn(),
+          consume: vi.fn(() => ({ consumerTag: 'amq.ctag-restored' })),
+        };
+
+        const closing = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+        await gracefulServer.setupChannel(restoredChannel, vi.fn());
+
+        expect(restoredChannel.consume).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+      });
+
+      it('should wait for "gracePeriod" at most', async () => {
+        const { gracefulServer, waitSpy } = createGracefulServer({
+          gracePeriod: 500,
+        });
+
+        await gracefulServer.close();
+
+        expect(waitSpy).toHaveBeenCalledExactlyOnceWith(500);
+      });
+
+      it('should still close when the consumer cannot be cancelled', async () => {
+        const {
+          gracefulServer,
+          consumerChannel,
+          channel,
+          connection,
+          waitSpy,
+        } = createGracefulServer();
+        consumerChannel.cancel.mockRejectedValue(new Error('Channel closed'));
+
+        await expect(gracefulServer.close()).resolves.toBeUndefined();
+
+        expect(waitSpy).toHaveBeenCalledOnce();
+        expect(channel.close).toHaveBeenCalledOnce();
+        expect(connection.close).toHaveBeenCalledOnce();
+      });
+
+      it('should still close when the consumer channel throws instead of rejecting', async () => {
+        const { gracefulServer, consumerChannel, channel, connection } =
+          createGracefulServer();
+        // amqplib throws on a channel that is already closed
+        consumerChannel.cancel.mockImplementation(() => {
+          throw new Error('Channel closed');
+        });
+
+        await expect(gracefulServer.close()).resolves.toBeUndefined();
+
+        expect(channel.close).toHaveBeenCalledOnce();
+        expect(connection.close).toHaveBeenCalledOnce();
+      });
+
+      it('should not wait when the server never consumed, as nothing can be in flight', async () => {
+        const { gracefulServer, channel, connection, waitSpy } =
+          createGracefulServer();
+        Object.assign(gracefulServer, { consumer: null });
+
+        await expect(gracefulServer.close()).resolves.toBeUndefined();
+
+        expect(waitSpy).not.toHaveBeenCalled();
+        expect(channel.close).toHaveBeenCalledOnce();
+        expect(connection.close).toHaveBeenCalledOnce();
+      });
+
+      it('should not wait again when it is closed a second time', async () => {
+        const { gracefulServer, consumerChannel, waitSpy } =
+          createGracefulServer();
+
+        await gracefulServer.close();
+        await gracefulServer.close();
+
+        expect(consumerChannel.cancel).toHaveBeenCalledOnce();
+        expect(waitSpy).toHaveBeenCalledOnce();
+      });
+
+      it('should let a close() that overlaps the first one wait as well, instead of closing under it', async () => {
+        const { gracefulServer, channel, waitSpy } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+
+        const first = gracefulServer.close();
+        const second = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(channel.close).not.toHaveBeenCalled();
+
+        finish();
+        await Promise.all([first, second]);
+      });
+
+      it('should not close the connection under the channel that an overlapping close() is closing', async () => {
+        const { gracefulServer, channel, connection, waitSpy } =
+          createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        let channelClosed!: () => void;
+        channel.close.mockReturnValue(
+          new Promise<void>(res => (channelClosed = res)),
+        );
+
+        const first = gracefulServer.close();
+        const second = gracefulServer.close();
+        finish();
+        await new Promise(resolve => setImmediate(resolve));
+
+        // amqplib settles the channel close on the broker's reply, which
+        // never arrives once the connection is closed
+        expect(channel.close).toHaveBeenCalledOnce();
+        expect(connection.close).not.toHaveBeenCalled();
+
+        channelClosed();
+        await Promise.all([first, second]);
+
+        expect(connection.close).toHaveBeenCalledOnce();
+      });
+
+      it('should wait for the handlers only once the broker has cancelled the consumer', async () => {
+        const { gracefulServer, consumerChannel, waitSpy } =
+          createGracefulServer();
+        let cancelled!: () => void;
+        consumerChannel.cancel.mockReturnValue(
+          new Promise<void>(res => (cancelled = res)),
+        );
+
+        const closing = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+
+        // Until then, the broker still delivers messages to the server
+        expect(waitSpy).not.toHaveBeenCalled();
+
+        cancelled();
+        await closing;
+
+        expect(waitSpy).toHaveBeenCalledOnce();
+      });
+
+      it('should close a server that never listened', async () => {
+        const neverListened = new ServerRMQ({ gracefulShutdown: true });
+
+        await expect(neverListened.close()).resolves.toBeUndefined();
+      });
     });
   });
 
@@ -497,7 +806,7 @@ describe('ServerRMQ', () => {
     });
     it('should negative acknowledge if message does not exists in handlers object and noAck option is false', async () => {
       untypedServer.noAck = false;
-      await server.handleMessage(msg, '');
+      await server.handleMessage(msg, channel);
       expect(channel.nack).toHaveBeenCalledWith(msg, false, false);
       expect(sendMessageStub).toHaveBeenCalledWith(
         {
@@ -736,7 +1045,7 @@ describe('ServerRMQ', () => {
         untypedServer.noAck = false;
         const message = withId('a'.repeat(257));
 
-        await expect(server.handleMessage(message, '')).rejects.toThrow(
+        await expect(server.handleMessage(message, channel)).rejects.toThrow(
           InvalidPacketIdException,
         );
         expect(channel.nack).toHaveBeenCalledWith(message, false, false);
@@ -942,7 +1251,7 @@ describe('ServerRMQ', () => {
       channel = {
         assertQueue: vi.fn(() => ({ queue })),
         prefetch: vi.fn(),
-        consume: vi.fn(),
+        consume: vi.fn(() => ({ consumerTag: 'amq.ctag-test' })),
         assertExchange: vi.fn(() => ({})),
         bindQueue: vi.fn(),
       };
@@ -993,6 +1302,38 @@ describe('ServerRMQ', () => {
       await server.setupChannel(channel, () => null);
       expect(channel.bindQueue).toHaveBeenCalledWith(namedQueue, exchange, '');
     });
+    it('should bind the queue to an exchange named after it when exchangeType is fanout and no exchange is set', async () => {
+      // the client publishes to an exchange named after the queue in this case
+      server['options' as any] = {
+        ...(server as any)['options'],
+        queue,
+        exchangeType: 'fanout',
+      };
+      await server.setupChannel(channel, () => null);
+      expect(channel.assertExchange).toHaveBeenCalledWith(
+        queue,
+        'fanout',
+        expect.any(Object),
+      );
+      expect(channel.bindQueue).toHaveBeenCalledWith(queue, queue, '');
+    });
+    it.each([
+      ['neither an exchange nor a queue is set', {}],
+      ['the exchange is set to undefined', { queue, exchange: undefined }],
+      ['the exchange is set to an empty string', { queue, exchange: '' }],
+    ])(
+      'should not assert an exchange when exchangeType is fanout and %s',
+      async (_, options) => {
+        server['options' as any] = {
+          ...(server as any)['options'],
+          ...options,
+          exchangeType: 'fanout',
+        };
+        await server.setupChannel(channel, () => null);
+        expect(channel.assertExchange).not.toHaveBeenCalled();
+        expect(channel.bindQueue).not.toHaveBeenCalled();
+      },
+    );
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await server.setupChannel(channel, () => null);
       expect(channel.prefetch).toHaveBeenCalledWith(
@@ -1041,6 +1382,75 @@ describe('ServerRMQ', () => {
       const resolve = vi.fn();
       await server.setupChannel(channel, resolve);
       expect(resolve).toHaveBeenCalled();
+    });
+    describe('and the server is closed with "gracefulShutdown"', () => {
+      beforeEach(() => {
+        untypedServer['options'].gracefulShutdown = true;
+        vi.spyOn(untypedServer, 'waitForHandlersInFlight').mockResolvedValue(
+          undefined,
+        );
+        channel.cancel = vi.fn().mockResolvedValue(undefined);
+      });
+
+      it('should not consume when it starts closing while the channel is set up', async () => {
+        let assertQueue!: () => void;
+        channel.assertQueue = vi.fn(
+          () => new Promise(res => (assertQueue = () => res({ queue }))),
+        );
+
+        // As the channel wrapper does on a reconnection
+        const settingUp = server.setupChannel(channel, () => null);
+        const closing = server.close();
+        assertQueue();
+        await settingUp;
+        await closing;
+
+        expect(channel.consume).not.toHaveBeenCalled();
+      });
+
+      it('should cancel the consumer under the tag the broker replied with', async () => {
+        await server.setupChannel(channel, () => null);
+
+        await server.close();
+
+        expect(channel.cancel).toHaveBeenCalledExactlyOnceWith('amq.ctag-test');
+      });
+
+      it('should cancel the consumer of the channel set up last, after a reconnection', async () => {
+        const restoredChannel = {
+          ...channel,
+          consume: vi.fn(() => ({ consumerTag: 'amq.ctag-restored' })),
+          cancel: vi.fn().mockResolvedValue(undefined),
+        };
+        await server.setupChannel(channel, () => null);
+        await server.setupChannel(restoredChannel, () => null);
+
+        await server.close();
+
+        expect(channel.cancel).not.toHaveBeenCalled();
+        expect(restoredChannel.cancel).toHaveBeenCalledExactlyOnceWith(
+          'amq.ctag-restored',
+        );
+      });
+
+      it('should not consume again when the broker cancels the consumer while it closes', async () => {
+        vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+        let finish!: () => void;
+        untypedServer.waitForHandlersInFlight.mockReturnValue(
+          new Promise<void>(res => (finish = res)),
+        );
+        await server.setupChannel(channel, () => null);
+        const [, onMessage] = channel.consume.mock.calls[0];
+
+        const closing = server.close();
+        await new Promise(resolve => setImmediate(resolve));
+        await onMessage(null);
+
+        expect(channel.consume).toHaveBeenCalledOnce();
+
+        finish();
+        await closing;
+      });
     });
   });
 
@@ -1204,17 +1614,19 @@ describe('ServerRMQ', () => {
     it('should negative acknowledge without retrying if key does not exists in handlers object and noAck option is false', async () => {
       const nack = vi.fn();
       const message = { pattern: 'no-exists', data };
+      const deliveryChannel = { nack };
       untypedServer.channel = {
-        nack,
+        nack: vi.fn(),
       };
       untypedServer.noAck = false;
       await server.handleEvent(
         channel,
         message,
-        new RmqContext([message, '', '']),
+        new RmqContext([message, deliveryChannel, '']),
       );
 
       expect(nack).toHaveBeenCalledWith(message, false, false);
+      expect(untypedServer.channel.nack).not.toHaveBeenCalled();
     });
 
     it('should not negative acknowledge if key does not exists in handlers object but noAck option is true', async () => {
@@ -1231,6 +1643,258 @@ describe('ServerRMQ', () => {
       );
 
       expect(nack).not.toHaveBeenCalledWith(message, false, false);
+    });
+  });
+
+  describe('when the wrapper reconnects while a delivery is in flight', () => {
+    const createChannel = () => ({
+      nack: vi.fn(),
+      ack: vi.fn(),
+      reject: vi.fn(),
+    });
+    const createRawMessage = (
+      payload: object,
+      extra: Record<string, unknown> = {},
+    ) => ({
+      content: Buffer.from(JSON.stringify(payload)),
+      properties: { correlationId: '1' },
+      fields: {},
+      ...extra,
+    });
+
+    let deliveryChannel: ReturnType<typeof createChannel>;
+    let wrapperChannel: ReturnType<typeof createChannel>;
+
+    beforeEach(() => {
+      deliveryChannel = createChannel();
+      wrapperChannel = createChannel();
+    });
+
+    const silenceLogs = () => {
+      vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+      vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+    };
+
+    const expectNackedOnDeliveryChannelOnly = (message: object) => {
+      expect(deliveryChannel.nack).toHaveBeenCalledWith(message, false, false);
+      expect(wrapperChannel.nack).not.toHaveBeenCalled();
+    };
+
+    it('should nack an unmatched event on the delivery channel after deserialize', async () => {
+      server = new ServerRMQ({ noAck: false });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = deliveryChannel;
+
+      let resume!: (packet: object) => void;
+      untypedServer.deserializer = {
+        deserialize: () =>
+          new Promise(resolve => {
+            resume = resolve;
+          }),
+      };
+
+      const message = createRawMessage({
+        pattern: 'unknown-event',
+        data: 'x',
+      });
+      const handling = server.handleMessage(message, deliveryChannel);
+
+      untypedServer.channel = wrapperChannel;
+      resume({ pattern: 'unknown-event', data: 'x' });
+      await handling;
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should nack an unmatched request on the delivery channel after deserialize', async () => {
+      server = new ServerRMQ({ noAck: false });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = deliveryChannel;
+      vi.spyOn(server, 'sendMessage').mockResolvedValue(undefined);
+
+      let resume!: (packet: object) => void;
+      untypedServer.deserializer = {
+        deserialize: () =>
+          new Promise(resolve => {
+            resume = resolve;
+          }),
+      };
+
+      const message = createRawMessage({
+        pattern: 'unknown-request',
+        data: 'x',
+        id: '3',
+      });
+      const handling = server.handleMessage(message, deliveryChannel);
+
+      untypedServer.channel = wrapperChannel;
+      resume({ pattern: 'unknown-request', data: 'x', id: '3' });
+      await handling;
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should nack an oversized message on the delivery channel', async () => {
+      server = new ServerRMQ({ noAck: false, maxMessageSize: 8 });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = wrapperChannel;
+      vi.spyOn(server, 'sendMessage').mockResolvedValue(undefined);
+
+      const message = createRawMessage({
+        pattern: 'test',
+        data: '123',
+        id: '3',
+      });
+      await server.handleMessage(message, deliveryChannel);
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should nack a dropped wildcard message on the delivery channel', async () => {
+      server = new ServerRMQ({
+        noAck: false,
+        wildcards: true,
+        queue: 'accounts',
+      });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = wrapperChannel;
+      untypedServer.messageHandlers = objectToMap({
+        'admin.purge': vi.fn() as any,
+        'public.*': vi.fn() as any,
+      });
+      untypedServer.initializeWildcardHandlersIfExist();
+
+      const message = createRawMessage(
+        { pattern: 'admin.purge', data: 'account-4', id: '3' },
+        { fields: { exchange: 'accounts', routingKey: 'public.info' } },
+      );
+      await server.handleMessage(message, deliveryChannel);
+
+      expectNackedOnDeliveryChannelOnly(message);
+    });
+
+    it('should not throw when the delivery channel has closed', async () => {
+      server = new ServerRMQ({ noAck: false });
+      untypedServer = server as any;
+      silenceLogs();
+      untypedServer.channel = wrapperChannel;
+      const closedError = new Error('Channel closed');
+      const closedChannel = {
+        nack: vi.fn(() => {
+          throw closedError;
+        }),
+      };
+      const logError = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      vi.spyOn(untypedServer.logger, 'warn').mockImplementation(() => {});
+
+      await expect(
+        server.handleEvent(
+          'missing',
+          { pattern: 'missing', data: 'x' },
+          new RmqContext([{ id: 1 }, closedChannel, 'missing']),
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(closedChannel.nack).toHaveBeenCalled();
+      expect(wrapperChannel.nack).not.toHaveBeenCalled();
+      expect(logError).toHaveBeenCalledWith(closedError);
+    });
+  });
+
+  describe('with "nackOnInternalError"', () => {
+    const pattern = 'test';
+    const filter = new BaseRpcExceptionFilter();
+    // What the exception filters answer a handler failure with
+    const internalErrorReply = () =>
+      filter.catch(new Error('failed'), {} as any);
+    const rpcErrorReply = () =>
+      filter.catch(new RpcException('Internal server error'), {} as any);
+    // The server wraps the methods of the channel, so the spies stay apart
+    let spies: Record<'ack' | 'nack' | 'reject', ReturnType<typeof vi.fn>>;
+    let channel: Record<string, (...args: unknown[]) => unknown>;
+    const message = (packet: object = { pattern, data: 'test' }) => ({
+      content: { toString: () => JSON.stringify(packet) },
+      fields: { deliveryTag: 1 },
+      properties: { correlationId: '1', replyTo: 'reply-queue' },
+    });
+    const createServer = (options: object = {}) => {
+      server = new ServerRMQ({
+        noAck: false,
+        nackOnInternalError: true,
+        ...options,
+      });
+      untypedServer = server as any;
+      untypedServer.channel = { nack: vi.fn() };
+      vi.spyOn(server, 'sendMessage').mockResolvedValue(undefined);
+    };
+    const handle = async (
+      handler: (ctx: RmqContext) => unknown,
+      msg = message(),
+    ) => {
+      server.addHandler(pattern, (async (_: unknown, ctx: RmqContext) =>
+        handler(ctx)) as any);
+      await server.handleMessage(msg, channel).catch(() => {});
+      await new Promise(resolve => setImmediate(resolve));
+    };
+
+    beforeEach(() => {
+      vi.spyOn(BaseRpcExceptionFilter['logger'], 'error').mockImplementation(
+        () => {},
+      );
+      spies = { ack: vi.fn(), nack: vi.fn(), reject: vi.fn() };
+      channel = {
+        ack: (...args) => spies.ack(...args),
+        nack: (...args) => spies.nack(...args),
+        reject: (...args) => spies.reject(...args),
+      };
+      createServer();
+    });
+
+    it('should nack, without requeue, an event or a request that fails with an internal error', async () => {
+      const event = message();
+      await handle(() => internalErrorReply(), event);
+      expect(spies.nack).toHaveBeenLastCalledWith(event, false, false);
+
+      const request = message({ pattern, data: 'test', id: '1' });
+      await handle(() => internalErrorReply(), request);
+      expect(spies.nack).toHaveBeenLastCalledWith(request, false, false);
+
+      // An exception filter that throws
+      await handle(() => Promise.reject(new Error('filter failed')));
+      expect(spies.nack).toHaveBeenCalledTimes(3);
+    });
+    it('should not nack a message that fails with an RpcException, whatever its message', async () => {
+      await handle(() => rpcErrorReply());
+      await handle(() => Promise.reject(new RpcException('not found')));
+      expect(spies.nack).not.toHaveBeenCalled();
+    });
+    it('should not nack a message acknowledged already, also in "finalize" after the error', async () => {
+      await handle(ctx => {
+        ctx.getChannelRef().ack(ctx.getMessage());
+        return internalErrorReply();
+      });
+      await handle(ctx =>
+        internalErrorReply().pipe(
+          finalize(() => ctx.getChannelRef().ack(ctx.getMessage())),
+        ),
+      );
+      expect(spies.ack).toHaveBeenCalledTimes(2);
+      expect(spies.nack).not.toHaveBeenCalled();
+    });
+    it('should leave the channel and the message alone without the option or with "noAck"', async () => {
+      const { ack } = channel;
+      for (const options of [{ nackOnInternalError: false }, { noAck: true }]) {
+        createServer(options);
+        await handle(() => internalErrorReply());
+      }
+      expect(spies.nack).not.toHaveBeenCalled();
+      expect(channel.ack).toBe(ack);
     });
   });
 

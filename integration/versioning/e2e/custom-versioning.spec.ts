@@ -229,6 +229,44 @@ describe('Custom Versioning', () => {
       });
     });
 
+    describe('GET /multiple-neutral', () => {
+      it('V1', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/foo.v1+json',
+          })
+          .expect(404);
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/foo.v2+json',
+          })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/json',
+          })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it('No Header', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+    });
+
     describe('GET /override', () => {
       it('V1', () => {
         return request(app.getHttpServer())

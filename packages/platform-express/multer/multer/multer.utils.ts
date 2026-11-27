@@ -145,17 +145,24 @@ function passErrorToCallback(fileFilter: FileFilter): FileFilter {
   };
 }
 
+function resolveLimit(value: number | undefined, defaultValue: number): number {
+  return value == null || isNaN(value) ? defaultValue : value;
+}
+
 function withDefaultLimits(
   limits: MulterLimits | null | undefined,
 ): MulterLimits {
   return {
     ...limits,
-    fieldNestingDepth:
-      limits?.fieldNestingDepth ?? DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth,
-    fieldArrayIndexLimit:
-      limits?.fieldArrayIndexLimit ??
+    fieldNestingDepth: resolveLimit(
+      limits?.fieldNestingDepth,
+      DEFAULT_FIELD_NAME_LIMITS.fieldNestingDepth,
+    ),
+    fieldArrayIndexLimit: resolveLimit(
+      limits?.fieldArrayIndexLimit,
       DEFAULT_FIELD_NAME_LIMITS.fieldArrayIndexLimit,
-    parts: limits?.parts ?? DEFAULT_PARTS_LIMIT,
+    ),
+    parts: resolveLimit(limits?.parts, DEFAULT_PARTS_LIMIT),
   };
 }
 
@@ -235,6 +242,86 @@ export function closeArrayGaps(store: object): void {
       }
     }
   }
+}
+
+/**
+ * Fails a multipart request whose field names put a `__proto__` key, or a
+ * `constructor.prototype` path, in `req.body` (e.g. `__proto__[x]` or
+ * `constructor[prototype][x]`), as the NodeAdapter's JSON and urlencoded
+ * parsers do by default: a route handler that copies such a body onto
+ * another object (`Object.assign()`, a deep merge) would change that
+ * object's prototype. multer has no hook to refuse a field name before it
+ * appends it, so the body is checked once multer is done, and the files
+ * multer stored for the request are removed first.
+ */
+export async function rejectPrototypePoisoning(
+  storage: any,
+  req: any,
+): Promise<void> {
+  const body = req?.body;
+  // multer gives a multipart request a body without a prototype, and leaves
+  // any other body (checked by its own parser) alone.
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    Object.getPrototypeOf(body) ||
+    !hasPrototypeKey(body)
+  ) {
+    return;
+  }
+  await removeStoredFiles(storage, req);
+  throw new BadRequestException(multerExceptions.INVALID_FIELD_NAME);
+}
+
+/**
+ * Whether the store holds a `__proto__` key, or a `constructor` one whose
+ * value has a `prototype` key, at any depth: the two shapes that set a
+ * prototype when the body is copied onto another object, as
+ * `Object.assign()` copies an own `__proto__` key through the setter of
+ * `Object.prototype`. The same shapes fail for platform-node, which scans
+ * with `secure-json-parse`.
+ */
+function hasPrototypeKey(store: object): boolean {
+  // Not recursive, as `fieldNestingDepth` may be lifted.
+  const pending: object[] = [store];
+  while (pending.length > 0) {
+    const container = pending.pop()! as any;
+    if (Object.hasOwn(container, '__proto__')) {
+      return true;
+    }
+    if (
+      Object.hasOwn(container, 'constructor') &&
+      typeof container.constructor === 'object' &&
+      container.constructor !== null &&
+      Object.hasOwn(container.constructor, 'prototype')
+    ) {
+      return true;
+    }
+    // The values rather than the indexes up to `length`, so that the work
+    // depends on the number of values: `fieldArrayIndexLimit` may be lifted.
+    for (const value of Object.values(container)) {
+      if (typeof value === 'object' && value !== null) {
+        pending.push(value as object);
+      }
+    }
+  }
+  return false;
+}
+
+function removeStoredFiles(storage: any, req: any): Promise<void> {
+  return Promise.all(
+    storedFiles(req).map(
+      file =>
+        new Promise<void>(resolve => {
+          try {
+            storage._removeFile(req, file, () => resolve());
+          } catch {
+            // The request fails anyway.
+            resolve();
+          }
+        }),
+    ),
+  ).then(() => undefined);
 }
 
 function onResponseFinished(res: any, callback: () => void): () => void {

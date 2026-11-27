@@ -62,6 +62,32 @@ describe('ServerNats', () => {
       await server.listen(callbackSpy as any);
       await vi.waitFor(() => expect(logErrorSpy).toHaveBeenCalledWith(error));
     });
+    it('should close the created client and skip startup when closed before createNatsClient resolves', async () => {
+      let resolveClient!: (value: any) => void;
+      const pendingClient = {
+        close: vi.fn().mockResolvedValue(undefined),
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {},
+        }),
+      };
+      vi.spyOn(server, 'createNatsClient').mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+      const startSpy = vi.spyOn(server, 'start').mockImplementation(() => {});
+
+      const listenPromise = server.listen(callbackSpy as any);
+      await server.close();
+      resolveClient(pendingClient);
+      await listenPromise;
+
+      expect(pendingClient.close).toHaveBeenCalledOnce();
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(untypedServer.natsClient).toBeUndefined();
+      expect(callbackSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
   });
   describe('close', () => {
     const natsClient = { close: vi.fn() };
@@ -74,15 +100,15 @@ describe('ServerNats', () => {
     });
 
     describe('when "gracefulShutdown" is true', () => {
-      const waitForGracePeriod = vi.fn();
-      const subscriptions = [
-        { unsubscribe: vi.fn() },
-        { unsubscribe: vi.fn() },
-      ];
+      let subscriptions: Array<{ unsubscribe: ReturnType<typeof vi.fn> }>;
       beforeEach(() => {
-        (server as any).subscriptions = subscriptions;
-        (server as any).waitForGracePeriod = waitForGracePeriod;
-        (server as any).options.gracefulShutdown = true;
+        natsClient.close.mockClear();
+        subscriptions = [{ unsubscribe: vi.fn() }, { unsubscribe: vi.fn() }];
+        untypedServer.subscriptions = subscriptions;
+        untypedServer.options.gracefulShutdown = true;
+      });
+      afterEach(() => {
+        vi.useRealTimers();
       });
 
       it('should unsubscribe all subscriptions', async () => {
@@ -90,24 +116,107 @@ describe('ServerNats', () => {
         for (const subscription of subscriptions) {
           expect(subscription.unsubscribe).toHaveBeenCalledOnce();
         }
+        expect(untypedServer.subscriptions).toEqual([]);
       });
 
-      it('should call "waitForGracePeriod"', async () => {
+      it('should unsubscribe, wait for the handlers in flight, then close the connection', async () => {
+        const waitSpy = vi
+          .spyOn(untypedServer, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+
         await server.close();
-        expect(waitForGracePeriod).toHaveBeenCalled();
+
+        const [unsubscribed] =
+          subscriptions[1].unsubscribe.mock.invocationCallOrder;
+        const [waited] = waitSpy.mock.invocationCallOrder;
+        const [closed] = natsClient.close.mock.invocationCallOrder;
+        expect(unsubscribed).toBeLessThan(waited);
+        expect(waited).toBeLessThan(closed);
+      });
+
+      it('should wait for "gracePeriod" at most', async () => {
+        const waitSpy = vi
+          .spyOn(untypedServer, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+        untypedServer.options.gracePeriod = 500;
+
+        await server.close();
+
+        expect(waitSpy).toHaveBeenCalledExactlyOnceWith(500);
+      });
+
+      it('should close without waiting when no handler is in flight', async () => {
+        // With fake timers a fixed wait would never end
+        vi.useFakeTimers();
+        untypedServer.options.gracePeriod = 60_000;
+
+        await server.close();
+
+        expect(natsClient.close).toHaveBeenCalledOnce();
+      });
+
+      it('should close as soon as the handler in flight is done', async () => {
+        vi.useFakeTimers();
+        untypedServer.options.gracePeriod = 60_000;
+        let finish!: () => void;
+        untypedServer.messageHandlers = new Map([
+          [
+            'slow',
+            Object.assign(() => new Promise<void>(res => (finish = res)), {
+              isEventHandler: true,
+            }),
+          ],
+        ]);
+        void server.handleEvent(
+          'slow',
+          { pattern: 'slow', data: null },
+          new BaseRpcContext([]),
+        );
+
+        const closing = server.close();
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(natsClient.close).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+        expect(natsClient.close).toHaveBeenCalledOnce();
+      });
+
+      it('should close after "gracePeriod" when a handler is still running', async () => {
+        vi.useFakeTimers();
+        untypedServer.options.gracePeriod = 5000;
+        untypedServer.messageHandlers = new Map([
+          [
+            'stuck',
+            Object.assign(() => new Promise<void>(() => {}), {
+              isEventHandler: true,
+            }),
+          ],
+        ]);
+        void server.handleEvent(
+          'stuck',
+          { pattern: 'stuck', data: null },
+          new BaseRpcContext([]),
+        );
+
+        const closing = server.close();
+        await vi.advanceTimersByTimeAsync(4999);
+        expect(natsClient.close).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        await closing;
+        expect(natsClient.close).toHaveBeenCalledOnce();
       });
     });
 
     describe('when "gracefulShutdown" is false', () => {
-      const waitForGracePeriod = vi.fn();
       const subscriptions = [
         { unsubscribe: vi.fn() },
         { unsubscribe: vi.fn() },
       ];
       beforeEach(() => {
-        (server as any).subscriptions = subscriptions;
-        (server as any).waitForGracePeriod = waitForGracePeriod;
-        (server as any).options.gracefulShutdown = false;
+        untypedServer.subscriptions = subscriptions;
+        untypedServer.options.gracefulShutdown = false;
       });
       it('should not unsubscribe all subscriptions', async () => {
         await server.close();
@@ -116,9 +225,12 @@ describe('ServerNats', () => {
         }
       });
 
-      it('should not call "waitForGracePeriod"', async () => {
+      it('should not wait for the handlers in flight', async () => {
+        const waitSpy = vi.spyOn(untypedServer, 'waitForHandlersInFlight');
+
         await server.close();
-        expect(waitForGracePeriod).not.toHaveBeenCalled();
+
+        expect(waitSpy).not.toHaveBeenCalled();
       });
     });
   });
@@ -690,6 +802,27 @@ describe('ServerNats', () => {
       );
     });
     describe('when the response is a record', () => {
+      const payload = JSON.stringify({
+        response: { value: 'test' },
+        isDisposed: true,
+        id,
+      });
+
+      beforeEach(async () => {
+        vi.spyOn(server as any, 'loadPackage').mockResolvedValue({
+          headers: createHeaders,
+          connect: vi.fn().mockResolvedValue({}),
+        });
+        await server.createNatsClient();
+      });
+
+      function replyHeaders(respond: ReturnType<typeof vi.fn>) {
+        expect(respond).toHaveBeenCalledOnce();
+        const [body, options] = respond.mock.calls[0];
+        expect(body).toBe(payload);
+        return options.headers;
+      }
+
       it(`should respond with the record data as "response" and the record headers`, () => {
         const natsMsg = {
           data: new Uint8Array(),
@@ -699,21 +832,18 @@ describe('ServerNats', () => {
           reply: 'test',
         } as NatsMsg;
         const publisher = server.getPublisher(natsMsg, id, context);
-        const headers = { key: 'value' };
+        const headers = { key: 'value', 'x-version': '1.0.0' };
         const record = new NatsRecordBuilder({ value: 'test' })
           .setHeaders(headers)
           .build();
 
         publisher({ response: record, isDisposed: true });
 
-        expect(natsMsg.respond).toHaveBeenCalledWith(
-          JSON.stringify({
-            response: { value: 'test' },
-            isDisposed: true,
-            id,
-          }),
-          { headers },
-        );
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(() => sent.encode()).not.toThrow();
+        expect(sent.get('key')).toBe('value');
+        expect(sent.get('x-version')).toBe('1.0.0');
+        // The caller's record keeps the object it was given.
         expect(record.headers).toBe(headers);
       });
       it(`should respond with the record sent through "send" unwrapped, with its headers, once disposed`, async () => {
@@ -734,14 +864,88 @@ describe('ServerNats', () => {
         server.send(of(record), publisher);
         await flush();
 
-        expect(natsMsg.respond).toHaveBeenCalledExactlyOnceWith(
-          JSON.stringify({
-            response: { value: 'test' },
-            isDisposed: true,
-            id,
-          }),
-          { headers },
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(sent.get('key')).toBe('value');
+        expect(() => sent.encode()).not.toThrow();
+      });
+      it('should encode an empty plain header object', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders({})
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(sent.keys()).toEqual([]);
+        expect(() => sent.encode()).not.toThrow();
+      });
+      it('should pass a MsgHdrs through, repeated values included', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const headers = createHeaders();
+        headers.append('x-tag', 'a');
+        headers.append('x-tag', 'b');
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders(headers)
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        const sent = replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>);
+        expect(sent).toBe(headers);
+        expect(sent.values('x-tag')).toEqual(['a', 'b']);
+      });
+      it('should pass an object that already has encode() through', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const headers = { encode: () => new Uint8Array([1]) };
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders(headers)
+          .build();
+
+        publisher({ response: record, isDisposed: true });
+
+        expect(replyHeaders(natsMsg.respond as ReturnType<typeof vi.fn>)).toBe(
+          headers,
         );
+      });
+      it('should not publish a plain header whose value is not a string', () => {
+        const natsMsg = {
+          data: new Uint8Array(),
+          subject: '',
+          sid: +id,
+          respond: vi.fn(),
+          reply: 'test',
+        } as NatsMsg;
+        const publisher = server.getPublisher(natsMsg, id, context);
+        const record = new NatsRecordBuilder({ value: 'test' })
+          .setHeaders({ 'x-n': 1 })
+          .build();
+
+        expect(() =>
+          publisher({ response: record, isDisposed: true }),
+        ).toThrow();
+        expect(natsMsg.respond).not.toHaveBeenCalled();
       });
     });
     it(`should not call "publish" when replyTo NOT provided`, () => {

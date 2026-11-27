@@ -65,7 +65,8 @@ import { AbstractHttpAdapter } from '@nestjs/core';
 import { LegacyRouteConverter } from '@nestjs/core/internal';
 import { getMediaTypeVersion } from './utils/get-media-type-version.util.js';
 import { onResponseClose } from './utils/on-response-close.util.js';
-const { kErrorHandler, kReplySerializer, kRouteContext } = fastifySymbols;
+const { kErrorHandler, kReply, kReplySerializer, kRouteContext } =
+  fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
 import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
@@ -80,6 +81,7 @@ import {
   FastifyViewOptions,
 } from '../interfaces/external/index.js';
 import {
+  type NestFastifyApplication,
   NestFastifyBodyParserOptions,
   NestFastifyListenOptions,
 } from '../interfaces/index.js';
@@ -313,6 +315,7 @@ export class FastifyAdapter<
   TInstance extends FastifyInstance<TServer, TRawRequest, TRawResponse> =
     FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
+  declare protected readonly __nestApplicationType: NestFastifyApplication<TServer>;
   protected readonly logger = new Logger(FastifyAdapter.name);
   declare protected readonly instance: TInstance;
   protected _pathPrefix?: string;
@@ -421,7 +424,11 @@ export class FastifyAdapter<
       // Custom Versioning Handler
       else if (this.versioningOptions?.type === VersioningType.CUSTOM) {
         try {
-          return this.versioningOptions.extractor(req);
+          const version = this.versioningOptions.extractor(req);
+          return isUndefined(version) ||
+            (Array.isArray(version) && !version.length)
+            ? VERSION_NEUTRAL // No version was supplied
+            : version;
         } catch (err) {
           // Fastify routes the request, and so calls the extractor, before
           // anything could catch the exception. It is passed to the error
@@ -504,99 +511,31 @@ export class FastifyAdapter<
       this.multipartOptions = multipart === true ? {} : { ...multipart };
     }
 
+    // One hook for everything that has to run before Nest middleware, in
+    // this order: the `setOnRequestHook()` hook, the `503` while shutting
+    // down, the CORS hook, the security hook, the not-found handling of
+    // request targets middleware cannot match, and the exception of custom
+    // versioning. Fastify runs a hook per entry, so one hook costs less than
+    // six on every request, and the steps that have nothing to do stay inline.
+    // Each step stops the chain like a separate hook would: on an error, or
+    // once the reply was sent.
     this.instance.addHook('onRequest', (request, reply, done) => {
       if (this.onRequestHook) {
         this.runLifecycleHook(
           this.onRequestHook,
           request as TRequest,
           reply as TReply,
-          done,
+          (err?: Error) => {
+            if (err) {
+              done(err);
+            } else if (!reply.sent) {
+              this.runRequestSteps(request as TRequest, reply as TReply, done);
+            }
+          },
         );
       } else {
-        done();
+        this.runRequestSteps(request as TRequest, reply as TReply, done);
       }
-    });
-
-    // Fastify's own `return503OnClosing` only applies once `close()` runs,
-    // which is after the shutdown hooks. Added here rather than in
-    // `initHttpServer()` so that it runs before Nest middleware:
-    // `NestFactory.create()` calls `init()`, which registers middie, first.
-    // Answers with the same body as Fastify's own 503, so that clients get
-    // one response shape for the whole shutdown.
-    this.instance.addHook('onRequest', (request, reply, done) => {
-      if (this.return503OnClosing && this.isShuttingDown) {
-        if (request.raw.httpVersionMajor !== 2) {
-          reply.header('Connection', 'close');
-        }
-        reply.code(503).send({
-          error: 'Service Unavailable',
-          message: 'Service Unavailable',
-          statusCode: 503,
-        });
-      } else {
-        done();
-      }
-    });
-
-    // The request hook of `app.enableCors()` (see `enableCors()`). Added here
-    // for the same reason as the hook above: it must run before Nest
-    // middleware, so that a preflight is answered before them and the
-    // responses they end carry the CORS headers, as on Express. Before the
-    // security hook, so that its responses carry them too.
-    this.instance.addHook('onRequest', (request, reply, done) => {
-      if (!this.corsHook) {
-        return done();
-      }
-      this.corsHook(request as TRequest, reply as TReply, (err?: Error) => {
-        this.copyCorsHeadersToRaw(reply as TReply);
-        done(err);
-      });
-    });
-
-    // The request hook of `app.enableCsrfProtection()` and
-    // `app.useSecurityHeaders()` (see `registerSecurityHook()`). Added here
-    // for the same reason as the hook above: it must run before Nest
-    // middleware, and `NestFactory.create()` registers middie before either
-    // method can be called. After the `503` hook, as on Express.
-    this.instance.addHook('onRequest', (request, reply, done) => {
-      if (this.securityHook) {
-        done(
-          this.securityHook(request as TRequest, reply.raw) as
-            FastifyError | undefined,
-        );
-      } else {
-        done();
-      }
-    });
-
-    // Passes requests whose target middleware cannot be matched against to
-    // the not-found handler (see `isRoutableRequestTarget()`). Added here,
-    // like the hooks above, so that it runs before Nest middleware, and
-    // after the security hook, so that the `404` carries its headers, as on
-    // Express. A request the router did not match is already on its way to
-    // the not-found handler.
-    this.instance.addHook('onRequest', (request, reply, done) => {
-      if (request.is404 || this.isRoutableRequestTarget(request.raw.url)) {
-        done();
-      } else {
-        reply.callNotFound();
-      }
-    });
-
-    // Passes an exception thrown by the extractor of custom versioning while
-    // Fastify routed the request (see `versionConstraint`) to the error
-    // handler, for matched and unmatched routes alike. Added here, like the
-    // hooks above, so that it runs before Nest middleware.
-    this.instance.addHook('onRequest', (request, _reply, done) => {
-      if (!this.versionExtractorErrors.has(request.raw)) {
-        done();
-        return;
-      }
-      const err = this.versionExtractorErrors.get(request.raw);
-      this.versionExtractorErrors.delete(request.raw);
-      done(
-        (err as Error) || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR(),
-      );
     });
 
     this.instance.addHook('onResponse', (request, reply, done) => {
@@ -611,6 +550,97 @@ export class FastifyAdapter<
         done();
       }
     });
+  }
+
+  /**
+   * The steps of the constructor's `onRequest` hook after the
+   * `setOnRequestHook()` hook. Never throws: an exception goes to `done()`,
+   * as Fastify does for a hook that throws.
+   */
+  private runRequestSteps(
+    request: TRequest,
+    reply: TReply,
+    done: (err?: Error) => void,
+  ): void {
+    // Fastify's own `return503OnClosing` only applies once `close()` runs,
+    // which is after the shutdown hooks. Answers with the same body as
+    // Fastify's own 503, so that clients get one response shape for the
+    // whole shutdown.
+    if (this.return503OnClosing && this.isShuttingDown) {
+      try {
+        if (request.raw.httpVersionMajor !== 2) {
+          reply.header('Connection', 'close');
+        }
+        reply.code(503).send({
+          error: 'Service Unavailable',
+          message: 'Service Unavailable',
+          statusCode: 503,
+        });
+      } catch (err) {
+        done(err as Error);
+      }
+      return;
+    }
+    // The request hook of `app.enableCors()` (see `enableCors()`). Before the
+    // security hook, so that its responses carry the CORS headers too, and a
+    // preflight is answered before middleware, as on Express.
+    if (this.corsHook) {
+      try {
+        this.corsHook(request, reply, (err?: Error) => {
+          this.copyCorsHeadersToRaw(reply);
+          if (err) {
+            done(err);
+          } else if (!reply.sent) {
+            this.runLateRequestSteps(request, reply, done);
+          }
+        });
+      } catch (err) {
+        done(err as Error);
+      }
+      return;
+    }
+    this.runLateRequestSteps(request, reply, done);
+  }
+
+  private runLateRequestSteps(
+    request: TRequest,
+    reply: TReply,
+    done: (err?: Error) => void,
+  ): void {
+    let error: Error | undefined;
+    try {
+      // The request hook of `app.enableCsrfProtection()` and
+      // `app.useSecurityHeaders()` (see `registerSecurityHook()`). After the
+      // `503` step, as on Express.
+      if (this.securityHook) {
+        error = this.securityHook(request, reply.raw) as
+          FastifyError | undefined;
+        if (error || reply.sent) {
+          return done(error);
+        }
+      }
+      // Passes requests whose target middleware cannot be matched against to
+      // the not-found handler (see `isRoutableRequestTarget()`), after the
+      // security hook so that the `404` carries its headers, as on Express.
+      // A request the router did not match is already on its way to the
+      // not-found handler.
+      if (!request.is404 && !this.isRoutableRequestTarget(request.raw.url)) {
+        reply.callNotFound();
+        return;
+      }
+      // Passes an exception thrown by the extractor of custom versioning while
+      // Fastify routed the request (see `versionConstraint`) to the error
+      // handler, for matched and unmatched routes alike.
+      if (this.versionExtractorErrors.has(request.raw)) {
+        const err = this.versionExtractorErrors.get(request.raw);
+        this.versionExtractorErrors.delete(request.raw);
+        error =
+          (err as Error) || new fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR();
+      }
+    } catch (err) {
+      error = err as Error;
+    }
+    done(error);
   }
 
   private runLifecycleHook(
@@ -692,11 +722,19 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(
+    port: string | number,
+    hostname: string,
+    backlog: number,
+    callback?: () => void,
+  ): void;
+  public listen(
     listenOptions: string | number | NestFastifyListenOptions,
     ...args: any[]
   ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
-    const callback = isFirstArgTypeofFunction ? args[0] : args[1];
+    // The callback comes last, after the host and the backlog if any
+    const lastArg = args[args.length - 1];
+    const callback = isFunction(lastArg) ? lastArg : undefined;
 
     if (typeof listenOptions === 'string' && Number.isNaN(+listenOptions)) {
       // A string that is not a number is a Unix socket path or a named pipe.
@@ -721,6 +759,9 @@ export class FastifyAdapter<
     }
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
+      if (typeof args[1] === 'number') {
+        options.backlog = args[1];
+      }
     }
     if (options.port !== undefined && !this.isValidPort(options.port)) {
       // Fastify calls `server.listen()` from its ready callback, where the
@@ -851,6 +892,26 @@ export class FastifyAdapter<
     if (!isNil(statusCode)) {
       fastifyReply.status(statusCode);
     }
+    // Fastify drops the body of a 204, but sends the one of a 205, which must
+    // have none (RFC 9110). It gets no body or Content-Type and a zero
+    // Content-Length instead, as in the Express and Node adapters. On a 304,
+    // Node.js discards the body, but Fastify still reads the whole stream of
+    // a StreamableFile before it ends the response, so it is destroyed too.
+    if (
+      fastifyReply.statusCode === HttpStatus.RESET_CONTENT ||
+      (fastifyReply.statusCode === HttpStatus.NOT_MODIFIED &&
+        body instanceof StreamableFile)
+    ) {
+      if (body instanceof StreamableFile) {
+        const stream = body.getStream();
+        if (isFunction(stream?.destroy)) {
+          stream.destroy();
+        }
+      }
+      fastifyReply.removeHeader('Content-Type');
+      fastifyReply.removeHeader('Transfer-Encoding');
+      return fastifyReply.send();
+    }
     if (body instanceof StreamableFile) {
       const file = body;
       const stream = file.getStream();
@@ -954,16 +1015,39 @@ export class FastifyAdapter<
   }
 
   public render(
-    response: TReply & { view: Function },
+    response: TRawResponse | (TReply & { view: Function }),
     view: string,
     options: any,
   ) {
-    return response && response.view(view, options);
+    if (!response) {
+      return response;
+    }
+    if (!this.isNativeResponse(response)) {
+      const reply = response as TReply & { view: Function };
+      return reply.view(view, options);
+    }
+    // The reply created for a raw response is a plain Fastify reply, without
+    // the "view" decorator @fastify/view adds to the replies of the instance,
+    // so that decorator is called on it: rendering, the Content-Type and
+    // sending the page or the error stay those of the plugin
+    const instance = this.instance as TInstance & Record<symbol, any>;
+    const fastifyReply = this.createReplyForRawResponse(response);
+    // Its renderers read the route options of the request, and a raw
+    // response has no route
+    (fastifyReply.request as { routeOptions?: object }).routeOptions = {};
+    return instance[kReply].prototype.view.call(fastifyReply, view, options);
   }
 
-  public redirect(response: TReply, statusCode: number, url: string) {
+  public redirect(
+    response: TRawResponse | TReply,
+    statusCode: number,
+    url: string,
+  ) {
+    const fastifyReply: TReply = this.isNativeResponse(response)
+      ? this.createReplyForRawResponse(response)
+      : response;
     const code = statusCode ?? HttpStatus.FOUND;
-    return response.status(code).redirect(url);
+    return fastifyReply.status(code).redirect(url);
   }
 
   public setErrorHandler(handler: Parameters<TInstance['setErrorHandler']>[0]) {
@@ -1422,9 +1506,17 @@ export class FastifyAdapter<
           hasEndOfStringCharacter,
         );
 
+        // The middleware is added to the root and to the contexts created
+        // since middie was registered (see below), and @fastify/middie
+        // >= 9.3.9 also adds the one of the root to those contexts, so two
+        // copies may see the same request. Only the first one runs it.
+        const handledRequests = new WeakSet<object>();
         const createMiddleware =
           (stripsPath: boolean) =>
           (req: any, res: any, next: (err?: Error) => void) => {
+            if (handledRequests.has(req)) {
+              return next();
+            }
             const queryParamsIndex = req.originalUrl.indexOf('?');
             let pathname =
               queryParamsIndex >= 0
@@ -1447,6 +1539,7 @@ export class FastifyAdapter<
                     : '/';
               }
             }
+            handledRequests.add(req);
             this.runMiddleware(callback, req, res, next);
           };
 
@@ -1652,7 +1745,10 @@ export class FastifyAdapter<
   public mapException(error: unknown): unknown {
     // A 5xx FastifyError (e.g. FST_ERR_HANDLER_TIMEOUT) is a server fault: it
     // stays unmapped, so the built-in filter logs it, like an http-errors one.
-    if (this.isHttpFastifyError(error) && error.statusCode < 500) {
+    if (
+      (this.isHttpFastifyError(error) || isRequestAbortedError(error)) &&
+      error.statusCode < 500
+    ) {
       return new HttpException(error.message, error.statusCode, {
         cause: error,
       });
@@ -2188,11 +2284,13 @@ export class FastifyAdapter<
    * middleware paths can match.
    *
    * Node.js accepts other targets too (e.g. "GET *users HTTP/1.1").
-   * "find-my-way" routes those as if their first character were the leading
-   * "/" ("*users" is served by the "/users" route), while no middleware path
-   * matches them, so the route would run without its middleware. They are
-   * answered by the not-found handler instead, as with the ExpressAdapter,
-   * whose router never matches a path that does not start with "/".
+   * "find-my-way" < 9.10.2, which the router of a Fastify instance passed to
+   * the adapter may still be, routes those as if their first character were
+   * the leading "/" ("*users" is served by the "/users" route), while no
+   * middleware path matches them, so the route would run without its
+   * middleware. They are answered by the not-found handler instead, as with
+   * the ExpressAdapter, whose router never matches a path that does not start
+   * with "/". Later versions reject them (400) before any hook runs.
    *
    * That includes the asterisk-form "OPTIONS *" (RFC 9112, section 3.2.4),
    * which asks about the server as a whole rather than about a resource:
@@ -2255,5 +2353,19 @@ function isHttpError(
     typeof (err as any).expose === 'boolean' &&
     typeof (err as any).statusCode === 'number' &&
     (err as any).status === (err as any).statusCode
+  );
+}
+
+/** Node.js's error for a client that disconnects mid-body. */
+function isRequestAbortedError(
+  err: unknown,
+): err is Error & { statusCode: number } {
+  return (
+    err instanceof Error &&
+    err.message === 'aborted' &&
+    'code' in err &&
+    err.code === 'ECONNRESET' &&
+    'statusCode' in err &&
+    typeof err.statusCode === 'number'
   );
 }

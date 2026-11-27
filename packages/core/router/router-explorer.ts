@@ -11,6 +11,7 @@ import {
   VERSIONED_ROUTE_MAPPED_MESSAGE,
 } from '../helpers/messages.js';
 import { RouterMethodFactory } from '../helpers/router-method-factory.js';
+import { withoutStackTrace } from '../helpers/without-stack-trace.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
 import { Injector } from '../injector/injector.js';
@@ -208,19 +209,20 @@ export class RouterExplorer {
       routePathMetadata.versioningOptions;
     let routeHandler = this.applyHostFilter(host, proxy);
 
-    paths.forEach(path => {
-      if (
-        isVersioned &&
-        routePathMetadata.versioningOptions!.type !== VersioningType.URI
-      ) {
-        // All versioning (except for URI Versioning) is done via the "Version Filter"
-        routeHandler = this.applyVersionFilter(
-          router,
-          routePathMetadata,
-          routeHandler,
-        );
-      }
+    if (
+      paths.length > 0 &&
+      isVersioned &&
+      routePathMetadata.versioningOptions!.type !== VersioningType.URI
+    ) {
+      // All versioning (except for URI Versioning) is done via the "Version Filter"
+      routeHandler = this.applyVersionFilter(
+        router,
+        routePathMetadata,
+        routeHandler,
+      );
+    }
 
+    paths.forEach(path => {
       routePathMetadata.methodPath = path;
       const pathsToRegister = this.routePathFactory.create(
         routePathMetadata,
@@ -247,24 +249,15 @@ export class RouterExplorer {
         };
 
         if (!deferRegistration) {
-          this.copyMetadataToCallback(targetCallback, routeHandler);
-
-          const httpAdapter = this.container.getHttpAdapterRef();
-          const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
-          let handler = routeHandler;
-          if (onRouteTriggered) {
-            // Adapters read route options (e.g. the version) from the handler
-            handler = Object.assign((...args: unknown[]) => {
-              onRouteTriggered(requestMethod, path);
-              return routeHandler(...args);
-            }, routeHandler);
-            this.copyMetadataToCallback(targetCallback, handler);
-          }
-          Object.defineProperty(handler, 'name', {
-            configurable: true,
-            value: `${instanceWrapper.name}.${methodName}`,
-          });
-          routerMethodRef(normalizedPath, handler);
+          this.registerHandlerOnRouter(
+            routerMethodRef,
+            requestMethod,
+            normalizedPath,
+            path,
+            targetCallback,
+            routeHandler,
+            `${instanceWrapper.name}.${methodName}`,
+          );
         }
 
         onRouteResolved?.({
@@ -323,23 +316,44 @@ export class RouterExplorer {
       .get(router, route.method)
       .bind(router);
 
-    this.copyMetadataToCallback(route.targetCallback, route.handler);
-    const normalizedPath = route.path;
-    const rawPath = route.rawPath ?? route.path;
+    this.registerHandlerOnRouter(
+      routerMethodRef,
+      route.method,
+      route.path,
+      route.rawPath ?? route.path,
+      route.targetCallback,
+      route.handler,
+      `${route.instanceWrapper.name}.${route.methodName}`,
+    );
+  }
+
+  private registerHandlerOnRouter(
+    routerMethodRef: (path: string, callback: any) => unknown,
+    requestMethod: RequestMethod,
+    normalizedPath: string,
+    rawPath: string,
+    targetCallback: RouterProxyCallback,
+    baseHandler: Function,
+    handlerName: string,
+  ): void {
+    this.copyMetadataToCallback(targetCallback, baseHandler);
 
     const httpAdapter = this.container.getHttpAdapterRef();
     const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
+    let handler = baseHandler;
     if (onRouteTriggered) {
       // Adapters read route options (e.g. the version) from the handler
-      const handler = Object.assign((...args: unknown[]) => {
-        onRouteTriggered(route.method, rawPath);
-        return route.handler(...args);
-      }, route.handler);
-      this.copyMetadataToCallback(route.targetCallback, handler);
-      routerMethodRef(normalizedPath, handler);
-    } else {
-      routerMethodRef(normalizedPath, route.handler);
+      handler = Object.assign((...args: unknown[]) => {
+        onRouteTriggered(requestMethod, rawPath);
+        return baseHandler(...args);
+      }, baseHandler);
+      this.copyMetadataToCallback(targetCallback, handler);
     }
+    Object.defineProperty(handler, 'name', {
+      configurable: true,
+      value: handlerName,
+    });
+    routerMethodRef(normalizedPath, handler);
   }
 
   private applyHostFilter(
@@ -416,7 +430,9 @@ export class RouterExplorer {
         }
         const method = httpAdapterRef.getRequestMethod(req);
         const url = httpAdapterRef.getRequestUrl(req);
-        throw new NotFoundException(`Cannot ${method} ${url}`);
+        throw withoutStackTrace(
+          () => new NotFoundException(`Cannot ${method} ${url}`),
+        );
       }
       return next();
     };

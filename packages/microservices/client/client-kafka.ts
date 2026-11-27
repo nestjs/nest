@@ -73,8 +73,19 @@ export class ClientKafka
   protected client: Kafka | null = null;
   protected parser: KafkaParser | null = null;
   protected initialized: Promise<void> | null = null;
+  /**
+   * The attempt allowed to keep writing the client's state, or null once
+   * `close()` has taken the client over. Every step of a connection attempt
+   * checks it after an await, so an attempt that outlives `close()` stops
+   * instead of reading the fields `close()` has already cleared.
+   */
+  protected connectionAttempt: KafkaConnectionAttempt | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
+  protected readonly pendingRequestPartitions = new Map<
+    string,
+    { replyTopic: string; replyPartition: number }
+  >();
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
@@ -140,33 +151,35 @@ export class ClientKafka
 
   public async close(): Promise<void> {
     this.handleClose();
-    try {
-      // Both clients have to be disconnected even if one of them fails, so a
-      // consumer does not stay in its group when the producer cannot be closed.
-      const results = await Promise.allSettled([
-        this._producer?.disconnect(),
-        this._consumer?.disconnect(),
-      ]);
-      const [failure, ...otherFailures] = results.filter(
-        (result): result is PromiseRejectedResult =>
-          result.status === 'rejected',
-      );
-      otherFailures.forEach(({ reason }) => this.logger.error(reason));
-      if (failure) {
-        throw failure.reason;
-      }
-    } finally {
-      // The state must be reset even when a disconnect throws, otherwise a
-      // later `connect()` reuses the cached `initialized` promise and hands
-      // back the closed producer.
-      this._producer = null;
-      this._consumer = null;
-      this.initialized = null;
-      this.client = null;
+    // Reset first, so that an in-flight `connect()` stops at its next step,
+    // and a `connect()` issued while the clients disconnect starts a new
+    // attempt that this close leaves alone. It also keeps a later `connect()`
+    // from handing back the closed producer when a disconnect throws.
+    const producer = this._producer;
+    const consumer = this._consumer;
+    this._producer = null;
+    this._consumer = null;
+    this.initialized = null;
+    this.client = null;
+    this.connectionAttempt = null;
+
+    // Both clients have to be disconnected even if one of them fails, so a
+    // consumer does not stay in its group when the producer cannot be closed.
+    const results = await Promise.allSettled([
+      producer?.disconnect(),
+      consumer?.disconnect(),
+    ]);
+    const [failure, ...otherFailures] = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    otherFailures.forEach(({ reason }) => this.logger.error(reason));
+    if (failure) {
+      throw failure.reason;
     }
   }
 
   public handleClose() {
+    this.pendingRequestPartitions.clear();
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
       const callbacks = [...this.routingMap.values()];
@@ -189,6 +202,9 @@ export class ClientKafka
       return this.initialized.then(() => this._producer!);
     }
     const attempt: KafkaConnectionAttempt = {};
+    // Claim the client before the attempt starts, so a `close()` or a newer
+    // `connect()` can invalidate it at any later point.
+    this.connectionAttempt = attempt;
     const initialized = this.initializeClientAndConnections(attempt).catch(
       async err => {
         // A rejected attempt must not be cached: the next `connect()` call
@@ -206,29 +222,54 @@ export class ClientKafka
    * Tears down whatever a failed connection attempt managed to create, so a
    * consumer that joined its group before the producer failed does not stay
    * behind when the next attempt creates a new one. The client's state is only
-   * reset if no newer attempt has replaced it in the meantime (e.g., `close()`
-   * followed by `connect()` while the failed attempt was still pending).
+   * reset if neither `close()` nor a newer attempt has taken it over in the
+   * meantime (e.g., `close()` followed by `connect()` while the failed attempt
+   * was still pending).
    */
   private async discardPartialConnection(
     attempt: KafkaConnectionAttempt,
     initialized: Promise<void>,
   ): Promise<void> {
+    if (this.connectionAttempt === attempt) {
+      this.connectionAttempt = null;
+    }
     if (this.initialized === initialized) {
       this._consumer = null;
       this._producer = null;
       this.client = null;
       this.initialized = null;
     }
+    // Otherwise `close()` or a newer attempt owns the client's state now: this
+    // attempt stops before it publishes a field again, so only the instances
+    // it created are left to disconnect.
     await Promise.allSettled([
       attempt.consumer?.disconnect(),
       attempt.producer?.disconnect(),
     ]);
   }
 
+  /**
+   * Stops an attempt once `close()` or a newer `connect()` has taken the
+   * client over. Without it an attempt that outlives `close()` keeps going:
+   * it reads `client`, `_consumer` or `_producer` after the await during which
+   * `close()` cleared them, and rejects with a `TypeError` long after
+   * `close()` returned.
+   */
+  private assertConnectionIsActive(attempt: KafkaConnectionAttempt): void {
+    if (this.connectionAttempt !== attempt) {
+      throw new Error('Connection closed');
+    }
+  }
+
   private async initializeClientAndConnections(
     attempt: KafkaConnectionAttempt,
   ): Promise<void> {
-    this.client = await this.createClient();
+    const client = await this.createClient();
+    // `close()` may have run while the Kafka client was being created: stop
+    // before publishing it, so a closed client is not left holding one.
+    this.assertConnectionIsActive(attempt);
+    this.client = client;
+
     if (!this.producerOnlyMode) {
       const partitionAssigners = [
         (
@@ -242,41 +283,54 @@ export class ClientKafka
         groupId: this.groupId,
       };
 
-      this._consumer = attempt.consumer =
-        this.client!.consumer(consumerOptions);
+      const consumer = (attempt.consumer = client.consumer(consumerOptions));
+      this._consumer = consumer;
       this.registerConsumerEventListeners();
 
       // Set member assignments on join and rebalance
-      this._consumer.on(
-        this._consumer.events.GROUP_JOIN,
+      consumer.on(
+        consumer.events.GROUP_JOIN,
         this.setConsumerAssignments.bind(this),
       );
-      await this._consumer.connect();
+      await consumer.connect();
+      // `close()` disconnects the consumer while it connects; the attempt has
+      // to stop instead of binding topics to the closed consumer.
+      this.assertConnectionIsActive(attempt);
       await this.bindTopics();
+      this.assertConnectionIsActive(attempt);
     }
 
-    this._producer = attempt.producer = this.client!.producer(
+    const producer = (attempt.producer = client.producer(
       this.options.producer || {},
-    );
+    ));
+    this._producer = producer;
     this.registerProducerEventListeners();
-    await this._producer.connect();
+    await producer.connect();
+    // `close()` may have run while the producer was connecting.
+    this.assertConnectionIsActive(attempt);
   }
 
   public async bindTopics(): Promise<void> {
-    if (!this._consumer) {
+    const consumer = this._consumer;
+    if (!consumer) {
       throw Error('No consumer initialized');
     }
 
     const consumerSubscribeOptions = this.options.subscribe || {};
 
     if (this.responsePatterns.length > 0) {
-      await this._consumer.subscribe({
+      await consumer.subscribe({
         ...consumerSubscribeOptions,
         topics: this.responsePatterns,
       });
+      // `close()` may have disconnected the consumer while it was subscribing,
+      // and a newer attempt may have replaced it.
+      if (this._consumer !== consumer) {
+        throw new Error('Connection closed');
+      }
     }
 
-    await this._consumer.run({
+    await consumer.run({
       ...(this.options.run || {}),
       eachMessage: this.createResponseCallback(),
     });
@@ -408,24 +462,44 @@ export class ClientKafka
   }
 
   protected registerConsumerEventListeners() {
-    if (!this._consumer) {
+    const consumer = this._consumer;
+    if (!consumer) {
       return;
     }
-    this._consumer.on(this._consumer.events.CONNECT, () =>
-      this._status$.next(KafkaStatus.CONNECTED),
-    );
-    this._consumer.on(this._consumer.events.DISCONNECT, () =>
-      this._status$.next(KafkaStatus.DISCONNECTED),
-    );
-    this._consumer.on(this._consumer.events.REBALANCING, () =>
-      this._status$.next(KafkaStatus.REBALANCING),
-    );
-    this._consumer.on(this._consumer.events.STOP, () =>
-      this._status$.next(KafkaStatus.STOPPED),
-    );
-    this._consumer.on(this._consumer.events.CRASH, () =>
-      this._status$.next(KafkaStatus.CRASHED),
-    );
+    consumer.on(consumer.events.CONNECT, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.CONNECTED);
+    });
+    consumer.on(consumer.events.DISCONNECT, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.DISCONNECTED);
+    });
+    consumer.on(consumer.events.REBALANCING, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.REBALANCING);
+    });
+    consumer.on(consumer.events.STOP, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.STOPPED);
+      // A stopped consumer reads no more replies. kafkajs also stops (and
+      // leaves the group) before it reports a crash, restarting or not, so
+      // this covers a crash as well.
+      this.handleClose();
+    });
+    consumer.on(consumer.events.CRASH, () => {
+      if (consumer !== this._consumer) {
+        return;
+      }
+      this._status$.next(KafkaStatus.CRASHED);
+    });
   }
 
   protected registerProducerEventListeners() {
@@ -481,7 +555,7 @@ export class ClientKafka
       ...(this.options.send || {}),
     };
 
-    return this._producer!.send(message);
+    return this.producer.send(message);
   }
 
   protected getReplyTopicPartition(topic: string): string {
@@ -501,7 +575,10 @@ export class ClientKafka
     const packet = this.assignPacketId(partialPacket);
     this.routingMap.set(packet.id, callback);
 
-    const cleanup = () => this.routingMap.delete(packet.id);
+    const cleanup = () => {
+      this.pendingRequestPartitions.delete(packet.id);
+      this.routingMap.delete(packet.id);
+    };
     const errorCallback = (err: unknown) => {
       cleanup();
       callback({ err });
@@ -511,9 +588,17 @@ export class ClientKafka
       const pattern = this.normalizePattern(partialPacket.pattern);
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
+      this.pendingRequestPartitions.set(packet.id, {
+        replyTopic,
+        replyPartition: Number(replyPartition),
+      });
 
       Promise.resolve(this.serializer.serialize(packet.data, { pattern }))
         .then((serializedRequest: KafkaRequest) => {
+          // Torn down or failed (e.g., by a rebalance) while serializing
+          if (!this.routingMap.has(packet.id)) {
+            return;
+          }
           // Ahead of the reply headers, which no metadata entry may replace
           const serializedPacket = this.mergeMetadata(
             serializedRequest,
@@ -530,9 +615,13 @@ export class ClientKafka
             ...(this.options.send || {}),
           };
 
-          return this._producer!.send(message);
+          return this.producer.send(message);
         })
-        .catch(err => errorCallback(err));
+        .catch(err => {
+          if (this.routingMap.has(packet.id)) {
+            errorCallback(err);
+          }
+        });
 
       return cleanup;
     } catch (err) {
@@ -592,6 +681,26 @@ export class ClientKafka
     }
 
     this.consumerAssignments = consumerAssignments;
+
+    if (this.pendingRequestPartitions.size > 0) {
+      const err = new Error('Connection closed');
+      for (const [id, { replyTopic, replyPartition }] of this
+        .pendingRequestPartitions) {
+        const assignedPartitions = data.payload.memberAssignment[replyTopic];
+        if (!assignedPartitions?.includes(replyPartition)) {
+          this.pendingRequestPartitions.delete(id);
+          const callback = this.routingMap.get(id);
+          if (callback) {
+            this.routingMap.delete(id);
+            try {
+              callback({ err });
+            } catch (callbackErr) {
+              this.logger.error(callbackErr);
+            }
+          }
+        }
+      }
+    }
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {

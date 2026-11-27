@@ -224,6 +224,26 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getVersioning()!.defaultVersion).toEqual('1');
     });
+
+    it('should not modify the options it is given', () => {
+      const defaultVersion = ['1', '2', '2', '1'];
+      const options = { type: 'test', defaultVersion };
+      appConfig.enableVersioning(options as any);
+
+      expect(options.defaultVersion).toBe(defaultVersion);
+      expect(defaultVersion).toEqual(['1', '2', '2', '1']);
+      expect(appConfig.getVersioning()!.defaultVersion).toEqual(['1', '2']);
+    });
+
+    it('should accept frozen options', () => {
+      const options = Object.freeze({
+        type: 'test',
+        defaultVersion: Object.freeze(['1', '1', '2']),
+      });
+
+      expect(() => appConfig.enableVersioning(options as any)).not.toThrow();
+      expect(appConfig.getVersioning()!.defaultVersion).toEqual(['1', '2']);
+    });
   });
 
   describe('constructor', () => {

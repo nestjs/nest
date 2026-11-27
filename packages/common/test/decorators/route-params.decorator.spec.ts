@@ -1185,6 +1185,36 @@ describe('@Res', () => {
       Reflect.getMetadata(RESPONSE_PASSTHROUGH_METADATA, Test, 'test'),
     ).toBe(true);
   });
+
+  it('should not inherit passthrough in an overriding method', () => {
+    class Parent {
+      public test(@Res({ passthrough: true }) res) {}
+    }
+    class Child extends Parent {
+      public override test(@Res() res) {}
+    }
+    expect(
+      Reflect.getMetadata(RESPONSE_PASSTHROUGH_METADATA, Parent, 'test'),
+    ).toBe(true);
+    expect(
+      Reflect.getMetadata(RESPONSE_PASSTHROUGH_METADATA, Child, 'test'),
+    ).toBe(false);
+  });
+
+  it('should enable passthrough in an overriding method', () => {
+    class Parent {
+      public test(@Res() res) {}
+    }
+    class Child extends Parent {
+      public override test(@Res({ passthrough: true }) res) {}
+    }
+    expect(
+      Reflect.getMetadata(RESPONSE_PASSTHROUGH_METADATA, Parent, 'test'),
+    ).toBeUndefined();
+    expect(
+      Reflect.getMetadata(RESPONSE_PASSTHROUGH_METADATA, Child, 'test'),
+    ).toBe(true);
+  });
 });
 
 describe('@UploadedFile', () => {

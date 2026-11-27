@@ -18,6 +18,7 @@ import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
 import { Duplex, Readable, Transform, Writable } from 'stream';
 import { types } from 'util';
+import type { NestExpressApplication } from '../interfaces/nest-express-application.interface.js';
 import {
   NestExpressBodyParserOptionsFor,
   NestExpressBodyParserType,
@@ -70,6 +71,7 @@ function isJsonContentType(contentType: string): boolean {
 export class ExpressAdapter extends AbstractHttpAdapter<
   http.Server | https.Server
 > {
+  declare protected readonly __nestApplicationType: NestExpressApplication;
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();
@@ -174,10 +176,18 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     }
     if (body instanceof StreamableFile) {
       // A stream that failed before the reply (e.g. while an interceptor
-      // awaited) has already emitted its 'error' event.
-      const { errored } = body.getStream();
-      if (errored) {
-        return body.errorHandler(errored, response);
+      // awaited) has already emitted its 'error' event, and one destroyed
+      // without an error emits nothing more, so piping either of them would
+      // never end the response.
+      const earlyError = getEarlyStreamError(body.getStream());
+      if (earlyError) {
+        return body.errorHandler(earlyError, response);
+      }
+      // No body for a 204, 205 or 304 (RFC 9110): res.send() strips it and
+      // the headers describing it, as for any other body
+      if ([204, 205, 304].includes(response.statusCode)) {
+        body.getStream().destroy();
+        return response.send();
       }
       this.applyStreamHeaders(response, body);
       const stream = body.getStream();
@@ -578,6 +588,14 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         const extractedVersion = versioningOptions.extractor(req);
 
         if (Array.isArray(version)) {
+          // No version was supplied
+          if (
+            version.includes(VERSION_NEUTRAL) &&
+            (isUndefined(extractedVersion) ||
+              (Array.isArray(extractedVersion) && !extractedVersion.length))
+          ) {
+            return handler(req, res, next);
+          }
           if (
             Array.isArray(extractedVersion) &&
             version.filter(v => extractedVersion.includes(v as string)).length
@@ -845,6 +863,24 @@ export class ExpressAdapter extends AbstractHttpAdapter<
 
 function isWritableChunk(chunk: unknown): chunk is string | Uint8Array {
   return typeof chunk === 'string' || types.isUint8Array(chunk);
+}
+
+/**
+ * Returns the error a StreamableFile source can no longer be piped for. That
+ * is the error it failed with, or for a source destroyed before it ended
+ * without one (e.g. "fs.ReadStream#close()"), a premature close error like
+ * the one `stream.finished()` reports.
+ */
+function getEarlyStreamError(stream: Readable): Error | undefined {
+  if (stream.errored) {
+    return stream.errored;
+  }
+  if (stream.destroyed && !stream.readableEnded) {
+    return Object.assign(new Error('Premature close'), {
+      code: 'ERR_STREAM_PREMATURE_CLOSE',
+    });
+  }
+  return undefined;
 }
 
 /**

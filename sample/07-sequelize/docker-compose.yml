@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   mysql:
     image: mysql:26

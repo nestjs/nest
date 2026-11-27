@@ -9,6 +9,7 @@ import { EventEmitter, once } from 'events';
 import { Readable, Writable } from 'stream';
 import { FileInterceptor } from '../../../multipart/interceptors/file.interceptor.js';
 import { MISSING_PLUGIN_MESSAGE } from '../../../multipart/multipart/multipart.constants.js';
+import { MultipartError } from '../../../multipart/multipart/multipart.error.js';
 import {
   createContext,
   createFakeRequest,
@@ -87,7 +88,9 @@ describe('FileInterceptor', () => {
       await expect(
         target.intercept(createContext(req), handler),
       ).rejects.toEqual(
-        new BadRequestException('Unexpected file field - avatar'),
+        new BadRequestException('Unexpected file field - avatar', {
+          cause: new MultipartError('LIMIT_UNEXPECTED_FILE', 'avatar'),
+        }),
       );
     });
 
@@ -96,7 +99,11 @@ describe('FileInterceptor', () => {
       const req = createFakeRequest([{ ...file('avatar'), truncated: true }]);
       await expect(
         target.intercept(createContext(req), handler),
-      ).rejects.toEqual(new PayloadTooLargeException('File too large'));
+      ).rejects.toEqual(
+        new PayloadTooLargeException('File too large', {
+          cause: new MultipartError('LIMIT_FILE_SIZE', 'avatar'),
+        }),
+      );
     });
 
     it('should fail with an actionable message when the plugin is missing', async () => {
@@ -135,6 +142,23 @@ describe('FileInterceptor', () => {
         throwFileSizeLimit: false,
         limits: { files: 2 },
       });
+    });
+
+    it('should leave a parts limit of NaN to the plugin', async () => {
+      // platform-express and platform-node use their default parts limit then
+      for (const limits of [
+        { parts: NaN, files: 2 },
+        () => ({ parts: NaN, files: 2 }),
+      ]) {
+        const target = new (FileInterceptor('avatar', { limits }))();
+        const req = createFakeRequest([]);
+        await target.intercept(createContext(req), handler);
+
+        expect(req.parts.mock.calls[0][0]).toStrictEqual({
+          throwFileSizeLimit: false,
+          limits: { files: 2 },
+        });
+      }
     });
 
     it('should resolve limits given as a function of the request', async () => {
@@ -321,7 +345,14 @@ describe('FileInterceptor', () => {
 
           await expect(
             target.intercept(createContext(req), handler),
-          ).rejects.toEqual(new BadRequestException('the request was closed'));
+          ).rejects.toEqual(
+            new BadRequestException('the request was closed', {
+              cause: expect.objectContaining({
+                message: 'the request was closed',
+                code: 'FST_MP_PREMATURE_CLOSE',
+              }),
+            }),
+          );
           await vi.waitFor(() =>
             expect(storage._removeFile).toHaveBeenCalledWith(
               req,
@@ -479,7 +510,9 @@ describe('FileInterceptor', () => {
 
         await expect(
           target.intercept(createContext(req), handler),
-        ).rejects.toEqual(new BadRequestException('the request was closed'));
+        ).rejects.toEqual(
+          new BadRequestException('the request was closed', { cause: error }),
+        );
         expect(storage._removeFile).toHaveBeenCalledWith(
           req,
           expect.objectContaining({ path: '/uploads/partial' }),
@@ -497,7 +530,13 @@ describe('FileInterceptor', () => {
 
         await expect(
           target.intercept(createContext(req), handler),
-        ).rejects.toEqual(new BadRequestException('Too many files'));
+        ).rejects.toEqual(
+          new BadRequestException('Too many files', {
+            cause: new MultipartError('LIMIT_FILE_COUNT', undefined, {
+              cause: limit,
+            }),
+          }),
+        );
         expect(storage._removeFile).toHaveBeenCalledWith(
           req,
           expect.objectContaining({ path: '/uploads/partial' }),
@@ -638,6 +677,86 @@ describe('FileInterceptor', () => {
           expect.any(Function),
         ),
       );
+    });
+
+    describe('when the request was pipelined on a connection', () => {
+      // The response of a request that waits behind others pipelined on the
+      // connection: it has no socket of its own, and may never close itself
+      const createConnection = () =>
+        Object.assign(new EventEmitter(), { destroyed: false });
+      const createPipelinedExchange = (connection: EventEmitter) => {
+        const req = createFakeRequest([file('avatar')]);
+        req.raw.socket = connection;
+        const reply = {
+          raw: Object.assign(createReply().raw, { req: req.raw }),
+        };
+        markRejectedByPipes(req);
+        return { req, reply };
+      };
+
+      it('should remove the stored file when the connection closes before the response is sent', async () => {
+        const storage = createStorage();
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const connection = createConnection();
+        const { req, reply } = createPipelinedExchange(connection);
+
+        const result$ = await target.intercept(
+          createContext(req, reply),
+          failing,
+        );
+        await expect(lastValueFrom(result$)).rejects.toBe(error);
+        expect(storage._removeFile).not.toHaveBeenCalled();
+        connection.emit('close');
+
+        await vi.waitFor(() =>
+          expect(storage._removeFile).toHaveBeenCalledExactlyOnceWith(
+            req,
+            expect.objectContaining({ path: '/uploads/a' }),
+            expect.any(Function),
+          ),
+        );
+      });
+
+      it('should remove the stored file once when the response is sent before the connection closes', async () => {
+        const storage = createStorage();
+        const target = new (FileInterceptor('avatar', { storage }))();
+        const connection = createConnection();
+        const { req, reply } = createPipelinedExchange(connection);
+
+        const result$ = await target.intercept(
+          createContext(req, reply),
+          failing,
+        );
+        await expect(lastValueFrom(result$)).rejects.toBe(error);
+        reply.raw.end();
+        await vi.waitFor(() => expect(storage._removeFile).toHaveBeenCalled());
+        connection.emit('close');
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(storage._removeFile).toHaveBeenCalledOnce();
+      });
+    });
+
+    it('should not watch the response when no file was stored', async () => {
+      const storage = createStorage();
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([]);
+      markRejectedByPipes(req);
+
+      const result$ = await target.intercept(createContext(req), failing);
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      expect(storage._removeFile).not.toHaveBeenCalled();
+    });
+
+    it('should not fail when a stand-in reply has no raw stream', async () => {
+      const storage = createStorage();
+      const target = new (FileInterceptor('avatar', { storage }))();
+      const req = createFakeRequest([file('avatar')]);
+      markRejectedByPipes(req);
+
+      const result$ = await target.intercept(createContext(req), failing);
+      await expect(lastValueFrom(result$)).rejects.toBe(error);
+      expect(storage._removeFile).not.toHaveBeenCalled();
     });
 
     it('should keep the stored file when the route handler fails', async () => {

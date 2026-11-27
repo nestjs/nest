@@ -7,7 +7,7 @@ import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants.js';
 import { NestContainer } from '@nestjs/core';
 import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
+import { fromEvent, lastValueFrom, Observable, of, Subject } from 'rxjs';
 import { GraphInspector } from '../../core/inspector/graph-inspector.js';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { AbstractWsAdapter } from '../adapters/ws-adapter.js';
@@ -1217,6 +1217,100 @@ describe('WebSocketsController', () => {
       );
     });
 
+    it('should wait for an asynchronous exception filter before cleaning up the request-scoped context on disconnect', async () => {
+      const client: Record<any, any> = {};
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        isDependencyTreeStatic: () => false,
+        instance: {
+          handleDisconnect() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      let finishFilter!: () => void;
+      const exceptionFilter = {
+        handle: vi.fn(
+          () => new Promise<void>(resolve => (finishFilter = resolve)),
+        ),
+      };
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handleDisconnect: () => {
+          throw new Error('cleanup failed');
+        },
+      } as never);
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      let settled = false;
+      const handled = instance
+        .createRequestScopedEventHandler(
+          gatewayWrapper,
+          { providers: new Map() } as Module,
+          'moduleKey',
+          'handleDisconnect',
+          {},
+        )(client)
+        .then(() => (settled = true));
+
+      await vi.waitFor(() => expect(exceptionFilter.handle).toHaveBeenCalled());
+      await new Promise(resolve => setImmediate(resolve));
+      expect(settled).toBe(false);
+      expect(client[REQUEST_CONTEXT_ID as any]).toBeDefined();
+
+      finishFilter();
+      await handled;
+      expect(settled).toBe(true);
+      expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
+    });
+
+    it('should log a rejection of an asynchronous exception filter instead of leaving it unhandled', async () => {
+      const filterError = new TypeError(
+        'Do not know how to serialize a BigInt',
+      );
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        isDependencyTreeStatic: () => false,
+        instance: {
+          handleConnection() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const exceptionFilter = {
+        handle: vi.fn(async () => Promise.reject(filterError)),
+      };
+      const logError = vi
+        .spyOn(untypedInstance.logger, 'error')
+        .mockImplementation(() => undefined);
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      vi.spyOn(injector, 'loadPerContext').mockResolvedValue({
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      } as never);
+      vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+        exceptionFilter as any,
+      );
+
+      await expect(
+        instance.createRequestScopedEventHandler(
+          gatewayWrapper,
+          { providers: new Map() } as Module,
+          'moduleKey',
+          'handleConnection',
+          {},
+        )({}),
+      ).resolves.toBeUndefined();
+      expect(logError).toHaveBeenCalledWith(filterError);
+    });
+
     describe('when the gateway fails to resolve', () => {
       class Gateway {
         handleConnection() {}
@@ -1397,6 +1491,29 @@ describe('WebSocketsController', () => {
         );
         expect(calls).toEqual(['handleDisconnect']);
       });
+
+      it('should not wait for an asynchronous filter of the connection hook to call the disconnect hook', async () => {
+        gateway.handleConnection = () => {
+          throw new Error('Unauthorized');
+        };
+        // A filter that never settles, e.g. one waiting for an acknowledgement
+        // from the client that has just left
+        const exceptionFilter = {
+          handle: vi.fn(() => new Promise(() => undefined)),
+        };
+        vi.spyOn(exceptionFiltersContext, 'create').mockReturnValue(
+          exceptionFilter as any,
+        );
+        void createHandler('handleConnection')(client);
+        const disconnected = createHandler('handleDisconnect')(client);
+
+        resolveGateway();
+        await disconnected;
+
+        expect(exceptionFilter.handle).toHaveBeenCalled();
+        expect(calls).toEqual(['handleDisconnect']);
+        expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
+      });
     });
   });
   describe('createStaticEventHandler', () => {
@@ -1550,6 +1667,65 @@ describe('WebSocketsController', () => {
         )!({}),
       ).resolves.toBeUndefined();
       expect(logError.mock.calls).toEqual([[filterError], [filterError]]);
+    });
+
+    it('should log a rejection of an asynchronous exception filter instead of leaving it unhandled', async () => {
+      const filterError = new TypeError(
+        'Do not know how to serialize a BigInt',
+      );
+      exceptionFilter.handle.mockImplementation(async () =>
+        Promise.reject(filterError),
+      );
+      const logError = vi
+        .spyOn(untypedInstance.logger, 'error')
+        .mockImplementation(() => undefined);
+      const syncGateway = {
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      };
+      const asyncGateway = {
+        handleConnection: async () => Promise.reject(new Error('Unauthorized')),
+      };
+
+      await expect(
+        instance.createStaticEventHandler(
+          syncGateway,
+          'moduleKey',
+          'handleConnection',
+        )!({}),
+      ).resolves.toBeUndefined();
+      await expect(
+        instance.createStaticEventHandler(
+          asyncGateway,
+          'moduleKey',
+          'handleConnection',
+        )!({}),
+      ).resolves.toBeUndefined();
+      expect(logError.mock.calls).toEqual([[filterError], [filterError]]);
+    });
+
+    it('should log a rejection of a filter that returns a thenable without catch()', async () => {
+      const filterError = new Error('filter failed');
+      exceptionFilter.handle.mockImplementation(() => ({
+        then: (_: unknown, reject: (reason: unknown) => void) =>
+          reject(filterError),
+      }));
+      const logError = vi
+        .spyOn(untypedInstance.logger, 'error')
+        .mockImplementation(() => undefined);
+      const gateway = {
+        handleConnection: () => {
+          throw new Error('Unauthorized');
+        },
+      };
+
+      await instance.createStaticEventHandler(
+        gateway,
+        'moduleKey',
+        'handleConnection',
+      )!({});
+      expect(logError).toHaveBeenCalledExactlyOnceWith(filterError);
     });
 
     it('should delegate errors to the filters of the gateway that inherits the hook', () => {
@@ -1788,6 +1964,68 @@ describe('WebSocketsController', () => {
         expect(handleDisconnectSpy).toHaveBeenCalledOnce();
         expect(handleDisconnectSpy).toHaveBeenCalledWith(null);
       });
+    });
+
+    describe('when gateways sharing a server report the same disconnects', () => {
+      it('should handle each client once, even when another one is reported in between', () => {
+        const handler = vi.fn();
+        const disconnect = new Subject<any>();
+        instance.subscribeDisconnectEvent(handler, disconnect);
+        const host = { id: 'host' };
+        const guest = { id: 'guest' };
+
+        // A hook kicks the guest while the host's disconnect is reported, so
+        // the guest's reports come before the host's second one
+        disconnect.next({
+          client: host,
+          reason: 'client namespace disconnect',
+        });
+        disconnect.next({
+          client: guest,
+          reason: 'server namespace disconnect',
+        });
+        disconnect.next({
+          client: guest,
+          reason: 'server namespace disconnect',
+        });
+        disconnect.next({
+          client: host,
+          reason: 'client namespace disconnect',
+        });
+
+        expect(handler.mock.calls).toEqual([
+          [host, 'client namespace disconnect'],
+          [guest, 'server namespace disconnect'],
+        ]);
+      });
+
+      it('should drop a repeat of the last client that is not an object', () => {
+        const handler = vi.fn();
+        const disconnect = new Subject<any>();
+        instance.subscribeDisconnectEvent(handler, disconnect);
+
+        disconnect.next('a');
+        disconnect.next('a');
+        disconnect.next('b');
+
+        expect(handler.mock.calls).toEqual([['a'], ['b']]);
+      });
+
+      it.each([0, '', false])(
+        'should drop repeats of the enveloped falsy client %j',
+        client => {
+          const handler = vi.fn();
+          const disconnect = new Subject<any>();
+          instance.subscribeDisconnectEvent(handler, disconnect);
+
+          disconnect.next({ client, reason: 'client namespace disconnect' });
+          disconnect.next({ client, reason: 'server namespace disconnect' });
+
+          expect(handler.mock.calls).toEqual([
+            [client, 'client namespace disconnect'],
+          ]);
+        },
+      );
     });
   });
   describe('subscribeMessages', () => {

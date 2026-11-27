@@ -2,6 +2,7 @@
 import { DynamicModule, Provider } from '../interfaces/index.js';
 import { Logger } from '../services/logger.service.js';
 import { randomStringGenerator } from '../utils/random-string-generator.util.js';
+import { isObject } from '../utils/shared.utils.js';
 import {
   ASYNC_METHOD_SUFFIX,
   ASYNC_OPTIONS_METADATA_KEYS,
@@ -69,11 +70,16 @@ export class ConfigurableModuleBuilder<
   ) => DynamicModule;
 
   protected readonly logger = new Logger(ConfigurableModuleBuilder.name);
+  protected readonly options: ConfigurableModuleBuilderOptions;
 
   constructor(
-    protected readonly options: ConfigurableModuleBuilderOptions = {},
+    options: ConfigurableModuleBuilderOptions = {},
     parentBuilder?: ConfigurableModuleBuilder<ModuleOptions>,
   ) {
+    // "build()" stores the generated injection token in the options, so a
+    // builder created by the caller works on a copy of the caller's object.
+    // Builders derived from it keep sharing that copy, and so the token.
+    this.options = parentBuilder ? options : { ...options };
     if (parentBuilder) {
       this.staticMethodKey = parentBuilder.staticMethodKey as StaticMethodKey;
       this.factoryClassMethodKey =
@@ -267,7 +273,7 @@ export class ConfigurableModuleBuilder<
         input: ModuleOptions & ExtraModuleDefinitionOptions,
         extras: ExtraModuleDefinitionOptions | undefined,
       ): ModuleOptions {
-        if (!extras) {
+        if (!extras || !isObject(input)) {
           return input;
         }
         const moduleOptions = {};

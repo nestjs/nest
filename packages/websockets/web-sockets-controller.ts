@@ -5,7 +5,7 @@ import {
   of,
   Subject,
 } from 'rxjs';
-import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
+import { distinctUntilChanged, filter, mergeAll } from 'rxjs/operators';
 import {
   GATEWAY_OPTIONS,
   MESSAGE_METADATA,
@@ -344,12 +344,24 @@ export class WebSocketsController {
         ? handlerOrGateway
         : handlerOrGateway?.handleDisconnect?.bind(handlerOrGateway);
     if (handler) {
+      // Every gateway sharing the server reports each disconnect. A hook that
+      // disconnects other clients (socket.io emits "disconnect" synchronously)
+      // has theirs reported in between the reports of one client, so every
+      // client handled is remembered, not just the last one.
+      const handledClients = new WeakSet<object>();
+      let lastClient: unknown = handledClients;
       event
         .pipe(
-          distinctUntilChanged((prev, curr) => {
-            const prevClient = prev?.client || prev;
-            const currClient = curr?.client || curr;
-            return prevClient === currClient;
+          filter((data: any) => {
+            const client = data?.client ?? data;
+            const isRepeat =
+              client === lastClient ||
+              (canBeHeldWeakly(client) && handledClients.has(client));
+            lastClient = client;
+            if (canBeHeldWeakly(client)) {
+              handledClients.add(client);
+            }
+            return !isRepeat;
           }),
         )
         .subscribe((data: any) => {
@@ -593,7 +605,14 @@ export class WebSocketsController {
           isStatic ? STATIC_CONTEXT : contextId,
           instanceWrapper.id,
         );
-        this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
+        // A filter is not the hook: the disconnect hook does not wait for it
+        markConnectionHookAsCalled?.();
+        await this.handleLifecycleHookError(
+          exceptionFilter,
+          methodName,
+          args,
+          err,
+        );
       } finally {
         // The hook threw, or is not going to be called at all
         markConnectionHookAsCalled?.();
@@ -673,7 +692,12 @@ export class WebSocketsController {
           STATIC_CONTEXT,
           instanceWrapperId,
         );
-        this.handleLifecycleHookError(exceptionFilter, methodName, args, err);
+        return this.handleLifecycleHookError(
+          exceptionFilter,
+          methodName,
+          args,
+          err,
+        );
       };
       try {
         const result = hook.apply(instance, args);
@@ -681,7 +705,7 @@ export class WebSocketsController {
           ? (result as Promise<unknown>).catch(handleError)
           : result;
       } catch (err) {
-        handleError(err);
+        return handleError(err);
       }
     };
   }
@@ -707,7 +731,12 @@ export class WebSocketsController {
     // uncaught exception or an unhandled rejection. It is logged instead, as
     // the adapters do for message handlers.
     try {
-      exceptionFilter.handle(err as Error, host);
+      const pending = exceptionFilter.handle(err as Error, host);
+      if (isFunction((pending as Promise<unknown>)?.then)) {
+        return Promise.resolve(pending).catch(filterError =>
+          this.logger.error(filterError),
+        );
+      }
     } catch (filterError) {
       this.logger.error(filterError);
     }
@@ -785,4 +814,11 @@ export class WebSocketsController {
       ),
     );
   }
+}
+
+/** Whether a value can be put in a `WeakSet`. */
+function canBeHeldWeakly(value: unknown): value is object {
+  return (
+    (typeof value === 'object' && value !== null) || typeof value === 'function'
+  );
 }

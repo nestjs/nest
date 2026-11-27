@@ -8,7 +8,17 @@ describe('TCP client reconnect', () => {
   let client: ClientTCP;
   let serverSockets: net.Socket[];
   let clientSockets: net.Socket[];
-  let accepted: Promise<void>;
+
+  const serverSocketOf = async (clientSocket: net.Socket) => {
+    const find = () =>
+      serverSockets.find(
+        socket => socket.remotePort === clientSocket.localPort,
+      );
+    while (!find()) {
+      await once(server, 'connection');
+    }
+    return find()!;
+  };
 
   beforeEach(async () => {
     serverSockets = [];
@@ -16,14 +26,9 @@ describe('TCP client reconnect', () => {
     // Keep the old connection half-open until the new one has a pending
     // request, so its late close is controlled by real TCP FINs, not timers.
     server = net.createServer({ allowHalfOpen: true });
-    accepted = new Promise(resolve => {
-      server.on('connection', socket => {
-        serverSockets.push(socket);
-        socket.resume();
-        if (serverSockets.length === 2) {
-          resolve();
-        }
-      });
+    server.on('connection', socket => {
+      serverSockets.push(socket);
+      socket.resume();
     });
     server.listen(0, '127.0.0.1');
     await once(server, 'listening');
@@ -60,14 +65,15 @@ describe('TCP client reconnect', () => {
       const connectB = client.connect();
       const socketB = client.unwrap<net.Socket>();
       clientSockets.push(socketB);
-      await Promise.all([connectA, connectB, accepted]);
-
-      const serverA = serverSockets.find(
-        socket => socket.remotePort === socketA.localPort,
-      )!;
-      const serverB = serverSockets.find(
-        socket => socket.remotePort === socketB.localPort,
-      )!;
+      if (closeWhileConnecting) {
+        // A socket that has not connected yet is destroyed, not ended
+        await expect(connectA).rejects.toThrow('Connection closed');
+      }
+      await connectB;
+      const serverA = closeWhileConnecting
+        ? undefined
+        : await serverSocketOf(socketA);
+      const serverB = await serverSocketOf(socketB);
       const messages = new JsonSocket(serverB);
       const request = once(serverB, 'message');
       // Handle rejection immediately, including when a stale close fails the
@@ -80,7 +86,8 @@ describe('TCP client reconnect', () => {
       );
       const [packet] = await request;
 
-      serverA.end();
+      // The late close of the old socket must not fail the new request
+      serverA?.end();
       await closedA;
       messages.sendMessage({ id: packet.id, response: 'a' });
       messages.sendMessage({ id: packet.id, response: 'b' });
@@ -90,7 +97,7 @@ describe('TCP client reconnect', () => {
       expect(client.unwrap<net.Socket>()).toBe(socketB);
       await client.connect();
       expect(client.unwrap<net.Socket>()).toBe(socketB);
-      expect(serverSockets).toHaveLength(2);
+      expect(socketA.destroyed).toBe(true);
     });
   }
 });

@@ -72,6 +72,31 @@ describe('ServerMqtt', () => {
 
       expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
+    it('should close the created client and skip startup when closed before createMqttClient resolves', async () => {
+      let resolveClient!: (value: any) => void;
+      const pendingClient = {
+        endAsync: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+      vi.spyOn(server, 'createMqttClient').mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolveClient = resolve;
+          }),
+      );
+      const startSpy = vi.spyOn(server, 'start').mockImplementation(() => {});
+
+      const listenPromise = server.listen(callbackSpy);
+      await server.close();
+      resolveClient(pendingClient);
+      await listenPromise;
+
+      expect(pendingClient.endAsync).toHaveBeenCalledOnce();
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(untypedServer.mqttClient).toBeNull();
+      expect(callbackSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
     it('should bind the callback with "once"', async () => {
       await server.listen(callbackSpy);
 
@@ -194,17 +219,45 @@ describe('ServerMqtt', () => {
   });
   describe('close', () => {
     let endAsync: ReturnType<typeof vi.fn>;
-    let mqttClient: { endAsync: ReturnType<typeof vi.fn> };
+    let mqttClient: { endAsync: ReturnType<typeof vi.fn>; connected: boolean };
 
     beforeEach(() => {
       endAsync = vi.fn().mockResolvedValue(undefined);
-      mqttClient = { endAsync };
+      mqttClient = { endAsync, connected: true };
       untypedServer.mqttClient = mqttClient;
     });
 
     it('should end mqttClient', async () => {
       await server.close();
-      expect(endAsync).toHaveBeenCalledOnce();
+      expect(endAsync).toHaveBeenCalledExactlyOnceWith(false);
+    });
+
+    it('should not wait for the broker to acknowledge packets while disconnected', async () => {
+      mqttClient.connected = false;
+
+      await server.close();
+
+      expect(endAsync).toHaveBeenCalledExactlyOnceWith(true);
+    });
+
+    it('should settle with a reply in flight when the broker is gone', async () => {
+      const { connect } = await import('mqtt');
+      // Nothing listens there, so the client keeps reconnecting
+      const client = connect('mqtt://127.0.0.1:1', { reconnectPeriod: 50 });
+      client.on('error', () => {});
+      // Kept for the next connection, and acknowledged by none
+      client.publish('reply', 'x', { qos: 1 });
+      untypedServer.mqttClient = client;
+
+      const settled = await Promise.race([
+        server.close().then(() => true),
+        new Promise(resolve => setTimeout(() => resolve(false), 1000)),
+      ]);
+      if (!settled) {
+        client.end(true);
+      }
+
+      expect(settled).toBe(true);
     });
 
     it('should settle only once the connection is closed', async () => {
@@ -249,6 +302,188 @@ describe('ServerMqtt', () => {
 
       expect(untypedServer.mqttClient).toBeNull();
       expect(untypedServer.pendingEventListeners).toEqual([]);
+    });
+
+    it('should not unsubscribe nor wait without "gracefulShutdown"', async () => {
+      const unsubscribeAsync = vi.fn();
+      Object.assign(mqttClient, { connected: true, unsubscribeAsync });
+      untypedServer.messageHandlers = objectToMap({ test: vi.fn() });
+      const waitSpy = vi.spyOn(untypedServer, 'waitForHandlersInFlight');
+
+      await server.close();
+
+      expect(unsubscribeAsync).not.toHaveBeenCalled();
+      expect(waitSpy).not.toHaveBeenCalled();
+    });
+
+    describe('with "gracefulShutdown"', () => {
+      function createGracefulServer(
+        options: Record<string, unknown> = {},
+        ServerClass: typeof ServerMqtt = ServerMqtt,
+      ) {
+        const gracefulServer = new ServerClass({
+          gracefulShutdown: true,
+          ...options,
+        });
+        const client = {
+          connected: true,
+          options: { resubscribe: true },
+          on: vi.fn(),
+          subscribe: vi.fn(),
+          unsubscribeAsync: vi.fn().mockResolvedValue(undefined),
+          endAsync: vi.fn().mockResolvedValue(undefined),
+        };
+        Object.assign(gracefulServer, {
+          mqttClient: client,
+          messageHandlers: objectToMap({
+            'orders/create': vi.fn(),
+            'orders/created': Object.assign(vi.fn(), { isEventHandler: true }),
+            '$share/workers/jobs/+': Object.assign(vi.fn(), {
+              isEventHandler: true,
+            }),
+          }),
+        });
+        const waitSpy = vi
+          .spyOn(gracefulServer as any, 'waitForHandlersInFlight')
+          .mockResolvedValue(undefined);
+        return { gracefulServer, client, waitSpy };
+      }
+
+      it('should stop receiving messages, wait for the handlers in flight, then end the connection', async () => {
+        const { gracefulServer, client, waitSpy } = createGracefulServer();
+
+        await gracefulServer.close();
+
+        const [unsubscribed] = client.unsubscribeAsync.mock.invocationCallOrder;
+        const [waited] = waitSpy.mock.invocationCallOrder;
+        const [ended] = client.endAsync.mock.invocationCallOrder;
+        expect(unsubscribed).toBeLessThan(waited);
+        expect(waited).toBeLessThan(ended);
+      });
+
+      it('should unsubscribe from every topic it subscribed to', async () => {
+        class PrefixedServerMqtt extends ServerMqtt {
+          public getRequestPattern(pattern: string) {
+            return `requests/${pattern}`;
+          }
+        }
+        const { gracefulServer, client } = createGracefulServer(
+          {},
+          PrefixedServerMqtt,
+        );
+        gracefulServer.bindEvents(client);
+        const subscribed = client.subscribe.mock.calls.map(([topic]) => topic);
+
+        await gracefulServer.close();
+
+        expect(subscribed).toEqual([
+          'requests/orders/create',
+          'orders/created',
+          '$share/workers/jobs/+',
+        ]);
+        expect(client.unsubscribeAsync).toHaveBeenCalledExactlyOnceWith(
+          subscribed,
+        );
+      });
+
+      it('should keep the connection open while handlers are in flight', async () => {
+        const { gracefulServer, client, waitSpy } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+
+        const closing = gracefulServer.close();
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(client.endAsync).not.toHaveBeenCalled();
+
+        finish();
+        await closing;
+
+        expect(client.endAsync).toHaveBeenCalledOnce();
+      });
+
+      it('should reset the state before it waits, so a listener waits for the next listen', async () => {
+        const { gracefulServer, waitSpy } = createGracefulServer();
+        let finish!: () => void;
+        waitSpy.mockReturnValue(new Promise<void>(res => (finish = res)));
+        const callback = vi.fn();
+
+        const closing = gracefulServer.close();
+        gracefulServer.on('message', callback);
+
+        expect((gracefulServer as any).mqttClient).toBeNull();
+        expect((gracefulServer as any).pendingEventListeners).toEqual([
+          { event: 'message', callback },
+        ]);
+
+        finish();
+        await closing;
+      });
+
+      it('should wait for "gracePeriod" at most', async () => {
+        const { gracefulServer, waitSpy } = createGracefulServer({
+          gracePeriod: 500,
+        });
+
+        await gracefulServer.close();
+
+        expect(waitSpy).toHaveBeenCalledExactlyOnceWith(500);
+      });
+
+      it('should still end the connection when it is lost before the broker answers', async () => {
+        const { gracefulServer, client, waitSpy } = createGracefulServer();
+        client.unsubscribeAsync.mockRejectedValue(
+          new Error('Connection closed'),
+        );
+
+        await expect(gracefulServer.close()).resolves.toBeUndefined();
+
+        expect(waitSpy).toHaveBeenCalledOnce();
+        expect(client.endAsync).toHaveBeenCalledOnce();
+      });
+
+      it('should not unsubscribe while disconnected, as mqtt would hold the packet and never end', async () => {
+        const { gracefulServer, client, waitSpy } = createGracefulServer();
+        client.connected = false;
+
+        await gracefulServer.close();
+
+        expect(client.unsubscribeAsync).not.toHaveBeenCalled();
+        expect(waitSpy).toHaveBeenCalledOnce();
+        expect(client.endAsync).toHaveBeenCalledOnce();
+      });
+
+      it('should keep mqtt from resubscribing on a reconnect when closed while disconnected', async () => {
+        const { gracefulServer, client } = createGracefulServer();
+        client.connected = false;
+
+        await gracefulServer.close();
+
+        expect(client.options.resubscribe).toBe(false);
+        expect(client.unsubscribeAsync).not.toHaveBeenCalled();
+      });
+
+      it('should not unsubscribe when there is no handler', async () => {
+        const { gracefulServer, client } = createGracefulServer();
+        Object.assign(gracefulServer, { messageHandlers: new Map() });
+
+        await gracefulServer.close();
+
+        expect(client.unsubscribeAsync).not.toHaveBeenCalled();
+        expect(client.endAsync).toHaveBeenCalledOnce();
+      });
+
+      it('should close a server that never listened', async () => {
+        const neverListened = new ServerMqtt({ gracefulShutdown: true });
+        const waitSpy = vi.spyOn(
+          neverListened as any,
+          'waitForHandlersInFlight',
+        );
+
+        await expect(neverListened.close()).resolves.toBeUndefined();
+
+        expect(waitSpy).not.toHaveBeenCalled();
+      });
     });
   });
   describe('createMqttClient', () => {

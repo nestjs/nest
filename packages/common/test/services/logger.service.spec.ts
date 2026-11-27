@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from 'node:util';
 import {
   ConsoleLogger,
   Logger,
@@ -134,9 +135,9 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `Object(${Object.keys(error).length})`,
         );
-        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
-          `randomError: \x1b[33mtrue`,
-        );
+        expect(
+          stripVTControlCharacters(processStderrWriteSpy.mock.calls[0][0]),
+        ).toContain('randomError: true');
       });
 
       it('should print one error with stacktrace and context to the console', () => {
@@ -1189,6 +1190,20 @@ describe('Logger', () => {
         expect(json.params).toBeUndefined();
       });
 
+      it('should preserve Object.prototype key names when flattenParams is true', () => {
+        const logger = new ConsoleLogger({ json: true, flattenParams: true });
+        logger.log(
+          'Metadata',
+          { constructor: 'UserController', toString: 'custom', valueOf: 1 },
+          'Svc',
+        );
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.constructor).toBe('UserController');
+        expect(json.toString).toBe('custom');
+        expect(json.valueOf).toBe(1);
+      });
+
       it('should handle error with params but no stack', () => {
         const logger = new ConsoleLogger({ json: true });
         logger.error('fail', { reqId: 'abc' }, 'AppService');
@@ -1699,6 +1714,41 @@ describe('Logger', () => {
         ]);
       });
 
+      it('should serialize the errors of a SuppressedError', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const error = new Error('dispose failed');
+        const suppressed = new Error('handler failed');
+
+        logger.error('Failed', createSuppressedError(error, suppressed));
+
+        const json = parseStderr();
+        expect(json.error.name).toBe('SuppressedError');
+        expect(json.error.error).toEqual({
+          name: 'Error',
+          message: 'dispose failed',
+          stack: error.stack,
+        });
+        expect(json.error.suppressed).toEqual({
+          name: 'Error',
+          message: 'handler failed',
+          stack: suppressed.stack,
+        });
+      });
+
+      it('should redact the errors of a SuppressedError', () => {
+        const logger = new ConsoleLogger({ json: true, redact: ['token'] });
+        const suppressedError = createSuppressedError(
+          Object.assign(new Error('dispose failed'), { token: 'a' }),
+          { token: 'b' },
+        );
+
+        logger.error('Failed', suppressedError);
+
+        const json = parseStderr();
+        expect(json.error.error.token).toBe('[REDACTED]');
+        expect(json.error.suppressed).toEqual({ token: '[REDACTED]' });
+      });
+
       it('should keep the stack argument convention', () => {
         const logger = new ConsoleLogger({ json: true });
         const error = new Error('boom');
@@ -2075,6 +2125,43 @@ describe('Logger', () => {
         expect(output).toContain("authorization: '[REDACTED]'");
         expect(output).not.toContain('Bearer abc');
       });
+
+      it('should mask the entries of headers, search params and form data', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['authorization', 'token', 'password'],
+        });
+        const form = new FormData();
+        form.append('password', 'hunter2');
+
+        logger.log('Request', {
+          headers: new Headers({ authorization: 'Bearer abc' }),
+          query: new URLSearchParams('token=xyz'),
+          form,
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain("authorization: '[REDACTED]'");
+        expect(output).not.toContain('Bearer abc');
+        expect(output).not.toContain('xyz');
+        expect(output).not.toContain('hunter2');
+      });
+      it('should mask the credentials and search params of a url', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          redact: ['token', 'password'],
+        });
+
+        logger.log('Callback', {
+          url: new URL('https://admin:hunter2@example.com/cb?token=xyz&page=1'),
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain("'token' => '[REDACTED]'");
+        expect(output).toContain("'page' => '1'");
+        expect(output).not.toContain('hunter2');
+        expect(output).not.toContain('xyz');
+      });
     });
 
     describe('JSON mode', () => {
@@ -2095,6 +2182,48 @@ describe('Logger', () => {
         });
       });
 
+      it('should still serialize headers, search params and form data', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: ['authorization', 'token', 'password'],
+        });
+        const form = new FormData();
+        form.append('password', 'hunter2');
+
+        logger.log('Request', {
+          headers: new Headers({ authorization: 'Bearer abc' }),
+          query: new URLSearchParams('token=xyz'),
+          form,
+          id: 1,
+        });
+
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(stdoutJson().params).toEqual({
+          headers: {},
+          query: {},
+          form: {},
+          id: 1,
+        });
+        expect(output).not.toContain('Bearer abc');
+        expect(output).not.toContain('xyz');
+        expect(output).not.toContain('hunter2');
+      });
+
+      it('should mask the credentials and search params of a url', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          redact: ['token', 'password'],
+        });
+
+        logger.log('Callback', {
+          url: new URL('https://admin:hunter2@example.com/cb?token=xyz&page=1'),
+        });
+
+        expect(stdoutJson().params).toEqual({
+          url: 'https://admin:%5BREDACTED%5D@example.com/cb?token=%5BREDACTED%5D&page=1',
+        });
+      });
+
       it('should mask flattened params', () => {
         const logger = new ConsoleLogger({
           json: true,
@@ -2108,6 +2237,25 @@ describe('Logger', () => {
           password: '[REDACTED]',
           userId: 1,
         });
+      });
+
+      it('should not spread the censor string as character indices when flattened params fail redaction', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          flattenParams: true,
+          redact: ['password'],
+        });
+        const broken = {
+          get password(): string {
+            throw new Error('getter');
+          },
+        };
+
+        logger.log('Login', { user: broken });
+
+        const record = stdoutJson();
+        expect(record.params).toBe('[REDACTED]');
+        expect(record['0']).toBeUndefined();
       });
 
       it('should mask the structured error and its cause', () => {
@@ -2389,4 +2537,25 @@ function convertInspectToJSON(inspectOutput: string) {
     console.error('Error parsing the modified inspect output:', error);
     throw error;
   }
+}
+
+/**
+ * A 'SuppressedError' (thrown by 'using' declarations), or an error of the
+ * same shape where Node.js does not have the class (before v24).
+ */
+function createSuppressedError(error: unknown, suppressed: unknown): Error {
+  const SuppressedErrorType = (globalThis as any).SuppressedError;
+  if (SuppressedErrorType) {
+    return new SuppressedErrorType(error, suppressed);
+  }
+  const suppressedError = new Error('An error was suppressed during disposal');
+  suppressedError.name = 'SuppressedError';
+  for (const [key, value] of Object.entries({ error, suppressed })) {
+    Object.defineProperty(suppressedError, key, {
+      value,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return suppressedError;
 }

@@ -52,7 +52,7 @@ export class KafkaParser {
       for (const key of Object.keys(data.headers)) {
         result.headers[key] = TRANSPORT_HEADERS.includes(key)
           ? this.decodeAsString(data.headers[key])
-          : this.decode(data.headers[key]);
+          : this.decodeHeader(data.headers[key]);
       }
     } else {
       result.headers = {};
@@ -90,6 +90,16 @@ export class KafkaParser {
 
   protected decodeAsString(value: Buffer): string | null {
     return isNil(value) ? null : value.toString();
+  }
+
+  protected decodeHeader(
+    value: Buffer | Buffer[],
+  ): object | string | null | Buffer {
+    // kafkajs collects the values of a repeated header in an array. Decoded
+    // as one value, they would be joined into a single comma-separated string
+    return Array.isArray(value)
+      ? value.map(item => this.decode(item))
+      : this.decode(value);
   }
 
   protected getMessageSize(data: any): number {
