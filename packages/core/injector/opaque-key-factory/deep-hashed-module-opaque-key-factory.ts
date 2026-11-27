@@ -32,6 +32,7 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
   private readonly moduleTokenCache = new Map<string, string>();
   private readonly unserializableModuleIds = new WeakMap<object, string>();
+  private readonly functionIds = new WeakMap<Function, string>();
   private readonly logger = new Logger(DeepHashedModuleOpaqueKeyFactory.name, {
     timestamp: true,
   });
@@ -64,7 +65,14 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
       dynamic: dynamicMetadata,
     };
     const start = performance.now();
-    const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken);
+    // A class is serialized as its name and a function as its source, so two
+    // classes of the same name, or two closures of the same source over
+    // different values ("useFactory: () => options"), would give different
+    // modules the same token. Each function is identified by reference too.
+    const functionIds: string[] = [];
+    const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken, fn =>
+      functionIds.push(this.getFunctionId(fn)),
+    );
     const timeSpentInMs = performance.now() - start;
 
     if (timeSpentInMs > 10) {
@@ -83,29 +91,47 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
         `${moduleId}_${moduleName}_${this.getUnserializableModuleId(originalRef)}`,
       );
     }
-    return this.hashString(opaqueTokenString);
+    return this.hashString(`${opaqueTokenString}_${functionIds.join(',')}`);
   }
 
-  public getStringifiedOpaqueToken(opaqueToken: object | undefined): string {
+  /**
+   * @param onFunction called with each function (class or not) serialized in
+   * the token, in order.
+   */
+  public getStringifiedOpaqueToken(
+    opaqueToken: object | undefined,
+    onFunction?: (fn: Function) => void,
+  ): string {
     // Uses safeStringify instead of JSON.stringify to support circular dynamic modules
     // The replacer function is also required in order to obtain real class names
     // instead of the unified "Function" key
     if (!opaqueToken) {
       return '';
     }
-    const tokenString = stringify(opaqueToken, this.replacer);
-    if (tokenString !== UNSERIALIZABLE) {
-      return tokenString;
+    const functions: Function[] = [];
+    const replacer = (key: string, value: any) => {
+      if (isFunction(value)) {
+        functions.push(value);
+      }
+      return this.replacer(key, value);
+    };
+    let tokenString = stringify(opaqueToken, replacer);
+    if (tokenString === UNSERIALIZABLE) {
+      // fast-safe-stringify only breaks cycles it finds through arrays and object
+      // keys, so one running through a Map or Set makes it give up. Hashing that
+      // constant would give modules of different classes the same token, so
+      // serialize those collections as "{}" instead, as JSON.stringify does.
+      functions.length = 0;
+      tokenString = stringify(opaqueToken, (key, value) =>
+        value instanceof Map || value instanceof Set
+          ? {}
+          : replacer(key, value),
+      );
     }
-    // fast-safe-stringify only breaks cycles it finds through arrays and object
-    // keys, so one running through a Map or Set makes it give up. Hashing that
-    // constant would give modules of different classes the same token, so
-    // serialize those collections as "{}" instead, as JSON.stringify does.
-    return stringify(opaqueToken, (key, value) =>
-      value instanceof Map || value instanceof Set
-        ? {}
-        : this.replacer(key, value),
-    );
+    if (onFunction && tokenString !== UNSERIALIZABLE) {
+      functions.forEach(onFunction);
+    }
+    return tokenString;
   }
 
   public getModuleId(metatype: Type<unknown>): string {
@@ -129,6 +155,15 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
       this.unserializableModuleIds.set(originalRef, moduleId);
     }
     return moduleId;
+  }
+
+  private getFunctionId(fn: Function): string {
+    let functionId = this.functionIds.get(fn);
+    if (!functionId) {
+      functionId = randomStringGenerator();
+      this.functionIds.set(fn, functionId);
+    }
+    return functionId;
   }
 
   private hashString(value: string): string {

@@ -48,6 +48,47 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
       expect(token1).not.toEqual(token3);
     });
 
+    it('should tell apart factories of the same source over different values', () => {
+      const createMetadata = (url: string) => ({
+        providers: [{ provide: 'URL', useFactory: () => url }],
+      });
+
+      expect(
+        factory.createForDynamic(Module, createMetadata('db-a')),
+      ).not.toEqual(factory.createForDynamic(Module, createMetadata('db-b')));
+    });
+
+    it('should tell apart different classes of the same name', () => {
+      const createClass = () => class Config {};
+      const ConfigA = createClass();
+      const ConfigB = createClass();
+
+      expect(
+        factory.createForDynamic(Module, {
+          providers: [{ provide: 'CONFIG', useClass: ConfigA }],
+        }),
+      ).not.toEqual(
+        factory.createForDynamic(Module, {
+          providers: [{ provide: 'CONFIG', useClass: ConfigB }],
+        }),
+      );
+    });
+
+    it('should give the same token to modules reusing the same functions', () => {
+      class Config {}
+      const createUrl = () => 'db-a';
+      const createMetadata = () => ({
+        providers: [
+          { provide: 'CONFIG', useClass: Config },
+          { provide: 'URL', useFactory: createUrl },
+        ],
+      });
+
+      expect(factory.createForDynamic(Module, createMetadata())).toEqual(
+        factory.createForDynamic(Module, createMetadata()),
+      );
+    });
+
     describe('when the dynamic metadata cannot be serialized', () => {
       class OtherModule {}
 
