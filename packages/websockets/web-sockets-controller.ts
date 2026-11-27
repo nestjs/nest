@@ -353,7 +353,7 @@ export class WebSocketsController {
       event
         .pipe(
           filter((data: any) => {
-            const client = data?.client || data;
+            const client = data?.client ?? data;
             const isRepeat =
               client === lastClient ||
               (canBeHeldWeakly(client) && handledClients.has(client));

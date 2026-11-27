@@ -2010,6 +2010,22 @@ describe('WebSocketsController', () => {
 
         expect(handler.mock.calls).toEqual([['a'], ['b']]);
       });
+
+      it.each([0, '', false])(
+        'should drop repeats of the enveloped falsy client %j',
+        client => {
+          const handler = vi.fn();
+          const disconnect = new Subject<any>();
+          instance.subscribeDisconnectEvent(handler, disconnect);
+
+          disconnect.next({ client, reason: 'client namespace disconnect' });
+          disconnect.next({ client, reason: 'server namespace disconnect' });
+
+          expect(handler.mock.calls).toEqual([
+            [client, 'client namespace disconnect'],
+          ]);
+        },
+      );
     });
   });
   describe('subscribeMessages', () => {
