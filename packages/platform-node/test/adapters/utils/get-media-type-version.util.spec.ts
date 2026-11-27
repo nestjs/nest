@@ -77,4 +77,15 @@ describe('getMediaTypeVersion', () => {
       'application/json;note="' + '\\"'.repeat(8000) + ';v=2';
     expect(getMediaTypeVersion(acceptHeader, 'v=')).toBeUndefined();
   });
+
+  it.each([
+    ['application/json;V=2', 'v='],
+    ['application/json; Version=2', 'version='],
+    ['application/json;v=2', 'V='],
+  ])(
+    'should match the parameter name in any case: %s with %s',
+    (acceptHeader, key) => {
+      expect(getMediaTypeVersion(acceptHeader, key)).toBe('2');
+    },
+  );
 });

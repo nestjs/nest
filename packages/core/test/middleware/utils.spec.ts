@@ -668,6 +668,19 @@ describe('middleware utils', () => {
         ).toBe(false);
       });
 
+      it('should read a media type version parameter in any case, like the router does', () => {
+        const versioning: VersioningOptions = {
+          type: VersioningType.MEDIA_TYPE,
+          key: 'v=',
+        };
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json;V=1' }, versioning),
+        ).toBe(true);
+        expect(
+          isExcluded('/cats/3', { accept: 'application/json;V=2' }, versioning),
+        ).toBe(false);
+      });
+
       it('should read a quoted media type version, like the router does', () => {
         const versioning: VersioningOptions = {
           type: VersioningType.MEDIA_TYPE,
