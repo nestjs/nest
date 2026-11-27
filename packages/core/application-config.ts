@@ -36,6 +36,35 @@ export class ApplicationConfig {
   private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] =
     [];
   private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
+  /**
+   * Module-scoped enhancers (registered via the `MODULE_*` tokens, see
+   * #17962). Keyed by the owning module's key; unlike the global lists
+   * above, an entry only applies to the controllers of that one module
+   * ("shallow" scoping — it does not reach into imported modules).
+   */
+  private readonly modulePipes = new Map<string, Array<PipeTransform>>();
+  private readonly moduleFilters = new Map<string, Array<ExceptionFilter>>();
+  private readonly moduleInterceptors = new Map<
+    string,
+    Array<NestInterceptor>
+  >();
+  private readonly moduleGuards = new Map<string, Array<CanActivate>>();
+  private readonly moduleRequestPipes = new Map<
+    string,
+    InstanceWrapper<PipeTransform>[]
+  >();
+  private readonly moduleRequestFilters = new Map<
+    string,
+    InstanceWrapper<ExceptionFilter>[]
+  >();
+  private readonly moduleRequestInterceptors = new Map<
+    string,
+    InstanceWrapper<NestInterceptor>[]
+  >();
+  private readonly moduleRequestGuards = new Map<
+    string,
+    InstanceWrapper<CanActivate>[]
+  >();
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
 
@@ -151,6 +180,103 @@ export class ApplicationConfig {
 
   public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
     return this.globalRequestGuards;
+  }
+
+  public addModulePipe(moduleKey: string, pipe: PipeTransform<any>) {
+    this.appendToModuleMap(this.modulePipes, moduleKey, pipe);
+  }
+
+  public getModulePipes(moduleKey: string): PipeTransform<any>[] {
+    return this.modulePipes.get(moduleKey) ?? [];
+  }
+
+  public addModuleFilter(moduleKey: string, filter: ExceptionFilter) {
+    this.appendToModuleMap(this.moduleFilters, moduleKey, filter);
+  }
+
+  public getModuleFilters(moduleKey: string): ExceptionFilter[] {
+    return this.moduleFilters.get(moduleKey) ?? [];
+  }
+
+  public addModuleInterceptor(moduleKey: string, interceptor: NestInterceptor) {
+    this.appendToModuleMap(this.moduleInterceptors, moduleKey, interceptor);
+  }
+
+  public getModuleInterceptors(moduleKey: string): NestInterceptor[] {
+    return this.moduleInterceptors.get(moduleKey) ?? [];
+  }
+
+  public addModuleGuard(moduleKey: string, guard: CanActivate) {
+    this.appendToModuleMap(this.moduleGuards, moduleKey, guard);
+  }
+
+  public getModuleGuards(moduleKey: string): CanActivate[] {
+    return this.moduleGuards.get(moduleKey) ?? [];
+  }
+
+  public addModuleRequestPipe(
+    moduleKey: string,
+    wrapper: InstanceWrapper<PipeTransform>,
+  ) {
+    this.appendToModuleMap(this.moduleRequestPipes, moduleKey, wrapper);
+  }
+
+  public getModuleRequestPipes(
+    moduleKey: string,
+  ): InstanceWrapper<PipeTransform>[] {
+    return this.moduleRequestPipes.get(moduleKey) ?? [];
+  }
+
+  public addModuleRequestFilter(
+    moduleKey: string,
+    wrapper: InstanceWrapper<ExceptionFilter>,
+  ) {
+    this.appendToModuleMap(this.moduleRequestFilters, moduleKey, wrapper);
+  }
+
+  public getModuleRequestFilters(
+    moduleKey: string,
+  ): InstanceWrapper<ExceptionFilter>[] {
+    return this.moduleRequestFilters.get(moduleKey) ?? [];
+  }
+
+  public addModuleRequestInterceptor(
+    moduleKey: string,
+    wrapper: InstanceWrapper<NestInterceptor>,
+  ) {
+    this.appendToModuleMap(this.moduleRequestInterceptors, moduleKey, wrapper);
+  }
+
+  public getModuleRequestInterceptors(
+    moduleKey: string,
+  ): InstanceWrapper<NestInterceptor>[] {
+    return this.moduleRequestInterceptors.get(moduleKey) ?? [];
+  }
+
+  public addModuleRequestGuard(
+    moduleKey: string,
+    wrapper: InstanceWrapper<CanActivate>,
+  ) {
+    this.appendToModuleMap(this.moduleRequestGuards, moduleKey, wrapper);
+  }
+
+  public getModuleRequestGuards(
+    moduleKey: string,
+  ): InstanceWrapper<CanActivate>[] {
+    return this.moduleRequestGuards.get(moduleKey) ?? [];
+  }
+
+  private appendToModuleMap<T>(
+    map: Map<string, T[]>,
+    moduleKey: string,
+    value: T,
+  ) {
+    const entries = map.get(moduleKey);
+    if (entries) {
+      entries.push(value);
+      return;
+    }
+    map.set(moduleKey, [value]);
   }
 
   public registerPreRequestHook(...hooks: PreRequestHook[]) {

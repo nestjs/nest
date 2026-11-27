@@ -11,6 +11,10 @@ import {
   APP_GUARD,
   APP_INTERCEPTOR,
   APP_PIPE,
+  MODULE_FILTER,
+  MODULE_GUARD,
+  MODULE_INTERCEPTOR,
+  MODULE_PIPE,
 } from '../constants.js';
 import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-module.exception.js';
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception.js';
@@ -721,7 +725,7 @@ describe('DependenciesScanner', () => {
       scanner.applyApplicationProviders();
 
       expect(applySpy).toHaveBeenCalled();
-      expect(applySpy).toHaveBeenCalledWith(expectedInstance);
+      expect(applySpy).toHaveBeenCalledWith(expectedInstance, 'moduleToken');
       expect(insertAttachedEnhancerStub).toHaveBeenCalledWith(instanceWrapper);
     });
     describe('when a provider depends on a request-scoped provider', () => {
@@ -812,7 +816,7 @@ describe('DependenciesScanner', () => {
         }));
 
         expect(() => scanner.applyApplicationProviders()).not.toThrow();
-        expect(applySpy).toHaveBeenCalledWith(null);
+        expect(applySpy).toHaveBeenCalledWith(null, 'moduleToken');
       });
     });
     describe('when a static provider does not give an enhancer', () => {
@@ -885,7 +889,10 @@ describe('DependenciesScanner', () => {
         expect(warn.mock.calls[0][0]).toContain(
           'The exception filter (APP_FILTER provider (useValue) gives class HttpExceptionFilter)',
         );
-        expect(applySpy).toHaveBeenCalledWith(HttpExceptionFilter);
+        expect(applySpy).toHaveBeenCalledWith(
+          HttpExceptionFilter,
+          'moduleToken',
+        );
       });
     });
     describe('when a static provider has never been instantiated', () => {
@@ -958,7 +965,10 @@ describe('DependenciesScanner', () => {
       scanner.applyApplicationProviders();
 
       expect(applySpy).toHaveBeenCalled();
-      expect(applySpy).toHaveBeenCalledWith(expectedInstanceWrapper);
+      expect(applySpy).toHaveBeenCalledWith(
+        expectedInstanceWrapper,
+        'moduleToken',
+      );
       expect(insertAttachedEnhancerStub).toHaveBeenCalledWith(
         expectedInstanceWrapper,
       );
@@ -1016,6 +1026,79 @@ describe('DependenciesScanner', () => {
       expect(addEnhancerMetadataProviderSpy).toHaveBeenCalled();
       expect(addEnhancerMetadataProviderSpy).toHaveBeenCalledWith(instance);
     });
+
+    it('should add module-scoped enhancers metadata only to the declaring module', () => {
+      const moduleProvider = {
+        moduleKey: 'moduleToken',
+        providerKey: 'providerToken',
+        type: MODULE_GUARD,
+        scope: Scope.REQUEST,
+      };
+      untypedScanner.applicationProvidersApplyMap = [moduleProvider];
+
+      const instance = new InstanceWrapper({ name: 'test' });
+      const ownControllers = new Map();
+      const ownProviders = new Map();
+      const otherControllers = new Map();
+      const otherProviders = new Map();
+
+      const ownController = new InstanceWrapper();
+      const ownProvider = new InstanceWrapper();
+      const otherController = new InstanceWrapper();
+      const otherProvider = new InstanceWrapper();
+
+      ownControllers.set('test', ownController);
+      ownProviders.set('entryProvider', ownProvider);
+      otherControllers.set('test', otherController);
+      otherProviders.set('entryProvider', otherProvider);
+
+      const declaringModule = {
+        injectables: { get: () => instance },
+        controllers: ownControllers,
+        entryProviders: Array.from(ownProviders.values()),
+      };
+      const otherModule = {
+        injectables: { get: () => instance },
+        controllers: otherControllers,
+        entryProviders: Array.from(otherProviders.values()),
+      };
+
+      vi.spyOn(container, 'getModules').mockImplementation(
+        () =>
+          ({
+            get: (key: string) =>
+              key === 'moduleToken' ? declaringModule : otherModule,
+            values() {
+              return [declaringModule, otherModule];
+            },
+          }) as any,
+      );
+
+      const addEnhancerMetadataOwnControllerSpy = vi.spyOn(
+        ownController,
+        'addEnhancerMetadata',
+      );
+      const addEnhancerMetadataOwnProviderSpy = vi.spyOn(
+        ownProvider,
+        'addEnhancerMetadata',
+      );
+      const addEnhancerMetadataOtherControllerSpy = vi.spyOn(
+        otherController,
+        'addEnhancerMetadata',
+      );
+      const addEnhancerMetadataOtherProviderSpy = vi.spyOn(
+        otherProvider,
+        'addEnhancerMetadata',
+      );
+      scanner.addScopedEnhancersMetadata();
+
+      expect(addEnhancerMetadataOwnControllerSpy).toHaveBeenCalledWith(
+        instance,
+      );
+      expect(addEnhancerMetadataOwnProviderSpy).toHaveBeenCalledWith(instance);
+      expect(addEnhancerMetadataOtherControllerSpy).not.toHaveBeenCalled();
+      expect(addEnhancerMetadataOtherProviderSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('getApplyProvidersMap', () => {
@@ -1059,6 +1142,46 @@ describe('DependenciesScanner', () => {
         expect(addSpy).toHaveBeenCalled();
       });
     });
+    describe(`when token is ${MODULE_INTERCEPTOR}`, () => {
+      it('call "addModuleInterceptor" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModuleInterceptor',
+        );
+        scanner.getApplyProvidersMap()[MODULE_INTERCEPTOR](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
+      });
+    });
+    describe(`when token is ${MODULE_GUARD}`, () => {
+      it('call "addModuleGuard" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModuleGuard',
+        );
+        scanner.getApplyProvidersMap()[MODULE_GUARD](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
+      });
+    });
+    describe(`when token is ${MODULE_PIPE}`, () => {
+      it('call "addModulePipe" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModulePipe',
+        );
+        scanner.getApplyProvidersMap()[MODULE_PIPE](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
+      });
+    });
+    describe(`when token is ${MODULE_FILTER}`, () => {
+      it('call "addModuleFilter" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModuleFilter',
+        );
+        scanner.getApplyProvidersMap()[MODULE_FILTER](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
+      });
+    });
   });
   describe('getApplyRequestProvidersMap', () => {
     describe(`when token is ${APP_INTERCEPTOR}`, () => {
@@ -1099,6 +1222,48 @@ describe('DependenciesScanner', () => {
         );
         scanner.getApplyRequestProvidersMap()[APP_FILTER](null);
         expect(addSpy).toHaveBeenCalled();
+      });
+    });
+    describe(`when token is ${MODULE_INTERCEPTOR}`, () => {
+      it('call "addModuleRequestInterceptor" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModuleRequestInterceptor',
+        );
+        scanner
+          .getApplyRequestProvidersMap()
+          [MODULE_INTERCEPTOR](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
+      });
+    });
+    describe(`when token is ${MODULE_GUARD}`, () => {
+      it('call "addModuleRequestGuard" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModuleRequestGuard',
+        );
+        scanner.getApplyRequestProvidersMap()[MODULE_GUARD](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
+      });
+    });
+    describe(`when token is ${MODULE_PIPE}`, () => {
+      it('call "addModuleRequestPipe" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModuleRequestPipe',
+        );
+        scanner.getApplyRequestProvidersMap()[MODULE_PIPE](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
+      });
+    });
+    describe(`when token is ${MODULE_FILTER}`, () => {
+      it('call "addModuleRequestFilter" with the declaring module key', () => {
+        const addSpy = vi.spyOn(
+          untypedScanner.applicationConfig,
+          'addModuleRequestFilter',
+        );
+        scanner.getApplyRequestProvidersMap()[MODULE_FILTER](null, 'module-a');
+        expect(addSpy).toHaveBeenCalledWith('module-a', null);
       });
     });
   });

@@ -332,4 +332,79 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getRouteResolutionStrategy()).toEqual(undefined);
     });
   });
+
+  describe('Module-scoped enhancers', () => {
+    it('should keep module guards scoped to their module', () => {
+      const guardA = { canActivate: () => true };
+      const guardB = { canActivate: () => false };
+      appConfig.addModuleGuard('module-a', guardA as any);
+      appConfig.addModuleGuard('module-b', guardB as any);
+
+      expect(appConfig.getModuleGuards('module-a')).toEqual([guardA]);
+      expect(appConfig.getModuleGuards('module-b')).toEqual([guardB]);
+      expect(appConfig.getGlobalGuards()).toEqual([]);
+    });
+
+    it('should return an empty array for a module without enhancers', () => {
+      expect(appConfig.getModuleGuards('unknown-module')).toEqual([]);
+      expect(appConfig.getModuleInterceptors('unknown-module')).toEqual([]);
+      expect(appConfig.getModulePipes('unknown-module')).toEqual([]);
+      expect(appConfig.getModuleFilters('unknown-module')).toEqual([]);
+      expect(appConfig.getModuleRequestGuards('unknown-module')).toEqual([]);
+      expect(appConfig.getModuleRequestInterceptors('unknown-module')).toEqual(
+        [],
+      );
+      expect(appConfig.getModuleRequestPipes('unknown-module')).toEqual([]);
+      expect(appConfig.getModuleRequestFilters('unknown-module')).toEqual([]);
+    });
+
+    it('should accumulate module enhancers in registration order', () => {
+      const interceptors = [1, 2].map(() => ({ intercept: () => null }));
+      const pipes = [1, 2].map(() => ({ transform: () => null }));
+      const filters = [1, 2].map(() => ({ catch: () => null }));
+      const guards = [1, 2].map(() => ({ canActivate: () => true }));
+      interceptors.forEach(item =>
+        appConfig.addModuleInterceptor('module-a', item as any),
+      );
+      pipes.forEach(item => appConfig.addModulePipe('module-a', item as any));
+      filters.forEach(item =>
+        appConfig.addModuleFilter('module-a', item as any),
+      );
+      guards.forEach(item => appConfig.addModuleGuard('module-a', item as any));
+
+      expect(appConfig.getModuleInterceptors('module-a')).toEqual(interceptors);
+      expect(appConfig.getModulePipes('module-a')).toEqual(pipes);
+      expect(appConfig.getModuleFilters('module-a')).toEqual(filters);
+      expect(appConfig.getModuleGuards('module-a')).toEqual(guards);
+    });
+
+    it('should keep request-scoped module enhancers scoped to their module', () => {
+      const requestGuard = 'requestGuard';
+      const requestInterceptor = 'requestInterceptor';
+      const requestPipe = 'requestPipe';
+      const requestFilter = 'requestFilter';
+      appConfig.addModuleRequestGuard('module-a', requestGuard as any);
+      appConfig.addModuleRequestInterceptor(
+        'module-a',
+        requestInterceptor as any,
+      );
+      appConfig.addModuleRequestPipe('module-a', requestPipe as any);
+      appConfig.addModuleRequestFilter('module-a', requestFilter as any);
+
+      expect(appConfig.getModuleRequestGuards('module-a')).toEqual([
+        requestGuard,
+      ]);
+      expect(appConfig.getModuleRequestInterceptors('module-a')).toEqual([
+        requestInterceptor,
+      ]);
+      expect(appConfig.getModuleRequestPipes('module-a')).toEqual([
+        requestPipe,
+      ]);
+      expect(appConfig.getModuleRequestFilters('module-a')).toEqual([
+        requestFilter,
+      ]);
+      expect(appConfig.getModuleRequestGuards('module-b')).toEqual([]);
+      expect(appConfig.getGlobalRequestGuards()).toEqual([]);
+    });
+  });
 });
