@@ -227,6 +227,14 @@ describe('ClientKafka', () => {
       .mockImplementation(() => kafkaClient);
   });
 
+  describe('constructor', () => {
+    it('should use the default client and consumer options for options set to undefined', () => {
+      client = new ClientKafka({ client: undefined, consumer: undefined });
+      expect((client as any).clientId).toBe('nestjs-consumer-client');
+      expect((client as any).groupId).toBe('nestjs-group-client');
+    });
+  });
+
   describe('createClient', () => {
     beforeEach(() => {
       client = new ClientKafka({});
