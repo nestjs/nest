@@ -9,6 +9,6 @@ export class TestingInstanceLoader extends InstanceLoader<TestingInjector> {
   ): Promise<void> {
     this.injector.setContainer(this.container);
     mocker && this.injector.setMocker(mocker);
-    await super.createInstancesOfDependencies();
+    await super.createInstancesOfDependencies(modules);
   }
 }

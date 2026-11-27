@@ -64,6 +64,18 @@ describe('TestingInstanceLoader', () => {
       expect(superSpy).toHaveBeenCalled();
     });
 
+    it('should pass the provided modules to the base loader', async () => {
+      const superSpy = vi.spyOn(
+        Object.getPrototypeOf(TestingInstanceLoader.prototype),
+        'createInstancesOfDependencies',
+      );
+      const modules = new Map([['key', { id: 'mod1' }]]) as any;
+
+      await loader.createInstancesOfDependencies(modules);
+
+      expect(superSpy).toHaveBeenCalledWith(modules);
+    });
+
     it('should use default modules from container when none provided', async () => {
       const modules = new Map([['key', { id: 'mod1' }]]);
       mockContainer.getModules.mockReturnValue(modules);
