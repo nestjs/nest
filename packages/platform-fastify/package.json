@@ -35,7 +35,7 @@
   "dependencies": {
     "@fastify/cors": "11.4.3",
     "@fastify/formbody": "9.0.2",
-    "@fastify/middie": "9.3.9",
+    "@fastify/middie": "9.4.0",
     "fast-querystring": "1.1.2",
     "fastify": "5.12.8",
     "find-my-way": "9.10.2",
