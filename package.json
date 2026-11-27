@@ -99,6 +99,7 @@
     "@nestjs/graphql": "14.2.1",
     "@nestjs/mongoose": "12.0.1",
     "@nestjs/typeorm": "12.0.3",
+    "@platformatic/kafka": "2.16.0",
     "@standard-schema/spec": "1.1.0",
     "@types/amqplib": "2.2.1",
     "@types/cors": "2.8.19",

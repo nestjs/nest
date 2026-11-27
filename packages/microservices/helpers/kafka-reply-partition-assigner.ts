@@ -8,7 +8,17 @@ import {
 } from '../external/kafka.interface.js';
 import { loadPackageCached, isUndefined } from '@nestjs/common/internal';
 
-let kafkaPackage: any = {};
+/**
+ * kafkajs, which ClientKafka loads (createClient()) before it runs on it. On
+ * `@platformatic/kafka`, which encodes the group protocol itself, the
+ * assigner never loads it.
+ */
+function loadKafkajs() {
+  return loadPackageCached('kafkajs', KafkaReplyPartitionAssigner.name);
+}
+
+/** The partitions a member gets of each topic, by member id. */
+type ReplyPartitionAssignment = Record<string, Record<string, number[]>>;
 
 export class KafkaReplyPartitionAssigner {
   readonly name = 'NestReplyPartitionAssigner';
@@ -16,16 +26,12 @@ export class KafkaReplyPartitionAssigner {
 
   constructor(
     private readonly clientKafka: ClientKafka,
-    private readonly config: {
+    // kafkajs passes it; `@platformatic/kafka` passes the partitions of the
+    // topics to `assignPartitions()` instead
+    private readonly config?: {
       cluster: Cluster;
     },
-  ) {
-    // ClientKafka loads kafkajs (createClient()) before it creates the assigner
-    kafkaPackage = loadPackageCached(
-      'kafkajs',
-      KafkaReplyPartitionAssigner.name,
-    );
-  }
+  ) {}
 
   /**
    * This process can result in imbalanced assignments
@@ -38,14 +44,68 @@ export class KafkaReplyPartitionAssigner {
     members: GroupMember[];
     topics: string[];
   }): Promise<GroupMemberAssignment[]> {
-    kafkaPackage = await kafkaPackage;
-    const assignment = {};
+    const cluster = this.config?.cluster;
+    if (!cluster) {
+      throw new Error('The assigner needs the cluster to assign partitions');
+    }
+    // build a collection of topics and partitions
+    const topicsPartitions = group.topics.flatMap(topic => {
+      const partitionMetadata = cluster.findTopicPartitionMetadata(topic);
+      return partitionMetadata.map(m => ({
+        topic,
+        partitionId: m.partitionId,
+      }));
+    });
+    const assignment = this.createAssignment(
+      group.members.map(member => this.decodeMember(member)),
+      group.topics,
+      topicsPartitions,
+    );
+
+    // encode the end result
+    const { AssignerProtocol } = loadKafkajs();
+    return Object.keys(assignment).map(memberId => ({
+      memberId,
+      memberAssignment: AssignerProtocol.MemberAssignment.encode({
+        version: this.version,
+        assignment: assignment[memberId],
+      }),
+    }));
+  }
+
+  /**
+   * Assigns the partitions of the topics to the members on
+   * `@platformatic/kafka`, which decodes the members itself and expects the
+   * assignment synchronously. A member keeps the partition it had of a topic
+   * before, which its user data holds (see `getUserData`).
+   */
+  public assignPartitions(
+    members: { memberId: string; userData?: Buffer | string | null }[],
+    topics: readonly string[],
+    topicsPartitions: { topic: string; partitionId: number }[],
+  ): ReplyPartitionAssignment {
+    return this.createAssignment(
+      members.map(({ memberId, userData }) => ({
+        memberId,
+        previousAssignment: this.decodePreviousAssignment(userData),
+      })),
+      topics,
+      topicsPartitions,
+    );
+  }
+
+  private createAssignment(
+    decodedMembers: {
+      memberId: string;
+      previousAssignment: Record<string, unknown>;
+    }[],
+    topics: readonly string[],
+    topicsPartitions: { topic: string; partitionId: number }[],
+  ): ReplyPartitionAssignment {
+    const assignment: ReplyPartitionAssignment = {};
     const previousAssignment = {};
 
-    const membersCount = group.members.length;
-    const decodedMembers = group.members.map(member =>
-      this.decodeMember(member),
-    );
+    const membersCount = decodedMembers.length;
     const sortedMemberIds = decodedMembers
       .map(member => member.memberId)
       .sort();
@@ -60,16 +120,6 @@ export class KafkaReplyPartitionAssigner {
       }
     });
 
-    // build a collection of topics and partitions
-    const topicsPartitions = group.topics.flatMap(topic => {
-      const partitionMetadata =
-        this.config.cluster.findTopicPartitionMetadata(topic);
-      return partitionMetadata.map(m => ({
-        topic,
-        partitionId: m.partitionId,
-      }));
-    });
-
     // create the new assignment by populating the members with the first partition of the topics
     sortedMemberIds.forEach(assignee => {
       if (!assignment[assignee]) {
@@ -77,7 +127,7 @@ export class KafkaReplyPartitionAssigner {
       }
 
       // add topics to each member
-      group.topics.forEach(topic => {
+      topics.forEach(topic => {
         if (!assignment[assignee][topic]) {
           assignment[assignee][topic] = [];
         }
@@ -114,7 +164,7 @@ export class KafkaReplyPartitionAssigner {
 
     // check for member topics that have a partition length of 0
     sortedMemberIds.forEach(assignee => {
-      group.topics.forEach(topic => {
+      topics.forEach(topic => {
         // only continue if there are no partitions for assignee's topic
         if (assignment[assignee][topic].length === 0) {
           // find the first partition for this topic
@@ -150,28 +200,18 @@ export class KafkaReplyPartitionAssigner {
     // build the assignments
     topicsPartitions.forEach(insertAssignmentsByTopic);
 
-    // encode the end result
-    return Object.keys(assignment).map(memberId => ({
-      memberId,
-      memberAssignment: kafkaPackage.AssignerProtocol.MemberAssignment.encode({
-        version: this.version,
-        assignment: assignment[memberId],
-      }),
-    }));
+    return assignment;
   }
 
   public protocol(subscription: {
     topics: string[];
     userData: Buffer;
   }): GroupState {
-    const stringifiedUserData = JSON.stringify({
-      previousAssignment: this.getPreviousAssignment(),
-    });
-    subscription.userData = Buffer.from(stringifiedUserData);
+    subscription.userData = this.getUserData();
 
     return {
       name: this.name,
-      metadata: kafkaPackage.AssignerProtocol.MemberMetadata.encode({
+      metadata: loadKafkajs().AssignerProtocol.MemberMetadata.encode({
         version: this.version,
         topics: subscription.topics,
         userData: subscription.userData,
@@ -179,16 +219,24 @@ export class KafkaReplyPartitionAssigner {
     };
   }
 
+  /**
+   * The user data of the member: the partitions it has of each topic, which
+   * it keeps when the group rebalances.
+   */
+  public getUserData(): Buffer {
+    return Buffer.from(
+      JSON.stringify({ previousAssignment: this.getPreviousAssignment() }),
+    );
+  }
+
   public getPreviousAssignment() {
     return this.clientKafka.getConsumerAssignments();
   }
 
   public decodeMember(member: GroupMember) {
-    // kafkaPackage must be resolved before calling this method
-    // (it is resolved in assign() which calls decodeMember)
     let memberMetadata: MemberMetadata;
     try {
-      memberMetadata = kafkaPackage.AssignerProtocol.MemberMetadata.decode(
+      memberMetadata = loadKafkajs().AssignerProtocol.MemberMetadata.decode(
         member.memberMetadata,
       ) as MemberMetadata;
     } catch {
@@ -211,7 +259,7 @@ export class KafkaReplyPartitionAssigner {
    * empty assignment (the member is then treated as new).
    */
   private decodePreviousAssignment(
-    userData: Buffer | undefined,
+    userData: Buffer | string | null | undefined,
   ): Record<string, unknown> {
     const rawUserData = userData?.toString();
     if (!rawUserData) {

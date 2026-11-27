@@ -12,6 +12,7 @@ import {
   KafkaMessage,
 } from '../../external/kafka.interface.js';
 import { ServerKafka } from '../../server/index.js';
+import { isPlatformaticKafkaSupported } from '../utils/platformatic-kafka-support.js';
 import { objectToMap } from './utils/object-to-map.js';
 
 class NoopLogger extends Logger {
@@ -1778,6 +1779,15 @@ describe('ServerKafka', () => {
     });
   });
 
+  it('should create a kafkajs client when the driver option says so', async () => {
+    server = new ServerKafka({ driver: 'kafkajs', client: { brokers: [] } });
+
+    const kafkaClient = await server.createClient();
+
+    expect(kafkaClient.consumer).toBeTypeOf('function');
+    expect(kafkaClient.producer).toBeTypeOf('function');
+  });
+
   describe('createClient', () => {
     it('should accept a custom logCreator in client options', async () => {
       const logCreatorSpy = vi.fn(() => 'test');
@@ -1797,5 +1807,32 @@ describe('ServerKafka', () => {
 
       expect(logCreatorSpy).toHaveBeenCalled();
     });
+
+    it('should run on kafkajs without the driver option', async () => {
+      const kafkajs = await import('kafkajs');
+      server = new ServerKafka({ client: { brokers: ['broker:9092'] } });
+
+      expect(await server.createClient()).toBeInstanceOf(kafkajs.Kafka);
+    });
+
+    it.skipIf(!isPlatformaticKafkaSupported)(
+      'should run on @platformatic/kafka when the driver option names it',
+      async () => {
+        const { PlatformaticKafkaClient } =
+          await import('../../helpers/platformatic-kafka-client.js');
+        server = new ServerKafka({
+          driver: 'platformatic',
+          client: { bootstrapBrokers: ['broker:9092'], clientId: 'app' },
+        });
+
+        const kafkaClient = await server.createClient();
+
+        expect(kafkaClient).toBeInstanceOf(PlatformaticKafkaClient);
+        expect(kafkaClient.options).toEqual({
+          bootstrapBrokers: ['broker:9092'],
+          clientId: 'app-server',
+        });
+      },
+    );
   });
 });
