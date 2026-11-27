@@ -277,6 +277,15 @@ describe('HttpException', () => {
       expect(error.cause).toBeUndefined();
     });
 
+    it('should set a falsy cause, as Error does', () => {
+      for (const cause of [0, '', false, null]) {
+        const error = new HttpException('test', 400, { cause });
+        expect(error.cause).toBe(cause);
+        expect(error.cause).toBe(new Error('test', { cause }).cause);
+        expect(new BadRequestException('test', { cause }).cause).toBe(cause);
+      }
+    });
+
     it('should preserve default description when using options with cause', () => {
       const builtInExceptionsWithDefaults: [Type<HttpException>, string][] = [
         [BadGatewayException, 'Bad Gateway'],

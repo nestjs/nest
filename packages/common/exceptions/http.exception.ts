@@ -87,9 +87,10 @@ export class HttpException extends IntrinsicException {
    * @see https://github.com/microsoft/TypeScript/issues/45167
    */
   public initCause(): void {
-    if (this.options?.cause) {
+    // Any value is a cause, as with "new Error(message, { cause })", even a
+    // falsy one (e.g. 0, '' or false)
+    if (this.options?.cause !== undefined) {
       this.cause = this.options.cause;
-      return;
     }
   }
 
