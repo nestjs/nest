@@ -29,7 +29,8 @@ const splitOutsideQuotes = (value: string, separator: ',' | ';'): string[] => {
  *
  * The version parameter may follow other parameters and may belong to any
  * media range of a list (`text/html, application/json;v=2`); the first match
- * wins. Returns `undefined` when no parameter starts with the key.
+ * wins. Returns `undefined` when no parameter starts with the key, which is
+ * matched in any case, as parameter names are case-insensitive.
  *
  * Quoted parameter values are unescaped, and separators inside them are ignored.
  * An unterminated quoted string runs to the end of the header value, so a
@@ -50,7 +51,11 @@ export function getMediaTypeVersion(
     const [, ...parameters] = splitOutsideQuotes(mediaRange, ';');
     for (const parameter of parameters) {
       const trimmedParameter = parameter.trim();
-      if (trimmedParameter.startsWith(key)) {
+      // Parameter names are case-insensitive (RFC 9110, section 5.6.6)
+      if (
+        trimmedParameter.slice(0, key.length).toLowerCase() ===
+        key.toLowerCase()
+      ) {
         const version = trimmedParameter.slice(key.length);
         if (version.startsWith('"') && version.endsWith('"')) {
           return version.slice(1, -1).replace(/\\([\s\S])/g, '$1');
