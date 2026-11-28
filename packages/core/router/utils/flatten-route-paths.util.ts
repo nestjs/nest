@@ -12,15 +12,17 @@ export function flattenRoutePaths(routes: Routes) {
       result.push({ module: item.module, path: item.path });
     }
     if (item.children) {
-      const childrenRef = item.children as Routes;
-      childrenRef.forEach(child => {
+      const childrenRef = (item.children as Routes).map(child => {
         if (!isString(child) && isString(child.path)) {
-          child.path = normalizePath(
-            normalizePath(item.path) + normalizePath(child.path),
-          );
-        } else {
-          result.push({ path: item.path, module: child as any as Type });
+          return {
+            ...child,
+            path: normalizePath(
+              normalizePath(item.path) + normalizePath(child.path),
+            ),
+          };
         }
+        result.push({ path: item.path, module: child as any as Type });
+        return child;
       });
       result.push(...flattenRoutePaths(childrenRef));
     }

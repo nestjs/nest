@@ -128,4 +128,19 @@ describe('flattenRoutePaths', () => {
     ];
     expect(flattenRoutePaths(routes)).toEqual(expectedRoutes);
   });
+
+  it('should not mutate the routes it flattens', () => {
+    class ChildModule {}
+    const routes = [
+      {
+        path: '/parent',
+        children: [{ path: '/child', module: ChildModule }],
+      },
+    ];
+
+    const first = flattenRoutePaths(routes);
+    const second = flattenRoutePaths(routes);
+
+    expect(second).toEqual(first);
+  });
 });
