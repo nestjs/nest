@@ -87,7 +87,7 @@ export class HttpException extends IntrinsicException {
    * @see https://github.com/microsoft/TypeScript/issues/45167
    */
   public initCause(): void {
-    if (this.options?.cause) {
+    if (this.options && 'cause' in this.options) {
       this.cause = this.options.cause;
       return;
     }

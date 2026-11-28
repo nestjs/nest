@@ -231,6 +231,16 @@ describe('HttpException', () => {
       expect(cause).toEqual(errorCause);
     });
 
+    it('keeps a cause explicitly set to undefined unset', () => {
+      const error = new HttpException('test', 400, { cause: undefined });
+      expect(error.cause).toBeUndefined();
+    });
+
+    it.each([0, '', false, null])('configures a falsy cause (%s)', cause => {
+      const error = new HttpException('test', 400, { cause });
+      expect(error.cause).toBe(cause);
+    });
+
     it('configures a cause when using a built-in exception with options', () => {
       const builtInErrorClasses = [
         BadGatewayException,
