@@ -728,6 +728,10 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(
+    listenOptions: NestFastifyListenOptions,
+    callback?: () => void,
+  ): void;
+  public listen(
     listenOptions: string | number | NestFastifyListenOptions,
     ...args: any[]
   ): void {
@@ -744,6 +748,7 @@ export class FastifyAdapter<
 
     let options: Record<string, any>;
     if (
+      listenOptions !== null &&
       typeof listenOptions === 'object' &&
       (listenOptions.host !== undefined ||
         listenOptions.port !== undefined ||
@@ -751,14 +756,16 @@ export class FastifyAdapter<
         listenOptions.fd !== undefined)
     ) {
       // First parameter is an object with a path, port, fd and/or host attributes
-      options = listenOptions;
+      options = { ...listenOptions };
     } else {
       options = {
         port: +listenOptions,
       };
     }
     if (!isFirstArgTypeofFunction) {
-      options.host = args[0];
+      if (args[0] !== undefined) {
+        options.host = args[0];
+      }
       if (typeof args[1] === 'number') {
         options.backlog = args[1];
       }
