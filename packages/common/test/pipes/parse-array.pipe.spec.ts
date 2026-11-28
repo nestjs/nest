@@ -1113,4 +1113,51 @@ describe('ParseArrayPipe', () => {
       });
     });
   });
+
+  describe('when "disableErrorMessages" is true', () => {
+    class ItemDto {
+      @IsNumber()
+      value: number;
+    }
+    const noDetails = { message: 'Bad Request', statusCode: 400 };
+    const getResponse = (pipe: ParseArrayPipe, value: unknown) =>
+      pipe.transform(value, {} as ArgumentMetadata).then(
+        () => expect.unreachable('expected the pipe to throw'),
+        err => {
+          expect(err).toBeInstanceOf(BadRequestException);
+          return (err as BadRequestException).getResponse();
+        },
+      );
+
+    it('should not send the error of an invalid primitive item', async () => {
+      const pipe = new ParseArrayPipe({
+        items: Number,
+        disableErrorMessages: true,
+      });
+      expect(await getResponse(pipe, 'a')).toEqual(noDetails);
+    });
+
+    it('should not send the errors of invalid primitive items when "stopAtFirstError" is false', async () => {
+      const pipe = new ParseArrayPipe({
+        items: Number,
+        disableErrorMessages: true,
+        stopAtFirstError: false,
+      });
+      expect(await getResponse(pipe, 'a,b')).toEqual(noDetails);
+    });
+
+    it('should not send the errors of invalid class items when "stopAtFirstError" is false', async () => {
+      const pipe = new ParseArrayPipe({
+        items: ItemDto,
+        disableErrorMessages: true,
+        stopAtFirstError: false,
+      });
+      expect(await getResponse(pipe, [{ value: 'a' }])).toEqual(noDetails);
+    });
+
+    it('should not send the error of a value that is not an array', async () => {
+      const pipe = new ParseArrayPipe({ disableErrorMessages: true });
+      expect(await getResponse(pipe, 42)).toEqual(noDetails);
+    });
+  });
 });
