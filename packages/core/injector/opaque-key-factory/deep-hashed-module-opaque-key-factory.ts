@@ -32,6 +32,8 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
   private readonly moduleTokenCache = new Map<string, string>();
   private readonly unserializableModuleIds = new WeakMap<object, string>();
+  private readonly functionIds = new WeakMap<Function, string>();
+  private currentFunctionIds: string[] = [];
   private readonly logger = new Logger(DeepHashedModuleOpaqueKeyFactory.name, {
     timestamp: true,
   });
@@ -83,7 +85,9 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
         `${moduleId}_${moduleName}_${this.getUnserializableModuleId(originalRef)}`,
       );
     }
-    return this.hashString(opaqueTokenString);
+    return this.hashString(
+      `${opaqueTokenString}_${this.currentFunctionIds.join(',')}`,
+    );
   }
 
   public getStringifiedOpaqueToken(opaqueToken: object | undefined): string {
@@ -91,9 +95,17 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
     // The replacer function is also required in order to obtain real class names
     // instead of the unified "Function" key
     if (!opaqueToken) {
+      this.currentFunctionIds = [];
       return '';
     }
-    const tokenString = stringify(opaqueToken, this.replacer);
+    const replacer = (key: string, value: any) => {
+      if (isFunction(value)) {
+        this.currentFunctionIds.push(this.getFunctionId(value));
+      }
+      return this.replacer(key, value);
+    };
+    this.currentFunctionIds = [];
+    const tokenString = stringify(opaqueToken, replacer);
     if (tokenString !== UNSERIALIZABLE) {
       return tokenString;
     }
@@ -101,10 +113,11 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
     // keys, so one running through a Map or Set makes it give up. Hashing that
     // constant would give modules of different classes the same token, so
     // serialize those collections as "{}" instead, as JSON.stringify does.
+    this.currentFunctionIds = [];
     return stringify(opaqueToken, (key, value) =>
       value instanceof Map || value instanceof Set
         ? {}
-        : this.replacer(key, value),
+        : replacer(key, value),
     );
   }
 
@@ -120,6 +133,15 @@ export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory 
 
   public getModuleName(metatype: Type<any>): string {
     return metatype.name;
+  }
+
+  private getFunctionId(fn: Function): string {
+    let id = this.functionIds.get(fn);
+    if (!id) {
+      id = randomStringGenerator();
+      this.functionIds.set(fn, id);
+    }
+    return id;
   }
 
   private getUnserializableModuleId(originalRef: object): string {

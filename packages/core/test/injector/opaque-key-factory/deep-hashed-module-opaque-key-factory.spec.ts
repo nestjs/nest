@@ -48,6 +48,27 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
       expect(token1).not.toEqual(token3);
     });
 
+    it('should tell apart dynamic modules whose factories are different functions', () => {
+      const makeFactory = (url: string) => () => url;
+      const sharedFactory = makeFactory('db-a');
+
+      const token1 = factory.createForDynamic(Module, {
+        providers: [{ provide: 'URL', useFactory: makeFactory('db-a') }],
+      });
+      const token2 = factory.createForDynamic(Module, {
+        providers: [{ provide: 'URL', useFactory: makeFactory('db-b') }],
+      });
+      const token3 = factory.createForDynamic(Module, {
+        providers: [{ provide: 'URL', useFactory: sharedFactory }],
+      });
+      const token4 = factory.createForDynamic(Module, {
+        providers: [{ provide: 'URL', useFactory: sharedFactory }],
+      });
+
+      expect(token1).not.toEqual(token2);
+      expect(token3).toEqual(token4);
+    });
+
     describe('when the dynamic metadata cannot be serialized', () => {
       class OtherModule {}
 
