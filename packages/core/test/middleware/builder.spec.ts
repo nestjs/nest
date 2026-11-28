@@ -21,6 +21,17 @@ import { RoutesMapper } from '../../middleware/routes-mapper.js';
 import { mapToExcludeRoute } from '../../middleware/utils.js';
 import { NoopHttpAdapter } from './../utils/noop-adapter.js';
 
+/** An adapter whose router matches paths as the given case sensitivity. */
+class RouteMatchingHttpAdapter extends NoopHttpAdapter {
+  constructor(private readonly caseSensitive: boolean) {
+    super({});
+  }
+
+  public getRouteMatchingOptions() {
+    return { caseSensitive: this.caseSensitive, ignoreTrailingSlash: true };
+  }
+}
+
 describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;
 
@@ -181,6 +192,63 @@ describe('MiddlewareBuilder', () => {
               ],
             },
           ]);
+        });
+
+        describe('when the paths are compared in another case', () => {
+          @Controller('Users')
+          class UpperCaseController {
+            @Get('me')
+            findMe() {}
+          }
+
+          @Controller('users')
+          class LowerCaseController {
+            @Get(':id')
+            findOne() {}
+          }
+
+          const createBuilder = (caseSensitive: boolean) => {
+            const appConfig = new ApplicationConfig();
+            appConfig.enableVersioning({ type: VersioningType.URI });
+            return new MiddlewareBuilder(
+              new RoutesMapper(new NestContainer(), appConfig),
+              new RouteMatchingHttpAdapter(caseSensitive),
+              new RouteInfoPathExtractor(appConfig),
+            );
+          };
+
+          it('should remove a route a parameterized one of another case covers', () => {
+            // Express serves "/Users" with "/users" unless it is told
+            // otherwise, so the middleware runs once, on the parameterized one
+            const caseInsensitiveBuilder = createBuilder(false);
+            caseInsensitiveBuilder
+              .apply([])
+              .forRoutes(UpperCaseController, LowerCaseController);
+
+            expect(caseInsensitiveBuilder.build()).toEqual([
+              {
+                middleware: [],
+                forRoutes: [{ method: RequestMethod.GET, path: '/users/:id' }],
+              },
+            ]);
+          });
+
+          it('should keep it when the router matches the paths case-sensitively', () => {
+            const caseSensitiveBuilder = createBuilder(true);
+            caseSensitiveBuilder
+              .apply([])
+              .forRoutes(UpperCaseController, LowerCaseController);
+
+            expect(caseSensitiveBuilder.build()).toEqual([
+              {
+                middleware: [],
+                forRoutes: [
+                  { method: RequestMethod.GET, path: '/Users/me' },
+                  { method: RequestMethod.GET, path: '/users/:id' },
+                ],
+              },
+            ]);
+          });
         });
 
         it('should not remove a route the parameterized one is not mounted on', () => {
