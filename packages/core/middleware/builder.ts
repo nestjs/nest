@@ -87,9 +87,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         ...this.excludedRoutes,
         ...this.getRoutesFlatList(routes).flatMap(route =>
           this.routeInfoPathExtractor.extractExclusionsFrom(route, {
-            caseSensitive:
-              this.builder.getHttpAdapter().getRouteMatchingOptions?.()
-                ?.caseSensitive ?? true,
+            caseSensitive: this.isCaseSensitiveRouteMatching(),
           }),
         ),
       ];
@@ -216,13 +214,27 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
               LegacyRouteConverter.tryConvert(toServedPath(path), {
                 logs: false,
               }),
-              { sensitive: true },
+              // As the router matches them: Express serves "/Users" with
+              // "/users" unless it is told otherwise
+              { sensitive: this.isCaseSensitiveRouteMatching() },
             ).regexp,
         );
       } catch {
         // The adapter reports a path it cannot mount; it covers nothing here
         return [];
       }
+    }
+
+    /**
+     * Whether the router serves "/Users" and "/users" as different paths.
+     * Express matches them in any case unless it is told otherwise, while
+     * Fastify matches them case-sensitively.
+     */
+    private isCaseSensitiveRouteMatching(): boolean {
+      return (
+        this.builder.getHttpAdapter().getRouteMatchingOptions?.()
+          ?.caseSensitive ?? true
+      );
     }
   };
 }
