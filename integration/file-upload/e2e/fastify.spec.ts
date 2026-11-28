@@ -31,7 +31,7 @@ import { mkdtempSync, readdirSync, rmSync } from 'fs';
 import { Agent } from 'http';
 import type { AddressInfo } from 'net';
 import { connect } from 'net';
-import { throwError, timeout } from 'rxjs';
+import { catchError, throwError, timeout } from 'rxjs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import request from 'supertest';
@@ -46,6 +46,20 @@ class TimeoutInterceptor implements NestInterceptor {
       timeout({
         first: 1000,
         with: () => throwError(() => new RequestTimeoutException()),
+      }),
+    );
+  }
+}
+
+/** Records errors raised while parsing or handling `/stalled-stream`. */
+const stalledStreamErrors: string[] = [];
+
+class RecordErrorInterceptor implements NestInterceptor {
+  intercept(_context: ExecutionContext, next: CallHandler) {
+    return next.handle().pipe(
+      catchError(err => {
+        stalledStreamErrors.push(err.message);
+        return throwError(() => err);
       }),
     );
   }
@@ -133,6 +147,12 @@ class FastifyUploadController {
   )
   echo(@UploadedFile() file: any) {
     return new StreamableFile(file.stream, { type: file.mimetype });
+  }
+
+  @Post('stalled-stream')
+  @UseInterceptors(RecordErrorInterceptor, FileStreamInterceptor('upload'))
+  stalledStream() {
+    return {};
   }
 }
 
@@ -343,6 +363,33 @@ describe('File upload (Fastify)', () => {
         socket.destroy();
       }
       await vi.waitFor(() => expect(stored()).toEqual([]));
+    });
+
+    it('should fail a streamed upload when the client leaves a form the parser never finishes', async () => {
+      stalledStreamErrors.length = 0;
+      const { port } = app.getHttpServer().address() as AddressInfo;
+      const socket = connect(port, '127.0.0.1');
+      await once(socket, 'connect');
+      const boundary = '----nestboundary';
+      // Part headers with no empty line after them: @fastify/busboy stalls
+      // waiting for the header block to end.
+      const body =
+        `--${boundary}\r\n` +
+        'Content-Disposition: form-data; name="x"\r\n' +
+        `--${boundary}--\r\n`;
+      socket.write(
+        'POST /stalled-stream HTTP/1.1\r\nHost: 127.0.0.1\r\n' +
+          `Content-Type: multipart/form-data; boundary=${boundary}\r\n` +
+          `Content-Length: ${Buffer.byteLength(body)}\r\n\r\n` +
+          body,
+      );
+      await new Promise(resolve => setTimeout(resolve, 50));
+      socket.destroy();
+      await vi.waitFor(() =>
+        expect(stalledStreamErrors).toEqual([
+          'Multipart: Unexpected end of form',
+        ]),
+      );
     });
 
     const upload = (i: number) => ({

@@ -179,6 +179,62 @@ describe('FileStreamInterceptor', () => {
     );
   });
 
+  describe('when the parser never finishes the form', () => {
+    it('should fail once the client disconnects', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const req = createFakeRequest([]);
+      const socket = new EventEmitter();
+      req.raw.socket = socket;
+      req.parts = () =>
+        (async function* () {
+          yield {
+            type: 'field',
+            fieldname: 'note',
+            value: 'before',
+            mimetype: 'text/plain',
+            encoding: '7bit',
+            fieldnameTruncated: false,
+            valueTruncated: false,
+          };
+          // A part whose headers never end: busboy never emits it.
+          await new Promise(() => undefined);
+        })();
+
+      const result = target.intercept(
+        createContext(req, createReply()),
+        handler,
+      );
+      await new Promise(resolve => setImmediate(resolve));
+
+      socket.emit('close');
+      await expect(result).rejects.toEqual(
+        new BadRequestException('Multipart: Unexpected end of form'),
+      );
+      expect(socket.listenerCount('close')).toBe(0);
+    });
+
+    it('should stop watching the connection once the file stream is handed over', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const req = createFakeRequest([file('upload')]);
+      const socket = new EventEmitter();
+      req.raw.socket = socket;
+
+      await target.intercept(createContext(req, createReply()), handler);
+      expect(socket.listenerCount('close')).toBe(0);
+      req.file.stream.resume();
+    });
+
+    it('should stop watching the connection when the form has no matching file', async () => {
+      const target = new (FileStreamInterceptor('upload'))();
+      const req = createFakeRequest([field('note', 'only-text')]);
+      const socket = new EventEmitter();
+      req.raw.socket = socket;
+
+      await target.intercept(createContext(req, createReply()), handler);
+      expect(socket.listenerCount('close')).toBe(0);
+    });
+  });
+
   describe('when the handler leaves the stream unread', () => {
     it('should discard the rest of the body before responding', async () => {
       const target = new (FileStreamInterceptor('upload'))();

@@ -718,6 +718,7 @@ export async function processStream(
 
   const body = Object.create(null);
   setOnRequest(req, 'body', body);
+  const disconnection = rejectWhenDisconnected(req.raw);
 
   try {
     const limits = resolveLimits(req, options);
@@ -725,10 +726,12 @@ export async function processStream(
     const iterator = req
       .parts(toBusboyConfig(limits, options))
       [Symbol.asyncIterator]();
+    const nextPart = () =>
+      Promise.race([iterator.next(), disconnection.disconnected]);
     for (
-      let result = await iterator.next();
+      let result = await nextPart();
       !result.done;
-      result = await iterator.next()
+      result = await nextPart()
     ) {
       const part = result.value;
       if (part.type === 'field') {
@@ -776,6 +779,8 @@ export async function processStream(
   } catch (err) {
     await drainRequest(req.raw);
     throw transformException(err);
+  } finally {
+    disconnection.stop();
   }
   return undefined;
 }
