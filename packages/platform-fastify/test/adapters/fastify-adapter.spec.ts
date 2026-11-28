@@ -3113,6 +3113,72 @@ describe('FastifyAdapter', () => {
       expect(listen).toHaveBeenCalledWith({ port: 3000 }, undefined);
     });
 
+    it('should keep the host on an options object when called without a callback', () => {
+      const listen = spyOnListen();
+      const options = { port: 3000, host: '0.0.0.0' };
+
+      fastifyAdapter.listen(options);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '0.0.0.0' },
+        undefined,
+      );
+      expect(options).toStrictEqual({ port: 3000, host: '0.0.0.0' });
+    });
+
+    it('should keep the host on a host-only options object when called without a callback', () => {
+      const listen = spyOnListen();
+
+      fastifyAdapter.listen({ host: '0.0.0.0' });
+
+      expect(listen).toHaveBeenCalledWith({ host: '0.0.0.0' }, undefined);
+    });
+
+    it('should keep the host on an options object when the second argument is undefined', () => {
+      const listen = spyOnListen();
+      const callback = vi.fn();
+      const options = { port: 3000, host: '0.0.0.0' };
+
+      (fastifyAdapter.listen as any)(options, undefined, callback);
+
+      expect(listen).toHaveBeenCalledWith(
+        { port: 3000, host: '0.0.0.0' },
+        callback,
+      );
+      expect(options).toStrictEqual({ port: 3000, host: '0.0.0.0' });
+    });
+
+    it('should not mutate the options object or add an undefined host property', () => {
+      const listen = spyOnListen();
+      const options = { port: 3000 };
+
+      fastifyAdapter.listen(options);
+
+      expect(listen.mock.calls[0][0]).toStrictEqual({ port: 3000 });
+      expect(options).toStrictEqual({ port: 3000 });
+    });
+
+    it('should accept a frozen options object and not mutate options when overriding host', () => {
+      const listen = spyOnListen();
+      const frozenOptions = Object.freeze({ port: 3000, host: '0.0.0.0' });
+      const baseOptions = { port: 3000 };
+
+      fastifyAdapter.listen(frozenOptions);
+      (fastifyAdapter.listen as any)(baseOptions, '127.0.0.1');
+
+      expect(listen).toHaveBeenNthCalledWith(
+        1,
+        { port: 3000, host: '0.0.0.0' },
+        undefined,
+      );
+      expect(listen).toHaveBeenNthCalledWith(
+        2,
+        { port: 3000, host: '127.0.0.1' },
+        undefined,
+      );
+      expect(baseOptions).toStrictEqual({ port: 3000 });
+    });
+
     it('should keep an options object with a file descriptor as it is', () => {
       const listen = spyOnListen();
       const callback = vi.fn();
