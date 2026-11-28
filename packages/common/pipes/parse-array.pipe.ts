@@ -106,7 +106,11 @@ export class ParseArrayPipe implements PipeTransform {
     });
     this.exceptionFactory =
       trackedExceptionFactory ||
-      (error => new HttpErrorByCode[errorHttpStatusCode](error));
+      (error =>
+        // As in the validation pipe, the errors are not sent to the client
+        options.disableErrorMessages
+          ? new HttpErrorByCode[errorHttpStatusCode]()
+          : new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
   /**
