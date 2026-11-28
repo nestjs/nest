@@ -824,6 +824,40 @@ describe('ValidationPipe', () => {
           ).rejects.toBeDefined();
         });
       });
+      describe('when values are converted implicitly', () => {
+        class CredentialsDto {
+          @IsString()
+          public email: string;
+        }
+        const credentialsMetadata: ArgumentMetadata = {
+          type: 'body',
+          metatype: CredentialsDto,
+          data: '',
+        };
+
+        it('should return the value that was validated', async () => {
+          target = new ValidationPipe({
+            transformOptions: { enableImplicitConversion: true },
+          });
+          const result = await target.transform(
+            { email: { $ne: null } },
+            credentialsMetadata,
+          );
+          expect(result).not.toBeInstanceOf(CredentialsDto);
+          expect(result).toEqual({ email: '[object Object]' });
+        });
+        it('should return the value that was validated with a custom exception factory', async () => {
+          target = new ValidationPipe({
+            transformOptions: { enableImplicitConversion: true },
+            exceptionFactory: () => new Error('custom'),
+          });
+          const result = await target.transform(
+            { email: { $ne: null } },
+            credentialsMetadata,
+          );
+          expect(result).toEqual({ email: '[object Object]' });
+        });
+      });
     });
     describe('when the value holds a sparse array', () => {
       class TagsDto {

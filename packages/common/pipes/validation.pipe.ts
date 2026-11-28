@@ -292,8 +292,12 @@ export class ValidationPipe implements PipeTransform {
 
     // we check if the number of keys of the "validatorOptions" is higher than 1 (instead of 0)
     // because the "forbidUnknownValues" now fallbacks to "false" (in case it wasn't explicitly specified)
+    // With "transformOptions" (e.g. "enableImplicitConversion"), the rules
+    // ran on a value that class-transformer converted, so that value is
+    // returned instead of the one that came in.
     const shouldTransformToPlain =
-      Object.keys(this.validatorOptions).length > 1;
+      Object.keys(this.validatorOptions).length > 1 ||
+      !isUndefined(this.transformOptions);
     return shouldTransformToPlain
       ? classTransformer.classToPlain(entity, this.transformOptions)
       : value;
